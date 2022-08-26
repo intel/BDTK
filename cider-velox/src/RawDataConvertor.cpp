@@ -20,15 +20,23 @@
  */
 
 #include "RawDataConvertor.h"
+#include <boost/smart_ptr/intrusive_ptr.hpp>
+#include <cmath>
+#include <cstdint>
 #include "TypeConversions.h"
+#include "cider/batch/CiderBatch.h"
+#include "substrait/type.pb.h"
 #include "velox/buffer/Buffer.h"
 #include "velox/type/StringView.h"
+#include "velox/type/Type.h"
 #include "velox/vector/BaseVector.h"
+#include "velox/vector/ComplexVector.h"
 #include "velox/vector/DictionaryVector.h"
 #include "velox/vector/FlatVector.h"
+#include "velox/vector/VectorStream.h"
+#include "velox/vector/tests/VectorTestBase.h"
 
 namespace facebook::velox::plugin {
-
 template <TypeKind kind>
 int8_t* toCiderImpl(VectorPtr& child, int idx, int num_rows) {
   using T = typename TypeTraits<kind>::NativeType;
@@ -206,6 +214,26 @@ int8_t* toCiderImpl<TypeKind::DATE>(VectorPtr& child, int idx, int num_rows) {
   return reinterpret_cast<int8_t*>(column);
 }
 
+// template <>
+// VectorPtr toCiderImpl<TypeKind::ROW>(const TypePtr& vType,
+//                                      const int8_t* data_buffer,
+//                                      int num_rows,
+//                                      memory::MemoryPool* pool,
+//                                      int32_t /*unused*/) {
+//   auto result = BaseVector::create(vType, num_rows, pool);
+//   auto flatResult = result->as<FlatVector<Row>>();
+//   const int64_t* srcValues = reinterpret_cast<const int64_t*>(data_buffer);
+//   for (auto pos = 0; pos < num_rows; pos++) {
+//     if (srcValues[pos] == std::numeric_limits<int64_t>::min()) {
+//       result->setNull(pos, true);
+//     } else {
+//       auto value = srcValues[pos];
+//       flatResult->set(pos, Date(value));
+//     }
+//   }
+//   return result;
+// }
+
 int8_t* toCiderResult(VectorPtr& child, int idx, int num_rows) {
   switch (child->encoding()) {
     case VectorEncoding::Simple::FLAT:
@@ -334,6 +362,29 @@ VectorPtr toVeloxImpl<TypeKind::VARCHAR>(const TypePtr& vType,
   return result;
 }
 
+// template <>
+// VectorPtr toVeloxImpl<TypeKind::DOUBLE>(const TypePtr& vType,
+//                                         const int8_t* data_buffer,
+//                                         int num_rows,
+//                                         memory::MemoryPool* pool,
+//                                         int32_t /*unused*/) {
+//   auto result = BaseVector::create(vType, num_rows, pool);
+//   auto flatResult = result->as<FlatVector<double>>();
+//   // const CiderByteArray* srcValues = reinterpret_cast<const
+//   // CiderByteArray*>(data_buffer);
+//   const double* srcValues = reinterpret_cast<const double*>(data_buffer);
+//   for (auto pos = 0; pos < num_rows; pos++) {
+//     if (srcValues[pos] == getNullValue<double>()) {
+//       result->setNull(pos, true);
+
+//     }  // else {
+//     //   auto value = srcValues[pos].ptr;
+//     //   flatResult->set(pos, reinterpret_cast<double*>(value));
+//     // }
+//   }
+//   return result;
+// }
+
 template <>
 VectorPtr toVeloxImpl<TypeKind::INTERVAL_DAY_TIME>(const TypePtr& vType,
                                                    const int8_t* data_buffer,
@@ -409,6 +460,82 @@ VectorPtr toVeloxImpl<TypeKind::DATE>(const TypePtr& vType,
   return result;
 }
 
+// template <>
+//<TypeKind::ROW>
+VectorPtr toVeloxRowImpl(const TypePtr& vType,
+                         const int8_t* data_buffer,
+                         int num_rows,
+                         memory::MemoryPool* pool) {
+  // BufferReleaser releaser;
+  // BufferPtr buffer = BufferView<BufferReleaser&>::create(
+  //     reinterpret_cast<const uint8_t*>(data_buffer), num_rows *
+  //     vType->cppSizeInBytes(), releaser);
+
+  // auto result = std::make_shared<FlatVector<std::shared_ptr<const RowType>>>(
+  //     pool,
+  //     vType,
+  //     BufferPtr(nullptr),
+  //     num_rows,
+  //     buffer,
+  //     std::vector<BufferPtr>(),
+  //     SimpleVectorStats<double>(),
+  //     std::nullopt,
+  //     0);
+
+  // const int64_t* srcValues = reinterpret_cast<const int64_t*>(data_buffer);
+  // int64_t nullValue = getNullValue<int64_t>();
+  // for (auto pos = 0; pos < num_rows; pos++) {
+  //   if (srcValues[pos] == nullValue) {
+  //     result->setNull(pos, true);
+  //   }
+  // }
+  // return result;
+
+  // void checkSumCountRowType(TypePtr type, const std::string& errorMessage) {
+  //   VELOX_CHECK_EQ(type->kind(), TypeKind::ROW, "{}", errorMessage);
+  //   VELOX_CHECK_EQ(type->childAt(0)->kind(), TypeKind::DOUBLE, "{}", errorMessage);
+  //   VELOX_CHECK_EQ(type->childAt(1)->kind(), TypeKind::BIGINT, "{}", errorMessage);
+  // }
+  auto result = BaseVector::create(vType, num_rows, pool);
+  if (std::dynamic_pointer_cast<RowVectorPtr>(result)) {
+    auto tmp3 = true;
+  }
+
+  auto flatResult = result->as<FlatVector<std::shared_ptr<const RowType>>>();
+  const int64_t* srcValues = reinterpret_cast<const int64_t*>(data_buffer);
+  const int64_t* srcValues2 = reinterpret_cast<const int64_t*>(data_buffer + 1);
+
+  for (auto pos = 0; pos < num_rows; pos++) {
+    vType->childAt(0);
+
+    auto tmp1 = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(toVeloxImpl,
+                                                   vType->childAt(0)->kind(),
+                                                   vType->childAt(0),
+                                                   data_buffer,
+                                                   num_rows,
+                                                   pool,
+                                                   CIDER_DIMEN::MICROSECOND);
+    auto tmp2 = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(toVeloxImpl,
+                                                   vType->childAt(1)->kind(),
+                                                   vType->childAt(1),
+                                                   data_buffer,
+                                                   num_rows,
+                                                   pool,
+                                                   CIDER_DIMEN::MICROSECOND);
+
+    tmp1->append(tmp2.get());
+    if (srcValues[pos] == std::numeric_limits<int64_t>::min()) {
+      result->setNull(pos, true);
+    } else {
+      auto value = srcValues[pos];
+      flatResult->set(pos, ROW({"col_0"}, {BIGINT()}));
+      // flatResult->set(pos, Date(value));
+    }
+  }
+  return result;
+  // return std::dynamic_pointer_cast<RowVectorPtr>(result);
+}
+
 VectorPtr toVeloxDecimalImpl(const TypePtr& vType,
                              const int8_t* data_buffer,
                              int num_rows,
@@ -446,6 +573,8 @@ VectorPtr toVeloxVector(const TypePtr& vType,
                         int32_t dimen = CIDER_DIMEN::MICROSECOND) {
   if (sType.kind_case() == ::substrait::Type::KindCase::kDecimal) {
     return toVeloxDecimalImpl(vType, data_buffer, num_rows, pool);
+  } else if (sType.kind_case() == ::substrait::Type::KindCase::kStruct) {
+    return toVeloxRowImpl(vType, data_buffer, num_rows, pool);
   } else {
     return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
         toVeloxImpl, vType->kind(), vType, data_buffer, num_rows, pool, dimen);
@@ -463,10 +592,36 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
   int num_cols = schema.getColumnCount();
   types.reserve(num_cols);
   columns.reserve(num_cols);
+  int inputColIndex = 0;
+
   for (int i = 0; i < num_cols; i++) {
     ::substrait::Type sType = schema.getColumnTypeById(i);
     types.push_back(getVeloxType(sType));
-    columns.push_back(toVeloxVector(types[i], sType, input.column(i), num_rows, pool));
+    auto currentData = input.column(i);
+    auto columNum = input.column_num();
+    if (sType.kind_case() == substrait::Type::kStruct) {
+      std::vector<VectorPtr> columnStruct{toVeloxVector(types[i]->childAt(0),
+                                                        sType.struct_().types(0),
+                                                        input.column(inputColIndex),
+                                                        num_rows,
+                                                        pool),
+                                          toVeloxVector(types[i]->childAt(1),
+                                                        sType.struct_().types(1),
+
+                                                        input.column(inputColIndex + 1),
+
+                                                        num_rows,
+                                                        pool)};
+
+      columns.push_back(std::make_shared<RowVector>(
+          pool, types[i], BufferPtr(nullptr), num_rows, columnStruct));
+
+      inputColIndex = inputColIndex + 2;
+    } else {
+      columns.push_back(
+          toVeloxVector(types[i], sType, input.column(inputColIndex), num_rows, pool));
+      inputColIndex = inputColIndex + 1;
+    }
   }
   rowType = std::make_shared<RowType>(move(col_names), move(types));
   return std::make_shared<RowVector>(

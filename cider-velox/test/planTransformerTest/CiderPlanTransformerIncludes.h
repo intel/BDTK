@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "CiderTransformer/CiderPlanPatterns.h"
-#include "CiderTransformer/CiderPlanRewriter.h"
+#include "ciderTransformer/CiderPlanPatterns.h"
+#include "ciderTransformer/CiderPlanRewriter.h"
 #include "PlanTranformerIncludes.h"
 #include "utils/CiderPlanRewriters.h"
