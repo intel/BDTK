@@ -24,10 +24,13 @@
 #include "cider/CiderTypes.h"
 #include "util/DateTimeParser.h"
 
-int64_t CiderDateType::toInt64(const std::string& string_val) {
+int64_t DateAndTimeType::toInt64(const std::string& string_val, Type type) {
+  DateTimeParser::FormatType fmtType = ( type == Type::Time)
+                                           ? DateTimeParser::FormatType::Time
+                                           : DateTimeParser::FormatType::Date;
   DateTimeParser parser;
-  parser.setFormatType(DateTimeParser::FormatType::Date);
-  auto res = parser.parse(string_val, 0);
+  parser.setFormatType(fmtType);
+  auto res = parser.parse(string_val, DateAndTimeType::getTypeDimension(type));
   if (res.has_value()) {
     return res.value();
   }

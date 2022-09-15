@@ -26,6 +26,7 @@
 
 #include "ConverterHelper.h"
 #include "TypeUtils.h"
+#include "cider/CiderTypes.h"
 #include "function/ExtensionFunctionsBinding.h"
 
 namespace generator {
@@ -88,14 +89,25 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Type& s_type) {
     case substrait::Type::kI64:
       return SQLTypeInfo(SQLTypes::kBIGINT, not_null);
     case substrait::Type::kTimestamp:
-      return SQLTypeInfo(SQLTypes::kTIMESTAMP, not_null);
+      return SQLTypeInfo(SQLTypes::kTIMESTAMP,
+                         DateAndTimeType::getTypeDimension(DateAndTimeType::Type::Timestamp),
+                         0,
+                         not_null);
     case substrait::Type::kVarchar:
       return SQLTypeInfo(SQLTypes::kVARCHAR, not_null);
     case substrait::Type::kFixedChar:
       // todo: parse length?
       return SQLTypeInfo(SQLTypes::kCHAR, not_null);
     case substrait::Type::kDate:
-      return SQLTypeInfo(SQLTypes::kDATE, not_null);
+      return SQLTypeInfo(SQLTypes::kDATE,
+                         DateAndTimeType::getTypeDimension(DateAndTimeType::Type::Date),
+                         0,
+                         not_null);
+    case substrait::Type::kTime:
+      return SQLTypeInfo(SQLTypes::kTIME,
+                         DateAndTimeType::getTypeDimension(DateAndTimeType::Type::Time),
+                         0,
+                         not_null);
     // FIXME: struct type support, currently we return a faked value
     // for partial avg expr with correct type updated later
     case substrait::Type::kStruct:

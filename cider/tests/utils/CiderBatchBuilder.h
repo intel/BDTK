@@ -83,11 +83,10 @@ class CiderBatchBuilder {
     return *this;
   }
 
-  template <typename T,
-            std::enable_if_t<std::is_same<T, CiderDateType>::value, bool> = true>
-  CiderBatchBuilder& addColumn(const std::string& col_name,
+  template <typename T>
+  CiderBatchBuilder& addTimingColumn(const std::string& col_name,
                                const ::substrait::Type& col_type,
-                               const std::vector<CiderDateType>& col_data,
+                               const std::vector<T>& col_data,
                                const std::vector<bool>& null_data = {}) {
     col_names_.push_back(col_name);
     col_types_.push_back(col_type);

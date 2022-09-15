@@ -65,16 +65,60 @@ enum GeneratePattern { Sequence, Random, Special_Date_format_String };
     break;                                                                       \
   }
 
-#define GENERATE_AND_ADD_TIMING_COLUMN(TYPE)                                    \
+#define GENERATE_AND_ADD_DATE_COLUMN(TYPE)                                         \
+  {                                                                                \
+    std::vector<bool> null_data;                                                   \
+    std::vector<TYPE> col_data;                                                    \
+    std::tie(col_data, null_data) =                                                \
+        value_min > value_max ? generateAndFillTimeVector<TYPE>(row_num,           \
+                                                                pattern,           \
+                                                                null_chance[i],    \
+                                                                MIN_DAYS,          \
+                                                                MAX_DAYS,          \
+                                                                kSecondsInOneDay)  \
+                              : generateAndFillTimeVector<TYPE>(row_num,           \
+                                                                pattern,           \
+                                                                null_chance[i],    \
+                                                                value_min,         \
+                                                                value_max,         \
+                                                                kSecondsInOneDay); \
+    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);        \
+    break;                                                                         \
+  }
+
+#define GENERATE_AND_ADD_TIME_COLUMN(TYPE)                                      \
   {                                                                             \
     std::vector<bool> null_data;                                                \
     std::vector<TYPE> col_data;                                                 \
     std::tie(col_data, null_data) =                                             \
         value_min > value_max                                                   \
-            ? generateAndFillDateVector<TYPE>(row_num, pattern, null_chance[i]) \
-            : generateAndFillDateVector<TYPE>(                                  \
-                  row_num, pattern, null_chance[i], value_min, value_max);      \
-    builder = builder.addColumn<TYPE>(names[i], type, col_data, null_data);     \
+            ? generateAndFillTimeVector<TYPE>(row_num,                          \
+                                              pattern,                          \
+                                              null_chance[i],                   \
+                                              MIN_MICROSECONDS_IN_DAY,          \
+                                              MAX_MICROSECONDS_IN_DAY,          \
+                                              1)                                \
+            : generateAndFillTimeVector<TYPE>(                                  \
+                  , row_num, pattern, null_chance[i], value_min, value_max, 1); \
+    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);     \
+    break;                                                                      \
+  }
+
+#define GENERATE_AND_ADD_TIMESTAMP_COLUMN(TYPE)                                 \
+  {                                                                             \
+    std::vector<bool> null_data;                                                \
+    std::vector<TYPE> col_data;                                                 \
+    std::tie(col_data, null_data) =                                             \
+        value_min > value_max                                                   \
+            ? generateAndFillTimeVector<TYPE>(row_num,                          \
+                                              pattern,                          \
+                                              null_chance[i],                   \
+                                              MIN_MICROSECONDS,                 \
+                                              MAX_MICROSECONDS,                 \
+                                              1)                                \
+            : generateAndFillTimeVector<TYPE>(                                  \
+                  , row_num, pattern, null_chance[i], value_min, value_max, 1); \
+    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);     \
     break;                                                                      \
   }
 
@@ -129,12 +173,12 @@ class QueryDataGenerator {
         case ::substrait::Type::KindCase::kFixedChar:
           GENERATE_AND_ADD_VARCHAR_COLUMN(CiderByteArray)
         case ::substrait::Type::KindCase::kDate:
-          GENERATE_AND_ADD_TIMING_COLUMN(CiderDateType)
+          GENERATE_AND_ADD_DATE_COLUMN(CiderDateType)
         // FIXME(jikunshang): add timestamp support, Kaidi is WIP.
         case ::substrait::Type::KindCase::kTime:
-          //          GENERATE_AND_ADD_TIMING_COLUMN(CiderTimeType)
+          GENERATE_AND_ADD_TIME_COLUMN(CiderTimeType)
         case ::substrait::Type::KindCase::kTimestamp:
-          //          GENERATE_AND_ADD_TIMING_COLUMN(CiderTimeStampType)
+          GENERATE_AND_ADD_TIMESTAMP_COLUMN(CiderTimestampType)
         default:
           CIDER_THROW(CiderCompileException, "Type not supported.");
       }
@@ -324,18 +368,28 @@ class QueryDataGenerator {
     return std::make_tuple(col_data, null_data);
   }
 
+// A date within [1000-01-01..9999-12-31].
 #define MIN_DAYS -1000 * 365
 #define MAX_DAYS 1000 * 365
-  // For CiderDateType, random value is days(rather than seconds, will multiply manually)
-  template <typename T,
-            std::enable_if_t<std::is_same<T, CiderDateType>::value, bool> = true>
-  static std::tuple<std::vector<CiderDateType>, std::vector<bool>>
-  generateAndFillDateVector(const size_t row_num,
-                            const GeneratePattern pattern,
-                            const int32_t null_chance,
-                            const int64_t value_min = MIN_DAYS,
-                            const int64_t value_max = MAX_DAYS) {
-    std::vector<CiderDateType> col_data;
+
+// A time since the beginning of any day range of [0..86,399,999,999] microseconds
+#define MIN_MICROSECONDS_IN_DAY 0
+#define MAX__MICROSECONDS_IN_DAY 3000 * kMicrosecondsInSecond
+
+// A timestamp within [1000-01-01 00:00:00.000000..9999-12-31 23:59:59.999999], with
+// microsecond precision.
+#define MIN_MICROSECONDS MIN_DAYS* kSecondsInOneDay* kMicrosecondsInSecond
+#define MAX__MICROSECONDS MAX_DAYS* kSecondsInOneDay* kMicrosecondsInSecond
+
+  template <typename T>
+  static std::tuple<std::vector<T>, std::vector<bool>> generateAndFillTimeVector(
+      const size_t row_num,
+      const GeneratePattern pattern,
+      const int32_t null_chance,
+      const int64_t value_min,
+      const int64_t value_max,
+      const int64_t time_step) {
+    std::vector<T> col_data;
     col_data.reserve(row_num);
     std::vector<bool> null_data(row_num);
     std::mt19937 rng(std::random_device{}());  // NOLINT
@@ -344,23 +398,19 @@ class QueryDataGenerator {
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] =
               Random::oneIn(null_chance, rng)
-                  ? (col_data.push_back(
-                         CiderDateType(std::numeric_limits<int64_t>::min())),
-                     true)
-                  : (col_data.push_back(CiderDateType(i * kSecondsInOneDay)), false);
+                  ? (col_data.push_back(T(std::numeric_limits<int64_t>::min())), true)
+                  : (col_data.push_back(T(i * time_step)), false);
         }
         break;
       case GeneratePattern::Special_Date_format_String:
       case GeneratePattern::Random:
         for (auto i = 0; i < row_num; ++i) {
-          null_data[i] = Random::oneIn(null_chance, rng)
-                             ? (col_data.push_back(
-                                    CiderDateType(std::numeric_limits<int64_t>::min())),
-                                true)
-                             : (col_data.push_back(CiderDateType(
-                                    kSecondsInOneDay *
-                                    Random::randInt64(value_min, value_max, rng))),
-                                false);
+          null_data[i] =
+              Random::oneIn(null_chance, rng)
+                  ? (col_data.push_back(T(std::numeric_limits<int64_t>::min())), true)
+                  : (col_data.push_back(
+                         T(time_step * Random::randInt64(value_min, value_max, rng))),
+                     false);
         }
         break;
     }

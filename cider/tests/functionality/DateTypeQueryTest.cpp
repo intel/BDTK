@@ -26,11 +26,12 @@ class DateTypeQueryTest : public CiderTestBase {
  public:
   DateTypeQueryTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a BIGINT, col_b DATE);";
+    create_ddl_ = "CREATE TABLE test(col_a BIGINT, col_c TIMESTAMP);";
     input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
         366,
-        {"col_a", "col_b"},
-        {CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(Date)}))};
+        {"col_a", "col_c"},
+        {CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(Timestamp)}))};
+    std::cout << input_[0]->toValueString() << std::endl;
   }
 };
 
@@ -247,9 +248,20 @@ TEST_F(DateRandomAndNullQueryTest, DateOpTest) {
       "< date '1980-01-01'");
 }
 
+TEST_F(DateTypeQueryTest, TimeStampTest) {
+  assertQuery("SELECT col_c from test");
+  assertQuery("SELECT cast(col_c as DATE) from test");
+  assertQuery("SELECT col_c +  interval '1' month  from test");
+  assertQuery("select extract(microsecond from col_c) from test");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
+  testing::GTEST_FLAG(filter) = ("*.TimeStampTest");
   int err{0};
   try {
     err = RUN_ALL_TESTS();

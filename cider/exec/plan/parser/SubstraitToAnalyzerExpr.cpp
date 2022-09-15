@@ -541,6 +541,16 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       return std::make_shared<Analyzer::Constant>(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }
+    case substrait::Expression_Literal::LiteralTypeCase::kTimestamp: {
+      constant_value.bigintval = s_literal_expr.timestamp();
+      return std::make_shared<Analyzer::Constant>(
+          getSQLTypeInfo(s_literal_expr), false, constant_value);
+    }
+    case substrait::Expression_Literal::LiteralTypeCase::kTime: {
+      constant_value.bigintval = s_literal_expr.time();
+      return std::make_shared<Analyzer::Constant>(
+          getSQLTypeInfo(s_literal_expr), false, constant_value);
+    }
     case substrait::Expression_Literal::LiteralTypeCase::kFixedChar: {
       constant_value.stringval = new std::string(s_literal_expr.fixed_char());
       return std::make_shared<Analyzer::Constant>(
@@ -637,8 +647,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExp
   CHECK(s_scalar_function.arguments(1).has_value());
   auto from_expr =
       toAnalyzerExpr(s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
-  from_expr->set_type_info(
-      SQLTypeInfo(SQLTypes::kDATE, from_expr->get_type_info().get_notnull()));
+  from_expr->set_type_info(from_expr->get_type_info());
+
   return ExtractExpr::generate(from_expr, time_unit);
 }
 
@@ -664,8 +674,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildDateAddExp
   CHECK(function_name == "add" || function_name == "subtract");
   const std::shared_ptr<Analyzer::Expr> datetime =
       toAnalyzerExpr(s_scalar_function.arguments(0).value(), function_map, expr_map_ptr);
-  SQLTypeInfo datetime_ti(
-      SQLTypeInfo(SQLTypes::kDATE, datetime->get_type_info().get_notnull()));
+  SQLTypeInfo datetime_ti = datetime->get_type_info();
   if (s_scalar_function.arguments(1).value().literal().has_interval_year_to_month()) {
     Datum interval_value;
     SQLTypeInfo interval_ti(SQLTypes::kINTERVAL_YEAR_MONTH, true);
@@ -917,7 +926,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   // translate Date type function (DateAdd/DateSubtract)
   // FIXME: from Function_datetime.yaml, some date functions return type is `timestamp`
   // rather than `date`
-  if (s_scalar_function.has_output_type() && s_scalar_function.output_type().has_date()) {
+  if (function == "add") {
     return buildDateAddExpr(s_scalar_function, function, function_map, expr_map_ptr);
   }
 
