@@ -120,12 +120,12 @@ SQLTypes CiderBatch::getCiderType() const {
 
 // TODO: Dictionary support is TBD.
 std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
-  CHECK(arrow_schema_ && arrow_array_);
+  CHECK(!isMoved());
   CHECK_LT(index, arrow_schema_->n_children);
   ArrowSchema* child_schema = arrow_schema_->children[index];
   ArrowArray* child_array = arrow_array_->children[index];
 
-  if (isMoved()) {
+  if (!child_schema || !child_schema->release) {
     // Child has been moved.
     return nullptr;
   }
@@ -151,11 +151,62 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
   return child_batch;
 }
 
+bool CiderBatch::resizeBatch(int64_t size, bool default_not_null) {
+  if (getNulls()) {
+    if (!resizeNulls(size, default_not_null)) {
+      return false;
+    }
+  }
+  if (!resizeData(size)) {
+    return false;
+  }
+  return true;
+}
+
+bool CiderBatch::resizeNulls(int64_t size, bool default_not_null) {
+  CHECK(!isMoved());
+  if (!permitBufferAllocate()) {
+    return false;
+  }
+
+  ArrowArray* array = getArrowArray();
+  auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(array->private_data);
+
+  size_t bytes = ((size + 7) >> 3);
+  size_t null_index = getNullVectorIndex();
+  bool first_time = !array->buffers[null_index];
+
+  array_holder->allocBuffer(null_index, bytes);
+  uint8_t* null_vector = array_holder->getBufferAs<uint8_t>(null_index);
+
+  if (default_not_null) {
+    // TODO: Optimize
+    for (size_t i = (first_time ? 0 : getLength()); i < size; ++i) {
+      CiderBitUtils::setBitAt(null_vector, i);
+    }
+  } else {
+    // TODO: Optimize
+    for (size_t i = (first_time ? 0 : getLength()); i < size; ++i) {
+      CiderBitUtils::clearBitAt(null_vector, i);
+    }
+  }
+  size_t not_null_num = CiderBitUtils::countSetBits(null_vector, size);
+  setNullCount(size - not_null_num);
+
+  return true;
+}
+
 uint8_t* CiderBatch::getMutableNulls() {
   CHECK(!isMoved());
   ArrowArray* array = getArrowArray();
-
-  return reinterpret_cast<uint8_t*>(const_cast<void*>(array->buffers[0]));
+  const void* nulls = array->buffers[getNullVectorIndex()];
+  if (!nulls) {
+    if (resizeNulls(getLength(), true)) {
+      return reinterpret_cast<uint8_t*>(
+          const_cast<void*>(array->buffers[getNullVectorIndex()]));
+    }
+  }
+  return nullptr;
 }
 
 const uint8_t* CiderBatch::getNulls() const {
@@ -163,40 +214,6 @@ const uint8_t* CiderBatch::getNulls() const {
   ArrowArray* array = getArrowArray();
 
   return reinterpret_cast<const uint8_t*>(array->buffers[0]);
-}
-
-bool CiderBatch::resizeNullVector(size_t index, size_t size, bool default_not_null) {
-  if (!permitBufferAllocate()) {
-    return false;
-  }
-
-  ArrowSchema* schema = getArrowSchema();
-  ArrowArray* array = getArrowArray();
-
-  auto schema_holder =
-      reinterpret_cast<CiderArrowSchemaBufferHolder*>(schema->private_data);
-  auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(array->private_data);
-
-  if (schema_holder->needNullVector()) {
-    size_t bytes = ((size + 7) >> 3);
-    array_holder->allocBuffer(0, bytes);
-
-    uint8_t* null_vector = array_holder->getBufferAs<uint8_t>(index);
-
-    // TODO: Optimize
-    for (size_t i = array->length; i < size; ++i) {
-      if (default_not_null) {
-        CiderBitUtils::setBitAt(null_vector, i);
-      } else {
-        CiderBitUtils::clearBitAt(null_vector, i);
-      }
-    }
-    if (!default_not_null) {
-      array->null_count += size - array->length;
-    }
-  }
-
-  return true;
 }
 
 void CiderBatch::releaseArrowEntries() {
@@ -279,7 +296,7 @@ int64_t CiderBatch::getLength() const {
 }
 
 bool CiderBatch::isMoved() const {
-  CHECK((arrow_schema_ && arrow_schema_) || (!arrow_array_ && !arrow_schema_));
+  CHECK((arrow_array_ && arrow_schema_) || (!arrow_array_ && !arrow_schema_));
   if (arrow_schema_ && arrow_array_) {
     CHECK((arrow_schema_->release && arrow_array_->release) ||
           (!arrow_schema_->release && !arrow_array_->release));
@@ -288,10 +305,7 @@ bool CiderBatch::isMoved() const {
   return true;
 }
 
-bool CiderBatch::isNullable() const {
+bool CiderBatch::containsNull() const {
   CHECK(!isMoved());
-  CiderArrowSchemaBufferHolder* holder =
-      reinterpret_cast<CiderArrowSchemaBufferHolder*>(arrow_schema_->private_data);
-
-  return holder->needNullVector();
+  return getNulls() && getNullCount();
 }

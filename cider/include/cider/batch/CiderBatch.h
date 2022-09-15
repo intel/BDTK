@@ -65,7 +65,7 @@ class CiderBatch {
 
   bool isMoved() const;
 
-  bool isNullable() const;
+  bool containsNull() const;
 
   std::unique_ptr<CiderBatch> getChildAt(size_t index);
 
@@ -95,10 +95,12 @@ class CiderBatch {
     return dynamic_cast<const T*>(this);
   }
 
-  virtual bool resizeBatch(int64_t size, bool default_not_null = false) {
-    abort();
-  }  // TODO: Change to pure virtual function.
+  // TODO: Change to pure virtual function.
+  // CiderBatch dosen't contain null vector by default until getMutableNulls is called.
+  bool resizeBatch(int64_t size, bool default_not_null = false);
 
+  // This function has a side effect that the null vector will be allocated if there is no
+  // null vector exists.
   virtual uint8_t* getMutableNulls();
 
   virtual const uint8_t* getNulls() const;
@@ -117,13 +119,18 @@ class CiderBatch {
   using SchemaReleaser = void (*)(struct ArrowSchema*);
   using ArrayReleaser = void (*)(struct ArrowArray*);
 
+  // This function will not resize nulls.
+  // TODO: Change to pure virtual function.
+  virtual bool resizeData(int64_t size) { abort(); }
+  bool resizeNulls(int64_t size, bool default_not_null);
+
+  virtual size_t getNullVectorIndex() const { return 0; }
+
   bool permitBufferAllocate() const { return reallocate_; }
 
   ArrowSchema* getArrowSchema() const { return arrow_schema_; }
 
   ArrowArray* getArrowArray() const { return arrow_array_; }
-
-  virtual bool resizeNullVector(size_t index, size_t size, bool default_not_null);
 
   SchemaReleaser getSchemaReleaser() const;
   ArrayReleaser getArrayReleaser() const;
