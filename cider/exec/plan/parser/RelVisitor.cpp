@@ -54,4 +54,7 @@ void RelVisitor::visit(FilterQualContext* filter_qual_context) {}
 // join
 void RelVisitor::visit(JoinQualContext* join_qual_context) {}
 
+// sort
+void RelVisitor::visit(OrderEntryContext* order_entry_context) {}
+
 }  // namespace generator

@@ -56,6 +56,7 @@ struct GeneratorContext {
   int cur_join_depth_;
   bool is_target_exprs_collected_;
   bool is_partial_avg_;
+  SortAlgorithm sort_algorithm_ = SortAlgorithm::Default;
   // Records hints of the col data: case name and the amount of corresponding flatten
   // types
   // (case 1) <"normal", 1> represents a normal case, such as fp64, bool, ...
@@ -77,9 +78,9 @@ struct GeneratorContext {
 
   SortInfo getSortInfoFromCtx() {
     if (orderby_collation_.size() == 0) {
-      return {{}, SortAlgorithm::Default, 0, 0};
+      return {{}, sort_algorithm_, 0, 0};
     } else {
-      return {orderby_collation_, SortAlgorithm::SpeculativeTopN, limit_, offset_};
+      return {orderby_collation_, sort_algorithm_, limit_, offset_};
     }
   }
 

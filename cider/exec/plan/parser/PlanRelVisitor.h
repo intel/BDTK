@@ -121,4 +121,20 @@ class ReadRelVisitor : public RelVisitor {
   std::vector<CiderTableSchema>* input_table_schemas_ptr_ = nullptr;
 };
 
+class SortRelVisitor : public RelVisitor {
+ public:
+  SortRelVisitor(const substrait::SortRel& rel_node,
+                 Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
+                 const std::unordered_map<int, std::string>& function_map,
+                 std::shared_ptr<VariableContext> variable_context_shared_ptr,
+                 bool is_right_join_node);
+  virtual ~SortRelVisitor();
+
+  // sort
+  virtual void visit(OrderEntryContext* order_entry_context);
+
+ private:
+  const substrait::SortRel& rel_node_;
+};
+
 }  // namespace generator

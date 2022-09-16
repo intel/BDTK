@@ -98,4 +98,21 @@ class TargetContext : public BaseContext {
   std::vector<std::pair<ColumnHint, int>> col_hint_records_;
 };
 
+class OrderEntryContext : public BaseContext {
+ public:
+  virtual ~OrderEntryContext();
+  virtual void accept(std::shared_ptr<RelVisitor> rel_visitor_ptr);
+  virtual void convert(std::shared_ptr<GeneratorContext> ctx_ptr);
+  std::list<Analyzer::OrderEntry>* getOrderEntry();
+  SortAlgorithm* getSortAlgorithm();
+  size_t* getOffset();
+  size_t* getLimit();
+
+ private:
+  std::list<Analyzer::OrderEntry> orderby_collation_;
+  SortAlgorithm sort_algorithm_ = SortAlgorithm::Default;
+  size_t offset_ = 0;
+  size_t limit_ = 0;
+};
+
 }  // namespace generator

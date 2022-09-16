@@ -25,6 +25,7 @@
 #include "cider/CiderBatch.h"
 #include "cider/CiderCompileModule.h"
 #include "cider/CiderRuntimeModule.h"
+#include "exec/template/RelAlgExecutionUnit.h"
 
 #include <memory>
 #include <string>

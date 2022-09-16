@@ -28,6 +28,8 @@
 
 #include <string>
 #include <unordered_map>
+#include "CiderSort.h"
+#include "exec/plan/parser/Translator.h"
 #include "exec/template/AggregatedColRange.h"
 #include "exec/template/ExpressionRewrite.h"
 #include "substrait/algebra.pb.h"
@@ -122,4 +124,10 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr,
 std::unordered_map<int, std::string> getFunctionMap(
     const std::vector<
         substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*> func_infos);
+
+void parseSubstraitSortfieldSortkind2sortfiledType(
+    const substrait::SortField_SortDirection& direction,
+    SortDirection& sort_dir,
+    NullSortedPosition& nulls_pos);
+
 }  // namespace generator

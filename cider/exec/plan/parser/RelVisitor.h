@@ -53,6 +53,7 @@ class GroupbyContext;
 class JoinQualContext;
 class TargetContext;
 class FilterQualContext;
+class OrderEntryContext;
 
 class RelVisitor {
  public:
@@ -71,6 +72,8 @@ class RelVisitor {
   virtual void visit(FilterQualContext* filter_qual_context);
   // join
   virtual void visit(JoinQualContext* join_qual_context);
+  // sort
+  virtual void visit(OrderEntryContext* order_entry_context);
 
  protected:
   Substrait2AnalyzerExprConverter* toAnalyzerExprConverter_ = nullptr;

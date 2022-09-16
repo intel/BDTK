@@ -38,7 +38,8 @@ enum ContextElementType {
   GroupbyContextType,
   JoinQualContextType,
   TargetContextType,
-  FilterQualContextType
+  FilterQualContextType,
+  OrderEntryContextType
 };
 
 class BaseContext {

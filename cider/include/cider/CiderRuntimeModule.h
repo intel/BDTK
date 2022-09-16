@@ -72,7 +72,10 @@ class CiderRuntimeModule {
   /// \param[<in>] max_row        max row by one fetch, 0 for not limit.
   /// \return ReturnCode indicates whether all rows fetched. CiderBatch store the results.
   std::pair<ReturnCode, std::unique_ptr<CiderBatch>> fetchResults(int32_t max_row = 0);
+
   static std::string getErrorMessageFromCode(const int32_t error_code);
+
+  SortInfo getSortInfo();
 
  private:
   void initCiderAggGroupByHashTable();

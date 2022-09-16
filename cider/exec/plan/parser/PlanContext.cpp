@@ -132,4 +132,33 @@ std::vector<std::pair<ColumnHint, int>>* TargetContext::getColHintRecords() {
   return &col_hint_records_;
 }
 
+OrderEntryContext::~OrderEntryContext() {}
+
+void OrderEntryContext::accept(std::shared_ptr<RelVisitor> rel_visitor_ptr) {
+  rel_visitor_ptr->visit(this);
+}
+
+void OrderEntryContext::convert(std::shared_ptr<GeneratorContext> ctx_ptr) {
+  ctx_ptr->orderby_collation_ = this->orderby_collation_;
+  ctx_ptr->sort_algorithm_ = this->sort_algorithm_;
+  ctx_ptr->offset_ = this->offset_;
+  ctx_ptr->limit_ = this->limit_;
+}
+
+std::list<Analyzer::OrderEntry>* OrderEntryContext::getOrderEntry() {
+  return &orderby_collation_;
+}
+
+SortAlgorithm* OrderEntryContext::getSortAlgorithm() {
+  return &sort_algorithm_;
+}
+
+size_t* OrderEntryContext::getOffset() {
+  return &offset_;
+}
+
+size_t* OrderEntryContext::getLimit() {
+  return &limit_;
+}
+
 }  // namespace generator

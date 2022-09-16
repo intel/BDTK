@@ -409,6 +409,11 @@ int getLeftJoinDepth(const substrait::Plan& plan) {
         ++join_depth;
         continue;
       }
+      case substrait::Rel::RelTypeCase::kSort: {
+        auto input = rel_node.sort().input();
+        rel_node = input;
+        continue;
+      }
       default:
         throw std::runtime_error("Unsupported substrait rel type " +
                                  std::to_string(rel_node.rel_type_case()));
@@ -529,4 +534,47 @@ std::unordered_map<int, std::string> getFunctionMap(
   }
   return function_map;
 }
+
+void parseSubstraitSortfieldSortkind2sortfiledType(
+    const substrait::SortField_SortDirection& direction,
+    SortDirection& sort_dir,
+    NullSortedPosition& nulls_pos) {
+  switch (direction) {
+    case substrait::SortField_SortDirection::
+        SortField_SortDirection_SORT_DIRECTION_UNSPECIFIED:
+      sort_dir = SortDirection::Ascending;
+      nulls_pos = NullSortedPosition::Last;
+      break;
+    case substrait::SortField_SortDirection::
+        SortField_SortDirection_SORT_DIRECTION_ASC_NULLS_FIRST:
+      sort_dir = SortDirection::Ascending;
+      nulls_pos = NullSortedPosition::First;
+      break;
+    case substrait::SortField_SortDirection::
+        SortField_SortDirection_SORT_DIRECTION_ASC_NULLS_LAST:
+      sort_dir = SortDirection::Ascending;
+      nulls_pos = NullSortedPosition::Last;
+      break;
+    case substrait::SortField_SortDirection::
+        SortField_SortDirection_SORT_DIRECTION_DESC_NULLS_FIRST:
+      sort_dir = SortDirection::Descending;
+      nulls_pos = NullSortedPosition::First;
+      break;
+    case substrait::SortField_SortDirection::
+        SortField_SortDirection_SORT_DIRECTION_DESC_NULLS_LAST:
+      sort_dir = SortDirection::Descending;
+      nulls_pos = NullSortedPosition::Last;
+      break;
+    case substrait::SortField_SortDirection::
+        SortField_SortDirection_SORT_DIRECTION_CLUSTERED:
+      // todo: SortField_SortDirection_SORT_DIRECTION_CLUSTERED
+      throw std::runtime_error(
+          "SortField_SortDirection_SORT_DIRECTION_CLUSTERED is not support.");
+      break;
+    default:
+      throw std::runtime_error("Undefined substrait SortField_SortDirection.");
+  }
+  return;
+}
+
 }  // namespace generator

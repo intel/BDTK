@@ -25,6 +25,7 @@
  **/
 
 #include "PlanRelVisitor.h"
+#include "CiderSort.h"
 
 namespace generator {
 
@@ -477,6 +478,72 @@ void ReadRelVisitor::visit(TargetContext* target_context) {
   variable_context_shared_ptr_->setCurJoinDepth(join_depth + 1);
   // For each col var generation on the left branch, should use the fake_table_id
   toAnalyzerExprConverter_->setTableIdForNewColVar(fake_table_id);
+}
+
+SortRelVisitor::SortRelVisitor(
+    const substrait::SortRel& rel_node,
+    Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
+    const std::unordered_map<int, std::string>& function_map,
+    std::shared_ptr<VariableContext> variable_context_shared_ptr,
+    bool is_right_join_node)
+    : RelVisitor(toAnalyzerExprConverter,
+                 function_map,
+                 variable_context_shared_ptr,
+                 is_right_join_node)
+    , rel_node_(rel_node) {}
+
+SortRelVisitor::~SortRelVisitor() {}
+
+void SortRelVisitor::visit(OrderEntryContext* order_entry_context) {
+  std::list<Analyzer::OrderEntry>* orderby_collation =
+      order_entry_context->getOrderEntry();
+  SortAlgorithm* sort_algorithm = order_entry_context->getSortAlgorithm();
+  size_t* offset = order_entry_context->getOffset();
+  size_t* limit = order_entry_context->getLimit();
+  int sorts_size = rel_node_.sorts_size();
+  if (sorts_size == 0) {
+    throw std::runtime_error("SortRel sort size is 0.");
+  }
+  std::vector<SortField> sort_fields_vec;
+  sort_fields_vec.reserve(sorts_size);
+  size_t field = 0;
+  for (int i = 0; i < sorts_size; i++) {
+    const substrait::SortField& substrait_sort_field = rel_node_.sorts(i);
+    auto column_var = toAnalyzerExprConverter_->toAnalyzerExpr(
+        substrait_sort_field.expr(),
+        function_map_,
+        variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+    if (auto column_var_expr =
+            std::dynamic_pointer_cast<Analyzer::ColumnVar>(column_var)) {
+      field = column_var_expr->get_column_id();
+    } else {
+      throw std::runtime_error("Failed to get expr from sort field.");
+    }
+    SortDirection sort_dir = SortDirection::Ascending;
+    NullSortedPosition nulls_pos = NullSortedPosition::Last;
+    substrait::SortField::SortKindCase sort_kind_case =
+        substrait_sort_field.sort_kind_case();
+    substrait::SortField_SortDirection direction = substrait_sort_field.direction();
+    switch (sort_kind_case) {
+      case substrait::SortField::SortKindCase::kDirection:
+        parseSubstraitSortfieldSortkind2sortfiledType(direction, sort_dir, nulls_pos);
+        break;
+      case substrait::SortField::SortKindCase::kComparisonFunctionReference:
+        // todo: kComparisonFunctionReference
+        break;
+      case substrait::SortField::SortKindCase::SORT_KIND_NOT_SET:
+        break;
+      default:
+        throw std::runtime_error("Undefined sort kind case.");
+    }
+    SortField sort_field(field, sort_dir, nulls_pos);
+    sort_fields_vec.emplace_back(field, sort_dir, nulls_pos);
+  }
+  std::vector<Analyzer::OrderEntry> order_entry_vec =
+      translate_collation(sort_fields_vec);
+  for (int i = 0; i < order_entry_vec.size(); i++) {
+    orderby_collation->push_back(order_entry_vec[i]);
+  }
 }
 
 }  // namespace generator

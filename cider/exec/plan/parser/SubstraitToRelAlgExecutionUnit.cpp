@@ -293,6 +293,13 @@ void SubstraitToRelAlgExecutionUnit::updateGeneratorContext(
                                                            variable_context_shared_ptr,
                                                            rel_node_pair.second);
         break;
+      case substrait::Rel::RelTypeCase::kSort:
+        rel_visitor_ptr = std::make_shared<SortRelVisitor>(rel_node_pair.first.sort(),
+                                                           &toAnalyzerExprConverter_,
+                                                           function_map,
+                                                           variable_context_shared_ptr,
+                                                           rel_node_pair.second);
+        break;
       default:
         throw std::runtime_error("Unsupported substrait rel type " +
                                  std::to_string(rel_node.rel_type_case()));
@@ -318,42 +325,31 @@ void SubstraitToRelAlgExecutionUnit::getRelNodesInPostOder(
   rel_type_set.insert(rel_type);
   switch (rel_type) {
     case substrait::Rel::RelTypeCase::kRead:
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.push_back(std::pair(rel_node, is_join_right_node));
       break;
     case substrait::Rel::RelTypeCase::kFilter:
       getRelNodesInPostOder(
           rel_node.filter().input(), rel_vec, rel_type_set, is_join_right_node);
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.push_back(std::pair(rel_node, is_join_right_node));
       break;
     case substrait::Rel::RelTypeCase::kProject:
       getRelNodesInPostOder(
           rel_node.project().input(), rel_vec, rel_type_set, is_join_right_node);
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.push_back(std::pair(rel_node, is_join_right_node));
       break;
     case substrait::Rel::RelTypeCase::kAggregate:
       getRelNodesInPostOder(
           rel_node.aggregate().input(), rel_vec, rel_type_set, is_join_right_node);
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.push_back(std::pair(rel_node, is_join_right_node));
       break;
     case substrait::Rel::RelTypeCase::kJoin:
       getRelNodesInPostOder(rel_node.join().left(), rel_vec, rel_type_set, false);
       getRelNodesInPostOder(rel_node.join().right(), rel_vec, rel_type_set, true);
+      rel_vec.push_back(std::pair(rel_node, is_join_right_node));
+      break;
+    case substrait::Rel::RelTypeCase::kSort:
+      getRelNodesInPostOder(
+          rel_node.sort().input(), rel_vec, rel_type_set, is_join_right_node);
       rel_vec.push_back(std::pair(rel_node, is_join_right_node));
       break;
     default:
@@ -387,6 +383,9 @@ void SubstraitToRelAlgExecutionUnit::generateCtxElements(
       case substrait::Rel::RelTypeCase::kJoin:
         context_type_set.insert(ContextElementType::JoinQualContextType);
         break;
+      case substrait::Rel::RelTypeCase::kSort:
+        context_type_set.insert(ContextElementType::OrderEntryContextType);
+        break;
       default:
         throw std::runtime_error("Unsupported substrait rel type " +
                                  std::to_string(rel_type));
@@ -415,6 +414,10 @@ void SubstraitToRelAlgExecutionUnit::generateCtxElements(
   if (context_type_set.find(ContextElementType::JoinQualContextType) !=
       context_type_set.end()) {
     ctx_elements_vec.push_back(std::make_shared<JoinQualContext>());
+  }
+  if (context_type_set.find(ContextElementType::OrderEntryContextType) !=
+      context_type_set.end()) {
+    ctx_elements_vec.push_back(std::make_shared<OrderEntryContext>());
   }
 }
 
