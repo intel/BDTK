@@ -353,6 +353,7 @@ PlanTransformerFactory& PlanTransformerFactory::registerPattern(
 
 std::shared_ptr<PlanTransformer> PlanTransformerFactory::getTransformer(
     VeloxPlanNodePtr root) {
+  LOG(DEBUG1) << root->toString(true, true);
   return std::make_shared<PlanTransformer>(patternRewriters_, root);
 }
 }  // namespace facebook::velox::plugin::plantransformer

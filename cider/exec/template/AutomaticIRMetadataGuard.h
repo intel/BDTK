@@ -203,13 +203,16 @@ class AutomaticIRMetadataGuard {
 
   inline static const std::string detailed_footnote_prefix_{"Omnisci Debugging Info: "};
 };
-
+#if 0
 #define AUTOMATIC_IR_METADATA(CGENSTATE)                \
   AutomaticIRMetadataGuard automatic_ir_metadata_guard( \
       CGENSTATE, __FILE__, __LINE__, __func__)
 
 #define AUTOMATIC_IR_METADATA_DONE() automatic_ir_metadata_guard.done()
-
+#else
+#define AUTOMATIC_IR_METADATA(CGENSTATE)
+#define AUTOMATIC_IR_METADATA_DONE()
+#endif
 #else  // NDEBUG
 
 #define AUTOMATIC_IR_METADATA(CGENSTATE)
