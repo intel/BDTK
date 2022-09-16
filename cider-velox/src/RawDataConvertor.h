@@ -33,7 +33,7 @@ class RawDataConvertor : public DataConvertor {
  public:
   RawDataConvertor() {}
 
-  RawDataConvertor(std::shared_ptr<CiderAllocator> allocator);
+  explicit RawDataConvertor(std::shared_ptr<CiderAllocator> allocator);
 
   CiderBatch convertToCider(RowVectorPtr input,
                             int num_rows,

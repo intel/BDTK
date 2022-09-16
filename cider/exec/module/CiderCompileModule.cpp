@@ -88,7 +88,7 @@ CiderTableSchema CiderCompilationResult::getOutputCiderTableSchema() const {
 
 class CiderCompileModule::Impl {
  public:
-  Impl(std::shared_ptr<CiderAllocator> allocator) {
+  explicit Impl(std::shared_ptr<CiderAllocator> allocator) {
     executor_ = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID, nullptr, nullptr);
     ciderStringDictionaryProxy_ = initStringDictionaryProxy(allocator);
     executor_->setCiderStringDictionaryProxy(ciderStringDictionaryProxy_.get());

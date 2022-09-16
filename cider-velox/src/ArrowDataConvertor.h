@@ -33,7 +33,7 @@ class ArrowDataConvertor : public DataConvertor {
  public:
   ArrowDataConvertor() {}
 
-  ArrowDataConvertor(std::shared_ptr<CiderAllocator> allocator);
+  explicit ArrowDataConvertor(std::shared_ptr<CiderAllocator> allocator);
 
   CiderBatch convertToCider(RowVectorPtr input,
                             int num_rows,
