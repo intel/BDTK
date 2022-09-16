@@ -23,6 +23,7 @@
 #ifndef ENCODER_H
 #define ENCODER_H
 
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "util/DateConverters.h"
 #include "util/memory/Chunk/ChunkMetadata.h"
@@ -69,15 +70,15 @@ class DecimalOverflowValidator {
     }
 
     if (value >= max_) {
-      throw std::runtime_error("Decimal overflow: value is greater than 10^" +
-                               std::to_string(pow10_) + " max " + std::to_string(max_) +
-                               " value " + std::to_string(value));
+      CIDER_THROW(CiderCompileException,
+                  "Decimal overflow: value is greater than 10^" + std::to_string(pow10_) +
+                      " max " + std::to_string(max_) + " value " + std::to_string(value));
     }
 
     if (value <= min_) {
-      throw std::runtime_error("Decimal overflow: value is less than -10^" +
-                               std::to_string(pow10_) + " min " + std::to_string(min_) +
-                               " value " + std::to_string(value));
+      CIDER_THROW(CiderCompileException,
+                  "Decimal overflow: value is less than -10^" + std::to_string(pow10_) +
+                      " min " + std::to_string(min_) + " value " + std::to_string(value));
     }
   }
 
@@ -132,14 +133,14 @@ class DateDaysOverflowValidator {
     const int64_t days =
         DateConverters::get_epoch_days_from_seconds(static_cast<int64_t>(value));
     if (days > max_) {
-      throw std::runtime_error("Date encoding overflow: Epoch days " +
-                               std::to_string(days) + " greater than maximum capacity " +
-                               std::to_string(max_));
+      CIDER_THROW(CiderCompileException,
+                  "Date encoding overflow: Epoch days " + std::to_string(days) +
+                      " greater than maximum capacity " + std::to_string(max_));
     }
     if (days < min_) {
-      throw std::runtime_error("Date encoding underflow: Epoch days " +
-                               std::to_string(days) + " less than minimum capacity " +
-                               std::to_string(min_));
+      CIDER_THROW(CiderCompileException,
+                  "Date encoding underflow: Epoch days " + std::to_string(days) +
+                      " less than minimum capacity " + std::to_string(min_));
     }
   }
 

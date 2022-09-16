@@ -100,7 +100,8 @@ std::shared_ptr<OverlapsJoinHashTable> OverlapsJoinHashTable::getInstance(
           .info;
   const auto total_entries = 2 * query_info.getNumTuplesUpperBound();
   if (total_entries > static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
-    throw TooManyHashEntries();
+    CIDER_THROW(CiderTooManyHashEntriesException,
+                "Hash tables with more than 2B entries not supported yet");
   }
 
   auto hashtable_cache_key_string =
@@ -126,21 +127,8 @@ std::shared_ptr<OverlapsJoinHashTable> OverlapsJoinHashTable::getInstance(
   if (query_hint.isAnyQueryHintDelivered()) {
     join_hash_table->registerQueryHint(query_hint);
   }
-  try {
-    join_hash_table->reify(layout);
-  } catch (const HashJoinFail& e) {
-    throw HashJoinFail(std::string("Could not build a 1-to-1 correspondence for columns "
-                                   "involved in overlaps join | ") +
-                       e.what());
-  } catch (const ColumnarConversionNotSupported& e) {
-    throw HashJoinFail(std::string("Could not build hash tables for overlaps join | "
-                                   "Inner table too big. Attempt manual table reordering "
-                                   "or create a single fragment inner table. | ") +
-                       e.what());
-  } catch (const std::exception& e) {
-    throw HashJoinFail(std::string("Failed to build hash tables for overlaps join | ") +
-                       e.what());
-  }
+  join_hash_table->reify(layout);
+
   if (VLOGGING(1)) {
     ts2 = std::chrono::steady_clock::now();
     VLOG(1) << "Built geo hash table " << getHashTypeString(layout) << " in "
@@ -767,7 +755,10 @@ void OverlapsJoinHashTable::reifyWithLayout(const HashType layout) {
         VLOG(1) << "Could not find suitable overlaps join parameters to create hash "
                    "table under max allowed size ("
                 << overlaps_max_table_size_bytes << ") bytes.";
-        throw OverlapsHashTableTooBig(overlaps_max_table_size_bytes);
+        CIDER_THROW(
+            CiderHashJoinException,
+            "Could not create overlaps hash table with less than max allowed size of " +
+                std::to_string(overlaps_max_table_size_bytes) + " bytes");
       }
 
       VLOG(1) << "Final tuner output: " << tuner << " with properties " << crt_props;
@@ -833,7 +824,7 @@ ColumnsForDevice OverlapsJoinHashTable::fetchColumnsForDevice(
   for (const auto& inner_outer_pair : inner_outer_pairs_) {
     const auto inner_col = inner_outer_pair.first;
     if (inner_col->is_virtual()) {
-      throw FailedToJoinOnVirtualColumn();
+      CIDER_THROW(CiderHashJoinException, "Cannot join on rowid");
     }
     join_columns.emplace_back(fetchJoinColumn(inner_col,
                                               fragments,
@@ -1110,9 +1101,9 @@ std::shared_ptr<BaselineHashTable> OverlapsJoinHashTable::initHashTableOnCpu(
                                               getKeyComponentCount());
   ts2 = std::chrono::steady_clock::now();
   if (err) {
-    throw HashJoinFail(
-        std::string("Unrecognized error when initializing CPU overlaps hash table (") +
-        std::to_string(err) + std::string(")"));
+    CIDER_THROW(CiderHashJoinException,
+                "Unrecognized error when initializing CPU overlaps hash table (" +
+                    std::to_string(err) + ")");
   }
   std::shared_ptr<BaselineHashTable> hash_table = builder.getHashTable();
   if (skip_hashtable_caching) {

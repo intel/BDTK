@@ -20,6 +20,7 @@
  */
 
 #include "PlanPattern.h"
+#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin::plantransformer {
 std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(
@@ -27,7 +28,7 @@ std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(
   std::pair<bool, VeloxNodeAddrPlanSection> result = matchFromSrc(branchIte);
   if (result.first) {
     if (!result.second.isValid()) {
-      throw std::runtime_error("Match result is invalid.");
+      VELOX_UNREACHABLE("Match result is invalid.");
     }
   }
   return result;

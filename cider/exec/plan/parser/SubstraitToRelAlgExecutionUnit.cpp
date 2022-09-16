@@ -30,6 +30,7 @@
 #include "RelVisitor.h"
 #include "TypeUtils.h"
 #include "VariableContext.h"
+#include "cider/CiderException.h"
 #include "exec/plan/parser/Translator.h"
 #include "exec/template/QueryHint.h"
 #include "exec/template/common/descriptors/ColSlotContext.h"
@@ -42,10 +43,10 @@
 namespace generator {
 RelAlgExecutionUnit SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit() {
   if (plan_.relations_size() == 0) {
-    throw std::runtime_error("invalid plan with no root node.");
+    CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
   }
   if (!plan_.relations(0).has_root()) {
-    throw std::runtime_error("invalid plan with no root node.");
+    CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
   }
   substrait::Rel root = plan_.relations(0).root().input();
   // create an empty context for future update
@@ -160,8 +161,9 @@ SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit(
       break;
     }
     default:
-      throw std::runtime_error("unsupported type " + enum_str[expr_type] +
-                               " for expression evaluation.");
+      CIDER_THROW(
+          CiderCompileException,
+          "unsupported type " + enum_str[expr_type] + " for expression evaluation.");
   }
   RelAlgExecutionUnit rel_alg_eu{input_descs,
                                  input_col_descs,
@@ -204,13 +206,13 @@ substrait::Type SubstraitToRelAlgExecutionUnit::reconstructStructType(size_t ind
 CiderTableSchema SubstraitToRelAlgExecutionUnit::getOutputCiderTableSchema() {
   if (!output_cider_table_schema_.getColumnCount()) {
     if (plan_.relations_size() == 0) {
-      throw std::runtime_error("invalid plan with no root node.");
+      CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
     }
     if (!plan_.relations(0).has_root()) {
-      throw std::runtime_error("invalid plan with no root node.");
+      CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
     }
     if (!ctx_) {
-      throw std::runtime_error("RelAlgExecutionUnit not generated yet!");
+      CIDER_THROW(CiderCompileException, "RelAlgExecutionUnit not generated yet!");
     }
     // get output column names in depth order
     std::vector<std::string> names;
@@ -294,8 +296,9 @@ void SubstraitToRelAlgExecutionUnit::updateGeneratorContext(
                                                            rel_node_pair.second);
         break;
       default:
-        throw std::runtime_error("Unsupported substrait rel type " +
-                                 std::to_string(rel_node.rel_type_case()));
+        CIDER_THROW(
+            CiderCompileException,
+            "Unsupported substrait rel type " + std::to_string(rel_node.rel_type_case()));
     }
     for (auto ctx_element : ctx_elements) {
       ctx_element->accept(rel_visitor_ptr);
@@ -357,8 +360,8 @@ void SubstraitToRelAlgExecutionUnit::getRelNodesInPostOder(
       rel_vec.push_back(std::pair(rel_node, is_join_right_node));
       break;
     default:
-      throw std::runtime_error("Unsupported substrait rel type " +
-                               std::to_string(rel_type));
+      CIDER_THROW(CiderCompileException,
+                  "Unsupported substrait rel type " + std::to_string(rel_type));
   }
 }
 
@@ -388,8 +391,8 @@ void SubstraitToRelAlgExecutionUnit::generateCtxElements(
         context_type_set.insert(ContextElementType::JoinQualContextType);
         break;
       default:
-        throw std::runtime_error("Unsupported substrait rel type " +
-                                 std::to_string(rel_type));
+        CIDER_THROW(CiderCompileException,
+                    "Unsupported substrait rel type " + std::to_string(rel_type));
     }
   }
   // ctx elements should be order to GroupbyContext, InputDescContext, TargetContext,

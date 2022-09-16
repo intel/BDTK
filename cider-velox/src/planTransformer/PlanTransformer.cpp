@@ -20,6 +20,7 @@
  */
 
 #include "PlanTransformer.h"
+#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin::plantransformer {
 
@@ -127,8 +128,7 @@ void PlanTransformer::matchSourceBranch(BranchSrcToTargetIterator& srcBranchIte)
       if (matched.first) {
         VeloxNodeAddrPlanSection matchResult = matched.second;
         if (!matchResult.source.equal(matchStartPos)) {
-          throw std::runtime_error(
-              "Match result should always start from match start point.");
+          VELOX_UNREACHABLE("Match result should always start from match start point.");
         }
         if (acceptMatchResult(matchResult)) {
           if (!hasMatchResult_) {

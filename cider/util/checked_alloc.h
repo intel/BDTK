@@ -31,27 +31,15 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include "cider/CiderException.h"
 #include "util/Logger.h"
-#include "util/types.h"
-
-class OutOfHostMemory : public std::bad_alloc {
- public:
-  OutOfHostMemory(const size_t size)
-      : what_str_("Not enough CPU memory available to allocate " + std::to_string(size)) {
-    VLOG(1) << "Failed to allocate " << size << " bytes " << std::endl
-            << boost::stacktrace::stacktrace();
-  }
-
-  virtual const char* what() const noexcept final { return what_str_.c_str(); }
-
- private:
-  const std::string what_str_;
-};
 
 inline void* checked_malloc(const size_t size) {
   auto ptr = malloc(size);
   if (!ptr) {
-    throw OutOfHostMemory(size);
+    CIDER_THROW(
+        CiderOutOfMemoryException,
+        "Not enough CPU memory available to allocate " + std::to_string(size) + " bytes");
   }
   return ptr;
 }
@@ -59,7 +47,9 @@ inline void* checked_malloc(const size_t size) {
 inline void* checked_calloc(const size_t nmemb, const size_t size) {
   auto ptr = calloc(nmemb, size);
   if (!ptr) {
-    throw OutOfHostMemory(nmemb * size);
+    CIDER_THROW(CiderOutOfMemoryException,
+                "Not enough CPU memory available to allocate " +
+                    std::to_string(nmemb * size) + " bytes");
   }
   return ptr;
 }

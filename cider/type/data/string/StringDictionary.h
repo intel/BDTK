@@ -42,13 +42,6 @@ namespace StringOps_Namespace {
 struct StringOpInfo;
 }
 
-class DictPayloadUnavailable : public std::runtime_error {
- public:
-  DictPayloadUnavailable() : std::runtime_error("DictPayloadUnavailable") {}
-
-  DictPayloadUnavailable(const std::string& err) : std::runtime_error(err) {}
-};
-
 class LeafHostInfo;
 
 using string_dict_hash_t = uint32_t;

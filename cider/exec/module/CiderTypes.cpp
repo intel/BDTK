@@ -31,7 +31,7 @@ int64_t CiderDateType::toInt64(const std::string& string_val) {
   if (res.has_value()) {
     return res.value();
   }
-  throw std::runtime_error("Not a valid date string!");
+  CIDER_THROW(CiderCompileException, "Not a valid date string!");
 }
 
 std::string CiderByteArray::toString(const CiderByteArray& ciderByteArray) {

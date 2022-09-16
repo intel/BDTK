@@ -20,8 +20,8 @@
  */
 
 #include "PlanRewriter.h"
-
 #include "PlanUtil.h"
+#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin::plantransformer {
 VeloxPlanNodePtr PlanRewriter::rewrite(VeloxNodeAddrPlanSection& planSection,
@@ -54,7 +54,7 @@ VeloxPlanNodePtr PlanRewriter::rewriteWithMultiSrc(VeloxNodeAddrPlanSection& pla
       // delete the whole plan section since the target node of the plan section
       // may can not accept multi sources.So for this situation, we
       // throw exception out directly.
-      throw std::runtime_error(
+      VELOX_ARITHMETIC_ERROR(
           "PlanSection with multi sources nodes should not be rewritten to nullptr");
     }
     return resultPtr;

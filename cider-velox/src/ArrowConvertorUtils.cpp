@@ -22,6 +22,7 @@
 #include "ArrowConvertorUtils.h"
 #include "BitUtils.h"
 #include "TypeConversions.h"
+#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin {
 
@@ -57,7 +58,7 @@ int8_t* convertTimestamp(const char* arrow_type,
       return convertToCiderImpl<int64_t>(arrowSchema, arrowArray, num_rows);
     }
   }
-  throw std::runtime_error("Conversion is not supported yet");
+  VELOX_UNSUPPORTED("Conversion is not supported yet");
 }
 
 int8_t* convertToCider(const ArrowSchema& arrowSchema,
@@ -83,7 +84,7 @@ int8_t* convertToCider(const ArrowSchema& arrowSchema,
     case 't':
       return convertTimestamp(arrow_type, arrowSchema, arrowArray, num_rows);
     default:
-      throw std::runtime_error("Conversion is not supported yet");
+      VELOX_UNSUPPORTED("Conversion is not supported yet");
   }
 }
 
@@ -182,7 +183,7 @@ void convertToArrow(ArrowArray& arrowArray,
     case 't':
       return convertTimestamp(arrow_type, arrowArray, data_buffer, num_rows);
     default:
-      throw std::runtime_error("Conversion is not supported yet");
+      VELOX_UNSUPPORTED("Conversion is not supported yet");
   }
 }
 

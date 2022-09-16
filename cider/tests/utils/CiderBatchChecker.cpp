@@ -179,8 +179,8 @@ std::vector<ConcatenatedRow> CiderBatchChecker::toConcatenatedRowVector(
             row.addCol(extract_varchar_value(buffer, row_index));
             break;
           default:
-            throw std::runtime_error("Unsupported type " +
-                                     std::to_string(type.kind_case()));
+            CIDER_THROW(CiderCompileException,
+                        "Unsupported type " + std::to_string(type.kind_case()));
         }
         if (col_index == col_num - 1) {
           row.finish();

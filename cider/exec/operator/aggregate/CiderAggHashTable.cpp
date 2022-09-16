@@ -179,7 +179,8 @@ void CiderHasher::copyStringToLocal(UStringVal* uString) {
     return;
   }
   if (size > kStringBufferUnitSize) {
-    throw std::runtime_error("Failed to store a string of lenth " + size);
+    CIDER_THROW(CiderCompileException,
+                "Failed to store a string of lenth " + std::to_string(size));
   }
   if (uStringValStorage_.empty()) {
     uStringValStorage_.emplace_back();
@@ -211,14 +212,14 @@ int64_t CiderHasher::lookupIdByValue(CiderByteArray value) {
     if (pair.second) {
       if (uStringVals.size() > kMaxDistinct) {
         distinctOverflow_ = true;
-        throw std::runtime_error("Overflow in distinct string hash set.");
+        CIDER_THROW(CiderCompileException, "Overflow in distinct string hash set.");
       }
       copyStringToLocal(&*pair.first);
       stringCacheVec.emplace_back(*pair.first);
     }
     return uStringVals.find(uString)->id();
   } else {
-    throw std::runtime_error("Overflow in distinct string hash set.");
+    CIDER_THROW(CiderCompileException, "Overflow in distinct string hash set.");
   }
   return -1;
 }
@@ -435,8 +436,8 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
     CHECK_EQ(row_width_, query_mem_desc_->getRowSize());
     buffer_width_ = row_width_ * buffer_entry_num_;
   } else {
-    throw std::runtime_error(
-        "Columnar layout of CiderAggHashTable is not supported now.");
+    CIDER_THROW(CiderCompileException,
+                "Columnar layout of CiderAggHashTable is not supported now.");
     row_width_ = slot_width_ * columns_num_;
     buffer_width_ = offset;
   }
@@ -764,7 +765,8 @@ size_t CiderAggHashTable::getNextRowIndex(const int8_t* buffer_ptr,
                                           const size_t start_row_index) const {
   if (is_columnar_layout_) {
     // Unsupported now
-    throw std::runtime_error("Columnar layout group-by hashtable is unsupported.");
+    CIDER_THROW(CiderCompileException,
+                "Columnar layout group-by hashtable is unsupported.");
     return slot_width_ == 8
                ? getNextRowIndexColumnar<int64_t>(buffer_ptr, start_row_index)
                : getNextRowIndexColumnar<int32_t>(buffer_ptr, start_row_index);

@@ -21,11 +21,11 @@
 
 #define CIDERBATCH_WITH_ARROW
 
+#include "include/cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
-
+#include "cider/CiderException.h"
 #include "include/cider/batch/CiderBatch.h"
-#include "include/cider/batch/CiderBatchUtils.h"
 #include "include/cider/batch/ScalarBatch.h"
 #include "include/cider/batch/StructBatch.h"
 
@@ -142,8 +142,8 @@ int64_t getBufferNum(const ArrowSchema* schema) {
           return 1;
       }
     default:
-      throw std::runtime_error(std::string("Unsupported data type to CiderBatch: ") +
-                               type);
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported data type to CiderBatch: ") + type);
   }
 }
 
@@ -173,8 +173,8 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
           return kSTRUCT;
       }
     default:
-      throw std::runtime_error(std::string("Unsupported data type to CiderBatch: ") +
-                               format);
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported data type to CiderBatch: ") + format);
   }
 }
 
@@ -197,8 +197,9 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
     case kSTRUCT:
       return "+s";
     default:
-      throw std::runtime_error(std::string("Unsupported to convert type ") +
-                               toString(type) + "to Arrow type.");
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported to convert type ") + toString(type) +
+                      "to Arrow type.");
   }
 }
 
@@ -258,8 +259,8 @@ std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema, ArrowArray* ar
           return StructBatch::Create(schema, array);
       }
     default:
-      throw std::runtime_error(
-          std::string("Unsupported data type to create CiderBatch: ") + format);
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported data type to create CiderBatch: ") + format);
   }
 }
 }  // namespace CiderBatchUtils

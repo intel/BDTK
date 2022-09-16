@@ -127,7 +127,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
   // TBD: Lazy fetch support.
   // TODO: Reuse columns fetched in JOIN stage.
   if (col_var->get_rte_idx() > 0) {
-    throw std::runtime_error("Range table index of ColumnExpr should LE than 0.");
+    CIDER_THROW(CiderCompileException,
+                "Range table index of ColumnExpr should LE than 0.");
   }
 
   if (col_var->get_table_id() > 0) {
@@ -162,9 +163,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
         break;
       }
     case kVARCHAR:
-      throw std::runtime_error("String type ColumnVar is not supported now.");
+      CIDER_THROW(CiderCompileException, "String type ColumnVar is not supported now.");
     case kARRAY:
-      throw std::runtime_error("Array type ColumnVar is not supported now.");
+      CIDER_THROW(CiderCompileException, "Array type ColumnVar is not supported now.");
     default:
       // Only fixed-size type now.
       col_values =
@@ -538,8 +539,9 @@ std::vector<llvm::Value*> CodeGenerator::codegenOuterJoinNullPlaceholder(
   const auto& null_ti = col_var->get_type_info();
   if ((null_ti.is_string() && null_ti.get_compression() == kENCODING_NONE) ||
       null_ti.is_array()) {
-    throw std::runtime_error("Projection type " + null_ti.get_type_name() +
-                             " not supported for outer joins yet");
+    CIDER_THROW(CiderCompileException,
+                "Projection type " + null_ti.get_type_name() +
+                    " not supported for outer joins yet");
   }
   const auto null_constant = makeExpr<Analyzer::Constant>(null_ti, true, Datum{0});
   const auto null_target_lvs =
@@ -583,7 +585,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::resolveGroupedColumnReferenceCi
             dynamic_cast<FixedSizeColValues*>(cached_group_expr)) {
       return std::make_unique<FixedSizeColValues>(*actual_cached_group_expr);
     } else {
-      throw std::runtime_error("Cached group key expression not is fixed size column.");
+      CIDER_THROW(CiderCompileException,
+                  "Cached group key expression not is fixed size column.");
     }
   }
   return nullptr;

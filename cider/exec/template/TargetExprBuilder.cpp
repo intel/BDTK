@@ -240,10 +240,12 @@ void TargetExprCodegen::codegenAggregate(
     // TODO: Projection support.
 
     if (auto window_func = dynamic_cast<const Analyzer::WindowFunction*>(target_expr)) {
-      throw std::runtime_error("TargetExpr codegen is not support window function now.");
+      CIDER_THROW(CiderCompileException,
+                  "TargetExpr codegen is not support window function now.");
     }
     if (!is_group_by && !is_non_groupby_agg) {
-      throw std::runtime_error("TargetExpr codegen is only support aggregation now.");
+      CIDER_THROW(CiderCompileException,
+                  "TargetExpr codegen is only support group-by aggregation now.");
     }
 
     const auto chosen_bytes =
@@ -278,7 +280,8 @@ void TargetExprCodegen::codegenAggregate(
                                                       arg_expr);
         break;
       default:
-        throw std::runtime_error("Unsupported aggregation type in TargetExprBuilder.");
+        CIDER_THROW(CiderCompileException,
+                    "Unsupported aggregation type in TargetExprBuilder.");
     }
     CHECK(generator);
 
@@ -551,14 +554,15 @@ void TargetExprCodegenBuilder::operator()(const Analyzer::Expr* target_expr,
   }
   if (dynamic_cast<const Analyzer::UOper*>(target_expr) &&
       static_cast<const Analyzer::UOper*>(target_expr)->get_optype() == kUNNEST) {
-    throw std::runtime_error("UNNEST not supported in the projection list yet.");
+    CIDER_THROW(CiderCompileException,
+                "UNNEST not supported in the projection list yet.");
   }
   if ((executor->plan_state_->isLazyFetchColumn(target_expr) || !is_group_by) &&
       (static_cast<size_t>(query_mem_desc.getPaddedSlotWidthBytes(slot_index_counter)) <
        sizeof(int64_t)) &&
       !is_columnar_projection(query_mem_desc)) {
     // TODO(miyu): enable different byte width in the layout w/o padding
-    throw CompilationRetryNoCompaction();
+    CIDER_THROW(CiderCompileException, "Retry query compilation with no compaction.");
   }
 
   auto target_info = get_target_info(target_expr, g_bigint_count);

@@ -23,6 +23,7 @@
 #include "Regexp.h"
 #include <boost/regex.hpp>
 #include <stdexcept>
+#include "cider/CiderException.h"
 
 /*
  * @brief regexp_like performs the SQL REGEXP operation
@@ -43,7 +44,7 @@ extern "C" RUNTIME_EXPORT bool regexp_like(const char* str,
     boost::regex re(pattern, pat_len, boost::regex::extended);
     boost::cmatch what;
     result = boost::regex_match(str, str + str_len, what, re);
-  } catch (std::runtime_error& error) {
+  } catch (std::exception& error) {
     // LOG(ERROR) << "Regexp match error: " << error.what();
     result = false;
   }

@@ -30,6 +30,7 @@
 #include <limits>
 
 #include "Buffer.h"
+#include "cider/CiderException.h"
 #include "util/Logger.h"
 #include "util/measure.h"
 
@@ -110,7 +111,7 @@ void BufferMgr::clear() {
   buffer_epoch_ = 0;
 }
 
-/// Throws a runtime_error if the Chunk already exists
+/// Throws a CiderOutOfMemoryException if the Chunk already exists
 AbstractBuffer* BufferMgr::createBuffer(const ChunkKey& chunk_key,
                                         const size_t chunk_page_size,
                                         const size_t initial_size) {
@@ -138,7 +139,7 @@ AbstractBuffer* BufferMgr::createBuffer(const ChunkKey& chunk_key,
   // so can't be evicted)
   try {
     allocateBuffer(chunk_index_[chunk_key], actual_chunk_page_size, initial_size);
-  } catch (const OutOfMemory&) {
+  } catch (const CiderOutOfMemoryException&) {
     auto buffer_it = chunk_index_.find(chunk_key);
     CHECK(buffer_it != chunk_index_.end());
     buffer_it->second->buffer =
@@ -285,7 +286,8 @@ BufferList::iterator BufferMgr::findFreeBufferInSlab(const size_t slab_num,
 BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
   size_t num_pages_requested = (num_bytes + page_size_ - 1) / page_size_;
   if (num_pages_requested > max_num_pages_per_slab_) {
-    throw TooBigForSlab(num_bytes);
+    CIDER_THROW(CiderOutOfMemoryException,
+                "Failed to allocate " + std::to_string(num_bytes) + " bytes");
   }
 
   size_t num_slabs = slab_segments_.size();
@@ -322,7 +324,7 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
           num_slabs,
           num_pages_requested);  // has to succeed since we made sure to request a slab
                                  // big enough to accomodate request
-    } catch (std::runtime_error& error) {  // failed to allocate slab
+    } catch (CiderException& error) {  // failed to allocate slab
       LOG(INFO) << "ALLOCATION Attempted slab of " << current_max_slab_page_size_
                 << " pages (" << current_max_slab_page_size_ * page_size_ << "B) failed "
                 << getStringMgrType() << ":" << device_id_;
@@ -349,7 +351,8 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
   }
 
   if (num_pages_allocated_ == 0 && allocations_capped_) {
-    throw FailedToCreateFirstSlab(num_bytes);
+    CIDER_THROW(CiderOutOfMemoryException,
+                "Failed to allocate " + std::to_string(num_bytes) + " bytes");
   }
 
   // If here then we can't add a slab - so we need to evict
@@ -406,7 +409,6 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
       } else if (evict_it == slab_segments_[slab_num].end()) {
         // this means that every segment after this will fail as well, so our search has
         // proven futile
-        // throw std::runtime_error ("Couldn't evict chunks to get free space");
         break;
         // in reality we should try to rearrange the buffer to get more contiguous free
         // space
@@ -419,7 +421,8 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
     LOG(ERROR) << "ALLOCATION failed to find " << num_bytes << "B throwing out of memory "
                << getStringMgrType() << ":" << device_id_;
     VLOG(2) << printSlabs();
-    throw OutOfMemory(num_bytes);
+    CIDER_THROW(CiderOutOfMemoryException,
+                "Failed to allocate " + std::to_string(num_bytes) + " bytes");
   }
   LOG(INFO) << "ALLOCATION failed to find " << num_bytes << "B free. Forcing Eviction."
             << " Eviction start " << best_eviction_start->start_page
@@ -597,7 +600,6 @@ bool BufferMgr::isBufferOnDevice(const ChunkKey& key) {
   }
 }
 
-/// This method throws a runtime_error when deleting a Chunk that does not exist.
 void BufferMgr::deleteBuffer(const ChunkKey& key, const bool) {
   // Note: purge is unused
   std::unique_lock<std::mutex> chunk_index_lock(chunk_index_mutex_);
@@ -726,7 +728,6 @@ void BufferMgr::checkpoint(const int db_id, const int tb_id) {
 }
 
 /// Returns a pointer to the Buffer holding the chunk, if it exists; otherwise,
-/// throws a runtime_error.
 AbstractBuffer* BufferMgr::getBuffer(const ChunkKey& key, const size_t num_bytes) {
   std::lock_guard<std::mutex> lock(global_mutex_);  // granular lock
 
@@ -754,7 +755,7 @@ AbstractBuffer* BufferMgr::getBuffer(const ChunkKey& key, const size_t num_bytes
     try {
       parent_mgr_->fetchBuffer(
           key, buffer, num_bytes);  // this should put buffer in a BufferSegment
-    } catch (const std::exception& error) {
+    } catch (const CiderException& error) {
       LOG(FATAL) << "Get chunk - Could not find chunk " << keyToString(key)
                  << " in buffer pool or parent buffer pools. Error was " << error.what();
     }
@@ -779,7 +780,7 @@ void BufferMgr::fetchBuffer(const ChunkKey& key,
     buffer = createBuffer(key, page_size_, num_bytes);  // will pin buffer
     try {
       parent_mgr_->fetchBuffer(key, buffer, num_bytes);
-    } catch (std::runtime_error& error) {
+    } catch (CiderException& error) {
       LOG(FATAL) << "Could not fetch parent buffer " << keyToString(key);
     }
   } else {
@@ -788,7 +789,7 @@ void BufferMgr::fetchBuffer(const ChunkKey& key,
     if (num_bytes > buffer->size()) {
       try {
         parent_mgr_->fetchBuffer(key, buffer, num_bytes);
-      } catch (std::runtime_error& error) {
+      } catch (CiderException& error) {
         LOG(FATAL) << "Could not fetch parent buffer " << keyToString(key);
       }
     }

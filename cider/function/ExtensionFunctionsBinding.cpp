@@ -24,6 +24,7 @@
 #include "function/FunctionHelper.h"
 
 #include <algorithm>
+#include "cider/CiderException.h"
 
 // A rather crude function binding logic based on the types of the arguments.
 // We want it to be possible to write specialized versions of functions to be
@@ -343,12 +344,12 @@ static int match_arguments(const SQLTypeInfo& arg_type,
          kCURSOR
       */
     default:
-      throw std::runtime_error(std::string(__FILE__) + "#" + std::to_string(__LINE__) +
-                               ": support for " + arg_type.get_type_name() +
-                               "(type=" + std::to_string(arg_type.get_type()) + ")" +
-                               +" not implemented: \n  pos=" + std::to_string(sig_pos) +
-                               " max_pos=" + std::to_string(max_pos) + "\n  sig_types=(" +
-                               ExtensionFunctionsWhitelist::toString(sig_types) + ")");
+      CIDER_THROW(CiderCompileException,
+                  "support for " + arg_type.get_type_name() +
+                      "(type=" + std::to_string(arg_type.get_type()) + ")" +
+                      +" not implemented: \n  pos=" + std::to_string(sig_pos) +
+                      " max_pos=" + std::to_string(max_pos) + "\n  sig_types=(" +
+                      ExtensionFunctionsWhitelist::toString(sig_types) + ")");
   }
   return -1;
 }
@@ -410,8 +411,8 @@ std::tuple<T, std::vector<SQLTypeInfo>> bind_function(
     ext_funcs have the same name.
    */
   if (!is_valid_identifier(name)) {
-    throw ExtensionFunctionBindingError(
-        "Cannot bind function with invalid UDF/UDTF function name: " + name);
+    CIDER_THROW(CiderCompileException,
+                "Cannot bind function with invalid UDF/UDTF function name: " + name);
   }
 
   int minimal_score = std::numeric_limits<int>::max();
@@ -550,7 +551,7 @@ std::tuple<T, std::vector<SQLTypeInfo>> bind_function(
     std::string message;
     if (!ext_funcs.size()) {
       message = "Function " + name + "(" + sarg_types + ") not supported.";
-      throw ExtensionFunctionBindingError(message);
+      CIDER_THROW(CiderCompileException, message);
     } else {
       if constexpr (std::is_same_v<T, ExtensionFunction>) {
         message = "Could not bind " + name + "(" + sarg_types + ") to any " + processor +
@@ -565,7 +566,7 @@ std::tuple<T, std::vector<SQLTypeInfo>> bind_function(
         message += "\n    " + ext_func.toStringSQL();
       }
     }
-    throw ExtensionFunctionBindingError(message);
+    CIDER_THROW(CiderCompileException, message);
   }
 
   return {ext_funcs[optimal], type_infos_variants[optimal_variant]};
@@ -574,12 +575,9 @@ std::tuple<T, std::vector<SQLTypeInfo>> bind_function(
 ExtensionFunction bind_function(std::string name,
                                 Analyzer::ExpressionPtrVector func_args) {
   auto ext_funcs = ExtensionFunctionsWhitelist::get_ext_funcs(name);
-  try {
+
     return std::get<0>(
         bind_function<ExtensionFunction>(name, func_args, ext_funcs, "CPU"));
-  } catch (ExtensionFunctionBindingError& e) {
-    throw;
-  }
 }
 
 ExtensionFunction bind_function(const Analyzer::FunctionOper* function_oper) {

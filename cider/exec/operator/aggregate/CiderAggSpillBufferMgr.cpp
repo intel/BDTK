@@ -20,18 +20,14 @@
  */
 
 #include "exec/operator/aggregate/CiderAggSpillBufferMgr.h"
-
 #include <fcntl.h>
 #include <linux/mman.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <cerrno>
-
 #include <boost/filesystem.hpp>
 #include <ctime>
-#include <exception>
 #include <string>
-
 #include "util/Logger.h"
 
 CiderAggSpillBufferMgr::CiderAggSpillBufferMgr(

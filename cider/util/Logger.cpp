@@ -23,11 +23,9 @@
 bool g_enable_debug_timer{false};
 
 #include "Logger.h"
-
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-
 #include <boost/algorithm/string.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks.hpp>
@@ -45,6 +43,7 @@ bool g_enable_debug_timer{false};
 #include <iostream>
 #include <mutex>
 #include <regex>
+#include "cider/CiderException.h"
 
 namespace logger {
 
@@ -317,8 +316,8 @@ void init(LogOptions const& log_opts) {
 
 void set_once_fatal_func(FatalFunc fatal_func) {
   if (g_fatal_func.exchange(fatal_func)) {
-    throw std::runtime_error(
-        "logger::set_once_fatal_func() should not be called more than once.");
+    CIDER_THROW(CiderCompileException,
+                "logger::set_once_fatal_func() should not be called more than once.");
   }
 }
 

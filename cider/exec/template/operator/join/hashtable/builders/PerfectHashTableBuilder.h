@@ -152,7 +152,7 @@ class PerfectJoinHashTableBuilder {
     if (err) {
       // Too many hash entries, need to retry with a 1:many table
       hash_table_ = nullptr;  // clear the hash table buffer
-      throw NeedsOneToManyHash();
+      CIDER_THROW(CiderOneToMoreHashException, "Needs one to many hash");
     }
   }
 

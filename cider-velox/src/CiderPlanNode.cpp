@@ -20,10 +20,9 @@
  */
 
 #include "CiderPlanNode.h"
-
 #include <mutex>
-
 #include "CiderPlanNodeTranslator.h"
+#include "cider/CiderException.h"
 #include "substrait/plan.pb.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 
@@ -71,7 +70,7 @@ const bool CiderPlanNode::isKindOf(CiderPlanNodeKind kind) const {
       return false;
     }
     default:
-      throw std::runtime_error("Unsupported kind " + kindToString(kind));
+      VELOX_UNSUPPORTED("Unsupported kind " + kindToString(kind));
   }
 }
 

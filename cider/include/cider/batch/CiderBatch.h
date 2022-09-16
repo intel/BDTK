@@ -26,6 +26,7 @@
 #include "../CiderTableSchema.h"
 #include "../CiderTypes.h"
 #include "CiderBatchUtils.h"
+#include "cider/CiderException.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "util/CiderBitUtils.h"
 
@@ -381,7 +382,7 @@ class CiderBatch {
           case 8:
             PRINT_BY_TYPE(int64_t)
           default:
-            throw std::runtime_error("Not supported type size to print value!");
+            CIDER_THROW(CiderCompileException, "Not supported type size to print value!");
         }
         ss << "\n";
       }
@@ -417,7 +418,7 @@ class CiderBatch {
             break;
           }
           default:
-            throw std::runtime_error("Not supported type to print value!");
+            CIDER_THROW(CiderCompileException, "Not supported type to print value!");
         }
         ss << "\n";
       }

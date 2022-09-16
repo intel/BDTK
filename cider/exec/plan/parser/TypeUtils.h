@@ -22,6 +22,7 @@
 #ifndef CIDER_TYPEUTILS_H
 #define CIDER_TYPEUTILS_H
 
+#include "cider/CiderException.h"
 #include "substrait/type.pb.h"
 
 // Public to make substrait type easier
@@ -86,7 +87,8 @@ class TypeUtils {
       case ::substrait::Type::KindCase::kDecimal:
         GENERATE_SUBSTRAIT_TYPE(Decimal, decimal, nullalbility)
       default:
-        throw std::runtime_error("not supported type: " + typeKind);
+        CIDER_THROW(CiderCompileException,
+                    "not supported type: " + std::to_string(typeKind));
     }
 
     return s_type;
@@ -101,7 +103,8 @@ class TypeUtils {
       case substrait::Type::kI64:
         return "i64";
       default:
-        throw std::runtime_error("Failed to get arg type when trying to make func");
+        CIDER_THROW(CiderCompileException,
+                    "Failed to get arg type when trying to make func");
     }
   }
 
@@ -119,7 +122,7 @@ class TypeUtils {
       case substrait::Type::NULLABILITY_NULLABLE:
         return true;
       case substrait::Type::NULLABILITY_UNSPECIFIED:
-        throw std::runtime_error("nullability of column is not specified.");
+        CIDER_THROW(CiderCompileException, "nullability of column is not specified.");
     }
   }
 

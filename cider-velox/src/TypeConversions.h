@@ -22,6 +22,7 @@
 #pragma once
 
 #include <cstdint>
+#include "cider/CiderException.h"
 #include "cider/CiderInterface.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/vector/ComplexVector.h"

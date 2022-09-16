@@ -236,7 +236,7 @@ llvm::Value* CodeGenerator::codegenFunctionOper(
   ExtensionFunction ext_func_sig = [=]() {
     try {
       return bind_function(function_oper);
-    } catch (ExtensionFunctionBindingError& e) {
+    } catch (CiderCompileException& e) {
       LOG(WARNING) << "codegenFunctionOper[CPU]: " << e.what();
       throw;
     }
@@ -526,8 +526,9 @@ llvm::Value* CodeGenerator::codegenFunctionOperWithCustomTypeHandling(
 
       return endArgsNullcheck(bbs0, result_lv, nullptr, function_oper);
     }
-    throw std::runtime_error("Type combination not supported for function " +
-                             function_oper->getName());
+    CIDER_THROW(
+        CiderCompileException,
+        "Type combination not supported for function " + function_oper->getName());
   }
   return codegenFunctionOper(function_oper, co);
 }
