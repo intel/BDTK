@@ -33,6 +33,8 @@ class ArrowDataConvertor : public DataConvertor {
  public:
   ArrowDataConvertor() {}
 
+  ArrowDataConvertor(std::shared_ptr<CiderAllocator> allocator);
+
   CiderBatch convertToCider(RowVectorPtr input,
                             int num_rows,
                             std::chrono::microseconds* timer) override;
@@ -40,6 +42,9 @@ class ArrowDataConvertor : public DataConvertor {
   RowVectorPtr convertToRowVector(const CiderBatch& input,
                                   const CiderTableSchema& schema,
                                   memory::MemoryPool* pool) override;
+
+ private:
+  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 }  // namespace facebook::velox::plugin

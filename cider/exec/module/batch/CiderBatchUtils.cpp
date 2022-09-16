@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <memory>
 #define CIDERBATCH_WITH_ARROW
 
 #include "cider/batch/CiderBatchUtils.h"
@@ -230,7 +231,9 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
   return root_schema;
 }
 
-std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema, ArrowArray* array) {
+std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema,
+                                             std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowArray* array) {
   CHECK(schema);
   CHECK(schema->release);
 
@@ -238,25 +241,25 @@ std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema, ArrowArray* ar
   switch (format[0]) {
     // Scalar Types
     case 'b':
-      return ScalarBatch<bool>::Create(schema, array);
+      return ScalarBatch<bool>::Create(schema, allocator, array);
     case 'c':
-      return ScalarBatch<int8_t>::Create(schema, array);
+      return ScalarBatch<int8_t>::Create(schema, allocator, array);
     case 's':
-      return ScalarBatch<int16_t>::Create(schema, array);
+      return ScalarBatch<int16_t>::Create(schema, allocator, array);
     case 'i':
-      return ScalarBatch<int32_t>::Create(schema, array);
+      return ScalarBatch<int32_t>::Create(schema, allocator, array);
     case 'l':
-      return ScalarBatch<int64_t>::Create(schema, array);
+      return ScalarBatch<int64_t>::Create(schema, allocator, array);
     case 'f':
-      return ScalarBatch<float>::Create(schema, array);
+      return ScalarBatch<float>::Create(schema, allocator, array);
     case 'g':
-      return ScalarBatch<double>::Create(schema, array);
+      return ScalarBatch<double>::Create(schema, allocator, array);
     case '+':
       // Complex Types
       switch (format[1]) {
         // Struct Type
         case 's':
-          return StructBatch::Create(schema, array);
+          return StructBatch::Create(schema, allocator, array);
       }
     default:
       CIDER_THROW(CiderCompileException,

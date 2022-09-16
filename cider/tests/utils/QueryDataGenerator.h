@@ -210,7 +210,7 @@ class QueryDataGenerator {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
     int mod = sizeof(alphanum) - 1;
-    char* buf = (char*)std::malloc(len);
+    char* buf = reinterpret_cast<char*>(allocator->allocate(len));
     for (int i = 0; i < len; i++) {
       buf[i] = alphanum[rand() % mod];
     }
@@ -223,7 +223,7 @@ class QueryDataGenerator {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
     int mod = sizeof(alphanum) - 1;
-    char* buf = (char*)std::malloc(len);
+    char* buf = reinterpret_cast<char*>(allocator->allocate(len));
     for (int i = 0; i < len; i++) {
       buf[i] = alphanum[index % mod];
     }

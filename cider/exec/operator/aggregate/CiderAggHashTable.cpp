@@ -681,7 +681,7 @@ void CiderAggHashTable::initCountDistinctInBuffer(size_t buffer_index) {
             CHECK_LT(col_info.count_distinct_desc.bitmap_sz_bits, MAX_BITMAP_BITS);
             const auto bitmap_byte_sz =
                 col_info.count_distinct_desc.bitmapPaddedSizeBytes();
-            int8_t* buffer = reinterpret_cast<int8_t*>(std::malloc(bitmap_byte_sz));
+            int8_t* buffer = allocator_->allocate(bitmap_byte_sz);
             int64_t address = reinterpret_cast<int64_t>(buffer);
             std::memcpy(col_ptr, &address, slot_width_);
           } else {

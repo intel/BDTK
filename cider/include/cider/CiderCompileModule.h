@@ -23,6 +23,7 @@
 #define CIDER_CIDERCOMPILEMODULE_H
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "CiderInterface.h"
@@ -93,6 +94,7 @@ class CiderCompileModule {
 
   class Impl;
   std::unique_ptr<Impl> impl_;
+  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 #endif  // CIDER_CIDERCOMPILEMODULE_H

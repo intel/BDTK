@@ -20,10 +20,14 @@
  */
 
 #include "DuckDbQueryRunner.h"
+#include <cstdint>
 #include "Utils.h"
 #include "cider/CiderTypes.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "util/Logger.h"
+
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
 
 void DuckDbQueryRunner::createTableAndInsertData(
     const std::string& table_name,
@@ -376,7 +380,8 @@ void addColumnDataToCiderBatch<CiderByteArray>(
     } else {
       std::string value = dataChunk->GetValue(i, j).GetValue<std::string>();
       // memory leak risk. user should manually free.
-      uint8_t* value_buf = (uint8_t*)std::malloc(value.length());
+      uint8_t* value_buf =
+          reinterpret_cast<uint8_t*>(allocator->allocate(value.length()));
       std::memcpy(value_buf, value.c_str(), value.length());
       buf[j].len = value.length();
       buf[j].ptr = value_buf;

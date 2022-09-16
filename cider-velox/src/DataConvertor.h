@@ -51,7 +51,8 @@ class DataConvertor {
  public:
   DataConvertor() {}
 
-  static std::shared_ptr<DataConvertor> create(CONVERT_TYPE type);
+  static std::shared_ptr<DataConvertor> create(CONVERT_TYPE type,
+                                               std::shared_ptr<CiderAllocator> allocator);
 
   virtual CiderBatch convertToCider(RowVectorPtr input,
                                     int num_rows,

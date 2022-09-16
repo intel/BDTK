@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <memory>
 #define CIDERBATCH_WITH_ARROW
 #include <gtest/gtest.h>
 #include "type/schema/ColumnInfo.h"
@@ -105,7 +106,7 @@ class MockTable {
     }
     auto type = SQLTypeInfo(kSTRUCT, false, children_types);
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, std::make_shared<CiderDefaultAllocator>());
     CHECK(batch->resizeBatch(element_num_, true));
 
     for (size_t i = 0; i < col_names.size(); ++i) {

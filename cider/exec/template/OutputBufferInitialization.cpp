@@ -21,6 +21,7 @@
  */
 
 #include "OutputBufferInitialization.h"
+#include <memory>
 #include "exec/template/BufferCompaction.h"
 #include "exec/template/TypePunning.h"
 #include "exec/template/common/descriptors/QueryMemoryDescriptor.h"
@@ -266,7 +267,8 @@ int64_t get_agg_initial_val(const SQLAgg agg,
 
 std::vector<int64_t> init_agg_val(const std::vector<Analyzer::Expr*>& targets,
                                   const std::list<std::shared_ptr<Analyzer::Expr>>& quals,
-                                  const QueryMemoryDescriptor& query_mem_desc) {
+                                  const QueryMemoryDescriptor& query_mem_desc,
+                                  std::shared_ptr<CiderAllocator> allocator) {
   // Set initial values for agg result
   auto agg_init_vals = init_agg_val_vec(targets, quals, query_mem_desc);
   const size_t agg_col_count{query_mem_desc.getSlotCount()};
@@ -292,7 +294,7 @@ std::vector<int64_t> init_agg_val(const std::vector<Analyzer::Expr*>& targets,
         const int64_t MAX_BITMAP_BITS{4 * 1000 * 1000L};
         CHECK_LT(count_distinct_desc.bitmap_sz_bits, MAX_BITMAP_BITS);
         const auto bitmap_byte_sz = count_distinct_desc.bitmapPaddedSizeBytes();
-        int8_t* buffer = reinterpret_cast<int8_t*>(std::malloc(bitmap_byte_sz));
+        int8_t* buffer = allocator->allocate(bitmap_byte_sz);
         std::memset(buffer, 0, bitmap_byte_sz);
         agg_init_vals[agg_col_idx] = reinterpret_cast<int64_t>(buffer);
       } else {

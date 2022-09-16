@@ -31,12 +31,16 @@ template <typename T>
 class ScalarBatch final : public CiderBatch {
  public:
   static std::unique_ptr<ScalarBatch<T>> Create(ArrowSchema* schema,
+                                                std::shared_ptr<CiderAllocator> allocator,
                                                 ArrowArray* array = nullptr) {
     return array ? std::make_unique<ScalarBatch<T>>(schema, array)
-                 : std::make_unique<ScalarBatch<T>>(schema);
+                 : std::make_unique<ScalarBatch<T>>(schema, allocator);
   }
 
-  explicit ScalarBatch(ArrowSchema* schema) : CiderBatch(schema) { checkArrowEntries(); }
+  explicit ScalarBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, allocator) {
+    checkArrowEntries();
+  }
   explicit ScalarBatch(ArrowSchema* schema, ArrowArray* array)
       : CiderBatch(schema, array) {
     checkArrowEntries();

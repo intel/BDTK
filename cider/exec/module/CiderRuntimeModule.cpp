@@ -19,6 +19,8 @@
  * under the License.
  */
 
+#include <cstdint>
+#include <memory>
 #define CIDERBATCH_WITH_ARROW
 
 #include "cider/CiderRuntimeModule.h"
@@ -81,7 +83,8 @@ CiderRuntimeModule::CiderRuntimeModule(
   // pass concrete agg func to set different init_agg_vals
   init_agg_vals_ = init_agg_val(rel_alg_exe->target_exprs,
                                 rel_alg_exe->simple_quals,
-                                *ciderCompilationResult_->impl_->query_mem_desc_);
+                                *ciderCompilationResult_->impl_->query_mem_desc_,
+                                allocator_);
 
   is_group_by_ = rel_alg_exe->groupby_exprs.size() && rel_alg_exe->groupby_exprs.front();
   if (is_group_by_) {
@@ -118,8 +121,8 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
                           ? in_batch.getChildrenNum()
                           : in_batch.column_num() + build_table_.column_num();
 
-  const int8_t** col_buffers =
-      reinterpret_cast<const int8_t**>(std::malloc(sizeof(int8_t**) * (total_col_num)));
+  const int8_t** col_buffers = reinterpret_cast<const int8_t**>(
+      allocator_->allocate(sizeof(int8_t**) * (total_col_num)));
 
   if (use_cider_data_format) {
     const void** children_arraies = in_batch.getChildrenArrayPtr();
@@ -259,7 +262,8 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
       }
     }
   }
-  std::free(col_buffers);
+  allocator_->deallocate(reinterpret_cast<int8_t*>(col_buffers),
+                         sizeof(int8_t**) * (total_col_num));
   if (error_code_ != 0) {
     CIDER_THROW(CiderRuntimeException, getErrorMessageFromCode(error_code_));
   }
@@ -412,7 +416,8 @@ void CiderRuntimeModule::extract_varchar_column_from_dict(int32_t start_row,
     int64_t key = flattened_out[cur_col_offset];
     std::string s =
         ciderCompilationResult_->impl_->ciderStringDictionaryProxy_->getString(key);
-    uint8_t* ptr = (uint8_t*)std::malloc(s.length());  // memleak
+    // uint8_t* ptr = (uint8_t*)std::malloc(s.length());  // memleak
+    uint8_t* ptr = reinterpret_cast<uint8_t*>(allocator_->allocate(s.length()));
     std::memcpy(ptr, s.c_str(), s.length());
     col_out_buffer[i].ptr = reinterpret_cast<const uint8_t*>(ptr);
     col_out_buffer[i].len = (uint32_t)s.length();
@@ -556,7 +561,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
   std::unique_ptr<CiderBatch> groupby_agg_result;
   if (ciderCompilationOption_.use_cider_data_format) {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(output_type_);
-    groupby_agg_result = std::make_unique<StructBatch>(schema);
+    groupby_agg_result = std::make_unique<StructBatch>(schema, allocator_);
   } else {
     groupby_agg_result = std::make_unique<CiderBatch>(row_num, column_size, allocator_);
   }
@@ -725,7 +730,8 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateCountDistinctResIfNeed(
           result[j] = count_distinct_set_address(
               address,
               ciderCompilationResult_->impl_->query_mem_desc_->getCountDistinctDescriptor(
-                  i));
+                  i),
+              allocator_);
         }
       }
     }

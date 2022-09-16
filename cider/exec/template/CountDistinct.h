@@ -23,6 +23,8 @@
 #define QUERYENGINE_COUNTDISTINCT_H
 // FIXME: workaround for compile issue of ConstructBatch.h
 // Will be safe to remove it after formally switch to Arrow
+#include <cstdint>
+#include <memory>
 #define CIDERBATCH_WITH_ARROW
 #include "HyperLogLog.h"
 #include "cider/CiderBatch.h"
@@ -113,8 +115,9 @@ inline std::vector<T> count_distinct_set(
 }
 
 template <typename T>
-inline int64_t wrap_to_batch(std::vector<T> values) {
-  T* column = (T*)std::malloc(sizeof(T) * values.size());
+inline int64_t wrap_to_batch(std::vector<T> values,
+                             std::shared_ptr<CiderAllocator> allocator) {
+  T* column = reinterpret_cast<T*>(allocator->allocate(sizeof(T) * values.size()));
   memcpy(column, values.data(), sizeof(T) * values.size());
 
   std::vector<const int8_t*> table_ptr;
@@ -126,29 +129,34 @@ inline int64_t wrap_to_batch(std::vector<T> values) {
 
 inline int64_t count_distinct_set_address(
     const int64_t set_handle,
-    const CountDistinctDescriptor& count_distinct_desc) {
+    const CountDistinctDescriptor& count_distinct_desc,
+    std::shared_ptr<CiderAllocator> allocator) {
   int64_t distinct_vals_addr;
   switch (count_distinct_desc.arg_type) {
     case SQLTypes::kTINYINT: {
       auto values = count_distinct_set<int8_t>(set_handle, count_distinct_desc);
-      distinct_vals_addr = reinterpret_cast<int64_t>(wrap_to_batch<int8_t>(values));
+      distinct_vals_addr =
+          reinterpret_cast<int64_t>(wrap_to_batch<int8_t>(values, allocator));
       break;
     }
     case SQLTypes::kSMALLINT: {
       auto values = count_distinct_set<int16_t>(set_handle, count_distinct_desc);
-      distinct_vals_addr = reinterpret_cast<int64_t>(wrap_to_batch<int16_t>(values));
+      distinct_vals_addr =
+          reinterpret_cast<int64_t>(wrap_to_batch<int16_t>(values, allocator));
       break;
     }
     case SQLTypes::kINT: {
       CHECK(count_distinct_desc.impl_type_ == CountDistinctImplType::HashSet);
       auto values = count_distinct_set<int32_t>(set_handle, count_distinct_desc);
-      distinct_vals_addr = reinterpret_cast<int64_t>(wrap_to_batch<int32_t>(values));
+      distinct_vals_addr =
+          reinterpret_cast<int64_t>(wrap_to_batch<int32_t>(values, allocator));
       break;
     }
     case SQLTypes::kBIGINT: {
       CHECK(count_distinct_desc.impl_type_ == CountDistinctImplType::HashSet);
       auto values = count_distinct_set<int64_t>(set_handle, count_distinct_desc);
-      distinct_vals_addr = reinterpret_cast<int64_t>(wrap_to_batch<int64_t>(values));
+      distinct_vals_addr =
+          reinterpret_cast<int64_t>(wrap_to_batch<int64_t>(values, allocator));
       break;
     }
   }

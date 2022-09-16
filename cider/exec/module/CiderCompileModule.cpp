@@ -88,9 +88,9 @@ CiderTableSchema CiderCompilationResult::getOutputCiderTableSchema() const {
 
 class CiderCompileModule::Impl {
  public:
-  Impl() {
+  Impl(std::shared_ptr<CiderAllocator> allocator) {
     executor_ = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID, nullptr, nullptr);
-    ciderStringDictionaryProxy_ = initStringDictionaryProxy();
+    ciderStringDictionaryProxy_ = initStringDictionaryProxy(allocator);
     executor_->setCiderStringDictionaryProxy(ciderStringDictionaryProxy_.get());
   }
   ~Impl() {}
@@ -456,11 +456,12 @@ class CiderCompileModule::Impl {
 
     return query_infos;
   }
-  std::shared_ptr<StringDictionaryProxy> initStringDictionaryProxy() {
+  std::shared_ptr<StringDictionaryProxy> initStringDictionaryProxy(
+      std::shared_ptr<CiderAllocator> allocator) {
     std::shared_ptr<StringDictionaryProxy> stringDictionaryProxy;
     const DictRef dict_ref(-1, 1);
     std::shared_ptr<StringDictionary> tsd =
-        std::make_shared<StringDictionary>(dict_ref, "", false, true);
+        std::make_shared<StringDictionary>(dict_ref, "", allocator, false, true);
     stringDictionaryProxy.reset(new StringDictionaryProxy(tsd, 0, 0));
 
     return stringDictionaryProxy;
@@ -480,7 +481,7 @@ class CiderCompileModule::Impl {
 };
 
 CiderCompileModule::CiderCompileModule() {
-  impl_.reset(new Impl());
+  impl_.reset(new Impl(allocator_));
 }
 
 CiderCompileModule::~CiderCompileModule() {}

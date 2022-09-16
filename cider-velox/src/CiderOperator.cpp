@@ -45,6 +45,7 @@ CiderOperator::CiderOperator(int32_t operatorId,
                "CiderOp")
     , planNode_(ciderPlanNode) {
   // Set up exec option and compilation option
+  auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
   if (!ciderPlanNode->isKindOf(CiderPlanNodeKind::kJoin)) {
     const auto plan = ciderPlanNode->getSubstraitPlan();
     auto exec_option = CiderExecutionOption::defaults();
@@ -53,14 +54,13 @@ CiderOperator::CiderOperator(int32_t operatorId,
     ciderCompileModule_ = CiderCompileModule::Make();
     auto ciderCompileResult =
         ciderCompileModule_->compile(plan, compile_option, exec_option);
-    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
         ciderCompileResult, compile_option, exec_option, allocator);
     outputSchema_ = std::make_shared<CiderTableSchema>(
         ciderCompileResult->getOutputCiderTableSchema());
   }
   // hardcode, init a DataConvertor here.
-  dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT);
+  dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT, allocator);
 }
 
 std::unique_ptr<CiderOperator> CiderOperator::Make(

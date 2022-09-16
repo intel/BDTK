@@ -24,13 +24,16 @@
 
 #include <cstdlib>
 
-CiderArrowArrayBufferHolder::CiderArrowArrayBufferHolder(size_t buffer_num,
-                                                         size_t children_num,
-                                                         bool dict)
+CiderArrowArrayBufferHolder::CiderArrowArrayBufferHolder(
+    size_t buffer_num,
+    size_t children_num,
+    std::shared_ptr<CiderAllocator> allocator,
+    bool dict)
     : buffers_(buffer_num, nullptr)
     , buffers_bytes_(buffer_num, 0)
     , children_ptr_(children_num, nullptr)
     , children_and_dict_(children_num + (dict ? 1 : 0))
+    , allocator_(allocator)
     , has_dict_(dict) {
   for (size_t i = 0; i < children_num; ++i) {
     children_and_dict_[i].release = nullptr;
@@ -47,7 +50,9 @@ CiderArrowArrayBufferHolder::~CiderArrowArrayBufferHolder() {
   }
 }
 
-// TODO: Replace with CiderAllocator
+// TODO: qiuyangshen Replace with CiderAllocator
+// Unable to determine reallocated memory size
+// refactoring code by LiJiang
 void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
   if (buffers_[index]) {
     buffers_[index] = std::realloc(buffers_[index], bytes);
@@ -56,7 +61,7 @@ void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
   }
 }
 
-// TODO: Replace with CiderAllocator
+// TODO: qiuyangshen Replace with CiderAllocator
 void CiderArrowArrayBufferHolder::relaseBuffer(size_t index) {
   if (buffers_[index]) {
     std::free(buffers_[index]);

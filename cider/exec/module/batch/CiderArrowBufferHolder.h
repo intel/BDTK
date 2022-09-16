@@ -22,14 +22,19 @@
 #ifndef CIDER_ARROW_BUFFER_HOLDER_H
 #define CIDER_ARROW_BUFFER_HOLDER_H
 
+#include <memory>
 #include <vector>
+#include "cider/CiderAllocator.h"
 
 struct ArrowSchema;
 struct ArrowArray;
 
 class CiderArrowArrayBufferHolder {
  public:
-  CiderArrowArrayBufferHolder(size_t buffer_num, size_t children_num, bool dict);
+  CiderArrowArrayBufferHolder(size_t buffer_num,
+                              size_t children_num,
+                              std::shared_ptr<CiderAllocator> allocator,
+                              bool dict);
   ~CiderArrowArrayBufferHolder();
 
   const void** getBufferPtrs() { return const_cast<const void**>(buffers_.data()); }
@@ -53,6 +58,7 @@ class CiderArrowArrayBufferHolder {
   std::vector<size_t> buffers_bytes_;  // Used for allocator.
   std::vector<ArrowArray*> children_ptr_;
   std::vector<ArrowArray> children_and_dict_;
+  std::shared_ptr<CiderAllocator> allocator_;
   const bool has_dict_;
 };
 

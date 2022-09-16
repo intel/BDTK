@@ -19,20 +19,23 @@
  * under the License.
  */
 #include "DataConvertor.h"
+#include <memory>
 
 #include "ArrowDataConvertor.h"
 #include "RawDataConvertor.h"
 
 namespace facebook::velox::plugin {
 
-std::shared_ptr<DataConvertor> DataConvertor::create(CONVERT_TYPE type) {
+std::shared_ptr<DataConvertor> DataConvertor::create(
+    CONVERT_TYPE type,
+    std::shared_ptr<CiderAllocator> allocator) {
   std::shared_ptr<DataConvertor> convertor;
   switch (type) {
     case CONVERT_TYPE::DIRECT:
-      convertor = std::make_shared<RawDataConvertor>();
+      convertor = std::make_shared<RawDataConvertor>(allocator);
       return convertor;
     case CONVERT_TYPE::ARROW:
-      convertor = std::make_shared<ArrowDataConvertor>();
+      convertor = std::make_shared<ArrowDataConvertor>(allocator);
       return convertor;
     default:
       VELOX_USER_FAIL("invalid input");

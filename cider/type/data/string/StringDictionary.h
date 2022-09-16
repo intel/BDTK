@@ -30,11 +30,13 @@
 #include <functional>
 #include <future>
 #include <map>
+#include <memory>
 #include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include "cider/CiderAllocator.h"
 
 extern bool g_enable_stringdict_parallel;
 
@@ -52,6 +54,7 @@ class StringDictionary {
  public:
   StringDictionary(const DictRef& dict_ref,
                    const std::string& folder,
+                   std::shared_ptr<CiderAllocator> allocator,
                    const bool isTemp,
                    const bool recover,
                    const bool materializeHashes = false,
@@ -243,6 +246,7 @@ class StringDictionary {
 
   const DictRef dict_ref_;
   const std::string folder_;
+  std::shared_ptr<CiderAllocator> allocator_;
   size_t str_count_;
   size_t collisions_;
   std::vector<int32_t> string_id_string_dict_hash_table_;

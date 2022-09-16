@@ -28,6 +28,8 @@
 #include "substrait/type.pb.h"
 #include "util/Logger.h"
 
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
 class CiderBatchBuilder {
  public:
   CiderBatchBuilder() : row_num_(0), is_row_num_set_(false) {}
@@ -72,7 +74,7 @@ class CiderBatchBuilder {
       if (!null_data.empty()) {
         CHECK_EQ(row_num_, null_data.size());
       }
-      buf = (int8_t*)std::malloc(sizeof(T) * row_num_);
+      buf = allocator->allocate(sizeof(T) * row_num_);
       std::memcpy(buf, col_data.data(), sizeof(T) * row_num_);
     }
     table_ptr_.push_back(buf);
@@ -107,7 +109,7 @@ class CiderBatchBuilder {
       if (!null_data.empty()) {
         CHECK_EQ(row_num_, null_data.size());
       }
-      buf = (int8_t*)std::malloc(sizeof(int64_t) * row_num_);
+      buf = allocator->allocate(sizeof(int64_t) * row_num_);
       int64_t* dump = reinterpret_cast<int64_t*>(buf);
       for (auto i = 0; i < row_num_; i++) {
         dump[i] = col_data[i].getInt64Val();
@@ -143,7 +145,7 @@ class CiderBatchBuilder {
         CHECK_EQ(row_num_, null_data.size());
       }
       int len = sizeof(CiderByteArray) * row_num_;
-      buf = (int8_t*)std::malloc(len);
+      buf = allocator->allocate(len);
       std::memcpy(buf, col_data.data(), len);
     }
     table_ptr_.push_back(buf);
