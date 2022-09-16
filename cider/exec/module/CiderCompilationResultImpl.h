@@ -41,6 +41,19 @@ class CiderCompilationResult::Impl {
   }
 
   CiderTableSchema getOutputCiderTableSchema() const { return outputSchema_; }
+  QueryType getQueryType() const {
+    switch (query_mem_desc_->getQueryDescriptionType()) {
+      case QueryDescriptionType::GroupByPerfectHash:
+      case QueryDescriptionType::GroupByBaselineHash:
+        return QueryType::STATEFUL_GROUPBY;
+      case QueryDescriptionType::NonGroupedAggregate:
+        return QueryType::STATEFUL_NON_GROUPBY;
+      case QueryDescriptionType::Projection:
+        return QueryType::STATELESS;
+      default:
+        return QueryType::INVALID;
+    }
+  }
 
   CompilationResult compilation_result_;
   std::unique_ptr<QueryMemoryDescriptor> query_mem_desc_;

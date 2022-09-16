@@ -86,6 +86,10 @@ CiderTableSchema CiderCompilationResult::getOutputCiderTableSchema() const {
   return impl_->getOutputCiderTableSchema();
 }
 
+QueryType CiderCompilationResult::getQueryType() const {
+  return impl_->getQueryType();
+}
+
 class CiderCompileModule::Impl {
  public:
   explicit Impl(std::shared_ptr<CiderAllocator> allocator) {

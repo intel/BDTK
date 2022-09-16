@@ -31,6 +31,8 @@
 
 class AggregatedColRange;
 
+enum QueryType { STATELESS, STATEFUL_GROUPBY, STATEFUL_NON_GROUPBY, INVALID = -1 };
+
 class CiderCompilationResult {
  public:
   CiderCompilationResult();
@@ -43,6 +45,8 @@ class CiderCompilationResult {
   void* func() const;
 
   CiderTableSchema getOutputCiderTableSchema() const;
+
+  QueryType getQueryType() const;
 
   class Impl;
   std::unique_ptr<Impl> impl_;
