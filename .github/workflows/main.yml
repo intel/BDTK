@@ -1,0 +1,140 @@
+# Copyright (c) 2022 Intel Corporation.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: pre-commit checker
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  ISTHMUS_EXEC: /substrait-java/isthmus/build/graal/isthmus
+
+jobs:
+  build:
+    runs-on: presto-integration-test
+    
+    steps:
+      - name: Clean up CI directory
+        working-directory: ${{github.workspace}}
+        run: |
+          rm -rf * .[!.]*
+
+      - uses: actions/checkout@v2
+        with:
+          token: ${{secrets.VELOX_JIAO_PAT}}
+          submodules: recursive
+
+      - name: Build
+        working-directory: ${{github.workspace}}
+        run: |
+          make release
+          
+      - name: Run Unit Tests
+        working-directory: ${{github.workspace}}
+        run: |
+          make test-release
+
+      - name: Presto Integration
+        working-directory: ${{github.workspace}}
+        run: |
+          rm -rf /workspace/presto/presto-native-execution/_build/
+          rm -rf /workspace/presto/presto-native-execution/velox-plugin/
+          mkdir /workspace/presto/presto-native-execution/velox-plugin/
+          cp -r . /workspace/presto/presto-native-execution/velox-plugin/
+          /workspace/presto-cider-scripts/build-cider-release.sh
+
+      - name: Run End-to-end Tests
+        working-directory: /workspace/presto-cider-scripts
+        run: |
+          ./test-queries.sh
+
+  code-style-check:
+    runs-on: self-hosted
+
+    steps:
+      - name: Clean up CI directory
+        working-directory: ${{github.workspace}}
+        run: |
+          rm -rf * .[!.]*
+
+      - uses: actions/checkout@v2
+
+      - name: Check formatting
+        if: ${{github.event.pull_request.base.sha}}
+        run: |
+          git fetch --recurse-submodules=no origin main ${{github.event.pull_request.base.sha}}
+          export BASE_COMMIT=${{github.event.pull_request.base.sha}}
+          ci/scripts/check.py format branch
+          if $?; then
+            ci/scripts/check.py format branch --fix
+            echo -e "\n==== Apply using:"
+            echo "patch -p1 \<<EOF"
+            git --no-pager diff
+            echo "EOF"
+            false
+          fi
+
+  license-check:
+    runs-on: self-hosted
+
+    steps:
+      - name: Clean up CI directory
+        working-directory: ${{github.workspace}}
+        run: |
+          rm -rf * .[!.]*
+
+      - uses: actions/checkout@v2
+
+      - name: Check License Header
+        if: ${{github.event.pull_request.base.sha}}
+        run: |
+          git fetch --recurse-submodules=no origin main ${{github.event.pull_request.base.sha}}
+          export BASE_COMMIT=${{github.event.pull_request.base.sha}}
+          ci/scripts/check.py header branch
+          if $?; then
+            ci/scripts/check.py header branch --fix
+            echo -e "\n==== Apply using:"
+            echo "patch -p1 \<<EOF"
+            git --no-pager diff
+            echo "EOF"
+            false
+          fi
+
+  lint-check:
+    runs-on: self-hosted
+    steps:
+      - name: Clean up CI directory
+        working-directory: ${{github.workspace}}
+        run: |
+          rm -rf * .[!.]*
+
+      - uses: actions/checkout@v2
+
+      - name: Check formatting
+        if: ${{github.event.pull_request.base.sha}}
+        run: |
+          git fetch --recurse-submodules=no origin main ${{github.event.pull_request.base.sha}}
+          export BASE_COMMIT=${{github.event.pull_request.base.sha}}
+          ci/scripts/run_cpplint.py                        \
+            --cpplint_binary ci/scripts/cpplint.py         \
+            --exclude_globs ci/scripts/lint_exclusions.txt \
+            --source_dir ci/scripts/lint_inclusions.txt

@@ -1,0 +1,223 @@
+{
+  "extensionUris": [],
+  "extensions": [],
+  "relations": [{
+    "root": {
+      "input": {
+        "project": {
+          "common": {
+            "emit": {
+              "outputMapping": [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            }
+          },
+          "input": {
+            "read": {
+              "common": {
+                "direct": {
+                }
+              },
+              "baseSchema": {
+                "names": ["T_BOOL_NULL", "T_BOOL_NOTNULL", "T_INT_NULL", "T_INT_NOTNULL", "T_BIGINT_NULL", "T_BIGINT_NOTNULL", "T_DECIMAL_NULL", "T_DECIMAL_NOTNULL", "T_FLOAT_NULL", "T_FLOAT_NOTNULL", "T_DOUBLE_NULL", "T_DOUBLE_NOTNULL"],
+                "struct": {
+                  "types": [{
+                    "bool": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }, {
+                    "bool": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }, {
+                    "i32": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }, {
+                    "i32": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }, {
+                    "i64": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }, {
+                    "i64": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }, {
+                    "decimal": {
+                      "scale": 0,
+                      "precision": 19,
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }, {
+                    "decimal": {
+                      "scale": 0,
+                      "precision": 19,
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }, {
+                    "fp32": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }, {
+                    "fp32": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }, {
+                    "fp64": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }, {
+                    "fp64": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }],
+                  "typeVariationReference": 0,
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {
+                "names": ["CUSTOMIZED"]
+              }
+            }
+          },
+          "expressions": [{
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 0
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 1
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 2
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 3
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 4
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 5
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 6
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 7
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 8
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 9
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 10
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }, {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 11
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }]
+        }
+      },
+      "names": ["T_BOOL_NULL", "T_BOOL_NOTNULL", "T_INT_NULL", "T_INT_NOTNULL", "T_BIGINT_NULL", "T_BIGINT_NOTNULL", "T_DECIMAL_NULL", "T_DECIMAL_NOTNULL", "T_FLOAT_NULL", "T_FLOAT_NOTNULL", "T_DOUBLE_NULL", "T_DOUBLE_NOTNULL"]
+    }
+  }],
+  "expectedTypeUrls": []
+}

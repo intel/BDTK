@@ -1,0 +1,183 @@
+{
+    "extensionUris": [{
+        "extensionUriAnchor": 1,
+        "uri": "/functions_comparison.yaml"
+      },{
+      "extensionUriAnchor": 2,
+      "uri": "/functions_arithmetic.yaml"
+    }],
+    "extensions": [{
+      "extensionFunction": {
+        "extensionUriReference": 1,
+        "functionAnchor": 0,
+        "name": "coalesce:any_any_any"
+      }
+    }, {
+      "extensionFunction": {
+        "extensionUriReference": 2,
+        "functionAnchor": 1,
+        "name": "sum:opt_i64"
+      }
+    }],
+    "relations": [{
+      "root": {
+        "input": {
+          "aggregate": {
+            "common": {
+              "direct": {
+              }
+            },
+            "input": {
+              "project": {
+                "common": {
+                  "emit": {
+                    "outputMapping": [4]
+                  }
+                },
+                "input": {
+                  "read": {
+                    "common": {
+                      "direct": {
+                      }
+                    },
+                    "baseSchema": {
+                      "names": ["COL_INT", "COL_BIGINT", "COL_DOUBLE", "COL_FLOAT"],
+                      "struct": {
+                        "types": [{
+                          "i32": {
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_NULLABLE"
+                          }
+                        }, {
+                          "i64": {
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_NULLABLE"
+                          }
+                        }, {
+                          "fp64": {
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_NULLABLE"
+                          }
+                        }, {
+                          "fp32": {
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_NULLABLE"
+                          }
+                        }],
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "namedTable": {
+                      "names": ["TEST"]
+                    }
+                  }
+                },
+                "expressions": [{
+                  "scalarFunction": {
+                    "functionReference": 0,
+                    "args": [],
+                    "outputType": {
+                      "i64": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    },
+                  "arguments": [{
+                    "value": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {
+                            "field": 0
+                          }
+                        },
+                        "rootReference": {
+                        }
+                      }
+                    }
+                  }, {
+                    "value": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {
+                            "field": 1
+                          }
+                        },
+                        "rootReference": {
+                        }
+                      }
+                    }
+                  }, {
+                    "value": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {
+                            "field": 2
+                          }
+                        },
+                        "rootReference": {
+                        }
+                      }
+                    }
+                  }, {
+                  "value": {
+                    "cast": {
+                      "type": {
+                        "fp32": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      "input": {
+                        "literal": {
+                          "i32": 7,
+                          "nullable": false,
+                          "typeVariationReference": 0
+                        }
+                      },
+                      "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                    }
+                  }
+                }]
+                  }
+                }]
+              }
+            },
+            "groupings": [{
+              "groupingExpressions": []
+            }],
+            "measures": [{
+              "measure": {
+                "functionReference": 1,
+                "args": [],
+                "sorts": [],
+                "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+                "outputType": {
+                  "fp64": {
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_NULLABLE"
+                  }
+                },
+                "invocation": "AGGREGATION_INVOCATION_ALL",
+                "arguments": [{
+                  "value": {
+                    "selection": {
+                      "directReference": {
+                        "structField": {
+                          "field": 0
+                        }
+                      },
+                      "rootReference": {
+                      }
+                    }
+                  }
+                }]
+              }
+            }]
+          }
+        },
+        "names": ["EXPR$0"]
+      }
+    }],
+    "expectedTypeUrls": []
+  }

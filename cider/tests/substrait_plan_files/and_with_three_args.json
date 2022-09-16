@@ -1,0 +1,123 @@
+{
+  "extensionUris": [{
+    "extensionUriAnchor": 1,
+    "uri": "/functions_boolean.yaml"
+  }],
+  "extensions": [{
+    "extensionFunction": {
+      "extensionUriReference": 1,
+      "functionAnchor": 0,
+      "name": "and:bool"
+    }
+  }],
+  "relations": [{
+    "root": {
+      "input": {
+        "project": {
+          "common": {
+            "emit": {
+              "outputMapping": [3]
+            }
+          },
+          "input": {
+            "filter": {
+              "common": {
+                "direct": {
+                }
+              },
+              "input": {
+                "read": {
+                  "common": {
+                    "direct": {
+                    }
+                  },
+                  "baseSchema": {
+                    "names": ["T0", "T1", "T2"],
+                    "struct": {
+                      "types": [{
+                        "bool": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_REQUIRED"
+                        }
+                      }, {
+                        "bool": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_REQUIRED"
+                        }
+                      }, {
+                        "bool": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_REQUIRED"
+                        }
+                      }],
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  },
+                  "namedTable": {
+                    "names": ["TMP"]
+                  }
+                }
+              },
+              "condition": {
+                "scalarFunction": {
+                  "functionReference": 0,
+                  "arguments": [{ "value": {
+                    "selection": {
+                      "directReference": {
+                        "structField": {
+                          "field": 0
+                        }
+                      },
+                      "rootReference": {
+                      }
+                    }}
+                  }, { "value": {
+                    "selection": {
+                      "directReference": {
+                        "structField": {
+                          "field": 1
+                        }
+                      },
+                      "rootReference": {
+                      }
+                    }}
+                  }, { "value": {
+                    "selection": {
+                      "directReference": {
+                        "structField": {
+                          "field": 2
+                        }
+                      },
+                      "rootReference": {
+                      }
+                    }}
+                  }],
+                  "outputType": {
+                    "bool": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "expressions": [{
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 0
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }]
+        }
+      },
+      "names": ["T0"]
+    }
+  }],
+  "expectedTypeUrls": []
+}

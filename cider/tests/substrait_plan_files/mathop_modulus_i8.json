@@ -1,0 +1,145 @@
+{
+  "extensionUris": [
+    {
+      "extensionUriAnchor": 1,
+      "uri": "/functions_arithmetic.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extensionFunction": {
+        "extensionUriReference": 1,
+        "functionAnchor": 0,
+        "name": "modulus:i32_i32"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [
+                  6
+                ]
+              }
+            },
+            "input": {
+              "read": {
+                "common": {
+                  "direct": {}
+                },
+                "baseSchema": {
+                  "names": [
+                    "COL_1",
+                    "COL_2",
+                    "COL_3",
+                    "COL_4",
+                    "COL_5",
+                    "COL_6"
+                  ],
+                  "struct": {
+                    "types": [
+                      {
+                        "i32": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "i64": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "fp32": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "fp64": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "i8": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "i16": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      }
+                    ],
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": {
+                  "names": [
+                    "TEST"
+                  ]
+                }
+              }
+            },
+            "expressions": [
+              {
+                "scalarFunction": {
+                  "functionReference": 0,
+                  "arguments": [
+                    {"value": {
+                      "cast": {
+                        "type": {
+                          "i32": {
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_NULLABLE"
+                          }
+                        },
+                        "input": {
+                          "selection": {
+                            "directReference": {
+                              "structField": {
+                                "field": 4
+                              }
+                            },
+                            "rootReference": {
+                            }
+                          }
+                        },
+                        "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                      }
+                    }},
+                    {"value": {
+                      "literal": {
+                        "i32": 2,
+                        "nullable": false
+                      }}
+                    }
+                  ],
+                  "outputType": {
+                    "i32": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "EXPR$0"
+        ]
+      }
+    }
+  ],
+  "expectedTypeUrls": []
+}

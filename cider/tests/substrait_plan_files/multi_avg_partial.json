@@ -1,0 +1,186 @@
+{
+ "extension_uris": [
+  {
+   "extension_uri_anchor": 1,
+   "uri": "/workspace/velox-plugin/velox/substrait/extensions/functions_comparison.yaml"
+  },
+  {
+   "extension_uri_anchor": 2,
+   "uri": "/workspace/velox-plugin/velox/substrait/extensions/functions_arithmetic.yaml"
+  }
+ ],
+ "extensions": [
+  {
+   "extension_function": {
+    "extension_uri_reference": 2,
+    "function_anchor": 0,
+    "name": "avg:any1"
+   }
+  }, {
+    "extensionFunction": {
+      "extensionUriReference": 2,
+      "functionAnchor": 1,
+      "name": "sum:opt_i64"
+    }
+  }
+ ],
+ "relations": [
+  {
+   "root": {
+    "input": {
+     "aggregate": {
+      "common": {
+       "direct": {}
+      },
+      "input": {
+       "read": {
+        "common": {
+         "direct": {}
+        },
+        "base_schema": {
+         "names": [
+          "col_i32",
+          "col_i16"
+         ],
+         "struct": {
+          "types": [
+           {
+            "i32": {
+             "type_variation_reference": 0,
+             "nullability": "NULLABILITY_REQUIRED"
+            }
+           },
+           {
+            "i16": {
+             "type_variation_reference": 0,
+             "nullability": "NULLABILITY_REQUIRED"
+            }
+           }
+          ],
+          "type_variation_reference": 0,
+          "nullability": "NULLABILITY_REQUIRED"
+         }
+        }
+       }
+      },
+      "groupings": [
+       {
+        "grouping_expressions": []
+       }
+      ],
+      "measures": [
+       {
+        "measure": {
+         "function_reference": 0,
+         "arguments": [
+          { "value": {
+           "selection": {
+            "direct_reference": {
+             "struct_field": {
+              "field": 0
+             }
+            },
+            "root_reference": {}
+           }
+          }}
+         ],
+         "sorts": [],
+         "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+         "output_type": {
+          "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+          }
+         }
+        },
+        "filter": {}
+       },{
+        "measure": {
+          "functionReference": 1,
+          "arguments": [{ "value": {
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 1
+                }
+              },
+              "rootReference": {
+              }
+            }}
+          }],
+          "sorts": [],
+          "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+          "outputType": {
+            "i64": {
+              "typeVariationReference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          }
+        }
+      }, {
+        "measure": {
+         "function_reference": 0,
+         "arguments": [
+          { "value": {
+           "selection": {
+            "direct_reference": {
+             "struct_field": {
+              "field": 1
+             }
+            },
+            "root_reference": {}
+           }
+          }}
+         ],
+         "sorts": [],
+         "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+         "output_type": {
+          "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+          }
+         }
+        },
+        "filter": {}
+       }
+      ]
+     }
+    },
+    "names": [
+     "a0",
+     "a1",
+     "a2"
+    ]
+   }
+  }
+ ],
+ "expected_type_urls": []
+}

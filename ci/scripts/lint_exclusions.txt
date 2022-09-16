@@ -1,0 +1,5 @@
+*/duckdb.cpp
+*/duckdb.hpp
+*/ThirdParty/*
+*Tests/DataMgr/*
+*src/substrait/proto/*

@@ -1,0 +1,158 @@
+{
+  "extensionUris": [
+    {
+      "extensionUriAnchor": 1,
+      "uri": "/functions_arithmetic_decimal.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extensionFunction": {
+        "extensionUriReference": 1,
+        "functionAnchor": 0,
+        "name": "multiply:opt_dec_dec"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [
+                  6
+                ]
+              }
+            },
+            "input": {
+              "read": {
+                "common": {
+                  "direct": {}
+                },
+                "baseSchema": {
+                  "names": [
+                    "INTEGER_COL",
+                    "BIGINT_COL",
+                    "FLOAT_COL",
+                    "DOUBLE_COL",
+                    "TINYINT_COL",
+                    "SMALLINT_COL"
+                  ],
+                  "struct": {
+                    "types": [
+                      {
+                        "i32": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "i64": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "fp32": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "fp64": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "i8": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      {
+                        "i16": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      }
+                    ],
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": {
+                  "names": [
+                    "TEST"
+                  ]
+                }
+              }
+            },
+            "expressions": [
+              {
+                "scalarFunction": {
+                  "functionReference": 0,
+                  "args": [],
+                  "outputType": {
+                    "decimal": {
+                      "scale": 6,
+                      "precision": 14,
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "value": {
+                        "cast": {
+                          "type": {
+                            "decimal": {
+                              "scale": 3,
+                              "precision": 13,
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          "input": {
+                            "selection": {
+                              "directReference": {
+                                "structField": {
+                                  "field": 0
+                                }
+                              },
+                              "rootReference": {}
+                            }
+                          },
+                          "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                        }
+                      }
+                    },
+                    {
+                      "value": {
+                        "literal": {
+                          "decimal": {
+                            "value": "ewAAAAAAAAAAAAAAAAAAAA==",
+                            "precision": 4,
+                            "scale": 3
+                          },
+                          "nullable": false,
+                          "typeVariationReference": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "EXPR$0"
+        ]
+      }
+    }
+  ],
+  "expectedTypeUrls": []
+}

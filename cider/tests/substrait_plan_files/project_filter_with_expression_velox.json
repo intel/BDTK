@@ -1,0 +1,307 @@
+{
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "/workspace/veloxPlugin/velox/substrait/extensions/functions_comparison.yaml"
+    },
+    {
+      "extension_uri_anchor": 2,
+      "uri": "/workspace/veloxPlugin/velox/substrait/extensions/functions_arithmetic.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 0,
+        "name": "gt:i64_i64"
+      }
+    },
+    {
+      "extension_function": {
+        "extension_uri_reference": 2,
+        "function_anchor": 1,
+        "name": "add:i32_i32"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "output_mapping": [
+                  0,
+                  1,
+                  4
+                ]
+              }
+            },
+            "input": {
+              "filter": {
+                "common": {
+                  "direct": {}
+                },
+                "input": {
+                  "read": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "base_schema": {
+                      "names": [
+                        "c0",
+                        "c1",
+                        "c2",
+                        "c3"
+                      ],
+                      "struct": {
+                        "types": [
+                          {
+                            "i32": {
+                              "type_variation_reference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          },
+                          {
+                            "i32": {
+                              "type_variation_reference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          },
+                          {
+                            "i32": {
+                              "type_variation_reference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          },
+                          {
+                            "i32": {
+                              "type_variation_reference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          }
+                        ],
+                        "type_variation_reference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "virtual_table": {
+                      "values": [
+                        {
+                          "fields": [
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            }
+                          ]
+                        },
+                        {
+                          "fields": [
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            }
+                          ]
+                        },
+                        {
+                          "fields": [
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            },
+                            {
+                              "nullable": false,
+                              "i32": 581869302
+                            },
+                            {
+                              "nullable": false,
+                              "i32": -708632711
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "condition": {
+                  "scalar_function": {
+                    "function_reference": 0,
+                    "arguments": [
+                      { "value": {
+                        "cast": {
+                          "type": {
+                            "i64": {
+                              "type_variation_reference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          },
+                          "input": {
+                            "selection": {
+                              "direct_reference": {
+                                "struct_field": {
+                                  "field": 1
+                                }
+                              },
+                              "root_reference": {}
+                            }
+                          }
+                        }}
+                      },
+                      { "value": {
+                        "literal": {
+                          "nullable": false,
+                          "i64": "0"
+                        }}
+                      }
+                    ],
+                    "output_type": {
+                      "bool": {
+                        "type_variation_reference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "expressions": [
+              {
+                "selection": {
+                  "direct_reference": {
+                    "struct_field": {
+                      "field": 0
+                    }
+                  },
+                  "root_reference": {}
+                }
+              },
+              {
+                "selection": {
+                  "direct_reference": {
+                    "struct_field": {
+                      "field": 1
+                    }
+                  },
+                  "root_reference": {}
+                }
+              },
+              {
+                "scalar_function": {
+                  "function_reference": 1,
+                  "arguments": [
+                    { "value": {
+                      "selection": {
+                        "direct_reference": {
+                          "struct_field": {
+                            "field": 0
+                          }
+                        },
+                        "root_reference": {}
+                      }}
+                    },
+                    { "value": {
+                      "selection": {
+                        "direct_reference": {
+                          "struct_field": {
+                            "field": 1
+                          }
+                        },
+                        "root_reference": {}
+                      }
+                    }}
+                  ],
+                  "output_type": {
+                    "i32": {
+                      "type_variation_reference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "names": []
+      }
+    }
+  ],
+  "expected_type_urls": []
+}

@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ * Copyright (c) OmniSci, Inc. and its affiliates.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "exec/template/Execute.h"
+#include "type/plan/Analyzer.h"
+#include "util/memory/Fragmenter.h"
+
+class QueryRewriter {
+ public:
+  QueryRewriter(const std::vector<InputTableInfo>& query_infos, Executor* executor)
+      : query_infos_(query_infos), executor_(executor) {}
+  RelAlgExecutionUnit rewrite(const RelAlgExecutionUnit& ra_exe_unit_in) const;
+
+  RelAlgExecutionUnit rewriteAggregateOnGroupByColumn(
+      const RelAlgExecutionUnit& ra_exe_unit_in) const;
+
+ private:
+  RelAlgExecutionUnit rewriteOverlapsJoin(
+      const RelAlgExecutionUnit& ra_exe_unit_in) const;
+
+  RelAlgExecutionUnit rewriteConstrainedByIn(
+      const RelAlgExecutionUnit& ra_exe_unit_in) const;
+
+  RelAlgExecutionUnit rewriteConstrainedByInImpl(
+      const RelAlgExecutionUnit& ra_exe_unit_in,
+      const std::shared_ptr<Analyzer::CaseExpr>,
+      const Analyzer::InValues*) const;
+
+  static std::shared_ptr<Analyzer::CaseExpr> generateCaseForDomainValues(
+      const Analyzer::InValues*);
+
+  std::pair<bool, std::set<size_t>> is_all_groupby_exprs_are_col_var(
+      const std::list<std::shared_ptr<Analyzer::Expr>>& groupby_exprs) const;
+
+  std::shared_ptr<Analyzer::CaseExpr> generateCaseExprForCountDistinctOnGroupByCol(
+      std::shared_ptr<Analyzer::Expr> expr) const;
+
+  const std::vector<InputTableInfo>& query_infos_;
+  Executor* executor_;
+  mutable std::vector<std::shared_ptr<Analyzer::Expr>> target_exprs_owned_;
+};

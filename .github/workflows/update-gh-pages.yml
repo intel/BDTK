@@ -1,0 +1,65 @@
+# Copyright (c) 2022 Intel Corporation.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+
+# This is a workflow to auto make html and push to gh-pages
+
+name: Update-gh-pages
+
+on:
+  # Triggers the workflow only when '.rst' files under 'docs/source' changed on main branch
+  push:
+    branches: [ 'main' ]
+    paths: 
+      - 'docs/*.rst'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+        
+      - name: create build environment
+        run: |
+          git fetch
+          mkdir temp-build
+          cp scripts/{make.bat,Makefile} temp-build
+          mkdir temp-build/source
+          cp -r docs/* temp-build/source
+          rm -rf temp-build/source/syntax-support
+
+      - name: build html
+        run: |
+          make -C temp-build html
+          git checkout gh-pages
+          cp -R temp-build/build/html/* docs
+        
+      - name: config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: commit
+        run: |
+          git add docs
+          git commit -m "update gh-pages"
+      
+      - name: push
+        run: |
+          git push origin gh-pages

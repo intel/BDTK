@@ -1,0 +1,414 @@
+{
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "/workspace/veloxPlugin/velox/substrait/extensions/functions_comparison.yaml"
+    },
+    {
+      "extension_uri_anchor": 2,
+      "uri": "/workspace/veloxPlugin/velox/substrait/extensions/functions_arithmetic.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 0,
+        "name": "lt:i64_i64"
+      }
+    },
+    {
+      "extension_function": {
+        "extension_uri_reference": 2,
+        "function_anchor": 1,
+        "name": "avg:fp32"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "output_mapping": [
+                  2
+                ]
+              }
+            },
+            "input": {
+              "aggregate": {
+                "common": {
+                  "direct": {}
+                },
+                "input": {
+                  "filter": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "input": {
+                      "read": {
+                        "common": {
+                          "direct": {}
+                        },
+                        "base_schema": {
+                          "names": [
+                            "c0",
+                            "c1",
+                            "c2",
+                            "c3",
+                            "c4",
+                            "c5",
+                            "c6"
+                          ],
+                          "struct": {
+                            "types": [
+                              {
+                                "i64": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i32": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i32": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i64": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "fp32": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "fp64": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i32": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              }
+                            ],
+                            "type_variation_reference": 0,
+                            "nullability": "NULLABILITY_REQUIRED"
+                          }
+                        },
+                        "virtual_table": {
+                          "values": [
+                            {
+                              "fields": [
+                                {
+                                  "nullable": false,
+                                  "i64": "2499109626526694126"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "2342493223442167775"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "4077358421272316858"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": 581869302
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -708632711
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -133711905
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": 581869302
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -708632711
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -133711905
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "2499109626526694126"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "2342493223442167775"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "4077358421272316858"
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp32": 0.905791938
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp32": 0.968867779
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp32": 0.632359266
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp64": 0.9057919341454927
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp64": 0.9688677711242314
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp64": 0.6323592500344464
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": 581869302
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -708632711
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -133711905
+                                }
+                              ]
+                            },
+                            {
+                              "fields": [
+                                {
+                                  "nullable": false,
+                                  "i64": "2499109626526694126"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "2342493223442167775"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "4077358421272316858"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": 581869302
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -708632711
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -133711905
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": 581869302
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -708632711
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -133711905
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "2499109626526694126"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "2342493223442167775"
+                                },
+                                {
+                                  "nullable": false,
+                                  "i64": "4077358421272316858"
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp32": 0.905791938
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp32": 0.968867779
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp32": 0.632359266
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp64": 0.9057919341454927
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp64": 0.9688677711242314
+                                },
+                                {
+                                  "nullable": false,
+                                  "fp64": 0.6323592500344464
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": 581869302
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -708632711
+                                },
+                                {
+                                  "nullable": false,
+                                  "i32": -133711905
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "condition": {
+                      "scalar_function": {
+                        "function_reference": 0,
+                        "arguments": [
+                          { "value": {
+                            "cast": {
+                              "type": {
+                                "i64": {
+                                  "type_variation_reference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              "input": {
+                                "selection": {
+                                  "direct_reference": {
+                                    "struct_field": {
+                                      "field": 6
+                                    }
+                                  },
+                                  "root_reference": {}
+                                }
+                              }
+                            }}
+                          },
+                          { "value": {
+                            "literal": {
+                              "nullable": false,
+                              "i64": "24"
+                            }
+                          }}
+                        ],
+                        "output_type": {
+                          "bool": {
+                            "type_variation_reference": 0,
+                            "nullability": "NULLABILITY_REQUIRED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "groupings": [
+                  {
+                    "grouping_expressions": [
+                      {
+                        "selection": {
+                          "direct_reference": {
+                            "struct_field": {
+                              "field": 0
+                            }
+                          },
+                          "root_reference": {}
+                        }
+                      },
+                      {
+                        "selection": {
+                          "direct_reference": {
+                            "struct_field": {
+                              "field": 1
+                            }
+                          },
+                          "root_reference": {}
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "measures": [
+                  {
+                    "measure": {
+                      "function_reference": 1,
+                      "arguments": [
+                        { "value": {
+                          "selection": {
+                            "direct_reference": {
+                              "struct_field": {
+                                "field": 4
+                              }
+                            },
+                            "root_reference": {}
+                          }
+                        }}
+                      ],
+                      "sorts": [],
+                      "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+                      "output_type": {
+                        "fp32": {
+                          "type_variation_reference": 0,
+                          "nullability": "NULLABILITY_REQUIRED"
+                        }
+                      }
+                    },
+                    "filter": {}
+                  }
+                ]
+              }
+            },
+            "expressions": [
+              {
+                "selection": {
+                  "direct_reference": {
+                    "struct_field": {
+                      "field": 2
+                    }
+                  },
+                  "root_reference": {}
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "avg_price"
+        ]
+      }
+    }
+  ],
+  "expected_type_urls": []
+}

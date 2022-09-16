@@ -1,0 +1,165 @@
+{
+  "extensionUris": [
+    {
+      "extensionUriAnchor": 1,
+      "uri": "/functions_comparison.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extensionFunction": {
+        "extensionUriReference": 1,
+        "functionAnchor": 0,
+        "name": "equal:any1_any1"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [
+                  2,
+                  3
+                ]
+              }
+            },
+            "input": {
+              "join": {
+                "common": {
+                  "direct": {}
+                },
+                "left": {
+                  "read": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "baseSchema": {
+                      "names": [
+                        "C0"
+                      ],
+                      "struct": {
+                        "types": [
+                          {
+                            "i64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          }
+                        ],
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "namedTable": {
+                      "names": [
+                        "T"
+                      ]
+                    }
+                  }
+                },
+                "right": {
+                  "read": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "baseSchema": {
+                      "names": [
+                        "U_C0"
+                      ],
+                      "struct": {
+                        "types": [
+                          {
+                            "i64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          }
+                        ],
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "namedTable": {
+                      "names": [
+                        "U"
+                      ]
+                    }
+                  }
+                },
+                "expression": {
+                  "scalarFunction": {
+                    "functionReference": 0,
+                    "arguments": [
+                      {
+                        "value": {
+                          "selection": {
+                            "directReference": {
+                              "structField": {
+                                "field": 0
+                              }
+                            },
+                            "rootReference": {}
+                          }
+                        }
+                      },
+                      {
+                        "value": {
+                          "selection": {
+                            "directReference": {
+                              "structField": {
+                                "field": 1
+                              }
+                            },
+                            "rootReference": {}
+                          }
+                        }
+                      }
+                    ],
+                    "outputType": {
+                      "bool": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    }
+                  }
+                },
+                "type": "JOIN_TYPE_INNER"
+              }
+            },
+            "expressions": [
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 0
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 1
+                    }
+                  },
+                  "rootReference": {}
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "C0",
+          "U_C0"
+        ]
+      }
+    }
+  ],
+  "expectedTypeUrls": []
+}

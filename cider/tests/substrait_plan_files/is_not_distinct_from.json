@@ -1,0 +1,324 @@
+{
+  "extensionUris": [
+    {
+      "extensionUriAnchor": 1,
+      "uri": "/functions_boolean.yaml"
+    },
+    {
+      "extensionUriAnchor": 2,
+      "uri": "/functions_comparison.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extensionFunction": {
+        "extensionUriReference": 1,
+        "functionAnchor": 0,
+        "name": "or:bool"
+      }
+    },
+    {
+      "extensionFunction": {
+        "extensionUriReference": 2,
+        "functionAnchor": 1,
+        "name": "is_not_distinct_from:any_any"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ]
+              }
+            },
+            "input": {
+              "filter": {
+                "common": {
+                  "direct": {}
+                },
+                "input": {
+                  "read": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "baseSchema": {
+                      "names": [
+                        "COL_1",
+                        "COL_2",
+                        "COL_3",
+                        "COL_4",
+                        "COL_5",
+                        "COL_6",
+                        "COL_7",
+                        "COL_8"
+                      ],
+                      "struct": {
+                        "types": [
+                          {
+                            "i32": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "i64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "fp32": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "fp64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "i32": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "i64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "fp32": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "fp64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          }
+                        ],
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "namedTable": {
+                      "names": [
+                        "TEST"
+                      ]
+                    }
+                  }
+                },
+                "condition": {
+                  "scalarFunction": {
+                    "functionReference": 0,
+                    "args": [],
+                    "outputType": {
+                      "bool": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "value": {
+                          "scalarFunction": {
+                            "functionReference": 1,
+                            "args": [],
+                            "outputType": {
+                              "bool": {
+                                "typeVariationReference": 0,
+                                "nullability": "NULLABILITY_NULLABLE"
+                              }
+                            },
+                            "arguments": [
+                              {
+                                "value": {
+                                  "selection": {
+                                    "directReference": {
+                                      "structField": {
+                                        "field": 1
+                                      }
+                                    },
+                                    "rootReference": {}
+                                  }
+                                }
+                              },
+                              {
+                                "value": {
+                                  "selection": {
+                                    "directReference": {
+                                      "structField": {
+                                        "field": 5
+                                      }
+                                    },
+                                    "rootReference": {}
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "value": {
+                          "scalarFunction": {
+                            "functionReference": 1,
+                            "args": [],
+                            "outputType": {
+                              "bool": {
+                                "typeVariationReference": 0,
+                                "nullability": "NULLABILITY_NULLABLE"
+                              }
+                            },
+                            "arguments": [
+                              {
+                                "value": {
+                                  "selection": {
+                                    "directReference": {
+                                      "structField": {
+                                        "field": 0
+                                      }
+                                    },
+                                    "rootReference": {}
+                                  }
+                                }
+                              },
+                              {
+                                "value": {
+                                  "selection": {
+                                    "directReference": {
+                                      "structField": {
+                                        "field": 4
+                                      }
+                                    },
+                                    "rootReference": {}
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "expressions": [
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 0
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 1
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 2
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 3
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 4
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 5
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 6
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 7
+                    }
+                  },
+                  "rootReference": {}
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "COL_1",
+          "COL_2",
+          "COL_3",
+          "COL_4",
+          "COL_5",
+          "COL_6",
+          "COL_7",
+          "COL_8"
+        ]
+      }
+    }
+  ],
+  "expectedTypeUrls": []
+}

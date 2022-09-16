@@ -1,0 +1,436 @@
+{
+  "extensionUris": [
+    {
+      "extensionUriAnchor": 3,
+      "uri": "/functions_aggregate_generic.yaml"
+    },
+    {
+      "extensionUriAnchor": 1,
+      "uri": "/functions_boolean.yaml"
+    },
+    {
+      "extensionUriAnchor": 2,
+      "uri": "/functions_comparison.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extensionFunction": {
+        "extensionUriReference": 1,
+        "functionAnchor": 0,
+        "name": "and:bool"
+      }
+    },
+    {
+      "extensionFunction": {
+        "extensionUriReference": 2,
+        "functionAnchor": 1,
+        "name": "equal:any1_any1"
+      }
+    },
+    {
+      "extensionFunction": {
+        "extensionUriReference": 2,
+        "functionAnchor": 2,
+        "name": "gt:any1_any1"
+      }
+    },
+    {
+      "extensionFunction": {
+        "extensionUriReference": 3,
+        "functionAnchor": 3,
+        "name": "count:opt"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "aggregate": {
+            "common": {
+              "direct": {
+              }
+            },
+            "input": {
+              "filter": {
+                "common": {
+                  "direct": {
+                  }
+                },
+                "input": {
+                  "join": {
+                    "common": {
+                      "direct": {
+                      }
+                    },
+                    "left": {
+                      "read": {
+                        "common": {
+                          "direct": {
+                          }
+                        },
+                        "baseSchema": {
+                          "names": [
+                            "O_ORDERKEY",
+                            "O_CUSTKEY",
+                            "O_ORDERSTATUS",
+                            "O_TOTALPRICE",
+                            "O_ORDERDATE",
+                            "O_ORDERPRIORITY",
+                            "O_CLERK",
+                            "O_SHIPPRIORITY",
+                            "O_COMMENT"
+                          ],
+                          "struct": {
+                            "types": [
+                              {
+                                "i64": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i64": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "varchar": {
+                                  "length": 10,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "decimal": {
+                                  "scale": 0,
+                                  "precision": 19,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "date": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "varchar": {
+                                  "length": 10,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "varchar": {
+                                  "length": 10,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "i32": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "varchar": {
+                                  "length": 10,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              }
+                            ],
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_REQUIRED"
+                          }
+                        },
+                        "namedTable": {
+                          "names": [
+                            "ORDERS"
+                          ]
+                        }
+                      }
+                    },
+                    "right": {
+                      "read": {
+                        "common": {
+                          "direct": {
+                          }
+                        },
+                        "baseSchema": {
+                          "names": [
+                            "L_ORDERKEY",
+                            "L_PARTKEY",
+                            "L_SUPPKEY",
+                            "L_LINENUMBER",
+                            "L_QUANTITY",
+                            "L_EXTENDEDPRICE",
+                            "L_DISCOUNT",
+                            "L_TAX",
+                            "L_RETURNFLAG",
+                            "L_LINESTATUS",
+                            "L_SHIPDATE",
+                            "L_COMMITDATE",
+                            "L_RECEIPTDATE",
+                            "L_SHIPINSTRUCT",
+                            "L_SHIPMODE",
+                            "L_COMMENT"
+                          ],
+                          "struct": {
+                            "types": [
+                              {
+                                "i64": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i64": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i64": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_REQUIRED"
+                                }
+                              },
+                              {
+                                "i32": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "decimal": {
+                                  "scale": 0,
+                                  "precision": 19,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "decimal": {
+                                  "scale": 0,
+                                  "precision": 19,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "decimal": {
+                                  "scale": 0,
+                                  "precision": 19,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "decimal": {
+                                  "scale": 0,
+                                  "precision": 19,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "fixedChar": {
+                                  "length": 1,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "fixedChar": {
+                                  "length": 1,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "date": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "date": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "date": {
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "fixedChar": {
+                                  "length": 25,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "fixedChar": {
+                                  "length": 10,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              },
+                              {
+                                "varchar": {
+                                  "length": 44,
+                                  "typeVariationReference": 0,
+                                  "nullability": "NULLABILITY_NULLABLE"
+                                }
+                              }
+                            ],
+                            "typeVariationReference": 0,
+                            "nullability": "NULLABILITY_REQUIRED"
+                          }
+                        },
+                        "namedTable": {
+                          "names": [
+                            "LINEITEM"
+                          ]
+                        }
+                      }
+                    },
+                    "expression": {
+                      "literal": {
+                        "boolean": true,
+                        "nullable": false
+                      }
+                    },
+                    "type": "JOIN_TYPE_INNER"
+                  }
+                },
+                "condition": {
+                  "scalarFunction": {
+                    "functionReference": 0,
+                    "arguments": [
+                      { "value": {
+                        "scalarFunction": {
+                          "functionReference": 1,
+                          "arguments": [
+                            { "value": {
+                              "selection": {
+                                "directReference": {
+                                  "structField": {
+                                    "field": 9
+                                  }
+                                },
+                                "rootReference": {
+                                }
+                              }}
+                            },
+                            { "value": {
+                              "selection": {
+                                "directReference": {
+                                  "structField": {
+                                    "field": 0
+                                  }
+                                },
+                                "rootReference": {
+                                }
+                              }}
+                            }
+                          ],
+                          "outputType": {
+                            "bool": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          }
+                        }}
+                      },
+                      { "value": {
+                        "scalarFunction": {
+                          "functionReference": 2,
+                          "arguments": [
+                            { "value": {
+                              "selection": {
+                                "directReference": {
+                                  "structField": {
+                                    "field": 0
+                                  }
+                                },
+                                "rootReference": {
+                                }
+                              }}
+                            },
+                            { "value": {
+                              "cast": {
+                                "type": {
+                                  "i64": {
+                                    "typeVariationReference": 0,
+                                    "nullability": "NULLABILITY_REQUIRED"
+                                  }
+                                },
+                                "input": {
+                                  "literal": {
+                                    "i32": 10000,
+                                    "nullable": false
+                                  }
+                                }
+                              }}
+                            }
+                          ],
+                          "outputType": {
+                            "bool": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_REQUIRED"
+                            }
+                          }
+                        }}
+                      }
+                    ],
+                    "outputType": {
+                      "bool": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "groupings": [
+              {
+                "groupingExpressions": []
+              }
+            ],
+            "measures": [
+              {
+                "measure": {
+                  "functionReference": 3,
+                  "arguments": [],
+                  "sorts": [],
+                  "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+                  "outputType": {
+                    "i64": {
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "EXPR$0"
+        ]
+      }
+    }
+  ],
+  "expectedTypeUrls": []
+}

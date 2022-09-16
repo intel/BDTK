@@ -1,0 +1,238 @@
+{
+    "extensionUris": [
+        {
+            "extensionUriAnchor": 2,
+            "uri": "/functions_arithmetic.yaml"
+        },
+        {
+            "extensionUriAnchor": 1,
+            "uri": "/functions_arithmetic_decimal.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 0,
+                "name": "subtract:opt_dec_dec"
+            }
+        },
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 1,
+                "name": "multiply:opt_dec_dec"
+            }
+        },
+        {
+            "extensionFunction": {
+                "extensionUriReference": 2,
+                "functionAnchor": 2,
+                "name": "divide:opt_i32_i32"
+            }
+        }
+    ],
+    "relations": [
+        {
+            "root": {
+                "input": {
+                    "project": {
+                        "common": {
+                            "emit": {
+                                "outputMapping": [
+                                    6
+                                ]
+                            }
+                        },
+                        "input": {
+                            "read": {
+                                "common": {
+                                    "direct": {}
+                                },
+                                "baseSchema": {
+                                    "names": [
+                                        "INTEGER_COL",
+                                        "BIGINT_COL",
+                                        "FLOAT_COL",
+                                        "DOUBLE_COL",
+                                        "TINYINT_COL",
+                                        "SMALLINT_COL"
+                                    ],
+                                    "struct": {
+                                        "types": [
+                                            {
+                                                "i32": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "i64": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "fp32": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "fp64": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "i8": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "i16": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            }
+                                        ],
+                                        "typeVariationReference": 0,
+                                        "nullability": "NULLABILITY_REQUIRED"
+                                    }
+                                },
+                                "namedTable": {
+                                    "names": [
+                                        "TEST"
+                                    ]
+                                }
+                            }
+                        },
+                        "expressions": [
+                            {
+                                "scalarFunction": {
+                                    "functionReference": 0,
+                                    "args": [],
+                                    "outputType": {
+                                        "decimal": {
+                                            "scale": 2,
+                                            "precision": 13,
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_REQUIRED"
+                                        }
+                                    },
+                                    "arguments": [
+                                        {
+                                            "value": {
+                                                "scalarFunction": {
+                                                    "functionReference": 1,
+                                                    "args": [],
+                                                    "outputType": {
+                                                        "decimal": {
+                                                            "scale": 2,
+                                                            "precision": 12,
+                                                            "typeVariationReference": 0,
+                                                            "nullability": "NULLABILITY_REQUIRED"
+                                                        }
+                                                    },
+                                                    "arguments": [
+                                                        {
+                                                            "value": {
+                                                                "cast": {
+                                                                    "type": {
+                                                                        "decimal": {
+                                                                            "scale": 1,
+                                                                            "precision": 11,
+                                                                            "typeVariationReference": 0,
+                                                                            "nullability": "NULLABILITY_REQUIRED"
+                                                                        }
+                                                                    },
+                                                                    "input": {
+                                                                        "literal": {
+                                                                            "i32": 4,
+                                                                            "nullable": false,
+                                                                            "typeVariationReference": 0
+                                                                        }
+                                                                    },
+                                                                    "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "value": {
+                                                                "literal": {
+                                                                    "decimal": {
+                                                                        "value": "DwAAAAAAAAAAAAAAAAAAAA==",
+                                                                        "precision": 2,
+                                                                        "scale": 1
+                                                                    },
+                                                                    "nullable": false,
+                                                                    "typeVariationReference": 0
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "value": {
+                                                "cast": {
+                                                    "type": {
+                                                        "decimal": {
+                                                            "scale": 2,
+                                                            "precision": 12,
+                                                            "typeVariationReference": 0,
+                                                            "nullability": "NULLABILITY_REQUIRED"
+                                                        }
+                                                    },
+                                                    "input": {
+                                                        "scalarFunction": {
+                                                            "functionReference": 2,
+                                                            "args": [],
+                                                            "outputType": {
+                                                                "i32": {
+                                                                    "typeVariationReference": 0,
+                                                                    "nullability": "NULLABILITY_REQUIRED"
+                                                                }
+                                                            },
+                                                            "arguments": [
+                                                                {
+                                                                    "value": {
+                                                                        "literal": {
+                                                                            "i32": 23,
+                                                                            "nullable": false,
+                                                                            "typeVariationReference": 0
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "value": {
+                                                                        "literal": {
+                                                                            "i32": 11,
+                                                                            "nullable": false,
+                                                                            "typeVariationReference": 0
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    },
+                                                    "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "names": [
+                    "EXPR$0"
+                ]
+            }
+        }
+    ],
+    "expectedTypeUrls": []
+}
