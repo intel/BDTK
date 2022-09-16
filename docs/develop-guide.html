@@ -1,0 +1,836 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Cider Developer Guide &#8212; Cider 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cider User Guide" href="user-guide.html" />
+    <link rel="prev" title="Cider in 10 minutes" href="cider-in-10-min.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="user-guide.html" title="Cider User Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cider-in-10-min.html" title="Cider in 10 minutes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cider-developer-guide">
+<h1>Cider Developer Guide<a class="headerlink" href="#cider-developer-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-to-build">
+<h2>1 How to build<a class="headerlink" href="#how-to-build" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="build-modular-sql">
+<h3>1.1 Build Modular SQL<a class="headerlink" href="#build-modular-sql" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line"><strong>Prerequisite:</strong></div>
+<div class="line">Install docker and set proxy according to the guidance in:</div>
+<div class="line"><a class="reference external" href="https://docs.docker.com/config/daemon/systemd/">https://docs.docker.com/config/daemon/systemd/</a></div>
+<div class="line"><a class="reference external" href="https://docs.docker.com/network/proxy/">https://docs.docker.com/network/proxy/</a></div>
+</div>
+<ol class="arabic simple">
+<li>Clone repo locally</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: ${workdir}</span>
+<span class="c1"># omnisci</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">intel</span><span class="o">-</span><span class="n">innersource</span><span class="o">/</span><span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">omnisci</span><span class="o">.</span><span class="n">git</span> <span class="o">-</span><span class="n">b</span> <span class="n">develop</span>
+<span class="n">pushd</span> <span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">omnisci</span>
+<span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
+<span class="n">popd</span>
+
+<span class="c1"># presto</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">intel</span><span class="o">-</span><span class="n">innersource</span><span class="o">/</span><span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">presto</span><span class="o">.</span><span class="n">git</span> <span class="o">-</span><span class="n">b</span> <span class="n">cider</span>
+<span class="n">pushd</span> <span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">presto</span>
+<span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
+<span class="n">popd</span>
+
+<span class="c1"># velox-plugin</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">intel</span><span class="o">-</span><span class="n">innersource</span><span class="o">/</span><span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">velox</span><span class="o">-</span><span class="n">plugin</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pushd</span> <span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">velox</span><span class="o">-</span><span class="n">plugin</span>
+<span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
+<span class="n">popd</span>
+
+<span class="c1"># others</span>
+<span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">.</span><span class="n">m2</span><span class="o">/</span><span class="n">repository</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li>Build an image from a Dockerfile</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># WORKDIR: ${path_to_velox_plugin}/scripts/docker_build
+docker build -t ${image_name} .
+
+# Note: if you are building image behind proxy, please add such docker build args:
+# --build-arg HttpProxyHost=your.proxy.server --build-arg HttpsProxyHost=your.proxy.server --build-arg HttpProxyPort=your.proxy.server --build-arg HttpsProxyPort=your.proxy.port
+
+# Start a docker container for development
+docker run -d --name ${container_name} --privileged=true -v ${path_to_omnisci}:/workspace/omnisci -v ${path_to_presto}:/workspace/presto -v ${path_to_velox_plugin}:/workspace/velox-plugin -v ${workdir}/.m2/repository:/root/.m2/repository ${image_name} /usr/sbin/init
+# Tips: you can run with more CPU cores to accelerate building time
+# docker run -d ... ${image_name} --cpus=&quot;30&quot; /usr/sbin/init
+
+docker exec -it ${container_name} /bin/bash
+</pre></div>
+</div>
+<p><em>Note: files used for building image are from omnisci and presto,
+details are as follows:</em></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>.
+├── Dockerfile
+├── scripts-omnisci
+│   (from frameworks.ai.modular-sql.omnisci/scripts)
+│   ├── common-functions.sh
+│   ├── llvm-9-glibc-2.31-708430.patch
+│   └── mapd-deps-ubuntu.sh
+└── scripts-presto
+    (from frameworks.ai.modular-sql.presto/presto-native-execution)
+    ├── scripts
+    │   └── setup-ubuntu.sh
+    └── velox
+        └── scripts
+            └── setup-ubuntu.sh
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Build in container</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># omnisci</span>
+<span class="c1"># WORKDIR: /workspace/omnisci</span>
+<span class="o">./</span><span class="n">build</span><span class="o">-</span><span class="n">omnisci</span><span class="o">-</span><span class="n">debug</span><span class="o">.</span><span class="n">sh</span>
+
+<span class="c1"># presto</span>
+<span class="c1"># WORKDIR: /workspace/presto/presto-native-execution</span>
+<span class="n">make</span> <span class="n">debug</span>
+<span class="c1"># run `make help` to see details</span>
+
+<span class="c1"># velox-plugin</span>
+<span class="c1"># should be built after omnisci</span>
+<span class="c1"># WORKDIR: /workspace/velox-plugin</span>
+<span class="n">export</span> <span class="n">OMNISCI_SOURCE_PATH</span><span class="o">=/</span><span class="n">workspace</span><span class="o">/</span><span class="n">omnisci</span>
+<span class="n">bash</span> <span class="n">build</span><span class="o">-</span><span class="n">velox</span><span class="o">-</span><span class="n">plugin</span><span class="o">-</span><span class="n">debug</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+<p><em>Note: presto and velox-plugin should be based on the same version of
+velox</em></p>
+<ol class="arabic simple" start="4">
+<li>Setup ssh for debugging</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start ssh server in the docker</span>
+<span class="n">systemctl</span> <span class="n">start</span> <span class="n">ssh</span>
+<span class="n">ssh</span><span class="o">-</span><span class="n">keygen</span> <span class="o">-</span><span class="n">t</span> <span class="n">rsa</span> <span class="c1"># help create .ssh folder</span>
+<span class="n">systemctl</span> <span class="n">enable</span> <span class="n">ssh</span>
+<span class="c1"># Configure bypass ssh to docker</span>
+<span class="c1"># Configure remote debug referring https://www.jianshu.com/p/0f2fb935a9a1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="build-jni">
+<h3>1.2 Build JNI<a class="headerlink" href="#build-jni" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Build the ominisci</li>
+<li>Copy the libciderjni.so to java/ciderJNI/target/classes</li>
+<li>In the java/ciderJNI run mvn package again to build the jni jar</li>
+</ul>
+</div>
+<div class="section" id="build-java">
+<h3>1.3 Build Java<a class="headerlink" href="#build-java" title="Permalink to this headline">¶</a></h3>
+<p>TODO:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>COMMAND ${MVN_PATH_COMMAND} ${MVN_EXECUTABLE} -l ${CMAKE_BINARY_DIR}/mvn_build.log -e clean install -Dthrift.version=&quot;${Thrift_VERSION}&quot; -Dmaven.compiler.showDeprecation=true -Dmaven.compiler.showWarnings=true -Domnisci.release.version=&quot;${OMNISCI_JAR_RELEASE_VERSION}&quot; -Djava.net.preferIPv4Stack=true -Dmaven.wagon.http.retryHandler.count=3
+</pre></div>
+</div>
+<p><a class="reference external" href="https://github.com/Intel-bigdata/omniscidb/blob/master/CMakeLists.txt#L940">https://github.com/Intel-bigdata/omniscidb/blob/master/CMakeLists.txt#L940</a></p>
+</div>
+</div>
+<div class="section" id="how-to-run-unit-tests">
+<h2>2 How to run unit tests<a class="headerlink" href="#how-to-run-unit-tests" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-to-run-all-unit-tests">
+<h3>2.1 How to run all unit tests<a class="headerlink" href="#how-to-run-all-unit-tests" title="Permalink to this headline">¶</a></h3>
+<p>For omnisci:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: /workspace/omnisci/build-$BUILD_TYPE</span>
+<span class="n">cd</span> <span class="n">Tests</span>
+<span class="n">mkdir</span> <span class="o">./</span><span class="n">tmp</span>
+<span class="n">ctest</span> <span class="o">-</span><span class="n">V</span>
+</pre></div>
+</div>
+<p>For presto:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: /workspace/presto/presto-native-execution</span>
+<span class="n">make</span> <span class="n">unittest</span>
+</pre></div>
+</div>
+<p>For velox-plugin:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># WORKDIR: /workspace/velox-plugin/build-$BUILD_TYPE
+export OMNISCI_SOURCE_PATH=/workspace/omnisci
+export LD_LIBRARY_PATH=$OMNISCI_SOURCE_PATH/build-$BUILD_TYPE/Embedded:$OMNISCI_SOURCE_PATH/build-$BUILD_TYPE/Cider:$OMNISCI_SOURCE_PATH/build-$BUILD_TYPE/Generator:$LD_LIBRARY_PATH
+
+mkdir QueryEngine
+cp $OMNISCI_SOURCE_PATH/build-Debug/QueryEngine/*.bc QueryEngine
+cd test
+ctest -V
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-to-run-a-single-unit-test">
+<h3>2.2 How to run a single unit test<a class="headerlink" href="#how-to-run-a-single-unit-test" title="Permalink to this headline">¶</a></h3>
+<p>Follow the steps mentioned in <a class="reference external" href="#2.1">How to run all unit tests</a>
+without step <code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-V</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">XXXtest</span>
+</pre></div>
+</div>
+<p>Then configure GDB with the built test binaries, like following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+    {
+      &quot;name&quot;: &quot;${name_of_this_configuration}&quot;,
+      &quot;type&quot;: &quot;cppdbg&quot;,
+      &quot;request&quot;: &quot;launch&quot;,
+      &quot;program&quot;: &quot;${path_to_the_test_you_want_to_debug}&quot;,
+      &quot;args&quot;: [],
+      &quot;stopAtEntry&quot;: false,
+      &quot;cwd&quot;: &quot;${workspaceFolder}&quot;,
+      &quot;environment&quot;: [],
+      &quot;externalConsole&quot;: false,
+      &quot;MIMode&quot;: &quot;gdb&quot;,
+      &quot;setupCommands&quot;: [
+          {
+              &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,
+              &quot;text&quot;: &quot;-enable-pretty-printing&quot;,
+              &quot;ignoreFailures&quot;: true
+          }
+      ]
+    }
+    ]
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-to-run-on-gpu">
+<h3>2.3 How to run on GPU<a class="headerlink" href="#how-to-run-on-gpu" title="Permalink to this headline">¶</a></h3>
+<p>TODO: &#64;Ye Yuqiang to give (July 15th)</p>
+</div>
+</div>
+<div class="section" id="how-to-install">
+<h2>3 How to install<a class="headerlink" href="#how-to-install" title="Permalink to this headline">¶</a></h2>
+<p>TODO:</p>
+</div>
+<div class="section" id="how-to-debug">
+<h2>4 How to debug<a class="headerlink" href="#how-to-debug" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="debug-omniscidb-in-vscode">
+<h3>4.1 Debug omniscidb in vscode<a class="headerlink" href="#debug-omniscidb-in-vscode" title="Permalink to this headline">¶</a></h3>
+<p>Enable debug option when make: <code class="docutils literal notranslate"><span class="pre">cmake</span>&#160; <span class="pre">-DCMAKE_BUILD_TYPE=Debug</span> <span class="pre">..</span></code>
+Rerun scripts <code class="docutils literal notranslate"><span class="pre">/conda/build-install-all.sh</span></code> (with conda active)
+Configure <code class="docutils literal notranslate"><span class="pre">.vscode/launch.json</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.BUILDRUN_
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+        {
+            &quot;name&quot;: &quot;g++ - Build and debug active file&quot;,
+            &quot;type&quot;: &quot;cppdbg&quot;,
+            &quot;request&quot;: &quot;launch&quot;,
+            &quot;program&quot;: &quot;${workspaceFolder}/build/Tests/${fileBasenameNoExtension}&quot;,
+            &quot;args&quot;: [],
+            &quot;stopAtEntry&quot;: true,
+            &quot;cwd&quot;: &quot;${fileDirname}&quot;,
+            &quot;environment&quot;: [
+                {
+                    &quot;name&quot;:&quot;LD_LIBRARY_PATH&quot;,
+                    &quot;value&quot;:&quot;/root/anaconda3/envs/omnisci-dev/lib&quot;
+                }
+            ],
+            &quot;externalConsole&quot;: false,
+            &quot;MIMode&quot;: &quot;gdb&quot;,
+            &quot;setupCommands&quot;: [
+                {
+                    &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,
+                    &quot;text&quot;: &quot;-enable-pretty-printing&quot;,
+                    &quot;ignoreFailures&quot;: true
+                }
+            ],
+            &quot;miDebuggerPath&quot;: &quot;/usr/bin/gdb&quot;
+        }
+    ]
+}
+</pre></div>
+</div>
+<p>Then “Run and debug”</p>
+</div>
+<div class="section" id="debug-in-clion">
+<h3>4.2 Debug in CLion<a class="headerlink" href="#debug-in-clion" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Configure Toolchain</li>
+<li>Configure CMake, set build type as <code class="docutils literal notranslate"><span class="pre">Debug</span></code> and build directory to
+be “build” <em>Note: you should have already built omnisci binary under
+“build” dir, otherwise, you need configure Clion bundled cmake task
+to launch build task.</em></li>
+<li>Choose ExecuteTest for example and start debug, set up breakpoints
+and step in/over</li>
+</ol>
+</div>
+<div class="section" id="remote-debug-in-docker-image-with-clion">
+<h3>4.3 Remote debug in Docker image with Clion<a class="headerlink" href="#remote-debug-in-docker-image-with-clion" title="Permalink to this headline">¶</a></h3>
+<p>TODO:</p>
+</div>
+</div>
+<div class="section" id="how-to-get-llvm-ir">
+<h2>5 How to get LLVM IR<a class="headerlink" href="#how-to-get-llvm-ir" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line">Use <code class="docutils literal notranslate"><span class="pre">HighCardinalityGroupByTest.cpp</span></code> as an example, execute binary
+file (using patch from
+<a class="reference external" href="https://github.com/Intel-bigdata/omniscidb/pull/4">https://github.com/Intel-bigdata/omniscidb/pull/4</a>)</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">HighCardinalityGroupByTest</span></code> with command line parameters
+<code class="docutils literal notranslate"><span class="pre">--log-severity-clog=DEBUG4</span> <span class="pre">--log-channels=IR</span></code> you should be able to
+get some log in stderr.</div>
+<div class="line">Besides, add an extra cmake compile option <code class="docutils literal notranslate"><span class="pre">-DENABLE_JIT_DEBUG=ON</span></code>
+in the file <code class="docutils literal notranslate"><span class="pre">script/conda/build.sh</span></code> and replace <code class="docutils literal notranslate"><span class="pre">LOG(IR)</span></code> with
+<code class="docutils literal notranslate"><span class="pre">VLOG(1)</span></code> on <code class="docutils literal notranslate"><span class="pre">NativeCodegen.cpp</span></code> Line 2830-2840, then rebuild
+code. (ideally enable <code class="docutils literal notranslate"><span class="pre">-log-channels=IR</span></code> should equal to
+<code class="docutils literal notranslate"><span class="pre">LOG(DEBUG)</span></code>, but didn’t take effect in my dev env, so I change
+source code)</div>
+</div>
+<div class="line-block">
+<div class="line">Omnisci Logger introduce:</div>
+<div class="line"><a class="reference external" href="https://omnisci.github.io/omniscidb/components/logger.html">https://omnisci.github.io/omniscidb/components/logger.html</a></div>
+</div>
+</div>
+<div class="section" id="how-to-run-simple-examples-with-prestodb-in-dev-environment">
+<h2>6 How to run simple examples with Prestodb in DEV environment<a class="headerlink" href="#how-to-run-simple-examples-with-prestodb-in-dev-environment" title="Permalink to this headline">¶</a></h2>
+<p>Follow steps in <a class="reference external" href="#1.3">Build JNI</a>. And use example demo code from
+branch <a class="reference external" href="https://github.com/intel-bigdata/presto/tree/cider">https://github.com/intel-bigdata/presto/tree/cider</a>.</p>
+<div class="section" id="configure-hive-metastore">
+<h3>6.1 Configure Hive MetaStore<a class="headerlink" href="#configure-hive-metastore" title="Permalink to this headline">¶</a></h3>
+<p>Follow the steps from
+<a class="reference external" href="https://prestodb.io/docs/current/installation/deployment.html#configuring-presto">https://prestodb.io/docs/current/installation/deployment.html#configuring-presto</a>
+to install Hive metastore (requiring HDFS pre-installed)</p>
+<p>Download and extract the binary tarball of Hive. For example, download
+and untar <code class="docutils literal notranslate"><span class="pre">apache-hive-&lt;VERSION&gt;-bin.tar.gz</span></code></p>
+<p>You only need to launch Hive Metastore to serve Presto catalog
+information such as table schema and partition location. If it is the
+first time to launch the Hive Metastore, prepare corresponding
+configuration files and environment, also initialize a new Metastore:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export HIVE_HOME=`pwd`
+cp conf/hive-default.xml.template conf/hive-site.xml
+mkdir -p hcatalog/var/log/
+# only required for the first time
+bin/schematool -dbType derby -initSchema
+</pre></div>
+</div>
+<p>Start a Hive Metastore which will run in the background and listen on
+port 9083 (by default).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hcatalog</span><span class="o">/</span><span class="n">sbin</span><span class="o">/</span><span class="n">hcat_server</span><span class="o">.</span><span class="n">sh</span> <span class="n">start</span>
+<span class="c1"># Output:</span>
+<span class="c1"># Started metastore server init, testing if initialized correctly...</span>
+<span class="c1"># Metastore initialized successfully on port[9083].</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="prepare-omniscidb-as-library">
+<h3>6.2 Prepare OmnisciDB as library<a class="headerlink" href="#prepare-omniscidb-as-library" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="set-up-meta-data-for-ominiscidb">
+<h4>6.2.1 Set up meta data for OminisciDB<a class="headerlink" href="#set-up-meta-data-for-ominiscidb" title="Permalink to this headline">¶</a></h4>
+<p>This is current workaround. Before you start presto server, add extra
+env variables: <code class="docutils literal notranslate"><span class="pre">INITDB_PATH=/path/to/initdb</span></code> (In CiderEntry
+constructor will use this env. If you didn’t set, you will get
+<code class="docutils literal notranslate"><span class="pre">std::basic_string</span> <span class="pre">null</span></code> related error)</p>
+</div>
+<div class="section" id="resolve-dependency">
+<h4>6.2.2 Resolve dependency<a class="headerlink" href="#resolve-dependency" title="Permalink to this headline">¶</a></h4>
+<p>Copy <code class="docutils literal notranslate"><span class="pre">$OMNISCI_BUILD_DIR/bin</span></code>, <code class="docutils literal notranslate"><span class="pre">QueryEngine/</span></code> to <code class="docutils literal notranslate"><span class="pre">$JAVA_HOME/</span></code>
+Initdb will call <code class="docutils literal notranslate"><span class="pre">calcite.jar</span></code>, and <code class="docutils literal notranslate"><span class="pre">calcite.jar</span></code> may need
+<code class="docutils literal notranslate"><span class="pre">queryEngine/*.ast</span></code> files</p>
+</div>
+</div>
+<div class="section" id="configure-prestodb-server-and-run-some-example-queries">
+<h3>6.3 Configure Prestodb server and run some example queries<a class="headerlink" href="#configure-prestodb-server-and-run-some-example-queries" title="Permalink to this headline">¶</a></h3>
+<p>Follow steps from
+<a class="reference external" href="https://github.com/intel-bigdata/presto/tree/cider#running-presto-in-your-ide">https://github.com/intel-bigdata/presto/tree/cider#running-presto-in-your-ide</a></p>
+<div class="section" id="running-with-ide">
+<h4>6.3.1 Running with IDE<a class="headerlink" href="#running-with-ide" title="Permalink to this headline">¶</a></h4>
+<p>After building Presto for the first time, you can load the project into
+your IDE and run the server. We recommend using <a class="reference external" href="http://www.jetbrains.com/idea/">IntelliJ
+IDEA</a>. Because Presto is a standard
+Maven project, you can import it into your IDE using the root
+<code class="docutils literal notranslate"><span class="pre">pom.xml</span></code> file. In IntelliJ, choose Open Project from the Quick Start
+box or choose Open from the File menu and select the root <code class="docutils literal notranslate"><span class="pre">pom.xml</span></code>
+file.</p>
+<p>After opening the project in IntelliJ, double check that the Java SDK is
+properly configured for the project: * Open the File menu and select
+Project Structure * In the SDKs section, ensure that a 1.8 JDK is
+selected (create one if none exist) * In the Project section, ensure
+the Project language level is set to 8.0 as Presto makes use of several
+Java 8 language features</p>
+<p>Presto comes with sample configuration that should work out-of-the-box
+for development. Use the following options to create a run
+configuration: * Main Class: com.facebook.presto.server.PrestoServer *
+VM Options:
+<code class="docutils literal notranslate"><span class="pre">-ea</span> <span class="pre">-XX:+UseG1GC</span> <span class="pre">-XX:G1HeapRegionSize=32M</span> <span class="pre">-XX:+UseGCOverheadLimit</span> <span class="pre">-XX:+ExplicitGCInvokesConcurrent</span> <span class="pre">-Xmx2G</span> <span class="pre">-Dconfig=etc/config.properties</span> <span class="pre">-Dlog.levels-file=etc/log.properties</span></code>
+* Working directory: <code class="docutils literal notranslate"><span class="pre">$MODULE_DIR$</span></code> * Use classpath of module:
+presto-main</p>
+<p>The working directory should be the <code class="docutils literal notranslate"><span class="pre">presto-main</span></code> subdirectory. In
+IntelliJ, using <code class="docutils literal notranslate"><span class="pre">$MODULE_DIR$</span></code> accomplishes this automatically.
+Additionally, the Hive plugin must be configured with location of your
+Hive metastore Thrift service. Add the following to the list of VM
+options, replacing <code class="docutils literal notranslate"><span class="pre">localhost:9083</span></code> with the correct host and port (or
+use the below value if you do not have a Hive metastore):
+<code class="docutils literal notranslate"><span class="pre">-Dhive.metastore.uri=thrift://localhost:9083</span></code></p>
+</div>
+<div class="section" id="how-to-improve-prestodb-initialization-speed">
+<h4>6.3.2 How to improve Prestodb initialization speed<a class="headerlink" href="#how-to-improve-prestodb-initialization-speed" title="Permalink to this headline">¶</a></h4>
+<p>Speed up presto init Presto server will load a lot plugin and it will
+resolve dependency from maven central repo and this is really slow. A
+solution is to modify this class and bypass resolve step.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">-</span><span class="n">b</span> <span class="n">offline</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jikunshang</span><span class="o">/</span><span class="n">resolver</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">resolver</span>
+<span class="n">mvn</span> <span class="n">clean</span> <span class="n">install</span> <span class="o">-</span><span class="n">DskipTests</span><span class="o">=</span><span class="n">true</span>
+<span class="c1"># change resolver version in pom file</span>
+<span class="c1"># presto/pom.xml L931    &lt;version&gt;1.4&lt;/version&gt; -&gt;   &lt;version&gt;1.7-SNAPSHOT&lt;/version&gt;</span>
+<span class="n">And</span> <span class="n">you</span> <span class="n">can</span> <span class="n">remove</span> <span class="n">unnecessary</span> <span class="n">catlog</span><span class="o">/</span><span class="n">connector</span> <span class="n">by</span> <span class="n">remove</span> <span class="n">source</span><span class="o">/</span><span class="n">presto</span><span class="o">-</span><span class="n">main</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">catalog</span><span class="o">/*.</span><span class="n">properties</span> <span class="ow">and</span> <span class="n">source</span><span class="o">/</span><span class="n">presto</span><span class="o">-</span><span class="n">main</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">catalog</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">properties</span>  <span class="n">plugin</span><span class="o">.</span><span class="n">bundles</span><span class="o">=</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-filter-project-queries-with-cli">
+<h4>6.3.3 Running filter/project queries with CLI<a class="headerlink" href="#running-filter-project-queries-with-cli" title="Permalink to this headline">¶</a></h4>
+<p>Start the CLI to connect to the server and run SQL queries:
+<code class="docutils literal notranslate"><span class="pre">presto-cli/target/presto-cli-*-executable.jar</span></code> Run a query to see the
+nodes in the cluster:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="o">*</span> <span class="n">FROM</span> <span class="n">system</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">nodes</span><span class="p">;</span>
+
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">create</span> <span class="n">table</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">a</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span> <span class="n">double</span><span class="p">,</span> <span class="n">c</span> <span class="nb">int</span><span class="p">)</span> <span class="n">WITH</span> <span class="p">(</span><span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;ORC&#39;</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">INSERT</span> <span class="n">INTO</span> <span class="n">test</span> <span class="n">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="nb">set</span> <span class="n">session</span> <span class="n">hive</span><span class="o">.</span><span class="n">pushdown_filter_enabled</span><span class="o">=</span><span class="n">true</span><span class="p">;</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">select</span> <span class="o">*</span> <span class="kn">from</span> <span class="nn">hive.default.test</span> <span class="n">where</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-join-queries-with-cli">
+<h4>6.3.4 Running join queries with CLI<a class="headerlink" href="#running-join-queries-with-cli" title="Permalink to this headline">¶</a></h4>
+<p>Start the CLI to connect to the server and run SQL queries:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">presto</span><span class="o">-</span><span class="n">cli</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">presto</span><span class="o">-</span><span class="n">cli</span><span class="o">-*-</span><span class="n">executable</span><span class="o">.</span><span class="n">jar</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">create</span> <span class="n">table</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc1</span><span class="p">(</span><span class="n">a</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span> <span class="n">double</span><span class="p">,</span> <span class="n">c</span> <span class="nb">int</span><span class="p">)</span> <span class="n">WITH</span> <span class="p">(</span><span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;ORC&#39;</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">INSERT</span> <span class="n">INTO</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc1</span> <span class="n">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">SESSION</span> <span class="n">join_distribution_type</span> <span class="o">=</span> <span class="s1">&#39;PARTITIONED&#39;</span><span class="p">;</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">create</span> <span class="n">table</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc2</span> <span class="p">(</span><span class="n">a</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span> <span class="n">double</span><span class="p">,</span> <span class="n">c</span> <span class="nb">int</span><span class="p">)</span> <span class="n">WITH</span> <span class="p">(</span><span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;ORC&#39;</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">INSERT</span> <span class="n">INTO</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc2</span> <span class="n">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">select</span> <span class="o">*</span> <span class="kn">from</span> <span class="nn">hive.default.test_orc1</span> <span class="n">l</span><span class="p">,</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc2</span> <span class="n">r</span> <span class="n">where</span> <span class="n">l</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">a</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="how-to-run-simple-examples-with-prestodb-in-distributed-environment">
+<h2>7 How to run simple examples with Prestodb in distributed environment<a class="headerlink" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Create a folder to install omnisci files, for example <code class="docutils literal notranslate"><span class="pre">omnisci</span></code></p>
+</li>
+<li><div class="first line-block">
+<div class="line">Copy the lib folder under the conda omnisci build environment to
+every node, for example, copy
+<code class="docutils literal notranslate"><span class="pre">/root/anaconda3/envs/omnisci-dev/lib/</span></code> folder to
+<code class="docutils literal notranslate"><span class="pre">/path/to/omnisci</span></code> on every Prestodb node</div>
+</div>
+</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">anaconda3</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">omnisci</span><span class="o">-</span><span class="n">dev</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">ominisci</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Copy the <code class="docutils literal notranslate"><span class="pre">calcite-1.0-SNAPSHOT-jar-with-dependencies.jar</span></code> from the
+omnisci build folder to the folder bin</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci_sourcecode</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">calcite</span><span class="o">-</span><span class="mf">1.0</span><span class="o">-</span><span class="n">SNAPSHOT</span><span class="o">-</span><span class="n">jar</span><span class="o">-</span><span class="k">with</span><span class="o">-</span><span class="n">dependencies</span><span class="o">.</span><span class="n">jar</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci</span><span class="o">/</span><span class="nb">bin</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li>Copy the <code class="docutils literal notranslate"><span class="pre">ExtensionFunctions.ast</span></code>, <code class="docutils literal notranslate"><span class="pre">GeosRuntime.bc</span></code> and
+<code class="docutils literal notranslate"><span class="pre">RuntimeFunctions.bc</span></code> from the QueryEngine folder under the
+omnisci build folder to QueryEngine folder</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci_sourcecode</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">QueryEngine</span><span class="o">/</span><span class="n">ExtensionFunctions</span><span class="o">.</span><span class="n">ast</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci</span><span class="o">/</span><span class="n">QueryEngine</span>
+<span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci_sourcecode</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">QueryEngine</span><span class="o">/</span><span class="n">GeosRuntime</span><span class="o">.</span><span class="n">bc</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci</span><span class="o">/</span><span class="n">QueryEngine</span>
+<span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci_sourcecode</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">QueryEngine</span><span class="o">/</span><span class="n">RuntimeFunctions</span><span class="o">.</span><span class="n">bc</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci</span><span class="o">/</span><span class="n">QueryEngine</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li>Copy the libDBEngine.so from Embedded folder under the omnisci build
+folder to lib folder</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci_sourcecode</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">Embedded</span><span class="o">/</span><span class="n">libDBEngine</span><span class="o">.</span><span class="n">so</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci</span><span class="o">/</span><span class="n">lib</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="6">
+<li>Copy the libciderjni.so from java/ciderJNI/src/main/native/ folder
+under the omnisci build folder to lib folder</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci_sourcecode</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">java</span><span class="o">/</span><span class="n">ciderJNI</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="o">/</span><span class="n">native</span><span class="o">/</span><span class="n">libciderjni</span><span class="o">.</span><span class="n">so</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">omnisci</span><span class="o">/</span><span class="n">lib</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="7">
+<li>Set the LD_LIBRARY_PATH environment variable include the lib folder.</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export LD_LIBRARY_PATH=/path/to/omnisci/lib:$LD_LIBRARY_PATH
+</pre></div>
+</div>
+<ol class="arabic simple" start="8">
+<li>You may also need include the libjvm.so in your LD_LIBRARY_PATH if
+it is not</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export LD_LIBRARY_PATH= $JAVA_HOME/jre/lib/amd64/server/:$LD_LIBRARY_PATH
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-to-contribute-document">
+<h2>8 How to contribute document<a class="headerlink" href="#how-to-contribute-document" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="introduction">
+<h3>8.1 Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
+<p>Cider documentation uses sphinx to produce html structure.
+The related code is under docs directory on “gh-pages” branch which is implemented in <a class="reference external" href="https://github.com/intel-innersource/frameworks.ai.modular-sql.velox-plugin/pull/144">PR</a></p>
+<p>We can find two directories under “docs/sphinx”, one is “source” which contains all source files including rst files, template files and images, and the other is “build” to where all compiled files are saved.</p>
+<ol class="arabic simple">
+<li>For “source” directory, the root page is from “index.rst”. We describe the structure of whole documentation in it. Others are leaf pages and we have to give the same name as it’s described in root page.</li>
+<li>For “build” directory, the most important is “html” directory where we can find all the html files. The root page is named “index.html” and we can open it directly in our web browser.</li>
+</ol>
+</div>
+<div class="section" id="build-and-commit">
+<h3>8.2 Build and commit<a class="headerlink" href="#build-and-commit" title="Permalink to this headline">¶</a></h3>
+<p>We can simply run “make html” under sphinx folder after we added a rst file to the “source” directory.
+If we want to publish all the changes however, copy all files including directories from “build” folder to “docs” folder and then commit the changes to “gh-pages” branch. Waiting for a couple of minutes, the page will be reloaded automatically by GitHub.</p>
+</div>
+<div class="section" id="external-links">
+<h3>8.3 External links<a class="headerlink" href="#external-links" title="Permalink to this headline">¶</a></h3>
+<p>Last, share some tools and documents, hope it can help:</p>
+<ol class="arabic simple">
+<li>Sphinx quick start: <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/quickstart.html">sphinx-doc</a></li>
+<li>How to write rst(reStructuredText) files: <a class="reference external" href="https://www.devdungeon.com/content/restructuredtext-rst-tutorial-0">rst-tutorial</a></li>
+<li>Transfer markdown to rst: <a class="reference external" href="https://cloudconvert.com/md-to-rst">md-to-rst</a></li>
+</ol>
+</div>
+</div>
+<div class="section" id="troubleshooting">
+<h2>9 Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="omnisci-velox-docker-build-failed-issue">
+<h3>9.1 Omnisci Velox docker build failed issue<a class="headerlink" href="#omnisci-velox-docker-build-failed-issue" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="the-rapidjson-build-failed-issue">
+<h4>9.1.1 The rapidjson build failed issue<a class="headerlink" href="#the-rapidjson-build-failed-issue" title="Permalink to this headline">¶</a></h4>
+<p>error like blow. Fix it by rapidjson/rapidjson/document.h:2244:22: note:
+candidate: ’template rapidjson::GenericDocument&lt;Encoding, Allocator,
+StackAllocator&gt;&amp; rapidjson::GenericDocument&lt;Encoding, Allocator,
+StackAllocator&gt;::Parse(const Ch<em>) [with unsigned int parseFlags =
+parseFlags; Encoding = rapidjson::UTF8&lt;&gt;; Allocator =
+rapidjson::MemoryPoolAllocator&lt;&gt;; StackAllocator =
+rapidjson::CrtAllocator]’ 2244 | GenericDocument&amp; Parse(const Ch</em> str)
+{ | ^~~~~</p>
+</div>
+<div class="section" id="maven-cant-parse-proxy-correctly">
+<h4>9.1.2 Maven can’t parse proxy correctly<a class="headerlink" href="#maven-cant-parse-proxy-correctly" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">If it raises error related to proxy by Maven, please ensure your
+settings.xml file (usually ${user.home}/.m2/settings.xml) is secured
+with permissions appropriate for your operating system.</div>
+<div class="line">Reference: <a class="reference external" href="https://maven.apache.org/guides/mini/guide-proxies.html">https://maven.apache.org/guides/mini/guide-proxies.html</a></div>
+</div>
+</div>
+<div class="section" id="the-velox-build-failed-issue">
+<h4>9.1.3 The Velox build failed issue<a class="headerlink" href="#the-velox-build-failed-issue" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>If it raises error on the code in
+omniscidb/Catalog/OptionsContainer.h (80-85), please change
+it to: <code class="docutils literal notranslate"><span class="pre">options.Parse(options_json.c_str());</span></code></li>
+<li><dl class="first docutils">
+<dt>If it raises error on the code in velox/velox/core/Context.h,</dt>
+<dd>please modified the corresponding code like this:</dd>
+</dl>
+</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>enum class ContextScope { GLOBAL, SESSION, QUERY, SCOPESTACK };
+saying: expected identifier before ‘,’ token, please make a modification:
+enum class UseCase {
+DEV = 1,
+TEST = 2,
+PROD = 3,
+};
+
+#ifdef GLOBAL
+#undef GLOBAL
+#endif
+enum class ContextScope { GLOBAL, SESSION, QUERY, SCOPESTACK };
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="omniscidb-internals">
+<h3>9.2 OmnisciDB internals<a class="headerlink" href="#omniscidb-internals" title="Permalink to this headline">¶</a></h3>
+<p>Most materials are available at Links:
+<a class="reference external" href="https://omnisci.github.io/omniscidb/execution/scheduler.html">https://omnisci.github.io/omniscidb/execution/scheduler.html</a> #### 8.2.1
+Joins The most of hash join related code is in
+<code class="docutils literal notranslate"><span class="pre">QueryEngine/JoinHashTable</span></code>. Base class for join hash table HashJoin
+is in <code class="docutils literal notranslate"><span class="pre">QueryEngine/JoinHashTable/HashJoin.h</span></code>. Join hash tables map key
+to row ID. For hash tables build LLVM JIT is not used, it’s done by
+static code which can be found at <code class="docutils literal notranslate"><span class="pre">QueryEngine/JoinHashTable/Runtime</span></code>.
+Hash table classes also have code generation methods used as callbacks
+by Executor (codegenSlot and codegenMatchingSet). The first part of join
+processing starts in <code class="docutils literal notranslate"><span class="pre">Executor::buildJoinLoops</span></code> at
+<code class="docutils literal notranslate"><span class="pre">QueryEngine/IRCodegen.cpp</span></code>. OmniSci can execute nested joins in a
+single step, so we might have multiple joins processed there. In this
+function we determine what kind of join will be used (hash-join or
+loop-join) and build all required hash join tables. For each join we
+build JoinLoop structure which is later used for code generation. This
+structure holds a type of join, algorithm to be used (has-join with
+one-to-one matching, hash-join with one-to-many matching, loop-join) and
+callbacks to generate code parts.</p>
+<p>The second part is code generation, done by
+<code class="docutils literal notranslate"><span class="pre">Executor::codegenJoinLoops</span></code>. Join loops code is generated in
+<code class="docutils literal notranslate"><span class="pre">JoinLoop::codegen</span></code> at <code class="docutils literal notranslate"><span class="pre">QueryEngine/LoopControlFlow/JoinLoop.cpp</span></code>.
+For one-to-one hash-join it is a simple hash table probing. For
+loop-join and one-to-many hash-join a loop is generated. Code generation
+uses callbacks stored in JoinLoop structure to access hash tables and
+determine iteration boundaries. E. g. for one-to-many join hash tables a
+callback function calls <code class="docutils literal notranslate"><span class="pre">HashJoin::codegenMatchingSet</span></code>, which
+generates code to access the table and provides a pointer to the matched
+entry and a number of rows in the entry. For loop-join these values are
+simply passed to the generated function in its arguments.</p>
+<div class="section" id="groupby">
+<h4>9.2.2 GroupBy<a class="headerlink" href="#groupby" title="Permalink to this headline">¶</a></h4>
+<p>Aggregation is performed using hash tables whose structure is similar to
+ones used for one-to-one hash join tables (again, perfect and baseline
+versions are used). They map group key to collected aggregates. Prior
+code execution all aggregates in a table are set to their initial
+values. It’s done by static code. Basic algorithm for aggregation
+computation (per each input row):</p>
+<ul class="simple">
+<li>Map group key to hash table entry. For perfect hash tables we simply
+call dynamically generated perfect hash function. For baseline hash
+we use MurmurHash and linear probing</li>
+<li>For each aggregate call a corresponding runtime function to collect
+input value</li>
+</ul>
+<p>Start point for aggregate code generation is <code class="docutils literal notranslate"><span class="pre">GroupByAndAggregate</span></code>
+class implemented in <code class="docutils literal notranslate"><span class="pre">QueryEngine/GroupByAndAggregate.cpp</span></code>, but there
+are also other related places,
+e.g.&nbsp;<code class="docutils literal notranslate"><span class="pre">TargetExprCodegen::codegenAggregate</span></code> in
+<code class="docutils literal notranslate"><span class="pre">QueryEngine/TargetExprBuilder.cpp</span></code> (this method generates a proper
+runtime function call to collect values in an aggregate). Runtime
+functions are in <code class="docutils literal notranslate"><span class="pre">QueryEngine/RuntimeFunctions.cpp</span></code> and
+<code class="docutils literal notranslate"><span class="pre">QueryEngine/GroupByRuntime.cpp</span></code>. These files are compiled into LLVM
+binary code which is then used by JIT compiler so that runtime functions
+can be inlined into dynamic code. For hash-join table OmniSci uses
+multi-threaded build of a single table. GroupBy execution doesn’t
+support it (we have plans to add this feature though) and therefore
+after execution we get multiple hash tables with collected aggregates
+which have to be reduced. Entry point for reduction is
+<code class="docutils literal notranslate"><span class="pre">Executor::reduceMultiDeviceResults</span></code> in <code class="docutils literal notranslate"><span class="pre">QueryEngine/Execute.cpp</span></code>.
+Most of reduction related code is in
+<code class="docutils literal notranslate"><span class="pre">QueryEngine/ResultSetReduction*.cpp</span></code> files. Reduction can be done by
+LLVM JIT compiled module or by ReductionInterpreter. Interpreter is used
+for small result sets, when code generation and compilation overhead is
+likely to exceed reduction time. #### 8.2.3 Code Generation</p>
+</div>
+<div class="section" id="gpu-difference-against-cpu">
+<h4>9.2.4 GPU difference against CPU<a class="headerlink" href="#gpu-difference-against-cpu" title="Permalink to this headline">¶</a></h4>
+<p>&#64;Ye Yuqiang</p>
+</div>
+<div class="section" id="prestodb-internals">
+<h4>9.2.5 Prestodb Internals<a class="headerlink" href="#prestodb-internals" title="Permalink to this headline">¶</a></h4>
+</div>
+</div>
+</div>
+<div class="section" id="code-style-check">
+<h2>10 Code Style Check<a class="headerlink" href="#code-style-check" title="Permalink to this headline">¶</a></h2>
+<p>Code style check will be triggered automatically after you submit a PR. So please ensure your PR does not break any of these workflows. It runs <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">format-check</span></code>, <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">header-check</span></code> as part of our continuous integration.
+Pull requests should pass <code class="docutils literal notranslate"><span class="pre">format-check</span></code> and <code class="docutils literal notranslate"><span class="pre">header-check</span></code> without errors before being accepted.</p>
+<p>More details can be found at <a class="reference external" href="https://github.com/intel-innersource/frameworks.ai.modular-sql.velox-plugin/blob/40591b915bfee8068749218725f9c95a4704bacd/ci/scripts/run_cpplint.py">ci/scripts/run_cpplint.py</a></p>
+</div>
+<div class="section" id="future-work-discussion">
+<h2>11 Future Work Discussion<a class="headerlink" href="#future-work-discussion" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="clang-frontend-vs-irbuilder">
+<h3>11.1 Clang frontend VS. IRBuilder<a class="headerlink" href="#clang-frontend-vs-irbuilder" title="Permalink to this headline">¶</a></h3>
+<p>From Impala <a class="reference external" href="http://sites.computer.org/debull/A14mar/p31.pdf">http://sites.computer.org/debull/A14mar/p31.pdf</a></p>
+<p>Instead of using the IRBuilder to construct query-specific functions, we
+generally prefer to compile a C++ function to IR using Clang, then
+inject query-specific information into the function at runtime. This
+allows us to write functions in C++ rather than constructing them
+instruction by instruction using the IRBuilder. We also cross-compile
+the functions to both IR and native code, allowing us to easily run
+either the interpreted or codegenerated version. This is useful for
+debugging: we can isolate whether a bug is due to code generation or the
+function itself, and the native functions can be debugged using gdb.</p>
+<p>Currently, our only mechanism for modifying compiled IR function is to
+replace function calls to interpreted functions with calls to equivalent
+query-specific generated functions. This is how we remove virtual
+functions calls as described in Section 2. For example, we cross compile
+many of the virtual functions implementing each expression type to both
+IR and native code. When running with code generation disabled, the
+native functions are run as-is, using the interpreted general-purpose
+expression implementations. When code generation is enabled, we
+recursively find all calls to child expressions and replace them with
+calls to code-generated functions. Of course, this technique alone
+doesn’t allow us to take full advantage of code generation. It doesn’t
+help us with many of the techniques described in section 2, such as
+removing conditionals and loads.</p>
+<p>For now we generate functions that benefit from these techniques using
+the IRBuilder. However, we are currently developing a new framework for
+modifying precompiled IR functions. Returning to to the
+MaterializeTuple() example in Figure 1, the main optimizations we would
+like to perform on the interpreted code in order to take advantage of
+runtime information are (1) to unroll the for loop using the known num
+slots variable, so we can replace each iteration with iteration-specific
+runtime information, and (2) to replace accesses of offsets and types
+with the actual values. Once we have a framework for these
+transformations, we will be able to implement code-generated functions
+more easily and quickly than we can with the IRBuilder.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Cider Developer Guide</a><ul>
+<li><a class="reference internal" href="#how-to-build">1 How to build</a><ul>
+<li><a class="reference internal" href="#build-modular-sql">1.1 Build Modular SQL</a></li>
+<li><a class="reference internal" href="#build-jni">1.2 Build JNI</a></li>
+<li><a class="reference internal" href="#build-java">1.3 Build Java</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-run-unit-tests">2 How to run unit tests</a><ul>
+<li><a class="reference internal" href="#how-to-run-all-unit-tests">2.1 How to run all unit tests</a></li>
+<li><a class="reference internal" href="#how-to-run-a-single-unit-test">2.2 How to run a single unit test</a></li>
+<li><a class="reference internal" href="#how-to-run-on-gpu">2.3 How to run on GPU</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-install">3 How to install</a></li>
+<li><a class="reference internal" href="#how-to-debug">4 How to debug</a><ul>
+<li><a class="reference internal" href="#debug-omniscidb-in-vscode">4.1 Debug omniscidb in vscode</a></li>
+<li><a class="reference internal" href="#debug-in-clion">4.2 Debug in CLion</a></li>
+<li><a class="reference internal" href="#remote-debug-in-docker-image-with-clion">4.3 Remote debug in Docker image with Clion</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-get-llvm-ir">5 How to get LLVM IR</a></li>
+<li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-dev-environment">6 How to run simple examples with Prestodb in DEV environment</a><ul>
+<li><a class="reference internal" href="#configure-hive-metastore">6.1 Configure Hive MetaStore</a></li>
+<li><a class="reference internal" href="#prepare-omniscidb-as-library">6.2 Prepare OmnisciDB as library</a><ul>
+<li><a class="reference internal" href="#set-up-meta-data-for-ominiscidb">6.2.1 Set up meta data for OminisciDB</a></li>
+<li><a class="reference internal" href="#resolve-dependency">6.2.2 Resolve dependency</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configure-prestodb-server-and-run-some-example-queries">6.3 Configure Prestodb server and run some example queries</a><ul>
+<li><a class="reference internal" href="#running-with-ide">6.3.1 Running with IDE</a></li>
+<li><a class="reference internal" href="#how-to-improve-prestodb-initialization-speed">6.3.2 How to improve Prestodb initialization speed</a></li>
+<li><a class="reference internal" href="#running-filter-project-queries-with-cli">6.3.3 Running filter/project queries with CLI</a></li>
+<li><a class="reference internal" href="#running-join-queries-with-cli">6.3.4 Running join queries with CLI</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment">7 How to run simple examples with Prestodb in distributed environment</a></li>
+<li><a class="reference internal" href="#how-to-contribute-document">8 How to contribute document</a><ul>
+<li><a class="reference internal" href="#introduction">8.1 Introduction</a></li>
+<li><a class="reference internal" href="#build-and-commit">8.2 Build and commit</a></li>
+<li><a class="reference internal" href="#external-links">8.3 External links</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">9 Troubleshooting</a><ul>
+<li><a class="reference internal" href="#omnisci-velox-docker-build-failed-issue">9.1 Omnisci Velox docker build failed issue</a><ul>
+<li><a class="reference internal" href="#the-rapidjson-build-failed-issue">9.1.1 The rapidjson build failed issue</a></li>
+<li><a class="reference internal" href="#maven-cant-parse-proxy-correctly">9.1.2 Maven can’t parse proxy correctly</a></li>
+<li><a class="reference internal" href="#the-velox-build-failed-issue">9.1.3 The Velox build failed issue</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#omniscidb-internals">9.2 OmnisciDB internals</a><ul>
+<li><a class="reference internal" href="#groupby">9.2.2 GroupBy</a></li>
+<li><a class="reference internal" href="#gpu-difference-against-cpu">9.2.4 GPU difference against CPU</a></li>
+<li><a class="reference internal" href="#prestodb-internals">9.2.5 Prestodb Internals</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#code-style-check">10 Code Style Check</a></li>
+<li><a class="reference internal" href="#future-work-discussion">11 Future Work Discussion</a><ul>
+<li><a class="reference internal" href="#clang-frontend-vs-irbuilder">11.1 Clang frontend VS. IRBuilder</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cider-in-10-min.html"
+                        title="previous chapter">Cider in 10 minutes</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="user-guide.html"
+                        title="next chapter">Cider User Guide</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/develop-guide.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="user-guide.html" title="Cider User Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cider-in-10-min.html" title="Cider in 10 minutes"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Intel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
