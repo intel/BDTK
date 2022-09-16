@@ -67,6 +67,7 @@ set(CIDER_PLAN_PARSER_SRCS
     PlanContext.cpp
     VariableContext.cpp
     RelVisitor.cpp
-    PlanRelVisitor.cpp)
+    PlanRelVisitor.cpp
+    CiderSort.cpp)
 add_library(cider_plan_parser STATIC ${CIDER_PLAN_PARSER_SRCS})
 target_link_libraries(cider_plan_parser substrait cider_util fmt::fmt)

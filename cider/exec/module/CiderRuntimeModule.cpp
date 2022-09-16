@@ -259,6 +259,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
       }
     }
   }
+
   std::free(col_buffers);
   if (error_code_ != 0) {
     CIDER_THROW(CiderRuntimeException, getErrorMessageFromCode(error_code_));
@@ -604,6 +605,10 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
       group_by_agg_iterator_ ? kMoreOutput : kNoMoreOutput,
       std::move(std::make_unique<CiderBatch>(
           setSchemaAndUpdateCountDistinctResIfNeed(std::move(groupby_agg_result)))));
+}
+
+SortInfo CiderRuntimeModule::getSortInfo() {
+  return ciderCompilationResult_->impl_->rel_alg_exe_unit_->sort_info;
 }
 
 CiderAggHashTableRowIteratorPtr CiderRuntimeModule::getGroupByAggHashTableIteratorAt(

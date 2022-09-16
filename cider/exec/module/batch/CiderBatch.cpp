@@ -295,3 +295,149 @@ bool CiderBatch::isNullable() const {
 
   return holder->needNullVector();
 }
+
+void CiderBatch::sort(const SortInfo& sort_info) {
+  if (is_sorted_ || sort_info.order_entries.size() == 0) {
+    return;
+  }
+  // get result table
+  int row_num = row_num_;
+  int col_num = column_num();
+  auto types = schema_->getColumnTypes();
+  std::vector<std::vector<int8_t*>> table_ptr_vec = getTableVec();
+  // sort result table
+  generator::ResultSetComparator rsc = generator::ResultSetComparator(sort_info, types);
+  std::sort(table_ptr_vec.begin(), table_ptr_vec.end(), rsc);
+  // rewrite table by table_ptr_vec
+  reWriteTable(table_ptr_vec, types);
+  is_sorted_ = true;
+}
+
+std::vector<std::vector<int8_t*>> CiderBatch::getTableVec() {
+  int row_num = row_num_;
+  int col_num = column_num();
+  auto types = schema_->getColumnTypes();
+  std::vector<std::vector<int8_t*>> table_ptr_vec;
+  table_ptr_vec.reserve(row_num);
+  for (int i = 0; i < row_num; i++) {
+    std::vector<int8_t*> row_vec;
+    row_vec.reserve(col_num);
+    for (int j = 0; j < col_num; j++) {
+      auto type = types[j];
+      switch (type.kind_case()) {
+        case ::substrait::Type::KindCase::kBool:
+        case ::substrait::Type::KindCase::kI8:
+          row_vec.push_back((int8_t*)&((int8_t*)(table_ptr_[j]))[i]);
+          break;
+        case ::substrait::Type::KindCase::kI16:
+          row_vec.push_back((int8_t*)&((int16_t*)(table_ptr_[j]))[i]);
+          break;
+        case ::substrait::Type::KindCase::kI32:
+          row_vec.push_back((int8_t*)&((int32_t*)(table_ptr_[j]))[i]);
+          break;
+        case ::substrait::Type::KindCase::kI64:
+        case ::substrait::Type::KindCase::kDate:
+          row_vec.push_back((int8_t*)&((int64_t*)(table_ptr_[j]))[i]);
+          break;
+        case ::substrait::Type::KindCase::kFp32:
+          row_vec.push_back((int8_t*)&((float*)(table_ptr_[j]))[i]);
+          break;
+        case ::substrait::Type::KindCase::kFp64:
+        case ::substrait::Type::KindCase::kDecimal:
+          row_vec.push_back((int8_t*)&((double*)(table_ptr_[j]))[i]);
+          break;
+        default:
+          throw std::runtime_error("Not supported type to print value!");
+      }
+    }
+    table_ptr_vec.push_back(row_vec);
+  }
+  return std::move(table_ptr_vec);
+}
+
+void CiderBatch::printTable(const std::vector<std::vector<int8_t*>>& table_ptr_vec) {
+  int row_num = row_num_;
+  int col_num = column_num();
+  auto types = schema_->getColumnTypes();
+  std::stringstream ss;
+  ss << "row num: " << row_num << ", column num: " << col_num << ".\n";
+  for (int i = 0; i < row_num; i++) {
+    for (int j = 0; j < col_num; j++) {
+      auto type = types[j];
+      switch (type.kind_case()) {
+        case ::substrait::Type::KindCase::kBool:
+        case ::substrait::Type::KindCase::kI8:
+          ss << *(int8_t*)table_ptr_vec[i][j] << "\t";
+          break;
+        case ::substrait::Type::KindCase::kI16:
+          ss << *(int16_t*)table_ptr_vec[i][j] << "\t";
+          break;
+        case ::substrait::Type::KindCase::kI32:
+          ss << *(int32_t*)table_ptr_vec[i][j] << "\t";
+          break;
+        case ::substrait::Type::KindCase::kI64:
+        case ::substrait::Type::KindCase::kDate:
+          ss << *(int64_t*)table_ptr_vec[i][j] << "\t";
+          break;
+        case ::substrait::Type::KindCase::kFp32:
+          ss << *(float*)table_ptr_vec[i][j] << "\t";
+          break;
+        case ::substrait::Type::KindCase::kFp64:
+        case ::substrait::Type::KindCase::kDecimal:
+          ss << *(double*)table_ptr_vec[i][j] << "\t";
+          break;
+        default:
+          throw std::runtime_error("Not supported type to print value!");
+      }
+    }
+    ss << "\n";
+  }
+  std::cout << ss.str() << std::endl;
+}
+
+#define SWAP_VALUE(C_TYPE)                          \
+  {                                                 \
+    C_TYPE* buff = (C_TYPE*)table_ptr_[i];          \
+    std::vector<C_TYPE> tmp;                        \
+    tmp.reserve(row_num);                           \
+    for (int j = 0; j < row_num; j++) {             \
+      tmp.push_back(*(C_TYPE*)table_ptr_vec[j][i]); \
+    }                                               \
+    for (int k = 0; k < row_num; k++) {             \
+      buff[k] = tmp[k];                             \
+    }                                               \
+    break;                                          \
+  }
+
+void CiderBatch::reWriteTable(const std::vector<std::vector<int8_t*>>& table_ptr_vec,
+                              const std::vector<substrait::Type>& types) {
+  int row_num = row_num_;
+  int col_num = column_num();
+  for (int i = 0; i < col_num; i++) {
+    const auto& type = types[i];
+    switch (type.kind_case()) {
+      case ::substrait::Type::KindCase::kBool:
+      case ::substrait::Type::KindCase::kI8:
+        SWAP_VALUE(int8_t)
+      case ::substrait::Type::KindCase::kI16:
+        SWAP_VALUE(int16_t)
+      case ::substrait::Type::KindCase::kI32:
+        SWAP_VALUE(int32_t)
+      case ::substrait::Type::KindCase::kI64:
+      case ::substrait::Type::KindCase::kDate:
+        SWAP_VALUE(int64_t)
+      case ::substrait::Type::KindCase::kFp32:
+        SWAP_VALUE(float)
+      case ::substrait::Type::KindCase::kFp64:
+      case ::substrait::Type::KindCase::kDecimal:
+        SWAP_VALUE(double)
+      case ::substrait::Type::KindCase::kFixedChar:
+      case ::substrait::Type::KindCase::kVarchar:
+      case ::substrait::Type::KindCase::kString: {
+        break;
+      }
+      default:
+        throw std::runtime_error("Not supported type to print value!");
+    }
+  }
+}
