@@ -47,17 +47,20 @@ VeloxPlanNodePtr PlanUtil::cloneJoinNodeWithNewSources(VeloxPlanNodePtr node,
                                                 right,
                                                 hashJoinNode->outputType());
   } else if (auto mergeJoinNode = std::dynamic_pointer_cast<const MergeJoinNode>(node)) {
-    return std::make_shared<const MergeJoinNode>(hashJoinNode->id(),
-                                                 hashJoinNode->joinType(),
-                                                 hashJoinNode->leftKeys(),
-                                                 hashJoinNode->rightKeys(),
-                                                 hashJoinNode->filter(),
+    return std::make_shared<const MergeJoinNode>(mergeJoinNode->id(),
+                                                 mergeJoinNode->joinType(),
+                                                 mergeJoinNode->leftKeys(),
+                                                 mergeJoinNode->rightKeys(),
+                                                 mergeJoinNode->filter(),
                                                  left,
                                                  right,
-                                                 hashJoinNode->outputType());
+                                                 mergeJoinNode->outputType());
   } else if (auto crossJoinNode = std::dynamic_pointer_cast<const CrossJoinNode>(node)) {
     return std::make_shared<const CrossJoinNode>(
-        crossJoinNode->id(), left, right, hashJoinNode->outputType());
+        crossJoinNode->id(), left, right, crossJoinNode->outputType());
+  } else {
+    throw std::runtime_error(
+        "Clone velox plannode:Not supported velox Join plannode type.");
   }
   return nullptr;
 }
@@ -75,6 +78,16 @@ VeloxPlanNodePtr PlanUtil::cloneNodeWithNewSource(VeloxPlanNodePtr node,
         partitionOutputNode->partitionFunctionFactory(),
         partitionOutputNode->outputType(),
         source);
+  } else if (auto lPartitionNode =
+                 std::dynamic_pointer_cast<const LocalPartitionNode>(node)) {
+    std::vector<PlanNodePtr> sources = {source};
+    return std::make_shared<const LocalPartitionNode>(
+        lPartitionNode->id(),
+        lPartitionNode->type(),
+        lPartitionNode->partitionFunctionFactory(),
+        lPartitionNode->outputType(),
+        sources,
+        lPartitionNode->inputTypeFromSource());
   } else if (auto aggNode = std::dynamic_pointer_cast<const AggregationNode>(node)) {
     return std::make_shared<const AggregationNode>(aggNode->id(),
                                                    aggNode->step(),
@@ -112,8 +125,28 @@ VeloxPlanNodePtr PlanUtil::cloneNodeWithNewSource(VeloxPlanNodePtr node,
                                              source);
   } else if (auto valuesNode = std::dynamic_pointer_cast<const ValuesNode>(node)) {
     return std::make_shared<ValuesNode>(valuesNode->id(), valuesNode->values());
+  } else if (auto mergeExceNode =
+                 std::dynamic_pointer_cast<const MergeExchangeNode>(node)) {
+    return std::make_shared<MergeExchangeNode>(mergeExceNode->id(),
+                                               mergeExceNode->outputType(),
+                                               mergeExceNode->sortingKeys(),
+                                               mergeExceNode->sortingOrders());
+  } else if (auto exchangeNode = std::dynamic_pointer_cast<const ExchangeNode>(node)) {
+    return std::make_shared<ExchangeNode>(exchangeNode->id(), exchangeNode->outputType());
+  } else if (auto tableScanNode = std::dynamic_pointer_cast<const TableScanNode>(node)) {
+    return std::make_shared<TableScanNode>(tableScanNode->id(),
+                                           tableScanNode->outputType(),
+                                           tableScanNode->tableHandle(),
+                                           tableScanNode->assignments());
+  } else if (auto assignUniqueIdNode =
+                 std::dynamic_pointer_cast<const AssignUniqueIdNode>(node)) {
+    return std::make_shared<AssignUniqueIdNode>(assignUniqueIdNode->id(),
+                                                std::string{assignUniqueIdNode->name()},
+                                                assignUniqueIdNode->taskUniqueId(),
+                                                source);
   } else {
-    return nullptr;
+    throw std::runtime_error("Clone velox plannode: Not supported velox plannode type[" +
+                             std::string(typeid(node).name()) + "]");
   }
 }
 
