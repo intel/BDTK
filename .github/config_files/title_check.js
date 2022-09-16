@@ -96,6 +96,6 @@ module.exports = async ({github, context}) => {
   if (!haveISSUESID(title)) {
     await commentOpenIssue(github, context, pullRequestNumber);
   } else {
-    commentJIRAURL(github, context, pullRequestNumber, detectJIRAID(title))
+    // commentJIRAURL(github, context, pullRequestNumber, detectJIRAID(title))
   }
 };
