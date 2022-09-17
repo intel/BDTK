@@ -478,8 +478,6 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr, bool is_partial_av
                              var_expr->get_which_row(),
                              var_expr->get_varno());
   }
-  // FIXME: should handle differently for Var and ColumnVar
-  // TODO: need consider about join
   if (auto column_var_expr = std::dynamic_pointer_cast<Analyzer::ColumnVar>(expr)) {
     return new Analyzer::ColumnVar(column_var_expr->get_type_info(),
                                    column_var_expr->get_table_id(),
