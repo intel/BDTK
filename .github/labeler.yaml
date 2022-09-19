@@ -17,27 +17,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-publicApi:
-  - "cider/Cider/**/*"
+API:
+  - "cider/include/cider/**/*"
 
 cider:
-  - "cider/Analyzer/**/*"
-  - "cider/BufferProvider/**/*"
-  - "cider/cmake/**/*"
-  - "cider/DataProvider/**/*"
-  - "cider/Examples/**/*"
-  - "cider/Generator/**/*"
-  - "cider/Logger/**/*"
-  - "cider/NvidiaComputeCapability/**/*"
-  - "cider/OSDependent/**/*"
-  - "cider/QueryEngine/**/*"
-  - "cider/SchemaMgr/**/*"
-  - "cider/Shared/**/*"
-  - "cider/StringDictionary/**/*"
-  - "cider/Utils/**/*"
+  - "cider/examples/**/*"
+  - "cider/include/**/*"
+  - "cider/exec/**/*"
+  - "cider/function/**/*"
+  - "cider/type/**/*"
+  - "cider/util/**/*"
   - "cider/CMakeLists.txt"
 
-veloxIntegration:
+velox_plugin:
   - "cider-velox/src/**/*"
   - "cider-velox/CMakeLists.txt"
 
@@ -49,10 +41,11 @@ CICD:
   - "ci/**/*"
   - ".github/**/*"
 
-Test:
+test:
   - "cider-velox/test/**/*" 
-  - "cider/Tests/**/*"
+  - "cider/tests/**/*"
 
 benchmark:
   - "cider-velox/benchmark/**/*" 
+  - "cider/benchmarks/**/*" 
 
