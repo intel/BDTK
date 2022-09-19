@@ -19,8 +19,9 @@
  * under the License.
  */
 
-#include "CiderPlanNode.h"
 #include <mutex>
+
+#include "CiderPlanNode.h"
 #include "CiderPlanNodeTranslator.h"
 #include "cider/CiderException.h"
 #include "substrait/plan.pb.h"

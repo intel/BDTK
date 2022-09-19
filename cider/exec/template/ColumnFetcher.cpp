@@ -134,8 +134,8 @@ JoinColumn ColumnFetcher::makeJoinColumn(
     if (g_enable_non_kernel_time_query_interrupt &&
         executor->checkNonKernelTimeInterrupted()) {
       CIDER_THROW(CiderRuntimeException,
-                  "Query execution failed with error code " +
-                      std::to_string(Executor::ERR_INTERRUPTED));
+                  fmt::format("Query execution failed with error code {}",
+                              std::to_string(Executor::ERR_INTERRUPTED)));
     }
     auto [col_buff, elem_count] = getOneColumnFragment(
         executor,

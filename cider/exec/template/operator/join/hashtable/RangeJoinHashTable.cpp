@@ -244,9 +244,10 @@ std::shared_ptr<BaselineHashTable> RangeJoinHashTable::initHashTableOnCpu(
                                               getKeyComponentCount());
   ts2 = std::chrono::steady_clock::now();
   if (err) {
-    CIDER_THROW(CiderHashJoinException,
-                "Unrecognized error when initializing CPU range join hash table (" +
-                    std::to_string(err) + ")");
+    CIDER_THROW(
+        CiderHashJoinException,
+        fmt::format("Unrecognized error when initializing CPU range join hash table ({})",
+                    err));
   }
   std::shared_ptr<BaselineHashTable> hash_table = builder.getHashTable();
   auto hashtable_build_time =

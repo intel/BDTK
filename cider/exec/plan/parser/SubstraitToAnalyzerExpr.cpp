@@ -92,9 +92,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case substrait::Expression::RexTypeCase::kIfThen:
       return toAnalyzerExpr(s_expr.if_then(), function_map, expr_map_ptr);
     default:
-      CIDER_THROW(
-          CiderRuntimeException,
-          "Unsupported expression type " + std::to_string(s_expr.rex_type_case()));
+      CIDER_THROW(CiderRuntimeException,
+                  fmt::format("Unsupported expression type {}", s_expr.rex_type_case()));
   }
 }
 
@@ -577,8 +576,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
 
     default:
       CIDER_THROW(CiderRuntimeException,
-                  "Unsupported literal_type in Omnisci " +
-                      std::to_string(s_literal_expr.literal_type_case()));
+                  fmt::format("Unsupported literal_type in Omnisci {}",
+                              s_literal_expr.literal_type_case()));
   }
 }
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(

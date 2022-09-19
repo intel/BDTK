@@ -755,10 +755,10 @@ void OverlapsJoinHashTable::reifyWithLayout(const HashType layout) {
         VLOG(1) << "Could not find suitable overlaps join parameters to create hash "
                    "table under max allowed size ("
                 << overlaps_max_table_size_bytes << ") bytes.";
-        CIDER_THROW(
-            CiderHashJoinException,
-            "Could not create overlaps hash table with less than max allowed size of " +
-                std::to_string(overlaps_max_table_size_bytes) + " bytes");
+        CIDER_THROW(CiderHashJoinException,
+                    fmt::format("Could not create overlaps hash table with less than max "
+                                "allowed size of {} bytes",
+                                overlaps_max_table_size_bytes));
       }
 
       VLOG(1) << "Final tuner output: " << tuner << " with properties " << crt_props;
@@ -1101,9 +1101,10 @@ std::shared_ptr<BaselineHashTable> OverlapsJoinHashTable::initHashTableOnCpu(
                                               getKeyComponentCount());
   ts2 = std::chrono::steady_clock::now();
   if (err) {
-    CIDER_THROW(CiderHashJoinException,
-                "Unrecognized error when initializing CPU overlaps hash table (" +
-                    std::to_string(err) + ")");
+    CIDER_THROW(
+        CiderHashJoinException,
+        fmt::format("Unrecognized error when initializing CPU overlaps hash table ({})",
+                    err));
   }
   std::shared_ptr<BaselineHashTable> hash_table = builder.getHashTable();
   if (skip_hashtable_caching) {

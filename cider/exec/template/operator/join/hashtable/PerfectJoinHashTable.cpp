@@ -415,7 +415,7 @@ void PerfectJoinHashTable::reifyForDevice(const ChunkKey& chunk_key,
     if (err) {
       CIDER_THROW(
           CiderCompileException,
-          "Unexpected error building one to many hash table: " + std::to_string(err));
+          fmt::format("Unexpected error building one to many hash table: {}", err));
     }
   }
 }

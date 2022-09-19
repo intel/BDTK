@@ -59,7 +59,7 @@ std::string getFunctionName(const std::unordered_map<int, std::string> function_
   if (function == function_map.end()) {
     CIDER_THROW(
         CiderCompileException,
-        "Failed to find function with id in map: " + std::to_string(function_reference));
+        fmt::format("Failed to find function with id in map: {}", function_reference));
   }
   return function->second;
 }
@@ -104,7 +104,7 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Type& s_type) {
       return SQLTypeInfo(SQLTypes::kTEXT, not_null);
     default:
       CIDER_THROW(CiderCompileException,
-                  "Unsupported type " + std::to_string(s_type.kind_case()));
+                  fmt::format("Unsupported type {}", s_type.kind_case()));
   }
 }
 
@@ -146,9 +146,8 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Expression_Literal& s_literal_expr) 
     case substrait::Expression_Literal::LiteralTypeCase::kIntervalDayToSecond:
       return SQLTypeInfo(SQLTypes::kINTERVAL_DAY_TIME);
     default:
-      CIDER_THROW(
-          CiderCompileException,
-          "Unsupported type " + std::to_string(s_literal_expr.literal_type_case()));
+      CIDER_THROW(CiderCompileException,
+                  fmt::format("Unsupported type {}", s_literal_expr.literal_type_case()));
   }
 }
 
@@ -377,8 +376,8 @@ int getSizeOfOutputColumns(const substrait::Rel& rel_node) {
              getSizeOfOutputColumns(rel_node.join().right());
     default:
       CIDER_THROW(CiderCompileException,
-                  "Couldn't get output column size for " +
-                      std::to_string(rel_node.rel_type_case()));
+                  fmt::format("Couldn't get output column size for {}",
+                              rel_node.rel_type_case()));
   }
 }
 
@@ -418,7 +417,7 @@ int getLeftJoinDepth(const substrait::Plan& plan) {
       default:
         CIDER_THROW(
             CiderCompileException,
-            "Unsupported substrait rel type " + std::to_string(rel_node.rel_type_case()));
+            fmt::format("Unsupported substrait rel type {}", rel_node.rel_type_case()));
     }
   }
   return join_depth;

@@ -180,7 +180,7 @@ std::vector<ConcatenatedRow> CiderBatchChecker::toConcatenatedRowVector(
             break;
           default:
             CIDER_THROW(CiderCompileException,
-                        "Unsupported type " + std::to_string(type.kind_case()));
+                        fmt::format("Unsupported type {}", type.kind_case()));
         }
         if (col_index == col_num - 1) {
           row.finish();

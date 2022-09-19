@@ -128,7 +128,7 @@ if(ENABLE_VELOX_FUNCTION)
 endif()
 
 # TBB
-option(ENABLE_TBB "Enable OneTBB for threading (if found)" OFF)
+option(ENABLE_TBB "Enable OneTBB for threading (if found)" ON)
 set(TBB_LIBS "")
 find_package(TBB)
 if(TBB_FOUND)

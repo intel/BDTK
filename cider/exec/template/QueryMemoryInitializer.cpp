@@ -59,13 +59,13 @@ inline void check_total_bitmap_memory(const QueryMemoryDescriptor& query_mem_des
     // Absurd amount of memory, merely computing the number of bits overflows int64_t.
     // Don't bother to report the real amount, this is unlikely to ever happen.
     CIDER_THROW(CiderOutOfMemoryException,
-                "Not enough CPU memory available to allocate " +
-                    std::to_string(std::numeric_limits<int64_t>::max() / 8) + " bytes");
+                fmt::format("Not enough CPU memory available to allocate {} bytes",
+                            std::numeric_limits<int64_t>::max() / 8));
   }
   if (total_bytes >= g_bitmap_memory_limit) {
-    CIDER_THROW(CiderOutOfMemoryException,
-                "Not enough CPU memory available to allocate " +
-                    std::to_string(total_bytes) + " bytes");
+    CIDER_THROW(
+        CiderOutOfMemoryException,
+        fmt::format("Not enough CPU memory available to allocate {} bytes", total_bytes));
   }
 }
 

@@ -298,7 +298,7 @@ void SubstraitToRelAlgExecutionUnit::updateGeneratorContext(
       default:
         CIDER_THROW(
             CiderCompileException,
-            "Unsupported substrait rel type " + std::to_string(rel_node.rel_type_case()));
+            fmt::format("Unsupported substrait rel type {}", rel_node.rel_type_case()));
     }
     for (auto ctx_element : ctx_elements) {
       ctx_element->accept(rel_visitor_ptr);
@@ -361,7 +361,7 @@ void SubstraitToRelAlgExecutionUnit::getRelNodesInPostOder(
       break;
     default:
       CIDER_THROW(CiderCompileException,
-                  "Unsupported substrait rel type " + std::to_string(rel_type));
+                  fmt::format("Unsupported substrait rel type {}", rel_type));
   }
 }
 
@@ -392,7 +392,7 @@ void SubstraitToRelAlgExecutionUnit::generateCtxElements(
         break;
       default:
         CIDER_THROW(CiderCompileException,
-                    "Unsupported substrait rel type " + std::to_string(rel_type));
+                    fmt::format("Unsupported substrait rel type {}", rel_type));
     }
   }
   // ctx elements should be order to GroupbyContext, InputDescContext, TargetContext,

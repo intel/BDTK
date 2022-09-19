@@ -357,9 +357,10 @@ void BaselineJoinHashTable::reifyForDevice(const ColumnsForDevice& columns_for_d
                                           emitted_keys_count,
                                           device_id);
   if (err) {
-    CIDER_THROW(CiderHashJoinException,
-                "Unrecognized error when initializing baseline hash table (" +
-                    std::to_string(err) + ")");
+    CIDER_THROW(
+        CiderHashJoinException,
+        fmt::format("Unrecognized error when initializing baseline hash table ({})",
+                    err));
   }
 }
 

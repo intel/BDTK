@@ -88,7 +88,7 @@ class TypeUtils {
         GENERATE_SUBSTRAIT_TYPE(Decimal, decimal, nullalbility)
       default:
         CIDER_THROW(CiderCompileException,
-                    "not supported type: " + std::to_string(typeKind));
+                    fmt::format("not supported type: {}", typeKind));
     }
 
     return s_type;

@@ -1512,8 +1512,8 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
       !has_cardinality_estimation && !eo.just_explain) {
     const auto col_range_info = group_by_and_aggregate.getColRangeInfo();
     CIDER_THROW(CiderCompileException,
-                "Cardinality Estimation Required : " +
-                    std::to_string(col_range_info.max - col_range_info.min));
+                fmt::format("Cardinality Estimation Required : {}",
+                            col_range_info.max - col_range_info.min));
   }
 
   const bool output_columnar = query_mem_desc->didOutputColumnar();

@@ -67,7 +67,7 @@ class LiteralUtils {
       case ::substrait::Type::KindCase::kVarchar:
       default:
         CIDER_THROW(CiderCompileException,
-                    "not supported literal type: " + std::to_string(typeKind));
+                    fmt::format("not supported literal type {}", typeKind));
     }
     return s_expr;
   }

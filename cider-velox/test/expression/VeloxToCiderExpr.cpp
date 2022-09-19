@@ -145,7 +145,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
   // inputs for FieldAccessTypedExpr is not useful for cider?
   auto it = colInfo.find(vExpr->name());
   if (it == colInfo.end()) {
-    VELOX_ARITHMETIC_ERROR("can't get column index for column " + vExpr->name());
+    VELOX_USER_FAIL("can't get column index for column " + vExpr->name());
   }
   auto colIndex = it->second;
   // Can't get isNullable info from velox expr, we set it default to true

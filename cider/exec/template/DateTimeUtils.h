@@ -66,7 +66,7 @@ constexpr inline int64_t get_timestamp_precision_scale(const int32_t dimen) {
     case 9:
       return kNanoSecsPerSec;
     default:
-      CIDER_THROW(CiderCompileException, "Unknown dimen = " + std::to_string(dimen));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
   }
   return -1;
 }
@@ -80,7 +80,7 @@ constexpr inline int64_t get_dateadd_timestamp_precision_scale(const DateaddFiel
     case daNANOSECOND:
       return kNanoSecsPerSec;
     default:
-      CIDER_THROW(CiderCompileException, "Unknown field = " + std::to_string(field));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown field = {}", field));
   }
   return -1;
 }
@@ -94,7 +94,7 @@ constexpr inline int64_t get_extract_timestamp_precision_scale(const ExtractFiel
     case kNANOSECOND:
       return kNanoSecsPerSec;
     default:
-      CIDER_THROW(CiderCompileException, "Unknown field = " + std::to_string(field));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown field = {}", field));
   }
   return -1;
 }
@@ -124,7 +124,7 @@ const inline std::pair<SQLOps, int64_t> get_dateadd_high_precision_adjusted_scal
         case 3:
           return {kDIVIDE, kMicroSecsPerSec};
         default:
-          CIDER_THROW(CiderCompileException, "Unknown dimen = " + std::to_string(dimen));
+          CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
       }
     case daMICROSECOND:
       switch (dimen) {
@@ -135,7 +135,7 @@ const inline std::pair<SQLOps, int64_t> get_dateadd_high_precision_adjusted_scal
         case 3:
           return {kDIVIDE, kMilliSecsPerSec};
         default:
-          CIDER_THROW(CiderCompileException, "Unknown dimen = " + std::to_string(dimen));
+          CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
       }
     case daMILLISECOND:
       switch (dimen) {
@@ -146,10 +146,10 @@ const inline std::pair<SQLOps, int64_t> get_dateadd_high_precision_adjusted_scal
         case 3:
           return {};
         default:
-          CIDER_THROW(CiderCompileException, "Unknown dimen = " + std::to_string(dimen));
+          CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
       }
     default:
-      CIDER_THROW(CiderCompileException, "Unknown field = " + std::to_string(field));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown field = {}", field));
   }
   return {};
 }

@@ -39,7 +39,7 @@ inline void* checked_malloc(const size_t size) {
   if (!ptr) {
     CIDER_THROW(
         CiderOutOfMemoryException,
-        "Not enough CPU memory available to allocate " + std::to_string(size) + " bytes");
+        fmt::format("Not enough CPU memory available to allocate {} bytes", size));
   }
   return ptr;
 }
@@ -48,8 +48,8 @@ inline void* checked_calloc(const size_t nmemb, const size_t size) {
   auto ptr = calloc(nmemb, size);
   if (!ptr) {
     CIDER_THROW(CiderOutOfMemoryException,
-                "Not enough CPU memory available to allocate " +
-                    std::to_string(nmemb * size) + " bytes");
+                fmt::format("Not enough CPU memory available to allocate {} bytes",
+                            nmemb * size));
   }
   return ptr;
 }

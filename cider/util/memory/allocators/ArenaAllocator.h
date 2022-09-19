@@ -117,9 +117,9 @@ class Arena {
 
   virtual void* allocate(size_t num_bytes) {
     if (size_limit_ != 0 && size_ + num_bytes > size_limit_) {
-      CIDER_THROW(CiderOutOfMemoryException,
-                  "Not enough CPU memory available to allocate " +
-                      std::to_string(num_bytes) + " bytes");
+      CIDER_THROW(
+          CiderOutOfMemoryException,
+          fmt::format("Not enough memory available to allocate {} bytes", num_bytes));
     }
     auto ret = allocator_.allocate(num_bytes);
     size_ += num_bytes;

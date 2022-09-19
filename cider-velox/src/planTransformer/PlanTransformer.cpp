@@ -128,7 +128,11 @@ void PlanTransformer::matchSourceBranch(BranchSrcToTargetIterator& srcBranchIte)
       if (matched.first) {
         VeloxNodeAddrPlanSection matchResult = matched.second;
         if (!matchResult.source.equal(matchStartPos)) {
-          VELOX_UNREACHABLE("Match result should always start from match start point.");
+          VELOX_UNREACHABLE(
+              "Match result should always start from match start point while currently "
+              "match result source nodeId is {} and matchStartPos nodeId is {} .",
+              matchResult.source.nodeId,
+              matchStartPos.nodeId);
         }
         if (acceptMatchResult(matchResult)) {
           if (!hasMatchResult_) {

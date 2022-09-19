@@ -180,7 +180,7 @@ void CiderHasher::copyStringToLocal(UStringVal* uString) {
   }
   if (size > kStringBufferUnitSize) {
     CIDER_THROW(CiderCompileException,
-                "Failed to store a string of lenth " + std::to_string(size));
+                fmt::format("Failed to store a string of lenth {}", size));
   }
   if (uStringValStorage_.empty()) {
     uStringValStorage_.emplace_back();

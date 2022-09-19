@@ -1190,9 +1190,9 @@ Executor::JoinHashTableOrError Executor::buildHashTableForQualifier(
     const RegisteredQueryHint& query_hint,
     const TableIdToNodeMap& table_id_to_node_map) {
   if (g_enable_dynamic_watchdog && interrupted_.load()) {
-    CIDER_THROW(
-        CiderRuntimeException,
-        "Query execution failed with error code " + std::to_string(ERR_INTERRUPTED));
+    CIDER_THROW(CiderRuntimeException,
+                fmt::format("Query execution failed with error code {}",
+                            std::to_string(ERR_INTERRUPTED)));
   }
   try {
     auto tbl = HashJoin::getInstance(qual_bin_oper,
@@ -1295,13 +1295,15 @@ std::tuple<bool, int64_t, int64_t> get_hpt_overflow_underflow_safe_scaled_values
                                              boost::multiprecision::signed_magnitude,
                                              boost::multiprecision::checked,
                                              void>>;
-
+  try {
     auto ret =
         std::make_tuple(true,
                         int64_t(checked_int64_t(chunk_min) * checked_int64_t(scale)),
                         int64_t(checked_int64_t(chunk_max) * checked_int64_t(scale)));
     return ret;
-
+  } catch (const std::overflow_error& e) {
+    // noop
+  }
   return std::make_tuple(false, chunk_min, chunk_max);
 }
 
@@ -1461,9 +1463,9 @@ void Executor::checkPendingQueryStatus(const QuerySessionId& query_session) {
     return;
   }
   if (queries_interrupt_flag_[query_session]) {
-    CIDER_THROW(
-        CiderRuntimeException,
-        "Query execution failed with error code " + std::to_string(ERR_INTERRUPTED));
+    CIDER_THROW(CiderRuntimeException,
+                fmt::format("Query execution failed with error code {}",
+                            std::to_string(ERR_INTERRUPTED)));
   }
 }
 

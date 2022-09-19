@@ -22,12 +22,13 @@
 #ifndef CIDER_CIDEREXCEPTION_H
 #define CIDER_CIDEREXCEPTION_H
 
+#include <fmt/core.h>
 #include <stdexcept>
 #include <string>
 
 // CIDER_THROW(CiderCompileException, "xxx");
 #define CIDER_THROW(type, msg) \
-  throw type("[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]: " + msg)
+  throw type(fmt::format("[{}:{}]: {}", __FILE__, std::to_string(__LINE__), msg))
 
 class CiderException : public std::exception {
  public:

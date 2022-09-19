@@ -352,7 +352,7 @@ void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
           extract_varchar_column(
               start_row, row_num, offsets[i], step, flattened_out, col);
         } else {
-          CIDER_THROW(CiderRuntimeException, "col_len is " + std::to_string(col_len));
+          CIDER_THROW(CiderRuntimeException, fmt::format("col_len is {}", col_len));
         }
         break;
       }

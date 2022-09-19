@@ -287,7 +287,7 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
   size_t num_pages_requested = (num_bytes + page_size_ - 1) / page_size_;
   if (num_pages_requested > max_num_pages_per_slab_) {
     CIDER_THROW(CiderOutOfMemoryException,
-                "Failed to allocate " + std::to_string(num_bytes) + " bytes");
+                fmt::format("Failed to allocate {} bytes", num_bytes));
   }
 
   size_t num_slabs = slab_segments_.size();
@@ -352,7 +352,7 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
 
   if (num_pages_allocated_ == 0 && allocations_capped_) {
     CIDER_THROW(CiderOutOfMemoryException,
-                "Failed to allocate " + std::to_string(num_bytes) + " bytes");
+                fmt::format("Failed to allocate {} bytes", num_bytes));
   }
 
   // If here then we can't add a slab - so we need to evict
@@ -422,7 +422,7 @@ BufferList::iterator BufferMgr::findFreeBuffer(size_t num_bytes) {
                << getStringMgrType() << ":" << device_id_;
     VLOG(2) << printSlabs();
     CIDER_THROW(CiderOutOfMemoryException,
-                "Failed to allocate " + std::to_string(num_bytes) + " bytes");
+                fmt::format("Failed to allocate {} bytes", num_bytes));
   }
   LOG(INFO) << "ALLOCATION failed to find " << num_bytes << "B free. Forcing Eviction."
             << " Eviction start " << best_eviction_start->start_page
@@ -727,7 +727,7 @@ void BufferMgr::checkpoint(const int db_id, const int tb_id) {
   }
 }
 
-/// Returns a pointer to the Buffer holding the chunk, if it exists; otherwise,
+/// Returns a pointer to the Buffer holding the chunk, if it exists.
 AbstractBuffer* BufferMgr::getBuffer(const ChunkKey& key, const size_t num_bytes) {
   std::lock_guard<std::mutex> lock(global_mutex_);  // granular lock
 

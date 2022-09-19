@@ -345,11 +345,13 @@ static int match_arguments(const SQLTypeInfo& arg_type,
       */
     default:
       CIDER_THROW(CiderCompileException,
-                  "support for " + arg_type.get_type_name() +
-                      "(type=" + std::to_string(arg_type.get_type()) + ")" +
-                      +" not implemented: \n  pos=" + std::to_string(sig_pos) +
-                      " max_pos=" + std::to_string(max_pos) + "\n  sig_types=(" +
-                      ExtensionFunctionsWhitelist::toString(sig_types) + ")");
+                  fmt::format("support for {} (type={}) not implemented: \n  pos={} "
+                              "max_pos={}\n  sig_types=({})",
+                              arg_type.get_type_name(),
+                              arg_type.get_type(),
+                              sig_pos,
+                              max_pos,
+                              ExtensionFunctionsWhitelist::toString(sig_types)));
   }
   return -1;
 }

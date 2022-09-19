@@ -85,7 +85,7 @@ void TieredCpuBufferMgr::addSlab(const size_t slab_size) {
         // go to the next allocator.
         slabs_.resize(slabs_.size() - 1);
         CIDER_THROW(CiderOutOfMemoryException,
-                    "Failed to allocate " + std::to_string(slab_size) + " bytes");
+                    fmt::format("Failed to allocate {} bytes", slab_size));
       }
       slab_to_allocator_map_[slabs_.size() - 1] = allocator.get();
       allocated_slab = true;
@@ -102,7 +102,7 @@ void TieredCpuBufferMgr::addSlab(const size_t slab_size) {
     // None of the allocators allocated a slab, so revert to original size and throw.
     slabs_.resize(slabs_.size() - 1);
     CIDER_THROW(CiderOutOfMemoryException,
-                "Failed to allocate " + std::to_string(slab_size) + " bytes");
+                fmt::format("Failed to allocate {} bytes", slab_size));
   }
 }
 
