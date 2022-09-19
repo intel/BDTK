@@ -320,6 +320,8 @@ class CiderBatch {
 
   int64_t row_num() const { return row_num_; }
 
+  bool getIsSorted() const { return is_sorted_; }
+
   size_t column_type_size(int32_t col_id) const { return column_type_size_[col_id]; }
 
   void set_row_num(int64_t row_num) { row_num_ = row_num; }
@@ -364,7 +366,7 @@ class CiderBatch {
   }
 
   // Only for debug usage.
-  std::string toValueString() const {
+  std::string toValueStringColumnTable() const {
     std::stringstream ss;
     ss << "row num: " << row_num_ << ", column num: " << column_num() << ".\n";
     // don't have an valid schema
@@ -426,14 +428,9 @@ class CiderBatch {
 
   void sort(const SortInfo& sort_info);
 
-  std::vector<std::vector<int8_t*>> getTableVec();
-
-  void printTable(const std::vector<std::vector<int8_t*>>& table_ptr_vec);
-
-  void reWriteTable(const std::vector<std::vector<int8_t*>>& table_ptr_vec,
-                    const std::vector<substrait::Type>& types);
-
-  bool get_is_sort() const { return is_sorted_; }
+  // Only for debug usage.
+  std::string toValueStringRowTable(
+      const std::vector<std::vector<int8_t*>>& table_ptr_vec) const;
 
  private:
   bool is_sorted_ = false;
@@ -448,6 +445,12 @@ class CiderBatch {
   std::vector<std::vector<bool>>
       null_vecs_;  // only use to pass and mark null data value to the duckdb engine
   static constexpr uint32_t kDefaultAlignment = 64;
+
+  // get Row table from column table
+  std::vector<std::vector<int8_t*>> getRowTable() const;
+
+  void reWriteTable(const std::vector<std::vector<int8_t*>>& table_ptr_vec,
+                    const std::vector<substrait::Type>& types);
 
   size_t alignSize(size_t size, uint32_t align) const noexcept {
     return (((static_cast<uint32_t>(size)) + (align)-1) & ~((align)-1));

@@ -118,7 +118,7 @@ CiderBatch CiderQueryRunner::runQueryOneBatch(
     result_batch = std::move(*output_batch);
   }
   const SortInfo& sort_info = cider_runtime_module->getSortInfo();
-  if (sort_info.order_entries.size() > 0 && !result_batch.get_is_sort()) {
+  if (sort_info.order_entries.size() > 0 && !result_batch.getIsSorted()) {
     result_batch.sort(sort_info);
   }
   return std::move(result_batch);
@@ -170,7 +170,7 @@ std::vector<CiderBatch> CiderQueryRunner::runQueryMultiBatches(
   }
   const SortInfo& sort_info = cider_runtime_module->getSortInfo();
   for (auto& result_batch : res_vec) {
-    if (sort_info.order_entries.size() > 0 && !result_batch.get_is_sort()) {
+    if (sort_info.order_entries.size() > 0 && !result_batch.getIsSorted()) {
       result_batch.sort(sort_info);
     }
   }
@@ -199,7 +199,7 @@ CiderBatch CiderQueryRunner::runJoinQueryOneBatch(const std::string& file_or_sql
     output_batch->set_schema(output_schema);
   }
   const SortInfo& sort_info = cider_runtime_module->getSortInfo();
-  if (sort_info.order_entries.size() > 0 && !output_batch->get_is_sort()) {
+  if (sort_info.order_entries.size() > 0 && !output_batch->getIsSorted()) {
     output_batch->sort(sort_info);
   }
   return std::move(*output_batch);
@@ -223,7 +223,7 @@ std::vector<CiderBatch> CiderQueryRunner::runQueryForCountDistinct(
     auto [_, output_batch] = cider_runtime_module->fetchResults();
     auto res_batch = updateCountDistinctRes(std::move(output_batch), compile_res);
     const SortInfo& sort_info = cider_runtime_module->getSortInfo();
-    if (sort_info.order_entries.size() > 0 && !res_batch.get_is_sort()) {
+    if (sort_info.order_entries.size() > 0 && !res_batch.getIsSorted()) {
       res_batch.sort(sort_info);
     }
     res_batches.push_back(std::move(res_batch));

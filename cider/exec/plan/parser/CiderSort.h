@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
+ * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -82,7 +83,7 @@ class SortField {
 std::vector<Analyzer::OrderEntry> translate_collation(
     const std::vector<SortField>& sort_fields);
 
-enum CompairResult { Equal, Greater, Less };
+enum CompareResult { Equal, Greater, Less };
 
 struct ResultSetComparator {
   ResultSetComparator(const SortInfo& sort_info,
@@ -96,7 +97,7 @@ struct ResultSetComparator {
   bool isSubtraitBoolType(const ::substrait::Type& type) const;
   bool isNull(const int8_t* value_ptr, const ::substrait::Type& type) const;
   bool operator()(const std::vector<int8_t*>& lhs, const std::vector<int8_t*>& rhs) const;
-  CompairResult compairValue(const int8_t* lhs_value_ptr,
+  CompareResult compareValue(const int8_t* lhs_value_ptr,
                              const int8_t* rhs_value_ptr,
                              const ::substrait::Type& type) const;
   const SortInfo& sort_info_;

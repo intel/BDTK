@@ -304,7 +304,7 @@ void CiderBatch::sort(const SortInfo& sort_info) {
   int row_num = row_num_;
   int col_num = column_num();
   auto types = schema_->getColumnTypes();
-  std::vector<std::vector<int8_t*>> table_ptr_vec = getTableVec();
+  std::vector<std::vector<int8_t*>> table_ptr_vec = getRowTable();
   // sort result table
   generator::ResultSetComparator rsc = generator::ResultSetComparator(sort_info, types);
   std::sort(table_ptr_vec.begin(), table_ptr_vec.end(), rsc);
@@ -313,7 +313,7 @@ void CiderBatch::sort(const SortInfo& sort_info) {
   is_sorted_ = true;
 }
 
-std::vector<std::vector<int8_t*>> CiderBatch::getTableVec() {
+std::vector<std::vector<int8_t*>> CiderBatch::getRowTable() const {
   int row_num = row_num_;
   int col_num = column_num();
   auto types = schema_->getColumnTypes();
@@ -355,7 +355,8 @@ std::vector<std::vector<int8_t*>> CiderBatch::getTableVec() {
   return std::move(table_ptr_vec);
 }
 
-void CiderBatch::printTable(const std::vector<std::vector<int8_t*>>& table_ptr_vec) {
+std::string CiderBatch::toValueStringRowTable(
+    const std::vector<std::vector<int8_t*>>& table_ptr_vec) const {
   int row_num = row_num_;
   int col_num = column_num();
   auto types = schema_->getColumnTypes();
@@ -392,7 +393,7 @@ void CiderBatch::printTable(const std::vector<std::vector<int8_t*>>& table_ptr_v
     }
     ss << "\n";
   }
-  std::cout << ss.str() << std::endl;
+  return ss.str();
 }
 
 #define SWAP_VALUE(C_TYPE)                          \

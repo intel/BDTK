@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
+ * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -119,52 +120,52 @@ bool ResultSetComparator::isNull(const int8_t* value_ptr,
   return false;
 }
 
-#define GET_TYPE_VALUE_AND_COMPAIR(C_TYPE)                                               \
+#define GET_TYPE_VALUE_AND_COMPARE(C_TYPE)                                               \
   {                                                                                      \
     C_TYPE lhs_value = *(C_TYPE*)lhs_value_ptr;                                          \
     C_TYPE rhs_value = *(C_TYPE*)rhs_value_ptr;                                          \
     if (lhs_value != rhs_value) {                                                        \
-      cmp_result = lhs_value < rhs_value ? CompairResult::Less : CompairResult::Greater; \
+      cmp_result = lhs_value < rhs_value ? CompareResult::Less : CompareResult::Greater; \
     }                                                                                    \
     break;                                                                               \
   }
 
-CompairResult ResultSetComparator::compairValue(const int8_t* lhs_value_ptr,
+CompareResult ResultSetComparator::compareValue(const int8_t* lhs_value_ptr,
                                                 const int8_t* rhs_value_ptr,
                                                 const ::substrait::Type& type) const {
-  CompairResult cmp_result = CompairResult::Equal;
+  CompareResult cmp_result = CompareResult::Equal;
   switch (type.kind_case()) {
     case ::substrait::Type::KindCase::kBool:
     case ::substrait::Type::KindCase::kI8: {
-      GET_TYPE_VALUE_AND_COMPAIR(int8_t)
+      GET_TYPE_VALUE_AND_COMPARE(int8_t)
     }
     case ::substrait::Type::KindCase::kI16: {
-      GET_TYPE_VALUE_AND_COMPAIR(int16_t)
+      GET_TYPE_VALUE_AND_COMPARE(int16_t)
     }
     case ::substrait::Type::KindCase::kI32: {
-      GET_TYPE_VALUE_AND_COMPAIR(int32_t)
+      GET_TYPE_VALUE_AND_COMPARE(int32_t)
     }
     case ::substrait::Type::KindCase::kI64: {
-      GET_TYPE_VALUE_AND_COMPAIR(int64_t)
+      GET_TYPE_VALUE_AND_COMPARE(int64_t)
     }
     case ::substrait::Type::KindCase::kFp32: {
-      GET_TYPE_VALUE_AND_COMPAIR(float)
+      GET_TYPE_VALUE_AND_COMPARE(float)
     }
     case ::substrait::Type::KindCase::kFp64:
     case ::substrait::Type::KindCase::kDecimal: {
-      GET_TYPE_VALUE_AND_COMPAIR(double)
+      GET_TYPE_VALUE_AND_COMPARE(double)
     }
     case ::substrait::Type::KindCase::kDate:
     case ::substrait::Type::KindCase::kTime:
     case ::substrait::Type::KindCase::kTimestamp: {
-      GET_TYPE_VALUE_AND_COMPAIR(int64_t)
+      GET_TYPE_VALUE_AND_COMPARE(int64_t)
     }
     case ::substrait::Type::KindCase::kString: {
-      // todo, string value compair
+      // todo, string value compare
       break;
     }
     case ::substrait::Type::KindCase::kVarchar: {
-      // todo, varchar value compair
+      // todo, varchar value compare
       break;
     }
     default:
@@ -191,13 +192,13 @@ bool ResultSetComparator::operator()(const std::vector<int8_t*>& lhs,
     if (!isNull(rhs_value_ptr, type) && isNull(rhs_value_ptr, type)) {
       return !order_entry.nulls_first;
     }
-    CompairResult cmp_result =
-        compairValue(reinterpret_cast<const int8_t*>(lhs_value_ptr),
+    CompareResult cmp_result =
+        compareValue(reinterpret_cast<const int8_t*>(lhs_value_ptr),
                      reinterpret_cast<const int8_t*>(rhs_value_ptr),
                      type);
-    if (cmp_result == CompairResult::Equal) {
+    if (cmp_result == CompareResult::Equal) {
       continue;
-    } else if (cmp_result == CompairResult::Greater) {
+    } else if (cmp_result == CompareResult::Greater) {
       return false != order_entry.is_desc;
     } else {
       return true != order_entry.is_desc;

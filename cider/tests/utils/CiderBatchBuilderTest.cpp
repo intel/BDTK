@@ -174,7 +174,7 @@ TEST(CiderBatchBuilderTest, MultiTypesBatch) {
   EXPECT_EQ(4, batch.column_num());
 }
 
-TEST(CiderBatchBuilderTest, ToValueStringTest) {
+TEST(CiderBatchBuilderTest, ToValueStringColumnTableTest) {
   std::vector<int> vec1{1, 2, 3, 4, 5};
   std::vector<int64_t> vec2{1, 2, 3, 4, 5};
   std::vector<float> vec3{1.1, 2.2, 3.3, 4.4, 5.5};
@@ -194,7 +194,7 @@ TEST(CiderBatchBuilderTest, ToValueStringTest) {
       "column type: int64_t 1\t2\t3\t4\t5\t\n"
       "column type: float 1.1\t2.2\t3.3\t4.4\t5.5\t\n"
       "column type: double 1.1\t2.2\t3.3\t4.4\t5.5\t\n";
-  EXPECT_EQ(res, batch.toValueString());
+  EXPECT_EQ(res, batch.toValueStringColumnTable());
 }
 
 TEST(CiderBatchBuilderTest, DateTypebatch) {
@@ -248,7 +248,7 @@ TEST(CiderBatchBuilderTest, nullTest) {
       "column type: int64_t 1\t2\t3\t4\t5\t\n"
       "column type: float 1.1\t2.2\t3.3\t4.4\t5.5\t\n"
       "column type: double 1.1\t2.2\t3.3\t4.4\t5.5\t\n";
-  EXPECT_EQ(res, batch.toValueString());
+  EXPECT_EQ(res, batch.toValueStringColumnTable());
 }
 
 int main(int argc, char** argv) {
