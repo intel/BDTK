@@ -50,24 +50,24 @@
 
 class CiderGroupByVarcharTest : public CiderTestBase {
  public:
+  // TODO(yizhong): make col_d to 50% chance nullable and change min length to 0
+  // after null string is supportedz
   CiderGroupByVarcharTest() {
     table_name_ = "table_test";
     create_ddl_ =
         "CREATE TABLE table_test(col_a BIGINT NOT NULL, col_b BIGINT NOT NULL, col_c "
         "VARCHAR NOT NULL, col_d VARCHAR);";
-    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-        500,
-        {"col_a", "col_b", "col_c", "col_d"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(Varchar),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        // TODO(yizhong): make col_d to 50% chance nullable and change min length to 0
-        // after null string is supported
-        {0, 0, 0, 0},
-        GeneratePattern::Random,
-        1,
-        10))};
+    input_ = {std::make_shared<CiderBatch>(
+        QueryDataGenerator::generateBatchByTypes(500,
+                                                 {"col_a", "col_b", "col_c", "col_d"},
+                                                 {CREATE_SUBSTRAIT_TYPE(I64),
+                                                  CREATE_SUBSTRAIT_TYPE(I64),
+                                                  CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                  CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                 {0, 0, 0, 0},
+                                                 GeneratePattern::Random,
+                                                 1,
+                                                 10))};
   }
 };
 
