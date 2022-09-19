@@ -33,18 +33,14 @@ class RawDataConvertor : public DataConvertor {
  public:
   RawDataConvertor() {}
 
-  explicit RawDataConvertor(std::shared_ptr<CiderAllocator> allocator);
-
   CiderBatch convertToCider(RowVectorPtr input,
                             int num_rows,
-                            std::chrono::microseconds* timer) override;
+                            std::chrono::microseconds* timer,
+                            memory::MemoryPool* pool) override;
 
   RowVectorPtr convertToRowVector(const CiderBatch& input,
                                   const CiderTableSchema& schema,
                                   memory::MemoryPool* pool) override;
-
- private:
-  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 }  // namespace facebook::velox::plugin

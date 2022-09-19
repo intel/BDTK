@@ -38,14 +38,8 @@
 
 namespace facebook::velox::plugin {
 
-RawDataConvertor::RawDataConvertor(std::shared_ptr<CiderAllocator> allocator)
-    : allocator_(allocator) {}
-
 template <TypeKind kind>
-int8_t* toCiderImpl(VectorPtr& child,
-                    int idx,
-                    int num_rows,
-                    std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderImpl(VectorPtr& child, int idx, int num_rows, memory::MemoryPool* pool) {
   using T = typename TypeTraits<kind>::NativeType;
   auto childVal = child->asFlatVector<T>();
   auto* rawValues = childVal->mutableRawValues();
@@ -66,10 +60,10 @@ template <TypeKind kind>
 int8_t* toCiderImplWithDictEncoding(VectorPtr& child,
                                     int idx,
                                     int num_rows,
-                                    std::shared_ptr<CiderAllocator> allocator) {
+                                    memory::MemoryPool* pool) {
   using T = typename TypeTraits<kind>::NativeType;
   auto dict = dynamic_cast<const DictionaryVector<T>*>(child.get());
-  T* column = reinterpret_cast<T*>(allocator->allocate(sizeof(T) * num_rows));
+  T* column = reinterpret_cast<T*>(pool->allocate(sizeof(T) * num_rows));
   for (auto i = 0; i < num_rows; i++) {
     if (dict->isNullAt(i)) {
       T nullValue = getNullValue<T>();
@@ -85,10 +79,10 @@ template <>
 int8_t* toCiderImpl<TypeKind::BOOLEAN>(VectorPtr& child,
                                        int idx,
                                        int num_rows,
-                                       std::shared_ptr<CiderAllocator> allocator) {
+                                       memory::MemoryPool* pool) {
   auto childVal = child->asFlatVector<bool>();
   uint64_t* rawValues = childVal->mutableRawValues<uint64_t>();
-  int8_t* column = allocator->allocate(sizeof(int8_t) * num_rows);
+  int8_t* column = reinterpret_cast<int8_t*>(pool->allocate(sizeof(int8_t) * num_rows));
   auto nulls = child->rawNulls();
   for (auto pos = 0; pos < num_rows; pos++) {
     if (child->mayHaveNulls() && bits::isBitNull(nulls, pos)) {
@@ -104,11 +98,11 @@ template <>
 int8_t* toCiderImpl<TypeKind::VARCHAR>(VectorPtr& child,
                                        int idx,
                                        int num_rows,
-                                       std::shared_ptr<CiderAllocator> allocator) {
+                                       memory::MemoryPool* pool) {
   auto childVal = child->asFlatVector<StringView>();
   auto* rawValues = childVal->mutableRawValues();
   CiderByteArray* column = reinterpret_cast<CiderByteArray*>(
-      allocator->allocate(sizeof(CiderByteArray) * num_rows));
+      pool->allocate(sizeof(CiderByteArray) * num_rows));
   auto nulls = child->rawNulls();
   for (auto i = 0; i < num_rows; i++) {
     if (child->mayHaveNulls() && bits::isBitNull(nulls, i)) {
@@ -116,8 +110,8 @@ int8_t* toCiderImpl<TypeKind::VARCHAR>(VectorPtr& child,
       column[i].ptr = nullptr;
     } else {
       column[i].len = rawValues[i].size();
-      column[i].ptr = reinterpret_cast<uint8_t*>(
-          allocator->allocate(sizeof(uint8_t) * column[i].len));
+      column[i].ptr =
+          reinterpret_cast<uint8_t*>(pool->allocate(sizeof(uint8_t) * column[i].len));
       std::memcpy((void*)column[i].ptr, rawValues[i].data(), column[i].len);
     }
   }
@@ -125,14 +119,13 @@ int8_t* toCiderImpl<TypeKind::VARCHAR>(VectorPtr& child,
 }
 
 template <>
-int8_t* toCiderImplWithDictEncoding<TypeKind::VARCHAR>(
-    VectorPtr& child,
-    int idx,
-    int num_rows,
-    std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderImplWithDictEncoding<TypeKind::VARCHAR>(VectorPtr& child,
+                                                       int idx,
+                                                       int num_rows,
+                                                       memory::MemoryPool* pool) {
   auto dict = dynamic_cast<const DictionaryVector<StringView>*>(child.get());
   CiderByteArray* column = reinterpret_cast<CiderByteArray*>(
-      allocator->allocate(sizeof(CiderByteArray) * num_rows));
+      pool->allocate(sizeof(CiderByteArray) * num_rows));
   for (auto i = 0; i < num_rows; i++) {
     if (dict->isNullAt(i)) {
       column[i].len = 0;
@@ -140,8 +133,8 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::VARCHAR>(
     } else {
       auto stringViewTemp = dict->valueAt(i);
       column[i].len = stringViewTemp.size();
-      column[i].ptr = reinterpret_cast<uint8_t*>(
-          allocator->allocate(sizeof(uint8_t) * column[i].len));
+      column[i].ptr =
+          reinterpret_cast<uint8_t*>(pool->allocate(sizeof(uint8_t) * column[i].len));
       std::memcpy((void*)column[i].ptr, stringViewTemp.data(), column[i].len);
     }
   }
@@ -149,11 +142,10 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::VARCHAR>(
 }
 
 template <>
-int8_t* toCiderImplWithDictEncoding<TypeKind::VARBINARY>(
-    VectorPtr& child,
-    int idx,
-    int num_rows,
-    std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderImplWithDictEncoding<TypeKind::VARBINARY>(VectorPtr& child,
+                                                         int idx,
+                                                         int num_rows,
+                                                         memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported with dictionary encoding",
             child->typeKind());
 }
@@ -162,7 +154,7 @@ template <>
 int8_t* toCiderImpl<TypeKind::VARBINARY>(VectorPtr& child,
                                          int idx,
                                          int num_rows,
-                                         std::shared_ptr<CiderAllocator> allocator) {
+                                         memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported yet");
 }
 
@@ -171,17 +163,16 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::INTERVAL_DAY_TIME>(
     VectorPtr& child,
     int idx,
     int num_rows,
-    std::shared_ptr<CiderAllocator> allocator) {
+    memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported with dictionary encoding",
             child->typeKind());
 }
 
 template <>
-int8_t* toCiderImpl<TypeKind::INTERVAL_DAY_TIME>(
-    VectorPtr& child,
-    int idx,
-    int num_rows,
-    std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderImpl<TypeKind::INTERVAL_DAY_TIME>(VectorPtr& child,
+                                                 int idx,
+                                                 int num_rows,
+                                                 memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported yet");
 }
 
@@ -191,11 +182,10 @@ static constexpr int64_t kMilliSecsPerSec = 1000;
 static constexpr int64_t kSecsPerSec = 1;
 
 template <>
-int8_t* toCiderImplWithDictEncoding<TypeKind::TIMESTAMP>(
-    VectorPtr& child,
-    int idx,
-    int num_rows,
-    std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderImplWithDictEncoding<TypeKind::TIMESTAMP>(VectorPtr& child,
+                                                         int idx,
+                                                         int num_rows,
+                                                         memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported with dictionary encoding",
             child->typeKind());
 }
@@ -204,11 +194,11 @@ template <>
 int8_t* toCiderImpl<TypeKind::TIMESTAMP>(VectorPtr& child,
                                          int idx,
                                          int num_rows,
-                                         std::shared_ptr<CiderAllocator> allocator) {
+                                         memory::MemoryPool* pool) {
   auto childVal = child->asFlatVector<Timestamp>();
   auto* rawValues = childVal->mutableRawValues();
   int64_t* column =
-      reinterpret_cast<int64_t*>(allocator->allocate(sizeof(int64_t) * num_rows));
+      reinterpret_cast<int64_t*>(pool->allocate(sizeof(int64_t) * num_rows));
   auto nulls = child->rawNulls();
   for (auto pos = 0; pos < num_rows; pos++) {
     if (child->mayHaveNulls() && bits::isBitNull(nulls, pos)) {
@@ -223,11 +213,10 @@ int8_t* toCiderImpl<TypeKind::TIMESTAMP>(VectorPtr& child,
 }
 
 template <>
-int8_t* toCiderImplWithDictEncoding<TypeKind::DATE>(
-    VectorPtr& child,
-    int idx,
-    int num_rows,
-    std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderImplWithDictEncoding<TypeKind::DATE>(VectorPtr& child,
+                                                    int idx,
+                                                    int num_rows,
+                                                    memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported yet with dictionary encoding",
             child->typeKind());
 }
@@ -236,11 +225,11 @@ template <>
 int8_t* toCiderImpl<TypeKind::DATE>(VectorPtr& child,
                                     int idx,
                                     int num_rows,
-                                    std::shared_ptr<CiderAllocator> allocator) {
+                                    memory::MemoryPool* pool) {
   auto childVal = child->asFlatVector<Date>();
   auto* rawValues = childVal->mutableRawValues();
   int64_t* column =
-      reinterpret_cast<int64_t*>(allocator->allocate(sizeof(int64_t) * num_rows));
+      reinterpret_cast<int64_t*>(pool->allocate(sizeof(int64_t) * num_rows));
   auto nulls = child->rawNulls();
   for (auto pos = 0; pos < num_rows; pos++) {
     if (child->mayHaveNulls() && bits::isBitNull(nulls, pos)) {
@@ -252,22 +241,15 @@ int8_t* toCiderImpl<TypeKind::DATE>(VectorPtr& child,
   return reinterpret_cast<int8_t*>(column);
 }
 
-int8_t* toCiderResult(VectorPtr& child,
-                      int idx,
-                      int num_rows,
-                      std::shared_ptr<CiderAllocator> allocator) {
+int8_t* toCiderResult(VectorPtr& child, int idx, int num_rows, memory::MemoryPool* pool) {
   switch (child->encoding()) {
     case VectorEncoding::Simple::FLAT:
     case VectorEncoding::Simple::LAZY:
       return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
-          toCiderImpl, child->typeKind(), child, idx, num_rows, allocator);
+          toCiderImpl, child->typeKind(), child, idx, num_rows, pool);
     case VectorEncoding::Simple::DICTIONARY:
-      return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(toCiderImplWithDictEncoding,
-                                                child->typeKind(),
-                                                child,
-                                                idx,
-                                                num_rows,
-                                                allocator);
+      return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
+          toCiderImplWithDictEncoding, child->typeKind(), child, idx, num_rows, pool);
     default:
       VELOX_NYI(" {} conversion is not supported yet", child->encoding());
   }
@@ -275,7 +257,8 @@ int8_t* toCiderResult(VectorPtr& child,
 
 CiderBatch RawDataConvertor::convertToCider(RowVectorPtr input,
                                             int num_rows,
-                                            std::chrono::microseconds* timer) {
+                                            std::chrono::microseconds* timer,
+                                            memory::MemoryPool* pool) {
   RowVector* row = input.get();
   auto* rowVector = row->as<RowVector>();
   auto size = rowVector->childrenSize();
@@ -285,7 +268,7 @@ CiderBatch RawDataConvertor::convertToCider(RowVectorPtr input,
     switch (child->encoding()) {
       case VectorEncoding::Simple::FLAT:
       case VectorEncoding::Simple::DICTIONARY:
-        table_ptr.push_back(toCiderResult(child, idx, num_rows, allocator_));
+        table_ptr.push_back(toCiderResult(child, idx, num_rows, pool));
         break;
       case VectorEncoding::Simple::LAZY: {
         // For LazyVector, we will load it here and use as TypeVector to use.
@@ -295,7 +278,7 @@ CiderBatch RawDataConvertor::convertToCider(RowVectorPtr input,
         if (timer) {
           *timer += std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
         }
-        table_ptr.push_back(toCiderResult(vec, idx, num_rows, allocator_));
+        table_ptr.push_back(toCiderResult(vec, idx, num_rows, pool));
         break;
       }
       default:

@@ -60,7 +60,7 @@ CiderOperator::CiderOperator(int32_t operatorId,
         ciderCompileResult->getOutputCiderTableSchema());
   }
   // hardcode, init a DataConvertor here.
-  dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT, allocator);
+  dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT);
 }
 
 std::unique_ptr<CiderOperator> CiderOperator::Make(
@@ -90,8 +90,8 @@ void CiderOperator::addInput(RowVectorPtr input) {
   }
 
   input_ = std::move(input);
-  auto inBatch =
-      dataConvertor_->convertToCider(input_, input_->size(), &convertorInternalCounter);
+  auto inBatch = dataConvertor_->convertToCider(
+      input_, input_->size(), &convertorInternalCounter, operatorCtx_->pool());
   ciderRuntimeModule_->processNextBatch(inBatch);
 }
 
@@ -120,8 +120,10 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
     ciderCompileModule_ = CiderCompileModule::Make();
 
     // TODO: add vector<RowVectorPtr> -> CiderBatch converter
-    auto buildBatch = dataConvertor_->convertToCider(
-        buildData_->data()[0], buildData_->data()[0]->size(), &convertorInternalCounter);
+    auto buildBatch = dataConvertor_->convertToCider(buildData_->data()[0],
+                                                     buildData_->data()[0]->size(),
+                                                     &convertorInternalCounter,
+                                                     operatorCtx_->pool());
 
     ciderCompileModule_->feedBuildTable(std::move(buildBatch));
     auto compileResult = ciderCompileModule_->compile(planNode_->getSubstraitPlan());

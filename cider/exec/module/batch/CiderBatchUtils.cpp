@@ -231,8 +231,8 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
   return root_schema;
 }
 
-std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema,
-                                             std::shared_ptr<CiderAllocator> allocator,
+std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowSchema* schema,
                                              ArrowArray* array) {
   CHECK(schema);
   CHECK(schema->release);

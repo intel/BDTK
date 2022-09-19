@@ -45,8 +45,6 @@ using namespace facebook::velox::exec;
 using namespace facebook::velox::test;
 using namespace facebook::velox::plugin;
 
-static const std::shared_ptr<CiderAllocator> allocator =
-    std::make_shared<CiderDefaultAllocator>();
 namespace {
 
 // simple multiply function.
@@ -146,15 +144,15 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     auto ciderRuntimeModule =
         getCiderRuntimeModule(expression, inputType_, execCtx_.pool(), "arithmetic");
     // convert data to CiderBatch
-    auto batchConvertor = DataConvertor::create(CONVERT_TYPE::DIRECT, allocator);
+    auto batchConvertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
     std::chrono::microseconds convertorInternalCounter;
     auto inBatch = batchConvertor->convertToCider(
-        rowVector_, vectorSize_, &convertorInternalCounter);
+        rowVector_, vectorSize_, &convertorInternalCounter, execCtx_.pool());
     // TODO :process the batch and return result
     size_t max_out = inBatch.row_num();
     std::vector<const int8_t*> col_buffer;
-    double* col_0 =
-        reinterpret_cast<double*>(allocator->allocate(sizeof(double) * max_out * 2));
+    double* col_0 = reinterpret_cast<double*>(
+        execCtx_.pool()->allocate(sizeof(double) * max_out * 2));
     int num_rows = max_out;
     col_buffer.push_back(reinterpret_cast<const int8_t*>(col_0));
     CiderBatch outBatch(num_rows, col_buffer);

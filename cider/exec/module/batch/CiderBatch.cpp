@@ -151,7 +151,7 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
   }
 
   auto child_batch =
-      CiderBatchUtils::createCiderBatch(child_schema, allocator_, child_array);
+      CiderBatchUtils::createCiderBatch(allocator_, child_schema, child_array);
   child_batch->ownership_ = false;  // Only root batch has ownership.
   child_batch->reallocate_ =
       true;  // ArrowArray allocated from Cider could (re-)allocate buffer.

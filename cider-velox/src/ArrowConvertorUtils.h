@@ -41,7 +41,7 @@ namespace facebook::velox::plugin {
 int8_t* convertToCider(const ArrowSchema& arrowSchema,
                        const ArrowArray& arrowArray,
                        int num_rows,
-                       std::shared_ptr<CiderAllocator> allocator);
+                       memory::MemoryPool* pool);
 
 /// Convert cider data buffer to ArrowArray and ArrowSchema.
 /// As ArrowArray has null buffer for null data while cider only has one
@@ -53,6 +53,6 @@ void convertToArrow(ArrowArray& arrowArray,
                     const int8_t* data_buffer,
                     ::substrait::Type col_type,
                     int num_rows,
-                    std::shared_ptr<CiderAllocator> allocator = nullptr);
+                    memory::MemoryPool* pool);
 
 }  // namespace facebook::velox::plugin

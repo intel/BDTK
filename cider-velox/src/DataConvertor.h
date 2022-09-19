@@ -51,12 +51,12 @@ class DataConvertor {
  public:
   DataConvertor() {}
 
-  static std::shared_ptr<DataConvertor> create(CONVERT_TYPE type,
-                                               std::shared_ptr<CiderAllocator> allocator);
+  static std::shared_ptr<DataConvertor> create(CONVERT_TYPE type);
 
   virtual CiderBatch convertToCider(RowVectorPtr input,
                                     int num_rows,
-                                    std::chrono::microseconds* timer) = 0;
+                                    std::chrono::microseconds* timer,
+                                    memory::MemoryPool* pool) = 0;
 
   virtual RowVectorPtr convertToRowVector(const CiderBatch& input,
                                           const CiderTableSchema& schema,

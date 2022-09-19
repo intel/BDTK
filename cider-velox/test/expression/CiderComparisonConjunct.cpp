@@ -45,9 +45,6 @@ using namespace facebook::velox::test;
 using namespace facebook::velox::functions;
 using namespace facebook::velox::plugin;
 
-static const std::shared_ptr<CiderAllocator> ciderAllocator =
-    std::make_shared<CiderDefaultAllocator>();
-
 namespace {
 
 class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
@@ -153,10 +150,10 @@ class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
         std::make_shared<CiderRuntimeModule>(result);
 
     // Convert data to CiderBatch
-    auto batchConvertor = DataConvertor::create(CONVERT_TYPE::DIRECT, ciderAllocator);
+    auto batchConvertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
     std::chrono::microseconds convertorInternalCounter;
     auto inBatch = batchConvertor->convertToCider(
-        rowVector_, vectorSize_, &convertorInternalCounter);
+        rowVector_, vectorSize_, &convertorInternalCounter, execCtx_.pool());
 
     suspender.dismiss();
 

@@ -48,8 +48,8 @@ int64_t getBufferNum(const ArrowSchema* schema);
 
 SQLTypes convertArrowTypeToCiderType(const char* format);
 
-std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema,
-                                             std::shared_ptr<CiderAllocator> allocator,
+std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowSchema* schema,
                                              ArrowArray* array = nullptr);
 
 const char* convertCiderTypeToArrowType(SQLTypes type);

@@ -26,16 +26,14 @@
 
 namespace facebook::velox::plugin {
 
-std::shared_ptr<DataConvertor> DataConvertor::create(
-    CONVERT_TYPE type,
-    std::shared_ptr<CiderAllocator> allocator) {
+std::shared_ptr<DataConvertor> DataConvertor::create(CONVERT_TYPE type) {
   std::shared_ptr<DataConvertor> convertor;
   switch (type) {
     case CONVERT_TYPE::DIRECT:
-      convertor = std::make_shared<RawDataConvertor>(allocator);
+      convertor = std::make_shared<RawDataConvertor>();
       return convertor;
     case CONVERT_TYPE::ARROW:
-      convertor = std::make_shared<ArrowDataConvertor>(allocator);
+      convertor = std::make_shared<ArrowDataConvertor>();
       return convertor;
     default:
       VELOX_USER_FAIL("invalid input");

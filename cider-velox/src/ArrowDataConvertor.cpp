@@ -26,20 +26,17 @@
 
 namespace facebook::velox::plugin {
 
-ArrowDataConvertor::ArrowDataConvertor(std::shared_ptr<CiderAllocator> allocator)
-    : allocator_(allocator) {}
-
 int8_t* toCiderWithArrow(VectorPtr& child,
                          int idx,
                          int num_rows,
-                         std::shared_ptr<CiderAllocator> allocator) {
+                         memory::MemoryPool* pool) {
   // velox to arrow
   ArrowArray arrowArray;
   exportToArrow(child, arrowArray);
   ArrowSchema arrowSchema;
   exportToArrow(child, arrowSchema);
   // arrow to cider
-  int8_t* column = convertToCider(arrowSchema, arrowArray, num_rows, allocator);
+  int8_t* column = convertToCider(arrowSchema, arrowArray, num_rows, pool);
   arrowArray.release(&arrowArray);
   arrowSchema.release(&arrowSchema);
   return column;
@@ -47,7 +44,8 @@ int8_t* toCiderWithArrow(VectorPtr& child,
 
 CiderBatch ArrowDataConvertor::convertToCider(RowVectorPtr input,
                                               int num_rows,
-                                              std::chrono::microseconds* timer) {
+                                              std::chrono::microseconds* timer,
+                                              memory::MemoryPool* pool) {
   RowVector* row = input.get();
   auto* rowVector = row->as<RowVector>();
   auto size = rowVector->childrenSize();
@@ -57,7 +55,7 @@ CiderBatch ArrowDataConvertor::convertToCider(RowVectorPtr input,
     VectorPtr& child = rowVector->childAt(idx);
     switch (child->encoding()) {
       case VectorEncoding::Simple::FLAT:
-        table_ptr.push_back(toCiderWithArrow(child, idx, num_rows, allocator_));
+        table_ptr.push_back(toCiderWithArrow(child, idx, num_rows, pool));
         break;
       case VectorEncoding::Simple::LAZY: {
         // For LazyVector, we will load it here and use as TypeVector to use.
@@ -67,7 +65,7 @@ CiderBatch ArrowDataConvertor::convertToCider(RowVectorPtr input,
         if (timer) {
           *timer += std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
         }
-        table_ptr.push_back(toCiderWithArrow(vec, idx, num_rows, allocator_));
+        table_ptr.push_back(toCiderWithArrow(vec, idx, num_rows, pool));
         break;
       }
       default:
@@ -83,9 +81,8 @@ VectorPtr toVeloxVectorWithArrow(ArrowArray& arrowArray,
                                  ::substrait::Type col_type,
                                  int num_rows,
                                  memory::MemoryPool* pool,
-                                 std::shared_ptr<CiderAllocator> allocator,
                                  int32_t dimen = 0) {
-  convertToArrow(arrowArray, arrowSchema, data_buffer, col_type, num_rows, allocator);
+  convertToArrow(arrowArray, arrowSchema, data_buffer, col_type, num_rows, pool);
   auto result = importFromArrowAsViewer(arrowSchema, arrowArray, pool);
   return result;
 }
@@ -109,8 +106,7 @@ RowVectorPtr ArrowDataConvertor::convertToRowVector(const CiderBatch& input,
                                              input.column(i),
                                              schema.getColumnTypeById(i),
                                              num_rows,
-                                             pool,
-                                             allocator_));
+                                             pool));
     types.push_back(importFromArrow(arrowSchema));
   }
   rowType = std::make_shared<RowType>(move(col_names), move(types));
