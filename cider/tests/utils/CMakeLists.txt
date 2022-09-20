@@ -18,8 +18,13 @@
 # under the License.
 
 set(CIDER_TESTS_UTILS_SOURCE
-    Utils.cpp DuckDbQueryRunner.cpp CiderQueryRunner.cpp CiderTestBase.cpp
-    CiderBatchChecker.cpp CiderBenchmarkRunner.cpp CiderRunner.cpp)
+    Utils.cpp
+    DuckDbQueryRunner.cpp
+    CiderQueryRunner.cpp
+    CiderTestBase.cpp
+    CiderBatchChecker.cpp
+    CiderBenchmarkRunner.cpp
+    CiderRunner.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
 target_link_libraries(test_utils cider_plan_parser)
@@ -66,8 +71,7 @@ add_test(CiderMultiBatchTest ${EXECUTABLE_OUTPUT_PATH}/CiderMultiBatchTest
 
 add_executable(CiderRunnerTest CiderRunnerTest.cpp)
 target_link_libraries(CiderRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
-add_test(CiderRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderRunnerTest
-        ${TEST_ARGS})
+add_test(CiderRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderRunnerTest ${TEST_ARGS})
 
 set(TEST_PROGRAMS IsthmusTest DuckDbQueryRunnerTest CiderBatchBuilderTest
                   CiderBatchCheckerTest)
