@@ -42,8 +42,7 @@ void runScalarBatchTest(ScalarBatch<T>* batch,
 
   EXPECT_TRUE(batch->resizeBatch(data.size()));
   EXPECT_EQ(batch->getLength(), data.size());
-  EXPECT_EQ(batch->getNullCount(), not_null.empty() ? 0 : (int64_t)data.size());
-
+  EXPECT_EQ(batch->getNullCount(), 0);
   {
     auto raw_data = batch->getMutableRawData();
     EXPECT_NE(raw_data, nullptr);
@@ -52,14 +51,15 @@ void runScalarBatchTest(ScalarBatch<T>* batch,
     }
   }
 
-  int64_t null_count = data.size();
+  int64_t null_count = 0;
   if (!not_null.empty()) {
     auto not_null_data = batch->getMutableNulls();
+    EXPECT_EQ(batch->getNullCount(), 0);
     EXPECT_NE(not_null_data, nullptr);
     for (size_t i = 0; i < not_null.size(); ++i) {
-      if (not_null[i]) {
-        CiderBitUtils::setBitAt(not_null_data, i);
-        --null_count;
+      if (!not_null[i]) {
+        CiderBitUtils::clearBitAt(not_null_data, i);
+        ++null_count;
       }
     }
     batch->setNullCount(null_count);
@@ -199,7 +199,7 @@ TEST_F(CiderArrowBatchTest, StructBatchTest) {
     EXPECT_TRUE(batch->isRootOwner());
     EXPECT_TRUE(batch->resizeBatch(10));
     EXPECT_EQ(batch->getLength(), 10);
-    EXPECT_EQ(batch->getNullCount(), 10);
+    EXPECT_EQ(batch->getNullCount(), 0);
     EXPECT_EQ(batch->getChildrenNum(), 8);
 
     {

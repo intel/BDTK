@@ -40,6 +40,7 @@ class CiderAggTargetColExtractor {
   const std::string name_;
   const size_t col_index_;
   size_t null_offset_;
+  bool null_;
 };
 
 #endif

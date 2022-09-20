@@ -314,16 +314,14 @@ void runTest(const std::string& test_name,
   for (size_t i = 0; i < input_batch->getChildrenNum(); ++i) {
     auto child = input_batch->getChildAt(i);
     const uint8_t* given_nulls = nulls[i].as<uint8_t>();
-    if (child->isNullable()) {
-      uint8_t* child_nulls = child->getMutableNulls();
-      int64_t null_count = 0;
-      for (size_t j = 0; j < child->getLength(); ++j) {
-        if (!all_null && CiderBitUtils::isBitSetAt(given_nulls, j)) {
-          CiderBitUtils::setBitAt(child_nulls, j);
-        } else {
-          CiderBitUtils::clearBitAt(child_nulls, j);
-          ++null_count;
-        }
+    uint8_t* child_nulls = child->getMutableNulls();
+    int64_t null_count = 0;
+    for (size_t j = 0; j < child->getLength(); ++j) {
+      if (!all_null && CiderBitUtils::isBitSetAt(given_nulls, j)) {
+        CiderBitUtils::setBitAt(child_nulls, j);
+      } else {
+        CiderBitUtils::clearBitAt(child_nulls, j);
+        ++null_count;
       }
       child->setNullCount(null_count);
     }

@@ -28,6 +28,7 @@ CiderArrowArrayBufferHolder::CiderArrowArrayBufferHolder(size_t buffer_num,
                                                          size_t children_num,
                                                          bool dict)
     : buffers_(buffer_num, nullptr)
+    , buffers_bytes_(buffer_num, 0)
     , children_ptr_(children_num, nullptr)
     , children_and_dict_(children_num + (dict ? 1 : 0))
     , has_dict_(dict) {
@@ -67,12 +68,9 @@ ArrowArray* CiderArrowArrayBufferHolder::getDictPtr() {
   return has_dict_ ? &children_and_dict_.back() : nullptr;
 }
 
-CiderArrowSchemaBufferHolder::CiderArrowSchemaBufferHolder(size_t children_num,
-                                                           bool null_vector,
-                                                           bool dict)
+CiderArrowSchemaBufferHolder::CiderArrowSchemaBufferHolder(size_t children_num, bool dict)
     : children_ptr_(children_num, nullptr)
     , children_and_dict_(children_num + (dict ? 1 : 0))
-    , null_vector_(null_vector)
     , has_dict_(dict) {
   for (size_t i = 0; i < children_num; ++i) {
     children_ptr_[i] = &children_and_dict_[i];
