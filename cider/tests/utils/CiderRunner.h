@@ -32,7 +32,7 @@
 class CiderCompiler {
  public:
   CiderCompiler();
-  ~CiderCompiler(){};
+  ~CiderCompiler() {}
 
   std::shared_ptr<CiderCompilationResult> compile(
       const std::string& create_ddl,
@@ -46,8 +46,8 @@ class CiderCompiler {
 
 class CiderRunner {
  public:
-  CiderRunner(){};
-  virtual ~CiderRunner(){};
+  CiderRunner() {}
+  virtual ~CiderRunner() {}
   static std::shared_ptr<CiderRunner> createCiderRunner(
       std::shared_ptr<CiderCompilationResult> res);
   virtual std::shared_ptr<CiderBatch> processNextBatch(
@@ -65,8 +65,8 @@ class CiderRunner {
 
 class CiderStatefulRunner : public CiderRunner {
  public:
-  ~CiderStatefulRunner(){};
-  CiderStatefulRunner(std::shared_ptr<CiderCompilationResult> res);
+  ~CiderStatefulRunner() {}
+  explicit CiderStatefulRunner(std::shared_ptr<CiderCompilationResult> res);
   std::shared_ptr<CiderBatch> finish() override;  // do nothing, return a nullptr;
   std::shared_ptr<CiderBatch> processNextBatch(
       const std::shared_ptr<CiderBatch>& input_batch) override;
@@ -74,8 +74,8 @@ class CiderStatefulRunner : public CiderRunner {
 
 class CiderStatelessRunner : public CiderRunner {
  public:
-  ~CiderStatelessRunner(){};
-  CiderStatelessRunner(std::shared_ptr<CiderCompilationResult> res);
+  ~CiderStatelessRunner() {}
+  explicit CiderStatelessRunner(std::shared_ptr<CiderCompilationResult> res);
   std::shared_ptr<CiderBatch> finish() override;
   std::shared_ptr<CiderBatch> processNextBatch(
       const std::shared_ptr<CiderBatch>& input_batch) override;

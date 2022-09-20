@@ -114,7 +114,7 @@ TEST(CiderRunnerTest, statefulRunnerMultiThreadTest) {
   auto input_batch = create_default_batch();
 
   std::function test_func = [](std::shared_ptr<CiderCompilationResult> com_res,
-      std::shared_ptr<CiderBatch> input_batch) {
+                               std::shared_ptr<CiderBatch> input_batch) {
     auto runner = CiderRunner::createCiderRunner(com_res);
     for (int i = 0; i < 100000; i++) {
       auto res = runner->processNextBatch(input_batch);
