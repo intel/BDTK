@@ -66,7 +66,7 @@ std::vector<std::pair<size_t, size_t>> find_string_literals(const std::string& q
       if (!boost::regex_search(it, query.end(), what, literal_string_regex)) {
         break;
       }
-    } catch (const CiderException& e) {
+    } catch (const std::exception& e) {
       LOG(WARNING) << "Error processing literals: " << e.what()
                    << "\nContinuing query parse...";
       // boost::regex throws an exception about the complexity of matching when

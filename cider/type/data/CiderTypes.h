@@ -27,7 +27,7 @@
 #include <type_traits>
 
 /* `../` is required for UDFCompiler */
-#include "include/cider/CiderException.h"
+#include "cider/CiderException.h"
 #include "type/data/InlineNullValues.h"
 #include "type/data/funcannotations.h"
 

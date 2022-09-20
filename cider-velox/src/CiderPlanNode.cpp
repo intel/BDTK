@@ -21,7 +21,6 @@
 
 #include <mutex>
 
-#include "CiderPlanNode.h"
 #include "CiderPlanNodeTranslator.h"
 #include "cider/CiderException.h"
 #include "substrait/plan.pb.h"

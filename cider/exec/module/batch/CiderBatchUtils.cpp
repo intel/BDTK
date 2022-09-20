@@ -21,13 +21,13 @@
 
 #define CIDERBATCH_WITH_ARROW
 
-#include "include/cider/batch/CiderBatchUtils.h"
+#include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
 #include "cider/CiderException.h"
-#include "include/cider/batch/CiderBatch.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "include/cider/batch/StructBatch.h"
+#include "cider/batch/CiderBatch.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 
 namespace CiderBatchUtils {
 void freeArrowArray(ArrowArray* ptr) {
@@ -142,7 +142,7 @@ int64_t getBufferNum(const ArrowSchema* schema) {
           return 1;
       }
     default:
-      CIDER_THROW(CiderCompileException,
+      CIDER_THROW(CiderException,
                   std::string("Unsupported data type to CiderBatch: ") + type);
   }
 }
