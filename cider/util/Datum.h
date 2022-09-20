@@ -19,28 +19,43 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifdef __CUDACC__
-#define DEVICE __device__
-#else
-#define DEVICE
+
+/**
+ * @file		Datum.h
+ * @brief	 Definitions for core Datum union type
+ *
+ */
+
+#pragma once
+
+#include "type/data/funcannotations.h"
+
+#ifndef __CUDACC__
+#include <string>
 #endif
 
-#define STATIC_QUAL static
-#define FORCE_INLINE inline __attribute__((always_inline))
+struct VarlenDatum {
+  size_t length;
+  int8_t* pointer;
+  bool is_null;
 
-#if (defined(__GNUC__) && defined(__SANITIZE_THREAD__)) || defined(WITH_JIT_DEBUG)
-#define ALWAYS_INLINE
-#elif defined(ENABLE_CIDER)
-#define ALWAYS_INLINE __attribute__((inline)) __attribute__((__visibility__("protected")))
-#else
-#define ALWAYS_INLINE __attribute__((always_inline))
+  DEVICE VarlenDatum() : length(0), pointer(nullptr), is_null(true) {}
+  DEVICE virtual ~VarlenDatum() {}
+
+  VarlenDatum(const size_t l, int8_t* p, const bool n)
+      : length(l), pointer(p), is_null(n) {}
+};
+
+union Datum {
+  int8_t boolval;
+  int8_t tinyintval;
+  int16_t smallintval;
+  int32_t intval;
+  int64_t bigintval;
+  float floatval;
+  double doubleval;
+  VarlenDatum* arrayval;
+#ifndef __CUDACC__
+  std::string* stringval;  // string value
 #endif
-
-#define NEVER_INLINE __attribute__((noinline))
-#define SUFFIX(name) name
-
-#ifdef _WIN32
-#define RUNTIME_EXPORT __declspec(dllexport)
-#else
-#define RUNTIME_EXPORT
-#endif
+};

@@ -510,6 +510,9 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr, bool is_partial_av
         extract_expr->get_field(),
         extract_expr->get_own_from_expr()->decompress());
   }
+  if (auto string_expr = std::dynamic_pointer_cast<Analyzer::TryStringCastOper>(expr)) {
+    return new Analyzer::TryStringCastOper(SQLTypes::kDATE, string_expr->getOwnArgs());
+  }
   if (auto string_expr = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
     return new Analyzer::StringOper(string_expr->get_kind(), string_expr->getOwnArgs());
   }

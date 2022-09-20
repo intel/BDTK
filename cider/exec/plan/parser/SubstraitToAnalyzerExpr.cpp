@@ -970,6 +970,36 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     // use a int32/int64 to represent under substrait protocol
     if (!s_cast_expr.input().literal().fixed_char().empty()) {
       v.bigintval = dateToInt64(s_cast_expr.input().literal().fixed_char());
+    }
+    // TODO: spevenhe.
+    // support nested function like cast(cast(xx as String) AS Date).
+    // CAST(SUBSTRING(col_string ,0,5) AS DATE
+    // Now only supports cast(col_string AS Date)
+    else if (s_cast_expr.input().selection().has_direct_reference() &&
+             s_cast_expr.input().selection().has_root_reference()) {
+      int col_id =
+          s_cast_expr.input().selection().direct_reference().struct_field().field();
+      if (expr_map_ptr != nullptr) {
+        auto iter = expr_map_ptr->find(col_id);
+        if (iter != expr_map_ptr->end()) {
+          auto type = iter->second->get_type_info().get_type();
+          if (type == SQLTypes::kTEXT || type == SQLTypes::kVARCHAR) {
+            std::vector<std::shared_ptr<Analyzer::Expr>> args;
+            args.push_back(toAnalyzerExpr(
+                s_cast_expr.input().selection(), function_map, expr_map_ptr));
+
+            return makeExpr<Analyzer::TryStringCastOper>(SQLTypes::kDATE, args);
+            ;
+          } else {
+            throw std::runtime_error("Unsupported date cast type other than string");
+          }
+        } else {
+          throw std::runtime_error("Failed to get field reference expr.");
+        }
+      }
+      throw std::runtime_error(
+          "Unsupported date cast: can not get the origin type of cast");
+
     } else {
       throw std::runtime_error("Not supported literal type, id: " +
                                s_cast_expr.input().literal().literal_type_case());

@@ -7,7 +7,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "year:date"
+        "name": "extract:req_date"
       }
     }],
     "relations": [{
@@ -26,15 +26,16 @@
                   }
                 },
                 "baseSchema": {
-                  "names": ["COL_A", "COL_B"],
+                  "names": ["COL_INT", "COL_STR"],
                   "struct": {
                     "types": [{
-                      "date": {
+                      "i32": {
                         "typeVariationReference": 0,
                         "nullability": "NULLABILITY_NULLABLE"
                       }
                     }, {
-                      "date": {
+                      "varchar": {
+                        "length": 10,
                         "typeVariationReference": 0,
                         "nullability": "NULLABILITY_NULLABLE"
                       }
@@ -58,16 +59,31 @@
                     "nullability": "NULLABILITY_NULLABLE"
                   }
                 },
-                "arguments": [ {
+                "arguments": [{
+                  "enum": {
+                    "specified": "YEAR"
+                  }
+                }, {
                   "value": {
-                    "selection": {
-                      "directReference": {
-                        "structField": {
-                          "field": 1
+                    "cast": {
+                      "type": {
+                        "date": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
                         }
                       },
-                      "rootReference": {
-                      }
+                      "input": {
+                        "selection": {
+                          "directReference": {
+                            "structField": {
+                              "field": 1
+                            }
+                          },
+                          "rootReference": {
+                          }
+                        }
+                      },
+                      "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
                     }
                   }
                 }]
