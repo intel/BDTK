@@ -470,12 +470,30 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
                        .planNode();
 
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
-  auto duckdbSql = "SELECT row(null, 3)";
+  auto duckdbSql = "SELECT null";
+  assertQuery(veloxPlan, duckdbSql);
   // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
   // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are
-  // [null,3], while we get [-9223372036854776000,0].
+  // null, while we get [-9223372036854776000,0].
   GTEST_SKIP();
+  assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
+  auto data = makeRowVector({makeFlatVector<int32_t>(
+      9, [](auto row) { return 1; }, nullEvery(2))});
+
+  createDuckDbTable({data});
+
+  auto veloxPlan = PlanBuilder()
+                       .values({data})
+                       .project({"c0"})
+                       .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT row(4, 4)";
+  assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
 

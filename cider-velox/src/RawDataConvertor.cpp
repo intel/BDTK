@@ -479,6 +479,7 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
     auto currentData = input.column(i);
     auto columNum = input.column_num();
     if (sType.kind_case() == substrait::Type::kStruct) {
+      // For the case, struct[sum, count].
       std::vector<VectorPtr> columnStruct{toVeloxVector(types[i]->childAt(0),
                                                         sType.struct_().types(0),
                                                         input.column(inputColIndex),

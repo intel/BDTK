@@ -56,7 +56,9 @@ inline const char* getArrowFormat(::substrait::Type& typeName) {
     case ::substrait::Type::KindCase::kTimestamp:
       return "ttu";  // MICROSECOND
     default:
-      throw std::runtime_error("Conversion is not supported yet in getArrowFormat");
+      throw std::runtime_error(
+          "Conversion is not supported yet in getArrowFormat for type" +
+          typeName.GetTypeName());
   }
 }
 
@@ -95,7 +97,9 @@ inline TypePtr getVeloxType(::substrait::Type& typeName) {
       return ROW(std::move(names), std::move(rowTypes));
     }
     default:
-      throw std::runtime_error("Conversion is not supported yet in getVeloxType");
+      throw std::runtime_error(
+          "Conversion is not supported yet in getVeloxType for type " +
+          typeName.GetTypeName());
   }
 }
 
