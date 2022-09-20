@@ -179,6 +179,8 @@ class Substrait2AnalyzerExprConverter {
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 
+  bool isColumnVar(const substrait::Expression_FieldReference& selection_expr);
+
   // This cols update stat is used for avoiding duplicated index update in ColumnVar/Var
   std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> cols_update_stat_;
 

@@ -39,8 +39,8 @@ struct VarlenDatum {
   int8_t* pointer;
   bool is_null;
 
-  DEVICE VarlenDatum() : length(0), pointer(nullptr), is_null(true) {}
-  DEVICE virtual ~VarlenDatum() {}
+  VarlenDatum() : length(0), pointer(nullptr), is_null(true) {}
+  virtual ~VarlenDatum() {}
 
   VarlenDatum(const size_t l, int8_t* p, const bool n)
       : length(l), pointer(p), is_null(n) {}

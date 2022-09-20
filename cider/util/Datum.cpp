@@ -308,13 +308,6 @@ Datum NullDatum(const SQLTypeInfo& ti) {
     case kDATE:
       d.bigintval = inline_fixed_encoding_null_val(ti);
       break;
-    // case kPOINT:
-    // case kMULTIPOINT:
-    // case kLINESTRING:
-    // case kMULTILINESTRING:
-    // case kPOLYGON:
-    // case kMULTIPOLYGON:
-    //   throw std::runtime_error("Internal error: geometry type in NullDatum.");
     default:
       throw std::runtime_error("Internal error: invalid type in NullDatum.");
   }

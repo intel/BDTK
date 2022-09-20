@@ -19,11 +19,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifdef __CUDACC__
-#define DEVICE __device__
-#else
-#define DEVICE
-#endif
 
 #define STATIC_QUAL static
 #define FORCE_INLINE inline __attribute__((always_inline))

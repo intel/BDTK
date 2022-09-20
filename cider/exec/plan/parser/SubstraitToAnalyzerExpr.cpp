@@ -25,6 +25,7 @@
  **/
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include <cstdint>
+#include "cider/CiderException.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DateTimeTranslator.h"
@@ -92,8 +93,9 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case substrait::Expression::RexTypeCase::kIfThen:
       return toAnalyzerExpr(s_expr.if_then(), function_map, expr_map_ptr);
     default:
-      throw std::runtime_error("Unsupported expression type " +
-                               std::to_string(s_expr.rex_type_case()));
+      CIDER_THROW(
+          CiderCompileException,
+          "Unsupported expression type " + std::to_string(s_expr.rex_type_case()));
   }
 }
 
@@ -274,7 +276,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
         break;
       }
       default:
-        throw std::runtime_error("unsupport update type on expression IR.");
+        CIDER_THROW(CiderCompileException, "unsupport update type on expression IR.");
     }
     return var_expr;
   }
@@ -327,7 +329,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
         break;
       }
       default:
-        throw std::runtime_error("unsupport update type on expression IR.");
+        CIDER_THROW(CiderCompileException, "unsupport update type on expression IR.");
     }
     return column_var_expr;
   }
@@ -465,7 +467,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
     }
     return makeExpr<Analyzer::StringOper>(string_expr->get_kind(), args);
   }
-  throw std::runtime_error("Failed to update expr.");
+  CIDER_THROW(CiderCompileException, "Failed to update expr.");
 }
 
 std::shared_ptr<Analyzer::AggExpr>
@@ -574,8 +576,9 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     }
 
     default:
-      throw std::runtime_error("Unsupported literal_type in Omnisci " +
-                               std::to_string(s_literal_expr.literal_type_case()));
+      CIDER_THROW(CiderCompileException,
+                  "Unsupported literal_type in Omnisci " +
+                      std::to_string(s_literal_expr.literal_type_case()));
   }
 }
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
@@ -590,7 +593,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     return toAnalyzerExpr(s_selection_expr.expression(), function_map, expr_map_ptr);
   }
   // direct_reference + root_reference --> ColumnVar
-  if (s_selection_expr.has_direct_reference() && s_selection_expr.has_root_reference()) {
+  if (isColumnVar(s_selection_expr)) {
     // before here we have got type and cached into expr_map from root node which have the
     // type info, here we use expr_map to get the right type info
     int col_id = s_selection_expr.direct_reference().struct_field().field();
@@ -602,12 +605,12 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       if (iter != expr_map_ptr->end()) {
         return iter->second;
       } else {
-        throw std::runtime_error("Failed to get field reference expr.");
+        CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
       }
     }
     return makeColumnVar(SQLTypeInfo(t, false), cur_table_id, col_id, nest_level, true);
   }
-  throw std::runtime_error("Failed to translate field reference expr.");
+  CIDER_THROW(CiderCompileException, "Failed to translate field reference expr.");
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildInValuesExpr(
@@ -713,7 +716,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildDateAddExp
     return makeExpr<Analyzer::DateaddExpr>(
         datetime_ti, daSECOND, interval_expr, datetime);
   }
-  throw std::runtime_error("Unsupported date time function: " + function_name);
+  CIDER_THROW(CiderCompileException, "Unsupported date time function: " + function_name);
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildLikeExpr(
@@ -740,7 +743,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildLikeExpr(
   } else if (value.literal().has_var_char()) {
     v.stringval = new std::string(value.literal().var_char().value());
   } else {
-    throw std::runtime_error("not supported type for like expr.");
+    CIDER_THROW(CiderCompileException, "not supported type for like expr.");
   }
   like_literal_expr = std::make_shared<Analyzer::Constant>(info, false, v);
 
@@ -807,7 +810,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       //    case SqlStringOpKind::BASE64_DECODE:
       //      return makeExpr<Analyzer::Base64DecodeStringOper>(args);
     default:
-      throw std::runtime_error("Unsupported string function.");
+      CIDER_THROW(CiderCompileException, "Unsupported string function.");
   }
   return nullptr;
 }
@@ -942,7 +945,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
         args[0],
         toAnalyzerExpr(seperated_expression, function_map, expr_map_ptr));
   }
-  throw std::runtime_error("Failed to transfer scalar function expr.");
+  CIDER_THROW(CiderCompileException, "Failed to transfer scalar function expr.");
 }
 
 int64_t dateToInt64(const std::string& string_val) {
@@ -952,7 +955,7 @@ int64_t dateToInt64(const std::string& string_val) {
   if (res.has_value()) {
     return res.value();
   }
-  throw std::runtime_error("Not a valid date string!");
+  CIDER_THROW(CiderCompileException, "Not a valid date string!");
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
@@ -975,8 +978,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     // support nested function like cast(cast(xx as String) AS Date).
     // CAST(SUBSTRING(col_string, 0, 5) AS DATE
     // Now only supports cast(col_string AS Date)
-    else if (s_cast_expr.input().selection().has_direct_reference() &&
-             s_cast_expr.input().selection().has_root_reference()) {
+    else if (isColumnVar(s_cast_expr.input().selection())) {
       int col_id =
           s_cast_expr.input().selection().direct_reference().struct_field().field();
       if (expr_map_ptr != nullptr) {
@@ -989,20 +991,20 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
                 s_cast_expr.input().selection(), function_map, expr_map_ptr));
 
             return makeExpr<Analyzer::TryStringCastOper>(SQLTypes::kDATE, args);
-            ;
           } else {
-            throw std::runtime_error("Unsupported date cast type other than string");
+            CIDER_THROW(CiderCompileException,
+                        "Not supported date cast type other than string.");
           }
         } else {
-          throw std::runtime_error("Failed to get field reference expr.");
+          CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
         }
       }
-      throw std::runtime_error(
-          "Unsupported date cast: can not get the origin type of cast");
-
+      CIDER_THROW(CiderCompileException, "Can not get the origin type of CAST to DATE.");
     } else {
-      throw std::runtime_error("Not supported literal type, id: " +
-                               s_cast_expr.input().literal().literal_type_case());
+      CIDER_THROW(CiderCompileException,
+                  "Not supported Expression or Not supported literal type for CAST to "
+                  "DATE, literal id " +
+                      std::to_string(s_cast_expr.input().literal().literal_type_case()));
     }
     return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
   }
@@ -1041,7 +1043,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
             : false,
         arg1);
   } else {
-    throw std::runtime_error("Cannot find output type for function: " + function);
+    CIDER_THROW(CiderCompileException,
+                "Cannot find output type for function: " + function);
   }
 }
 
@@ -1061,7 +1064,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
 
       expr_list.emplace_back(if_expr, then_expr);
     } else {
-      throw std::runtime_error("case when is incompleted: lack case or when");
+      CIDER_THROW(CiderCompileException, "case when is incompleted: lack case or when");
     }
   }
   if (s_if_then_expr.has_else_()) {
@@ -1069,6 +1072,14 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   }
 
   return Parser::CaseExpr::normalize(expr_list, else_expr);
+}
+
+bool Substrait2AnalyzerExprConverter::isColumnVar(
+    const substrait::Expression_FieldReference& selection_expr) {
+  if (selection_expr.has_direct_reference() && selection_expr.has_root_reference()) {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace generator
