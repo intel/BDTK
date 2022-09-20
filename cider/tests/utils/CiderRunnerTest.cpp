@@ -79,6 +79,58 @@ TEST(CiderRunnerTest, statefulRunnerMultiBatchTest) {
   }
 }
 
+TEST(CiderRunnerTest, statelessRunnerMultiThreadTest) {
+  CiderCompiler compiler;
+  std::string ddl = create_ddl();
+  std::string sql = "SELECT col_1 FROM test WHERE col_1 > 0 ";
+  auto com_res = compiler.compile(ddl, sql);
+
+  auto input_batch = create_default_batch();
+
+  std::function test_func = [](std::shared_ptr<CiderCompilationResult> com_res,
+                               std::shared_ptr<CiderBatch> input_batch) {
+    auto runner = CiderRunner::createCiderRunner(com_res);
+    for (int i = 0; i < 100000; i++) {
+      auto res = runner->processNextBatch(input_batch);
+    }
+    auto res_f = runner->finish();
+  };
+
+  std::vector<std::thread> thread_vec(10);
+  for (int i = 0; i < 10; i++) {
+    thread_vec[i] = std::thread(test_func, com_res, input_batch);
+  }
+  for (int i = 0; i < 10; i++) {
+    thread_vec[i].join();
+  }
+}
+
+TEST(CiderRunnerTest, statefulRunnerMultiThreadTest) {
+  CiderCompiler compiler;
+  std::string ddl = create_ddl();
+  std::string sql = "SELECT sum(col_1) FROM test WHERE col_1 > 0 ";
+  auto com_res = compiler.compile(ddl, sql);
+
+  auto input_batch = create_default_batch();
+
+  std::function test_func = [](std::shared_ptr<CiderCompilationResult> com_res,
+      std::shared_ptr<CiderBatch> input_batch) {
+    auto runner = CiderRunner::createCiderRunner(com_res);
+    for (int i = 0; i < 100000; i++) {
+      auto res = runner->processNextBatch(input_batch);
+    }
+    auto res_f = runner->finish();
+  };
+
+  std::vector<std::thread> thread_vec(10);
+  for (int i = 0; i < 10; i++) {
+    thread_vec[i] = std::thread(test_func, com_res, input_batch);
+  }
+  for (int i = 0; i < 10; i++) {
+    thread_vec[i].join();
+  }
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
