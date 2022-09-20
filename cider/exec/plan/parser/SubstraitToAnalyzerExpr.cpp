@@ -973,7 +973,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     }
     // TODO: spevenhe.
     // support nested function like cast(cast(xx as String) AS Date).
-    // CAST(SUBSTRING(col_string ,0,5) AS DATE
+    // CAST(SUBSTRING(col_string, 0, 5) AS DATE
     // Now only supports cast(col_string AS Date)
     else if (s_cast_expr.input().selection().has_direct_reference() &&
              s_cast_expr.input().selection().has_root_reference()) {
