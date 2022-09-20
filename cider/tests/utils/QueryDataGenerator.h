@@ -233,7 +233,7 @@ class QueryDataGenerator {
   static CiderByteArray genDateFormatCiderByteArray(int len) {
     char* buf = (char*)std::malloc(len);
     char base = '0';
-    std::mt19937 rng(std::random_device{}()); // NOLINT
+    std::mt19937 rng(std::random_device{}());  // NOLINT
     buf[0] = base + Random::randInt32(1, 2, rng);
     buf[1] = base + Random::randInt32(0, 9, rng);
     buf[2] = base + Random::randInt32(0, 9, rng);
@@ -247,9 +247,6 @@ class QueryDataGenerator {
     buf[8] = base + month / 10;
     buf[9] = base + month % 10;
 
-    for (int i = 0; i < len; i++) {
-      std::cout << buf[i];
-    }
     std::cout << std::endl;
     return CiderByteArray(len, (const uint8_t*)buf);
   }
