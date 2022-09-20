@@ -54,7 +54,7 @@ CiderStatelessRunner::CiderStatelessRunner(std::shared_ptr<CiderCompilationResul
 }
 
 std::shared_ptr<CiderBatch> CiderStatelessRunner::finish() {
-  finished_ = true; // or move to constructor;
+  finished_ = true;  // or move to constructor;
   return nullptr;
 }
 
@@ -72,11 +72,11 @@ CiderStatefulRunner::CiderStatefulRunner(std::shared_ptr<CiderCompilationResult>
 }
 
 std::shared_ptr<CiderBatch> CiderStatefulRunner::finish() {
-  if(isFinished()) {
+  if (isFinished()) {
     return nullptr;
   }
   auto [state, output_batch] = cider_runtime_module_->fetchResults();
-  if(state == CiderRuntimeModule::ReturnCode::kNoMoreOutput) {
+  if (state == CiderRuntimeModule::ReturnCode::kNoMoreOutput) {
     finished_ = true;
   }
   return std::move(output_batch);

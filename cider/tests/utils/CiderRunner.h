@@ -53,7 +53,7 @@ class CiderRunner {
   virtual std::shared_ptr<CiderBatch> processNextBatch(
       const std::shared_ptr<CiderBatch>& input_batch) = 0;
   virtual std::shared_ptr<CiderBatch> finish() = 0;
-  virtual bool isFinished() {return finished_;}
+  virtual bool isFinished() { return finished_; }
 
  protected:
   std::shared_ptr<CiderCompilationResult> com_res_;
