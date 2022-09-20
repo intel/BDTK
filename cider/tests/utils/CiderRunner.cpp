@@ -85,5 +85,5 @@ std::shared_ptr<CiderBatch> CiderStatefulRunner::processNextBatch(
     const std::shared_ptr<CiderBatch>& input_batch) {
   cider_runtime_module_->processNextBatch(*input_batch);
 
-  return std::make_shared<CiderBatch>();
+  return nullptr;
 }
