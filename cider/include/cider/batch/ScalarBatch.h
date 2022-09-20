@@ -42,22 +42,6 @@ class ScalarBatch final : public CiderBatch {
     checkArrowEntries();
   }
 
-  bool resizeBatch(int64_t size, bool default_not_null = false) override {
-    CHECK(!isMoved());
-    if (!permitBufferAllocate()) {
-      return false;
-    }
-
-    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
-
-    array_holder->allocBuffer(1, sizeof(T) * size);
-    bool ret = resizeNullVector(0, size, default_not_null);
-
-    setLength(size);
-
-    return ret;
-  }
-
   T* getMutableRawData() {
     CHECK(!isMoved());
     return reinterpret_cast<T*>(const_cast<void*>(getBuffersPtr()[1]));
@@ -66,6 +50,21 @@ class ScalarBatch final : public CiderBatch {
   const T* getRawData() const {
     CHECK(!isMoved());
     return reinterpret_cast<const T*>(getBuffersPtr()[1]);
+  }
+
+ protected:
+  bool resizeData(int64_t size) override {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+
+    array_holder->allocBuffer(1, sizeof(T) * size);
+    setLength(size);
+
+    return true;
   }
 
  private:

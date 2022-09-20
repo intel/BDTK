@@ -213,7 +213,6 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
 
         CiderArrowSchemaBufferHolder* holder =
             new CiderArrowSchemaBufferHolder(info.getChildrenNum(),
-                                             !info.get_notnull(),
                                              false);  // TODO: Dictionary support is TBD;
         schema->children = holder->getChildrenPtrs();
         schema->dictionary = holder->getDictPtr();

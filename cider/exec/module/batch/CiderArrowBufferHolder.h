@@ -50,6 +50,7 @@ class CiderArrowArrayBufferHolder {
   void relaseBuffer(size_t index);
 
   std::vector<void*> buffers_;
+  std::vector<size_t> buffers_bytes_;  // Used for allocator.
   std::vector<ArrowArray*> children_ptr_;
   std::vector<ArrowArray> children_and_dict_;
   const bool has_dict_;
@@ -57,18 +58,15 @@ class CiderArrowArrayBufferHolder {
 
 class CiderArrowSchemaBufferHolder {
  public:
-  CiderArrowSchemaBufferHolder(size_t children_num, bool null_vector, bool dict);
+  CiderArrowSchemaBufferHolder(size_t children_num, bool dict);
 
   ArrowSchema** getChildrenPtrs() { return children_ptr_.data(); }
 
   ArrowSchema* getDictPtr();
 
-  bool needNullVector() const { return null_vector_; }
-
  private:
   std::vector<ArrowSchema*> children_ptr_;
   std::vector<ArrowSchema> children_and_dict_;
-  const bool null_vector_;
   const bool has_dict_;
 };
 

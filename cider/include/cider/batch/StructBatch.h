@@ -41,16 +41,16 @@ class StructBatch final : public CiderBatch {
     checkArrowEntries();
   }
 
-  bool resizeBatch(int64_t size, bool default_not_null = false) override {
+ protected:
+  bool resizeData(int64_t size) override {
     CHECK(!isMoved());
     if (!permitBufferAllocate()) {
       return false;
     }
 
-    bool ret = resizeNullVector(0, size, default_not_null);
     setLength(size);
 
-    return ret;
+    return true;
   }
 
  private:
