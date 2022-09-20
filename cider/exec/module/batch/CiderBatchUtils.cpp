@@ -67,6 +67,11 @@ ArrowSchema* allocateArrowSchema() {
   return ptr;
 }
 
+ArrowSchema* allocateArrowSchema(const ArrowSchema& schema) {
+  ArrowSchema* ptr = new ArrowSchema(schema);
+  return ptr;
+}
+
 void ciderArrowSchemaReleaser(ArrowSchema* schema) {
   if (!schema || !schema->release) {
     return;
@@ -225,6 +230,59 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
       };
 
   build_function(root_schema, sql_info);
+
+  return root_schema;
+}
+
+const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
+  using namespace substrait;
+  switch (type.kind_case()) {
+    case Type::kBool:
+      return "b";
+    case Type::kI8:
+      return "c";
+    case Type::kI16:
+      return "s";
+    case Type::kI32:
+      return "i";
+    case Type::kI64:
+      return "l";
+    case Type::kFp32:
+      return "f";
+    case Type::kFp64:
+      return "g";
+    case Type::kStruct:
+      return "+s";
+    default:
+      throw std::runtime_error(std::string("Unsupported to convert type ") +
+                               type.GetTypeName() + "to Arrow type.");
+  }
+}
+
+ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table) {
+  auto&& children = table.getColumnTypes();
+
+  ArrowSchema* root_schema = allocateArrowSchema();
+  root_schema->format = "+s";
+  root_schema->n_children = children.size();
+  CiderArrowSchemaBufferHolder* holder =
+      new CiderArrowSchemaBufferHolder(children.size(), false);
+  root_schema->children = holder->getChildrenPtrs();
+  root_schema->dictionary = holder->getDictPtr();
+  root_schema->release = ciderArrowSchemaReleaser;
+  root_schema->private_data = holder;
+
+  for (size_t i = 0; i < children.size(); ++i) {
+    ArrowSchema* schema = root_schema->children[i];
+    schema->format = convertSubstraitTypeToArrowType(children[i]);
+    schema->n_children = 0;
+
+    CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
+    schema->children = holder->getChildrenPtrs();
+    schema->dictionary = holder->getDictPtr();
+    schema->release = ciderArrowSchemaReleaser;
+    schema->private_data = holder;
+  }
 
   return root_schema;
 }

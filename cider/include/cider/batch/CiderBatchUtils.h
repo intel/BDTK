@@ -23,8 +23,10 @@
 #define CIDER_CIDERBATCHUTILS_H
 
 #include "type/data/sqltypes.h"
+#include "substrait/type.pb.h"
 
 class CiderBatch;
+class CiderTableSchema;
 
 struct ArrowSchema;
 struct ArrowArray;
@@ -43,6 +45,8 @@ ArrowArray* allocateArrowArray();
 
 ArrowSchema* allocateArrowSchema();
 
+ArrowSchema* allocateArrowSchema(const ArrowSchema& schema);
+
 int64_t getBufferNum(const ArrowSchema* schema);
 
 SQLTypes convertArrowTypeToCiderType(const char* format);
@@ -53,6 +57,10 @@ std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema,
 const char* convertCiderTypeToArrowType(SQLTypes type);
 
 ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
+
+const char* convertSubstraitTypeToArrowType(const substrait::Type& type);
+
+ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table);
 
 };  // namespace CiderBatchUtils
 
