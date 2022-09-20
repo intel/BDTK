@@ -51,7 +51,7 @@
 class CiderGroupByVarcharTest : public CiderTestBase {
  public:
   // TODO(yizhong): make col_d to 50% chance nullable and change min length to 0
-  // after null string is supportedz
+  // after null string is supported
   CiderGroupByVarcharTest() {
     table_name_ = "table_test";
     create_ddl_ =
@@ -468,6 +468,12 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByMultiColTest) {
 }
 
 TEST_F(CiderGroupByVarcharTest, varcharGroupByTest) {
+  /*single not null group by key*/
+  assertQuery("SELECT SUM(col_a), col_c FROM table_test GROUP BY col_c", "", true);
+
+  /*single null group by key*/
+  assertQuery("SELECT SUM(col_a), col_d FROM table_test GROUP BY col_d", "", true);
+
   /*one not null varchar group by key*/
   assertQuery(
       "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c", "", true);
