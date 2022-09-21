@@ -28,11 +28,8 @@
 
 #pragma once
 
-#include "type/data/funcannotations.h"
-
-#ifndef __CUDACC__
 #include <string>
-#endif
+#include "type/data/funcannotations.h"
 
 struct VarlenDatum {
   size_t length;
@@ -55,7 +52,5 @@ union Datum {
   float floatval;
   double doubleval;
   VarlenDatum* arrayval;
-#ifndef __CUDACC__
   std::string* stringval;  // string value
-#endif
 };
