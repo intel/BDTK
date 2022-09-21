@@ -430,6 +430,7 @@ class CiderCompileModule::Impl {
       const std::vector<CiderTableSchema>& tableSchemas) {
     std::vector<InputTableInfo> query_infos;
     const int db_id = 100;
+    // Note that we only consider single join here, so use faked table id 100
     const int table_id = 100;
     // seems only this row num will be used for building join hash table only, so we set
     // row num to build table row num
@@ -441,7 +442,7 @@ class CiderCompileModule::Impl {
       Fragmenter_Namespace::FragmentInfo fi_0;
       fi_0.fragmentId = 0;
       fi_0.shadowNumTuples = row_num;
-      fi_0.physicalTableId = table_id + i;  // FIXME
+      fi_0.physicalTableId = table_id + i;
       fi_0.setPhysicalNumTuples(row_num);
 
       Fragmenter_Namespace::TableInfo ti_0;

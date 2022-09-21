@@ -150,8 +150,9 @@ TEST_F(CiderMathOpTest, ColumnMathMixOpTest) {
   assertQuery(
       "SELECT double_col + integer_col / bigint_col FROM test where bigint_col <> 0");
 
-  // TODO modify substrait-java generated json file by version v0.7.0 format to pass test
-  // as isthmus will cast double into float, loss of precision in float op double case.
+  // Using modified substrait-java generated json file by version v0.7.0 format to pass
+  // test as isthmus will cast double into float, loss of precision in float op double
+  // case.
   assertQuery("SELECT float_col + double_col FROM test", "mathop_add_fp32_fp64.json");
 }
 
