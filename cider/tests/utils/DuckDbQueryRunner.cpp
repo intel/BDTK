@@ -20,7 +20,6 @@
  */
 
 #include "DuckDbQueryRunner.h"
-#include <cstdint>
 #include "Utils.h"
 #include "cider/CiderTypes.h"
 #include "exec/plan/parser/TypeUtils.h"

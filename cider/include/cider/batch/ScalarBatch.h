@@ -33,7 +33,7 @@ class ScalarBatch final : public CiderBatch {
   static std::unique_ptr<ScalarBatch<T>> Create(ArrowSchema* schema,
                                                 std::shared_ptr<CiderAllocator> allocator,
                                                 ArrowArray* array = nullptr) {
-    return array ? std::make_unique<ScalarBatch<T>>(schema, array)
+    return array ? std::make_unique<ScalarBatch<T>>(schema, array, allocator)
                  : std::make_unique<ScalarBatch<T>>(schema, allocator);
   }
 
@@ -41,8 +41,10 @@ class ScalarBatch final : public CiderBatch {
       : CiderBatch(schema, allocator) {
     checkArrowEntries();
   }
-  explicit ScalarBatch(ArrowSchema* schema, ArrowArray* array)
-      : CiderBatch(schema, array) {
+  explicit ScalarBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, array, allocator) {
     checkArrowEntries();
   }
 

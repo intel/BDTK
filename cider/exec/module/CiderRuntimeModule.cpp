@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#include <cstdint>
-#include <memory>
 #define CIDERBATCH_WITH_ARROW
 
 #include "cider/CiderRuntimeModule.h"
@@ -206,6 +204,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     if (hoist_literals_) {
       if (is_group_by_) {
         CiderBitUtils::CiderBitVector<> row_skip_mask(
+            allocator_,
             use_cider_data_format ? in_batch.getLength() : in_batch.row_num());
         multifrag_cols_ptr[1] = row_skip_mask.as<const int8_t*>();
 
@@ -416,7 +415,6 @@ void CiderRuntimeModule::extract_varchar_column_from_dict(int32_t start_row,
     int64_t key = flattened_out[cur_col_offset];
     std::string s =
         ciderCompilationResult_->impl_->ciderStringDictionaryProxy_->getString(key);
-    // uint8_t* ptr = (uint8_t*)std::malloc(s.length());  // memleak
     uint8_t* ptr = reinterpret_cast<uint8_t*>(allocator_->allocate(s.length()));
     std::memcpy(ptr, s.c_str(), s.length());
     col_out_buffer[i].ptr = reinterpret_cast<const uint8_t*>(ptr);

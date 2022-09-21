@@ -23,7 +23,6 @@
 #define CIDER_CIDERCOMPILEMODULE_H
 
 #include <map>
-#include <memory>
 #include <string>
 
 #include "CiderInterface.h"
@@ -51,10 +50,11 @@ class CiderCompilationResult {
 
 class CiderCompileModule {
  public:
-  CiderCompileModule();
+  CiderCompileModule(std::shared_ptr<CiderAllocator> allocator);
   ~CiderCompileModule();
 
-  static std::shared_ptr<CiderCompileModule> Make();
+  static std::shared_ptr<CiderCompileModule> Make(
+      std::shared_ptr<CiderAllocator> allocator);
 
   std::shared_ptr<CiderCompilationResult> compile(
       const substrait::Plan& plan,

@@ -28,7 +28,6 @@
 #include <boost/sort/spreadsort/string_sort.hpp>
 #include <future>
 #include <iostream>
-#include <memory>
 #include <string_view>
 #include <thread>
 #include "cider/CiderException.h"

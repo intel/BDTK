@@ -20,7 +20,6 @@
  */
 
 #include "ArrowDataConvertor.h"
-#include <memory>
 #include "ArrowConvertorUtils.h"
 #include "velox/vector/arrow/Bridge.h"
 

@@ -22,7 +22,6 @@
 #include "RawDataConvertor.h"
 #include <cmath>
 #include <cstdint>
-#include <memory>
 #include "TypeConversions.h"
 #include "cider/batch/CiderBatch.h"
 #include "substrait/type.pb.h"

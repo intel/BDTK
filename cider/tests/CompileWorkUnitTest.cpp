@@ -135,7 +135,8 @@ std::vector<InputTableInfo> buildQueryInfo() {
 }
 
 TEST(APITest, case1) {
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
 
   // build compile input parameters
   RelAlgExecutionUnit ra_exe_unit = buildFakeAggRelAlgEU();

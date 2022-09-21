@@ -19,7 +19,6 @@
  * under the License.
  */
 #include "DataConvertor.h"
-#include <memory>
 
 #include "ArrowDataConvertor.h"
 #include "RawDataConvertor.h"

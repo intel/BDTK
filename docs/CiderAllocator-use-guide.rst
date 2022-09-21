@@ -43,5 +43,5 @@ A typical usage in CiderRunTimeModule
     `allocator_->deallocate(reinterpret_cast<int8_t*>(col_buffers),sizeof(int8_t**) * (total_col_num));`
 
 2.4 Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default
-    `auto customAllocator = make_shared<CustomAllocator>();
+    `auto customAllocator = std::make_shared<CustomAllocator>();
     cider_runtime_module_ = std::make_shared<CiderRuntimeModule>(compile_res_, compile_option, exe_option, customAllocator);`

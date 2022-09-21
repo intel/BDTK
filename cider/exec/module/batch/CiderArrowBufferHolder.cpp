@@ -50,22 +50,23 @@ CiderArrowArrayBufferHolder::~CiderArrowArrayBufferHolder() {
   }
 }
 
-// TODO: qiuyangshen Replace with CiderAllocator
-// Unable to determine reallocated memory size
-// refactoring code by LiJiang
 void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
   if (buffers_[index]) {
-    buffers_[index] = std::realloc(buffers_[index], bytes);
+    buffers_[index] = allocator_->reallocate(
+        reinterpret_cast<int8_t*>(buffers_[index]), buffers_bytes_[index], bytes);
+    buffers_bytes_[index] = bytes;
   } else {
-    buffers_[index] = std::malloc(bytes);
+    buffers_[index] = allocator_->allocate(bytes);
+    buffers_bytes_[index] = bytes;
   }
 }
 
-// TODO: qiuyangshen Replace with CiderAllocator
 void CiderArrowArrayBufferHolder::relaseBuffer(size_t index) {
   if (buffers_[index]) {
-    std::free(buffers_[index]);
+    allocator_->deallocate(reinterpret_cast<int8_t*>(buffers_[index]),
+                           buffers_bytes_[index]);
     buffers_[index] = nullptr;
+    buffers_bytes_[index] = 0;
   }
 }
 

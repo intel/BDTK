@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#include <memory>
 #define CIDERBATCH_WITH_ARROW
 
 #include "cider/batch/CiderBatchUtils.h"

@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <memory>
 
+#include "cider/CiderAllocator.h"
 #include "type/data/funcannotations.h"
 
 namespace CiderBitUtils {
@@ -45,21 +46,24 @@ class CiderBitVector {
     return ans;
   }();
 
-  explicit CiderBitVector(size_t bits_num, uint8_t init_val = 0)
-      : bits_num_(alignBitsNum(bits_num))
-      , data_(bits_num_ ? std::aligned_alloc(kSizeAlignmentFactor, bits_num_ >> 3)
-                        : nullptr) { /* Mem alignment, default is 16 bytes*/
+  explicit CiderBitVector(std::shared_ptr<CiderAllocator> allocator,
+                          size_t bits_num,
+                          uint8_t init_val = 0)
+      : allocator_(std::make_shared<AlignAllocator<kSizeAlignmentFactor>>(allocator))
+      , bits_num_(alignBitsNum(bits_num))
+      , /* Mem alignment, default is 16 bytes*/
+      data_(bits_num_ ? allocator_->allocate(bits_num_ >> 3) : nullptr) {
     resetBits(init_val);
   }
 
-  CiderBitVector() : CiderBitVector(0) {}
-
-  ~CiderBitVector() { std::free(data_); }
+  ~CiderBitVector() {
+    allocator_->deallocate(reinterpret_cast<int8_t*>(data_), bits_num_ >> 3);
+  }
 
   CiderBitVector(const CiderBitVector& rh)
-      : bits_num_(rh.bits_num_)
-      , data_(bits_num_ ? std::aligned_alloc(kSizeAlignmentFactor, bits_num_ >> 3)
-                        : nullptr) {
+      : allocator_(std::make_shared<AlignAllocator<kSizeAlignmentFactor>>(rh.allocator_))
+      , bits_num_(rh.bits_num_)
+      , data_(bits_num_ ? allocator_->allocate(rh.bits_num_ >> 3) : nullptr) {
     uint8_t* ptr = as<uint8_t>();
     const uint8_t* rh_ptr = rh.as<uint8_t>();
     for (size_t i = 0; i < (bits_num_ >> 3); ++i) {
@@ -71,8 +75,8 @@ class CiderBitVector {
     if (this == &rh) {
       return *this;
     }
-
-    std::free(data_);
+    allocator_->deallocate(reinterpret_cast<int8_t*>(data_), bits_num_ >> 3);
+    allocator_ = std::make_shared<AlignAllocator<kSizeAlignmentFactor>>(rh.allocator_);
 
     bits_num_ = rh.bits_num_;
     uint8_t* ptr = as<uint8_t>();
@@ -87,7 +91,8 @@ class CiderBitVector {
       return *this;
     }
 
-    std::free(data_);
+    allocator_->deallocate(reinterpret_cast<int8_t*>(data_), bits_num_ >> 3);
+    allocator_ = std::make_shared<AlignAllocator<kSizeAlignmentFactor>>(rh.allocator_);
 
     bits_num_ = rh.bits_num_;
     data_ = rh.data_;
@@ -99,7 +104,9 @@ class CiderBitVector {
   }
 
   CiderBitVector(CiderBitVector&& rh) noexcept
-      : bits_num_(rh.bits_num_), data_(rh.data_) {
+      : allocator_(std::make_shared<AlignAllocator<kSizeAlignmentFactor>>(rh.allocator_))
+      , bits_num_(rh.bits_num_)
+      , data_(rh.data_) {
     rh.bits_num_ = 0;
     rh.data_ = nullptr;
   }
@@ -134,6 +141,7 @@ class CiderBitVector {
     return expect_bits << 3;
   }
 
+  std::shared_ptr<CiderAllocator> allocator_;
   size_t bits_num_;
   void* data_;
 };

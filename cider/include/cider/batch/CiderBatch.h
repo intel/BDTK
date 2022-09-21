@@ -22,7 +22,6 @@
 #ifndef CIDER_CIDERBATCH_H
 #define CIDER_CIDERBATCH_H
 
-#include <memory>
 #include "../CiderAllocator.h"
 #include "../CiderTableSchema.h"
 #include "../CiderTypes.h"
@@ -42,7 +41,9 @@ class CiderBatch {
   explicit CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator);
   // In this case, CiderBatch references the memory allocated by the Caller, therefore
   // resize is not allowed.
-  explicit CiderBatch(ArrowSchema* schema, ArrowArray* array);
+  explicit CiderBatch(ArrowSchema* schema,
+                      ArrowArray* array,
+                      std::shared_ptr<CiderAllocator> allocator);
 
   virtual ~CiderBatch();
 

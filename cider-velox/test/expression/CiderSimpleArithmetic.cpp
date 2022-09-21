@@ -22,6 +22,7 @@
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 
+#include "Allocator.h"
 #include "DataConvertor.h"
 #include "ExprEvalUtils.h"
 #include "cider/CiderCompileModule.h"
@@ -44,6 +45,8 @@ using namespace facebook::velox;
 using namespace facebook::velox::exec;
 using namespace facebook::velox::test;
 using namespace facebook::velox::plugin;
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
 
 namespace {
 
@@ -113,7 +116,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     auto typedExpr = core::Expressions::inferTypes(untyped, inputType_, execCtx_.pool());
     auto rowType = std::dynamic_pointer_cast<const RowType>(inputType_);
     auto relAlgEU = ExprEvalUtils::getMockedRelAlgEU(typedExpr, rowType, "arithmetic");
-    auto ciderCompileModule = CiderCompileModule::Make();
+    auto ciderCompileModule = CiderCompileModule::Make(allocator);
     std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
     suspender.dismiss();
     auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
@@ -130,7 +133,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     auto typedExpr = core::Expressions::inferTypes(untyped, type, pool);
     auto rowType = std::dynamic_pointer_cast<const RowType>(type);
     auto relAlgEU = ExprEvalUtils::getMockedRelAlgEU(typedExpr, rowType, euType);
-    auto ciderCompileModule = CiderCompileModule::Make();
+    auto ciderCompileModule = CiderCompileModule::Make(allocator);
     std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
     auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
     auto ciderRuntimeModule = std::make_shared<CiderRuntimeModule>(result);

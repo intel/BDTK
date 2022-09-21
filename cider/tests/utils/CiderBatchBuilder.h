@@ -28,11 +28,12 @@
 #include "substrait/type.pb.h"
 #include "util/Logger.h"
 
-static const std::shared_ptr<CiderAllocator> allocator =
-    std::make_shared<CiderDefaultAllocator>();
 class CiderBatchBuilder {
  public:
-  CiderBatchBuilder() : row_num_(0), is_row_num_set_(false) {}
+  CiderBatchBuilder()
+      : row_num_(0)
+      , is_row_num_set_(false)
+      , allocator_(std::make_shared<CiderDefaultAllocator>()) {}
 
   CiderBatchBuilder& setRowNum(int row_num) {
     if (is_row_num_set_) {  // have set before, throw exception
@@ -74,7 +75,7 @@ class CiderBatchBuilder {
       if (!null_data.empty()) {
         CHECK_EQ(row_num_, null_data.size());
       }
-      buf = allocator->allocate(sizeof(T) * row_num_);
+      buf = allocator_->allocate(sizeof(T) * row_num_);
       std::memcpy(buf, col_data.data(), sizeof(T) * row_num_);
     }
     table_ptr_.push_back(buf);
@@ -109,7 +110,7 @@ class CiderBatchBuilder {
       if (!null_data.empty()) {
         CHECK_EQ(row_num_, null_data.size());
       }
-      buf = allocator->allocate(sizeof(int64_t) * row_num_);
+      buf = allocator_->allocate(sizeof(int64_t) * row_num_);
       int64_t* dump = reinterpret_cast<int64_t*>(buf);
       for (auto i = 0; i < row_num_; i++) {
         dump[i] = col_data[i].getInt64Val();
@@ -145,7 +146,7 @@ class CiderBatchBuilder {
         CHECK_EQ(row_num_, null_data.size());
       }
       int len = sizeof(CiderByteArray) * row_num_;
-      buf = allocator->allocate(len);
+      buf = allocator_->allocate(len);
       std::memcpy(buf, col_data.data(), len);
     }
     table_ptr_.push_back(buf);
@@ -179,6 +180,7 @@ class CiderBatchBuilder {
   std::vector<::substrait::Type> col_types_;
   std::string table_name_ = "";
   std::vector<std::vector<bool>> null_vecs_;  // mark null data when builder adds columns
+  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 #endif  // CIDER_CIDERBATCHBUILDER_H

@@ -23,6 +23,7 @@
 #include <folly/init/Init.h>
 #include <gflags/gflags.h>
 
+#include "Allocator.h"
 #include "DataConvertor.h"
 #include "ExprEvalUtils.h"
 #include "cider/CiderRuntimeModule.h"
@@ -44,7 +45,8 @@ using namespace facebook::velox::exec;
 using namespace facebook::velox::test;
 using namespace facebook::velox::functions;
 using namespace facebook::velox::plugin;
-
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
 namespace {
 
 class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
@@ -126,7 +128,7 @@ class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
         getEU(expression, std::dynamic_pointer_cast<const RowType>(inputType_));
 
     // Prepare runtime module
-    auto ciderCompileModule = CiderCompileModule::Make();
+    auto ciderCompileModule = CiderCompileModule::Make(allocator);
     std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
 
     suspender.dismiss();
@@ -143,7 +145,7 @@ class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
         getEU(expression, std::dynamic_pointer_cast<const RowType>(inputType_));
 
     // Prepare runtime module
-    auto ciderCompileModule = CiderCompileModule::Make();
+    auto ciderCompileModule = CiderCompileModule::Make(allocator);
     std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
     auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
     std::shared_ptr<CiderRuntimeModule> ciderRuntimeModule =

@@ -19,8 +19,7 @@
  * under the License.
  */
 
-#include "include/cider/batch/CiderBatch.h"
-#include <memory>
+#include "cider/batch/CiderBatch.h"
 #include "ArrowABI.h"
 
 CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
@@ -42,12 +41,19 @@ CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allo
   arrow_array_->release = CiderBatchUtils::ciderArrowArrayReleaser;
 }
 
-CiderBatch::CiderBatch(ArrowSchema* schema, ArrowArray* array)
-    : arrow_schema_(schema), arrow_array_(array), ownership_(true), reallocate_(false) {
+CiderBatch::CiderBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+    : arrow_schema_(schema)
+    , arrow_array_(array)
+    , ownership_(true)
+    , reallocate_(false)
+    , allocator_(allocator) {
   CHECK(arrow_schema_);
   CHECK(arrow_schema_->release);
   CHECK(arrow_array_);
   CHECK(arrow_array_->release);
+  CHECK(allocator_);
 }
 
 CiderBatch::~CiderBatch() {
@@ -60,6 +66,7 @@ CiderBatch::CiderBatch(const CiderBatch& rh) {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = false;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 }
 
 CiderBatch& CiderBatch::operator=(const CiderBatch& rh) {
@@ -72,6 +79,7 @@ CiderBatch& CiderBatch::operator=(const CiderBatch& rh) {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = false;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   return *this;
 }
@@ -81,6 +89,7 @@ CiderBatch::CiderBatch(CiderBatch&& rh) noexcept {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = rh.ownership_;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   rh.arrow_array_ = nullptr;
   rh.arrow_schema_ = nullptr;
@@ -99,6 +108,7 @@ CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = rh.ownership_;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   rh.arrow_array_ = nullptr;
   rh.arrow_schema_ = nullptr;

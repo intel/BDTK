@@ -480,14 +480,16 @@ class CiderCompileModule::Impl {
   }
 };
 
-CiderCompileModule::CiderCompileModule() {
-  impl_.reset(new Impl(allocator_));
+CiderCompileModule::CiderCompileModule(std::shared_ptr<CiderAllocator> allocator) {
+  impl_.reset(new Impl(allocator));
 }
 
 CiderCompileModule::~CiderCompileModule() {}
 
-std::shared_ptr<CiderCompileModule> CiderCompileModule::Make() {
-  auto ciderCompileModule = std::shared_ptr<CiderCompileModule>(new CiderCompileModule());
+std::shared_ptr<CiderCompileModule> CiderCompileModule::Make(
+    std::shared_ptr<CiderAllocator> allocator) {
+  auto ciderCompileModule =
+      std::shared_ptr<CiderCompileModule>(new CiderCompileModule(allocator));
   return ciderCompileModule;
 }
 

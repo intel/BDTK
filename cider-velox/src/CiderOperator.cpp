@@ -51,7 +51,7 @@ CiderOperator::CiderOperator(int32_t operatorId,
     auto exec_option = CiderExecutionOption::defaults();
     auto compile_option = CiderCompilationOption::defaults();
 
-    ciderCompileModule_ = CiderCompileModule::Make();
+    ciderCompileModule_ = CiderCompileModule::Make(allocator);
     auto ciderCompileResult =
         ciderCompileModule_->compile(plan, compile_option, exec_option);
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
@@ -117,7 +117,8 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
       buildSideEmpty_ = true;
     }
 
-    ciderCompileModule_ = CiderCompileModule::Make();
+    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
+    ciderCompileModule_ = CiderCompileModule::Make(allocator);
 
     // TODO: add vector<RowVectorPtr> -> CiderBatch converter
     auto buildBatch = dataConvertor_->convertToCider(buildData_->data()[0],
@@ -130,7 +131,6 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
 
     auto compile_option = CiderCompilationOption::defaults();
     auto exec_option = CiderExecutionOption::defaults();
-    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
         compileResult, compile_option, exec_option, allocator);
 

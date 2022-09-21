@@ -22,7 +22,6 @@
 #ifndef CIDER_ARROW_BUFFER_HOLDER_H
 #define CIDER_ARROW_BUFFER_HOLDER_H
 
-#include <memory>
 #include <vector>
 #include "cider/CiderAllocator.h"
 

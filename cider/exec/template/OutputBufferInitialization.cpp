@@ -21,7 +21,6 @@
  */
 
 #include "OutputBufferInitialization.h"
-#include <memory>
 #include "exec/template/BufferCompaction.h"
 #include "exec/template/TypePunning.h"
 #include "exec/template/common/descriptors/QueryMemoryDescriptor.h"

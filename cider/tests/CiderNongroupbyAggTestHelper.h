@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#include <memory>
 #define CIDERBATCH_WITH_ARROW
 #include <gtest/gtest.h>
 #include "type/schema/ColumnInfo.h"
@@ -287,7 +286,8 @@ void runTest(const std::string& test_name,
   LOG(DEBUG1) << "----------------------Test case: " + test_name +
                      " --------------------------------------";
 
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   auto exe_option = CiderExecutionOption::defaults();
   auto compile_option = CiderCompilationOption::defaults();
 

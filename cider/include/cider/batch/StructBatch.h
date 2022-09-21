@@ -32,7 +32,7 @@ class StructBatch final : public CiderBatch {
   static std::unique_ptr<StructBatch> Create(ArrowSchema* schema,
                                              std::shared_ptr<CiderAllocator> allocator,
                                              ArrowArray* array = nullptr) {
-    return array ? std::make_unique<StructBatch>(schema, array)
+    return array ? std::make_unique<StructBatch>(schema, array, allocator)
                  : std::make_unique<StructBatch>(schema, allocator);
   }
 
@@ -40,8 +40,10 @@ class StructBatch final : public CiderBatch {
       : CiderBatch(schema, allocator) {
     checkArrowEntries();
   }
-  explicit StructBatch(ArrowSchema* schema, ArrowArray* array)
-      : CiderBatch(schema, array) {
+  explicit StructBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, array, allocator) {
     checkArrowEntries();
   }
 
