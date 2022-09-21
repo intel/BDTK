@@ -244,8 +244,8 @@ class QueryDataGenerator {
     buf[6] = base + month % 10;
     buf[7] = '-';
     int day = Random::randInt32(1, 28, rng);
-    buf[8] = base + month / 10;
-    buf[9] = base + month % 10;
+    buf[8] = base + day / 10;
+    buf[9] = base + day % 10;
     return CiderByteArray(len, (const uint8_t*)buf);
   }
 
