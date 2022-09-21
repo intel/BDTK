@@ -28,7 +28,7 @@ const int64_t kSecondsInOneDay = 24 * 60 * 60;
 const int64_t kMicrosecondsInSecond = 1000 * 1000;
 
 // used to better gen time type column. Cider will use a 64 bit integer to represent time
-// type As date type, the value is epoch from 1970-01-01 in seconds, if you want to
+// As date type, the value is epoch from 1970-01-01 in seconds, if you want to
 // convert to days elapsed, you need to divide 24*60*60.
 // As timestamp type, the value is in units of microseconds since the UNIX epoch.
 // As time type, the value is in units of microseconds since the beginning of any day

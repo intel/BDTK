@@ -25,7 +25,7 @@
 #include "util/DateTimeParser.h"
 
 int64_t DateAndTimeType::toInt64(const std::string& string_val, Type type) {
-  DateTimeParser::FormatType fmtType = ( type == Type::Time)
+  DateTimeParser::FormatType fmtType = (type == Type::Time)
                                            ? DateTimeParser::FormatType::Time
                                            : DateTimeParser::FormatType::Date;
   DateTimeParser parser;

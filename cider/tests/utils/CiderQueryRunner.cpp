@@ -32,8 +32,6 @@
 
 #include <google/protobuf/util/json_util.h>
 
-
-
 #define COMPILE_AND_GEN_RUNTIME_MODULE()                                             \
   compile_option.needs_error_check = true;                                           \
   auto compile_res = ciderCompileModule_->compile(plan, compile_option, exe_option); \

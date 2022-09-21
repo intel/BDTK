@@ -30,8 +30,7 @@ bool CiderBatchChecker::checkEq(
     std::cout << "Input params error, shouldn't exist empty vector." << std::endl;
     return false;
   }
-  LOG(DEBUG2) << "expected_batches:\n" << expected_batches[0]->toValueString() << "\n";
-  LOG(DEBUG2) << "actual_batches:\n" <<  actual_batches[0]->toValueString() << "\n";
+
   int actual_row_num = 0;
   int expected_col_num = expected_batches[0]->column_num();
   int expected_row_num = expected_batches[0]->row_num();

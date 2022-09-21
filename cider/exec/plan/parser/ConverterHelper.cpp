@@ -89,10 +89,11 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Type& s_type) {
     case substrait::Type::kI64:
       return SQLTypeInfo(SQLTypes::kBIGINT, not_null);
     case substrait::Type::kTimestamp:
-      return SQLTypeInfo(SQLTypes::kTIMESTAMP,
-                         DateAndTimeType::getTypeDimension(DateAndTimeType::Type::Timestamp),
-                         0,
-                         not_null);
+      return SQLTypeInfo(
+          SQLTypes::kTIMESTAMP,
+          DateAndTimeType::getTypeDimension(DateAndTimeType::Type::Timestamp),
+          0,
+          not_null);
     case substrait::Type::kVarchar:
       return SQLTypeInfo(SQLTypes::kVARCHAR, not_null);
     case substrait::Type::kFixedChar:

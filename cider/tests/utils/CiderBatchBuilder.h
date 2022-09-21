@@ -85,9 +85,9 @@ class CiderBatchBuilder {
 
   template <typename T>
   CiderBatchBuilder& addTimingColumn(const std::string& col_name,
-                               const ::substrait::Type& col_type,
-                               const std::vector<T>& col_data,
-                               const std::vector<bool>& null_data = {}) {
+                                     const ::substrait::Type& col_type,
+                                     const std::vector<T>& col_data,
+                                     const std::vector<bool>& null_data = {}) {
     col_names_.push_back(col_name);
     col_types_.push_back(col_type);
     null_vecs_.push_back(null_data);

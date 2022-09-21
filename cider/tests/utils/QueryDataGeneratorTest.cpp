@@ -179,7 +179,7 @@ TEST(QueryDataGeneratorTest, genDateColumn) {
 
   auto expected_batch = std::make_shared<CiderBatch>(
       CiderBatchBuilder()
-          .addColumn<CiderDateType>("col_date", CREATE_SUBSTRAIT_TYPE(Date), col)
+          .addTimingColumn<CiderDateType>("col_date", CREATE_SUBSTRAIT_TYPE(Date), col)
           .build());
   EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch, expected_batch));
 }

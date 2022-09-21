@@ -33,6 +33,22 @@
 
 enum GeneratePattern { Sequence, Random, Special_Date_format_String };
 
+// A date within [1000-01-01..9999-12-31].
+#define MIN_DAYS -1000 * 365
+#define MAX_DAYS 1000 * 365
+#define DATE_DATA_GEN_STEP kSecondsInOneDay
+
+// A time since the beginning of any day range of [0..86,399,999,999] microseconds
+#define MIN_MICROSECONDS_IN_DAY 0
+#define MAX_MICROSECONDS_IN_DAY 86399999999
+#define TIME_DATA_GEN_STEP 1
+
+// A timestamp within [1000-01-01 00:00:00.000000..9999-12-31 23:59:59.999999], with
+// microsecond precision.
+#define MIN_MICROSECONDS MIN_DAYS* kSecondsInOneDay* kMicrosecondsInSecond
+#define MAX_MICROSECONDS MAX_DAYS* kSecondsInOneDay* kMicrosecondsInSecond
+#define TIMESTAMP_DATA_GEN_STEP 1
+
 #define GENERATE_AND_ADD_COLUMN(C_TYPE)                                       \
   {                                                                           \
     std::vector<C_TYPE> col_data;                                             \
@@ -65,61 +81,68 @@ enum GeneratePattern { Sequence, Random, Special_Date_format_String };
     break;                                                                       \
   }
 
-#define GENERATE_AND_ADD_DATE_COLUMN(TYPE)                                         \
-  {                                                                                \
-    std::vector<bool> null_data;                                                   \
-    std::vector<TYPE> col_data;                                                    \
-    std::tie(col_data, null_data) =                                                \
-        value_min > value_max ? generateAndFillTimeVector<TYPE>(row_num,           \
-                                                                pattern,           \
-                                                                null_chance[i],    \
-                                                                MIN_DAYS,          \
-                                                                MAX_DAYS,          \
-                                                                kSecondsInOneDay)  \
-                              : generateAndFillTimeVector<TYPE>(row_num,           \
-                                                                pattern,           \
-                                                                null_chance[i],    \
-                                                                value_min,         \
-                                                                value_max,         \
-                                                                kSecondsInOneDay); \
+#define GENERATE_AND_ADD_DATE_COLUMN(TYPE)                                           \
+  {                                                                                  \
+    std::vector<bool> null_data;                                                     \
+    std::vector<TYPE> col_data;                                                      \
+    std::tie(col_data, null_data) =                                                  \
+        value_min > value_max ? generateAndFillTimeVector<TYPE>(row_num,             \
+                                                                pattern,             \
+                                                                null_chance[i],      \
+                                                                MIN_DAYS,            \
+                                                                MAX_DAYS,            \
+                                                                DATE_DATA_GEN_STEP)  \
+                              : generateAndFillTimeVector<TYPE>(row_num,             \
+                                                                pattern,             \
+                                                                null_chance[i],      \
+                                                                value_min,           \
+                                                                value_max,           \
+                                                                DATE_DATA_GEN_STEP); \
+    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);    \
+    break;                                                                           \
+  }
+
+#define GENERATE_AND_ADD_TIME_COLUMN(TYPE)                                               \
+  {                                                                                      \
+    std::vector<bool> null_data;                                                         \
+    std::vector<TYPE> col_data;                                                          \
+    std::tie(col_data, null_data) =                                                      \
+        value_min > value_max ? generateAndFillTimeVector<TYPE>(row_num,                 \
+                                                                pattern,                 \
+                                                                null_chance[i],          \
+                                                                MIN_MICROSECONDS_IN_DAY, \
+                                                                MAX_MICROSECONDS_IN_DAY, \
+                                                                TIME_DATA_GEN_STEP)      \
+                              : generateAndFillTimeVector<TYPE>(row_num,                 \
+                                                                pattern,                 \
+                                                                null_chance[i],          \
+                                                                value_min,               \
+                                                                value_max,               \
+                                                                TIME_DATA_GEN_STEP);     \
     builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);        \
-    break;                                                                         \
+    break;                                                                               \
   }
 
-#define GENERATE_AND_ADD_TIME_COLUMN(TYPE)                                      \
-  {                                                                             \
-    std::vector<bool> null_data;                                                \
-    std::vector<TYPE> col_data;                                                 \
-    std::tie(col_data, null_data) =                                             \
-        value_min > value_max                                                   \
-            ? generateAndFillTimeVector<TYPE>(row_num,                          \
-                                              pattern,                          \
-                                              null_chance[i],                   \
-                                              MIN_MICROSECONDS_IN_DAY,          \
-                                              MAX_MICROSECONDS_IN_DAY,          \
-                                              1)                                \
-            : generateAndFillTimeVector<TYPE>(                                  \
-                  , row_num, pattern, null_chance[i], value_min, value_max, 1); \
-    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);     \
-    break;                                                                      \
-  }
-
-#define GENERATE_AND_ADD_TIMESTAMP_COLUMN(TYPE)                                 \
-  {                                                                             \
-    std::vector<bool> null_data;                                                \
-    std::vector<TYPE> col_data;                                                 \
-    std::tie(col_data, null_data) =                                             \
-        value_min > value_max                                                   \
-            ? generateAndFillTimeVector<TYPE>(row_num,                          \
-                                              pattern,                          \
-                                              null_chance[i],                   \
-                                              MIN_MICROSECONDS,                 \
-                                              MAX_MICROSECONDS,                 \
-                                              1)                                \
-            : generateAndFillTimeVector<TYPE>(                                  \
-                  , row_num, pattern, null_chance[i], value_min, value_max, 1); \
-    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data);     \
-    break;                                                                      \
+#define GENERATE_AND_ADD_TIMESTAMP_COLUMN(TYPE)                                   \
+  {                                                                               \
+    std::vector<bool> null_data;                                                  \
+    std::vector<TYPE> col_data;                                                   \
+    std::tie(col_data, null_data) =                                               \
+        value_min > value_max                                                     \
+            ? generateAndFillTimeVector<TYPE>(row_num,                            \
+                                              pattern,                            \
+                                              null_chance[i],                     \
+                                              MIN_MICROSECONDS,                   \
+                                              MAX_MICROSECONDS,                   \
+                                              TIMESTAMP_DATA_GEN_STEP)            \
+            : generateAndFillTimeVector<TYPE>(row_num,                            \
+                                              pattern,                            \
+                                              null_chance[i],                     \
+                                              value_min,                          \
+                                              value_max,                          \
+                                              TIMESTAMP_DATA_GEN_STEP);           \
+    builder = builder.addTimingColumn<TYPE>(names[i], type, col_data, null_data); \
+    break;                                                                        \
   }
 
 #define GENERATE_AND_ADD_VARCHAR_COLUMN(TYPE)                               \
@@ -174,7 +197,6 @@ class QueryDataGenerator {
           GENERATE_AND_ADD_VARCHAR_COLUMN(CiderByteArray)
         case ::substrait::Type::KindCase::kDate:
           GENERATE_AND_ADD_DATE_COLUMN(CiderDateType)
-        // FIXME(jikunshang): add timestamp support, Kaidi is WIP.
         case ::substrait::Type::KindCase::kTime:
           GENERATE_AND_ADD_TIME_COLUMN(CiderTimeType)
         case ::substrait::Type::KindCase::kTimestamp:
@@ -368,19 +390,6 @@ class QueryDataGenerator {
     return std::make_tuple(col_data, null_data);
   }
 
-// A date within [1000-01-01..9999-12-31].
-#define MIN_DAYS -1000 * 365
-#define MAX_DAYS 1000 * 365
-
-// A time since the beginning of any day range of [0..86,399,999,999] microseconds
-#define MIN_MICROSECONDS_IN_DAY 0
-#define MAX__MICROSECONDS_IN_DAY 3000 * kMicrosecondsInSecond
-
-// A timestamp within [1000-01-01 00:00:00.000000..9999-12-31 23:59:59.999999], with
-// microsecond precision.
-#define MIN_MICROSECONDS MIN_DAYS* kSecondsInOneDay* kMicrosecondsInSecond
-#define MAX__MICROSECONDS MAX_DAYS* kSecondsInOneDay* kMicrosecondsInSecond
-
   template <typename T>
   static std::tuple<std::vector<T>, std::vector<bool>> generateAndFillTimeVector(
       const size_t row_num,
@@ -388,7 +397,7 @@ class QueryDataGenerator {
       const int32_t null_chance,
       const int64_t value_min,
       const int64_t value_max,
-      const int64_t time_step) {
+      const int64_t gen_data_step) {
     std::vector<T> col_data;
     col_data.reserve(row_num);
     std::vector<bool> null_data(row_num);
@@ -399,7 +408,7 @@ class QueryDataGenerator {
           null_data[i] =
               Random::oneIn(null_chance, rng)
                   ? (col_data.push_back(T(std::numeric_limits<int64_t>::min())), true)
-                  : (col_data.push_back(T(i * time_step)), false);
+                  : (col_data.push_back(T(i * gen_data_step)), false);
         }
         break;
       case GeneratePattern::Special_Date_format_String:
@@ -409,7 +418,7 @@ class QueryDataGenerator {
               Random::oneIn(null_chance, rng)
                   ? (col_data.push_back(T(std::numeric_limits<int64_t>::min())), true)
                   : (col_data.push_back(
-                         T(time_step * Random::randInt64(value_min, value_max, rng))),
+                         T(gen_data_step * Random::randInt64(value_min, value_max, rng))),
                      false);
         }
         break;
