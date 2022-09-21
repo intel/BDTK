@@ -111,6 +111,27 @@ extern "C" RUNTIME_EXPORT int32_t lower_encoded(int32_t string_id,
 #endif
 }
 
+#define DEF_APPLY_NUMERIC_STRING_OPS(value_type, value_name)                             \
+  extern "C" RUNTIME_EXPORT ALWAYS_INLINE value_type                                     \
+      apply_numeric_string_ops_##value_name(                                             \
+          const char* str_ptr, const int32_t str_len, const int64_t string_ops_handle) { \
+    std::string raw_str(str_ptr, str_len);                                               \
+    auto string_ops =                                                                    \
+        reinterpret_cast<const StringOps_Namespace::StringOps*>(string_ops_handle);      \
+    const auto result_datum = string_ops->numericEval(raw_str);                          \
+    return result_datum.value_name##val;                                                 \
+  }
+
+DEF_APPLY_NUMERIC_STRING_OPS(int8_t, bool)
+DEF_APPLY_NUMERIC_STRING_OPS(int8_t, tinyint)
+DEF_APPLY_NUMERIC_STRING_OPS(int16_t, smallint)
+DEF_APPLY_NUMERIC_STRING_OPS(int32_t, int)
+DEF_APPLY_NUMERIC_STRING_OPS(int64_t, bigint)
+DEF_APPLY_NUMERIC_STRING_OPS(float, float)
+DEF_APPLY_NUMERIC_STRING_OPS(double, double)
+
+#undef DEF_APPLY_NUMERIC_STRING_OPS
+
 llvm::Value* CodeGenerator::codegen(const Analyzer::CharLengthExpr* expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
@@ -170,8 +191,8 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::LowerExpr* expr,
 std::vector<StringOps_Namespace::StringOpInfo> getStringOpInfos(
     const Analyzer::StringOper* expr) {
   std::vector<StringOps_Namespace::StringOpInfo> string_op_infos;
-  StringOps_Namespace::StringOpInfo string_op_info(expr->get_kind(),
-                                                   expr->getLiteralArgs());
+  StringOps_Namespace::StringOpInfo string_op_info(
+      expr->get_kind(), expr->get_type_info(), expr->getLiteralArgs());
   string_op_infos.push_back(string_op_info);
   return string_op_infos;
 }
@@ -198,7 +219,44 @@ llvm::Value* CodeGenerator::codegenPerRowStringOper(const Analyzer::StringOper* 
   const auto string_ops = getStringOps(string_op_infos);
   const int64_t string_ops_handle = reinterpret_cast<int64_t>(string_ops);
   auto string_ops_handle_lv = cgen_state_->llInt(string_ops_handle);
-
+  const auto& return_ti = expr->get_type_info();
+  if (!return_ti.is_string()) {
+    std::vector<llvm::Value*> string_oper_lvs{
+        primary_str_lv[1], primary_str_lv[2], string_ops_handle_lv};
+    const auto return_type = return_ti.get_type();
+    std::string fn_call = "apply_numeric_string_ops_";
+    switch (return_type) {
+      case kBOOLEAN: {
+        fn_call += "bool";
+        break;
+      }
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE: {
+        fn_call += to_lower(toString(return_type));
+        break;
+      }
+      case kNUMERIC:
+      case kDECIMAL:
+      case kTIME:
+      case kTIMESTAMP:
+      case kDATE: {
+        fn_call += "bigint";
+        break;
+      }
+      default: {
+        throw std::runtime_error("Unimplemented type for string-to-numeric translation");
+      }
+    }
+    const auto logical_size = return_ti.get_logical_size() * 8;
+    auto llvm_return_type = return_ti.is_fp()
+                                ? get_fp_type(logical_size, cgen_state_->context_)
+                                : get_int_type(logical_size, cgen_state_->context_);
+    return cgen_state_->emitExternalCall(fn_call, llvm_return_type, string_oper_lvs);
+  }
   const int64_t dest_string_proxy_handle =
       reinterpret_cast<int64_t>(executor()->getCiderStringDictionaryProxy());
   auto dest_string_proxy_handle_lv = cgen_state_->llInt(dest_string_proxy_handle);

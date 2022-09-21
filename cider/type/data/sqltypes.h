@@ -28,6 +28,7 @@
 #pragma once
 
 #include "type/data/funcannotations.h"
+#include "util/Datum.h"
 #include "util/Logger.h"
 #include "util/StringTransform.h"
 
@@ -136,18 +137,6 @@ inline std::ostream& operator<<(std::ostream& os, SQLTypes const sql_type) {
   return os;
 }
 
-struct VarlenDatum {
-  size_t length;
-  int8_t* pointer;
-  bool is_null;
-
-  VarlenDatum() : length(0), pointer(nullptr), is_null(true) {}
-  virtual ~VarlenDatum() {}
-
-  VarlenDatum(const size_t l, int8_t* p, const bool n)
-      : length(l), pointer(p), is_null(n) {}
-};
-
 struct DoNothingDeleter {
   void operator()(int8_t*) {}
 };
@@ -186,18 +175,6 @@ struct DeviceArrayDatum : public VarlenDatum {
 };
 
 using ArrayDatum = std::conditional_t<false, DeviceArrayDatum, HostArrayDatum>;
-
-union Datum {
-  int8_t boolval;
-  int8_t tinyintval;
-  int16_t smallintval;
-  int32_t intval;
-  int64_t bigintval;
-  float floatval;
-  double doubleval;
-  VarlenDatum* arrayval;
-  std::string* stringval;  // string value
-};
 
 union DataBlockPtr {
   int8_t* numbersPtr;
@@ -966,8 +943,10 @@ inline std::ostream& operator<<(std::ostream& os, const SQLTypeInfo& ti) {
 
 #include <string_view>
 
-Datum StringToDatum(std::string_view s, SQLTypeInfo& ti);
-std::string DatumToString(Datum d, const SQLTypeInfo& ti);
+Datum NullDatum(const SQLTypeInfo& ti);
+bool IsNullDatum(const Datum d, const SQLTypeInfo& ti);
+Datum StringToDatum(const std::string_view s, SQLTypeInfo& ti);
+std::string DatumToString(const Datum d, const SQLTypeInfo& ti);
 int64_t extract_int_type_from_datum(const Datum datum, const SQLTypeInfo& ti);
 double extract_fp_type_from_datum(const Datum datum, const SQLTypeInfo& ti);
 
