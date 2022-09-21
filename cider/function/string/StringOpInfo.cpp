@@ -28,7 +28,10 @@ namespace StringOps_Namespace {
 
 std::ostream& operator<<(std::ostream& stream, const StringOpInfo& string_op_info) {
   stream << "StringOp("
-         << "operator: " << ::toString(string_op_info.getOpKind()) << ", literals: [";
+         << "operator: " << string_op_info.getOpKind()
+         << "return_ti: " << toString(string_op_info.getReturnType().get_type())
+         << " dim: " << string_op_info.getReturnType().get_dimension()
+         << " scale: " << string_op_info.getReturnType().get_scale() << ", literals: [";
   bool first_elem = true;
   for (const auto& literal_arg : string_op_info.literal_arg_map_) {
     if (!first_elem) {

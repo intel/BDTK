@@ -1,15 +1,6 @@
 {
-    "extensionUris": [{
-      "extensionUriAnchor": 1,
-      "uri": "/functions_datetime.yaml"
-    }],
-    "extensions": [{
-      "extensionFunction": {
-        "extensionUriReference": 1,
-        "functionAnchor": 0,
-        "name": "year:date"
-      }
-    }],
+    "extensionUris": [],
+    "extensions": [],
     "relations": [{
       "root": {
         "input": {
@@ -26,15 +17,16 @@
                   }
                 },
                 "baseSchema": {
-                  "names": ["COL_A", "COL_B"],
+                  "names": ["COL_INT", "COL_STR"],
                   "struct": {
                     "types": [{
-                      "date": {
+                      "i32": {
                         "typeVariationReference": 0,
                         "nullability": "NULLABILITY_NULLABLE"
                       }
                     }, {
-                      "date": {
+                      "varchar": {
+                        "length": 10,
                         "typeVariationReference": 0,
                         "nullability": "NULLABILITY_NULLABLE"
                       }
@@ -49,28 +41,25 @@
               }
             },
             "expressions": [{
-              "scalarFunction": {
-                "functionReference": 0,
-                "args": [],
-                "outputType": {
-                  "i64": {
+              "cast": {
+                "type": {
+                  "date": {
                     "typeVariationReference": 0,
                     "nullability": "NULLABILITY_NULLABLE"
                   }
                 },
-                "arguments": [ {
-                  "value": {
-                    "selection": {
-                      "directReference": {
-                        "structField": {
-                          "field": 1
-                        }
-                      },
-                      "rootReference": {
+                "input": {
+                  "selection": {
+                    "directReference": {
+                      "structField": {
+                        "field": 1
                       }
+                    },
+                    "rootReference": {
                     }
                   }
-                }]
+                },
+                "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
               }
             }]
           }

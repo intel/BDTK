@@ -25,6 +25,7 @@
  **/
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include <cstdint>
+#include "cider/CiderException.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DateTimeTranslator.h"
@@ -590,7 +591,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     return toAnalyzerExpr(s_selection_expr.expression(), function_map, expr_map_ptr);
   }
   // direct_reference + root_reference --> ColumnVar
-  if (s_selection_expr.has_direct_reference() && s_selection_expr.has_root_reference()) {
+  if (isColumnVar(s_selection_expr)) {
     // before here we have got type and cached into expr_map from root node which have the
     // type info, here we use expr_map to get the right type info
     int col_id = s_selection_expr.direct_reference().struct_field().field();
@@ -970,9 +971,38 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     // use a int32/int64 to represent under substrait protocol
     if (!s_cast_expr.input().literal().fixed_char().empty()) {
       v.bigintval = dateToInt64(s_cast_expr.input().literal().fixed_char());
+    }
+    // TODO: spevenhe.
+    // support nested function like cast(cast(xx as String) AS Date).
+    // CAST(SUBSTRING(col_string, 0, 5) AS DATE
+    // Now only supports cast(col_string AS Date)
+    else if (isColumnVar(s_cast_expr.input().selection())) {
+      int col_id =
+          s_cast_expr.input().selection().direct_reference().struct_field().field();
+      if (expr_map_ptr != nullptr) {
+        auto iter = expr_map_ptr->find(col_id);
+        if (iter != expr_map_ptr->end()) {
+          auto type = iter->second->get_type_info().get_type();
+          if (type == SQLTypes::kTEXT || type == SQLTypes::kVARCHAR) {
+            std::vector<std::shared_ptr<Analyzer::Expr>> args;
+            args.push_back(toAnalyzerExpr(
+                s_cast_expr.input().selection(), function_map, expr_map_ptr));
+
+            return makeExpr<Analyzer::TryStringCastOper>(SQLTypes::kDATE, args);
+          } else {
+            CIDER_THROW(CiderCompileException,
+                        "Not supported date cast type other than string.");
+          }
+        } else {
+          CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
+        }
+      }
+      CIDER_THROW(CiderCompileException, "Can not get the origin type of CAST to DATE.");
     } else {
-      throw std::runtime_error("Not supported literal type, id: " +
-                               s_cast_expr.input().literal().literal_type_case());
+      CIDER_THROW(CiderCompileException,
+                  "Not supported Expression or Not supported literal type for CAST to "
+                  "DATE, literal id " +
+                      std::to_string(s_cast_expr.input().literal().literal_type_case()));
     }
     return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
   }
@@ -1039,6 +1069,14 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   }
 
   return Parser::CaseExpr::normalize(expr_list, else_expr);
+}
+
+bool Substrait2AnalyzerExprConverter::isColumnVar(
+    const substrait::Expression_FieldReference& selection_expr) {
+  if (selection_expr.has_direct_reference() && selection_expr.has_root_reference()) {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace generator

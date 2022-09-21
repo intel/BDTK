@@ -105,6 +105,7 @@ enum class SqlStringOpKind {
   JSON_VALUE,
   BASE64_ENCODE,
   BASE64_DECODE,
+  TRY_STRING_CAST,
   INVALID
 };
 
@@ -246,6 +247,60 @@ inline std::string toString(const SQLOps& op) {
   return "";
 }
 
+inline std::ostream& operator<<(std::ostream& os, const SqlStringOpKind kind) {
+  switch (kind) {
+    case SqlStringOpKind::LOWER:
+      return os << "LOWER";
+    case SqlStringOpKind::UPPER:
+      return os << "UPPER";
+    case SqlStringOpKind::INITCAP:
+      return os << "INITCAP";
+    case SqlStringOpKind::REVERSE:
+      return os << "REVERSE";
+    case SqlStringOpKind::REPEAT:
+      return os << "REPEAT";
+    case SqlStringOpKind::CONCAT:
+      return os << "CONCAT";
+    case SqlStringOpKind::RCONCAT:
+      return os << "RCONCAT";
+    case SqlStringOpKind::LPAD:
+      return os << "LPAD";
+    case SqlStringOpKind::RPAD:
+      return os << "RPAD";
+    case SqlStringOpKind::TRIM:
+      return os << "TRIM";
+    case SqlStringOpKind::LTRIM:
+      return os << "LTRIM";
+    case SqlStringOpKind::RTRIM:
+      return os << "RTRIM";
+    case SqlStringOpKind::SUBSTRING:
+      return os << "SUBSTRING";
+    case SqlStringOpKind::OVERLAY:
+      return os << "OVERLAY";
+    case SqlStringOpKind::REPLACE:
+      return os << "REPLACE";
+    case SqlStringOpKind::SPLIT_PART:
+      return os << "SPLIT_PART";
+    case SqlStringOpKind::REGEXP_REPLACE:
+      return os << "REGEXP_REPLACE";
+    case SqlStringOpKind::REGEXP_SUBSTR:
+      return os << "REGEXP_SUBSTR";
+    case SqlStringOpKind::JSON_VALUE:
+      return os << "JSON_VALUE";
+    case SqlStringOpKind::BASE64_ENCODE:
+      return os << "BASE64_ENCODE";
+    case SqlStringOpKind::BASE64_DECODE:
+      return os << "BASE64_DECODE";
+    case SqlStringOpKind::TRY_STRING_CAST:
+      return os << "TRY_STRING_CAST";
+    case SqlStringOpKind::INVALID:
+      return os << "INVALID";
+  }
+  LOG(FATAL) << "Invalid string operation";
+  // Make compiler happy
+  return os << "INVALID";
+}
+
 inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
   if (func_name == "LOWER") {
     return SqlStringOpKind::LOWER;
@@ -310,6 +365,9 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
   if (func_name == "BASE64_DECODE") {
     return SqlStringOpKind::BASE64_DECODE;
   }
+  if (func_name == "TRY_CAST") {
+    return SqlStringOpKind::TRY_STRING_CAST;
+  }
   LOG(FATAL) << "Invalid string function " << func_name << ".";
   return SqlStringOpKind::INVALID;
 }
@@ -357,6 +415,8 @@ inline std::string toString(const SqlStringOpKind& kind) {
       return "BASE64_ENCODE";
     case SqlStringOpKind::BASE64_DECODE:
       return "BASE64_DECODE";
+    case SqlStringOpKind::TRY_STRING_CAST:
+      return "TRY_STRING_CAST";
     default:
       LOG(FATAL) << "Invalid string operation";
   }

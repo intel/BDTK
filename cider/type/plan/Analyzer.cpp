@@ -222,8 +222,10 @@ std::shared_ptr<Analyzer::Expr> StringOper::deep_copy() const {
   for (const auto& chained_string_op_expr : chained_string_op_exprs_) {
     chained_string_op_exprs_copy.emplace_back(chained_string_op_expr->deep_copy());
   }
-  return makeExpr<Analyzer::StringOper>(
-      kind_, std::move(args_copy), std::move(chained_string_op_exprs_copy));
+  return makeExpr<Analyzer::StringOper>(kind_,
+                                        get_type_info(),
+                                        std::move(args_copy),
+                                        std::move(chained_string_op_exprs_copy));
 }
 
 bool StringOper::operator==(const Expr& rhs) const {
@@ -293,25 +295,24 @@ std::vector<size_t> StringOper::getLiteralArgIndexes() const {
 }
 
 SQLTypeInfo StringOper::get_return_type(
-    const std::vector<std::shared_ptr<Analyzer::Expr>> args) {
+    const SqlStringOpKind kind,
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& args) {
+  CHECK_NE(kind, SqlStringOpKind::TRY_STRING_CAST)
+      << "get_return_type for TRY_STRING_CAST disallowed.";
   if (args.empty()) {
     return SQLTypeInfo(kNULLT);
-  }
-  // Constant literal first argument
-  if (dynamic_cast<const Analyzer::Constant*>(args[0].get())) {
+  } else if (dynamic_cast<const Analyzer::Constant*>(args[0].get())) {
+    // Constant literal first argument
     return args[0]->get_type_info();
-  }
-  // None-encoded text column argument
-  // Note that whether or not this is allowed is decided separately
-  // in check_operand_types
-  if (args[0]->get_type_info().is_none_encoded_string()) {
+  } else if (args[0]->get_type_info().is_none_encoded_string()) {
+    // None-encoded text column argument
+    // Note that whether or not this is allowed is decided separately
+    // in check_operand_types
+    // If here, we have a dict-encoded column arg
     return SQLTypeInfo(kTEXT, kENCODING_DICT, 0, kNULLT);
+  } else {
+    return SQLTypeInfo(args[0]->get_type_info());  // nullable by default
   }
-  // If here, we have a dict-encoded column arg
-  SQLTypeInfo ret_ti(args[0]->get_type_info());
-  // Set return as nullable as string op can create nulls
-  ret_ti.set_notnull(false);
-  return ret_ti;
 }
 
 void StringOper::check_operand_types(
@@ -392,6 +393,11 @@ void StringOper::check_operand_types(
 
 std::shared_ptr<Analyzer::Expr> SubstringStringOper::deep_copy() const {
   return makeExpr<Analyzer::SubstringStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
+  return makeExpr<Analyzer::TryStringCastOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
