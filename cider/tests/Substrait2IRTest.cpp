@@ -53,7 +53,8 @@ std::vector<InputTableInfo> buildInputTableInfo(
     Fragmenter_Namespace::FragmentInfo fi_0;
     fi_0.fragmentId = i;
     fi_0.shadowNumTuples = 1024;
-    fi_0.physicalTableId = 100 + i;  // FIXME
+    // note that we use fake table id 100 since real table id can't be got
+    fi_0.physicalTableId = 100 + i;
     fi_0.setPhysicalNumTuples(1024);
     // add chunkMetadata
     for (int j = 0; j < table_schemas[i].getColumnTypes().size(); j++) {
