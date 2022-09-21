@@ -48,6 +48,29 @@
     }                                                                                  \
   };
 
+class CiderGroupByVarcharTest : public CiderTestBase {
+ public:
+  // TODO(yizhong): make col_d to 50% chance nullable and change min length to 0
+  // after null string is supported
+  CiderGroupByVarcharTest() {
+    table_name_ = "table_test";
+    create_ddl_ =
+        "CREATE TABLE table_test(col_a BIGINT NOT NULL, col_b BIGINT NOT NULL, col_c "
+        "VARCHAR NOT NULL, col_d VARCHAR);";
+    input_ = {std::make_shared<CiderBatch>(
+        QueryDataGenerator::generateBatchByTypes(500,
+                                                 {"col_a", "col_b", "col_c", "col_d"},
+                                                 {CREATE_SUBSTRAIT_TYPE(I64),
+                                                  CREATE_SUBSTRAIT_TYPE(I64),
+                                                  CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                  CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                 {0, 0, 0, 0},
+                                                 GeneratePattern::Random,
+                                                 1,
+                                                 10))};
+  }
+};
+
 GEN_PRIMITIVETYPE_GROUP_BY_TEST_CLASS(Float, FLOAT, Fp32, -1000, 1000)
 
 GEN_PRIMITIVETYPE_GROUP_BY_TEST_CLASS(Double, DOUBLE, Fp64, -1000, 1000)
@@ -193,21 +216,21 @@ class CiderGroupByPrimitiveTypeMixTest : public CiderTestBase {
     assertQuery(                                                                         \
         "SELECT col_a, col_b, col_c, SUM(col_a), SUM(col_b), SUM(col_c) FROM "           \
         "table_test "                                                                    \
-        "GROUP BY col_a, col_b, col_c HAVING col_a > 5 and col_b > 5",                   \
+        "GROUP BY col_a, col_b, col_c HAVING col_a > 5 AND col_b > 5",                   \
         "",                                                                              \
         true);                                                                           \
     /*three group by keys with three aggs and three gt conditions*/                      \
     assertQuery(                                                                         \
         "SELECT col_a, col_b, col_c, SUM(col_a), SUM(col_b), SUM(col_c) FROM "           \
         "table_test "                                                                    \
-        "GROUP BY col_a, col_b, col_c HAVING col_a > 5 and col_b > 5 and col_c > 5",     \
+        "GROUP BY col_a, col_b, col_c HAVING col_a > 5 AND col_b > 5 AND col_c > 5",     \
         "",                                                                              \
         true);                                                                           \
     /*three group by keys with three aggs and one gt condition and one lt condition*/    \
     assertQuery(                                                                         \
         "SELECT col_a, col_b, col_c, SUM(col_a), SUM(col_b), SUM(col_c) FROM "           \
         "table_test "                                                                    \
-        "GROUP BY col_a, col_b, col_c HAVING col_a > 5 and col_b < 5",                   \
+        "GROUP BY col_a, col_b, col_c HAVING col_a > 5 AND col_b < 5",                   \
         "",                                                                              \
         true);                                                                           \
     /*two params group by with not equal condition*/                                     \
@@ -274,21 +297,21 @@ class CiderGroupByPrimitiveTypeMixTest : public CiderTestBase {
     assertQuery(                                                                         \
         "SELECT col_a, col_b, col_c, SUM(col_a), SUM(col_b), SUM(col_c) FROM "           \
         "table_test "                                                                    \
-        "WHERE  col_a > 5 and col_b > 5 GROUP BY col_a, col_b, col_c",                   \
+        "WHERE  col_a > 5 AND col_b > 5 GROUP BY col_a, col_b, col_c",                   \
         "",                                                                              \
         true);                                                                           \
     /*three group by keys with three aggs and three gt conditions*/                      \
     assertQuery(                                                                         \
         "SELECT col_a, col_b, col_c, SUM(col_a), SUM(col_b), SUM(col_c) FROM "           \
         "table_test "                                                                    \
-        "WHERE col_a > 5 and col_b > 5 and col_c > 5 GROUP BY col_a, col_b, col_c",      \
+        "WHERE col_a > 5 AND col_b > 5 AND col_c > 5 GROUP BY col_a, col_b, col_c",      \
         "",                                                                              \
         true);                                                                           \
     /*three group by keys with three aggs and one gt condition and one lt condition*/    \
     assertQuery(                                                                         \
         "SELECT col_a, col_b, col_c, SUM(col_a), SUM(col_b), SUM(col_c) FROM "           \
         "table_test "                                                                    \
-        "WHERE col_a > 5 and col_b < 5 GROUP BY col_a, col_b, col_c",                    \
+        "WHERE col_a > 5 AND col_b < 5 GROUP BY col_a, col_b, col_c",                    \
         "",                                                                              \
         true);                                                                           \
     /*two params group by with not equal condition*/                                     \
@@ -364,7 +387,8 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByColTest) {
       true);
   // SMALLINT not null col group by
   assertQuery(
-      "SELECT smallint_not_null_g, COUNT(*) FROM table_test GROUP BY smallint_not_null_g",
+      "SELECT smallint_not_null_g, COUNT(*) FROM table_test GROUP BY "
+      "smallint_not_null_g",
       "",
       true);
   // INTEGER not null col group by
@@ -394,7 +418,8 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByColTest) {
       true);
   // TINYINT null col group by
   assertQuery(
-      "SELECT tinyint_half_null_f, COUNT(*) FROM table_test GROUP BY tinyint_half_null_f",
+      "SELECT tinyint_half_null_f, COUNT(*) FROM table_test GROUP BY "
+      "tinyint_half_null_f",
       "",
       true);
   // SMALLINT null col group by
@@ -405,7 +430,8 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByColTest) {
       true);
   // INTEGER null col group by
   assertQuery(
-      "SELECT integer_half_null_j, COUNT(*) FROM table_test GROUP BY integer_half_null_j",
+      "SELECT integer_half_null_j, COUNT(*) FROM table_test GROUP BY "
+      "integer_half_null_j",
       "",
       true);
   // BIGINT null col group by
@@ -415,7 +441,8 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByColTest) {
       true);
   // BOOLEAN null col group by
   assertQuery(
-      "SELECT boolean_half_null_n, COUNT(*) FROM table_test GROUP BY boolean_half_null_n",
+      "SELECT boolean_half_null_n, COUNT(*) FROM table_test GROUP BY "
+      "boolean_half_null_n",
       "",
       true);
 }
@@ -436,6 +463,134 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByMultiColTest) {
       "SELECT integer_not_null_i, bigint_not_null_k, boolean_not_null_m, COUNT(*), "
       "sum(integer_not_null_i), sum(bigint_not_null_k) FROM table_test GROUP BY "
       "integer_not_null_i, bigint_not_null_k, boolean_not_null_m",
+      "",
+      true);
+}
+
+TEST_F(CiderGroupByVarcharTest, varcharGroupByTest) {
+  /*single not null group by key*/
+  assertQuery("SELECT SUM(col_a), col_c FROM table_test GROUP BY col_c", "", true);
+
+  /*single null group by key*/
+  assertQuery("SELECT SUM(col_a), col_d FROM table_test GROUP BY col_d", "", true);
+
+  /*one not null varchar group by key*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c", "", true);
+
+  /*one null varchar group by key */
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d", "", true);
+
+  /*two null and not null varchar group by keys*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
+      "col_d",
+      "",
+      true);
+
+  /*four mixed group by keys*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d",
+      "",
+      true);
+
+  /*one not null varchar group by key with one condition*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d <> 'a'",
+      "",
+      true);
+
+  /*one not null varchar group by key with one not null condition*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d IS NOT NULL",
+      "",
+      true);
+
+  /*one null varchar group by key with one null condition*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d IS NULL",
+      "",
+      true);
+
+  /*multiple group by keys with multiple having conditions*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c HAVING "
+      "col_a IS NOT "
+      "NULL AND col_c IS NOT NULL ",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
+      "col_d HAVING "
+      "col_a IS NOT NULL AND col_c <> 'ABC' AND col_d <> 'abc'",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
+      "col_c <> 'AAA' AND col_d IS NULL ",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
+      "col_c <> 'AAA' AND col_d IS NOT NULL ",
+      "",
+      true);
+
+  /*multiple group by keys with multiple where conditions*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL AND col_d "
+      "IS NOT NULL GROUP BY col_a, col_d",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
+      "NOT NULL AND col_b IS "
+      "NOT NULL AND col_c <> 'AAA' GROUP BY col_a, col_b, col_c",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NULL "
+      "GROUP BY col_a, col_b, col_c, col_d",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NOT NULL "
+      "GROUP BY col_a, col_b, col_c, col_d",
+      "",
+      true);
+
+  /*multiple group by keys with multiple where and having conditions*/
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL GROUP BY "
+      "col_a, col_d HAVING col_d IS NOT NULL",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
+      "NOT NULL AND col_b IS NOT NULL GROUP BY col_a, col_b, col_c HAVING col_c <> 'AAA'",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND "
+      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
+      "col_d IS NULL",
+      "",
+      true);
+  assertQuery(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND "
+      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
+      "col_d IS NOT NULL ",
       "",
       true);
 }
