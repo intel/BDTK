@@ -323,21 +323,7 @@ GroupByAndAggregate::GroupByAndAggregate(
     , ra_exe_unit_(ra_exe_unit)
     , query_infos_(query_infos)
     , row_set_mem_owner_(row_set_mem_owner)
-    , group_cardinality_estimation_(group_cardinality_estimation) {
-  for (const auto& groupby_expr : ra_exe_unit_.groupby_exprs) {
-    if (!groupby_expr) {
-      continue;
-    }
-    const auto& groupby_ti = groupby_expr->get_type_info();
-    if (groupby_ti.is_bytes()) {
-      throw std::runtime_error(
-          "Cannot group by string columns which are not dictionary encoded.");
-    }
-    if (groupby_ti.is_buffer()) {
-      throw std::runtime_error("Group by buffer not supported");
-    }
-  }
-}
+    , group_cardinality_estimation_(group_cardinality_estimation) {}
 
 int64_t GroupByAndAggregate::getShardedTopBucket(const ColRangeInfo& col_range_info,
                                                  const size_t shard_count) const {
