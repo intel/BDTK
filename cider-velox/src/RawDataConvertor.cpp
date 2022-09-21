@@ -479,24 +479,24 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
     auto currentData = input.column(i);
     auto columNum = input.column_num();
     if (sType.kind_case() == substrait::Type::kStruct) {
+      // TODO : (ZhangJie) Support nested struct after cider supported nested (MaYan).
       // For the case, struct[sum, count].
-      std::vector<VectorPtr> columnStruct{toVeloxVector(types[i]->childAt(0),
-                                                        sType.struct_().types(0),
-                                                        input.column(inputColIndex),
-                                                        num_rows,
-                                                        pool),
-                                          toVeloxVector(types[i]->childAt(1),
-                                                        sType.struct_().types(1),
+      auto structSize = sType.struct_().types_size();
+      std::vector<VectorPtr> columnStruct;
+      columnStruct.reserve(structSize);
 
-                                                        input.column(inputColIndex + 1),
-
-                                                        num_rows,
-                                                        pool)};
+      for (int typeId = 0; typeId < structSize; typeId++) {
+        columnStruct.emplace_back(toVeloxVector(types[i]->childAt(typeId),
+                                                sType.struct_().types(typeId),
+                                                input.column(inputColIndex + typeId),
+                                                num_rows,
+                                                pool));
+      }
 
       columns.push_back(std::make_shared<RowVector>(
           pool, types[i], BufferPtr(nullptr), num_rows, columnStruct));
 
-      inputColIndex = inputColIndex + 2;
+      inputColIndex = inputColIndex + structSize;
     } else {
       columns.push_back(
           toVeloxVector(types[i], sType, input.column(inputColIndex), num_rows, pool));
