@@ -20,7 +20,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "CiderTestBase.h"
+#include "tests/utils/CiderTestBase.h"
 
 /* Set to small data set will also cover all cases.
  * We could set to a larger data set after we fix outBatch schema issuem, because
