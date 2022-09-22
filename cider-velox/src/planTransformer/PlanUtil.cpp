@@ -144,6 +144,10 @@ VeloxPlanNodePtr PlanUtil::cloneNodeWithNewSource(VeloxPlanNodePtr node,
                                                 std::string{assignUniqueIdNode->name()},
                                                 assignUniqueIdNode->taskUniqueId(),
                                                 source);
+  } else if (auto enforceSingleRowNode =
+                 std::dynamic_pointer_cast<const EnforceSingleRowNode>(node)) {
+    return std::make_shared<EnforceSingleRowNode>(enforceSingleRowNode->id(),
+                                                  source);
   } else {
     throw std::runtime_error("Clone velox plannode: Not supported velox plannode type[" +
                              std::string(typeid(node).name()) + "]");
