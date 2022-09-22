@@ -40,10 +40,10 @@ std::shared_ptr<CiderCompilationResult> CiderCompiler::compile(
 
 std::shared_ptr<CiderRunner> CiderRunner::createCiderRunner(
     std::shared_ptr<CiderCompilationResult> res) {
-  if (res->getQueryType() == QueryType::STATEFUL_NON_GROUPBY ||
-      res->getQueryType() == QueryType::STATEFUL_GROUPBY) {
+  if (res->getQueryType() == QueryType::kStatefulNonGroupBy ||
+      res->getQueryType() == QueryType::kStatefulGroupBy) {
     return std::make_shared<CiderStatefulRunner>(res);
-  } else if (res->getQueryType() == QueryType::STATELESS) {
+  } else if (res->getQueryType() == QueryType::kStateless) {
     return std::make_shared<CiderStatelessRunner>(res);
   }
 }

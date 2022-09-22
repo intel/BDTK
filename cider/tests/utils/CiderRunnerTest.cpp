@@ -70,7 +70,7 @@ TEST(CiderRunnerTest, statefulRunnerMultiBatchTest) {
   // Agg query -> CiderStatefulRunner
   EXPECT_TRUE(std::dynamic_pointer_cast<CiderStatefulRunner>(runner));
 
-  for (int i = 0; i < 1000000; i++) {
+  for (int i = 0; i < 1000; i++) {
     auto res = runner->processNextBatch(input_batch);
   }
   while (!runner->isFinished()) {
@@ -127,6 +127,31 @@ TEST(CiderRunnerTest, statefulRunnerMultiThreadTest) {
     thread_vec[i] = std::thread(test_func, com_res, input_batch);
   }
   for (int i = 0; i < 10; i++) {
+    thread_vec[i].join();
+  }
+}
+
+TEST(CiderRunnerTest, statelessRunnerMultiThreadCompileTest1) {
+  std::function test_func = []() {
+    auto input_batch = create_default_batch();
+    std::string ddl = create_ddl();
+    std::string sql = "SELECT col_1 FROM test WHERE col_1 > 0 ";
+    CiderCompiler compiler;
+    auto com_res = compiler.compile(ddl, sql);
+
+    auto runner = CiderRunner::createCiderRunner(com_res);
+
+    for (int i = 0; i < 100000; i++) {
+      auto res = runner->processNextBatch(input_batch);
+    }
+    auto res_f = runner->finish();
+  };
+  int thread_num = 4;
+  std::vector<std::thread> thread_vec(thread_num);
+  for (int i = 0; i < thread_num; i++) {
+    thread_vec[i] = std::thread(test_func);
+  }
+  for (int i = 0; i < thread_num; i++) {
     thread_vec[i].join();
   }
 }

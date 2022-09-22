@@ -41,17 +41,18 @@ class CiderCompilationResult::Impl {
   }
 
   CiderTableSchema getOutputCiderTableSchema() const { return outputSchema_; }
+
   QueryType getQueryType() const {
     switch (query_mem_desc_->getQueryDescriptionType()) {
       case QueryDescriptionType::GroupByPerfectHash:
       case QueryDescriptionType::GroupByBaselineHash:
-        return QueryType::STATEFUL_GROUPBY;
+        return QueryType::kStatefulGroupBy;
       case QueryDescriptionType::NonGroupedAggregate:
-        return QueryType::STATEFUL_NON_GROUPBY;
+        return QueryType::kStatefulNonGroupBy;
       case QueryDescriptionType::Projection:
-        return QueryType::STATELESS;
+        return QueryType::kStateless;
       default:
-        return QueryType::INVALID;
+        return QueryType::kInvalid;
     }
   }
 

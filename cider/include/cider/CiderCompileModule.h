@@ -31,7 +31,12 @@
 
 class AggregatedColRange;
 
-enum QueryType { STATELESS, STATEFUL_GROUPBY, STATEFUL_NON_GROUPBY, INVALID = -1 };
+enum class QueryType {
+  kStateless = 0,
+  kStatefulGroupBy,
+  kStatefulNonGroupBy,
+  kInvalid = -1
+};
 
 class CiderCompilationResult {
  public:
