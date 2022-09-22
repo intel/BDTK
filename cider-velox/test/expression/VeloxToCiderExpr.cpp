@@ -105,7 +105,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
       return toCiderExpr(cast_expr, colInfo);
     }
     return nullptr;
-  } catch (CiderException& error) {
+  } catch (VeloxException& error) {
     std::cout << error.what();
     return nullptr;
   }
