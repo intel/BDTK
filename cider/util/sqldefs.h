@@ -53,6 +53,8 @@ enum SQLOps {
   kBW_NE
 };
 
+using SQLOpsPtr = std::shared_ptr<SQLOps>;
+
 #define IS_COMPARISON(X)                                                    \
   ((X) == kEQ || (X) == kBW_EQ || (X) == kNE || (X) == kLT || (X) == kGT || \
    (X) == kLE || (X) == kGE || (X) == kBW_NE)
@@ -78,6 +80,8 @@ enum SQLAgg {
   kSAMPLE,
   kSINGLE_VALUE
 };
+
+using SQLAggPtr = std::shared_ptr<SQLAgg>;
 
 enum class SqlStringOpKind {
   /* Unary */

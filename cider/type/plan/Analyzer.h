@@ -53,6 +53,42 @@ makeExpr(Args&&... args) {
   return std::make_shared<Tp>(std::forward<Args>(args)...);
 }
 
+enum OpSupportExprType {
+  ColumnVar,
+  ExpressionTuple,
+  Constant,
+  UOper,
+  BinOper,
+  RangeOper,
+  Subquery,
+  InValues,
+  InIntegerSet,
+  CharLengthExpr,
+  KeyForStringExpr,
+  SampleRatioExpr,
+  LowerExpr,
+  CardinalityExpr,
+  LikeExpr,
+  RegexpExpr,
+  WidthBucketExpr,
+  LikelihoodExpr,
+  AggExpr,
+  CaseExpr,
+  ExtractExpr,
+  DateaddExpr,
+  DatediffExpr,
+  DatetruncExpr,
+  StringOper,
+  LowerStringOper,
+  SubstringStringOper,
+  FunctionOper,
+  OffsetInFragment,
+  WindowFunction,
+  ArrayExpr,
+};
+
+using OpSupportExprTypePtr = std::shared_ptr<OpSupportExprType>;
+
 namespace Analyzer {
 
 class ColumnVar;

@@ -43,12 +43,14 @@ option(CIDER_ENABLE_DUCKDB "Build DuckDB for Cider." ON)
 option(CIDER_ENABLE_VELOX "Build Velox Plugin for Cider." ON)
 option(CIDER_ENABLE_SUBSTRAIT "Build Substrait for Cider." ON)
 option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." ON)
+option(CIDER_ENABLE_YAMLCPP "Build yaml-cpp for Cider." ON)
 
 if(${CIDER_ENABLE_VELOX})
   # Disable components when enable velox build
   set(CIDER_ENABLE_GOOGLETEST OFF)
   set(CIDER_ENABLE_DUCKDB OFF)
   set(CIDER_ENABLE_SUBSTRAIT OFF)
+  set(CIDER_ENABLE_YAMLCPP OFF)
 endif()
 
 if(CIDER_ENABLE_TESTS)
@@ -84,6 +86,13 @@ else()
   set(substrait_directory
       ${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto)
   include_directories(thirdparty/velox/velox/substrait/proto)
+endif()
+
+if(${CIDER_ENABLE_YAMLCPP})
+  add_subdirectory(thirdparty/yaml-cpp)
+  include_directories(thirdparty/yaml-cpp/include)
+else()
+  include_directories(thirdparty/velox/third_party/yaml-cpp/include)
 endif()
 
 # TODO: remove after cleanup public API dependency RapidJSON
