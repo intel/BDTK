@@ -455,6 +455,9 @@ VectorPtr toVeloxVector(const TypePtr& vType,
 RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
                                                   const CiderTableSchema& schema,
                                                   memory::MemoryPool* pool) {
+  if (UNLIKELY(input.row_num() == 0)) {
+    return nullptr;
+  }
   std::shared_ptr<const RowType> rowType;
   std::vector<VectorPtr> columns;
   std::vector<TypePtr> types;

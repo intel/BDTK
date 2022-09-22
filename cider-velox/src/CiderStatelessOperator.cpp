@@ -38,12 +38,8 @@ RowVectorPtr CiderStatelessOperator::getOutput() {
   // In order to preserve the lifecycle of unique_ptr<>
   CiderRuntimeModule::ReturnCode ret;
   std::tie(ret, output_) = ciderRuntimeModule_->fetchResults();
-  if (UNLIKELY(output_->row_num() == 0)) {
-    return nullptr;
-  } else {
-    return dataConvertor_->convertToRowVector(
-        *output_, *outputSchema_, operatorCtx_->pool());
-  }
+  return dataConvertor_->convertToRowVector(
+      *output_, *outputSchema_, operatorCtx_->pool());
 }
 
 }  // namespace facebook::velox::plugin
