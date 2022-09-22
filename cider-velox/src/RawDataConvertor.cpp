@@ -20,15 +20,22 @@
  */
 
 #include "RawDataConvertor.h"
+#include <cmath>
+#include <cstdint>
 #include "TypeConversions.h"
+#include "cider/batch/CiderBatch.h"
+#include "substrait/type.pb.h"
 #include "velox/buffer/Buffer.h"
 #include "velox/type/StringView.h"
+#include "velox/type/Type.h"
 #include "velox/vector/BaseVector.h"
+#include "velox/vector/ComplexVector.h"
 #include "velox/vector/DictionaryVector.h"
 #include "velox/vector/FlatVector.h"
+#include "velox/vector/VectorStream.h"
+#include "velox/vector/tests/VectorTestBase.h"
 
 namespace facebook::velox::plugin {
-
 template <TypeKind kind>
 int8_t* toCiderImpl(VectorPtr& child, int idx, int num_rows) {
   using T = typename TypeTraits<kind>::NativeType;
@@ -463,10 +470,37 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
   int num_cols = schema.getColumnCount();
   types.reserve(num_cols);
   columns.reserve(num_cols);
+  int inputColIndex = 0;
+
   for (int i = 0; i < num_cols; i++) {
     ::substrait::Type sType = schema.getColumnTypeById(i);
     types.push_back(getVeloxType(sType));
-    columns.push_back(toVeloxVector(types[i], sType, input.column(i), num_rows, pool));
+    auto currentData = input.column(i);
+    auto columNum = input.column_num();
+    if (sType.kind_case() == substrait::Type::kStruct) {
+      // TODO : (ZhangJie) Support nested struct.
+      // For the case, struct[sum, count].
+      auto structSize = sType.struct_().types_size();
+      std::vector<VectorPtr> columnStruct;
+      columnStruct.reserve(structSize);
+
+      for (int typeId = 0; typeId < structSize; typeId++) {
+        columnStruct.emplace_back(toVeloxVector(types[i]->childAt(typeId),
+                                                sType.struct_().types(typeId),
+                                                input.column(inputColIndex + typeId),
+                                                num_rows,
+                                                pool));
+      }
+
+      columns.push_back(std::make_shared<RowVector>(
+          pool, types[i], BufferPtr(nullptr), num_rows, columnStruct));
+
+      inputColIndex = inputColIndex + structSize;
+    } else {
+      columns.push_back(
+          toVeloxVector(types[i], sType, input.column(inputColIndex), num_rows, pool));
+      inputColIndex = inputColIndex + 1;
+    }
   }
   rowType = std::make_shared<RowType>(move(col_names), move(types));
   return std::make_shared<RowVector>(
