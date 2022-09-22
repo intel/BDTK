@@ -21,7 +21,6 @@
 
 #include "PlanRewriter.h"
 #include "PlanUtil.h"
-#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin::plantransformer {
 VeloxPlanNodePtr PlanRewriter::rewrite(VeloxNodeAddrPlanSection& planSection,

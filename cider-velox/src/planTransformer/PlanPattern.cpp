@@ -20,7 +20,6 @@
  */
 
 #include "PlanPattern.h"
-#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin::plantransformer {
 std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(

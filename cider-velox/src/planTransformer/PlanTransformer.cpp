@@ -20,7 +20,6 @@
  */
 
 #include "PlanTransformer.h"
-#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin::plantransformer {
 

@@ -21,7 +21,6 @@
 
 #include "CiderPlanUtil.h"
 #include <memory>
-#include "cider/CiderException.h"
 #include "substrait/plan.pb.h"
 
 namespace facebook::velox::plugin::plantransformer {

@@ -21,7 +21,6 @@
 
 #include "VeloxToCiderExpr.h"
 #include <cstdint>
-#include "cider/CiderException.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "type/data/sqltypes.h"
 

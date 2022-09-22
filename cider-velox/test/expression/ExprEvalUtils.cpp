@@ -20,7 +20,6 @@
  */
 
 #include "ExprEvalUtils.h"
-#include "cider/CiderException.h"
 #include "exec/plan/parser/Translator.h"
 #include "exec/template/ExpressionRewrite.h"
 #include "exec/template/InputMetadata.h"

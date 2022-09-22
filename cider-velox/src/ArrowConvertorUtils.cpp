@@ -22,7 +22,6 @@
 #include "ArrowConvertorUtils.h"
 #include "BitUtils.h"
 #include "TypeConversions.h"
-#include "cider/CiderException.h"
 
 namespace facebook::velox::plugin {
 
