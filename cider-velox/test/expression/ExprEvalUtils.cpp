@@ -198,6 +198,6 @@ Analyzer::Expr* ExprEvalUtils::getExpr(std::shared_ptr<const Analyzer::Expr> exp
                                    column_var_expr->get_column_id(),
                                    column_var_expr->get_rte_idx());
   }
-  VELOX_UNREACHABLE("unsupported column type for target expr.");
+  VELOX_UNSUPPORTED("unsupported column type for target expr.");
 }
 }  // namespace facebook::velox::plugin

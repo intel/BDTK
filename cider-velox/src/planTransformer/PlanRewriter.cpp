@@ -53,7 +53,7 @@ VeloxPlanNodePtr PlanRewriter::rewriteWithMultiSrc(VeloxNodeAddrPlanSection& pla
       // delete the whole plan section since the target node of the plan section
       // may can not accept multi sources.So for this situation, we
       // throw exception out directly.
-      VELOX_ARITHMETIC_ERROR(
+      VELOX_FAIL(
           "PlanSection with multi sources nodes should not be rewritten to nullptr");
     }
     return resultPtr;

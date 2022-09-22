@@ -57,7 +57,7 @@ int8_t* convertTimestamp(const char* arrow_type,
       return convertToCiderImpl<int64_t>(arrowSchema, arrowArray, num_rows);
     }
   }
-  VELOX_UNSUPPORTED("Conversion is not supported yet");
+  VELOX_UNSUPPORTED("Conversion is not supported yet, arrow_type is {}", arrow_type);
 }
 
 int8_t* convertToCider(const ArrowSchema& arrowSchema,
@@ -83,7 +83,7 @@ int8_t* convertToCider(const ArrowSchema& arrowSchema,
     case 't':
       return convertTimestamp(arrow_type, arrowSchema, arrowArray, num_rows);
     default:
-      VELOX_UNSUPPORTED("Conversion is not supported yet");
+      VELOX_UNSUPPORTED("Conversion is not supported yet, arrow_type is {}", arrow_type);
   }
 }
 
@@ -182,7 +182,7 @@ void convertToArrow(ArrowArray& arrowArray,
     case 't':
       return convertTimestamp(arrow_type, arrowArray, data_buffer, num_rows);
     default:
-      VELOX_UNSUPPORTED("Conversion is not supported yet");
+      VELOX_UNSUPPORTED("Conversion is not supported yet, arrow_type is {}", arrow_type);
   }
 }
 

@@ -234,7 +234,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
       return std::make_shared<Analyzer::AggExpr>(
           agg_type, agg_kind, arg_expr, false, const_arg);
     } else {
-      VELOX_UNREACHABLE("agg should happen on specific column.");
+      VELOX_UNSUPPORTED("agg should happen on specific column.");
     }
   }
   // count(*)
