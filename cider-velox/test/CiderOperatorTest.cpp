@@ -24,6 +24,7 @@
 #include "velox/type/Type.h"
 
 #include <folly/init/Init.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include "CiderPlanNodeTranslator.h"
 #include "CiderVeloxPluginCtx.h"
@@ -107,7 +108,6 @@ TEST_F(CiderOperatorTest, Q6) {
       "select sum(l_extendedprice * l_discount) as revenue from tmp where "
       "l_shipdate >= 8765.666666666667 and l_shipdate < 9130.666666666667 and "
       "l_discount between 0.05 and 0.07 and l_quantity < 24.0";
-
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -214,8 +214,7 @@ TEST_F(CiderOperatorTest, min_max) {
 
   std::string duckDbSql =
       "select min(l_extendedprice) as  min_extendprice, max(l_discount) as max_discount "
-      "from tmp where "
-      "l_quantity < 0.5";
+      "from tmp where l_quantity < 0.5";
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -325,27 +324,177 @@ TEST_F(CiderOperatorTest, avg_on_col_cider) {
               {"l_orderkey", "l_linenumber"}, {"avg(l_quantity) as avg_price"}, {})
           .finalAggregation()
           .planNode();
-  // TODO: enable this after rowType convertor support.
-  // const ::substrait::Plan substraitPlan = ::substrait::Plan();
-  // auto expectedPlan =
-  //     PlanBuilder()
-  //         .values(vectors)
-  //         .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
-  //           return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
-  //              CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
-  //         })
-  //         .finalAggregation()
-  //         .planNode();
-  // std::cout << expectedPlan->toString(true, true) << std::endl;
 
-  // auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   auto duckdbSql =
       "SELECT l_orderkey, l_linenumber, avg(l_quantity) as avg_price FROM tmp WHERE "
       "l_shipdate < 24.0 GROUP BY l_orderkey, l_linenumber";
-  // assertQuery(resultPtr, duckdbSql);
 
   assertQuery(veloxPlan, duckdbSql);
-  // EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
+  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are null,
+  // while we get -Infinity/Infinity.
+  GTEST_SKIP();
+  // For the case, one column has both null value and not null value.
+  assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, avg_on_col_not_null) {
+  RowVectorPtr vector =
+      makeRowVector({makeFlatVector<int64_t>(
+                         {2499109626526694126, 2342493223442167775, 4077358421272316858}),
+                     makeFlatVector<int32_t>({581869302, -708632711, -133711905}),
+                     makeFlatVector<double>(
+                         {0.90579193414549275, 0.96886777112423139, 0.63235925003444637}),
+                     makeFlatVector<bool>({true, false, false}),
+                     makeFlatVector<int32_t>(3, nullptr, nullEvery(1))});
+  createDuckDbTable({vector});
+
+  auto veloxPlan = PlanBuilder()
+                       .values({vector})
+                       .filter("c2 < 24.0")
+                       .project({"c0", "c1"})
+                       .partialAggregation({"c0", "c1"}, {"avg(c1) as avg_price"}, {})
+                       .finalAggregation()
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql =
+      "SELECT c0, c1, avg(c1) as avg_price FROM tmp WHERE "
+      "c2 < 24.0 GROUP BY c0, c1";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, avg_on_col_null) {
+  RowVectorPtr vector =
+      makeRowVector({makeFlatVector<int64_t>(
+                         {2499109626526694126, 2342493223442167775, 4077358421272316858}),
+                     makeFlatVector<int32_t>({581869302, -708632711, -133711905}),
+                     makeFlatVector<double>(
+                         {0.90579193414549275, 0.96886777112423139, 0.63235925003444637}),
+                     makeFlatVector<bool>({true, false, false}),
+                     makeFlatVector<int32_t>(3, nullptr, nullEvery(1))});
+
+  createDuckDbTable({vector});
+  auto veloxPlan = PlanBuilder()
+                       .values({vector})
+                       .filter("c2 < 24.0")
+                       .project({"c0", "c1", "c4"})
+                       .partialAggregation({"c0", "c1"}, {"avg(c4) as avg_price"}, {})
+                       .finalAggregation()
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql =
+      "SELECT c0, c1, avg(c4) as avg_price FROM tmp WHERE "
+      "c2 < 24.0 GROUP BY c0, c1";
+
+  assertQuery(veloxPlan, duckdbSql);
+  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
+  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are null,
+  // while we get -Infinity/Infinity.
+  GTEST_SKIP();
+  assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
+  RowVectorPtr vector =
+      makeRowVector({makeFlatVector<int64_t>(
+                         {2499109626526694126, 2342493223442167775, 4077358421272316858}),
+                     makeFlatVector<int32_t>({581869302, -708632711, -133711905}),
+                     makeFlatVector<double>(
+                         {0.90579193414549275, 0.96886777112423139, 0.63235925003444637}),
+                     makeFlatVector<bool>({true, false, false}),
+                     makeFlatVector<int32_t>(3, nullptr, nullEvery(1))});
+
+  createDuckDbTable({vector});
+  auto veloxPlan = PlanBuilder()
+                       .values({vector})
+                       .filter("c2 < 24.0")
+                       .project({"c4"})
+                       .partialAggregation({}, {"avg(c4) as avg_price"}, {})
+                       .finalAggregation()
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT avg(c4) as avg_price FROM tmp WHERE c2 < 24.0 ";
+
+  assertQuery(veloxPlan, duckdbSql);
+  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
+  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are null,
+  // while we get -Infinity/Infinity.
+  GTEST_SKIP();
+  assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, partial_avg) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+  createDuckDbTable({data});
+  auto veloxPlan = PlanBuilder()
+                       .values({data})
+                       .project({"c0"})
+                       .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
+  auto duckdbSql = "SELECT row(45, 10)";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
+TEST_F(CiderOperatorTest, partial_avg_null) {
+  auto data = makeRowVector({makeAllNullFlatVector<int32_t>(3)});
+
+  createDuckDbTable({data});
+
+  auto veloxPlan = PlanBuilder()
+                       .values({data})
+                       .project({"c0"})
+                       .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT null";
+  assertQuery(veloxPlan, duckdbSql);
+  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
+  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are
+  // null, while we get [-9223372036854776000,0].
+  GTEST_SKIP();
+  assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
+  auto data = makeRowVector({makeFlatVector<int32_t>(
+      9, [](auto row) { return 1; }, nullEvery(2))});
+
+  createDuckDbTable({data});
+
+  auto veloxPlan = PlanBuilder()
+                       .values({data})
+                       .project({"c0"})
+                       .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT row(4, 4)";
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
 }
 
 int main(int argc, char** argv) {

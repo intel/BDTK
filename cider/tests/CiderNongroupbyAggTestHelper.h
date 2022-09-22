@@ -25,8 +25,8 @@
 #include "type/schema/TableInfo.h"
 
 #include "exec/template/AggregatedColRange.h"
-#include "exec/template/common/descriptors/InputDescriptors.h"
 #include "exec/template/InputMetadata.h"
+#include "exec/template/common/descriptors/InputDescriptors.h"
 
 #include "cider/CiderRuntimeModule.h"
 #include "cider/batch/ScalarBatch.h"
