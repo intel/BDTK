@@ -57,12 +57,8 @@ inline const char* getArrowFormat(::substrait::Type& typeName) {
     case ::substrait::Type::KindCase::kTimestamp:
       return "ttu";  // MICROSECOND
     default:
-<<<<<<< HEAD
       VELOX_NYI("Conversion is not supported yet in getArrowFormat for type" +
                 typeName.GetTypeName());
-=======
-      VELOX_UNSUPPORTED("Conversion {} is not supported yet", typeName.kind_case());
->>>>>>> 521b50f ([POAE7-2301]fix some suggestions)
   }
 }
 
@@ -104,12 +100,8 @@ inline TypePtr getVeloxType(::substrait::Type& typeName) {
       return ROW(std::move(names), std::move(rowTypes));
     }
     default:
-<<<<<<< HEAD
       VELOX_NYI("Conversion is not supported yet in getVeloxType for type " +
                 typeName.GetTypeName());
-=======
-      VELOX_UNSUPPORTED("Conversion {} is not supported yet", typeName.kind_case());
->>>>>>> 521b50f ([POAE7-2301]fix some suggestions)
   }
 }
 
