@@ -106,8 +106,9 @@ std::unique_ptr<CiderBatch> CiderRuntimeModule::prepareOneBatchOutput(int64_t le
   std::function<void(CiderBatch*)> build_function =
       [len, &build_function](CiderBatch* batch) -> void {
     batch->resizeBatch(len);
-    batch->getMutableNulls();  // Allocate nulls and assigned as not_null by default.
-                               // Currently, all children will be allocated with nulls.
+    // Allocate nulls and assigned as not_null by default. Currently, all children will be
+    // allocated with nulls.
+    batch->getMutableNulls();
     for (size_t i = 0; i < batch->getChildrenNum(); ++i) {
       auto child = batch->getChildAt(i);
       build_function(child.get());

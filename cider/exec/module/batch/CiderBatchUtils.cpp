@@ -24,6 +24,7 @@
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
 
+#include "include/cider/CiderException.h"
 #include "include/cider/batch/CiderBatch.h"
 #include "include/cider/batch/CiderBatchUtils.h"
 #include "include/cider/batch/ScalarBatch.h"
@@ -254,8 +255,9 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
     case Type::kStruct:
       return "+s";
     default:
-      throw std::runtime_error(std::string("Unsupported to convert type ") +
-                               type.GetTypeName() + "to Arrow type.");
+      CIDER_THROW(CiderRuntimeException,
+                  std::string("Unsupported to convert type ") + type.GetTypeName() +
+                      "to Arrow type.");
   }
 }
 
