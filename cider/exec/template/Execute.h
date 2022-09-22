@@ -304,6 +304,30 @@ class Executor {
       const std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner,
       const bool with_generation) const;
 
+  enum class ExtModuleKinds {
+    template_module,     // RuntimeFunctions.bc
+    udf_cpu_module,      // Load-time UDFs for CPU execution
+    udf_gpu_module,      // Load-time UDFs for GPU execution
+    rt_udf_cpu_module,   // Run-time UDF/UDTFs for CPU execution
+    rt_udf_gpu_module,   // Run-time UDF/UDTFs for GPU execution
+    rt_geos_module,      // geos functions
+    rt_libdevice_module  // math library functions for GPU execution
+  };
+  // Globally available mapping of extension module sources. Not thread-safe.
+  std::map<ExtModuleKinds, std::string> extension_module_sources;
+  void initialize_extension_module_sources();
+
+  // Convenience functions for retrieving executor-local extension modules, thread-safe:
+  const std::unique_ptr<llvm::Module>& get_rt_module() const {
+    return get_extension_module(ExtModuleKinds::template_module);
+  }
+  const std::unique_ptr<llvm::Module>& get_udf_module(bool is_gpu = false) const {
+    return get_extension_module(
+        (is_gpu ? ExtModuleKinds::udf_gpu_module : ExtModuleKinds::udf_cpu_module));
+  }
+  void update_extension_modules(bool update_runtime_modules_only = false);
+  llvm::LLVMContext& getContext() { return *context_.get(); }
+
   bool containsLeftDeepOuterJoin() const {
     return cgen_state_->contains_left_deep_outer_join_;
   }
@@ -388,6 +412,8 @@ class Executor {
       std::function<void(ResultSetPtr, const Fragmenter_Namespace::FragmentInfo&)>;
 
   std::unordered_map<int, const Analyzer::BinOper*> getInnerTabIdToJoinCond() const;
+
+  std::unique_ptr<llvm::Module> rt_module_;
 
  public:  // Temporary, ask saman about this
   static std::pair<int64_t, int32_t> reduceResults(const SQLAgg agg,
@@ -635,6 +661,17 @@ class Executor {
 
   std::unique_ptr<CgenState> cgen_state_;
 
+  const std::unique_ptr<llvm::Module>& get_extension_module(ExtModuleKinds kind) const {
+    auto it = extension_modules_.find(kind);
+    if (it != extension_modules_.end()) {
+      return it->second;
+    }
+    static const std::unique_ptr<llvm::Module> empty;
+    return empty;
+  }
+  std::map<ExtModuleKinds, std::unique_ptr<llvm::Module>> extension_modules_;
+
+
   class FetchCacheAnchor {
    public:
     FetchCacheAnchor(CgenState* cgen_state)
@@ -648,7 +685,7 @@ class Executor {
 
   std::unique_ptr<PlanState> plan_state_;
   std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner_;
-
+  std::unique_ptr<llvm::LLVMContext> context_;
   // indicates whether this executor has been interrupted
   std::atomic<bool> interrupted_;
 

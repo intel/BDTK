@@ -21,6 +21,7 @@
  */
 
 #include "exec/template/CgenState.h"
+#include "exec/template/CodeGenerator.h"
 #include "exec/template/Execute.h"
 #include "exec/template/OutputBufferInitialization.h"
 
@@ -202,4 +203,18 @@ void CgenState::emitErrorCheck(llvm::Value* condition,
   ir_builder_.SetInsertPoint(check_fail);
   ir_builder_.CreateRet(errorCode);
   ir_builder_.SetInsertPoint(check_ok);
+}
+
+void CgenState::set_module_shallow_copy(const std::unique_ptr<llvm::Module>& llvm_module,
+                                        bool always_clone) {
+  module_ =
+      llvm::CloneModule(*llvm_module, vmap_, [always_clone](const llvm::GlobalValue* gv) {
+        auto func = llvm::dyn_cast<llvm::Function>(gv);
+        if (!func) {
+          return true;
+        }
+        return (func->getLinkage() == llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
+                func->getLinkage() == llvm::GlobalValue::LinkageTypes::InternalLinkage ||
+                ( CodeGenerator::alwaysCloneRuntimeFunction(func)));
+      }).release();
 }

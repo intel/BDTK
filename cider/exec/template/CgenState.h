@@ -394,6 +394,9 @@ struct CgenState {
 
   void maybeCloneFunctionRecursive(llvm::Function* fn);
 
+  void set_module_shallow_copy(const std::unique_ptr<llvm::Module>& llvm_module,
+                               bool always_clone);
+
  private:
   template <class T>
   size_t getOrAddLiteral(const T& val, const int device_id) {

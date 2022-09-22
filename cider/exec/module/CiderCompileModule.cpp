@@ -93,7 +93,8 @@ QueryType CiderCompilationResult::getQueryType() const {
 class CiderCompileModule::Impl {
  public:
   explicit Impl(std::shared_ptr<CiderAllocator> allocator) {
-    executor_ = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID, nullptr, nullptr);
+    id_ =  std::hash<std::thread::id>{}(std::this_thread::get_id());
+    executor_ = Executor::getExecutor(id_, nullptr, nullptr);
     ciderStringDictionaryProxy_ = initStringDictionaryProxy(allocator);
     executor_->setCiderStringDictionaryProxy(ciderStringDictionaryProxy_.get());
   }
@@ -424,6 +425,7 @@ class CiderCompileModule::Impl {
   void feedBuildTable(CiderBatch&& build_table) { build_table_ = std::move(build_table); }
 
  private:
+  Executor::ExecutorId id_ = Executor::UNITARY_EXECUTOR_ID;
   std::shared_ptr<Executor> executor_;
   std::shared_ptr<RelAlgExecutionUnit> ra_exe_unit_;
   std::shared_ptr<generator::SubstraitToRelAlgExecutionUnit> translator_;

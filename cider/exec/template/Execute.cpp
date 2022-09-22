@@ -63,6 +63,7 @@
 #include "util/misc.h"
 #include "util/scope.h"
 #include "util/threading.h"
+#include "util/filesystem/cider_path.h"
 
 bool g_enable_watchdog{false};
 bool g_enable_dynamic_watchdog{false};
@@ -132,6 +133,16 @@ bool g_enable_automatic_ir_metadata{true};
 extern bool g_cache_string_hash;
 bool g_enable_multifrag_rs{false};
 
+extern std::unique_ptr<llvm::Module> read_llvm_module_from_bc_file(
+    const std::string& udf_ir_filename,
+    llvm::LLVMContext& ctx);
+extern std::unique_ptr<llvm::Module> read_llvm_module_from_ir_file(
+    const std::string& udf_ir_filename,
+    llvm::LLVMContext& ctx);
+extern std::unique_ptr<llvm::Module> read_llvm_module_from_ir_string(
+    const std::string& udf_ir_string,
+    llvm::LLVMContext& ctx);
+
 const int32_t Executor::ERR_SINGLE_VALUE_FOUND_MULTIPLE_VALUES;
 
 Executor::Executor(const ExecutorId executor_id,
@@ -147,7 +158,100 @@ Executor::Executor(const ExecutorId executor_id,
     , data_provider_(data_provider)
     , buffer_provider_(buffer_provider)
     , temporary_tables_(nullptr)
-    , input_table_info_cache_(this) {}
+    , input_table_info_cache_(this)
+    , context_(new llvm::LLVMContext()){
+  initialize_extension_module_sources();
+  update_extension_modules();
+}
+
+void Executor::initialize_extension_module_sources() {
+  if (Executor::extension_module_sources.find(
+      Executor::ExtModuleKinds::template_module) ==
+      Executor::extension_module_sources.end()) {
+    auto root_path = cider::get_root_abs_path();
+    auto template_path = root_path + "/QueryEngine/RuntimeFunctions.bc";
+    CHECK(boost::filesystem::exists(template_path));
+    Executor::extension_module_sources[Executor::ExtModuleKinds::template_module] =
+        template_path;
+  }
+}
+
+void Executor::update_extension_modules(bool update_runtime_modules_only) {
+  auto read_module = [&](Executor::ExtModuleKinds module_kind,
+                         const std::string& source) {
+    /*
+      source can be either a filename of a LLVM IR
+      or LLVM BC source, or a string containing
+      LLVM IR code.
+     */
+    CHECK(!source.empty());
+    switch (module_kind) {
+      case Executor::ExtModuleKinds::template_module:
+      case Executor::ExtModuleKinds::rt_geos_module:
+      case Executor::ExtModuleKinds::rt_libdevice_module: {
+        return read_llvm_module_from_bc_file(source, getContext());
+      }
+      case Executor::ExtModuleKinds::udf_cpu_module: {
+        return read_llvm_module_from_ir_file(source, getContext());
+      }
+      case Executor::ExtModuleKinds::udf_gpu_module: {
+        return read_llvm_module_from_ir_file(source, getContext());
+      }
+      case Executor::ExtModuleKinds::rt_udf_cpu_module: {
+        return read_llvm_module_from_ir_string(source, getContext());
+      }
+      case Executor::ExtModuleKinds::rt_udf_gpu_module: {
+        return read_llvm_module_from_ir_string(source, getContext());
+      }
+      default: {
+        UNREACHABLE();
+        return std::unique_ptr<llvm::Module>();
+      }
+    }
+  };
+  auto update_module = [&](Executor::ExtModuleKinds module_kind,
+                           bool erase_not_found = false) {
+    auto it = Executor::extension_module_sources.find(module_kind);
+    if (it != Executor::extension_module_sources.end()) {
+      auto llvm_module = read_module(module_kind, it->second);
+      if (llvm_module) {
+        extension_modules_[module_kind] = std::move(llvm_module);
+      } else if (erase_not_found) {
+        extension_modules_.erase(module_kind);
+      } else {
+        if (extension_modules_.find(module_kind) == extension_modules_.end()) {
+          LOG(WARNING) << "Failed to update " << ::toString(module_kind)
+                       << " LLVM module. The module will be unavailable.";
+        } else {
+          LOG(WARNING) << "Failed to update " << ::toString(module_kind)
+                       << " LLVM module. Using the existing module.";
+        }
+      }
+    } else {
+      if (erase_not_found) {
+        extension_modules_.erase(module_kind);
+      } else {
+        if (extension_modules_.find(module_kind) == extension_modules_.end()) {
+          LOG(WARNING) << "Source of " << ::toString(module_kind)
+                       << " LLVM module is unavailable. The module will be unavailable.";
+        } else {
+          LOG(WARNING) << "Source of " << ::toString(module_kind)
+                       << " LLVM module is unavailable. Using the existing module.";
+        }
+      }
+    }
+  };
+
+  if (!update_runtime_modules_only) {
+    // required compile-time modules, their requirements are enforced
+    // by Executor::initialize_extension_module_sources():
+    update_module(Executor::ExtModuleKinds::template_module);
+    // load-time modules, these are optional:
+    update_module(Executor::ExtModuleKinds::udf_cpu_module, true);
+  }
+  // run-time modules, these are optional and erasable:
+  update_module(Executor::ExtModuleKinds::rt_udf_cpu_module, true);
+}
 
 std::shared_ptr<Executor> Executor::getExecutor(const ExecutorId executor_id,
                                                 DataProvider* data_provider,
