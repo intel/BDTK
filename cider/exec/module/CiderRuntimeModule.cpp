@@ -744,14 +744,24 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateCountDistinctResIfNeed(
       int flatten_index = schema->getFlattenColIndex(i);
       if (schema->getColHints()[i] == ColumnHint::PartialAVG &&
           target_infos[flatten_index].agg_kind == SQLAgg::kSUM &&
-          target_infos[flatten_index].agg_arg_type.is_integer() &&
           generator::getSQLTypeInfo(schema->getColumnTypeById(i).struct_().types(0))
-                  .get_type() == SQLTypes::kDOUBLE) {
+                  .get_type() == SQLTypes::kDOUBLE &&
+          (target_infos[flatten_index].agg_arg_type.is_integer() ||
+           target_infos[flatten_index].agg_arg_type.is_fp())) {
         int64_t* result = const_cast<int64_t*>(
             reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
-        double value = (double)result[0];
         double* cast_buffer = reinterpret_cast<double*>(result);
-        cast_buffer[0] = value;
+        switch (result[0]) {
+          case std::numeric_limits<int8_t>::min():
+          case std::numeric_limits<int16_t>::min():
+          case std::numeric_limits<int32_t>::min():
+          case std::numeric_limits<int64_t>::min():
+          case (int64_t)std::numeric_limits<float>::min():
+            cast_buffer[0] = NULL_VALUE_DOUBLE;
+            break;
+          default:
+            cast_buffer[0] = (double)result[0];
+        }
       }
     }
   }
