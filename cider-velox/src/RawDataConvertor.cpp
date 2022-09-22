@@ -20,7 +20,6 @@
  */
 
 #include "RawDataConvertor.h"
-#include <boost/smart_ptr/intrusive_ptr.hpp>
 #include <cmath>
 #include <cstdint>
 #include "TypeConversions.h"
@@ -479,7 +478,7 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
     auto currentData = input.column(i);
     auto columNum = input.column_num();
     if (sType.kind_case() == substrait::Type::kStruct) {
-      // TODO : (ZhangJie) Support nested struct after cider supported nested (MaYan).
+      // TODO : (ZhangJie) Support nested struct.
       // For the case, struct[sum, count].
       auto structSize = sType.struct_().types_size();
       std::vector<VectorPtr> columnStruct;

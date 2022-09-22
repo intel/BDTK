@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include "cider/CiderInterface.h"
+#include "velox/common/base/Exceptions.h"
 #include "velox/vector/ComplexVector.h"
 
 namespace facebook::velox::plugin {
@@ -56,9 +57,8 @@ inline const char* getArrowFormat(::substrait::Type& typeName) {
     case ::substrait::Type::KindCase::kTimestamp:
       return "ttu";  // MICROSECOND
     default:
-      throw std::runtime_error(
-          "Conversion is not supported yet in getArrowFormat for type" +
-          typeName.GetTypeName());
+      VELOX_NYI("Conversion is not supported yet in getArrowFormat for type" +
+                typeName.GetTypeName());
   }
 }
 
@@ -87,9 +87,12 @@ inline TypePtr getVeloxType(::substrait::Type& typeName) {
     case ::substrait::Type::KindCase::kDate:
       return DATE();
     case ::substrait::Type::KindCase::kStruct: {
+      auto typeSize = typeName.struct_().types_size();
       std::vector<TypePtr> rowTypes;
       std::vector<std::string> names;
-      for (int idx = 0; idx < typeName.struct_().types_size(); idx++) {
+      rowTypes.reserve(typeSize);
+      names.reserve(typeSize);
+      for (int idx = 0; idx < typeSize; idx++) {
         names.emplace_back("col_" + std::to_string(idx));
         rowTypes.emplace_back(std::move(
             getVeloxType(const_cast<::substrait::Type&>(typeName.struct_().types(idx)))));
@@ -97,9 +100,8 @@ inline TypePtr getVeloxType(::substrait::Type& typeName) {
       return ROW(std::move(names), std::move(rowTypes));
     }
     default:
-      throw std::runtime_error(
-          "Conversion is not supported yet in getVeloxType for type " +
-          typeName.GetTypeName());
+      VELOX_NYI("Conversion is not supported yet in getVeloxType for type " +
+                typeName.GetTypeName());
   }
 }
 
