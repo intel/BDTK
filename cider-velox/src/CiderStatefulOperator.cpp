@@ -43,8 +43,12 @@ RowVectorPtr CiderStatefulOperator::getOutput() {
   if (ret == CiderRuntimeModule::ReturnCode::kNoMoreOutput) {
     finished_ = true;
   }
-  return dataConvertor_->convertToRowVector(
-      *output_, *outputSchema_, operatorCtx_->pool());
+  if (UNLIKELY(output_->row_num() == 0)) {
+    return nullptr;
+  } else {
+    return dataConvertor_->convertToRowVector(
+        *output_, *outputSchema_, operatorCtx_->pool());
+  }
 }
 
 }  // namespace facebook::velox::plugin
