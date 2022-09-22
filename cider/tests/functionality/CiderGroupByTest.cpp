@@ -146,6 +146,7 @@ class CiderGroupByPrimitiveTypeMixTest : public CiderTestBase {
         "",                                                                              \
         true);                                                                           \
     GTEST_SKIP();                                                                        \
+    /*TODO: enable this case later since "mod" is not supported currently*/              \
     /*select mod in group by*/                                                           \
     assertQuery(                                                                         \
         "SELECT col_a % 2 AS col_a_2, SUM(col_a) AS col_a_sum FROM table_test GROUP BY " \
