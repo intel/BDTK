@@ -262,8 +262,8 @@ class Executor {
   ~Executor() { extension_modules_.clear(); }
 
   static std::shared_ptr<Executor> getExecutor(const ExecutorId id,
-                                               DataProvider* data_provider,
-                                               BufferProvider* buffer_provider,
+                                               DataProvider* data_provider = nullptr,
+                                               BufferProvider* buffer_provider = nullptr,
                                                const std::string& debug_dir = "",
                                                const std::string& debug_file = "");
 

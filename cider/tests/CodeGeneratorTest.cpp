@@ -26,6 +26,8 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Transforms/Utils/Cloning.h>
+
 
 #include "TestHelpers.h"
 #include "exec/template/CodeGenerator.h"
@@ -35,9 +37,9 @@
 #include "type/plan/Analyzer.h"
 
 TEST(CodeGeneratorTest, IntegerConstant) {
-  auto& ctx = getGlobalLLVMContext();
-  std::unique_ptr<llvm::Module> module(read_template_module(ctx));
-  ScalarCodeGenerator code_generator(std::move(module));
+  auto executor = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID).get();
+  auto llvm_module = llvm::CloneModule(*executor->get_rt_module());
+  ScalarCodeGenerator code_generator(std::move(llvm_module));
   CompilationOptions co = CompilationOptions::defaults();
   co.hoist_literals = false;
 
@@ -59,9 +61,9 @@ TEST(CodeGeneratorTest, IntegerConstant) {
 }
 
 TEST(CodeGeneratorTest, IntegerAdd) {
-  auto& ctx = getGlobalLLVMContext();
-  std::unique_ptr<llvm::Module> module(read_template_module(ctx));
-  ScalarCodeGenerator code_generator(std::move(module));
+  auto executor = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID).get();
+  auto llvm_module = llvm::CloneModule(*executor->get_rt_module());
+  ScalarCodeGenerator code_generator(std::move(llvm_module));
   CompilationOptions co = CompilationOptions::defaults();
   co.hoist_literals = false;
 
@@ -85,9 +87,9 @@ TEST(CodeGeneratorTest, IntegerAdd) {
 }
 
 TEST(CodeGeneratorTest, IntegerColumn) {
-  auto& ctx = getGlobalLLVMContext();
-  std::unique_ptr<llvm::Module> module(read_template_module(ctx));
-  ScalarCodeGenerator code_generator(std::move(module));
+  auto executor = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID).get();
+  auto llvm_module = llvm::CloneModule(*executor->get_rt_module());
+  ScalarCodeGenerator code_generator(std::move(llvm_module));
   CompilationOptions co = CompilationOptions::defaults();
   co.hoist_literals = false;
 
@@ -112,9 +114,9 @@ TEST(CodeGeneratorTest, IntegerColumn) {
 }
 
 TEST(CodeGeneratorTest, IntegerExpr) {
-  auto& ctx = getGlobalLLVMContext();
-  std::unique_ptr<llvm::Module> module(read_template_module(ctx));
-  ScalarCodeGenerator code_generator(std::move(module));
+  auto executor = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID).get();
+  auto llvm_module = llvm::CloneModule(*executor->get_rt_module());
+  ScalarCodeGenerator code_generator(std::move(llvm_module));
   CompilationOptions co = CompilationOptions::defaults();
   co.hoist_literals = false;
 

@@ -221,7 +221,7 @@ void TargetExprCodegen::codegenAggregate(
 
   CodeGenerator code_generator(executor);
 
-  auto& context = getGlobalLLVMContext();
+  auto& context = executor->getContext();
 
   const auto agg_fn_names = agg_fn_base_names(
       target_info, is_varlen_projection(target_expr, target_info.sql_type));
