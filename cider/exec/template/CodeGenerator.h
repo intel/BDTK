@@ -623,12 +623,6 @@ class ScalarCodeGenerator : public CodeGenerator {
 };
 
 /**
- * Makes a shallow copy (just declarations) of the runtime module. Function definitions
- * are cloned only if they're used from the generated code.
- */
-std::unique_ptr<llvm::Module> runtime_module_shallow_copy(CgenState* cgen_state);
-
-/**
  *  Loads individual columns from a single, packed pointers buffer (the byte stream arg)
  */
 std::vector<llvm::Value*> generate_column_heads_load(const int num_columns,

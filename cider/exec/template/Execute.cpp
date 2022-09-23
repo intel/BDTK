@@ -58,12 +58,12 @@
 #include "robin_hood.h"
 #include "util/TypedDataAccessors.h"
 #include "util/checked_alloc.h"
+#include "util/filesystem/cider_path.h"
 #include "util/measure.h"
 #include "util/memory/DictDescriptor.h"
 #include "util/misc.h"
 #include "util/scope.h"
 #include "util/threading.h"
-#include "util/filesystem/cider_path.h"
 
 bool g_enable_watchdog{false};
 bool g_enable_dynamic_watchdog{false};
@@ -150,29 +150,27 @@ Executor::Executor(const ExecutorId executor_id,
                    BufferProvider* buffer_provider,
                    const std::string& debug_dir,
                    const std::string& debug_file)
-    : cgen_state_(new CgenState({}, false))
+    : executor_id_(executor_id)
+    , context_(new llvm::LLVMContext())
+    , cgen_state_(new CgenState({}, false, this))
     , cpu_code_cache_(code_cache_size)
     , debug_dir_(debug_dir)
     , debug_file_(debug_file)
-    , executor_id_(executor_id)
     , data_provider_(data_provider)
     , buffer_provider_(buffer_provider)
     , temporary_tables_(nullptr)
-    , input_table_info_cache_(this)
-    , context_(new llvm::LLVMContext()){
+    , input_table_info_cache_(this) {
   initialize_extension_module_sources();
   update_extension_modules();
 }
 
 void Executor::initialize_extension_module_sources() {
-  if (Executor::extension_module_sources.find(
-      Executor::ExtModuleKinds::template_module) ==
-      Executor::extension_module_sources.end()) {
+  if (extension_module_sources.find(Executor::ExtModuleKinds::template_module) ==
+      extension_module_sources.end()) {
     auto root_path = cider::get_root_abs_path();
-    auto template_path = root_path + "/QueryEngine/RuntimeFunctions.bc";
+    auto template_path = root_path + "/function/RuntimeFunctions.bc";
     CHECK(boost::filesystem::exists(template_path));
-    Executor::extension_module_sources[Executor::ExtModuleKinds::template_module] =
-        template_path;
+    extension_module_sources[Executor::ExtModuleKinds::template_module] = template_path;
   }
 }
 
@@ -211,8 +209,8 @@ void Executor::update_extension_modules(bool update_runtime_modules_only) {
   };
   auto update_module = [&](Executor::ExtModuleKinds module_kind,
                            bool erase_not_found = false) {
-    auto it = Executor::extension_module_sources.find(module_kind);
-    if (it != Executor::extension_module_sources.end()) {
+    auto it = extension_module_sources.find(module_kind);
+    if (it != extension_module_sources.end()) {
       auto llvm_module = read_module(module_kind, it->second);
       if (llvm_module) {
         extension_modules_[module_kind] = std::move(llvm_module);
@@ -1256,7 +1254,8 @@ void Executor::nukeOldState(const bool allow_lazy_fetch,
                                   [](const JoinCondition& join_condition) {
                                     return join_condition.type == JoinType::LEFT;
                                   }) != ra_exe_unit->join_quals.end();
-  cgen_state_.reset(new CgenState(query_infos.size(), contains_left_deep_outer_join));
+  cgen_state_.reset(
+      new CgenState(query_infos.size(), contains_left_deep_outer_join, this));
   plan_state_.reset(new PlanState(
       allow_lazy_fetch && !contains_left_deep_outer_join, query_infos, this));
 }

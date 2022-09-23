@@ -131,7 +131,7 @@ TEST(CiderRunnerTest, statefulRunnerMultiThreadTest) {
   }
 }
 
-TEST(CiderRunnerTest, statelessRunnerMultiThreadCompileTest1) {
+TEST(CiderRunnerTest, statelessRunnerMultiThreadCompileTest) {
   std::function test_func = []() {
     auto input_batch = create_default_batch();
     std::string ddl = create_ddl();
@@ -146,7 +146,7 @@ TEST(CiderRunnerTest, statelessRunnerMultiThreadCompileTest1) {
     }
     auto res_f = runner->finish();
   };
-  int thread_num = 4;
+  int thread_num = 10;
   std::vector<std::thread> thread_vec(thread_num);
   for (int i = 0; i < thread_num; i++) {
     thread_vec[i] = std::thread(test_func);

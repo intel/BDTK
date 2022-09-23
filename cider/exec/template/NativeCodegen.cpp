@@ -83,8 +83,6 @@ float g_fraction_code_cache_to_evict = 0.2;
 std::unique_ptr<llvm::Module> udf_cpu_module;
 std::unique_ptr<llvm::Module> rt_udf_cpu_module;
 
-extern std::unique_ptr<llvm::Module> g_rt_module;
-
 namespace {
 
 void throw_parseIR_error(const llvm::SMDiagnostic& parse_error, std::string src = "") {
@@ -322,6 +320,7 @@ void verify_function_ir(const llvm::Function* func) {
     err_os << "\n-----\n";
     func->print(err_os, nullptr);
     err_os << "\n-----\n";
+    std::cout << err_ss.str() << std::endl;
     LOG(FATAL) << err_ss.str();
   }
 }
@@ -638,7 +637,6 @@ bool CodeGenerator::alwaysCloneRuntimeFunction(const llvm::Function* func) {
          func->getName() == "init_shared_mem_nop" || func->getName() == "write_back_nop";
 }
 
-
 std::unique_ptr<llvm::Module> read_llvm_module_from_bc_file(
     const std::string& bc_filename,
     llvm::LLVMContext& context) {
@@ -680,12 +678,11 @@ std::unique_ptr<llvm::Module> read_llvm_module_from_ir_string(
   auto owner = llvm::parseIR(*buf, parse_error, ctx);
   if (!owner) {
     LOG(IR) << "read_llvm_module_from_ir_string:\n"
-    << udf_ir_string << "\nEnd of LLVM/NVVM IR";
+            << udf_ir_string << "\nEnd of LLVM/NVVM IR";
     throw_parseIR_error(parse_error);
   }
   return owner;
 }
-
 
 llvm::Module* read_template_module(llvm::LLVMContext& context) {
   llvm::SMDiagnostic err;
@@ -984,7 +981,6 @@ std::vector<std::string> get_agg_fnames(const std::vector<Analyzer::Expr*>& targ
 
 }  // namespace
 
-std::unique_ptr<llvm::Module> g_rt_module(read_template_module(getGlobalLLVMContext()));
 bool is_rt_udf_module_present(bool cpu_only) {
   return cpu_only && (rt_udf_cpu_module != nullptr);
 }
@@ -1572,7 +1568,7 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
   // contiguous for CPU
 
   CHECK(cgen_state_->module_ == nullptr);
-  cgen_state_->set_module_shallow_copy(g_rt_module, /*always_clone=*/true);
+  cgen_state_->set_module_shallow_copy(get_rt_module(), /*always_clone=*/true);
   AUTOMATIC_IR_METADATA(cgen_state_.get());
 
   auto agg_fnames =
@@ -2001,18 +1997,6 @@ bool Executor::compileBody(const RelAlgExecutionUnit& ra_exe_unit,
     }
   }
   return ret;
-}
-
-std::unique_ptr<llvm::Module> runtime_module_shallow_copy(CgenState* cgen_state) {
-  return llvm::CloneModule(
-      *g_rt_module.get(), cgen_state->vmap_, [](const llvm::GlobalValue* gv) {
-        auto func = llvm::dyn_cast<llvm::Function>(gv);
-        if (!func) {
-          return true;
-        }
-        return (func->getLinkage() == llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
-                func->getLinkage() == llvm::GlobalValue::LinkageTypes::InternalLinkage);
-      });
 }
 
 std::vector<llvm::Value*> generate_column_heads_load(const int num_columns,

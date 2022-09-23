@@ -251,6 +251,7 @@ class Executor {
  public:
   using ExecutorId = size_t;
   static const ExecutorId UNITARY_EXECUTOR_ID = 0;
+  static const ExecutorId INVALID_EXECUTOR_ID = SIZE_MAX;
 
   Executor(const ExecutorId id,
            DataProvider* data_provider,
@@ -670,7 +671,6 @@ class Executor {
     return empty;
   }
   std::map<ExtModuleKinds, std::unique_ptr<llvm::Module>> extension_modules_;
-
 
   class FetchCacheAnchor {
    public:

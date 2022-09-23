@@ -93,7 +93,7 @@ QueryType CiderCompilationResult::getQueryType() const {
 class CiderCompileModule::Impl {
  public:
   explicit Impl(std::shared_ptr<CiderAllocator> allocator) {
-    id_ =  std::hash<std::thread::id>{}(std::this_thread::get_id());
+    id_ = std::hash<std::thread::id>{}(std::this_thread::get_id());
     executor_ = Executor::getExecutor(id_, nullptr, nullptr);
     ciderStringDictionaryProxy_ = initStringDictionaryProxy(allocator);
     executor_->setCiderStringDictionaryProxy(ciderStringDictionaryProxy_.get());
