@@ -124,8 +124,7 @@ class CiderRuntimeModule {
                           int64_t** group_by_output_buffer,
                           const int64_t* join_hash_tables_ptr);
   void resetAggVal();
-  CiderBatch setSchemaAndUpdateCountDistinctResIfNeed(
-      std::unique_ptr<CiderBatch> output_batch);
+  CiderBatch setSchemaAndUpdateAggResIfNeed(std::unique_ptr<CiderBatch> output_batch);
   std::shared_ptr<CiderCompilationResult> ciderCompilationResult_;
   CiderCompilationOption ciderCompilationOption_;
   CiderExecutionOption ciderExecutionOption_;
@@ -149,6 +148,7 @@ class CiderRuntimeModule {
   int32_t fetched_rows_{0};
   constexpr static size_t kMaxOutputRows = 1000;
   constexpr static double NULL_VALUE_DOUBLE = std::numeric_limits<double>::min();
+  constexpr static int32_t NULL_VALUE_BIGINT = std::numeric_limits<int32_t>::min();
 
   bool is_group_by_;
 };
