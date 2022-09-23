@@ -19,9 +19,9 @@
  * under the License.
  */
 
+#include "PlanTransformer.h"
 #include <fstream>
 #include <thread>
-#include "PlanTransformer.h"
 
 namespace facebook::velox::plugin::plantransformer {
 
