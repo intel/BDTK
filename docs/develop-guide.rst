@@ -4,7 +4,7 @@ Cider Developer Guide
 1 How to build
 --------------
 
-1.1 Build Modular SQL
+1.1 Build BDTK
 ~~~~~~~~~~~~~~~~~~~~~
 
 | **Prerequisite:**
