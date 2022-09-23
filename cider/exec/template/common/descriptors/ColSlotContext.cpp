@@ -268,8 +268,8 @@ void ColSlotContext::addSlotForColumn(const int8_t padded_size,
 int64_t ColSlotContext::varlenOutputElementSize(const size_t slot_idx) const {
   const auto varlen_map_it = varlen_output_slot_map_.find(slot_idx);
   if (varlen_map_it == varlen_output_slot_map_.end()) {
-    throw std::runtime_error("Failed to find varlen map entry for slot " +
-                             std::to_string(slot_idx));
+    CIDER_THROW(CiderCompileException,
+                fmt::format("Failed to find varlen map entry for slot {}", slot_idx));
   }
   return varlen_map_it->second;
 }

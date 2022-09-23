@@ -122,7 +122,8 @@ struct CgenState {
         }
         CHECK_EQ(kENCODING_NONE, enc_type);
         if (constant->get_is_null()) {
-          throw std::runtime_error(
+          CIDER_THROW(
+              CiderCompileException,
               "CHAR / VARCHAR NULL literal not supported in this context");  // TODO(alex):
                                                                              // support
                                                                              // null
@@ -170,9 +171,9 @@ struct CgenState {
             }
             return getOrAddLiteral(int8_array_literal, device_id);
           }
-          throw std::runtime_error("Unsupported literal array");
+          CIDER_THROW(CiderCompileException, "Unsupported literal array");
         }
-        throw std::runtime_error("Encoded literal arrays are not supported");
+        CIDER_THROW(CiderCompileException, "Encoded literal arrays are not supported");
       }
       default:
         abort();

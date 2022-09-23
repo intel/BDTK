@@ -34,7 +34,7 @@ class CiderBatchBuilder {
 
   CiderBatchBuilder& setRowNum(int row_num) {
     if (is_row_num_set_) {  // have set before, throw exception
-      throw std::runtime_error("row num have been set!");
+      CIDER_THROW(CiderCompileException, "row num have been set!");
     }
     is_row_num_set_ = true;
     row_num_ = row_num;
@@ -65,7 +65,7 @@ class CiderBatchBuilder {
     } else {
       // check row num
       if (row_num_ != col_data.size()) {
-        throw std::runtime_error("Row num is not equal to previous columns!");
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
       }
       CHECK_EQ(row_num_, col_data.size());
       // check null data num
@@ -100,7 +100,7 @@ class CiderBatchBuilder {
     } else {
       // check row num
       if (row_num_ != col_data.size()) {
-        throw std::runtime_error("Row num is not equal to previous columns!");
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
       }
       CHECK_EQ(row_num_, col_data.size());
       // check null data num
@@ -135,7 +135,7 @@ class CiderBatchBuilder {
     if (!col_data.empty()) {
       // check row num
       if (row_num_ != col_data.size()) {
-        throw std::runtime_error("Row num is not equal to previous columns!");
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
       }
       CHECK_EQ(row_num_, col_data.size());
       // check null data num
@@ -152,7 +152,7 @@ class CiderBatchBuilder {
 
   CiderBatch build() {
     if (!is_row_num_set_) {
-      throw std::runtime_error("Invalid build!");
+      CIDER_THROW(CiderCompileException, "Invalid build!");
     }
     std::shared_ptr<CiderTableSchema> schema =
         std::make_shared<CiderTableSchema>(col_names_, col_types_, table_name_);

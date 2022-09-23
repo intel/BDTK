@@ -97,8 +97,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenArithFun(
   auto rhs_lv = codegen(rhs, co, true);
 
   if (lhs_type.is_decimal() || lhs_type.is_timeinterval()) {
-    throw std::runtime_error(
-        "Decimal and TimeInterval are not supported in arithmetic codegen now.");
+    CIDER_THROW(CiderCompileException,
+                "Decimal and TimeInterval are not supported in arithmetic codegen now.");
   }
   CHECK_EQ(lhs_type.get_type(), rhs_type.get_type());
 

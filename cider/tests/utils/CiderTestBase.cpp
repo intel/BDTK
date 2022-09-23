@@ -92,7 +92,7 @@ void CiderTestBase::assertQueryIgnoreOrder(const std::string& sql,
 bool CiderTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
   try {
     auto cider_res_batch = ciderQueryRunner_.runQueryOneBatch(wrong_sql, input_[0]);
-  } catch (CiderRuntimeException& e) {
+  } catch (const CiderException& e) {
     LOG(ERROR) << e.what();
     return true;
   }

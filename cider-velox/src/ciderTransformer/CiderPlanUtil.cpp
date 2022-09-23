@@ -42,7 +42,7 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
 std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
     VeloxNodeAddrPlanSection& planSection,
     VeloxPlanNodeAddrList& srcList) {
-  throw std::runtime_error("multi-source PlanSection rewrite is not supported for now.");
+  VELOX_UNSUPPORTED("multi-source PlanSection rewrite is not supported for now.");
 }
 
 }  // namespace facebook::velox::plugin::plantransformer

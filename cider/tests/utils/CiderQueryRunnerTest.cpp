@@ -113,7 +113,7 @@ TEST(CiderQueryRunnerTest, joinEmptyBuildTableTest) {
   std::string sql = "SELECT col_l_a FROM test_left JOIN test_right ON col_l_b = col_r_b";
 
   EXPECT_THROW(ciderQueryRunner.runJoinQueryOneBatch(sql, left_batch, right_batch),
-               std::runtime_error);
+               CiderCompileException);
 }
 
 TEST(CiderQueryRunnerTest, NotFeedBuildTableTest) {
@@ -130,7 +130,7 @@ TEST(CiderQueryRunnerTest, NotFeedBuildTableTest) {
 
   std::string sql = "SELECT col_l_a FROM test_left JOIN test_right ON col_l_b = col_r_b";
 
-  EXPECT_THROW(ciderQueryRunner.runQueryOneBatch(sql, left_batch), std::runtime_error);
+  EXPECT_THROW(ciderQueryRunner.runQueryOneBatch(sql, left_batch), CiderCompileException);
 }
 
 TEST(CiderQueryRunnerTest, VarChar) {

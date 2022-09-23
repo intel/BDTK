@@ -22,6 +22,7 @@
 
 #include "TieredCpuBufferMgr.h"
 #include "CpuBuffer.h"
+#include "cider/CiderException.h"
 #include "util/memory/allocators/ArenaAllocator.h"
 #include "util/misc.h"
 
@@ -83,7 +84,8 @@ void TieredCpuBufferMgr::addSlab(const size_t slab_size) {
         // If anything goes wrong with an allocation, then throw an exception rather than
         // go to the next allocator.
         slabs_.resize(slabs_.size() - 1);
-        throw FailedToCreateSlab(slab_size);
+        CIDER_THROW(CiderOutOfMemoryException,
+                    fmt::format("Failed to allocate {} bytes", slab_size));
       }
       slab_to_allocator_map_[slabs_.size() - 1] = allocator.get();
       allocated_slab = true;
@@ -99,7 +101,8 @@ void TieredCpuBufferMgr::addSlab(const size_t slab_size) {
   } else {
     // None of the allocators allocated a slab, so revert to original size and throw.
     slabs_.resize(slabs_.size() - 1);
-    throw FailedToCreateSlab(slab_size);
+    CIDER_THROW(CiderOutOfMemoryException,
+                fmt::format("Failed to allocate {} bytes", slab_size));
   }
 }
 

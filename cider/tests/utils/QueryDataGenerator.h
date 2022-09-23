@@ -136,7 +136,7 @@ class QueryDataGenerator {
         case ::substrait::Type::KindCase::kTimestamp:
           //          GENERATE_AND_ADD_TIMING_COLUMN(CiderTimeStampType)
         default:
-          throw std::runtime_error("Type not supported.");
+          CIDER_THROW(CiderCompileException, "Type not supported.");
       }
     }
     auto batch = builder.build();
@@ -197,7 +197,7 @@ class QueryDataGenerator {
         } else {
           std::string str = "Unexpected type:";
           str.append(typeid(T).name()).append(", could not generate data.");
-          throw std::runtime_error(str);
+          CIDER_THROW(CiderCompileException, str);
         }
         break;
     }

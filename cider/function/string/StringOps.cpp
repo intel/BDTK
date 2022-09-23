@@ -21,7 +21,7 @@
  */
 
 #include "StringOps.h"
-
+#include "cider/CiderException.h"
 namespace StringOps_Namespace {
 
 std::regex StringOp::generateRegex(const std::string& op_name,
@@ -41,8 +41,8 @@ std::regex StringOp::generateRegex(const std::string& op_name,
         break;
       case 'e': {
         if (!supports_sub_matches) {
-          throw std::runtime_error(op_name +
-                                   " does not support 'e' (sub-matches) option.");
+          CIDER_THROW(CiderCompileException,
+                      op_name + " does not support 'e' (sub-matches) option.");
         }
         // We use e to set sub-expression group in a separate initializer
         // but need to have this entry to not error on the default path
@@ -50,23 +50,27 @@ std::regex StringOp::generateRegex(const std::string& op_name,
       }
       default: {
         if (supports_sub_matches) {
-          throw std::runtime_error("Unrecognized regex parameter for " + op_name +
-                                   ", expected either 'c' 'i', or 'e'.");
+          CIDER_THROW(CiderCompileException,
+                      "Unrecognized regex parameter for " + op_name +
+                          ", expected either 'c' 'i', or 'e'.");
         }
-        throw std::runtime_error("Unrecognized regex parameter for " + op_name +
-                                 ", expected either 'c' or 'i'.");
+        CIDER_THROW(CiderCompileException,
+                    "Unrecognized regex parameter for " + op_name +
+                        ", expected either 'c' or 'i'.");
       }
     }
   }
   if (!is_case_sensitive && !is_case_insensitive) {
-    throw std::runtime_error(op_name +
-                             " params must either specify case-sensitivity ('c') or "
-                             "case-insensitivity ('i').");
+    CIDER_THROW(CiderCompileException,
+                op_name +
+                    " params must either specify case-sensitivity ('c') or "
+                    "case-insensitivity ('i').");
   }
   if (is_case_sensitive && is_case_insensitive) {
-    throw std::runtime_error(op_name +
-                             " params cannot specify both case-sensitivity ('c') and "
-                             "case-insensitivity ('i').");
+    CIDER_THROW(CiderCompileException,
+                op_name +
+                    " params cannot specify both case-sensitivity ('c') and "
+                    "case-insensitivity ('i').");
   }
   if (is_case_insensitive) {
     return std::regex(regex_pattern,

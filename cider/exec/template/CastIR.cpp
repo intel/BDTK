@@ -62,7 +62,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   // For dictionary encoded constants, the cast holds the dictionary id
   // information as the compression parameter; handle this case separately.
   if (operand_as_const) {
-    throw std::runtime_error("Cast for constant is not supported now.");
+    CIDER_THROW(CiderCompileException, "Cast for constant is not supported now.");
   }
 
   auto operand_lv = codegen(operand, co, true);
@@ -229,8 +229,9 @@ llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,
                                                   const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   if (!ti.is_string()) {
-    throw std::runtime_error("Cast from " + operand_ti.get_type_name() + " to " +
-                             ti.get_type_name() + " not supported");
+    CIDER_THROW(CiderCompileException,
+                "Cast from " + operand_ti.get_type_name() + " to " + ti.get_type_name() +
+                    " not supported");
   }
   if (operand_ti.get_compression() == kENCODING_NONE &&
       ti.get_compression() == kENCODING_NONE) {
@@ -239,8 +240,8 @@ llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,
   // dictionary encode non-constant
   if (operand_ti.get_compression() != kENCODING_DICT && !operand_is_const) {
     if (g_enable_watchdog) {
-      throw WatchdogException(
-          "Cast from none-encoded string to dictionary-encoded would be slow");
+      CIDER_THROW(CiderWatchdogException,
+                  "Cast from none-encoded string to dictionary-encoded would be slow");
     }
     CHECK_EQ(kENCODING_NONE, operand_ti.get_compression());
     CHECK_EQ(kENCODING_DICT, ti.get_compression());
@@ -255,8 +256,8 @@ llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,
   CHECK(operand_lv->getType()->isIntegerTy(32));
   if (ti.get_compression() == kENCODING_NONE) {
     if (g_enable_watchdog) {
-      throw WatchdogException(
-          "Cast from dictionary-encoded string to none-encoded would be slow");
+      CIDER_THROW(CiderWatchdogException,
+                  "Cast from dictionary-encoded string to none-encoded would be slow");
     }
     CHECK_EQ(kENCODING_DICT, operand_ti.get_compression());
     const int64_t string_dictionary_ptr =
@@ -412,8 +413,9 @@ llvm::Value* CodeGenerator::codegenCastToFp(llvm::Value* operand_lv,
                                             const SQLTypeInfo& ti) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   if (!ti.is_fp()) {
-    throw std::runtime_error("Cast from " + operand_ti.get_type_name() + " to " +
-                             ti.get_type_name() + " not supported");
+    CIDER_THROW(CiderCompileException,
+                "Cast from " + operand_ti.get_type_name() + " to " + ti.get_type_name() +
+                    " not supported");
   }
   llvm::Value* result_lv;
   if (operand_ti.get_notnull()) {
@@ -455,8 +457,9 @@ llvm::Value* CodeGenerator::codegenCastFromFp(llvm::Value* operand_lv,
                                               const SQLTypeInfo& ti) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   if (!operand_ti.is_fp() || !ti.is_number() || ti.is_decimal()) {
-    throw std::runtime_error("Cast from " + operand_ti.get_type_name() + " to " +
-                             ti.get_type_name() + " not supported");
+    CIDER_THROW(CiderCompileException,
+                "Cast from " + operand_ti.get_type_name() + " to " + ti.get_type_name() +
+                    " not supported");
   }
   if (operand_ti.get_type() == ti.get_type()) {
     // Should not have been called when both dimensions are same.

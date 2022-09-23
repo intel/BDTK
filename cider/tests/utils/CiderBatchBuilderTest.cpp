@@ -25,7 +25,7 @@
 
 TEST(CiderBatchBuilderTest, EmptyBatch) {
   // should not build an empty batch.
-  EXPECT_THROW({ auto emptyBatch = CiderBatchBuilder().build(); }, std::runtime_error);
+  EXPECT_THROW({ auto emptyBatch = CiderBatchBuilder().build(); }, CiderCompileException);
 
   auto batch =
       CiderBatchBuilder().addColumn<int>("col", CREATE_SUBSTRAIT_TYPE(I32), {}).build();
@@ -49,7 +49,7 @@ TEST(CiderBatchBuilderTest, RowNum) {
 
   // test set row num multiple times.
   EXPECT_THROW({ auto batch3 = CiderBatchBuilder().setRowNum(10).setRowNum(20).build(); },
-               std::runtime_error);
+               CiderCompileException);
 
   // test set row num after add Column
   EXPECT_THROW(
@@ -60,7 +60,7 @@ TEST(CiderBatchBuilderTest, RowNum) {
                 .setRowNum(20)
                 .build();
       },
-      std::runtime_error);
+      CiderCompileException);
 
   // test row num not equal
   EXPECT_THROW(
@@ -71,7 +71,7 @@ TEST(CiderBatchBuilderTest, RowNum) {
                 .addColumn<int>("col2", CREATE_SUBSTRAIT_TYPE(I32), {1, 2, 3, 4, 5, 6})
                 .build();
       },
-      std::runtime_error);
+      CiderCompileException);
 
   EXPECT_THROW(
       {
@@ -81,7 +81,7 @@ TEST(CiderBatchBuilderTest, RowNum) {
                 .addColumn<int>("col2", CREATE_SUBSTRAIT_TYPE(I32), {1, 2, 3, 4})
                 .build();
       },
-      std::runtime_error);
+      CiderCompileException);
 }
 
 TEST(CiderBatchBuilderTest, OneColumnBatch) {
@@ -222,7 +222,7 @@ TEST(CiderBatchBuilderTest, DateTypebatch) {
                 .addColumn<CiderDateType>("col1", CREATE_SUBSTRAIT_TYPE(Date), vec2)
                 .build();
       },
-      std::runtime_error);
+      CiderCompileException);
 }
 
 // CiderBatchBuilder will not use null_vector in addColumn context. You should generate

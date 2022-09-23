@@ -37,50 +37,6 @@
 #include "type/schema/SchemaProvider.h"
 #include "util/memory/DataProvider.h"
 
-class TooManyHashEntries : public std::runtime_error {
- public:
-  TooManyHashEntries()
-      : std::runtime_error("Hash tables with more than 2B entries not supported yet") {}
-
-  TooManyHashEntries(const std::string& reason) : std::runtime_error(reason) {}
-};
-
-class TableMustBeReplicated : public std::runtime_error {
- public:
-  TableMustBeReplicated(const std::string& table_name)
-      : std::runtime_error("Hash join failed: Table '" + table_name +
-                           "' must be replicated.") {}
-};
-
-class HashJoinFail : public std::runtime_error {
- public:
-  HashJoinFail(const std::string& reason) : std::runtime_error(reason) {}
-};
-
-class NeedsOneToManyHash : public HashJoinFail {
- public:
-  NeedsOneToManyHash() : HashJoinFail("Needs one to many hash") {}
-};
-
-class FailedToFetchColumn : public HashJoinFail {
- public:
-  FailedToFetchColumn()
-      : HashJoinFail("Not enough memory for columns involved in join") {}
-};
-
-class FailedToJoinOnVirtualColumn : public HashJoinFail {
- public:
-  FailedToJoinOnVirtualColumn() : HashJoinFail("Cannot join on rowid") {}
-};
-
-class OverlapsHashTableTooBig : public HashJoinFail {
- public:
-  OverlapsHashTableTooBig(const size_t overlaps_hash_table_max_bytes)
-      : HashJoinFail(
-            "Could not create overlaps hash table with less than max allowed size of " +
-            std::to_string(overlaps_hash_table_max_bytes) + " bytes") {}
-};
-
 using InnerOuter = std::pair<const Analyzer::ColumnVar*, const Analyzer::Expr*>;
 
 struct ColumnsForDevice {

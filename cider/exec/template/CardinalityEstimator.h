@@ -27,17 +27,6 @@
 #include "type/plan/Analyzer.h"
 #include "util/Logger.h"
 
-class CardinalityEstimationRequired : public std::runtime_error {
- public:
-  CardinalityEstimationRequired(const int64_t range)
-      : std::runtime_error("CardinalityEstimationRequired"), range_(range) {}
-
-  int64_t range() const { return range_; }
-
- private:
-  const int64_t range_;
-};
-
 namespace Analyzer {
 
 /*
