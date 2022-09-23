@@ -100,12 +100,6 @@ class CodeGenerator {
                               std::vector<Analyzer::Expr*>& primary_quals,
                               std::vector<Analyzer::Expr*>& deferred_quals,
                               const PlanState::HoistedFiltersSet& hoisted_quals);
-
-  struct ExecutorRequired : public std::runtime_error {
-    ExecutorRequired()
-        : std::runtime_error("Executor required to generate this expression") {}
-  };
-
   struct NullCheckCodegen {
     NullCheckCodegen(CgenState* cgen_state,
                      Executor* executor,
@@ -570,7 +564,7 @@ class CodeGenerator {
  protected:
   Executor* executor() const {
     if (!executor_) {
-      throw ExecutorRequired();
+      CIDER_THROW(CiderCompileException, "Executor required to generate this expression");
     }
     return executor_;
   }

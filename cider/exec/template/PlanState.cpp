@@ -49,7 +49,7 @@ bool PlanState::isLazyFetchColumn(const Analyzer::Expr* target_expr) const {
                         std::inserter(intersect, intersect.begin()),
                         CompareInputColDescId());
   if (!intersect.empty()) {
-    throw CompilationRetryNoLazyFetch();
+    CIDER_THROW(CiderCompileException, "Retry query compilation.");
   }
   return columns_to_fetch_.find(column_var_to_descriptor(do_not_fetch_column)) ==
          columns_to_fetch_.end();

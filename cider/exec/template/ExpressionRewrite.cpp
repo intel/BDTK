@@ -235,7 +235,7 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
       default:
         break;
     }
-    throw std::runtime_error("Unable to fold");
+    CIDER_THROW(CiderCompileException, "Unable to fold");
     return false;
   }
 
@@ -251,7 +251,7 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
       default:
         break;
     }
-    throw std::runtime_error("Unable to fold");
+    CIDER_THROW(CiderCompileException, "Unable to fold");
     return false;
   }
 
@@ -266,14 +266,14 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
         if ((t2_is_negative && t1 < std::numeric_limits<T>::lowest() - t2) ||
             (!t2_is_negative && t1 > std::numeric_limits<T>::max() - t2)) {
           num_overflows_++;
-          throw std::runtime_error("Plus overflow");
+          CIDER_THROW(CiderCompileException, "Plus overflow");
         }
         return t1 + t2;
       case kMINUS:
         if ((t2_is_negative && t1 > std::numeric_limits<T>::max() + t2) ||
             (!t2_is_negative && t1 < std::numeric_limits<T>::lowest() + t2)) {
           num_overflows_++;
-          throw std::runtime_error("Minus overflow");
+          CIDER_THROW(CiderCompileException, "Minus overflow");
         }
         return t1 - t2;
       case kMULTIPLY: {
@@ -288,7 +288,7 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
               t2 == std::numeric_limits<T>::lowest()) {
             // negation could overflow - bail
             num_overflows_++;
-            throw std::runtime_error("Mul neg overflow");
+            CIDER_THROW(CiderCompileException, "Mul neg overflow");
           }
           ct1 = -t1;  // ct1 gets t2's negativity
           ct2 = -t2;  // ct2 is now positive
@@ -299,20 +299,20 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
           if (ct1 > std::numeric_limits<T>::max() / ct2 ||
               ct1 < std::numeric_limits<T>::lowest() / ct2) {
             num_overflows_++;
-            throw std::runtime_error("Mul overflow");
+            CIDER_THROW(CiderCompileException, "Mul overflow");
           }
         }
         return t1 * t2;
       }
       case kDIVIDE:
         if (t2_is_zero) {
-          throw std::runtime_error("Will not fold division by zero");
+          CIDER_THROW(CiderCompileException, "Will not fold division by zero");
         }
         return t1 / t2;
       default:
         break;
     }
-    throw std::runtime_error("Unable to fold");
+    CIDER_THROW(CiderCompileException, "Unable to fold");
   }
 
   bool foldOper(SQLOps optype,

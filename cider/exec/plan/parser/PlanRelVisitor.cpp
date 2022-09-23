@@ -25,6 +25,7 @@
  **/
 
 #include "PlanRelVisitor.h"
+#include "cider/CiderException.h"
 
 namespace generator {
 
@@ -49,10 +50,11 @@ void AggRelVisitor::visit(TargetContext* target_context) {
   // Aggregate rel defaultly uses direct mapping, reorder mapping should an extra project
   // after visit agg rel node
   if (!rel_node_.common().has_direct()) {
-    throw std::runtime_error("Only support direct output for AggregateRel.");
+    CIDER_THROW(CiderCompileException, "Only support direct output for AggregateRel.");
   }
   if (rel_node_.groupings_size() == 0 && rel_node_.measures_size() == 0) {
-    throw std::runtime_error("AggregateRel should either has groupings or measures.");
+    CIDER_THROW(CiderCompileException,
+                "AggregateRel should either has groupings or measures.");
   }
 
   // if groupby is also target_expr, which means there is project after AggregateRel, we
@@ -107,7 +109,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
     if (function == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {
       if (substrait::Type::kStruct != s_expr.output_type().kind_case()) {
-        std::runtime_error("partial avg should have a struct type.");
+        CIDER_THROW(CiderCompileException, "partial avg should have a struct type.");
       }
       col_hint_records_ptr->push_back(std::make_pair(ColumnHint::PartialAVG, 2));
       std::unordered_map<int, std::string> function_map_fake(function_map_);
@@ -151,10 +153,11 @@ void AggRelVisitor::visit(GroupbyContext* groupby_context) {
   std::vector<std::shared_ptr<Analyzer::Expr>>* groupby_exprs_ptr =
       groupby_context->getGroupbyExprs();
   if (!rel_node_.common().has_direct()) {
-    throw std::runtime_error("Only support direct output for AggregateRel.");
+    CIDER_THROW(CiderCompileException, "Only support direct output for AggregateRel.");
   }
   if (rel_node_.groupings_size() == 0 && rel_node_.measures_size() == 0) {
-    throw std::runtime_error("AggregateRel should either has groupings or measures.");
+    CIDER_THROW(CiderCompileException,
+                "AggregateRel should either has groupings or measures.");
   }
 
   if (rel_node_.measures_size() > 0) {
@@ -179,7 +182,7 @@ void AggRelVisitor::visit(GroupbyContext* groupby_context) {
     if (function == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {
       if (substrait::Type::kStruct != s_expr.output_type().kind_case()) {
-        std::runtime_error("partial avg should have a struct type.");
+        CIDER_THROW(CiderCompileException, "partial avg should have a struct type.");
       }
       groupby_context->setIsPartialAvg(true);
     }
@@ -205,7 +208,7 @@ void FilterRelVisitor::visit(FilterQualContext* filter_qual_context) {
       filter_qual_context->getSimpleQuals();
   std::list<std::shared_ptr<Analyzer::Expr>>* quals_ptr = filter_qual_context->getQuals();
   if (!rel_node_.has_condition()) {
-    throw std::runtime_error("FilterRel exists but has no condition.");
+    CIDER_THROW(CiderCompileException, "FilterRel exists but has no condition.");
   }
   // update filter condition
   auto cider_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
@@ -246,7 +249,7 @@ JoinRelVisitor::~JoinRelVisitor() {}
 void JoinRelVisitor::visit(JoinQualContext* join_qual_context) {
   JoinQualsPerNestingLevel* join_quals_ptr = join_qual_context->getJoinQuals();
   if (!rel_node_.common().has_direct()) {
-    throw std::runtime_error("Only support direct output for JoinRel.");
+    CIDER_THROW(CiderCompileException, "Only support direct output for JoinRel.");
   }
   CHECK(rel_node_.has_expression());
   // use two expr map to records expr info, merge them when visit join rel node
@@ -326,7 +329,7 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
           }
           target_exprs_ptr->push_back(iter->second);
         } else {
-          throw std::runtime_error("Failed to get field reference expr.");
+          CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
         }
       } else {
         auto s_expr = rel_node_.expressions(i - max_index);
@@ -376,7 +379,7 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
             variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_)->end()) {
           target_exprs_ptr->push_back(iter->second);
         } else {
-          throw std::runtime_error("Failed to get field reference expr.");
+          CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
         }
       } else {
         auto s_expr = rel_node_.expressions(emit.output_mapping(i) - max_index);

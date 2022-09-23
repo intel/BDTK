@@ -53,17 +53,19 @@ inline void check_total_bitmap_memory(const QueryMemoryDescriptor& query_mem_des
     total_bytes_per_group += count_distinct_desc.bitmapPaddedSizeBytes();
   }
   int64_t total_bytes{0};
-  // Using OutOfHostMemory until we can verify that SlabTooBig would also be properly
-  // caught
   try {
     total_bytes = static_cast<int64_t>(total_bytes_per_group * groups_buffer_entry_count);
   } catch (...) {
     // Absurd amount of memory, merely computing the number of bits overflows int64_t.
     // Don't bother to report the real amount, this is unlikely to ever happen.
-    throw OutOfHostMemory(std::numeric_limits<int64_t>::max() / 8);
+    CIDER_THROW(CiderOutOfMemoryException,
+                fmt::format("Not enough CPU memory available to allocate {} bytes",
+                            std::numeric_limits<int64_t>::max() / 8));
   }
   if (total_bytes >= g_bitmap_memory_limit) {
-    throw OutOfHostMemory(total_bytes);
+    CIDER_THROW(
+        CiderOutOfMemoryException,
+        fmt::format("Not enough CPU memory available to allocate {} bytes", total_bytes));
   }
 }
 

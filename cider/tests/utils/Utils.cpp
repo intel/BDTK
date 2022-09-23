@@ -20,15 +20,14 @@
  */
 
 #include "Utils.h"
-
-#include <algorithm>
-#include <array>
-#include <cstdlib>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <algorithm>
+#include <array>
+#include <cstdlib>
+#include "cider/CiderException.h"
 
 CommandResult Command::exec(const std::string& command) {
   int exitcode = 255;
@@ -41,7 +40,7 @@ CommandResult Command::exec(const std::string& command) {
 #endif
   FILE* pipe = popen(command.c_str(), "r");
   if (!pipe) {
-    throw std::runtime_error("popen() failed!");
+    CIDER_THROW(CiderCompileException, "popen() failed!");
   }
   try {
     std::size_t bytes_read;
@@ -96,7 +95,7 @@ std::string TpcHTableCreator::createTpcHTables(const std::string& table_name) {
   if (name == "region") {
     return createTpcHTableRegion();
   }
-  throw std::runtime_error("table " + table_name + " is not in TPC-H.");
+  CIDER_THROW(CiderCompileException, "table " + table_name + " is not in TPC-H.");
 }
 
 std::string TpcHTableCreator::createTpcHTableOrders() {
@@ -161,7 +160,7 @@ std::string RunIsthmus::processSql(std::string sql, std::string create_ddl) {
       isthmus_exec + " \"" + sql + "\" " + " --create " + " \"" + create_ddl + "\" ";
   auto cmd_result = Command::exec(cmd);
   if (cmd_result.exitstatus) {
-    throw std::runtime_error("invalid sql, please double check!");
+    CIDER_THROW(CiderCompileException, "invalid sql, please double check!");
   }
   return cmd_result.output;
 }
@@ -169,7 +168,7 @@ std::string RunIsthmus::processSql(std::string sql, std::string create_ddl) {
 std::string RunIsthmus::getIsthmusExecutable() {
   const char* isthmus_exec = std::getenv("ISTHMUS_EXEC");
   if (!isthmus_exec) {
-    throw std::runtime_error("cannot find isthmus!");
+    CIDER_THROW(CiderCompileException, "cannot find isthmus!");
   }
   return isthmus_exec;
 }

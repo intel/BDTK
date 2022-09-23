@@ -19,7 +19,7 @@
  * under the License.
  */
 
-#include "include/cider/batch/CiderBatch.h"
+#include "cider/batch/CiderBatch.h"
 #include "ArrowABI.h"
 
 CiderBatch::CiderBatch(ArrowSchema* schema)

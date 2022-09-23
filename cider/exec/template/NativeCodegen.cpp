@@ -91,7 +91,7 @@ void throw_parseIR_error(const llvm::SMDiagnostic& parse_error, std::string src 
   std::string excname = "LLVM IR ParseError: ";
   llvm::raw_string_ostream ss(excname);
   parse_error.print(src.c_str(), ss, false, false);
-  throw ParseIRError(ss.str());
+  CIDER_THROW(CiderCompileException, ss.str());
 }
 
 /* SHOW_DEFINED(<llvm::Module instance>) prints the function names
@@ -454,9 +454,9 @@ void CodeGenerator::link_udf_module(const std::unique_ptr<llvm::Module>& udf_mod
       LOG(ERROR) << "  Attempt to overwrite " << f.getName().str() << " in "
                  << module.getModuleIdentifier() << " from `"
                  << udf_module->getModuleIdentifier() << "`" << std::endl;
-      throw std::runtime_error(
-          "link_udf_module: *** attempt to overwrite a runtime function with a UDF "
-          "function ***");
+      CIDER_THROW(CiderCompileException,
+                  "link_udf_module: *** attempt to overwrite a runtime function with a "
+                  "UDF function ***");
     } else {
       VLOG(1) << "  Adding " << f.getName().str() << " to "
               << module.getModuleIdentifier() << " from `"
@@ -478,7 +478,7 @@ void CodeGenerator::link_udf_module(const std::unique_ptr<llvm::Module>& udf_mod
   link_error = ld.linkInModule(std::move(udf_module_copy), flags);
 
   if (link_error) {
-    throw std::runtime_error("link_udf_module: *** error linking module ***");
+    CIDER_THROW(CiderCompileException, "link_udf_module: *** error linking module ***");
   }
 }
 
@@ -865,7 +865,8 @@ std::vector<std::string> get_agg_fnames(const std::vector<Analyzer::Expr*>& targ
       case kAVG: {
         if (!agg_type_info.is_integer() && !agg_type_info.is_decimal() &&
             !agg_type_info.is_fp()) {
-          throw std::runtime_error("AVG is only valid on integer and floating point");
+          CIDER_THROW(CiderCompileException,
+                      "AVG is only valid on integer and floating point");
         }
         result.emplace_back((agg_type_info.is_integer() || agg_type_info.is_time())
                                 ? "agg_sum"
@@ -877,7 +878,8 @@ std::vector<std::string> get_agg_fnames(const std::vector<Analyzer::Expr*>& targ
       }
       case kMIN: {
         if (agg_type_info.is_string() || agg_type_info.is_array()) {
-          throw std::runtime_error("MIN on strings or arrays types not supported yet");
+          CIDER_THROW(CiderCompileException,
+                      "MIN on strings or arrays types not supported yet");
         }
         result.emplace_back((agg_type_info.is_integer() || agg_type_info.is_time())
                                 ? "agg_min"
@@ -886,7 +888,8 @@ std::vector<std::string> get_agg_fnames(const std::vector<Analyzer::Expr*>& targ
       }
       case kMAX: {
         if (agg_type_info.is_string() || agg_type_info.is_array()) {
-          throw std::runtime_error("MAX on strings or arrays types not supported yet");
+          CIDER_THROW(CiderCompileException,
+                      "MAX on strings or arrays types not supported yet");
         }
         result.emplace_back((agg_type_info.is_integer() || agg_type_info.is_time())
                                 ? "agg_max"
@@ -896,7 +899,8 @@ std::vector<std::string> get_agg_fnames(const std::vector<Analyzer::Expr*>& targ
       case kSUM: {
         if (!agg_type_info.is_integer() && !agg_type_info.is_decimal() &&
             !agg_type_info.is_fp()) {
-          throw std::runtime_error("SUM is only valid on integer and floating point");
+          CIDER_THROW(CiderCompileException,
+                      "SUM is only valid on integer and floating point");
         }
         result.emplace_back((agg_type_info.is_integer() || agg_type_info.is_time())
                                 ? "agg_sum"
@@ -1507,7 +1511,9 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
           QueryDescriptionType::GroupByBaselineHash &&
       !has_cardinality_estimation && !eo.just_explain) {
     const auto col_range_info = group_by_and_aggregate.getColRangeInfo();
-    throw CardinalityEstimationRequired(col_range_info.max - col_range_info.min);
+    CIDER_THROW(CiderCompileException,
+                fmt::format("Cardinality Estimation Required : {}",
+                            col_range_info.max - col_range_info.min));
   }
 
   const bool output_columnar = query_mem_desc->didOutputColumnar();
@@ -1703,7 +1709,8 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
   if (true) {  // we always want IR
     if (co.explain_type == ExecutorExplainType::Optimized) {
 #ifdef WITH_JIT_DEBUG
-      throw std::runtime_error(
+      CIDER_THROW(
+          CiderCompileException,
           "Explain optimized not available when JIT runtime debug symbols are enabled");
 #else
       // Note that we don't run the NVVM reflect pass here. Use LOG(IR) to get the

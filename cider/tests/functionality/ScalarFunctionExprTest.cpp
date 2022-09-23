@@ -113,14 +113,9 @@ TEST_F(BetweenAndI64Test, UnregisteredTest) {
   const std::string& json_file = "between_unregistered_and_i64_velox.json";
   EXPECT_THROW(
       {
-        try {
-          auto cider_res_batch = ciderQueryRunner_.runQueryOneBatch(json_file, input_[0]);
-        } catch (const std::runtime_error& e) {
-          EXPECT_STREQ("between_unregistered is not yet supported", e.what());
-          throw;
-        }
+        auto cider_res_batch = ciderQueryRunner_.runQueryOneBatch(json_file, input_[0]);
       },
-      std::runtime_error);
+      CiderCompileException);
 }
 
 int main(int argc, char** argv) {

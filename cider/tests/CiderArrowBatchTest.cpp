@@ -22,9 +22,9 @@
 #define CIDERBATCH_WITH_ARROW
 
 #include <gtest/gtest.h>
-#include "include/cider/batch/CiderBatch.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "include/cider/batch/StructBatch.h"
+#include "cider/batch/CiderBatch.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 
 using namespace CiderBatchUtils;
 using namespace std;

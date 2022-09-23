@@ -30,13 +30,6 @@
 #include <memory>
 #include <unordered_map>
 
-class ColumnarConversionNotSupported : public std::runtime_error {
- public:
-  ColumnarConversionNotSupported()
-      : std::runtime_error(
-            "Columnar conversion not supported for variable length types") {}
-};
-
 /**
  * A helper data structure to track non-empty entries in the input buffer
  * Currently only used for direct columnarization with columnar outputs.

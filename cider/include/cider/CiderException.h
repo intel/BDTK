@@ -22,18 +22,20 @@
 #ifndef CIDER_CIDEREXCEPTION_H
 #define CIDER_CIDEREXCEPTION_H
 
+#include <fmt/core.h>
 #include <stdexcept>
 #include <string>
 
-// CIDER_THROW(CiderCompileException, "xxx");
+// CIDER_THROW(CiderCompileException, "Exception message");
 #define CIDER_THROW(type, msg) \
-  throw type("[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]: " + msg)
+  throw type(fmt::format("[{}:{}]: {}", __FILE__, std::to_string(__LINE__), msg))
 
 class CiderException : public std::exception {
  public:
+  explicit CiderException(const std::string& msg) : msg_("[CiderException]" + msg) {}
   explicit CiderException(std::string type, const std::string& msg)
       : msg_("[" + type + "]" + msg) {}
-  virtual ~CiderException() noexcept {};
+  virtual ~CiderException() noexcept {}
 
   const char* what() const noexcept override { return msg_.c_str(); }
 
@@ -41,20 +43,79 @@ class CiderException : public std::exception {
   const std::string msg_;
 };
 
-// please use CIDER_THROW(CiderRuntimeException, "xxx");
+// please use CIDER_THROW(CiderRuntimeException, "Exception message");
 class CiderRuntimeException : public CiderException {
  public:
   explicit CiderRuntimeException(const std::string& msg)
       : CiderException("CiderRuntimeException", msg) {}
-  virtual ~CiderRuntimeException() noexcept {};
+
+  // for subclass inheritance
+  explicit CiderRuntimeException(std::string type, const std::string& msg)
+      : CiderException(type, msg) {}
+
+  virtual ~CiderRuntimeException() noexcept {}
 };
 
-// please use CIDER_THROW(CiderCompileException, "xxx");
+// please use CIDER_THROW(CiderCompileException, "Exception message");
 class CiderCompileException : public CiderException {
  public:
   explicit CiderCompileException(const std::string& msg)
       : CiderException("CiderCompileException", msg) {}
-  virtual ~CiderCompileException() noexcept {};
+
+  // for subclass inheritance
+  explicit CiderCompileException(std::string type, const std::string& msg)
+      : CiderException(type, msg) {}
+
+  virtual ~CiderCompileException() noexcept {}
+};
+
+// please use CIDER_THROW(CiderOutOfMemoryException, "Exception message");
+class CiderOutOfMemoryException : public CiderRuntimeException {
+ public:
+  explicit CiderOutOfMemoryException(const std::string& msg)
+      : CiderRuntimeException("CiderOutOfMemoryException", msg) {}
+
+  virtual ~CiderOutOfMemoryException() noexcept {}
+};
+
+// please use CIDER_THROW(CiderWatchdogException, "Exception message");
+class CiderWatchdogException : public CiderCompileException {
+ public:
+  explicit CiderWatchdogException(const std::string& msg)
+      : CiderCompileException("CiderWatchdogException", msg) {}
+
+  virtual ~CiderWatchdogException() noexcept {}
+};
+
+// please use CIDER_THROW(CiderHashJoinException, "Exception message");
+class CiderHashJoinException : public CiderCompileException {
+ public:
+  explicit CiderHashJoinException(const std::string& msg)
+      : CiderCompileException("CiderHashJoinException", msg) {}
+
+  // for subclass inheritance
+  explicit CiderHashJoinException(std::string type, const std::string& msg)
+      : CiderCompileException(type, msg) {}
+
+  virtual ~CiderHashJoinException() noexcept {}
+};
+
+// please use CIDER_THROW(CiderOneToMoreHashException, "Exception message");
+class CiderOneToMoreHashException : public CiderHashJoinException {
+ public:
+  explicit CiderOneToMoreHashException(const std::string& msg)
+      : CiderHashJoinException("CiderOneToMoreHashException", msg) {}
+
+  virtual ~CiderOneToMoreHashException() noexcept {}
+};
+
+// please use CIDER_THROW(CiderTooManyHashEntriesException, "Exception message");
+class CiderTooManyHashEntriesException : public CiderHashJoinException {
+ public:
+  explicit CiderTooManyHashEntriesException(const std::string& msg)
+      : CiderHashJoinException("CiderTooManyHashEntriesException", msg) {}
+
+  virtual ~CiderTooManyHashEntriesException() noexcept {}
 };
 
 #endif  // CIDER_CIDEREXCEPTION_H
