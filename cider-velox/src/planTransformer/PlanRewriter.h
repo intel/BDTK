@@ -24,6 +24,7 @@
 #include "PlanNodeAddr.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 // PlanRewriter is the API of the pattern match - rewrite framework.
 // The user of the framework need provide implementation of the interface
 // and register it to PlanTransformer.
@@ -51,4 +52,5 @@ class PlanRewriter {
       VeloxNodeAddrPlanSection& planSection,
       VeloxPlanNodeAddrList& srcList) const = 0;
 };
+
 }  // namespace facebook::velox::plugin::plantransformer

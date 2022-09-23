@@ -90,9 +90,9 @@ int8_t* convertToCider(const ArrowSchema& arrowSchema,
 static void releaseArray(ArrowArray* array) {
   // Free the buffers, for basic types buffer size should be 2 (null and value
   // buffer)
-  free((void*)array->buffers[0]);
-  free((void*)array->buffers[1]);
-  free(array->buffers);
+  // free((void*)array->buffers[0]);
+  // free((void*)array->buffers[1]);
+  // free(array->buffers);
   // Mark released
   array->release = nullptr;
   array->private_data = nullptr;

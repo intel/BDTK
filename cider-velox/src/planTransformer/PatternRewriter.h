@@ -26,6 +26,7 @@
 #include "PlanRewriter.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 class PatternRewriter {
  public:
   PatternRewriter(std::shared_ptr<PlanPattern> pattern,
@@ -51,4 +52,5 @@ class PatternRewriter {
   std::shared_ptr<PlanPattern> pattern_;
   std::shared_ptr<PlanRewriter> rewriter_;
 };
+
 }  // namespace facebook::velox::plugin::plantransformer

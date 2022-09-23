@@ -25,25 +25,27 @@
 #include "exec/plan/parser/ConverterHelper.h"
 
 namespace facebook::velox::plugin {
+
+static std::mutex s_g_cider_velox_plugin_ctx_mutex;
+
 void facebook::velox::plugin::CiderVeloxPluginCtx::init() {
   registerTranslator();
   registerVeloxExtensionFunction();
 }
 
 VeloxPlanNodePtr CiderVeloxPluginCtx::transformVeloxPlan(VeloxPlanNodePtr originalPlan) {
+  std::lock_guard<std::mutex> guard(s_g_cider_velox_plugin_ctx_mutex);
   auto transformer =
       CiderVeloxPluginCtx::ciderTransformerFactory_.getTransformer(originalPlan);
   return transformer->transform();
 }
 
 void CiderVeloxPluginCtx::registerTranslator() {
-  static std::once_flag flag;
-  std::call_once(flag, []() {
-    exec::Operator::registerOperator(std::make_unique<CiderPlanNodeTranslator>());
-  });
+  exec::Operator::registerOperator(std::make_unique<CiderPlanNodeTranslator>());
 }
 
 void CiderVeloxPluginCtx::registerVeloxExtensionFunction() {
   generator::registerExtensionFunctions();
 }
+
 }  // namespace facebook::velox::plugin

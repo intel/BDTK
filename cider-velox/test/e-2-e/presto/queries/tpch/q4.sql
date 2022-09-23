@@ -21,7 +21,7 @@
 -- Functional Query Definition
 -- Approved February 1998
 select
-  o.orderkey,
+  o.orderpriority,
   count(*) as order_count
 from
   orders as o
@@ -38,5 +38,6 @@ where
       and l.commitdate < l.receiptdate
   )
 group by
-  o.orderkey
-  limit 10;
+  o.orderpriority
+order by
+  o.orderpriority;

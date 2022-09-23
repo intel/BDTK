@@ -22,6 +22,7 @@
 #include "PlanPattern.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(
     BranchSrcToTargetIterator branchIte) {
   std::pair<bool, VeloxNodeAddrPlanSection> result = matchFromSrc(branchIte);
@@ -32,4 +33,5 @@ std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(
   }
   return result;
 }
+
 }  // namespace facebook::velox::plugin::plantransformer

@@ -19,6 +19,8 @@
  * under the License.
  */
 
+#include <fstream>
+#include <thread>
 #include "PlanTransformer.h"
 
 namespace facebook::velox::plugin::plantransformer {
@@ -205,7 +207,7 @@ VeloxPlanNodePtr PlanTransformer::cloneBranchWithRewrittenSrc(int32_t branchId,
   VeloxPlanNodePtr curClonedNode = nullptr;
   for (int idx = branchSize - 1; idx >= startNodeId; idx--) {
     curNode = branch[idx];
-    if (idx == branchSize - 1 and PlanUtil::isJoin(curNode)) {
+    if (idx == branchSize - 1 && PlanUtil::isJoin(curNode)) {
       int32_t leftBranchId = orgBranches_->getLeftSrcBranchId(branchId);
       int32_t rightBranchId = orgBranches_->getRightSrcBranchId(branchId);
       auto left = lookupRewrittenMap(leftBranchId, 0);
@@ -263,7 +265,7 @@ void PlanTransformer::rewriteBranch(int32_t branchId) {
           break;
         }
       }
-      if (idx == 0 and curMatchResult->source.nodeId < branchSize - 1) {
+      if (idx == 0 && curMatchResult->source.nodeId < branchSize - 1) {
         cloneBranchWithRewrittenSrc(branchId, curMatchResult->source.nodeId + 1);
       }
       VeloxPlanNodePtr matchResultPtr = rewriteMatchResult(*curPair);
@@ -351,11 +353,25 @@ PlanTransformerFactory& PlanTransformerFactory::registerPattern(
     std::shared_ptr<PlanPattern> pattern,
     std::shared_ptr<PlanRewriter> rewriter) {
   patternRewriters_.emplace_back(std::make_shared<PatternRewriter>(pattern, rewriter));
+#if 0
+  std::ofstream file_out;
+  file_out.open("/tmp/fragment.txt", std::ios_base::app);
+  file_out << "thread[" << std::this_thread::get_id() << "], patternRewriters_.size = " << patternRewriters_.size() << '\n';
+  file_out.close();
+#endif
   return *this;
 }
 
 std::shared_ptr<PlanTransformer> PlanTransformerFactory::getTransformer(
     VeloxPlanNodePtr root) {
+#if 0
+  std::ofstream file_out;
+  file_out.open("/tmp/fragment.txt", std::ios_base::app);
+  file_out << root->toString(true, true) << '\n';
+  file_out.close();
+  // LOG(INFO) << " ############################ " << root->toString(true, true);
+#endif
   return std::make_shared<PlanTransformer>(patternRewriters_, root);
 }
+
 }  // namespace facebook::velox::plugin::plantransformer
