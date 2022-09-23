@@ -79,6 +79,7 @@ For velox-plugin:
 2.2 How to run a single unit test
 
 ::
+   
    # For Cider
    # Test Path: /workspace/velox-plugin/build-$BUILD_TYPE/cider/Tests
    ./XXXtest 
@@ -89,8 +90,8 @@ For velox-plugin:
    # Please check is there a exec directory(auto generate when make test-$BUILD_TYPE) under cider-velox.
    # If not, please use follow commands to get one(under /workspace/velox-plugin/): 
    #   mkdir /workspace/velox-plugin/build-${BUILD_TYPE}/cider-velox/function
-	#   cp /workspace/velox-plugin/build-${BUILD_TYPE}/cider/function/*.bc /workspace/velox-plugin/build-{BUILD_TYPE}/cider-velox/function
-	#   cd /workspace/velox-plugin/build-${BUILD_TYPE}cider-velox/test
+   #   cp /workspace/velox-plugin/build-${BUILD_TYPE}/cider/function/*.bc /workspace/velox-plugin/build-{BUILD_TYPE}/cider-velox/function
+   #   cd /workspace/velox-plugin/build-${BUILD_TYPE}cider-velox/test
    ./XXXtest 
 
 Then configure GDB with the built test binaries, like following:
