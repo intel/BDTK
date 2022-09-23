@@ -750,6 +750,8 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
     const int8_t** outBuffers = output_batch->table();
     for (int i = 0; i < schema->getColumnTypes().size(); i++) {
       int flatten_index = schema->getFlattenColIndex(i);
+      // When handling AVG as SUM/COUNT, SUM should be double while COUNT should be
+      // BIGINT. We should transfer null in integer to null in double here.
       if (schema->getColHints()[i] == ColumnHint::PartialAVG &&
           target_infos[flatten_index].agg_kind == SQLAgg::kSUM &&
           target_infos[flatten_index].agg_arg_type.is_integer() &&
