@@ -24,7 +24,7 @@ Cider Developer Guide
 
 2. Setting up BDTK develop envirenmont on Linux Docker
 
-We provide Dockerfile to help developers setup and install BDTK dependencies.
+   We provide Dockerfile to help developers setup and install BDTK dependencies.
 
 ::
 
@@ -37,9 +37,9 @@ We provide Dockerfile to help developers setup and install BDTK dependencies.
 
 3. Build in container
 
-Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
+   Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
 
-Run ``make`` in the root directory to compile the sources. For development, use ``make debug`` to build a non-optimized debug version, or ``make release`` to build an optimized version. Use ``make test-debug`` or ``make test-release`` to run tests.
+   Run ``make`` in the root directory to compile the sources. For development, use ``make debug`` to build a non-optimized debug version, or ``make release`` to build an optimized version. Use ``make test-debug`` or ``make test-release`` to run tests.
 
 
 4. Setup ssh for debugging
@@ -77,8 +77,6 @@ For velox-plugin:
 
 
 2.2 How to run a single unit test
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 ::
    # For Cider
