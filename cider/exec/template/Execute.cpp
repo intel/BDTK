@@ -251,6 +251,67 @@ void Executor::update_extension_modules(bool update_runtime_modules_only) {
   update_module(Executor::ExtModuleKinds::rt_udf_cpu_module, true);
 }
 
+// Used by StubGenerator::generateStub
+Executor::CgenStateManager::CgenStateManager(Executor& executor)
+    : executor_(executor)
+    , lock_queue_clock_(timer_start())
+    , lock_(executor_.compilation_mutex_)
+    , cgen_state_(std::move(executor_.cgen_state_))  // store old CgenState instance
+{
+  executor_.compilation_queue_time_ms_ += timer_stop(lock_queue_clock_);
+  executor_.cgen_state_.reset(new CgenState(0, false, &executor));
+}
+
+Executor::CgenStateManager::CgenStateManager(
+    Executor& executor,
+    const bool allow_lazy_fetch,
+    const std::vector<InputTableInfo>& query_infos,
+    const RelAlgExecutionUnit* ra_exe_unit)
+    : executor_(executor)
+    , lock_queue_clock_(timer_start())
+    , lock_(executor_.compilation_mutex_)
+    , cgen_state_(std::move(executor_.cgen_state_))  // store old CgenState instance
+{
+  executor_.compilation_queue_time_ms_ += timer_stop(lock_queue_clock_);
+  // nukeOldState creates new CgenState and PlanState instances for
+  // the subsequent code generation.  It also resets
+  // kernel_queue_time_ms_ and compilation_queue_time_ms_ that we do
+  // not currently restore.. should we accumulate these timings?
+  executor_.nukeOldState(allow_lazy_fetch, query_infos, ra_exe_unit);
+}
+
+Executor::CgenStateManager::~CgenStateManager() {
+  // prevent memory leak from hoisted literals
+  for (auto& p : executor_.cgen_state_->row_func_hoisted_literals_) {
+    auto inst = llvm::dyn_cast<llvm::LoadInst>(p.first);
+    if (inst && inst->getNumUses() == 0 && inst->getParent() == nullptr) {
+      // The llvm::Value instance stored in p.first is created by the
+      // CodeGenerator::codegenHoistedConstantsPlaceholders method.
+      p.first->deleteValue();
+    }
+  }
+  executor_.cgen_state_->row_func_hoisted_literals_.clear();
+
+  // move generated StringDictionaryTranslationMgrs and InValueBitmaps
+  // to the old CgenState instance as the execution of the generated
+  // code uses these bitmaps
+
+  executor_.cgen_state_->in_values_bitmaps_.clear();
+
+  // Delete worker module that may have been set by
+  // set_module_shallow_copy. If QueryMustRunOnCpu is thrown, the
+  // worker module is not instantiated, so the worker module needs to
+  // be deleted conditionally [see "Managing LLVM modules" comment in
+  // CgenState.h]:
+  if (executor_.cgen_state_->module_) {
+    executor_.cgen_state_->module_ = nullptr;
+    //    delete executor_.cgen_state_->module_;
+  }
+
+  // restore the old CgenState instance
+  executor_.cgen_state_.reset(cgen_state_.release());
+}
+
 std::shared_ptr<Executor> Executor::getExecutor(const ExecutorId executor_id,
                                                 DataProvider* data_provider,
                                                 BufferProvider* buffer_provider,

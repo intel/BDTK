@@ -237,13 +237,18 @@ void CgenState::emitErrorCheck(llvm::Value* condition,
 void CgenState::set_module_shallow_copy(const std::unique_ptr<llvm::Module>& llvm_module,
                                         bool always_clone) {
   module_ =
-      llvm::CloneModule(*llvm_module, vmap_, [always_clone](const llvm::GlobalValue* gv) {
-        auto func = llvm::dyn_cast<llvm::Function>(gv);
-        if (!func) {
-          return true;
-        }
-        return (func->getLinkage() == llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
-                func->getLinkage() == llvm::GlobalValue::LinkageTypes::InternalLinkage ||
-                (CodeGenerator::alwaysCloneRuntimeFunction(func)));
-      }).release();
+      llvm::CloneModule(*llvm_module,
+                        vmap_,
+                        [always_clone](const llvm::GlobalValue* gv) {
+                          auto func = llvm::dyn_cast<llvm::Function>(gv);
+                          if (!func) {
+                            return true;
+                          }
+                          return (func->getLinkage() ==
+                                      llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
+                                  func->getLinkage() ==
+                                      llvm::GlobalValue::LinkageTypes::InternalLinkage ||
+                                  (CodeGenerator::alwaysCloneRuntimeFunction(func)));
+                        })
+          .release();
 }

@@ -259,6 +259,8 @@ class Executor {
            const std::string& debug_dir,
            const std::string& debug_file);
 
+  ~Executor() { extension_modules_.clear(); }
+
   static std::shared_ptr<Executor> getExecutor(const ExecutorId id,
                                                DataProvider* data_provider,
                                                BufferProvider* buffer_provider,
@@ -645,6 +647,26 @@ class Executor {
   std::vector<int8_t> serializeLiterals(
       const std::unordered_map<int, CgenState::LiteralValues>& literals,
       const int device_id);
+
+  // CgenStateManager uses RAII pattern to ensure that recursive code
+  // generation (e.g. as in multi-step multi-subqueries) uses a new
+  // CgenState instance for each recursion depth while restoring the
+  // old CgenState instances when returning from recursion.
+  class CgenStateManager {
+   public:
+    CgenStateManager(Executor& executor);
+    CgenStateManager(Executor& executor,
+                     const bool allow_lazy_fetch,
+                     const std::vector<InputTableInfo>& query_infos,
+                     const RelAlgExecutionUnit* ra_exe_unit);
+    ~CgenStateManager();
+
+   private:
+    Executor& executor_;
+    std::chrono::steady_clock::time_point lock_queue_clock_;
+    std::lock_guard<std::mutex> lock_;
+    std::unique_ptr<CgenState> cgen_state_;
+  };
 
  private:
   std::shared_ptr<CompilationContext> getCodeFromCache(const CodeCacheKey&,

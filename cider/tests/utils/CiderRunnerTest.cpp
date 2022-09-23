@@ -70,7 +70,7 @@ TEST(CiderRunnerTest, statefulRunnerMultiBatchTest) {
   // Agg query -> CiderStatefulRunner
   EXPECT_TRUE(std::dynamic_pointer_cast<CiderStatefulRunner>(runner));
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 1000000; i++) {
     auto res = runner->processNextBatch(input_batch);
   }
   while (!runner->isFinished()) {

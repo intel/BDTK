@@ -1535,7 +1535,14 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
   LOG(ASM) << "CODEGEN #" << counter << ":";
 #endif
 
-  nukeOldState(allow_lazy_fetch, query_infos, &ra_exe_unit);
+  //  nukeOldState(allow_lazy_fetch, query_infos, &ra_exe_unit);
+
+  // cgenstate_manager uses RAII pattern to manage the live time of
+  // CgenState instances.
+  Executor::CgenStateManager cgenstate_manager(*this,
+                                               allow_lazy_fetch,
+                                               query_infos,
+                                               &ra_exe_unit);  // locks compilation_mutex
 
   GroupByAndAggregate group_by_and_aggregate(
       this,
