@@ -414,8 +414,6 @@ class Executor {
 
   std::unordered_map<int, const Analyzer::BinOper*> getInnerTabIdToJoinCond() const;
 
-  std::unique_ptr<llvm::Module> rt_module_;
-
  public:  // Temporary, ask saman about this
   static std::pair<int64_t, int32_t> reduceResults(const SQLAgg agg,
                                                    const SQLTypeInfo& ti,

@@ -57,7 +57,7 @@ struct CgenState {
       , ir_builder_(context_)
       , contains_left_deep_outer_join_(false)
       , query_func_(nullptr)
-      , query_func_entry_ir_builder_(context_) {};
+      , query_func_entry_ir_builder_(context_){};
 
   size_t getOrAddLiteral(const Analyzer::Constant* constant,
                          const EncodingType enc_type,
