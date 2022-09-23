@@ -320,7 +320,6 @@ void verify_function_ir(const llvm::Function* func) {
     err_os << "\n-----\n";
     func->print(err_os, nullptr);
     err_os << "\n-----\n";
-    std::cout << err_ss.str() << std::endl;
     LOG(FATAL) << err_ss.str();
   }
 }
