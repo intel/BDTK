@@ -745,22 +745,30 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateCountDistinctResIfNeed(
       if (schema->getColHints()[i] == ColumnHint::PartialAVG &&
           target_infos[flatten_index].agg_kind == SQLAgg::kSUM &&
           generator::getSQLTypeInfo(schema->getColumnTypeById(i).struct_().types(0))
-                  .get_type() == SQLTypes::kDOUBLE &&
-          (target_infos[flatten_index].agg_arg_type.is_integer() ||
-           target_infos[flatten_index].agg_arg_type.is_fp())) {
-        int64_t* result = const_cast<int64_t*>(
-            reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
-        double* cast_buffer = reinterpret_cast<double*>(result);
-        switch (result[0]) {
-          case std::numeric_limits<int8_t>::min():
-          case std::numeric_limits<int16_t>::min():
-          case std::numeric_limits<int32_t>::min():
-          case std::numeric_limits<int64_t>::min():
-          case (int64_t)std::numeric_limits<float>::min():
+                  .get_type() == SQLTypes::kDOUBLE) {
+        if (target_infos[flatten_index].agg_arg_type.is_integer()) {
+          int64_t* result = const_cast<int64_t*>(
+              reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
+          double* cast_buffer = reinterpret_cast<double*>(result);
+          switch (result[0]) {
+            case std::numeric_limits<int8_t>::min():
+            case std::numeric_limits<int16_t>::min():
+            case std::numeric_limits<int32_t>::min():
+            case std::numeric_limits<int64_t>::min():
+              cast_buffer[0] = NULL_VALUE_DOUBLE;
+              break;
+            default:
+              cast_buffer[0] = (double)result[0];
+          }
+        } else if (target_infos[flatten_index].agg_arg_type.is_fp()) {
+          double* result = const_cast<double*>(
+              reinterpret_cast<const double*>(outBuffers[flatten_index]));
+          double* cast_buffer = reinterpret_cast<double*>(result);
+          if (result[0] == std::numeric_limits<float>::min()) {
             cast_buffer[0] = NULL_VALUE_DOUBLE;
-            break;
-          default:
+          } else {
             cast_buffer[0] = (double)result[0];
+          }
         }
       }
     }
