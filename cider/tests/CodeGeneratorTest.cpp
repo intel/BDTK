@@ -32,7 +32,6 @@
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/Execute.h"
 #include "exec/template/IRCodegenUtils.h"
-#include "exec/template/LLVMGlobalContext.h"
 #include "type/plan/Analyzer.h"
 
 TEST(CodeGeneratorTest, IntegerConstant) {

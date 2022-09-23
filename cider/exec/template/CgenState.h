@@ -27,7 +27,6 @@
 #include "IRCodegenUtils.h"
 #include "InValuesBitmap.h"
 #include "InputMetadata.h"
-#include "LLVMGlobalContext.h"
 
 #include "type/plan/Analyzer.h"
 #include "util/InsertionOrderedMap.h"

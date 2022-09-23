@@ -66,7 +66,6 @@ set(query_engine_source_files
     operator/join/hashtable/RangeJoinHashTable.cpp
     LogicalIR.cpp
     LLVMFunctionAttributesUtil.cpp
-    LLVMGlobalContext.cpp
     NativeCodegen.cpp
     OutputBufferInitialization.cpp
     PlanState.cpp
