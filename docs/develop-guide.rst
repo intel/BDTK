@@ -12,36 +12,25 @@ Cider Developer Guide
 | https://docs.docker.com/config/daemon/systemd/
 | https://docs.docker.com/network/proxy/
 
-1. Clone repo locally
+1. Get the BDTK Source
 
 ::
 
-   # WORKDIR: ${workdir}
-   # velox-plugin
-   git clone https://github.com/intel-innersource/frameworks.ai.modular-sql.velox-plugin.git
-   pushd frameworks.ai.modular-sql.velox-plugin
-   git submodule update --init --recursive
-   popd
+   $ git clone --recursive https://github.com/intel/BDTK.git
+   $ cd BDTK
+   # if you are updating an existing checkout
+   $ git submodule sync --recursive
+   $ git submodule update --init --recursive
 
-1. Build an image from a Dockerfile
+2. Setting up BDTK develop envirenmont on Linux Docker
+
+   We provide Dockerfile to help developers setup and install BDTK dependencies.
 
 ::
 
-   # WORKDIR: ${path_to_velox_plugin}/ci/docker
-   docker build -t ${image_name} .
-
-   # Note: If you are behind an HTTP or HTTPS proxy server, for example in corporate settings,
-   #       you need to add this configuration in the Docker systemd service file, 
-   #       please follow the official guide: https://docs.docker.com/network/proxy/
-   # example:
-   # --build-arg HttpProxyHost=your.proxy.server --build-arg HttpsProxyHost=your.proxy.server --build-arg HttpProxyPort=your.proxy.server --build-arg HttpsProxyPort=your.proxy.port
-   
-   # Note: If the apt network still doesn't work, it may be a timezone problem. Here are two solutions:
-   # 1. sync system time with a independent service.
-   #    - config 'NTP' /etc/systemd/timesyncd.conf, you need to find a service in your company or elsewhere.
-   #    - run 'systemctl restart systemd-timesyncd.service'
-   # 2. add parameters after apt-get in Dockerfile to skip timezone check, like:
-   #    RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update 
+   # Build an image from a Dockerfile
+   $ cd ${path_to_source_of_bdtk}/ci/docker
+   $ docker build -t ${image_name} .
 
    # Start a docker container for development
    docker run -d --name ${container_name} --privileged=true -v ${path_to_velox_plugin}:/workspace/velox-plugin ${image_name} /usr/sbin/init
@@ -71,17 +60,13 @@ details are as follows:*
 
 1. Build in container
 
-::
+3. Build in container
 
-   # velox-plugin
-   # WORKDIR: /workspace/velox-plugin
-   # default target is release version
-   make debug/release
+   Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
 
-   # incremental compilation method:
-   # 1. continue use 'make debug/release', some cmake actions will spend a little time
-   # 2. use 'make build BUILD_TYPE=Debug/Release', the fastest method
+   Run ``make`` in the root directory to compile the sources. For development, use ``make debug`` to build a non-optimized debug version, or ``make release`` to build an optimized version. Use ``make test-debug`` or ``make test-release`` to run tests.
 
+   Run ``make`` in the root directory to compile the sources. For development, use ``make debug`` to build a non-optimized debug version, or ``make release`` to build an optimized version. Use ``make test-debug`` or ``make test-release`` to run tests.
 
 4. Setup ssh for debugging
 
@@ -118,10 +103,9 @@ For velox-plugin:
 
 
 2.2 How to run a single unit test
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 ::
+   
    # For Cider
    # Test Path: /workspace/velox-plugin/build-$BUILD_TYPE/cider/Tests
    ./XXXtest 
@@ -132,8 +116,8 @@ For velox-plugin:
    # Please check is there a exec directory(auto generate when make test-$BUILD_TYPE) under cider-velox.
    # If not, please use follow commands to get one(under /workspace/velox-plugin/): 
    #   mkdir /workspace/velox-plugin/build-${BUILD_TYPE}/cider-velox/function
-	#   cp /workspace/velox-plugin/build-${BUILD_TYPE}/cider/function/*.bc /workspace/velox-plugin/build-{BUILD_TYPE}/cider-velox/function
-	#   cd /workspace/velox-plugin/build-${BUILD_TYPE}cider-velox/test
+   #   cp /workspace/velox-plugin/build-${BUILD_TYPE}/cider/function/*.bc /workspace/velox-plugin/build-{BUILD_TYPE}/cider-velox/function
+   #   cd /workspace/velox-plugin/build-${BUILD_TYPE}cider-velox/test
    ./XXXtest 
 
 Then configure GDB with the built test binaries, like following:
