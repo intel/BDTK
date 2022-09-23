@@ -152,7 +152,6 @@ class QuerySessionStatus {
 using QuerySessionMap =
     std::map<const QuerySessionId, std::map<std::string, QuerySessionStatus>>;
 
-extern void read_rt_udf_cpu_module(const std::string& udf_ir);
 extern bool is_rt_udf_module_present(bool cpu_only = false);
 
 class ColumnFetcher;

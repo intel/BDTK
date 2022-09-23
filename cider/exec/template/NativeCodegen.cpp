@@ -984,38 +984,6 @@ bool is_rt_udf_module_present(bool cpu_only) {
   return cpu_only && (rt_udf_cpu_module != nullptr);
 }
 
-namespace {
-
-void read_udf_cpu_module(const std::string& udf_ir_filename) {
-  llvm::SMDiagnostic parse_error;
-
-  llvm::StringRef file_name_arg(udf_ir_filename);
-
-  udf_cpu_module = llvm::parseIRFile(file_name_arg, parse_error, getGlobalLLVMContext());
-  if (!udf_cpu_module) {
-    throw_parseIR_error(parse_error, udf_ir_filename);
-  }
-}
-
-}  // namespace
-
-void Executor::addUdfIrToModule(const std::string& udf_ir_filename) {
-  read_udf_cpu_module(udf_ir_filename);
-}
-
-void read_rt_udf_cpu_module(const std::string& udf_ir_string) {
-  llvm::SMDiagnostic parse_error;
-
-  auto buf =
-      std::make_unique<llvm::MemoryBufferRef>(udf_ir_string, "Runtime UDF for CPU");
-
-  rt_udf_cpu_module = llvm::parseIR(*buf, parse_error, getGlobalLLVMContext());
-  if (!rt_udf_cpu_module) {
-    LOG(IR) << "read_rt_udf_cpu_module:LLVM IR:\n" << udf_ir_string << "\nEnd of LLVM IR";
-    throw_parseIR_error(parse_error);
-  }
-}
-
 std::unordered_set<llvm::Function*> CodeGenerator::markDeadRuntimeFuncs(
     llvm::Module& module,
     const std::vector<llvm::Function*>& roots,

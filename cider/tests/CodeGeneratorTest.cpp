@@ -28,7 +28,6 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
-
 #include "TestHelpers.h"
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/Execute.h"
