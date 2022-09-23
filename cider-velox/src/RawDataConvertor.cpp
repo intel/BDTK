@@ -370,7 +370,7 @@ std::tuple<int64_t, int64_t> calculateScale(int32_t dimen) {
     case CIDER_DIMEN::NANOSECOND:
       return {kNanoSecsPerSec, kSecsPerSec};
     default:
-      VELOX_UNREACHABLE("Unknown dimension");
+      VELOX_UNSUPPORTED("Unknown dimension");
   }
 }
 

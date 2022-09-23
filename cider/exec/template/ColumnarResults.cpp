@@ -21,7 +21,6 @@
  */
 
 #include "ColumnarResults.h"
-#include "ErrorHandling.h"
 #include "Execute.h"
 #include "exec/template/common/descriptors/RowSetMemoryOwner.h"
 #include "util/Intervals.h"
@@ -69,7 +68,8 @@ ColumnarResults::ColumnarResults(std::shared_ptr<RowSetMemoryOwner> row_set_mem_
       (target_type.is_string() && target_type.get_compression() == kENCODING_NONE);
 
   if (is_varlen) {
-    throw ColumnarConversionNotSupported();
+    CIDER_THROW(CiderRuntimeException,
+                "Columnar conversion not supported for variable length types");
   }
   const auto buf_size = num_rows * target_type.get_size();
   column_buffers_[0] =

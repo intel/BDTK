@@ -51,14 +51,6 @@ class GroupByAndAggregate;
 struct ColRangeInfo;
 struct KeylessInfo;
 
-class StreamingTopNOOM : public std::runtime_error {
- public:
-  StreamingTopNOOM(const size_t heap_size_bytes)
-      : std::runtime_error("Unable to use streaming top N due to required heap size of " +
-                           std::to_string(heap_size_bytes) +
-                           " bytes exceeding maximum slab size.") {}
-};
-
 class QueryMemoryDescriptor {
  public:
   QueryMemoryDescriptor();

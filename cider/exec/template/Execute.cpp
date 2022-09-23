@@ -40,7 +40,6 @@
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/ColumnFetcher.h"
 #include "exec/template/DynamicWatchdog.h"
-#include "exec/template/ErrorHandling.h"
 #include "exec/template/ExpressionRewrite.h"
 #include "exec/template/ExternalCacheInvalidators.h"
 #include "exec/template/InPlaceSort.h"
@@ -327,7 +326,7 @@ std::vector<int8_t> Executor::serializeLiterals(
     }
   }
   if (lit_buf_size > static_cast<size_t>(std::numeric_limits<int16_t>::max())) {
-    throw TooManyLiterals();
+    CIDER_THROW(CiderCompileException, "Too many literals in the query");
   }
   int16_t crt_real_str_off = lit_buf_size;
   for (const auto& real_str : real_strings) {
@@ -1191,7 +1190,9 @@ Executor::JoinHashTableOrError Executor::buildHashTableForQualifier(
     const RegisteredQueryHint& query_hint,
     const TableIdToNodeMap& table_id_to_node_map) {
   if (g_enable_dynamic_watchdog && interrupted_.load()) {
-    throw QueryExecutionError(ERR_INTERRUPTED);
+    CIDER_THROW(CiderRuntimeException,
+                fmt::format("Query execution failed with error code {}",
+                            std::to_string(ERR_INTERRUPTED)));
   }
   try {
     auto tbl = HashJoin::getInstance(qual_bin_oper,
@@ -1207,7 +1208,7 @@ Executor::JoinHashTableOrError Executor::buildHashTableForQualifier(
                                      query_hint,
                                      table_id_to_node_map);
     return {tbl, ""};
-  } catch (const HashJoinFail& e) {
+  } catch (const CiderHashJoinException& e) {
     return {nullptr, e.what()};
   }
 }
@@ -1294,7 +1295,6 @@ std::tuple<bool, int64_t, int64_t> get_hpt_overflow_underflow_safe_scaled_values
                                              boost::multiprecision::signed_magnitude,
                                              boost::multiprecision::checked,
                                              void>>;
-
   try {
     auto ret =
         std::make_tuple(true,
@@ -1463,7 +1463,9 @@ void Executor::checkPendingQueryStatus(const QuerySessionId& query_session) {
     return;
   }
   if (queries_interrupt_flag_[query_session]) {
-    throw QueryExecutionError(Executor::ERR_INTERRUPTED);
+    CIDER_THROW(CiderRuntimeException,
+                fmt::format("Query execution failed with error code {}",
+                            std::to_string(ERR_INTERRUPTED)));
   }
 }
 

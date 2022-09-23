@@ -189,7 +189,7 @@ std::vector<int64_t> index_to_ntile(const int64_t* index,
                                     const size_t n) {
   std::vector<int64_t> row_numbers(index_size);
   if (!n) {
-    throw std::runtime_error("NTILE argument cannot be zero");
+    CIDER_THROW(CiderCompileException, "NTILE argument cannot be zero");
   }
   const size_t tile_size = (index_size + n - 1) / n;
   for (size_t i = 0; i < index_size; ++i) {
@@ -208,7 +208,8 @@ size_t window_function_buffer_element_size(const SqlWindowFunctionKind /*kind*/)
 size_t get_int_constant_from_expr(const Analyzer::Expr* expr) {
   const auto lag_constant = dynamic_cast<const Analyzer::Constant*>(expr);
   if (!lag_constant) {
-    throw std::runtime_error("LAG with non-constant lag argument not supported yet");
+    CIDER_THROW(CiderCompileException,
+                "LAG with non-constant lag argument not supported yet");
   }
   const auto& lag_ti = lag_constant->get_type_info();
   switch (lag_ti.get_type()) {
@@ -234,7 +235,7 @@ int64_t get_lag_or_lead_argument(const Analyzer::WindowFunction* window_func) {
         window_func->getKind() == SqlWindowFunctionKind::LEAD);
   const auto& args = window_func->getArgs();
   if (args.size() == 3) {
-    throw std::runtime_error("LAG with default not supported yet");
+    CIDER_THROW(CiderCompileException, "LAG with default not supported yet");
   }
   if (args.size() == 2) {
     const int64_t lag_or_lead =
@@ -585,8 +586,9 @@ void WindowFunctionContext::computePartition(
       break;
     }
     default: {
-      throw std::runtime_error("Window function not supported yet: " +
-                               ::toString(window_func->getKind()));
+      CIDER_THROW(
+          CiderCompileException,
+          "Window function not supported yet: " + ::toString(window_func->getKind()));
     }
   }
 }

@@ -30,6 +30,7 @@
 #include <iostream>
 #include <string_view>
 #include <thread>
+#include "cider/CiderException.h"
 #include "function/string/StringLike.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
@@ -51,7 +52,7 @@ int checked_open(const char* path, const bool recover) {
   auto err = std::string("Dictionary path ") + std::string(path) +
              std::string(" does not exist.");
   LOG(ERROR) << err;
-  throw DictPayloadUnavailable(err);
+  CIDER_THROW(CiderCompileException, err);
 }
 
 const uint64_t round_up_p2(const uint64_t num) {
@@ -292,7 +293,7 @@ void throw_encoding_error(std::string_view str, std::string_view folder) {
       << " There was an attempt to add the new string '" << str
       << "'. Table will need to be recreated with larger String Dictionary Capacity";
   LOG(ERROR) << oss.str();
-  throw std::runtime_error(oss.str());
+  CIDER_THROW(CiderCompileException, oss.str());
 }
 
 }  // namespace
@@ -797,7 +798,7 @@ std::vector<int32_t> StringDictionary::getCompare(const std::string& pattern,
     }
 
   } else {
-    std::runtime_error("Unsupported string comparison operator");
+    CIDER_THROW(CiderCompileException, "Unsupported string comparison operator");
   }
   return ret;
 }

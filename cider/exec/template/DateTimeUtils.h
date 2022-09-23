@@ -30,6 +30,7 @@
 #include <map>
 #include <string>
 
+#include "cider/CiderException.h"
 #include "util/sqldefs.h"
 
 namespace {
@@ -65,7 +66,7 @@ constexpr inline int64_t get_timestamp_precision_scale(const int32_t dimen) {
     case 9:
       return kNanoSecsPerSec;
     default:
-      throw std::runtime_error("Unknown dimen = " + std::to_string(dimen));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
   }
   return -1;
 }
@@ -79,7 +80,7 @@ constexpr inline int64_t get_dateadd_timestamp_precision_scale(const DateaddFiel
     case daNANOSECOND:
       return kNanoSecsPerSec;
     default:
-      throw std::runtime_error("Unknown field = " + std::to_string(field));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown field = {}", field));
   }
   return -1;
 }
@@ -93,7 +94,7 @@ constexpr inline int64_t get_extract_timestamp_precision_scale(const ExtractFiel
     case kNANOSECOND:
       return kNanoSecsPerSec;
     default:
-      throw std::runtime_error("Unknown field = " + std::to_string(field));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown field = {}", field));
   }
   return -1;
 }
@@ -123,7 +124,7 @@ const inline std::pair<SQLOps, int64_t> get_dateadd_high_precision_adjusted_scal
         case 3:
           return {kDIVIDE, kMicroSecsPerSec};
         default:
-          throw std::runtime_error("Unknown dimen = " + std::to_string(dimen));
+          CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
       }
     case daMICROSECOND:
       switch (dimen) {
@@ -134,7 +135,7 @@ const inline std::pair<SQLOps, int64_t> get_dateadd_high_precision_adjusted_scal
         case 3:
           return {kDIVIDE, kMilliSecsPerSec};
         default:
-          throw std::runtime_error("Unknown dimen = " + std::to_string(dimen));
+          CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
       }
     case daMILLISECOND:
       switch (dimen) {
@@ -145,10 +146,10 @@ const inline std::pair<SQLOps, int64_t> get_dateadd_high_precision_adjusted_scal
         case 3:
           return {};
         default:
-          throw std::runtime_error("Unknown dimen = " + std::to_string(dimen));
+          CIDER_THROW(CiderCompileException, fmt::format("Unknown dimen = {}", dimen));
       }
     default:
-      throw std::runtime_error("Unknown field = " + std::to_string(field));
+      CIDER_THROW(CiderCompileException, fmt::format("Unknown field = {}", field));
   }
   return {};
 }
@@ -179,7 +180,8 @@ constexpr inline int64_t get_datetime_scaled_epoch(const ScalingType direction,
     case ScaleUp: {
       const auto scaled_epoch = epoch * get_timestamp_precision_scale(dimen);
       if (epoch && epoch != scaled_epoch / get_timestamp_precision_scale(dimen)) {
-        throw std::runtime_error(
+        CIDER_THROW(
+            CiderCompileException,
             "Value Overflow/underflow detected while scaling DateTime precision.");
       }
       return scaled_epoch;

@@ -21,7 +21,6 @@
  */
 
 #include "CardinalityEstimator.h"
-#include "ErrorHandling.h"
 #include "ExpressionRewrite.h"
 
 int64_t g_large_ndv_threshold = 10000000;

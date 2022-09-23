@@ -136,7 +136,7 @@ class MockTable {
           copyDataToScalarBatch<ScalarBatch<double>>(child.get(), data);
           break;
         default:
-          throw std::runtime_error("Unsupported type to generate StructBatch.");
+          CIDER_THROW(CiderCompileException, "Unsupported type to generate StructBatch.");
       }
     }
     return batch;

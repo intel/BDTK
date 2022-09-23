@@ -22,13 +22,12 @@
 
 // http://stackoverflow.com/questions/5279051/how-can-i-create-cartesian-product-of-vector-of-vectors
 
+#include <boost/iterator/iterator_facade.hpp>
 #include <cassert>
-
 #include <limits>
 #include <stdexcept>
 #include <vector>
-
-#include <boost/iterator/iterator_facade.hpp>
+#include "cider/CiderException.h"
 
 //! Class iterating over the Cartesian product of a forward iterable container of forward
 //! iterable containers
@@ -162,7 +161,8 @@ template <typename T>
 std::vector<typename T::value_type::value_type> const&
 CartesianProductIterator<T>::dereference() const {
   if (absolutePosition_ == std::numeric_limits<std::size_t>::max()) {
-    throw new std::out_of_range("Out of bound dereference in CartesianProductIterator\n");
+    CIDER_THROW(CiderCompileException,
+                "Out of bound dereference in CartesianProductIterator\n");
   }
   auto& result = result_[absolutePosition_];
   if (result.empty()) {

@@ -31,11 +31,6 @@
 
 class Executor;
 
-class FailedToCreateBitmap : public std::runtime_error {
- public:
-  FailedToCreateBitmap() : std::runtime_error("FailedToCreateBitmap") {}
-};
-
 class InValuesBitmap {
  public:
   InValuesBitmap(const std::vector<int64_t>& values,

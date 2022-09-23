@@ -71,21 +71,6 @@ class SpeculativeTopNMap {
   size_t unknown_;
 };
 
-class SpeculativeTopNFailed : public std::runtime_error {
- public:
-  SpeculativeTopNFailed(const std::string& msg)
-      : std::runtime_error("SpeculativeTopNFailed: " + msg)
-      , failed_during_iteration_(false) {}
-
-  SpeculativeTopNFailed()
-      : std::runtime_error("SpeculativeTopNFailed"), failed_during_iteration_(true) {}
-
-  bool failedDuringIteration() const { return failed_during_iteration_; }
-
- private:
-  bool failed_during_iteration_;
-};
-
 class SpeculativeTopNBlacklist {
  public:
   void add(const std::shared_ptr<Analyzer::Expr> expr, const bool desc);

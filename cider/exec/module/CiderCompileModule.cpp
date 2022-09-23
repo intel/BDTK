@@ -107,7 +107,7 @@ class CiderCompileModule::Impl {
 
     // if this is a join query and don't feed a valid build table, throw exception
     if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0) {
-      throw std::runtime_error("Join query must feed a valid build table!");
+      CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
     }
 
     if (co.use_default_col_range) {

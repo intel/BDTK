@@ -72,7 +72,6 @@
 #include "type/data/string/StringDictionary.h"
 #include "type/data/string/StringDictionaryProxy.h"
 #include "type/schema/SchemaProvider.h"
-#include "util/Exception.h"
 #include "util/Logger.h"
 #include "util/MemoryInfo.h"
 #include "util/mapd_shared_mutex.h"
@@ -157,12 +156,6 @@ extern void read_rt_udf_cpu_module(const std::string& udf_ir);
 extern bool is_rt_udf_module_present(bool cpu_only = false);
 
 class ColumnFetcher;
-
-class WatchdogException : public std::runtime_error {
- public:
-  WatchdogException(const std::string& cause) : std::runtime_error(cause) {}
-};
-
 class Executor;
 
 inline llvm::Value* get_arg_by_name(llvm::Function* func, const std::string& name) {
@@ -241,49 +234,9 @@ inline std::vector<Analyzer::Expr*> get_exprs_not_owned(
   return exprs_not_owned;
 }
 
-class CompilationRetryNoLazyFetch : public std::runtime_error {
- public:
-  CompilationRetryNoLazyFetch() : std::runtime_error("Retry query compilation.") {}
-};
 
-class CompilationRetryNewScanLimit : public std::runtime_error {
- public:
-  CompilationRetryNewScanLimit(const size_t new_scan_limit)
-      : std::runtime_error("Retry query compilation with new scan limit.")
-      , new_scan_limit_(new_scan_limit) {}
 
-  size_t new_scan_limit_;
-};
 
-class TooManyLiterals : public std::runtime_error {
- public:
-  TooManyLiterals() : std::runtime_error("Too many literals in the query") {}
-};
-
-class CompilationRetryNoCompaction : public std::runtime_error {
- public:
-  CompilationRetryNoCompaction()
-      : std::runtime_error("Retry query compilation with no compaction.") {}
-};
-
-class QueryMustRunOnCpu : public std::runtime_error {
- public:
-  QueryMustRunOnCpu() : std::runtime_error("Query must run in cpu mode.") {}
-
-  QueryMustRunOnCpu(const std::string& err) : std::runtime_error(err) {}
-};
-
-class ParseIRError : public std::runtime_error {
- public:
-  ParseIRError(const std::string message) : std::runtime_error(message) {}
-};
-
-class StringConstInResultSet : public std::runtime_error {
- public:
-  StringConstInResultSet()
-      : std::runtime_error(
-            "NONE ENCODED String types are not supported as input result set.") {}
-};
 
 class ExtensionFunction;
 

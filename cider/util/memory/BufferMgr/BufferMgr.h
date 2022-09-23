@@ -36,7 +36,6 @@
 #include <mutex>
 
 #include "BufferSeg.h"
-#include "util/Exception.h"
 #include "util/boost_stacktrace.hpp"
 #include "util/memory/AbstractBufferMgr.h"
 #include "util/memory/Buffer/AbstractBuffer.h"

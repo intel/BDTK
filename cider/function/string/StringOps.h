@@ -24,6 +24,7 @@
 
 //#include "Logger/Logger.h"
 #include "StringOpInfo.h"
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "util/sqldefs.h"
 
@@ -177,7 +178,7 @@ struct Repeat : public StringOp {
       : StringOp(SqlStringOpKind::REPEAT, var_str_optional_literal)
       , n_(n >= 0 ? n : 0UL) {
     if (n < 0) {
-      throw std::runtime_error("Number of repeats must be >= 0");
+      CIDER_THROW(CiderCompileException, "Number of repeats must be >= 0");
     }
   }
 

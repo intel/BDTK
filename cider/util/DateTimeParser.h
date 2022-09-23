@@ -26,6 +26,7 @@
 #include <optional>
 #include <ostream>
 #include <string_view>
+#include "cider/CiderException.h"
 
 template <SQLTypes SQL_TYPE>
 std::optional<int64_t> dateTimeParseOptional(std::string_view, unsigned const dim);
@@ -45,7 +46,8 @@ int64_t dateTimeParse(std::string_view const s, unsigned const dim) {
   if (auto const time = dateTimeParseOptional<SQL_TYPE>(s, dim)) {
     return *time;
   } else {
-    throw std::runtime_error(cat("Invalid ", toString(SQL_TYPE), " string (", s, ')'));
+    CIDER_THROW(CiderCompileException,
+                cat("Invalid ", toString(SQL_TYPE), " string (", s, ')'));
   }
 }
 

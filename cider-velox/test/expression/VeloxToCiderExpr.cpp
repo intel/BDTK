@@ -48,7 +48,7 @@ SQLTypeInfo getCiderType(const std::shared_ptr<const velox::Type>& expr_type,
     case TypeKind::TIMESTAMP:
       return SQLTypeInfo(SQLTypes::kTIMESTAMP, notNull);
     default:
-      throw std::runtime_error(expr_type->toString() + " is not yet supported.");
+      VELOX_UNSUPPORTED(expr_type->toString() + " is not yet supported.");
   }
 }
 
@@ -105,7 +105,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
       return toCiderExpr(cast_expr, colInfo);
     }
     return nullptr;
-  } catch (std::runtime_error& error) {
+  } catch (VeloxException& error) {
     std::cout << error.what();
     return nullptr;
   }
@@ -133,7 +133,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
       constant_value.bigintval = value.value<TypeKind::BIGINT>();
       break;
     default:
-      throw std::runtime_error(vExpr->type()->toString() + " is not yet supported.");
+      VELOX_UNSUPPORTED(vExpr->type()->toString() + " is not yet supported.");
   }
   return std::make_shared<Analyzer::Constant>(cider_type, false, constant_value);
 }
@@ -144,7 +144,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
   // inputs for FieldAccessTypedExpr is not useful for cider?
   auto it = colInfo.find(vExpr->name());
   if (it == colInfo.end()) {
-    throw std::runtime_error("can't get column index for column " + vExpr->name());
+    VELOX_USER_FAIL("can't get column index for column " + vExpr->name());
   }
   auto colIndex = it->second;
   // Can't get isNullable info from velox expr, we set it default to true
@@ -234,7 +234,7 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
       return std::make_shared<Analyzer::AggExpr>(
           agg_type, agg_kind, arg_expr, false, const_arg);
     } else {
-      std::runtime_error("agg should happen on specific column.");
+      VELOX_UNSUPPORTED("agg should happen on specific column.");
     }
   }
   // count(*)
