@@ -24,8 +24,10 @@
 #include "PlanPattern.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 class State;
 using StatePtr = std::shared_ptr<State>;
+
 class State {
  public:
   State() {}

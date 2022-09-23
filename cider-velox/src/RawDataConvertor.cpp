@@ -36,6 +36,7 @@
 #include "velox/vector/tests/VectorTestBase.h"
 
 namespace facebook::velox::plugin {
+
 template <TypeKind kind>
 int8_t* toCiderImpl(VectorPtr& child, int idx, int num_rows) {
   using T = typename TypeTraits<kind>::NativeType;

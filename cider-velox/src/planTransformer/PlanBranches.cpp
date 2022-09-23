@@ -22,6 +22,7 @@
 #include "PlanBranches.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 PlanBranches::PlanBranches(VeloxPlanNodePtr root) {
   root_ = root;
   splitPlanBranches(root);
@@ -33,7 +34,6 @@ void PlanBranches::splitPlanBranches(VeloxPlanNodePtr rootNode) {
 }
 
 void PlanBranches::splitPlanBranches(VeloxPlanNodePtr branchRootNode, int32_t branchIdx) {
-  VeloxPlanNodePtr curBranchRoot = branchRootNode;
   VeloxPlanNodeVec curBranch = makePlanBranch(branchRootNode);
   size_t curBranchSize = curBranch.size();
   if (curBranchSize > 0) {
@@ -41,9 +41,8 @@ void PlanBranches::splitPlanBranches(VeloxPlanNodePtr branchRootNode, int32_t br
     branchMap_[branchIdx] = curBranch;
     VeloxPlanNodePtr branchSourceNode = curBranch[curBranchSize - 1];
     auto branchSrcs = branchSourceNode->sources();
-    if (branchSrcs.empty() or branchSrcs.size() < 2) {
+    if (branchSrcs.empty() || branchSrcs.size() < 2) {
       srcBranchIds_.push_back(branchIdx);
-      return;
     } else if (branchSrcs.size() == 2) {
       splitPlanBranches(branchSrcs[0], getLeftSrcBranchId(branchIdx));
       splitPlanBranches(branchSrcs[1], getRightSrcBranchId(branchIdx));
@@ -53,7 +52,7 @@ void PlanBranches::splitPlanBranches(VeloxPlanNodePtr branchRootNode, int32_t br
 
 VeloxPlanBranch PlanBranches::makePlanBranch(VeloxPlanNodePtr root) {
   VeloxPlanBranch branch;
-  if (root) {
+  if (root != nullptr) {
     VeloxPlanNodePtr curNode = root;
     while (curNode != nullptr) {
       branch.push_back(curNode);
@@ -113,7 +112,7 @@ VeloxPlanNodeAddr PlanBranches::getBranchSrcNodeAddr(int32_t branchId) {
 }
 
 VeloxPlanNodeAddr PlanBranches::moveToTarget(VeloxPlanNodeAddr& nodeAddr) {
-  if (!VeloxPlanNodeAddr::invalid().equal(nodeAddr) and root_ != nodeAddr.nodePtr) {
+  if (!VeloxPlanNodeAddr::invalid().equal(nodeAddr) && root_ != nodeAddr.nodePtr) {
     VeloxPlanNodeAddr curNodeAddr = nodeAddr;
     VeloxPlanNodePtr root = curNodeAddr.root;
     int32_t branchId = curNodeAddr.branchId;
@@ -158,7 +157,7 @@ VeloxPlanNodeAddrList PlanBranches::getAllSourcesOf(
     curNode = planSectionIte.next();
     VeloxPlanNodeVec sources = curNode.nodePtr->sources();
     if (curNode.equal(planSection.source)) {
-      if (sources.size() == 1 and sources[0] != nullptr) {
+      if (sources.size() == 1 && sources[0] != nullptr) {
         VeloxPlanNodeAddr srcAddr{
             root_, curNode.branchId, curNode.nodeId + 1, sources[0]};
         sourcesList.emplace_back(srcAddr);
@@ -256,4 +255,5 @@ VeloxPlanNodeAddr BranchSrcToTargetIterator::getCurPos() {
 void BranchSrcToTargetIterator::setCurPos(VeloxPlanNodeAddr& curPos) {
   curPlanNodeId_ = curPos;
 }
+
 }  // namespace facebook::velox::plugin::plantransformer

@@ -23,6 +23,7 @@
 #include "PlanUtil.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 VeloxPlanNodePtr PlanRewriter::rewrite(VeloxNodeAddrPlanSection& planSection,
                                        VeloxPlanNodeAddr& source) {
   auto rewrittenResult = rewritePlanSectionWithSingleSource(planSection, source);

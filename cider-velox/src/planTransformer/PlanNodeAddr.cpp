@@ -22,12 +22,13 @@
 #include "PlanNodeAddr.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 bool VeloxPlanSection::multiSectionSource() {
   return (source->sources().size() > 1);
 }
 
 bool VeloxPlanNodeAddr::equal(VeloxPlanNodeAddr addr) {
-  return (root == addr.root and branchId == addr.branchId and nodeId == addr.nodeId);
+  return (root == addr.root && branchId == addr.branchId && nodeId == addr.nodeId);
 }
 
 VeloxPlanNodeAddr VeloxPlanNodeAddr::invalid() {
@@ -62,7 +63,7 @@ bool VeloxNodeAddrPlanSection::isBefore(VeloxNodeAddrPlanSection section) {
   }
   if (target.branchId < section.target.branchId) {
     return true;
-  } else if (target.branchId == section.target.branchId and
+  } else if (target.branchId == section.target.branchId &&
              target.nodeId <= section.target.nodeId) {
     return true;
   }
@@ -85,8 +86,8 @@ std::vector<int32_t> VeloxNodeAddrPlanSection::coveredBranches() {
       parentBranchId = parentBranchId / 2;
     }
     return coveredBranchIds;
-  } else {
-    return std::vector<int32_t>();
   }
+  return {};
 }
+
 }  // namespace facebook::velox::plugin::plantransformer

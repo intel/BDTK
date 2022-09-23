@@ -425,6 +425,7 @@ class CiderBatch {
     }
     return ss.str();
   }
+#undef PRINT_BY_TYPE
 
   const std::shared_ptr<CiderTableSchema> schema() const { return schema_; }
 

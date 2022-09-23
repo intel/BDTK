@@ -20,10 +20,10 @@
  */
 
 #include "PlanUtil.h"
-
 #include "PlanBranches.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 using namespace facebook::velox::core;
 bool PlanUtil::isJoin(VeloxPlanNodePtr node) {
   if (auto hashJoinNode = std::dynamic_pointer_cast<const AbstractJoinNode>(node)) {
@@ -222,7 +222,7 @@ VeloxPlanNodePtr PlanUtil::cloneMultiSourcePlanSectionWithNewSources(
     curNode = planSectionIte.next();
     auto nodeSrcPtrs = curNode.nodePtr->sources();
     if (curNode.equal(planSection.source)) {
-      if (nodeSrcPtrs.size() == 1 and nodeSrcPtrs[0] != nullptr) {
+      if (nodeSrcPtrs.size() == 1 && nodeSrcPtrs[0] != nullptr) {
         auto foundInSrcNodeAddMap =
             findInNodeAddrMap(sourcePtrMap, curNode.branchId, curNode.nodeId + 1);
         if (foundInSrcNodeAddMap.first) {

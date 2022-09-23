@@ -25,7 +25,9 @@
 #include "PlanUtil.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 using VeloxPlanBranch = std::vector<VeloxPlanNodePtr>;
+
 class BranchSrcToTargetIterator;
 class PlanBranches {
   using VeloxPlanBranchMap =
@@ -83,4 +85,5 @@ class BranchSrcToTargetIterator {
   std::shared_ptr<VeloxNodeAddrPlanSection> planSection_;
   bool firstMove_ = true;
 };
+
 }  // namespace facebook::velox::plugin::plantransformer

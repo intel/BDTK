@@ -26,6 +26,7 @@
 #include "planTransformer/PlanTransformer.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 CiderPlanTransformerFactory::CiderPlanTransformerFactory() {
   ciderTransformerFactory_ =
       PlanTransformerFactory()
@@ -41,4 +42,5 @@ std::shared_ptr<PlanTransformer> CiderPlanTransformerFactory::getTransformer(
     VeloxPlanNodePtr root) {
   return ciderTransformerFactory_.getTransformer(root);
 }
+
 }  // namespace facebook::velox::plugin::plantransformer
