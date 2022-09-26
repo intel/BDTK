@@ -42,29 +42,9 @@ Cider Developer Guide
 *Note: files used for building image are from cider and presto,
 details are as follows:*
 
-::
-
-   .
-   ├── Dockerfile
-   ├── scripts-cider  
-   │   ├── common-functions.sh
-   │   ├── llvm-9-glibc-2.31-708430.patch
-   │   └── mapd-deps-ubuntu.sh
-   └── scripts-presto 
-       (from frameworks.ai.modular-sql.presto/presto-native-execution)
-       ├── scripts
-       │   └── setup-ubuntu.sh
-       └── velox
-           └── scripts
-               └── setup-ubuntu.sh
-
-1. Build in container
-
 3. Build in container
 
    Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
-
-   Run ``make`` in the root directory to compile the sources. For development, use ``make debug`` to build a non-optimized debug version, or ``make release`` to build an optimized version. Use ``make test-debug`` or ``make test-release`` to run tests.
 
    Run ``make`` in the root directory to compile the sources. For development, use ``make debug`` to build a non-optimized debug version, or ``make release`` to build an optimized version. Use ``make test-debug`` or ``make test-release`` to run tests.
 
