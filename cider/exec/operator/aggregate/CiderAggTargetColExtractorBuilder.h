@@ -44,6 +44,10 @@ class CiderAggTargetColExtractorBuilder {
   static std::unique_ptr<CiderAggTargetColExtractor> buildAVGAggExtractor(
       const CiderAggHashTable* hash_table,
       size_t col_index);
+
+  static std::unique_ptr<CiderAggTargetColExtractor> buildCountAggExtractor(
+      const CiderAggHashTable* hash_table,
+      size_t col_index);
 };
 
 #endif
