@@ -252,64 +252,93 @@ void TargetExprCodegen::codegenAggregate(
         static_cast<size_t>(query_mem_desc.getPaddedSlotWidthBytes(slot_index));
 
     std::unique_ptr<AggregateCodeGenerator> generator;
-    switch (target_info.agg_kind) {
-      case kMAX:
-      case kMIN:
-      case kSUM:
-      case kSAMPLE:
-        generator = SimpleAggregateCodeGenerator::Make(
-            agg_base_name, target_info, chosen_bytes, executor->cgen_state_.get());
-        break;
-      case kAVG:
-        generator = (0 == target_lv_idx
-                         ? SimpleAggregateCodeGenerator::Make(agg_base_name,
-                                                              target_info,
-                                                              chosen_bytes,
-                                                              executor->cgen_state_.get())
-                         : CountAggregateCodeGenerator::Make(agg_base_name,
-                                                             target_info,
-                                                             chosen_bytes,
-                                                             executor->cgen_state_.get(),
-                                                             true));
-        break;
-      case kCOUNT:
-        generator = CountAggregateCodeGenerator::Make(agg_base_name,
-                                                      target_info,
-                                                      chosen_bytes,
-                                                      executor->cgen_state_.get(),
-                                                      arg_expr);
-        break;
-      default:
-        CIDER_THROW(CiderCompileException,
-                    "Unsupported aggregation type in TargetExprBuilder.");
-    }
-    CHECK(generator);
-
-    if (is_group_by) {
-      // Fetch output buffers.
-      llvm::Value *agg_col_ptr = nullptr, *agg_null_ptr = nullptr, *index = nullptr;
-      agg_col_ptr = std::get<0>(agg_out_ptr_w_idx);
-      agg_col_ptr->setName("agg_col_ptr");
-      agg_null_ptr = LL_BUILDER.CreateGEP(
-          LL_BUILDER.CreateBitCast(agg_col_ptr, llvm::Type::getInt8PtrTy(context)),
-          LL_INT(query_mem_desc.getNullVectorOffsetOfGroupTargets()));
-      index = LL_INT(query_mem_desc.getColOnlyOffInBytes(slot_index) / chosen_bytes);
-      generator->codegen(agg_input_data, agg_col_ptr, index, agg_null_ptr);
-    } else if (is_non_groupby_agg) {
-      generator->codegen(agg_input_data,
-                         agg_out_vec[slot_index],
-                         LL_INT(uint64_t(0)),
-                         agg_out_vec[slot_index + agg_out_vec.size() / 2]);
-      // TODO(qi): Move to query_template
-      if (!target_info.skip_null_val) {
-        std::vector<llvm::Value*> func_args = {
-            agg_out_vec[slot_index + agg_out_vec.size() / 2], LL_INT(uint64_t(1))};
-        executor->cgen_state_->emitCall("agg_id", func_args);
+    if (query_mem_desc.getQueryDescriptionType() == QueryDescriptionType::Projection) {
+      generator = ProjectIDCodeGenerator::Make(
+          agg_base_name, target_info, executor->cgen_state_.get());
+    } else {
+      switch (target_info.agg_kind) {
+        case kMAX:
+        case kMIN:
+        case kSUM:
+        case kSAMPLE:
+          generator = SimpleAggregateCodeGenerator::Make(
+              agg_base_name, target_info, chosen_bytes, executor->cgen_state_.get());
+          break;
+        case kAVG:
+          generator =
+              (0 == target_lv_idx
+                   ? SimpleAggregateCodeGenerator::Make(agg_base_name,
+                                                        target_info,
+                                                        chosen_bytes,
+                                                        executor->cgen_state_.get())
+                   : CountAggregateCodeGenerator::Make(agg_base_name,
+                                                       target_info,
+                                                       chosen_bytes,
+                                                       executor->cgen_state_.get(),
+                                                       true));
+          break;
+        case kCOUNT:
+          generator = CountAggregateCodeGenerator::Make(agg_base_name,
+                                                        target_info,
+                                                        chosen_bytes,
+                                                        executor->cgen_state_.get(),
+                                                        arg_expr);
+          break;
+        default:
+          CIDER_THROW(CiderCompileException,
+                      "Unsupported aggregation type in TargetExprBuilder.");
       }
-    }
+      CHECK(generator);
 
-    ++slot_index;
-    ++target_lv_idx;
+      if (is_group_by) {
+        if (query_mem_desc.getQueryDescriptionType() ==
+            QueryDescriptionType::Projection) {
+          // Projection
+          llvm::Value *project_arraies_vec = std::get<0>(agg_out_ptr_w_idx),
+                      *row_num = std::get<1>(agg_out_ptr_w_idx);
+          llvm::Value* project_arraies_ptr =
+              LL_BUILDER.CreateGEP(project_arraies_vec, LL_INT(slot_index));
+          llvm::Value* project_arraies_i8 =
+              LL_BUILDER.CreateIntToPtr(LL_BUILDER.CreateLoad(project_arraies_ptr, false),
+                                        llvm::Type::getInt8PtrTy(context));
+          llvm::Value* col_data =
+              executor->cgen_state_->emitCall("cider_ColDecoder_extractArrowBuffersAt",
+                                              {project_arraies_i8, LL_INT((uint64_t)1)});
+          if (target_info.skip_null_val) {
+            llvm::Value* col_null = executor->cgen_state_->emitCall(
+                "cider_ColDecoder_extractArrowBuffersAt",
+                {project_arraies_i8, LL_INT((uint64_t)0)});
+            generator->codegen(agg_input_data, col_data, row_num, col_null);
+          } else {
+            generator->codegen(agg_input_data, col_data, row_num);
+          }
+        } else {
+          // Fetch output buffers.
+          llvm::Value *agg_col_ptr = nullptr, *agg_null_ptr = nullptr, *index = nullptr;
+          agg_col_ptr = std::get<0>(agg_out_ptr_w_idx);
+          agg_col_ptr->setName("agg_col_ptr");
+          agg_null_ptr = LL_BUILDER.CreateGEP(
+              LL_BUILDER.CreateBitCast(agg_col_ptr, llvm::Type::getInt8PtrTy(context)),
+              LL_INT(query_mem_desc.getNullVectorOffsetOfGroupTargets()));
+          index = LL_INT(query_mem_desc.getColOnlyOffInBytes(slot_index) / chosen_bytes);
+          generator->codegen(agg_input_data, agg_col_ptr, index, agg_null_ptr);
+        }
+      } else if (is_non_groupby_agg) {
+        generator->codegen(agg_input_data,
+                           agg_out_vec[slot_index],
+                           LL_INT(uint64_t(0)),
+                           agg_out_vec[slot_index + agg_out_vec.size() / 2]);
+        // TODO(qi): Move to query_template
+        if (!target_info.skip_null_val) {
+          std::vector<llvm::Value*> func_args = {
+              agg_out_vec[slot_index + agg_out_vec.size() / 2], LL_INT(uint64_t(1))};
+          executor->cgen_state_->emitCall("agg_id", func_args);
+        }
+      }
+
+      ++slot_index;
+      ++target_lv_idx;
+    }
   }
 }
 

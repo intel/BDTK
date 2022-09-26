@@ -245,8 +245,20 @@ void runTest(const std::string& test_name,
 
   std::vector<InputTableInfo> table_infos = {table_ptr->getInputTableInfo()};
 
+  // get output column types
+  std::vector<substrait::Type> column_types;
+  std::vector<ColumnHint> col_hints;
+  std::vector<std::string> col_names;
+  for (size_t i_target = 0; i_target < ra_exe_unit_ptr->target_exprs.size(); i_target++) {
+    col_names.push_back(std::to_string(i_target));
+    col_hints.push_back(Normal);
+    column_types.push_back(generator::getSubstraitType(
+        ra_exe_unit_ptr->target_exprs[i_target]->get_type_info()));
+  }
+  CiderTableSchema schema(col_names, column_types, "", col_hints);
+
   auto compile_result = cider_compile_module->compile(
-      ra_exe_unit_ptr.get(), &table_infos, compile_option, exe_option);
+      ra_exe_unit_ptr.get(), &table_infos, schema, compile_option, exe_option);
 
   CiderRuntimeModule cider_runtime_module(compile_result, compile_option, exe_option);
 
@@ -279,10 +291,6 @@ void runTest(const std::string& test_name,
 
   LOG(DEBUG1) << "---------------------------Execution "
                  "Success-----------------------------------";
-
-  auto iterator = cider_runtime_module.getGroupByAggHashTableIteratorAt(0);
-  auto runtime_state = iterator->getRuntimeState();
-  CHECK_EQ(runtime_state.getRowIndexNeedSpillVec().size(), spilled_entry_num);
 
   std::vector<SQLTypes> types(ra_exe_unit_ptr->target_exprs.size());
   for (size_t i = 0; i < types.size(); ++i) {

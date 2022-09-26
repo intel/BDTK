@@ -45,6 +45,7 @@
 #include "util/ChunkIter.h"
 #include "util/checked_alloc.h"
 
+#include <llvm/IR/Value.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
 #include <cstring>  // strcat()
@@ -757,21 +758,36 @@ bool GroupByAndAggregate::codegen(llvm::Value* filter_result,
     filter_false = filter_cfg.cond_false_;
 
     if (is_group_by) {
+      llvm::Value* old_total_matched_val{nullptr};
+      std::tuple<llvm::Value*, llvm::Value*> agg_out_ptr_w_idx;
       if (query_mem_desc.getQueryDescriptionType() == QueryDescriptionType::Projection &&
           !query_mem_desc.useStreamingTopN()) {
-        const auto crt_matched = get_arg_by_name(ROW_FUNC, "crt_matched");
-        LL_BUILDER.CreateStore(LL_INT(int32_t(1)), crt_matched);
-        auto total_matched_ptr = get_arg_by_name(ROW_FUNC, "total_matched");
-        llvm::Value* old_total_matched_val{nullptr};
-        old_total_matched_val = LL_BUILDER.CreateLoad(total_matched_ptr);
-        LL_BUILDER.CreateStore(
-            LL_BUILDER.CreateAdd(old_total_matched_val, LL_INT(int32_t(1))),
-            total_matched_ptr);
-        auto old_total_matched_ptr = get_arg_by_name(ROW_FUNC, "old_total_matched");
-        LL_BUILDER.CreateStore(old_total_matched_val, old_total_matched_ptr);
+        if (co.use_cider_data_format) {
+          auto total_matched_ptr = get_arg_by_name(ROW_FUNC, "total_matched");
+          old_total_matched_val = LL_BUILDER.CreateLoad(total_matched_ptr);
+          llvm::Value* old_total_matched_i64 =
+              executor_->cgen_state_->castToTypeIn(old_total_matched_val, 64);
+          LL_BUILDER.CreateStore(
+              LL_BUILDER.CreateAdd(old_total_matched_val, LL_INT(int32_t(1))),
+              total_matched_ptr);
+          agg_out_ptr_w_idx = {get_arg_by_name(ROW_FUNC, "group_by_buff"),
+                               old_total_matched_i64};
+        } else {
+          const auto crt_matched = get_arg_by_name(ROW_FUNC, "crt_matched");
+          LL_BUILDER.CreateStore(LL_INT(int32_t(1)), crt_matched);
+          auto total_matched_ptr = get_arg_by_name(ROW_FUNC, "total_matched");
+          old_total_matched_val = LL_BUILDER.CreateLoad(total_matched_ptr);
+          LL_BUILDER.CreateStore(
+              LL_BUILDER.CreateAdd(old_total_matched_val, LL_INT(int32_t(1))),
+              total_matched_ptr);
+          auto old_total_matched_ptr = get_arg_by_name(ROW_FUNC, "old_total_matched");
+          LL_BUILDER.CreateStore(old_total_matched_val, old_total_matched_ptr);
+          agg_out_ptr_w_idx = codegenGroupBy(query_mem_desc, co, filter_cfg);
+        }
+      } else {
+        agg_out_ptr_w_idx = codegenGroupBy(query_mem_desc, co, filter_cfg);
       }
 
-      auto agg_out_ptr_w_idx = codegenGroupBy(query_mem_desc, co, filter_cfg);
       auto varlen_output_buffer = codegenVarlenOutputBuffer(query_mem_desc);
       if (query_mem_desc.usesGetGroupValueFast() ||
           query_mem_desc.getQueryDescriptionType() ==
