@@ -40,25 +40,6 @@ void CiderTestBase::assertQuery(const std::string& sql,
   EXPECT_TRUE(CiderBatchChecker::checkEq(duck_res_batch, cider_res_batch, ignore_order));
 }
 
-void CiderTestBase::assertQueryRowEqual(const std::string& sql,
-                                        const std::string& json_file_or_sql,
-                                        const bool ignore_order) {
-  auto duck_res = duckDbQueryRunner_.runSql(sql);
-  auto duck_res_batch = DuckDbResultConvertor::fetchDataToCiderBatch(duck_res);
-
-  // By default, SQL statement is used to generate Substrait plan through Isthmus.
-  // However, in some cases, the conversion result doesn't meet our expectations.
-  // For example, for `between and` case, Isthmus will translate it into `>=` and `<=`,
-  // rather than `between` function.
-  // Meanwhile Some querie with same meaning have different expressions in duckdb and
-  // cider As a result, in above cases, we need feed a json file, which is delivered by
-  // Velox and will be used to generate Substrait plan, or a another sql in cider format.
-  auto cider_input = json_file_or_sql.size() ? json_file_or_sql : sql;
-  auto cider_res_batch = std::make_shared<CiderBatch>(
-      ciderQueryRunner_.runQueryOneBatch(cider_input, input_[0]));
-  EXPECT_TRUE(CiderBatchChecker::checkEq(duck_res_batch, cider_res_batch, ignore_order));
-}
-
 void CiderTestBase::assertQuery(const std::string& sql,
                                 const std::shared_ptr<CiderBatch> expected_batch,
                                 const bool ignore_order) {
