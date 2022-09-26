@@ -46,6 +46,7 @@ class SimpleAggExtractor : public CiderAggTargetColExtractor {
                                   : hashtable->getTargetNullVectorOffset();
     index_in_null_vector_ =
         colInfo.is_key ? col_index_ : col_index_ - hashtable->getKeyColNum();
+    null_ = !colInfo.sql_type_info.get_notnull();
   }
 
   void extract(const std::vector<const int8_t*>& rowAddrs, int8_t* outAddrs) override {
@@ -65,7 +66,7 @@ class SimpleAggExtractor : public CiderAggTargetColExtractor {
 
     CHECK(scalarOutput->resizeBatch(rowNum, true));
     TT* buffer = scalarOutput->getMutableRawData();
-    uint8_t* nulls = scalarOutput->getMutableNulls();
+    uint8_t* nulls = null_ ? scalarOutput->getMutableNulls() : nullptr;
 
     if (nulls) {
       int64_t null_count = 0;
@@ -148,6 +149,7 @@ class AVGAggExtractor : public CiderAggTargetColExtractor {
 
     sum_offset_ = sumColInfo.slot_offset;
     count_offset_ = countColInfo.slot_offset;
+    null_ = !sumColInfo.sql_type_info.get_notnull();
   }
 
   void extract(const std::vector<const int8_t*>& rowAddrs, int8_t* outAddr) override {
@@ -169,7 +171,7 @@ class AVGAggExtractor : public CiderAggTargetColExtractor {
 
     CHECK(scalarOutput->resizeBatch(rowNum, true));
     AVGT* buffer = scalarOutput->getMutableRawData();
-    uint8_t* nulls = scalarOutput->getMutableNulls();
+    uint8_t* nulls = null_ ? scalarOutput->getMutableNulls() : nullptr;
 
     if (nulls) {
       int64_t null_count = 0;

@@ -1,0 +1,131 @@
+{
+    "extensionUris": [
+        {
+            "extensionUriAnchor": 1,
+            "uri": "/functions_boolean.yaml"
+        },
+        {
+            "extensionUriAnchor": 2,
+            "uri": "/functions_datetime.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 0,
+                "name": "between:date_date_date"
+            }
+        }
+    ],
+    "relations": [
+        {
+            "root": {
+                "input": {
+                    "project": {
+                        "common": {
+                            "emit": {
+                                "outputMapping": [
+                                    1
+                                ]
+                            }
+                        },
+                        "input": {
+                            "filter": {
+                                "common": {
+                                    "direct": {}
+                                },
+                                "input": {
+                                    "read": {
+                                        "common": {
+                                            "direct": {}
+                                        },
+                                        "baseSchema": {
+                                            "names": [
+                                                "C0"
+                                            ],
+                                            "struct": {
+                                                "types": [
+                                                    {
+                                                        "date": {
+                                                            "typeVariationReference": 0,
+                                                            "nullability": "NULLABILITY_NULLABLE"
+                                                        }
+                                                    }
+                                                ],
+                                                "typeVariationReference": 0,
+                                                "nullability": "NULLABILITY_REQUIRED"
+                                            }
+                                        },
+                                        "namedTable": {
+                                            "names": [
+                                                "TMP"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "condition": {
+                                    "scalar_function": {
+                                        "function_reference": 0,
+                                        "arguments": [
+                                            {
+                                                "value": {
+                                                    "selection": {
+                                                        "direct_reference": {
+                                                            "struct_field": {
+                                                                "field": 0
+                                                            }
+                                                        },
+                                                        "root_reference": {}
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "value": {
+                                                    "literal": {
+                                                        "nullable": false,
+                                                        "date": 31
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "value": {
+                                                    "literal": {
+                                                        "nullable": false,
+                                                        "date": 59
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "output_type": {
+                                            "bool": {
+                                                "type_variation_reference": 0,
+                                                "nullability": "NULLABILITY_REQUIRED"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "expressions": [
+                            {
+                                "selection": {
+                                    "directReference": {
+                                        "structField": {
+                                            "field": 0
+                                        }
+                                    },
+                                    "rootReference": {}
+                                }
+                            }
+                        ]
+                    }
+                },
+                "names": [
+                    "C0"
+                ]
+            }
+        }
+    ],
+    "expectedTypeUrls": []
+}

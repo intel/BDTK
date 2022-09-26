@@ -54,10 +54,10 @@ COPY ./scripts-cider /scripts-cider
 
 RUN pushd scripts-cider && \
     sed -i 's/sudo //g' common-functions.sh && \
-    sed -i 's/sudo //g' mapd-deps-ubuntu.sh && \
-    sed -i '/git \\/d' mapd-deps-ubuntu.sh && \
-    sed -i 's/install_folly/# install_folly/g' mapd-deps-ubuntu.sh && \
-    ./mapd-deps-ubuntu.sh --nocuda && \
+    sed -i 's/sudo //g' cider-deps-ubuntu.sh && \
+    sed -i '/git \\/d' cider-deps-ubuntu.sh && \
+    sed -i 's/install_folly/# install_folly/g' cider-deps-ubuntu.sh && \
+    ./cider-deps-ubuntu.sh --nocuda && \
     popd && \
     rm -rf /scripts-cider && \
     rm -rf /var/lib/apt/lists/*

@@ -21,13 +21,13 @@
 
 #define CIDERBATCH_WITH_ARROW
 
+#include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
-
-#include "include/cider/batch/CiderBatch.h"
-#include "include/cider/batch/CiderBatchUtils.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "include/cider/batch/StructBatch.h"
+#include "cider/CiderException.h"
+#include "cider/batch/CiderBatch.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 
 namespace CiderBatchUtils {
 void freeArrowArray(ArrowArray* ptr) {
@@ -142,8 +142,8 @@ int64_t getBufferNum(const ArrowSchema* schema) {
           return 1;
       }
     default:
-      throw std::runtime_error(std::string("Unsupported data type to CiderBatch: ") +
-                               type);
+      CIDER_THROW(CiderException,
+                  std::string("Unsupported data type to CiderBatch: ") + type);
   }
 }
 
@@ -173,8 +173,8 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
           return kSTRUCT;
       }
     default:
-      throw std::runtime_error(std::string("Unsupported data type to CiderBatch: ") +
-                               format);
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported data type to CiderBatch: ") + format);
   }
 }
 
@@ -197,8 +197,9 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
     case kSTRUCT:
       return "+s";
     default:
-      throw std::runtime_error(std::string("Unsupported to convert type ") +
-                               toString(type) + "to Arrow type.");
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported to convert type ") + toString(type) +
+                      "to Arrow type.");
   }
 }
 
@@ -213,7 +214,6 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
 
         CiderArrowSchemaBufferHolder* holder =
             new CiderArrowSchemaBufferHolder(info.getChildrenNum(),
-                                             !info.get_notnull(),
                                              false);  // TODO: Dictionary support is TBD;
         schema->children = holder->getChildrenPtrs();
         schema->dictionary = holder->getDictPtr();
@@ -230,7 +230,9 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
   return root_schema;
 }
 
-std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema, ArrowArray* array) {
+std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowSchema* schema,
+                                             ArrowArray* array) {
   CHECK(schema);
   CHECK(schema->release);
 
@@ -238,29 +240,29 @@ std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema, ArrowArray* ar
   switch (format[0]) {
     // Scalar Types
     case 'b':
-      return ScalarBatch<bool>::Create(schema, array);
+      return ScalarBatch<bool>::Create(schema, allocator, array);
     case 'c':
-      return ScalarBatch<int8_t>::Create(schema, array);
+      return ScalarBatch<int8_t>::Create(schema, allocator, array);
     case 's':
-      return ScalarBatch<int16_t>::Create(schema, array);
+      return ScalarBatch<int16_t>::Create(schema, allocator, array);
     case 'i':
-      return ScalarBatch<int32_t>::Create(schema, array);
+      return ScalarBatch<int32_t>::Create(schema, allocator, array);
     case 'l':
-      return ScalarBatch<int64_t>::Create(schema, array);
+      return ScalarBatch<int64_t>::Create(schema, allocator, array);
     case 'f':
-      return ScalarBatch<float>::Create(schema, array);
+      return ScalarBatch<float>::Create(schema, allocator, array);
     case 'g':
-      return ScalarBatch<double>::Create(schema, array);
+      return ScalarBatch<double>::Create(schema, allocator, array);
     case '+':
       // Complex Types
       switch (format[1]) {
         // Struct Type
         case 's':
-          return StructBatch::Create(schema, array);
+          return StructBatch::Create(schema, allocator, array);
       }
     default:
-      throw std::runtime_error(
-          std::string("Unsupported data type to create CiderBatch: ") + format);
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported data type to create CiderBatch: ") + format);
   }
 }
 }  // namespace CiderBatchUtils

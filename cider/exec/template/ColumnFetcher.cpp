@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "exec/template/ErrorHandling.h"
+#include "cider/CiderException.h"
 #include "exec/template/Execute.h"
 #include "type/data/sqltypes.h"
 #include "util/Intervals.h"
@@ -133,7 +133,9 @@ JoinColumn ColumnFetcher::makeJoinColumn(
   for (auto& frag : fragments) {
     if (g_enable_non_kernel_time_query_interrupt &&
         executor->checkNonKernelTimeInterrupted()) {
-      throw QueryExecutionError(Executor::ERR_INTERRUPTED);
+      CIDER_THROW(CiderRuntimeException,
+                  fmt::format("Query execution failed with error code {}",
+                              std::to_string(Executor::ERR_INTERRUPTED)));
     }
     auto [col_buff, elem_count] = getOneColumnFragment(
         executor,

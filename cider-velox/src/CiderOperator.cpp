@@ -45,15 +45,15 @@ CiderOperator::CiderOperator(int32_t operatorId,
                "CiderOp")
     , planNode_(ciderPlanNode) {
   // Set up exec option and compilation option
+  auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
   if (!ciderPlanNode->isKindOf(CiderPlanNodeKind::kJoin)) {
     const auto plan = ciderPlanNode->getSubstraitPlan();
     auto exec_option = CiderExecutionOption::defaults();
     auto compile_option = CiderCompilationOption::defaults();
 
-    ciderCompileModule_ = CiderCompileModule::Make();
+    ciderCompileModule_ = CiderCompileModule::Make(allocator);
     auto ciderCompileResult =
         ciderCompileModule_->compile(plan, compile_option, exec_option);
-    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
         ciderCompileResult, compile_option, exec_option, allocator);
     outputSchema_ = std::make_shared<CiderTableSchema>(
@@ -67,15 +67,11 @@ std::unique_ptr<CiderOperator> CiderOperator::Make(
     int32_t operatorId,
     exec::DriverCtx* driverCtx,
     const std::shared_ptr<const CiderPlanNode>& ciderPlanNode) {
-  auto isStateful = ciderPlanNode->isKindOf(CiderPlanNodeKind::kAggregation);
+  bool isStateful = ciderPlanNode->isKindOf(CiderPlanNodeKind::kAggregation);
   if (isStateful) {
-    auto ciderOperator = std::unique_ptr<CiderOperator>(
-        new CiderStatefulOperator(operatorId, driverCtx, ciderPlanNode));
-    return std::move(ciderOperator);
+    return std::make_unique<CiderStatefulOperator>(operatorId, driverCtx, ciderPlanNode);
   } else {
-    auto ciderOperator = std::unique_ptr<CiderOperator>(
-        new CiderStatelessOperator(operatorId, driverCtx, ciderPlanNode));
-    return std::move(ciderOperator);
+    return std::make_unique<CiderStatelessOperator>(operatorId, driverCtx, ciderPlanNode);
   }
 }
 
@@ -94,8 +90,8 @@ void CiderOperator::addInput(RowVectorPtr input) {
   }
 
   input_ = std::move(input);
-  auto inBatch =
-      dataConvertor_->convertToCider(input_, input_->size(), &convertorInternalCounter);
+  auto inBatch = dataConvertor_->convertToCider(
+      input_, input_->size(), &convertorInternalCounter, operatorCtx_->pool());
   ciderRuntimeModule_->processNextBatch(inBatch);
 }
 
@@ -121,18 +117,20 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
       buildSideEmpty_ = true;
     }
 
-    ciderCompileModule_ = CiderCompileModule::Make();
+    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
+    ciderCompileModule_ = CiderCompileModule::Make(allocator);
 
     // TODO: add vector<RowVectorPtr> -> CiderBatch converter
-    auto buildBatch = dataConvertor_->convertToCider(
-        buildData_->data()[0], buildData_->data()[0]->size(), &convertorInternalCounter);
+    auto buildBatch = dataConvertor_->convertToCider(buildData_->data()[0],
+                                                     buildData_->data()[0]->size(),
+                                                     &convertorInternalCounter,
+                                                     operatorCtx_->pool());
 
     ciderCompileModule_->feedBuildTable(std::move(buildBatch));
     auto compileResult = ciderCompileModule_->compile(planNode_->getSubstraitPlan());
 
     auto compile_option = CiderCompilationOption::defaults();
     auto exec_option = CiderExecutionOption::defaults();
-    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
         compileResult, compile_option, exec_option, allocator);
 

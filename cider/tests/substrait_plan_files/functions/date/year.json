@@ -7,7 +7,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "year:req_date"
+        "name": "year:date"
       }
     }],
     "relations": [{

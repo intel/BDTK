@@ -31,31 +31,21 @@ template <typename T>
 class ScalarBatch final : public CiderBatch {
  public:
   static std::unique_ptr<ScalarBatch<T>> Create(ArrowSchema* schema,
+                                                std::shared_ptr<CiderAllocator> allocator,
                                                 ArrowArray* array = nullptr) {
-    return array ? std::make_unique<ScalarBatch<T>>(schema, array)
-                 : std::make_unique<ScalarBatch<T>>(schema);
+    return array ? std::make_unique<ScalarBatch<T>>(schema, array, allocator)
+                 : std::make_unique<ScalarBatch<T>>(schema, allocator);
   }
 
-  explicit ScalarBatch(ArrowSchema* schema) : CiderBatch(schema) { checkArrowEntries(); }
-  explicit ScalarBatch(ArrowSchema* schema, ArrowArray* array)
-      : CiderBatch(schema, array) {
+  explicit ScalarBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, allocator) {
     checkArrowEntries();
   }
-
-  bool resizeBatch(int64_t size, bool default_not_null = false) override {
-    CHECK(!isMoved());
-    if (!permitBufferAllocate()) {
-      return false;
-    }
-
-    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
-
-    array_holder->allocBuffer(1, sizeof(T) * size);
-    bool ret = resizeNullVector(0, size, default_not_null);
-
-    setLength(size);
-
-    return ret;
+  explicit ScalarBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, array, allocator) {
+    checkArrowEntries();
   }
 
   T* getMutableRawData() {
@@ -66,6 +56,21 @@ class ScalarBatch final : public CiderBatch {
   const T* getRawData() const {
     CHECK(!isMoved());
     return reinterpret_cast<const T*>(getBuffersPtr()[1]);
+  }
+
+ protected:
+  bool resizeData(int64_t size) override {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+
+    array_holder->allocBuffer(1, sizeof(T) * size);
+    setLength(size);
+
+    return true;
   }
 
  private:

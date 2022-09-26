@@ -27,6 +27,7 @@
 #include <type_traits>
 
 /* `../` is required for UDFCompiler */
+#include "cider/CiderException.h"
 #include "type/data/InlineNullValues.h"
 #include "type/data/funcannotations.h"
 
@@ -115,7 +116,7 @@ struct Column {
 
   T& operator[](const unsigned int index) const {
     if (index >= size_) {
-      throw std::runtime_error("column buffer index is out of range");
+      CIDER_THROW(CiderCompileException, "column buffer index is out of range");
     }
     return ptr_[index];
   }
@@ -127,7 +128,8 @@ struct Column {
     if (size() == other.size()) {
       memcpy(ptr_, &other[0], other.size() * sizeof(T));
     } else {
-      throw std::runtime_error("cannot copy assign columns with different sizes");
+      CIDER_THROW(CiderCompileException,
+                  "cannot copy assign columns with different sizes");
     }
     return *this;
   }

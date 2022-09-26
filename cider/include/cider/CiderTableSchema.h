@@ -114,7 +114,6 @@ class CiderTableSchema {
         return 16;  // sizeof(CiderByteArray)
       default:
         // TODO: handle unsupport type
-        // throw std::runtime_error("not supported type: " + type_kind);
         return 8;
     }
   }

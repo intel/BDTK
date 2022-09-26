@@ -105,7 +105,7 @@ class MockTable {
     }
     auto type = SQLTypeInfo(kSTRUCT, false, children_types);
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, std::make_shared<CiderDefaultAllocator>());
     CHECK(batch->resizeBatch(element_num_, true));
 
     for (size_t i = 0; i < col_names.size(); ++i) {
@@ -136,7 +136,7 @@ class MockTable {
           copyDataToScalarBatch<ScalarBatch<double>>(child.get(), data);
           break;
         default:
-          throw std::runtime_error("Unsupported type to generate StructBatch.");
+          CIDER_THROW(CiderCompileException, "Unsupported type to generate StructBatch.");
       }
     }
     return batch;
@@ -232,7 +232,8 @@ void runTest(const std::string& test_name,
   LOG(DEBUG1) << "----------------------Test case: " + test_name +
                      " --------------------------------------";
 
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   auto exe_option = CiderExecutionOption::defaults();
   auto compile_option = CiderCompilationOption::defaults();
 
@@ -244,7 +245,6 @@ void runTest(const std::string& test_name,
 
   std::vector<InputTableInfo> table_infos = {table_ptr->getInputTableInfo()};
 
-  // FIXME: output table schema not set
   auto compile_result = cider_compile_module->compile(
       ra_exe_unit_ptr.get(), &table_infos, compile_option, exe_option);
 
@@ -260,19 +260,17 @@ void runTest(const std::string& test_name,
   for (size_t i = 0; i < input_batch->getChildrenNum(); ++i) {
     auto child = input_batch->getChildAt(i);
     const uint8_t* given_nulls = nulls[i].as<uint8_t>();
-    if (child->isNullable()) {
-      uint8_t* child_nulls = child->getMutableNulls();
-      int64_t null_count = 0;
-      for (size_t j = 0; j < child->getLength(); ++j) {
-        if (CiderBitUtils::isBitSetAt(given_nulls, j)) {
-          CiderBitUtils::setBitAt(child_nulls, j);
-        } else {
-          CiderBitUtils::clearBitAt(child_nulls, j);
-          ++null_count;
-        }
+    uint8_t* child_nulls = child->getMutableNulls();
+    int64_t null_count = 0;
+    for (size_t j = 0; j < child->getLength(); ++j) {
+      if (CiderBitUtils::isBitSetAt(given_nulls, j)) {
+        CiderBitUtils::setBitAt(child_nulls, j);
+      } else {
+        CiderBitUtils::clearBitAt(child_nulls, j);
+        ++null_count;
       }
-      child->setNullCount(null_count);
     }
+    child->setNullCount(null_count);
   }
 
   for (size_t i = 0; i < 10; ++i) {

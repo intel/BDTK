@@ -97,7 +97,7 @@ int64_t convert_decimal_value_to_scale_internal(const int64_t decimal_value,
   if (decimal_value == 0) {
     return 0;
   }
-  throw std::runtime_error("Overflow in DECIMAL-to-DECIMAL conversion.");
+  CIDER_THROW(CiderCompileException, "Overflow in DECIMAL-to-DECIMAL conversion.");
 }
 }  // namespace
 
@@ -195,21 +195,23 @@ T parseFloatAsInteger(std::string_view s, SQLTypeInfo const& ti) {
   }
   U value = strtold(str_begin, &str_end);
   if (str_begin == str_end) {
-    throw std::runtime_error("Unable to parse " + std::string(s) + " to " +
-                             ti.get_type_name());
+    CIDER_THROW(CiderCompileException,
+                "Unable to parse " + std::string(s) + " to " + ti.get_type_name());
   } else if (str_begin + s.size() != str_end) {
-    throw std::runtime_error(std::string("Unexpected character \"") + *str_end +
-                             "\" encountered in " + ti.get_type_name() + " value " +
-                             std::string(s));
+    CIDER_THROW(CiderCompileException,
+                std::string("Unexpected character \"") + *str_end + "\" encountered in " +
+                    ti.get_type_name() + " value " + std::string(s));
   }
   value = std::round(value);
   if (!std::isfinite(value)) {
-    throw std::runtime_error("Invalid conversion from \"" + std::string(s) + "\" to " +
-                             ti.get_type_name());
+    CIDER_THROW(
+        CiderCompileException,
+        "Invalid conversion from \"" + std::string(s) + "\" to " + ti.get_type_name());
   } else if (value < static_cast<U>(std::numeric_limits<T>::min()) ||
              static_cast<U>(std::numeric_limits<T>::max()) < value) {
-    throw std::runtime_error("Integer " + std::string(s) + " is out of range for " +
-                             ti.get_type_name());
+    CIDER_THROW(
+        CiderCompileException,
+        "Integer " + std::string(s) + " is out of range for " + ti.get_type_name());
   }
   return static_cast<T>(value);
 }
@@ -230,45 +232,103 @@ T parseInteger(std::string_view s, SQLTypeInfo const& ti) {
     }
   } else if (error_code != std::errc()) {
     if (error_code == std::errc::result_out_of_range) {
-      throw std::runtime_error("Integer " + std::string(s) + " is out of range for " +
-                               ti.get_type_name());
+      CIDER_THROW(
+          CiderCompileException,
+          "Integer " + std::string(s) + " is out of range for " + ti.get_type_name());
     }
-    throw std::runtime_error("Invalid conversion from \"" + std::string(s) + "\" to " +
-                             ti.get_type_name());
+    CIDER_THROW(
+        CiderCompileException,
+        "Invalid conversion from \"" + std::string(s) + "\" to " + ti.get_type_name());
   }
   // Bounds checking based on SQLTypeInfo.
   unsigned const fieldsize =
       ti.get_compression() == kENCODING_FIXED ? ti.get_comp_param() : 8 * sizeof(T);
   if (fieldsize < 8 * sizeof(T)) {
     if (maxValue<T>(fieldsize) < retval) {
-      throw std::runtime_error("Integer " + std::string(s) +
-                               " exceeds maximum value for " + toString(ti, fieldsize));
+      CIDER_THROW(CiderCompileException,
+                  "Integer " + std::string(s) + " exceeds maximum value for " +
+                      toString(ti, fieldsize));
     } else if (ti.get_notnull()) {
       if (retval < minValue<T>(fieldsize)) {
-        throw std::runtime_error("Integer " + std::string(s) +
-                                 " exceeds minimum value for " + toString(ti, fieldsize));
+        CIDER_THROW(CiderCompileException,
+                    "Integer " + std::string(s) + " exceeds minimum value for " +
+                        toString(ti, fieldsize));
       }
     } else {
       if (retval <= minValue<T>(fieldsize)) {
-        throw std::runtime_error("Integer " + std::string(s) +
-                                 " exceeds minimum value for nullable " +
-                                 toString(ti, fieldsize));
+        CIDER_THROW(CiderCompileException,
+                    "Integer " + std::string(s) + " exceeds minimum value for nullable " +
+                        toString(ti, fieldsize));
       }
     }
   } else if (!ti.get_notnull() && retval == std::numeric_limits<T>::min()) {
-    throw std::runtime_error("Integer " + std::string(s) +
-                             " exceeds minimum value for nullable " +
-                             toString(ti, fieldsize));
+    CIDER_THROW(CiderCompileException,
+                "Integer " + std::string(s) + " exceeds minimum value for nullable " +
+                    toString(ti, fieldsize));
   }
   return retval;
 }
 
+inline SQLTypes get_type_for_datum(const SQLTypeInfo& ti) {
+  SQLTypes type;
+  if (ti.is_decimal()) {
+    type = decimal_to_int_type(ti);
+  } else if (ti.is_dict_encoded_string()) {
+    // type = string_dict_to_int_type(ti);
+    throw std::runtime_error("Unsupported encoded string.");
+  } else {
+    type = ti.get_type();
+  }
+  return type;
+}
+
 }  // namespace
+
+Datum NullDatum(const SQLTypeInfo& ti) {
+  Datum d;
+  const auto type = get_type_for_datum(ti);
+  switch (type) {
+    case kBOOLEAN:
+      d.boolval = inline_fixed_encoding_null_val(ti);
+      break;
+    case kBIGINT:
+      d.bigintval = inline_fixed_encoding_null_val(ti);
+      break;
+    case kINT:
+      d.intval = inline_fixed_encoding_null_val(ti);
+      break;
+    case kSMALLINT:
+      d.smallintval = inline_fixed_encoding_null_val(ti);
+      break;
+    case kTINYINT:
+      d.tinyintval = inline_fixed_encoding_null_val(ti);
+      break;
+    case kFLOAT:
+      d.floatval = NULL_FLOAT;
+      break;
+    case kDOUBLE:
+      d.doubleval = NULL_DOUBLE;
+      break;
+    case kTIME:
+    case kTIMESTAMP:
+    case kDATE:
+      d.bigintval = inline_fixed_encoding_null_val(ti);
+      break;
+    default:
+      throw std::runtime_error("Internal error: invalid type in NullDatum.");
+  }
+  return d;
+}
+
+bool IsNullDatum(const Datum datum, const SQLTypeInfo& ti) {
+  const Datum null_datum = NullDatum(ti);
+  return DatumEqual(datum, null_datum, ti);
+}
 
 /*
  * @brief convert string to a datum
  */
-Datum StringToDatum(std::string_view s, SQLTypeInfo& ti) {
+Datum StringToDatum(const std::string_view s, SQLTypeInfo& ti) {
   Datum d;
   try {
     switch (ti.get_type()) {
@@ -283,7 +343,8 @@ Datum StringToDatum(std::string_view s, SQLTypeInfo& ti) {
                    to_upper(std::string(s)) == "FALSE") {
           d.boolval = false;
         } else {
-          throw std::runtime_error("Invalid string for boolean " + std::string(s));
+          CIDER_THROW(CiderCompileException,
+                      "Invalid string for boolean " + std::string(s));
         }
         break;
       case kNUMERIC:
@@ -318,14 +379,17 @@ Datum StringToDatum(std::string_view s, SQLTypeInfo& ti) {
         d.bigintval = dateTimeParse<kDATE>(s, ti.get_dimension());
         break;
       default:
-        throw std::runtime_error("Internal error: invalid type in StringToDatum: " +
-                                 ti.get_type_name());
+        CIDER_THROW(
+            CiderCompileException,
+            "Internal error: invalid type in StringToDatum: " + ti.get_type_name());
     }
   } catch (const std::invalid_argument&) {
-    throw std::runtime_error("Invalid conversion from string to " + ti.get_type_name());
+    CIDER_THROW(CiderCompileException,
+                "Invalid conversion from string to " + ti.get_type_name());
   } catch (const std::out_of_range&) {
-    throw std::runtime_error("Got out of range error during conversion from string to " +
-                             ti.get_type_name());
+    CIDER_THROW(
+        CiderCompileException,
+        "Got out of range error during conversion from string to " + ti.get_type_name());
   }
   return d;
 }
@@ -433,8 +497,9 @@ std::string DatumToString(Datum d, const SQLTypeInfo& ti) {
       }
       return *d.stringval;
     default:
-      throw std::runtime_error("Internal error: invalid type " + ti.get_type_name() +
-                               " in DatumToString.");
+      CIDER_THROW(
+          CiderCompileException,
+          "Internal error: invalid type " + ti.get_type_name() + " in DatumToString.");
   }
   return "";
 }

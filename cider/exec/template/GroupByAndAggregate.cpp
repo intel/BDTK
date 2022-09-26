@@ -323,21 +323,7 @@ GroupByAndAggregate::GroupByAndAggregate(
     , ra_exe_unit_(ra_exe_unit)
     , query_infos_(query_infos)
     , row_set_mem_owner_(row_set_mem_owner)
-    , group_cardinality_estimation_(group_cardinality_estimation) {
-  for (const auto& groupby_expr : ra_exe_unit_.groupby_exprs) {
-    if (!groupby_expr) {
-      continue;
-    }
-    const auto& groupby_ti = groupby_expr->get_type_info();
-    if (groupby_ti.is_bytes()) {
-      throw std::runtime_error(
-          "Cannot group by string columns which are not dictionary encoded.");
-    }
-    if (groupby_ti.is_buffer()) {
-      throw std::runtime_error("Group by buffer not supported");
-    }
-  }
-}
+    , group_cardinality_estimation_(group_cardinality_estimation) {}
 
 int64_t GroupByAndAggregate::getShardedTopBucket(const ColRangeInfo& col_range_info,
                                                  const size_t shard_count) const {
@@ -572,11 +558,12 @@ CountDistinctDescriptors init_count_distinct_descriptors(
       const auto agg_expr = static_cast<const Analyzer::AggExpr*>(target_expr);
       const auto& arg_ti = agg_expr->get_arg()->get_type_info();
       if (arg_ti.is_bytes()) {
-        throw std::runtime_error(
-            "Strings must be dictionary-encoded for COUNT(DISTINCT).");
+        CIDER_THROW(CiderCompileException,
+                    "Strings must be dictionary-encoded for COUNT(DISTINCT).");
       }
       if (agg_info.agg_kind == kAPPROX_COUNT_DISTINCT && arg_ti.is_buffer()) {
-        throw std::runtime_error("APPROX_COUNT_DISTINCT on arrays not supported yet");
+        CIDER_THROW(CiderCompileException,
+                    "APPROX_COUNT_DISTINCT on arrays not supported yet");
       }
       ColRangeInfo no_range_info{QueryDescriptionType::Projection, 0, 0, 0, false};
       auto arg_range_info =
@@ -647,7 +634,7 @@ CountDistinctDescriptors init_count_distinct_descriptors(
 
       if (g_enable_watchdog && !(arg_range_info.isEmpty()) &&
           count_distinct_impl_type == CountDistinctImplType::HashSet) {
-        throw WatchdogException("Cannot use a fast path for COUNT distinct");
+        CIDER_THROW(CiderWatchdogException, "Cannot use a fast path for COUNT distinct");
       }
       const auto sub_bitmap_count = 1;
       count_distinct_descriptors.emplace_back(
@@ -730,9 +717,9 @@ std::unique_ptr<QueryMemoryDescriptor> GroupByAndAggregate::initQueryMemoryDescr
         (col_range_info.max - col_range_info.min) /
                 std::max(col_range_info.bucket, int64_t(1)) >
             130000000))) {
-    throw WatchdogException("Query would use too much memory");
+    CIDER_THROW(CiderWatchdogException, "Query would use too much memory");
   }
-  try {
+
     return QueryMemoryDescriptor::init(executor_,
                                        ra_exe_unit_,
                                        query_infos_,
@@ -747,23 +734,6 @@ std::unique_ptr<QueryMemoryDescriptor> GroupByAndAggregate::initQueryMemoryDescr
                                        output_columnar_hint,
                                        /*streaming_top_n_hint=*/true,
                                        co);
-  } catch (const StreamingTopNOOM& e) {
-    LOG(WARNING) << e.what() << " Disabling Streaming Top N.";
-    return QueryMemoryDescriptor::init(executor_,
-                                       ra_exe_unit_,
-                                       query_infos_,
-                                       col_range_info,
-                                       keyless_info,
-                                       allow_multifrag,
-                                       crt_min_byte_width,
-                                       shard_count,
-                                       max_groups_buffer_entry_count,
-                                       count_distinct_descriptors,
-                                       must_use_baseline_sort,
-                                       output_columnar_hint,
-                                       /*streaming_top_n_hint=*/false,
-                                       co);
-  }
 }
 
 bool GroupByAndAggregate::codegen(llvm::Value* filter_result,
@@ -1690,7 +1660,8 @@ std::unique_ptr<CodegenColValues> GroupByAndAggregate::codegenAggArgCider(
 
     // TBD: Array type support.
     if (target_ti.is_array()) {
-      throw std::runtime_error("codegenAggArgCider is not suuport array type now.");
+      CIDER_THROW(CiderCompileException,
+                  "codegenAggArgCider is not suuport array type now.");
     }
 
     return code_generator.codegen(agg_expr->get_arg(), co, true);
@@ -1744,9 +1715,9 @@ std::vector<llvm::Value*> GroupByAndAggregate::codegenAggArg(
                  executor_->cgen_state_->llInt(log2_bytes(elem_ti.get_logical_size()))})};
       } else {
         if (agg_expr) {
-          throw std::runtime_error(
-              "Using array[] operator as argument to an aggregate operator is not "
-              "supported");
+          CIDER_THROW(CiderCompileException,
+                      "Using array[] operator as argument to an aggregate operator is "
+                      "not supported");
         }
         CHECK(func_expr || arr_expr);
         if (dynamic_cast<const Analyzer::FunctionOper*>(target_expr)) {

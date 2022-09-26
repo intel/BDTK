@@ -53,7 +53,7 @@ extern bool g_null_div_by_zero;
           std::feclearexcept(FE_UNDERFLOW);                                        \
           auto result = x op y;                                                    \
           if (std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) { \
-            throw std::runtime_error("overflow / underflow");                      \
+            CIDER_THROW(CiderCompileException, "overflow / underflow");            \
           }                                                                        \
           return result;                                                           \
         });                                                                        \
@@ -63,7 +63,7 @@ extern bool g_null_div_by_zero;
           std::feclearexcept(FE_UNDERFLOW);                                        \
           auto result = x op y;                                                    \
           if (std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) { \
-            throw std::runtime_error("overflow / underflow");                      \
+            CIDER_THROW(CiderCompileException, "overflow / underflow");            \
           }                                                                        \
           return result;                                                           \
         });                                                                        \

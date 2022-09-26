@@ -24,6 +24,7 @@
 
 //#include "Logger/Logger.h"
 #include "StringOpInfo.h"
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "util/sqldefs.h"
 
@@ -44,7 +45,7 @@ namespace StringOps_Namespace {
 
 struct NullableStrType {
   NullableStrType(const std::string& str) : str(str), is_null(false) {}
-  NullableStrType(const std::string_view& sv) : str(sv), is_null(false) {}
+  NullableStrType(const std::string_view sv) : str(sv), is_null(false) {}
   NullableStrType() : is_null(true) {}
 
   std::pair<std::string, bool> toPair() const { return {str, is_null}; }
@@ -58,12 +59,37 @@ struct StringOp {
   StringOp(const SqlStringOpKind op_kind,
            const std::optional<std::string>& var_str_optional_literal)
       : op_kind_(op_kind)
+      , return_ti_(SQLTypeInfo(kTEXT))
       , has_var_str_literal_(var_str_optional_literal.has_value())
       , var_str_literal_(!var_str_optional_literal.has_value()
                              ? NullableStrType()
                              : NullableStrType(var_str_optional_literal.value())) {}
 
-  std::string opName() const { return ""; }
+  StringOp(const SqlStringOpKind op_kind,
+           const SQLTypeInfo& return_ti,
+           const std::optional<std::string>& var_str_optional_literal)
+      : op_kind_(op_kind)
+      , return_ti_(return_ti)
+      , has_var_str_literal_(var_str_optional_literal.has_value())
+      , var_str_literal_(!var_str_optional_literal.has_value()
+                             ? NullableStrType()
+                             : NullableStrType(var_str_optional_literal.value())) {}
+
+  virtual Datum numericEval(const std::string_view str) const {
+    UNREACHABLE() << "numericEval not allowed for this method";
+    // Make compiler happy
+    return NullDatum(SQLTypeInfo());
+  }
+
+  virtual Datum numericEval() const {
+    CHECK(hasVarStringLiteral());
+    if (var_str_literal_.is_null) {
+      return NullDatum(return_ti_);
+    }
+    return numericEval(var_str_literal_.str);
+  }
+
+  virtual const SQLTypeInfo& getReturnType() const { return return_ti_; }
 
   virtual NullableStrType operator()(std::string const&) const = 0;
 
@@ -91,8 +117,19 @@ struct StringOp {
                                   const bool supports_sub_matches);
 
   const SqlStringOpKind op_kind_;
+  const SQLTypeInfo return_ti_;
   const bool has_var_str_literal_{false};
   const NullableStrType var_str_literal_;
+};
+
+struct TryStringCast : public StringOp {
+ public:
+  TryStringCast(const SQLTypeInfo& return_ti,
+                const std::optional<std::string>& var_str_optional_literal)
+      : StringOp(SqlStringOpKind::TRY_STRING_CAST, return_ti, var_str_optional_literal) {}
+
+  NullableStrType operator()(const std::string& str) const override;
+  Datum numericEval(const std::string_view str) const override;
 };
 
 struct Lower : public StringOp {
@@ -141,7 +178,7 @@ struct Repeat : public StringOp {
       : StringOp(SqlStringOpKind::REPEAT, var_str_optional_literal)
       , n_(n >= 0 ? n : 0UL) {
     if (n < 0) {
-      throw std::runtime_error("Number of repeats must be >= 0");
+      CIDER_THROW(CiderCompileException, "Number of repeats must be >= 0");
     }
   }
 
@@ -394,6 +431,8 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
 std::pair<std::string, bool /* is null */> apply_string_op_to_literals(
     const StringOpInfo& string_op_info);
 
+Datum apply_numeric_op_to_literals(const StringOpInfo& string_op_info);
+
 class StringOps {
  public:
   StringOps() : string_ops_(genStringOpsFromOpInfos({})), num_ops_(0UL) {}
@@ -402,9 +441,11 @@ class StringOps {
       : string_ops_(genStringOpsFromOpInfos(string_op_infos))
       , num_ops_(string_op_infos.size()) {}
 
+  Datum numericEval(const std::string_view str) const;
+
   std::string operator()(const std::string& str) const;
 
-  std::string_view operator()(const std::string_view& sv, std::string& sv_storage) const;
+  std::string_view operator()(const std::string_view sv, std::string& sv_storage) const;
 
   size_t size() const { return num_ops_; }
 

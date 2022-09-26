@@ -33,6 +33,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "cider/CiderAllocator.h"
 
 namespace Analyzer {
 class Expr;
@@ -51,7 +52,8 @@ int64_t get_agg_initial_val(const SQLAgg agg,
 
 std::vector<int64_t> init_agg_val(const std::vector<Analyzer::Expr*>& targets,
                                   const std::list<std::shared_ptr<Analyzer::Expr>>& quals,
-                                  const QueryMemoryDescriptor& query_mem_desc);
+                                  const QueryMemoryDescriptor& query_mem_desc,
+                                  std::shared_ptr<CiderAllocator> allocator);
 
 std::vector<int64_t> init_agg_val_vec(
     const std::vector<Analyzer::Expr*>& targets,

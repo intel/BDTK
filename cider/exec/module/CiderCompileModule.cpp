@@ -88,9 +88,9 @@ CiderTableSchema CiderCompilationResult::getOutputCiderTableSchema() const {
 
 class CiderCompileModule::Impl {
  public:
-  Impl() {
+  explicit Impl(std::shared_ptr<CiderAllocator> allocator) {
     executor_ = Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID, nullptr, nullptr);
-    ciderStringDictionaryProxy_ = initStringDictionaryProxy();
+    ciderStringDictionaryProxy_ = initStringDictionaryProxy(allocator);
     executor_->setCiderStringDictionaryProxy(ciderStringDictionaryProxy_.get());
   }
   ~Impl() {}
@@ -107,7 +107,7 @@ class CiderCompileModule::Impl {
 
     // if this is a join query and don't feed a valid build table, throw exception
     if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0) {
-      throw std::runtime_error("Join query must feed a valid build table!");
+      CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
     }
 
     if (co.use_default_col_range) {
@@ -430,6 +430,7 @@ class CiderCompileModule::Impl {
       const std::vector<CiderTableSchema>& tableSchemas) {
     std::vector<InputTableInfo> query_infos;
     const int db_id = 100;
+    // Note that we only consider single join here, so use faked table id 100
     const int table_id = 100;
     // seems only this row num will be used for building join hash table only, so we set
     // row num to build table row num
@@ -441,7 +442,7 @@ class CiderCompileModule::Impl {
       Fragmenter_Namespace::FragmentInfo fi_0;
       fi_0.fragmentId = 0;
       fi_0.shadowNumTuples = row_num;
-      fi_0.physicalTableId = table_id + i;  // FIXME
+      fi_0.physicalTableId = table_id + i;
       fi_0.setPhysicalNumTuples(row_num);
 
       Fragmenter_Namespace::TableInfo ti_0;
@@ -455,11 +456,12 @@ class CiderCompileModule::Impl {
 
     return query_infos;
   }
-  std::shared_ptr<StringDictionaryProxy> initStringDictionaryProxy() {
+  std::shared_ptr<StringDictionaryProxy> initStringDictionaryProxy(
+      std::shared_ptr<CiderAllocator> allocator) {
     std::shared_ptr<StringDictionaryProxy> stringDictionaryProxy;
     const DictRef dict_ref(-1, 1);
     std::shared_ptr<StringDictionary> tsd =
-        std::make_shared<StringDictionary>(dict_ref, "", false, true);
+        std::make_shared<StringDictionary>(dict_ref, "", allocator, false, true);
     stringDictionaryProxy.reset(new StringDictionaryProxy(tsd, 0, 0));
 
     return stringDictionaryProxy;
@@ -478,14 +480,16 @@ class CiderCompileModule::Impl {
   }
 };
 
-CiderCompileModule::CiderCompileModule() {
-  impl_.reset(new Impl());
+CiderCompileModule::CiderCompileModule(std::shared_ptr<CiderAllocator> allocator) {
+  impl_.reset(new Impl(allocator));
 }
 
 CiderCompileModule::~CiderCompileModule() {}
 
-std::shared_ptr<CiderCompileModule> CiderCompileModule::Make() {
-  auto ciderCompileModule = std::shared_ptr<CiderCompileModule>(new CiderCompileModule());
+std::shared_ptr<CiderCompileModule> CiderCompileModule::Make(
+    std::shared_ptr<CiderAllocator> allocator) {
+  auto ciderCompileModule =
+      std::shared_ptr<CiderCompileModule>(new CiderCompileModule(allocator));
   return ciderCompileModule;
 }
 

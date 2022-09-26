@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#include "CiderPlanNode.h"
-
 #include <mutex>
 
 #include "CiderPlanNodeTranslator.h"
@@ -71,7 +69,7 @@ const bool CiderPlanNode::isKindOf(CiderPlanNodeKind kind) const {
       return false;
     }
     default:
-      throw std::runtime_error("Unsupported kind " + kindToString(kind));
+      VELOX_UNSUPPORTED("Unsupported kind " + kindToString(kind));
   }
 }
 

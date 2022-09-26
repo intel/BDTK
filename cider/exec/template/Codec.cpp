@@ -21,13 +21,13 @@
  */
 
 #include "Codec.h"
-#include "LLVMGlobalContext.h"
-#include "util/Logger.h"
-
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Value.h>
+#include "LLVMGlobalContext.h"
+#include "cider/CiderException.h"
+#include "util/Logger.h"
 
 llvm::CallInst* Decoder::extractBufferAt(llvm::Module* module,
                                          llvm::Value* byte_stream,
@@ -247,7 +247,8 @@ std::vector<llvm::Instruction*> FixedWidthSmallDate::codegenDecode(
     llvm::Module* module,
     llvm::Value* byte_stream,
     llvm::Value* pos) const {
-  throw std::runtime_error("FixedWidthSmallDate decoder is not fully supported.");
+  CIDER_THROW(CiderCompileException,
+              "FixedWidthSmallDate decoder is not fully supported.");
 
   auto& context = getGlobalLLVMContext();
 

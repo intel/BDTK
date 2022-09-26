@@ -27,6 +27,7 @@
 #include <numeric>
 #include <thread>
 
+#include "cider/CiderException.h"
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/Execute.h"
 #include "exec/template/ExpressionRewrite.h"
@@ -76,7 +77,8 @@ HashEntryInfo get_bucketized_hash_entry_info(SQLTypeInfo const& context_ti,
   // size_t is not big enough for maximum possible range.
   if (col_range.getIntMin() == std::numeric_limits<int64_t>::min() &&
       col_range.getIntMax() == std::numeric_limits<int64_t>::max()) {
-    throw TooManyHashEntries();
+    CIDER_THROW(CiderTooManyHashEntriesException,
+                "Hash tables with more than 2B entries not supported yet");
   }
 
   int64_t bucket_normalization =
@@ -110,15 +112,15 @@ std::shared_ptr<PerfectJoinHashTable> PerfectJoinHashTable::getInstance(
   auto col_range =
       getExpressionRange(ti.is_string() ? cols.second : inner_col, query_infos, executor);
   if (col_range.getType() == ExpressionRangeType::Invalid) {
-    throw HashJoinFail(
-        "Could not compute range for the expressions involved in the equijoin");
+    CIDER_THROW(CiderHashJoinException,
+                "Could not compute range for the expressions involved in the equijoin");
   }
   if (ti.is_string()) {
     // The nullable info must be the same as the source column.
     const auto source_col_range = getExpressionRange(inner_col, query_infos, executor);
     if (source_col_range.getType() == ExpressionRangeType::Invalid) {
-      throw HashJoinFail(
-          "Could not compute range for the expressions involved in the equijoin");
+      CIDER_THROW(CiderHashJoinException,
+                  "Could not compute range for the expressions involved in the equijoin");
     }
     if (source_col_range.getIntMin() > source_col_range.getIntMax()) {
       // If the inner column expression range is empty, use the inner col range
@@ -141,7 +143,8 @@ std::shared_ptr<PerfectJoinHashTable> PerfectJoinHashTable::getInstance(
   auto bucketized_entry_count = bucketized_entry_count_info.getNormalizedHashEntryCount();
 
   if (bucketized_entry_count > max_hash_entry_count) {
-    throw TooManyHashEntries();
+    CIDER_THROW(CiderTooManyHashEntriesException,
+                "Hash tables with more than 2B entries not supported yet");
   }
 
   // We don't want to build huge and very sparse tables
@@ -151,13 +154,14 @@ std::shared_ptr<PerfectJoinHashTable> PerfectJoinHashTable::getInstance(
         get_inner_query_info(inner_col->get_table_id(), query_infos).info;
     if (query_info.getNumTuplesUpperBound() * 100 <
         huge_join_hash_min_load_ * bucketized_entry_count) {
-      throw TooManyHashEntries();
+      CIDER_THROW(CiderTooManyHashEntriesException,
+                  "Hash tables with more than 2B entries not supported yet");
     }
   }
 
   if (qual_bin_oper->get_optype() == kBW_EQ &&
       col_range.getIntMax() >= std::numeric_limits<int64_t>::max()) {
-    throw HashJoinFail("Cannot translate null value for kBW_EQ");
+    CIDER_THROW(CiderHashJoinException, "Cannot translate null value for kBW_EQ");
   }
   std::vector<InnerOuter> inner_outer_pairs;
   inner_outer_pairs.emplace_back(inner_col, cols.second);
@@ -189,28 +193,9 @@ std::shared_ptr<PerfectJoinHashTable> PerfectJoinHashTable::getInstance(
                                table_id_to_node_map));
   try {
     join_hash_table->reify();
-  } catch (const TableMustBeReplicated& e) {
-    // Throw a runtime error to abort the query
+  } catch (const CiderHashJoinException& e) {
     join_hash_table->freeHashBufferMemory();
-    throw std::runtime_error(e.what());
-  } catch (const HashJoinFail& e) {
-    // HashJoinFail exceptions log an error and trigger a retry with a join loop (if
-    // possible)
-    join_hash_table->freeHashBufferMemory();
-    throw HashJoinFail(std::string("Could not build a 1-to-1 correspondence for columns "
-                                   "involved in equijoin | ") +
-                       e.what());
-  } catch (const ColumnarConversionNotSupported& e) {
-    throw HashJoinFail(std::string("Could not build hash tables for equijoin | ") +
-                       e.what());
-  } catch (const OutOfMemory& e) {
-    throw HashJoinFail(
-        std::string("Ran out of memory while building hash tables for equijoin | ") +
-        e.what());
-  } catch (const std::exception& e) {
-    throw std::runtime_error(
-        std::string("Fatal error while attempting to build hash tables for join: ") +
-        e.what());
+    throw;
   }
   if (VLOGGING(1)) {
     ts2 = std::chrono::steady_clock::now();
@@ -276,7 +261,8 @@ void PerfectJoinHashTable::reify() {
   }
   if (query_info.getNumTuplesUpperBound() >
       static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
-    throw TooManyHashEntries();
+    CIDER_THROW(CiderTooManyHashEntriesException,
+                "Hash tables with more than 2B entries not supported yet");
   }
   std::vector<std::future<void>> init_threads;
 
@@ -325,7 +311,7 @@ void PerfectJoinHashTable::reify() {
     for (auto& init_thread : init_threads) {
       init_thread.get();
     }
-  } catch (const NeedsOneToManyHash& e) {
+  } catch (const CiderOneToMoreHashException& e) {
     hash_type_ = HashType::OneToMany;
     freeHashBufferMemory();
     init_threads.clear();
@@ -376,7 +362,7 @@ ColumnsForDevice PerfectJoinHashTable::fetchColumnsForDevice(
   for (const auto& inner_outer_pair : inner_outer_pairs_) {
     const auto inner_col = inner_outer_pair.first;
     if (inner_col->is_virtual()) {
-      throw FailedToJoinOnVirtualColumn();
+      CIDER_THROW(CiderHashJoinException, "Cannot join on rowid");
     }
     join_columns.emplace_back(fetchJoinColumn(inner_col,
                                               fragments,
@@ -417,7 +403,7 @@ void PerfectJoinHashTable::reifyForDevice(const ChunkKey& chunk_key,
                                             effective_memory_level,
                                             device_id);
     if (err) {
-      throw NeedsOneToManyHash();
+      CIDER_THROW(CiderOneToMoreHashException, "Needs one to many hash");
     }
   } else {
     const auto err = initHashTableForDevice(chunk_key,
@@ -427,8 +413,9 @@ void PerfectJoinHashTable::reifyForDevice(const ChunkKey& chunk_key,
                                             effective_memory_level,
                                             device_id);
     if (err) {
-      throw std::runtime_error("Unexpected error building one to many hash table: " +
-                               std::to_string(err));
+      CIDER_THROW(
+          CiderCompileException,
+          fmt::format("Unexpected error building one to many hash table: {}", err));
     }
   }
 }
@@ -635,7 +622,8 @@ HashJoinMatchingSet PerfectJoinHashTable::codegenMatchingSet(const CompilationOp
           key_col_var,
           val_col_var,
           get_max_rte_scan_table(executor_->cgen_state_->scan_idx_to_hash_pos_))) {
-    throw std::runtime_error(
+    CIDER_THROW(
+        CiderCompileException,
         "Query execution fails because the query contains not supported self-join "
         "pattern. We suspect the query requires multiple left-deep join tree due to "
         "the "
@@ -745,7 +733,8 @@ llvm::Value* PerfectJoinHashTable::codegenSlot(const CompilationOptions& co,
           key_col_var,
           val_col_var,
           get_max_rte_scan_table(executor_->cgen_state_->scan_idx_to_hash_pos_))) {
-    throw std::runtime_error(
+    CIDER_THROW(
+        CiderCompileException,
         "Query execution fails because the query contains not supported self-join "
         "pattern. We suspect the query requires multiple left-deep join tree due to "
         "the "

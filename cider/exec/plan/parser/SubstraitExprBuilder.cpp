@@ -26,6 +26,7 @@
 
 #include "SubstraitExprBuilder.h"
 #include "TypeUtils.h"
+#include "cider/CiderException.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/type.pb.h"
 #include "util/Logger.h"
@@ -52,7 +53,7 @@
 
 ::substrait::NamedStruct* SubstraitExprBuilder::schema() {
   if (schema_) {
-    throw std::runtime_error("schema already exists, check your usage");
+    CIDER_THROW(CiderCompileException, "schema already exists, check your usage");
   }
   CHECK_GT(names_.size(), 0);
   CHECK_EQ(names_.size(), types_.size());
@@ -115,9 +116,9 @@ SubstraitExprBuilder::makeFunc(SubstraitExprBuilder* builder,
       } else if (builder->names_.size() > field) {
         func_sig = func_sig + "_" + TypeUtils::getStringType(*builder->types_[field]);
       } else {
-        throw std::runtime_error(
-            "Failed to get type of field reference, check builder names/types or "
-            "schema.");
+        CIDER_THROW(CiderCompileException,
+                    "Failed to get type of field reference, check builder names/types or "
+                    "schema.");
       }
     }
   }

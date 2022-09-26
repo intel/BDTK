@@ -21,9 +21,9 @@
  */
 
 #include "DdlUtils.h"
-
 #include <boost/program_options.hpp>
 
+#include "cider/CiderException.h"
 #include "rapidjson/document.h"
 #include "type/data/sqltypes.h"
 
@@ -148,19 +148,21 @@ void SqlType::check_type() {
     case kCHAR:
     case kVARCHAR:
       if (param1 <= 0) {
-        throw std::runtime_error("CHAR and VARCHAR must have a positive dimension.");
+        CIDER_THROW(CiderCompileException,
+                    "CHAR and VARCHAR must have a positive dimension.");
       }
       break;
     case kDECIMAL:
     case kNUMERIC:
       if (param1 <= 0) {
-        throw std::runtime_error("DECIMAL and NUMERIC must have a positive precision.");
+        CIDER_THROW(CiderCompileException,
+                    "DECIMAL and NUMERIC must have a positive precision.");
       } else if (param1 > 19) {
-        throw std::runtime_error(
-            "DECIMAL and NUMERIC precision cannot be larger than 19.");
+        CIDER_THROW(CiderCompileException,
+                    "DECIMAL and NUMERIC precision cannot be larger than 19.");
       } else if (param1 <= param2) {
-        throw std::runtime_error(
-            "DECIMAL and NUMERIC must have precision larger than scale.");
+        CIDER_THROW(CiderCompileException,
+                    "DECIMAL and NUMERIC must have precision larger than scale.");
       }
       break;
     case kTIMESTAMP:
@@ -168,8 +170,8 @@ void SqlType::check_type() {
         param1 = 0;  // set default to 0
       } else if (param1 != 0 && param1 != 3 && param1 != 6 &&
                  param1 != 9) {  // support ms, us, ns
-        throw std::runtime_error(
-            "Only TIMESTAMP(n) where n = (0,3,6,9) are supported now.");
+        CIDER_THROW(CiderCompileException,
+                    "Only TIMESTAMP(n) where n = (0,3,6,9) are supported now.");
       }
       break;
     case kTIME:
@@ -177,7 +179,7 @@ void SqlType::check_type() {
         param1 = 0;  // default precision is 0
       }
       if (param1 > 0) {  // @TODO(wei) support sub-second precision later.
-        throw std::runtime_error("Only TIME(0) is supported now.");
+        CIDER_THROW(CiderCompileException, "Only TIME(0) is supported now.");
       }
       break;
     default:

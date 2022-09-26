@@ -55,7 +55,8 @@ class DataConvertor {
 
   virtual CiderBatch convertToCider(RowVectorPtr input,
                                     int num_rows,
-                                    std::chrono::microseconds* timer) = 0;
+                                    std::chrono::microseconds* timer,
+                                    memory::MemoryPool* pool) = 0;
 
   virtual RowVectorPtr convertToRowVector(const CiderBatch& input,
                                           const CiderTableSchema& schema,

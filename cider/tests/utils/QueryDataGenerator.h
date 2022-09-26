@@ -31,7 +31,7 @@
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
 
-enum GeneratePattern { Sequence, Random };
+enum GeneratePattern { Sequence, Random, Special_Date_format_String };
 
 #define GENERATE_AND_ADD_COLUMN(C_TYPE)                                       \
   {                                                                           \
@@ -136,7 +136,7 @@ class QueryDataGenerator {
         case ::substrait::Type::KindCase::kTimestamp:
           //          GENERATE_AND_ADD_TIMING_COLUMN(CiderTimeStampType)
         default:
-          throw std::runtime_error("Type not supported.");
+          CIDER_THROW(CiderCompileException, "Type not supported.");
       }
     }
     auto batch = builder.build();
@@ -174,6 +174,7 @@ class QueryDataGenerator {
                                                          : (col_data[i] = i, false);
         }
         break;
+      case GeneratePattern::Special_Date_format_String:
       case GeneratePattern::Random:
         if (std::is_integral<T>::value) {
           // default type is int32_t. should not replace with T due to cannot gen float
@@ -196,7 +197,7 @@ class QueryDataGenerator {
         } else {
           std::string str = "Unexpected type:";
           str.append(typeid(T).name()).append(", could not generate data.");
-          throw std::runtime_error(str);
+          CIDER_THROW(CiderCompileException, str);
         }
         break;
     }
@@ -209,7 +210,8 @@ class QueryDataGenerator {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
     int mod = sizeof(alphanum) - 1;
-    char* buf = (char*)std::malloc(len);
+    auto allocator = std::make_shared<CiderDefaultAllocator>();
+    char* buf = reinterpret_cast<char*>(allocator->allocate(len));
     for (int i = 0; i < len; i++) {
       buf[i] = alphanum[rand() % mod];
     }
@@ -222,10 +224,30 @@ class QueryDataGenerator {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
     int mod = sizeof(alphanum) - 1;
-    char* buf = (char*)std::malloc(len);
+    auto allocator = std::make_shared<CiderDefaultAllocator>();
+    char* buf = reinterpret_cast<char*>(allocator->allocate(len));
     for (int i = 0; i < len; i++) {
       buf[i] = alphanum[index % mod];
     }
+    return CiderByteArray(len, (const uint8_t*)buf);
+  }
+
+  static CiderByteArray genDateFormatCiderByteArray(int len) {
+    char* buf = (char*)std::malloc(len);
+    char base = '0';
+    std::mt19937 rng(std::random_device{}());  // NOLINT
+    buf[0] = base + Random::randInt32(1, 2, rng);
+    buf[1] = base + Random::randInt32(0, 9, rng);
+    buf[2] = base + Random::randInt32(0, 9, rng);
+    buf[3] = base + Random::randInt32(0, 9, rng);
+    buf[4] = '-';
+    int month = Random::randInt32(1, 12, rng);
+    buf[5] = base + month / 10;
+    buf[6] = base + month % 10;
+    buf[7] = '-';
+    int day = Random::randInt32(1, 28, rng);
+    buf[8] = base + day / 10;
+    buf[9] = base + day % 10;
     return CiderByteArray(len, (const uint8_t*)buf);
   }
 
@@ -259,6 +281,13 @@ class QueryDataGenerator {
                              : (col_data[i] = genRandomCiderByteArray(len), false);
         }
         break;
+      case GeneratePattern::Special_Date_format_String:
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng)
+                             ? (col_data[i] = CiderByteArray(), true)
+                             : (col_data[i] = genDateFormatCiderByteArray(10), false);
+        }
+        break;
     }
     return std::make_tuple(col_data, null_data);
   }
@@ -281,6 +310,7 @@ class QueryDataGenerator {
                                                          : (col_data[i] = i % 2, false);
         }
         break;
+      case GeneratePattern::Special_Date_format_String:
       case GeneratePattern::Random:
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] = Random::oneIn(null_chance, rng)
@@ -320,6 +350,7 @@ class QueryDataGenerator {
                   : (col_data.push_back(CiderDateType(i * kSecondsInOneDay)), false);
         }
         break;
+      case GeneratePattern::Special_Date_format_String:
       case GeneratePattern::Random:
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] = Random::oneIn(null_chance, rng)

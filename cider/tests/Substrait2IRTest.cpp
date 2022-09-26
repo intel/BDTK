@@ -53,7 +53,8 @@ std::vector<InputTableInfo> buildInputTableInfo(
     Fragmenter_Namespace::FragmentInfo fi_0;
     fi_0.fragmentId = i;
     fi_0.shadowNumTuples = 1024;
-    fi_0.physicalTableId = 100 + i;  // FIXME
+    // note that we use fake table id 100 since real table id can't be got
+    fi_0.physicalTableId = 100 + i;
     fi_0.setPhysicalNumTuples(1024);
     // add chunkMetadata
     for (int j = 0; j < table_schemas[i].getColumnTypes().size(); j++) {
@@ -105,7 +106,8 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
   ::substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   cider_compile_module->feedBuildTable(std::move(buildCiderBatch()));
   cider_compile_module->compile(sub_plan);
 }

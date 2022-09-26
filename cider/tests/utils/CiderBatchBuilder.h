@@ -30,11 +30,14 @@
 
 class CiderBatchBuilder {
  public:
-  CiderBatchBuilder() : row_num_(0), is_row_num_set_(false) {}
+  CiderBatchBuilder()
+      : row_num_(0)
+      , is_row_num_set_(false)
+      , allocator_(std::make_shared<CiderDefaultAllocator>()) {}
 
   CiderBatchBuilder& setRowNum(int row_num) {
     if (is_row_num_set_) {  // have set before, throw exception
-      throw std::runtime_error("row num have been set!");
+      CIDER_THROW(CiderCompileException, "row num have been set!");
     }
     is_row_num_set_ = true;
     row_num_ = row_num;
@@ -65,14 +68,14 @@ class CiderBatchBuilder {
     } else {
       // check row num
       if (row_num_ != col_data.size()) {
-        throw std::runtime_error("Row num is not equal to previous columns!");
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
       }
       CHECK_EQ(row_num_, col_data.size());
       // check null data num
       if (!null_data.empty()) {
         CHECK_EQ(row_num_, null_data.size());
       }
-      buf = (int8_t*)std::malloc(sizeof(T) * row_num_);
+      buf = allocator_->allocate(sizeof(T) * row_num_);
       std::memcpy(buf, col_data.data(), sizeof(T) * row_num_);
     }
     table_ptr_.push_back(buf);
@@ -100,14 +103,14 @@ class CiderBatchBuilder {
     } else {
       // check row num
       if (row_num_ != col_data.size()) {
-        throw std::runtime_error("Row num is not equal to previous columns!");
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
       }
       CHECK_EQ(row_num_, col_data.size());
       // check null data num
       if (!null_data.empty()) {
         CHECK_EQ(row_num_, null_data.size());
       }
-      buf = (int8_t*)std::malloc(sizeof(int64_t) * row_num_);
+      buf = allocator_->allocate(sizeof(int64_t) * row_num_);
       int64_t* dump = reinterpret_cast<int64_t*>(buf);
       for (auto i = 0; i < row_num_; i++) {
         dump[i] = col_data[i].getInt64Val();
@@ -135,7 +138,7 @@ class CiderBatchBuilder {
     if (!col_data.empty()) {
       // check row num
       if (row_num_ != col_data.size()) {
-        throw std::runtime_error("Row num is not equal to previous columns!");
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
       }
       CHECK_EQ(row_num_, col_data.size());
       // check null data num
@@ -143,7 +146,7 @@ class CiderBatchBuilder {
         CHECK_EQ(row_num_, null_data.size());
       }
       int len = sizeof(CiderByteArray) * row_num_;
-      buf = (int8_t*)std::malloc(len);
+      buf = allocator_->allocate(len);
       std::memcpy(buf, col_data.data(), len);
     }
     table_ptr_.push_back(buf);
@@ -152,7 +155,7 @@ class CiderBatchBuilder {
 
   CiderBatch build() {
     if (!is_row_num_set_) {
-      throw std::runtime_error("Invalid build!");
+      CIDER_THROW(CiderCompileException, "Invalid build!");
     }
     std::shared_ptr<CiderTableSchema> schema =
         std::make_shared<CiderTableSchema>(col_names_, col_types_, table_name_);
@@ -177,6 +180,7 @@ class CiderBatchBuilder {
   std::vector<::substrait::Type> col_types_;
   std::string table_name_ = "";
   std::vector<std::vector<bool>> null_vecs_;  // mark null data when builder adds columns
+  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 #endif  // CIDER_CIDERBATCHBUILDER_H

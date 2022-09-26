@@ -291,7 +291,8 @@ class BaselineJoinHashTableBuilder {
         entry_size * keyspace_entry_count + one_to_many_hash_entries * sizeof(int32_t);
 
     if (hash_table_size > static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
-      throw TooManyHashEntries();
+      CIDER_THROW(CiderTooManyHashEntriesException,
+                  "Hash tables with more than 2B entries not supported yet");
     }
     const bool for_semi_join =
         (join_type == JoinType::SEMI || join_type == JoinType::ANTI) &&

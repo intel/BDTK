@@ -24,6 +24,7 @@
 
 #include <cmath>
 #include <cstring>
+#include "cider/CiderException.h"
 #include "type/data/InlineNullValues.h"
 #include "type/data/sqltypes.h"
 #include "util/DateConverters.h"
@@ -38,7 +39,7 @@ inline void value_truncated(const LHT& lhs, const RHT& rhs) {
      << (std::is_same<LHT, uint8_t>::value || std::is_same<LHT, int8_t>::value
              ? (int64_t)lhs
              : lhs);
-  throw std::runtime_error(os.str());
+  CIDER_THROW(CiderCompileException, os.str());
 };
 
 template <typename T>
@@ -208,7 +209,8 @@ inline void put_scalar(void* ndptr,
   const auto esize = get_element_size(etype);
   const auto isnull = is_null(oval, etype);
   if (etype.get_notnull() && isnull) {
-    throw std::runtime_error("NULL value on NOT NULL column '" + col_name + "'");
+    CIDER_THROW(CiderCompileException,
+                "NULL value on NOT NULL column '" + col_name + "'");
   }
 
   switch (etype.get_type()) {
@@ -258,7 +260,8 @@ inline void put_scalar(void* ndptr,
 
 inline void put_null(void* ndptr, const SQLTypeInfo& ntype, const std::string col_name) {
   if (ntype.get_notnull()) {
-    throw std::runtime_error("NULL value on NOT NULL column '" + col_name + "'");
+    CIDER_THROW(CiderCompileException,
+                "NULL value on NOT NULL column '" + col_name + "'");
   }
 
   switch (ntype.get_type()) {
@@ -308,7 +311,8 @@ inline void put_null_array(void* ndptr,
                            const SQLTypeInfo& ntype,
                            const std::string col_name) {
   if (ntype.get_notnull()) {
-    throw std::runtime_error("NULL value on NOT NULL column '" + col_name + "'");
+    CIDER_THROW(CiderCompileException,
+                "NULL value on NOT NULL column '" + col_name + "'");
   }
 
   switch (ntype.get_type()) {

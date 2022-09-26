@@ -24,6 +24,7 @@
 #include <numeric>
 #include <sstream>
 #include "cider/CiderBatch.h"
+#include "cider/CiderException.h"
 #include "cider/CiderTableSchema.h"
 
 class ConcatenatedRow {
@@ -201,8 +202,8 @@ class CiderBatchChecker {
         return checkByteArrayEqual(
             expected_buffer, expected_offset, actual_buffer, actual_offset, row_num);
       default:
-        // TODO: not support yet, throw some exception.
-        return false;
+        CIDER_THROW(CiderRuntimeException,
+                    "Unsupported substrait type " + std::to_string(col_type.kind_case()));
     }
   }
 
