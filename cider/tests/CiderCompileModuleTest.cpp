@@ -41,7 +41,8 @@ TEST(CiderCompileModuleTest, FilterProject) {
   substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
 
-  auto ciderCompileModule = CiderCompileModule::Make();
+  auto ciderCompileModule =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   auto result = ciderCompileModule->compile(sub_plan);
 }
 

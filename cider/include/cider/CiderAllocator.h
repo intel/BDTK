@@ -86,12 +86,14 @@ class AlignAllocator : public CiderAllocator {
   }
 
   void deallocate(int8_t* p, size_t size) final {
-    if constexpr (ALIGNMENT > kNoAlignment && ALIGNMENT <= kMaxAlignment) {
-      uint8_t offset = *(uint8_t*)(p - 1);
-      p = adjustAddress(p, offset);
+    if (p) {
+      if constexpr (ALIGNMENT > kNoAlignment && ALIGNMENT <= kMaxAlignment) {
+        uint8_t offset = *(uint8_t*)(p - 1);
+        p = adjustAddress(p, offset);
+      }
+      parent_->deallocate(p, size);
+      return;
     }
-    parent_->deallocate(p, size);
-    return;
   }
 
  private:

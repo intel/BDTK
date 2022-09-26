@@ -31,14 +31,17 @@
 
 using namespace CiderBitUtils;
 
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
+
 class CiderBitUtilsTest : public ::testing::Test {};
 
 template <size_t alignFactor>
 void testAlignment() {
   size_t bitsNum = (alignFactor << 3);
-  CiderBitVector<alignFactor> bit_vec_1(bitsNum - 1);
-  CiderBitVector<alignFactor> bit_vec_2(bitsNum);
-  CiderBitVector<alignFactor> bit_vec_3(bitsNum + 1);
+  CiderBitVector<alignFactor> bit_vec_1(allocator, bitsNum - 1);
+  CiderBitVector<alignFactor> bit_vec_2(allocator, bitsNum);
+  CiderBitVector<alignFactor> bit_vec_3(allocator, bitsNum + 1);
 
   EXPECT_EQ(bit_vec_1.getBitsNum(), bitsNum);
   EXPECT_EQ(bit_vec_2.getBitsNum(), bitsNum);
@@ -54,7 +57,7 @@ void testAlignment() {
 
 template <size_t alignFactor>
 void testBasicOp(size_t bit_num) {
-  CiderBitVector<alignFactor> bit_vec_1(bit_num);
+  CiderBitVector<alignFactor> bit_vec_1(allocator, bit_num);
   auto actual_bit_num = bit_vec_1.getBitsNum();
   auto bit_vec_uint8 = bit_vec_1.template as<uint8_t>();
   for (size_t i = 0; i < actual_bit_num; ++i) {
@@ -95,7 +98,7 @@ TEST_F(CiderBitUtilsTest, BasicOpTest) {
 }
 
 TEST_F(CiderBitUtilsTest, CountTest) {
-  CiderBitVector<16> bit_vec_1(1025);
+  CiderBitVector<16> bit_vec_1(allocator, 1025);
   auto bit_vec = bit_vec_1.as<uint8_t>();
 
   EXPECT_EQ(countSetBits(bit_vec, 1025), 0ul);

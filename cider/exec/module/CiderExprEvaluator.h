@@ -39,11 +39,13 @@ class CiderExprEvaluator {
       std::vector<::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*>
           funcs_info,
       ::substrait::NamedStruct* schema,
+      std::shared_ptr<CiderAllocator> allocator,
       const generator::ExprType& expr_type);
 
   CiderBatch eval(const CiderBatch& in_batch);
 
  private:
   std::shared_ptr<CiderRuntimeModule> runner_;
+  std::shared_ptr<CiderAllocator> allocator_;
 };
 #endif  // CIDER_CIDEREXPREVALUATOR_H

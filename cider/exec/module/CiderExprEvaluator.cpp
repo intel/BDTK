@@ -26,12 +26,14 @@ CiderExprEvaluator::CiderExprEvaluator(
     std::vector<::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*>
         funcs_info,
     ::substrait::NamedStruct* schema,
-    const generator::ExprType& expr_type) {
+    std::shared_ptr<CiderAllocator> allocator,
+    const generator::ExprType& expr_type)
+    : allocator_(allocator) {
   // Set up exec option and compilation option
   auto exec_option = CiderExecutionOption::defaults();
   auto compile_option = CiderCompilationOption::defaults();
 
-  auto ciderCompileModule = CiderCompileModule::Make();
+  auto ciderCompileModule = CiderCompileModule::Make(allocator_);
   auto result = ciderCompileModule->compile(
       exprs, *schema, funcs_info, expr_type, compile_option, exec_option);
   runner_ = std::make_shared<CiderRuntimeModule>(result, compile_option, exec_option);
