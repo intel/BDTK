@@ -10,3 +10,4 @@ Welcome to Cider's documentation!
     syntax-support
     user-guide
     cider-sharing
+    development-specification
