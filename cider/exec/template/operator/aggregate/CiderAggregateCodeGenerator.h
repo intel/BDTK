@@ -44,7 +44,7 @@ class AggregateCodeGenerator {
   CgenState* cgen_state_;
 };
 
-// Aggregate code generator for SUM, AVG, MIN, MAX.
+// Aggregate code generator for SUM, AVG, MIN, MAX, Group-By ID.
 class SimpleAggregateCodeGenerator : public AggregateCodeGenerator {
  public:
   static std::unique_ptr<AggregateCodeGenerator> Make(const std::string& base_fname,
@@ -59,6 +59,14 @@ class SimpleAggregateCodeGenerator : public AggregateCodeGenerator {
 
  private:
   bool is_float_float_;  // Both arg and sql type is float.
+};
+
+// Aggregate code generator for Project ID.
+class ProjectIDCodeGenerator : public SimpleAggregateCodeGenerator {
+ public:
+  static std::unique_ptr<AggregateCodeGenerator> Make(const std::string& base_fname,
+                                                      TargetInfo target_info,
+                                                      CgenState* cgen_state);
 };
 
 // Aggregate code generator for COUNT(*), COUNT(col), DISTINCT COUNT(col).

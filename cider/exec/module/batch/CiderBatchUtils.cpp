@@ -24,10 +24,12 @@
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
-#include "cider/CiderException.h"
-#include "cider/batch/CiderBatch.h"
-#include "cider/batch/ScalarBatch.h"
-#include "cider/batch/StructBatch.h"
+
+#include "include/cider/CiderException.h"
+#include "include/cider/batch/CiderBatch.h"
+#include "include/cider/batch/CiderBatchUtils.h"
+#include "include/cider/batch/ScalarBatch.h"
+#include "include/cider/batch/StructBatch.h"
 
 namespace CiderBatchUtils {
 void freeArrowArray(ArrowArray* ptr) {
@@ -64,6 +66,11 @@ ArrowSchema* allocateArrowSchema() {
                      .dictionary = nullptr,
                      .release = nullptr,
                      .private_data = nullptr};
+  return ptr;
+}
+
+ArrowSchema* allocateArrowSchema(const ArrowSchema& schema) {
+  ArrowSchema* ptr = new ArrowSchema(schema);
   return ptr;
 }
 
@@ -226,6 +233,60 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
       };
 
   build_function(root_schema, sql_info);
+
+  return root_schema;
+}
+
+const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
+  using namespace substrait;
+  switch (type.kind_case()) {
+    case Type::kBool:
+      return "b";
+    case Type::kI8:
+      return "c";
+    case Type::kI16:
+      return "s";
+    case Type::kI32:
+      return "i";
+    case Type::kI64:
+      return "l";
+    case Type::kFp32:
+      return "f";
+    case Type::kFp64:
+      return "g";
+    case Type::kStruct:
+      return "+s";
+    default:
+      CIDER_THROW(CiderRuntimeException,
+                  std::string("Unsupported to convert type ") + type.GetTypeName() +
+                      "to Arrow type.");
+  }
+}
+
+ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table) {
+  auto&& children = table.getColumnTypes();
+
+  ArrowSchema* root_schema = allocateArrowSchema();
+  root_schema->format = "+s";
+  root_schema->n_children = children.size();
+  CiderArrowSchemaBufferHolder* holder =
+      new CiderArrowSchemaBufferHolder(children.size(), false);
+  root_schema->children = holder->getChildrenPtrs();
+  root_schema->dictionary = holder->getDictPtr();
+  root_schema->release = ciderArrowSchemaReleaser;
+  root_schema->private_data = holder;
+
+  for (size_t i = 0; i < children.size(); ++i) {
+    ArrowSchema* schema = root_schema->children[i];
+    schema->format = convertSubstraitTypeToArrowType(children[i]);
+    schema->n_children = 0;
+
+    CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
+    schema->children = holder->getChildrenPtrs();
+    schema->dictionary = holder->getDictPtr();
+    schema->release = ciderArrowSchemaReleaser;
+    schema->private_data = holder;
+  }
 
   return root_schema;
 }

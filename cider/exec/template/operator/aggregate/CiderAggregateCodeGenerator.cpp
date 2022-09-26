@@ -153,6 +153,59 @@ void SimpleAggregateCodeGenerator::codegen(CodegenColValues* input,
   cgen_state_->emitCall(base_fname_, fun_args);
 }
 
+std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
+    const std::string& base_fname,
+    TargetInfo target_info,
+    CgenState* cgen_state) {
+  CHECK(cgen_state);
+  CHECK(base_fname == "agg_id");
+
+  auto generator = std::make_unique<ProjectIDCodeGenerator>();
+
+  generator->base_fname_ = "cider_" + base_fname + "_proj";
+  generator->target_info_ = target_info;
+  generator->cgen_state_ = cgen_state;
+
+  generator->target_width_ = get_bit_width(target_info.sql_type);
+  generator->slot_size_ = (generator->target_width_ >> 3);
+  generator->arg_width_ = generator->target_width_;
+
+  if (target_info.sql_type.is_fp()) {
+    // Check float_float case.
+    switch (generator->target_width_) {
+      case 32:
+        generator->base_fname_ += "_float";
+        break;
+      case 64:
+        generator->base_fname_ += "_double";
+        break;
+    }
+  } else if (target_info.sql_type.is_integer()) {
+    switch (generator->target_width_) {
+      case 8:
+        generator->base_fname_ += "_int8";
+        break;
+      case 16:
+        generator->base_fname_ += "_int16";
+        break;
+      case 32:
+        generator->base_fname_ += "_int32";
+        break;
+      case 64:
+        generator->base_fname_ += "_int64";
+        break;
+    }
+  } else {
+    throw std::runtime_error("Unsuppored data type for ProjectIDCodeGenerator.");
+  }
+
+  if (target_info.skip_null_val) {
+    generator->base_fname_ += "_nullable";
+  }
+
+  return generator;
+}
+
 std::unique_ptr<AggregateCodeGenerator> CountAggregateCodeGenerator::Make(
     const std::string& base_fname,
     TargetInfo target_info,

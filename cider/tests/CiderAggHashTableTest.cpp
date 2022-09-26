@@ -776,6 +776,75 @@ TEST_F(CiderNewDataFormatTest, ScalarTypeFilterTest) {
   testScalarTypeFilter(MockTableForTest, "double_null", 3);
 }
 
+void testScalarProject(MockTable* table,
+                       const std::string& col_name,
+                       size_t expect_ans_row_num) {
+  // select col, -col from table;
+  CHECK(table);
+
+  auto td = table->getMetadataForTable();
+  auto col = table->getMetadataForColumn(col_name);
+
+  auto input_descs = std::vector<InputDescriptor>{InputDescriptor(td->table_id, 0)};
+  auto input_col_descs = table->getInputColDescs({col});
+  std::vector<InputTableInfo> table_infos = {table->getInputTableInfo()};
+
+  auto col_expr =
+      makeExpr<Analyzer::ColumnVar>(col->type, td->table_id, col->column_id, 0);
+
+  // auto col_var_expr = makeExpr<Analyzer::Var>(
+  //     col->type, td->table_id, col->column_id, 0, false, Analyzer::Var::kOUTPUT, 1);
+  auto minus_expr =
+      makeExpr<Analyzer::UOper>(col_expr->get_type_info().get_type(), kUMINUS, col_expr);
+
+  auto ra_exe_unit_ptr = std::shared_ptr<RelAlgExecutionUnit>(
+      new RelAlgExecutionUnit{input_descs,
+                              input_col_descs,
+                              {},
+                              {},
+                              {},
+                              {nullptr},
+                              {col_expr.get(), minus_expr.get()},
+                              nullptr,
+                              SortInfo{},
+                              0});
+
+  std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
+  CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
+  CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
+
+  runTest(std::string("ScalarTypeProjectTest-" + col_name),
+          table,
+          ra_exe_unit_ptr,
+          {col_name},
+          expect_ans_row_num,
+          false,
+          16384,
+          0,
+          null_vectors);
+}
+
+TEST_F(CiderNewDataFormatTest, ScalarTypeProjectTest) {
+  testScalarProject(MockTableForTest, "tinyint_notnull", 5);
+  testScalarProject(MockTableForTest, "tinyint_null", 5);
+
+  testScalarProject(MockTableForTest, "smallint_notnull", 5);
+  testScalarProject(MockTableForTest, "smallint_null", 5);
+
+  testScalarProject(MockTableForTest, "int_notnull", 5);
+  testScalarProject(MockTableForTest, "int_null", 5);
+
+  testScalarProject(MockTableForTest, "bigint_notnull", 5);
+  testScalarProject(MockTableForTest, "bigint_null", 5);
+
+  testScalarProject(MockTableForTest, "float_notnull", 5);
+  testScalarProject(MockTableForTest, "float_null", 5);
+
+  testScalarProject(MockTableForTest, "double_notnull", 5);
+  testScalarProject(MockTableForTest, "double_null", 5);
+}
+
 class CiderHasherTest : public ::testing::Test {};
 
 TEST_F(CiderHasherTest, TypeTest) {
