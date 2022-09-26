@@ -28,6 +28,9 @@ using namespace facebook::velox::plugin;
 
 class ArrowUtilsTest : public testing::Test {
  public:
+  std::unique_ptr<facebook::velox::memory::ScopedMemoryPool> pool_{
+      facebook::velox::memory::getDefaultScopedMemoryPool()};
+
   template <typename T>
   void testCiderResult(const int8_t* data_buffer,
                        substrait::Type col_type,
@@ -36,7 +39,7 @@ class ArrowUtilsTest : public testing::Test {
                        int32_t dimen = 0) {
     ArrowArray arrowArray;
     ArrowSchema arrowSchema;
-    convertToArrow(arrowArray, arrowSchema, data_buffer, col_type, num_rows);
+    convertToArrow(arrowArray, arrowSchema, data_buffer, col_type, num_rows, pool_.get());
     EXPECT_EQ(num_rows, arrowArray.length);
     EXPECT_EQ(null_count, arrowArray.null_count);
     EXPECT_EQ(2, arrowArray.n_buffers);
@@ -69,8 +72,9 @@ class ArrowUtilsTest : public testing::Test {
                       const std::vector<std::optional<T>>& data_buffer) {
     int num_rows = data_buffer.size();
     int64_t nullCount = 0;
-    uint64_t* nulls = (uint64_t*)std::malloc(sizeof(uint64_t*) * num_rows);
-    T* srcValues = (T*)std::malloc(sizeof(T) * num_rows);
+    uint64_t* nulls =
+        reinterpret_cast<uint64_t*>(pool_->allocate(sizeof(uint64_t*) * num_rows));
+    T* srcValues = reinterpret_cast<T*>(pool_->allocate(sizeof(T) * num_rows));
     T nullValue = getNullValue<T>();
     for (int i = 0; i < num_rows; i++) {
       if (data_buffer[i] == std::nullopt) {
@@ -82,7 +86,8 @@ class ArrowUtilsTest : public testing::Test {
       }
     }
     int64_t n_buffers = 2;
-    const void** buffers = (const void**)malloc(sizeof(void*) * n_buffers);
+    const void** buffers =
+        reinterpret_cast<const void**>(pool_->allocate(sizeof(void*) * n_buffers));
     buffers[0] = (nullCount == 0) ? nullptr : (const void*)nulls;
     buffers[1] = (num_rows == 0) ? nullptr : (const void*)srcValues;
 
@@ -110,7 +115,7 @@ class ArrowUtilsTest : public testing::Test {
         nullptr,
     };
 
-    int8_t* results = convertToCider(arrowSchema, arrowArray, num_rows);
+    int8_t* results = convertToCider(arrowSchema, arrowArray, num_rows, pool_.get());
     T* col = reinterpret_cast<T*>(results);
     for (auto idx = 0; idx < num_rows; idx++) {
       if (data_buffer[idx] == std::nullopt) {
@@ -123,7 +128,7 @@ class ArrowUtilsTest : public testing::Test {
 };
 
 TEST_F(ArrowUtilsTest, toArrowInteger) {
-  int32_t* col = (int32_t*)std::malloc(sizeof(int32_t) * 10);
+  int32_t* col = reinterpret_cast<int32_t*>(pool_->allocate(sizeof(int32_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col[i] = i;
@@ -148,7 +153,7 @@ TEST_F(ArrowUtilsTest, toArrowInteger) {
 }
 
 TEST_F(ArrowUtilsTest, toArrowDouble) {
-  double* col = (double*)std::malloc(sizeof(double) * 10);
+  double* col = reinterpret_cast<double*>(pool_->allocate(sizeof(double) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col[i] = i * 3.14;
@@ -173,7 +178,7 @@ TEST_F(ArrowUtilsTest, toArrowDouble) {
 }
 
 TEST_F(ArrowUtilsTest, toArrowTimestamp) {
-  int64_t* col = (int64_t*)std::malloc(sizeof(int64_t) * 10);
+  int64_t* col = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col[i] = i + 86400000000;
@@ -199,7 +204,7 @@ TEST_F(ArrowUtilsTest, toArrowTimestamp) {
 }
 
 TEST_F(ArrowUtilsTest, toArrowDecimal) {
-  int64_t* col = (int64_t*)std::malloc(sizeof(int64_t) * 10);
+  int64_t* col = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col[i] = i * 1.00;

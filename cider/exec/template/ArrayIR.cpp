@@ -109,8 +109,8 @@ std::vector<llvm::Value*> CodeGenerator::codegenArrayExpr(
     if (arg_lvs.size() == 1) {
       argument_list.push_back(arg_lvs.front());
     } else {
-      throw std::runtime_error(
-          "Unexpected argument count during array[] code generation.");
+      CIDER_THROW(CiderCompileException,
+                  "Unexpected argument count during array[] code generation.");
     }
   }
 
@@ -188,7 +188,7 @@ std::vector<llvm::Value*> CodeGenerator::codegenArrayExpr(
       const auto sign_extended_element = ir_builder.CreateSExt(element, array_index_type);
       ir_builder.CreateStore(sign_extended_element, element_ptr);
     } else {
-      throw std::runtime_error("Unsupported type used in ARRAY construction.");
+      CIDER_THROW(CiderCompileException, "Unsupported type used in ARRAY construction.");
     }
   }
 

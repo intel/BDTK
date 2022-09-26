@@ -53,8 +53,8 @@ std::vector<llvm::Value*> CodeGenerator::codegen(const Analyzer::Expr* expr,
   if (constant) {
     const auto& ti = constant->get_type_info();
     if (ti.get_type() == kNULLT) {
-      throw std::runtime_error(
-          "NULL type literals are not currently supported in this context.");
+      CIDER_THROW(CiderCompileException,
+                  "NULL type literals are not currently supported in this context.");
     }
     if (constant->get_is_null()) {
       return {ti.is_fp()
@@ -155,7 +155,7 @@ std::vector<llvm::Value*> CodeGenerator::codegen(const Analyzer::Expr* expr,
     return {posArg(nullptr)};
   }
   if (dynamic_cast<const Analyzer::WindowFunction*>(expr)) {
-    throw std::runtime_error("Window expression not supported in this context");
+    CIDER_THROW(CiderCompileException, "Window expression not supported in this context");
   }
   abort();
 }
@@ -186,7 +186,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
     return codegenConstantExpr(constant, co);
   }
 
-  throw std::runtime_error("Cider data format codegen is not avaliable.");
+  CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::BinOper* bin_oper,
@@ -214,8 +214,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
   AUTOMATIC_IR_METADATA(cgen_state_);
   const auto& ti = constant_expr->get_type_info();
   if (ti.get_type() == kNULLT) {
-    throw std::runtime_error(
-        "NULL type literals are not currently supported in this context.");
+    CIDER_THROW(CiderCompileException,
+                "NULL type literals are not currently supported in this context.");
   }
   CHECK_NE(ti.get_compression(), kENCODING_DICT);
 
@@ -415,19 +415,22 @@ llvm::Value* CodeGenerator::codegenConstantWidthBucketExpr(
 
   auto num_partitions = expr->get_partition_count_val();
   if (num_partitions < 1 || num_partitions > INT32_MAX) {
-    throw std::runtime_error(
+    CIDER_THROW(
+        CiderCompileException,
         "PARTITION_COUNT expression of width_bucket function should be in a valid "
         "range: 0 < PARTITION_COUNT <= 2147483647");
   }
   double lower = expr->get_bound_val(lower_bound_expr);
   double upper = expr->get_bound_val(upper_bound_expr);
   if (lower == upper) {
-    throw std::runtime_error(
+    CIDER_THROW(
+        CiderCompileException,
         "LOWER_BOUND and UPPER_BOUND expressions of width_bucket function cannot have "
         "the same constant value");
   }
   if (lower == NULL_DOUBLE || upper == NULL_DOUBLE) {
-    throw std::runtime_error(
+    CIDER_THROW(
+        CiderCompileException,
         "Both LOWER_BOUND and UPPER_BOUND of width_bucket function should be finite "
         "numeric constants.");
   }
@@ -602,14 +605,14 @@ void check_if_loop_join_is_allowed(RelAlgExecutionUnit& ra_exe_unit,
     return;
   }
   if (level_idx + 1 != ra_exe_unit.join_quals.size()) {
-    throw std::runtime_error(
-        "Hash join failed, reason(s): " + fail_reason +
-        " | Cannot fall back to loop join for intermediate join quals");
+    CIDER_THROW(CiderCompileException,
+                "Hash join failed, reason(s): " + fail_reason +
+                    " | Cannot fall back to loop join for intermediate join quals");
   }
   if (!is_trivial_loop_join(query_infos, ra_exe_unit)) {
-    throw std::runtime_error(
-        "Hash join failed, reason(s): " + fail_reason +
-        " | Cannot fall back to loop join for non-trivial inner table size");
+    CIDER_THROW(CiderCompileException,
+                "Hash join failed, reason(s): " + fail_reason +
+                    " | Cannot fall back to loop join for non-trivial inner table size");
   }
 }
 
@@ -623,7 +626,8 @@ void check_valid_join_qual(std::shared_ptr<Analyzer::BinOper>& bin_oper) {
     auto rhs_type = rhs_cv->get_type_info().get_type();
     // check #1. avoid a join btw full array columns
     if (lhs_type == SQLTypes::kARRAY && rhs_type == SQLTypes::kARRAY) {
-      throw std::runtime_error(
+      CIDER_THROW(
+          CiderCompileException,
           "Join operation between full array columns (i.e., R.arr = S.arr) instead of "
           "indexed array columns (i.e., R.arr[1] = S.arr[2]) is not supported yet.");
     }
@@ -1461,7 +1465,7 @@ std::unique_ptr<FixedSizeColValues> Executor::groupByColumnCodegen(
 
     return std::unique_ptr<FixedSizeColValues>(fixed_size_group_key);
   } else {
-    throw std::runtime_error("Group key should be fixed-size now.");
+    CIDER_THROW(CiderCompileException, "Group key should be fixed-size now.");
   }
 }
 

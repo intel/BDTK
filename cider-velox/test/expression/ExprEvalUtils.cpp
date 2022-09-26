@@ -155,7 +155,7 @@ SQLTypeInfo ExprEvalUtils::getCiderType(
     case TypeKind::TIMESTAMP:
       return SQLTypeInfo(SQLTypes::kTIMESTAMP, notNull);
     default:
-      throw std::runtime_error(expr_type->toString() + " is not yet supported.");
+      VELOX_UNSUPPORTED(expr_type->toString() + " is not yet supported.");
   }
 }
 
@@ -198,6 +198,6 @@ Analyzer::Expr* ExprEvalUtils::getExpr(std::shared_ptr<const Analyzer::Expr> exp
                                    column_var_expr->get_column_id(),
                                    column_var_expr->get_rte_idx());
   }
-  throw std::runtime_error("Failed to get target expr.");
+  VELOX_UNSUPPORTED("unsupported column type for target expr.");
 }
 }  // namespace facebook::velox::plugin

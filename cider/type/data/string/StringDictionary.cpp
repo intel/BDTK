@@ -30,6 +30,7 @@
 #include <iostream>
 #include <string_view>
 #include <thread>
+#include "cider/CiderException.h"
 #include "function/string/StringLike.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
@@ -51,7 +52,7 @@ int checked_open(const char* path, const bool recover) {
   auto err = std::string("Dictionary path ") + std::string(path) +
              std::string(" does not exist.");
   LOG(ERROR) << err;
-  throw DictPayloadUnavailable(err);
+  CIDER_THROW(CiderCompileException, err);
 }
 
 const uint64_t round_up_p2(const uint64_t num) {
@@ -89,12 +90,14 @@ constexpr size_t StringDictionary::MAX_STRCOUNT;
 
 StringDictionary::StringDictionary(const DictRef& dict_ref,
                                    const std::string& folder,
+                                   std::shared_ptr<CiderAllocator> allocator,
                                    const bool isTemp,
                                    const bool recover,
                                    const bool materializeHashes,
                                    size_t initial_capacity)
     : dict_ref_(dict_ref)
     , folder_(folder)
+    , allocator_(allocator)
     , str_count_(0)
     , string_id_string_dict_hash_table_(initial_capacity, INVALID_STR_ID)
     , hash_cache_(initial_capacity)
@@ -292,7 +295,7 @@ void throw_encoding_error(std::string_view str, std::string_view folder) {
       << " There was an attempt to add the new string '" << str
       << "'. Table will need to be recreated with larger String Dictionary Capacity";
   LOG(ERROR) << oss.str();
-  throw std::runtime_error(oss.str());
+  CIDER_THROW(CiderCompileException, oss.str());
 }
 
 }  // namespace
@@ -797,7 +800,7 @@ std::vector<int32_t> StringDictionary::getCompare(const std::string& pattern,
     }
 
   } else {
-    std::runtime_error("Unsupported string comparison operator");
+    CIDER_THROW(CiderCompileException, "Unsupported string comparison operator");
   }
   return ret;
 }
@@ -1306,7 +1309,10 @@ size_t StringDictionary::addStorageCapacity(
                (min_capacity_requested / SYSTEM_PAGE_SIZE + 1) * SYSTEM_PAGE_SIZE);
 
   if (canary_buffer_size < canary_buff_size_to_add) {
-    CANARY_BUFFER = static_cast<char*>(realloc(CANARY_BUFFER, canary_buff_size_to_add));
+    CANARY_BUFFER = reinterpret_cast<char*>(
+        allocator_->reallocate(reinterpret_cast<int8_t*>(CANARY_BUFFER),
+                               canary_buffer_size,
+                               canary_buff_size_to_add));
     canary_buffer_size = canary_buff_size_to_add;
     CHECK(CANARY_BUFFER);
     memset(CANARY_BUFFER, 0xff, canary_buff_size_to_add);
@@ -1326,13 +1332,16 @@ void* StringDictionary::addMemoryCapacity(void* addr,
       std::max(static_cast<size_t>(1024 * SYSTEM_PAGE_SIZE),
                (min_capacity_requested / SYSTEM_PAGE_SIZE + 1) * SYSTEM_PAGE_SIZE);
   if (canary_buffer_size < canary_buff_size_to_add) {
-    CANARY_BUFFER =
-        reinterpret_cast<char*>(realloc(CANARY_BUFFER, canary_buff_size_to_add));
+    CANARY_BUFFER = reinterpret_cast<char*>(
+        allocator_->reallocate(reinterpret_cast<int8_t*>(CANARY_BUFFER),
+                               canary_buffer_size,
+                               canary_buff_size_to_add));
     canary_buffer_size = canary_buff_size_to_add;
     CHECK(CANARY_BUFFER);
     memset(CANARY_BUFFER, 0xff, canary_buff_size_to_add);
   }
-  void* new_addr = realloc(addr, mem_size + canary_buff_size_to_add);
+  void* new_addr = allocator_->reallocate(
+      reinterpret_cast<int8_t*>(addr), mem_size, mem_size + canary_buff_size_to_add);
   CHECK(new_addr);
   void* write_addr = reinterpret_cast<void*>(static_cast<char*>(new_addr) + mem_size);
   CHECK(memcpy(write_addr, CANARY_BUFFER, canary_buff_size_to_add));

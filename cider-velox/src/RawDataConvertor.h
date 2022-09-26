@@ -35,7 +35,8 @@ class RawDataConvertor : public DataConvertor {
 
   CiderBatch convertToCider(RowVectorPtr input,
                             int num_rows,
-                            std::chrono::microseconds* timer) override;
+                            std::chrono::microseconds* timer,
+                            memory::MemoryPool* pool) override;
 
   RowVectorPtr convertToRowVector(const CiderBatch& input,
                                   const CiderTableSchema& schema,

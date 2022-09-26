@@ -22,6 +22,7 @@
 
 #include "CodeGenerator.h"
 #include "Execute.h"
+#include "cider/CiderException.h"
 
 std::vector<llvm::Value*> CodeGenerator::codegen(const Analyzer::Constant* constant,
                                                  const EncodingType enc_type,
@@ -300,7 +301,7 @@ std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstants(
     // detect literal buffer overflow when trying to
     // assign literal buf offset which is not in a valid range
     // to checked_type variable
-    throw TooManyLiterals();
+    CIDER_THROW(CiderCompileException, "Too many literals in the query");
   }
   std::vector<llvm::Value*> hoisted_literal_loads;
   auto entry = cgen_state_->query_func_literal_loads_.find(lit_off);

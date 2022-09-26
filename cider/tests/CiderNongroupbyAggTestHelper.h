@@ -25,8 +25,8 @@
 #include "type/schema/TableInfo.h"
 
 #include "exec/template/AggregatedColRange.h"
-#include "exec/template/common/descriptors/InputDescriptors.h"
 #include "exec/template/InputMetadata.h"
+#include "exec/template/common/descriptors/InputDescriptors.h"
 
 #include "cider/CiderRuntimeModule.h"
 #include "cider/batch/ScalarBatch.h"
@@ -105,7 +105,7 @@ class MockTable {
     }
     auto type = SQLTypeInfo(kSTRUCT, false, children_types);
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, std::make_shared<CiderDefaultAllocator>());
     CHECK(batch->resizeBatch(element_num_, true));
 
     for (size_t i = 0; i < col_names.size(); ++i) {
@@ -136,7 +136,7 @@ class MockTable {
           copyDataToScalarBatch<ScalarBatch<double>>(child.get(), data);
           break;
         default:
-          throw std::runtime_error("Unsupported type to generate StructBatch.");
+          CIDER_THROW(CiderCompileException, "Unsupported type to generate StructBatch.");
       }
     }
     return batch;
@@ -286,7 +286,8 @@ void runTest(const std::string& test_name,
   LOG(DEBUG1) << "----------------------Test case: " + test_name +
                      " --------------------------------------";
 
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   auto exe_option = CiderExecutionOption::defaults();
   auto compile_option = CiderCompilationOption::defaults();
 

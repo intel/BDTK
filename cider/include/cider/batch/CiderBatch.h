@@ -26,6 +26,7 @@
 #include "../CiderTableSchema.h"
 #include "../CiderTypes.h"
 #include "CiderBatchUtils.h"
+#include "cider/CiderException.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "util/CiderBitUtils.h"
 
@@ -37,10 +38,12 @@ class CiderBatch {
   // buffers they hold, so ArrowSchema and ArrowArray should allocated from
   // CiderBatchUtils. Never construct distinct CiderBatches by this method with same
   // schema and array.
-  explicit CiderBatch(ArrowSchema* schema);
+  explicit CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator);
   // In this case, CiderBatch references the memory allocated by the Caller, therefore
   // resize is not allowed.
-  explicit CiderBatch(ArrowSchema* schema, ArrowArray* array);
+  explicit CiderBatch(ArrowSchema* schema,
+                      ArrowArray* array,
+                      std::shared_ptr<CiderAllocator> allocator);
 
   virtual ~CiderBatch();
 
@@ -381,7 +384,7 @@ class CiderBatch {
           case 8:
             PRINT_BY_TYPE(int64_t)
           default:
-            throw std::runtime_error("Not supported type size to print value!");
+            CIDER_THROW(CiderCompileException, "Not supported type size to print value!");
         }
         ss << "\n";
       }
@@ -417,7 +420,7 @@ class CiderBatch {
             break;
           }
           default:
-            throw std::runtime_error("Not supported type to print value!");
+            CIDER_THROW(CiderCompileException, "Not supported type to print value!");
         }
         ss << "\n";
       }
@@ -434,7 +437,7 @@ class CiderBatch {
   int64_t row_capacity_ = 0;
   std::vector<size_t> column_type_size_{};
   std::vector<const int8_t*> table_ptr_{};  // underlayer format is Modular SQL format
-  std::shared_ptr<CiderAllocator> allocator_ = nullptr;
+  std::shared_ptr<CiderAllocator> allocator_;
   std::shared_ptr<CiderTableSchema> schema_ = nullptr;
   bool is_use_self_memory_manager_ = true;
   uint32_t align_ = kDefaultAlignment;

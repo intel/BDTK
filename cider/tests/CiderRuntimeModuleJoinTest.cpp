@@ -140,7 +140,8 @@ void RunOneBatchAgg(std::string file_name) {
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
   eu_translator.createRelAlgExecutionUnit();
 
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
 
   cider_compile_module->feedBuildTable(std::move(buildOrdersCiderBatch()));
 

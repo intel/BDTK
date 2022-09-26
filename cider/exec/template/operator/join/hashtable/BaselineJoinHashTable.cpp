@@ -24,6 +24,7 @@
 
 #include <future>
 
+#include "cider/CiderException.h"
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/Execute.h"
 #include "exec/template/ExpressionRewrite.h"
@@ -81,28 +82,9 @@ std::shared_ptr<BaselineJoinHashTable> BaselineJoinHashTable::getInstance(
                                 table_id_to_node_map));
   try {
     join_hash_table->reify(preferred_hash_type);
-  } catch (const TableMustBeReplicated& e) {
-    // Throw a runtime error to abort the query
+  } catch (const CiderHashJoinException& e) {
     join_hash_table->freeHashBufferMemory();
-    throw std::runtime_error(e.what());
-  } catch (const HashJoinFail& e) {
-    // HashJoinFail exceptions log an error and trigger a retry with a join loop (if
-    // possible)
-    join_hash_table->freeHashBufferMemory();
-    throw HashJoinFail(std::string("Could not build a 1-to-1 correspondence for columns "
-                                   "involved in equijoin | ") +
-                       e.what());
-  } catch (const ColumnarConversionNotSupported& e) {
-    throw HashJoinFail(std::string("Could not build hash tables for equijoin | ") +
-                       e.what());
-  } catch (const OutOfMemory& e) {
-    throw HashJoinFail(
-        std::string("Ran out of memory while building hash tables for equijoin | ") +
-        e.what());
-  } catch (const std::exception& e) {
-    throw std::runtime_error(
-        std::string("Fatal error while attempting to build hash tables for join: ") +
-        e.what());
+    throw;
   }
   if (VLOGGING(1)) {
     ts2 = std::chrono::steady_clock::now();
@@ -199,7 +181,7 @@ void BaselineJoinHashTable::reify(const HashType preferred_layout) {
 
   try {
     reifyWithLayout(preferred_layout);
-  } catch (const std::exception& e) {
+  } catch (const CiderException& e) {
     VLOG(1) << "Caught exception while building baseline hash table: " << e.what();
     freeHashBufferMemory();
     reifyWithLayout(HashType::OneToMany);
@@ -214,7 +196,8 @@ void BaselineJoinHashTable::reifyWithLayout(const HashType layout) {
 
   const auto total_entries = 2 * query_info.getNumTuplesUpperBound();
   if (total_entries > static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
-    throw TooManyHashEntries();
+    CIDER_THROW(CiderTooManyHashEntriesException,
+                "Hash tables with more than 2B entries not supported yet");
   }
 
   auto buffer_provider = executor_->getBufferProvider();
@@ -335,7 +318,7 @@ ColumnsForDevice BaselineJoinHashTable::fetchColumnsForDevice(
   for (const auto& inner_outer_pair : inner_outer_pairs_) {
     const auto inner_col = inner_outer_pair.first;
     if (inner_col->is_virtual()) {
-      throw FailedToJoinOnVirtualColumn();
+      CIDER_THROW(CiderHashJoinException, "Cannot join on rowid");
     }
     join_columns.emplace_back(fetchJoinColumn(inner_col,
                                               fragments,
@@ -374,9 +357,10 @@ void BaselineJoinHashTable::reifyForDevice(const ColumnsForDevice& columns_for_d
                                           emitted_keys_count,
                                           device_id);
   if (err) {
-    throw HashJoinFail(
-        std::string("Unrecognized error when initializing baseline hash table (") +
-        std::to_string(err) + std::string(")"));
+    CIDER_THROW(
+        CiderHashJoinException,
+        fmt::format("Unrecognized error when initializing baseline hash table ({})",
+                    err));
   }
 }
 
@@ -639,7 +623,8 @@ llvm::Value* BaselineJoinHashTable::codegenKey(const CompilationOptions& co) {
             key_col_var,
             val_col_var,
             get_max_rte_scan_table(executor_->cgen_state_->scan_idx_to_hash_pos_))) {
-      throw std::runtime_error(
+      CIDER_THROW(
+          CiderCompileException,
           "Query execution fails because the query contains not supported self-join "
           "pattern. We suspect the query requires multiple left-deep join tree due to "
           "the join condition of the self-join and is not supported for now. Please "

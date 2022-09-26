@@ -22,6 +22,7 @@
 #ifndef CIDER_LITERALUTILS_H
 #define CIDER_LITERALUTILS_H
 
+#include "cider/CiderException.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/type.pb.h"
 
@@ -42,7 +43,7 @@ class LiteralUtils {
         } else if (value == "true") {
           s_literal->set_boolean(true);
         } else {
-          throw std::runtime_error("Substrait bool literal is not correct.");
+          CIDER_THROW(CiderCompileException, "Substrait bool literal is not correct.");
         }
         break;
       }
@@ -65,7 +66,8 @@ class LiteralUtils {
       case ::substrait::Type::KindCase::kFp64:
       case ::substrait::Type::KindCase::kVarchar:
       default:
-        throw std::runtime_error("not supported literal type: " + typeKind);
+        CIDER_THROW(CiderCompileException,
+                    fmt::format("not supported literal type {}", typeKind));
     }
     return s_expr;
   }

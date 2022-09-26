@@ -22,6 +22,7 @@
 
 #include "exec/template/operator/join/hashtable/HashJoin.h"
 
+#include "cider/CiderException.h"
 #include "exec/template/ColumnFetcher.h"
 #include "exec/template/Execute.h"
 #include "exec/template/RangeTableIndexVisitor.h"
@@ -77,7 +78,8 @@ JoinColumn HashJoin::fetchJoinColumn(
                                                            *column_cache);
     return join_column;
   } catch (...) {
-    throw FailedToFetchColumn();
+    CIDER_THROW(CiderOutOfMemoryException,
+                "Not enough memory for columns involved in join");
   }
 }
 
@@ -262,7 +264,7 @@ std::shared_ptr<HashJoin> HashJoin::getInstance(
                                                           executor,
                                                           hashtable_build_dag_map,
                                                           table_id_to_node_map);
-    } catch (TooManyHashEntries&) {
+    } catch (CiderTooManyHashEntriesException&) {
       const auto join_quals = coalesce_singleton_equi_join(qual_bin_oper);
       CHECK_EQ(join_quals.size(), size_t(1));
       const auto join_qual =
@@ -512,7 +514,7 @@ std::pair<std::string, std::shared_ptr<HashJoin>> HashJoin::getSyntheticInstance
       if (candidate_hash_table) {
         hash_table = candidate_hash_table;
       }
-    } catch (HashJoinFail& e) {
+    } catch (CiderHashJoinException& e) {
       error_msg = e.what();
       continue;
     }
@@ -527,18 +529,19 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
   const auto& lhs_ti = lhs->get_type_info();
   const auto& rhs_ti = rhs->get_type_info();
   if (lhs_ti.get_type() != rhs_ti.get_type()) {
-    throw HashJoinFail("Equijoin types must be identical, found: " +
-                       lhs_ti.get_type_name() + ", " + rhs_ti.get_type_name());
+    CIDER_THROW(CiderHashJoinException,
+                "Equijoin types must be identical, found: " + lhs_ti.get_type_name() +
+                    ", " + rhs_ti.get_type_name());
   }
   if (!lhs_ti.is_integer() && !lhs_ti.is_time() && !lhs_ti.is_string() &&
       !lhs_ti.is_decimal()) {
-    throw HashJoinFail("Cannot apply hash join to inner column type " +
-                       lhs_ti.get_type_name());
+    CIDER_THROW(CiderHashJoinException,
+                "Cannot apply hash join to inner column type " + lhs_ti.get_type_name());
   }
   // Decimal types should be identical.
   if (lhs_ti.is_decimal() && (lhs_ti.get_scale() != rhs_ti.get_scale() ||
                               lhs_ti.get_precision() != rhs_ti.get_precision())) {
-    throw HashJoinFail("Equijoin with different decimal types");
+    CIDER_THROW(CiderHashJoinException, "Equijoin with different decimal types");
   }
 
   const auto lhs_cast = dynamic_cast<const Analyzer::UOper*>(lhs);
@@ -546,11 +549,11 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
   if (lhs_ti.is_string() && (static_cast<bool>(lhs_cast) != static_cast<bool>(rhs_cast) ||
                              (lhs_cast && lhs_cast->get_optype() != kCAST) ||
                              (rhs_cast && rhs_cast->get_optype() != kCAST))) {
-    throw HashJoinFail("Cannot use hash join for given expression");
+    CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
   }
   // Casts to decimal are not suported.
   if (lhs_ti.is_decimal() && (lhs_cast || rhs_cast)) {
-    throw HashJoinFail("Cannot use hash join for given expression");
+    CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
   }
   const auto lhs_col =
       lhs_cast ? dynamic_cast<const Analyzer::ColumnVar*>(lhs_cast->get_operand())
@@ -559,7 +562,7 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
       rhs_cast ? dynamic_cast<const Analyzer::ColumnVar*>(rhs_cast->get_operand())
                : dynamic_cast<const Analyzer::ColumnVar*>(rhs);
   if (!lhs_col && !rhs_col) {
-    throw HashJoinFail("Cannot use hash join for given expression");
+    CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
   }
   const Analyzer::ColumnVar* inner_col{nullptr};
   const Analyzer::ColumnVar* outer_col{nullptr};
@@ -571,7 +574,7 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
     outer_col = lhs_col;
   } else {
     if (lhs_col && lhs_col->get_rte_idx() == 0) {
-      throw HashJoinFail("Cannot use hash join for given expression");
+      CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
     }
     inner_col = lhs_col;
     outer_col = rhs_col;
@@ -579,22 +582,22 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
     outer_expr = rhs;
   }
   if (!inner_col) {
-    throw HashJoinFail("Cannot use hash join for given expression");
+    CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
   }
   if (!outer_col) {
     // check whether outer_col is a constant, i.e., inner_col = K;
     const auto outer_constant_col = dynamic_cast<const Analyzer::Constant*>(outer_expr);
     if (outer_constant_col) {
-      throw HashJoinFail(
-          "Cannot use hash join for given expression: try to join with a constant "
-          "value");
+      CIDER_THROW(
+          CiderHashJoinException,
+          "Cannot use hash join for given expression: try to join with a constant value");
     }
     MaxRangeTableIndexVisitor rte_idx_visitor;
     int outer_rte_idx = rte_idx_visitor.visit(outer_expr);
     // The inner column candidate is not actually inner; the outer
     // expression contains columns which are at least as deep.
     if (inner_col->get_rte_idx() <= outer_rte_idx) {
-      throw HashJoinFail("Cannot use hash join for given expression");
+      CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
     }
   }
   // We need to fetch the actual type information from the schema provider since Analyzer
@@ -612,16 +615,16 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
   // Casts from decimal are not supported.
   if ((inner_col_real_ti.is_decimal() || outer_col_ti.is_decimal()) &&
       (lhs_cast || rhs_cast)) {
-    throw HashJoinFail("Cannot use hash join for given expression");
+    CIDER_THROW(CiderHashJoinException, "Cannot use hash join for given expression");
   }
 
   if (!(inner_col_real_ti.is_integer() || inner_col_real_ti.is_time() ||
         inner_col_real_ti.is_decimal() ||
         (inner_col_real_ti.is_string() &&
          inner_col_real_ti.get_compression() == kENCODING_DICT))) {
-    throw HashJoinFail(
-        "Can only apply hash join to integer-like types and dictionary encoded "
-        "strings");
+    CIDER_THROW(
+        CiderHashJoinException,
+        "Can only apply hash join to integer-like types and dictionary encoded strings");
   }
 
   auto normalized_inner_col = inner_col;
@@ -631,9 +634,10 @@ InnerOuter HashJoin::normalizeColumnPair(const Analyzer::Expr* lhs,
   const auto& normalized_outer_ti = normalized_outer_col->get_type_info();
 
   if (normalized_inner_ti.is_string() != normalized_outer_ti.is_string()) {
-    throw HashJoinFail(std::string("Could not build hash tables for incompatible types " +
-                                   normalized_inner_ti.get_type_name() + " and " +
-                                   normalized_outer_ti.get_type_name()));
+    CIDER_THROW(CiderHashJoinException,
+                "Could not build hash tables for incompatible types " +
+                    normalized_inner_ti.get_type_name() + " and " +
+                    normalized_outer_ti.get_type_name());
   }
 
   return {normalized_inner_col, normalized_outer_col};

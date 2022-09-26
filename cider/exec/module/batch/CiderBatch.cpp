@@ -19,18 +19,21 @@
  * under the License.
  */
 
-#include "include/cider/batch/CiderBatch.h"
+#include "cider/batch/CiderBatch.h"
 #include "ArrowABI.h"
 
-CiderBatch::CiderBatch(ArrowSchema* schema)
-    : arrow_schema_(schema), ownership_(true), reallocate_(true) {
+CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+    : arrow_schema_(schema), ownership_(true), reallocate_(true), allocator_(allocator) {
   CHECK(arrow_schema_);
   CHECK(arrow_schema_->release);
   arrow_array_ = CiderBatchUtils::allocateArrowArray();
   arrow_array_->n_buffers = CiderBatchUtils::getBufferNum(arrow_schema_);
   arrow_array_->n_children = arrow_schema_->n_children;
-  CiderArrowArrayBufferHolder* root_holder = new CiderArrowArrayBufferHolder(
-      arrow_array_->n_buffers, arrow_schema_->n_children, arrow_schema_->dictionary);
+  CiderArrowArrayBufferHolder* root_holder =
+      new CiderArrowArrayBufferHolder(arrow_array_->n_buffers,
+                                      arrow_schema_->n_children,
+                                      allocator_,
+                                      arrow_schema_->dictionary);
   arrow_array_->buffers = root_holder->getBufferPtrs();
   arrow_array_->children = root_holder->getChildrenPtrs();
   arrow_array_->dictionary = root_holder->getDictPtr();
@@ -38,12 +41,19 @@ CiderBatch::CiderBatch(ArrowSchema* schema)
   arrow_array_->release = CiderBatchUtils::ciderArrowArrayReleaser;
 }
 
-CiderBatch::CiderBatch(ArrowSchema* schema, ArrowArray* array)
-    : arrow_schema_(schema), arrow_array_(array), ownership_(true), reallocate_(false) {
+CiderBatch::CiderBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+    : arrow_schema_(schema)
+    , arrow_array_(array)
+    , ownership_(true)
+    , reallocate_(false)
+    , allocator_(allocator) {
   CHECK(arrow_schema_);
   CHECK(arrow_schema_->release);
   CHECK(arrow_array_);
   CHECK(arrow_array_->release);
+  CHECK(allocator_);
 }
 
 CiderBatch::~CiderBatch() {
@@ -56,6 +66,7 @@ CiderBatch::CiderBatch(const CiderBatch& rh) {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = false;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 }
 
 CiderBatch& CiderBatch::operator=(const CiderBatch& rh) {
@@ -68,6 +79,7 @@ CiderBatch& CiderBatch::operator=(const CiderBatch& rh) {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = false;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   return *this;
 }
@@ -77,6 +89,7 @@ CiderBatch::CiderBatch(CiderBatch&& rh) noexcept {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = rh.ownership_;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   rh.arrow_array_ = nullptr;
   rh.arrow_schema_ = nullptr;
@@ -95,6 +108,7 @@ CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = rh.ownership_;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   rh.arrow_array_ = nullptr;
   rh.arrow_schema_ = nullptr;
@@ -134,8 +148,11 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
     // Lazy allocate child array.
     child_array->n_buffers = CiderBatchUtils::getBufferNum(child_schema);
     child_array->n_children = child_schema->n_children;
-    CiderArrowArrayBufferHolder* holder = new CiderArrowArrayBufferHolder(
-        child_array->n_buffers, child_schema->n_children, child_schema->dictionary);
+    CiderArrowArrayBufferHolder* holder =
+        new CiderArrowArrayBufferHolder(child_array->n_buffers,
+                                        child_schema->n_children,
+                                        allocator_,
+                                        child_schema->dictionary);
     child_array->buffers = holder->getBufferPtrs();
     child_array->children = holder->getChildrenPtrs();
     child_array->dictionary = holder->getDictPtr();
@@ -143,7 +160,8 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
     child_array->release = CiderBatchUtils::ciderArrowArrayReleaser;
   }
 
-  auto child_batch = CiderBatchUtils::createCiderBatch(child_schema, child_array);
+  auto child_batch =
+      CiderBatchUtils::createCiderBatch(allocator_, child_schema, child_array);
   child_batch->ownership_ = false;  // Only root batch has ownership.
   child_batch->reallocate_ =
       true;  // ArrowArray allocated from Cider could (re-)allocate buffer.

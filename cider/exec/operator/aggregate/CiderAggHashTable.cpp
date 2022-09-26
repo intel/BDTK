@@ -179,7 +179,8 @@ void CiderHasher::copyStringToLocal(UStringVal* uString) {
     return;
   }
   if (size > kStringBufferUnitSize) {
-    throw std::runtime_error("Failed to store a string of lenth " + size);
+    CIDER_THROW(CiderCompileException,
+                fmt::format("Failed to store a string of lenth {}", size));
   }
   if (uStringValStorage_.empty()) {
     uStringValStorage_.emplace_back();
@@ -211,14 +212,14 @@ int64_t CiderHasher::lookupIdByValue(CiderByteArray value) {
     if (pair.second) {
       if (uStringVals.size() > kMaxDistinct) {
         distinctOverflow_ = true;
-        throw std::runtime_error("Overflow in distinct string hash set.");
+        CIDER_THROW(CiderCompileException, "Overflow in distinct string hash set.");
       }
       copyStringToLocal(&*pair.first);
       stringCacheVec.emplace_back(*pair.first);
     }
     return uStringVals.find(uString)->id();
   } else {
-    throw std::runtime_error("Overflow in distinct string hash set.");
+    CIDER_THROW(CiderCompileException, "Overflow in distinct string hash set.");
   }
   return -1;
 }
@@ -258,7 +259,7 @@ CiderAggHashTable::CiderAggHashTable(
     , query_mem_desc_(query_mem_desc.get())
     , rel_alg_exec_unit_(rel_alg_exec_unit.get())
     , buffer_memory_(buffers_num, nullptr)
-    , buffer_empty_map_(buffers_num)
+    , buffer_empty_map_(buffers_num, CiderBitUtils::CiderBitVector<>(allocator, 0))
     , runtime_state_(
           buffers_num_,
           {query_mem_desc->getEntryCount()})  // TODO: Fix Runtime State initialization.
@@ -435,8 +436,8 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
     CHECK_EQ(row_width_, query_mem_desc_->getRowSize());
     buffer_width_ = row_width_ * buffer_entry_num_;
   } else {
-    throw std::runtime_error(
-        "Columnar layout of CiderAggHashTable is not supported now.");
+    CIDER_THROW(CiderCompileException,
+                "Columnar layout of CiderAggHashTable is not supported now.");
     row_width_ = slot_width_ * columns_num_;
     buffer_width_ = offset;
   }
@@ -625,7 +626,8 @@ int8_t* CiderAggHashTable::allocateBufferAt(size_t buffer_id) {
   CHECK_LT(buffer_id, buffers_num_);
   if (nullptr == buffer_memory_[buffer_id]) {
     buffer_memory_[buffer_id] = allocator_->allocate(buffer_width_ * sizeof(int8_t));
-    buffer_empty_map_[buffer_id] = CiderBitUtils::CiderBitVector<>(buffer_entry_num_);
+    buffer_empty_map_[buffer_id] =
+        CiderBitUtils::CiderBitVector<>(allocator_, buffer_entry_num_);
   } else {
     LOG(ERROR) << "Existing a buffer";
   }
@@ -680,7 +682,7 @@ void CiderAggHashTable::initCountDistinctInBuffer(size_t buffer_index) {
             CHECK_LT(col_info.count_distinct_desc.bitmap_sz_bits, MAX_BITMAP_BITS);
             const auto bitmap_byte_sz =
                 col_info.count_distinct_desc.bitmapPaddedSizeBytes();
-            int8_t* buffer = reinterpret_cast<int8_t*>(std::malloc(bitmap_byte_sz));
+            int8_t* buffer = allocator_->allocate(bitmap_byte_sz);
             int64_t address = reinterpret_cast<int64_t>(buffer);
             std::memcpy(col_ptr, &address, slot_width_);
           } else {
@@ -764,7 +766,8 @@ size_t CiderAggHashTable::getNextRowIndex(const int8_t* buffer_ptr,
                                           const size_t start_row_index) const {
   if (is_columnar_layout_) {
     // Unsupported now
-    throw std::runtime_error("Columnar layout group-by hashtable is unsupported.");
+    CIDER_THROW(CiderCompileException,
+                "Columnar layout group-by hashtable is unsupported.");
     return slot_width_ == 8
                ? getNextRowIndexColumnar<int64_t>(buffer_ptr, start_row_index)
                : getNextRowIndexColumnar<int32_t>(buffer_ptr, start_row_index);

@@ -109,7 +109,8 @@ std::unique_ptr<AggregateCodeGenerator> SimpleAggregateCodeGenerator::Make(
         break;
     }
   } else {
-    throw std::runtime_error("Unsuppored data type for SimpleAggregateCodeGenerator.");
+    CIDER_THROW(CiderCompileException,
+                "Unsuppored data type for SimpleAggregateCodeGenerator.");
   }
 
   if (target_info.skip_null_val) {
@@ -129,8 +130,8 @@ void SimpleAggregateCodeGenerator::codegen(CodegenColValues* input,
 
   FixedSizeColValues* args = dynamic_cast<FixedSizeColValues*>(input);
   if (nullptr == args) {
-    throw std::runtime_error(
-        "SimpleAggregateCodeGenerator only support fixed-sized data now.");
+    CIDER_THROW(CiderCompileException,
+                "SimpleAggregateCodeGenerator only support fixed-sized data now.");
   }
   auto value = args->getValue(), is_null = args->getNull();
   if (!is_float_float_) {
@@ -245,7 +246,7 @@ std::unique_ptr<AggregateCodeGenerator> CountAggregateCodeGenerator::Make(
       generator->base_fname_ += "_nullable";
     }
   } else {
-    throw std::runtime_error("Distinct COUNT is not supported now.");
+    CIDER_THROW(CiderCompileException, "Distinct COUNT is not supported now.");
   }
 
   return generator;
@@ -267,14 +268,15 @@ void CountAggregateCodeGenerator::codegen(CodegenColValues* input,
         if (auto is_null = args->getNull()) {
           func_args.push_back(is_null);
         } else {
-          throw std::runtime_error("Argument of Count is nullptr.");
+          CIDER_THROW(CiderCompileException, "Argument of Count is nullptr.");
         }
       } else {
-        throw std::runtime_error("Argument of Count is not a NullableColValues.");
+        CIDER_THROW(CiderCompileException,
+                    "Argument of Count is not a NullableColValues.");
       }
     }
     cgen_state_->emitCall(base_fname_, func_args);
   } else {
-    throw std::runtime_error("Distinct COUNT is not supported now.");
+    CIDER_THROW(CiderCompileException, "Distinct COUNT is not supported now.");
   }
 }

@@ -33,7 +33,8 @@
 class CiderQueryRunner {
  public:
   CiderQueryRunner() {
-    ciderCompileModule_ = CiderCompileModule::Make();
+    ciderCompileModule_ =
+        CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
     exe_option = CiderExecutionOption::defaults();
     compile_option = CiderCompilationOption::defaults();
     compile_option.max_groups_buffer_entry_guess = 16384;

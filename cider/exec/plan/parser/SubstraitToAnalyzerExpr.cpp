@@ -25,7 +25,6 @@
  **/
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include <cstdint>
-#include "cider/CiderException.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DateTimeTranslator.h"
@@ -93,8 +92,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case substrait::Expression::RexTypeCase::kIfThen:
       return toAnalyzerExpr(s_expr.if_then(), function_map, expr_map_ptr);
     default:
-      throw std::runtime_error("Unsupported expression type " +
-                               std::to_string(s_expr.rex_type_case()));
+      CIDER_THROW(CiderCompileException,
+                  fmt::format("Unsupported expression type {}", s_expr.rex_type_case()));
   }
 }
 
@@ -275,7 +274,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
         break;
       }
       default:
-        throw std::runtime_error("unsupport update type on expression IR.");
+        CIDER_THROW(CiderCompileException, "unsupport update type on expression IR.");
     }
     return var_expr;
   }
@@ -328,7 +327,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
         break;
       }
       default:
-        throw std::runtime_error("unsupport update type on expression IR.");
+        CIDER_THROW(CiderCompileException, "unsupport update type on expression IR.");
     }
     return column_var_expr;
   }
@@ -466,7 +465,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
     }
     return makeExpr<Analyzer::StringOper>(string_expr->get_kind(), args);
   }
-  throw std::runtime_error("Failed to update expr.");
+  CIDER_THROW(CiderCompileException, "Failed to update expr.");
 }
 
 std::shared_ptr<Analyzer::AggExpr>
@@ -475,7 +474,8 @@ Substrait2AnalyzerExprConverter::updateOutputTypeOfAVGPartial(
     const substrait::Type& s_type) {
   auto agg_expr = std::dynamic_pointer_cast<Analyzer::AggExpr>(expr);
   if (!agg_expr) {
-    std::runtime_error("output type update only happens in partial AVG case.");
+    CIDER_THROW(CiderCompileException,
+                "output type update only happens in partial AVG case.");
   }
   return std::make_shared<Analyzer::AggExpr>(getSQLTypeInfo(s_type),
                                              agg_expr->get_aggtype(),
@@ -575,8 +575,9 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     }
 
     default:
-      throw std::runtime_error("Unsupported literal_type in Omnisci " +
-                               std::to_string(s_literal_expr.literal_type_case()));
+      CIDER_THROW(CiderCompileException,
+                  fmt::format("Unsupported literal_type in Omnisci {}",
+                              s_literal_expr.literal_type_case()));
   }
 }
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
@@ -603,12 +604,12 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       if (iter != expr_map_ptr->end()) {
         return iter->second;
       } else {
-        throw std::runtime_error("Failed to get field reference expr.");
+        CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
       }
     }
     return makeColumnVar(SQLTypeInfo(t, false), cur_table_id, col_id, nest_level, true);
   }
-  throw std::runtime_error("Failed to translate field reference expr.");
+  CIDER_THROW(CiderCompileException, "Failed to translate field reference expr.");
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildInValuesExpr(
@@ -714,7 +715,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildDateAddExp
     return makeExpr<Analyzer::DateaddExpr>(
         datetime_ti, daSECOND, interval_expr, datetime);
   }
-  throw std::runtime_error("Unsupported date time function: " + function_name);
+  CIDER_THROW(CiderCompileException, "Unsupported date time function: " + function_name);
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildLikeExpr(
@@ -741,7 +742,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildLikeExpr(
   } else if (value.literal().has_var_char()) {
     v.stringval = new std::string(value.literal().var_char().value());
   } else {
-    throw std::runtime_error("not supported type for like expr.");
+    CIDER_THROW(CiderCompileException, "not supported type for like expr.");
   }
   like_literal_expr = std::make_shared<Analyzer::Constant>(info, false, v);
 
@@ -808,7 +809,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       //    case SqlStringOpKind::BASE64_DECODE:
       //      return makeExpr<Analyzer::Base64DecodeStringOper>(args);
     default:
-      throw std::runtime_error("Unsupported string function.");
+      CIDER_THROW(CiderCompileException, "Unsupported string function.");
   }
   return nullptr;
 }
@@ -943,7 +944,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
         args[0],
         toAnalyzerExpr(seperated_expression, function_map, expr_map_ptr));
   }
-  throw std::runtime_error("Failed to transfer scalar function expr.");
+  CIDER_THROW(CiderCompileException, "Failed to transfer scalar function expr.");
 }
 
 int64_t dateToInt64(const std::string& string_val) {
@@ -953,7 +954,7 @@ int64_t dateToInt64(const std::string& string_val) {
   if (res.has_value()) {
     return res.value();
   }
-  throw std::runtime_error("Not a valid date string!");
+  CIDER_THROW(CiderCompileException, "Not a valid date string!");
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
@@ -1041,7 +1042,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
             : false,
         arg1);
   } else {
-    throw std::runtime_error("Cannot find output type for function: " + function);
+    CIDER_THROW(CiderCompileException,
+                "Cannot find output type for function: " + function);
   }
 }
 
@@ -1061,7 +1063,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
 
       expr_list.emplace_back(if_expr, then_expr);
     } else {
-      throw std::runtime_error("case when is incompleted: lack case or when");
+      CIDER_THROW(CiderCompileException, "case when is incompleted: lack case or when");
     }
   }
   if (s_if_then_expr.has_else_()) {

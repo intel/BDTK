@@ -346,7 +346,7 @@ void StringOper::check_operand_types(
       oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
           << "Currently only constant, column, or other string operator arguments "
           << "are allowed as inputs.";
-      throw std::runtime_error(oss.str());
+      CIDER_THROW(CiderCompileException, oss.str());
     }
     auto decasted_arg_ti = decasted_arg->get_type_info();
     // We need to prevent any non-string type from being casted to a string, but can
@@ -363,7 +363,7 @@ void StringOper::check_operand_types(
       oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
           << "Currently only column inputs allowed for the primary argument, "
           << "but a column input was received for argument " << arg_idx + 1 << ".";
-      throw std::runtime_error(oss.str());
+      CIDER_THROW(CiderCompileException, oss.str());
     }
     switch (expected_type_family) {
       case OperandTypeFamily::STRING_FAMILY: {
@@ -375,14 +375,14 @@ void StringOper::check_operand_types(
           oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
               << "Expected integer type for argument " << arg_idx + 1 << " ("
               << arg_names[arg_idx] << ").";
-          throw std::runtime_error(oss.str());
+          CIDER_THROW(CiderCompileException, oss.str());
           break;
         }
         if (!is_arg_constant) {
           oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
               << "Currently only text-encoded dictionary column inputs are "
               << "allowed, but an integer-type column was provided.";
-          throw std::runtime_error(oss.str());
+          CIDER_THROW(CiderCompileException, oss.str());
           break;
         }
         break;
@@ -495,8 +495,8 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
   *new_right_type = right_type;
   if (IS_LOGIC(op)) {
     if (left_type.get_type() != kBOOLEAN || right_type.get_type() != kBOOLEAN) {
-      throw std::runtime_error(
-          "non-boolean operands cannot be used in logic operations.");
+      CIDER_THROW(CiderCompileException,
+                  "non-boolean operands cannot be used in logic operations.");
     }
     result_type = SQLTypeInfo(kBOOLEAN, false);
   } else if (IS_COMPARISON(op)) {
@@ -512,7 +512,8 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
           case kTIMESTAMP:
             switch (right_type.get_type()) {
               case kTIME:
-                throw std::runtime_error("Cannont compare between TIMESTAMP and TIME.");
+                CIDER_THROW(CiderCompileException,
+                            "Cannont compare between TIMESTAMP and TIME.");
                 break;
               case kDATE:
                 *new_left_type = SQLTypeInfo(left_type.get_type(),
@@ -541,10 +542,12 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
           case kTIME:
             switch (right_type.get_type()) {
               case kTIMESTAMP:
-                throw std::runtime_error("Cannont compare between TIME and TIMESTAMP.");
+                CIDER_THROW(CiderCompileException,
+                            "Cannont compare between TIME and TIMESTAMP.");
                 break;
               case kDATE:
-                throw std::runtime_error("Cannont compare between TIME and DATE.");
+                CIDER_THROW(CiderCompileException,
+                            "Cannont compare between TIME and DATE.");
                 break;
               case kTIME:
                 *new_left_type = SQLTypeInfo(
@@ -581,7 +584,8 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
                 new_right_type->set_notnull(right_type.get_notnull());
                 break;
               case kTIME:
-                throw std::runtime_error("Cannont compare between DATE and TIME.");
+                CIDER_THROW(CiderCompileException,
+                            "Cannont compare between DATE and TIME.");
                 break;
               default:
                 CHECK(false);
@@ -607,8 +611,9 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
         *new_left_type = common_type;
         *new_right_type = common_type;
       } else {
-        throw std::runtime_error("Cannot compare between " + left_type.get_type_name() +
-                                 " and " + right_type.get_type_name());
+        CIDER_THROW(CiderCompileException,
+                    "Cannot compare between " + left_type.get_type_name() + " and " +
+                        right_type.get_type_name());
       }
     }
     result_type = SQLTypeInfo(kBOOLEAN, false);
@@ -621,10 +626,11 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
   } else if (IS_ARITHMETIC(op)) {
     if (!(left_type.is_number() || left_type.is_timeinterval()) ||
         !(right_type.is_number() || right_type.is_timeinterval())) {
-      throw std::runtime_error("non-numeric operands in arithmetic operations.");
+      CIDER_THROW(CiderCompileException,
+                  "non-numeric operands in arithmetic operations.");
     }
     if (op == kMODULO && (!left_type.is_integer() || !right_type.is_integer())) {
-      throw std::runtime_error("non-integer operands in modulo operation.");
+      CIDER_THROW(CiderCompileException, "non-integer operands in modulo operation.");
     }
     common_type = common_numeric_type(left_type, right_type);
     if (common_type.is_decimal()) {
@@ -653,7 +659,7 @@ SQLTypeInfo BinOper::analyze_type_info(SQLOps op,
     }
     result_type = common_type;
   } else {
-    throw std::runtime_error("invalid binary operator type.");
+    CIDER_THROW(CiderCompileException, "invalid binary operator type.");
   }
   result_type.set_notnull(left_type.get_notnull() && right_type.get_notnull());
   return result_type;
@@ -717,13 +723,13 @@ SQLTypeInfo BinOper::common_numeric_type(const SQLTypeInfo& type1,
       "Operator type not supported for time interval arithmetic: "};
   if (type1.is_timeinterval()) {
     if (!type2.is_integer()) {
-      throw std::runtime_error(timeinterval_op_error + type2.get_type_name());
+      CIDER_THROW(CiderCompileException, timeinterval_op_error + type2.get_type_name());
     }
     return type1;
   }
   if (type2.is_timeinterval()) {
     if (!type1.is_integer()) {
-      throw std::runtime_error(timeinterval_op_error + type1.get_type_name());
+      CIDER_THROW(CiderCompileException, timeinterval_op_error + type1.get_type_name());
     }
     return type2;
   }
@@ -962,18 +968,20 @@ std::shared_ptr<Analyzer::Expr> Expr::add_cast(const SQLTypeInfo& new_type_info)
     return shared_from_this();
   }
   if (!type_info.is_castable(new_type_info)) {
-    throw std::runtime_error("Cannot CAST from " + type_info.get_type_name() + " to " +
-                             new_type_info.get_type_name());
+    CIDER_THROW(CiderCompileException,
+                "Cannot CAST from " + type_info.get_type_name() + " to " +
+                    new_type_info.get_type_name());
   }
   // @TODO(wei) temporary restriction until executor can support this.
   if (typeid(*this) != typeid(Constant) && new_type_info.is_string() &&
       new_type_info.get_compression() == kENCODING_DICT &&
       new_type_info.get_comp_param() <= TRANSIENT_DICT_ID) {
     if (type_info.is_string() && type_info.get_compression() != kENCODING_DICT) {
-      throw std::runtime_error(
-          "Cannot group by string columns which are not dictionary encoded.");
+      CIDER_THROW(CiderCompileException,
+                  "Cannot group by string columns which are not dictionary encoded.");
     }
-    throw std::runtime_error(
+    CIDER_THROW(
+        CiderCompileException,
         "Internal error: Cannot apply transient dictionary encoding to non-literal "
         "expression "
         "yet.");
@@ -1014,7 +1022,7 @@ TO safeNarrow(FROM const from) {
   static_assert(sizeof(TO) < sizeof(FROM));
   if (from < static_cast<FROM>(std::numeric_limits<TO>::min()) ||
       static_cast<FROM>(std::numeric_limits<TO>::max()) < from) {
-    throw std::runtime_error("Overflow or underflow");
+    CIDER_THROW(CiderCompileException, "Overflow or underflow");
   }
   return static_cast<TO>(from);
 }
@@ -1051,7 +1059,7 @@ TO safeRound(FROM const from) {
   constexpr FROM max_float = maxRound<FROM, TO>();
   FROM const n = std::round(from);
   if (n < static_cast<FROM>(std::numeric_limits<TO>::min()) || max_float < n) {
-    throw std::runtime_error("Overflow or underflow");
+    CIDER_THROW(CiderCompileException, "Overflow or underflow");
   }
   return static_cast<TO>(n);
 }
@@ -1075,7 +1083,7 @@ int64_t safeScale(T from, unsigned const scale) {
   if (from == 0) {
     return 0;
   }
-  throw std::runtime_error("Overflow or underflow");
+  CIDER_THROW(CiderCompileException, "Overflow or underflow");
 }
 
 }  // namespace
@@ -1482,7 +1490,7 @@ void Constant::do_cast(const SQLTypeInfo& new_type_info) {
     for (auto& v : value_list) {
       auto c = std::dynamic_pointer_cast<Analyzer::Constant>(v);
       if (!c) {
-        throw std::runtime_error("Invalid array cast.");
+        CIDER_THROW(CiderCompileException, "Invalid array cast.");
       }
       c->do_cast(new_sub_ti);
     }
@@ -1498,8 +1506,9 @@ void Constant::do_cast(const SQLTypeInfo& new_type_info) {
     type_info = new_type_info;
     return;
   } else {
-    throw std::runtime_error("Cast from " + type_info.get_type_name() + " to " +
-                             new_type_info.get_type_name() + " not supported");
+    CIDER_THROW(CiderCompileException,
+                "Cast from " + type_info.get_type_name() + " to " +
+                    new_type_info.get_type_name() + " not supported");
   }
 }
 
@@ -1637,7 +1646,8 @@ void ColumnVar::check_group_by(
       }
     }
   }
-  throw std::runtime_error(
+  CIDER_THROW(
+      CiderCompileException,
       "expressions in the SELECT or HAVING clause must be an aggregate function or an "
       "expression "
       "over GROUP BY columns.");
@@ -1646,7 +1656,8 @@ void ColumnVar::check_group_by(
 void Var::check_group_by(
     const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
   if (which_row != kGROUPBY) {
-    throw std::runtime_error("Internal error: invalid VAR in GROUP BY or HAVING.");
+    CIDER_THROW(CiderCompileException,
+                "Internal error: invalid VAR in GROUP BY or HAVING.");
   }
 }
 
@@ -2058,7 +2069,8 @@ std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_with_targetlist(
       }
     }
   }
-  throw std::runtime_error("Internal error: cannot find ColumnVar in targetlist.");
+  CIDER_THROW(CiderCompileException,
+              "Internal error: cannot find ColumnVar in targetlist.");
 }
 
 std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_with_child_targetlist(
@@ -2068,7 +2080,8 @@ std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_with_child_targetlist(
     const Expr* e = tle->get_expr();
     const ColumnVar* colvar = dynamic_cast<const ColumnVar*>(e);
     if (colvar == nullptr) {
-      throw std::runtime_error(
+      CIDER_THROW(
+          CiderCompileException,
           "Internal Error: targetlist in rewrite_with_child_targetlist is not all "
           "columns.");
     }
@@ -2079,7 +2092,8 @@ std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_with_child_targetlist(
     }
     varno++;
   }
-  throw std::runtime_error("Internal error: cannot find ColumnVar in child targetlist.");
+  CIDER_THROW(CiderCompileException,
+              "Internal error: cannot find ColumnVar in child targetlist.");
 }
 
 std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_agg_to_var(
@@ -2090,7 +2104,8 @@ std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_agg_to_var(
     if (typeid(*e) != typeid(AggExpr)) {
       const ColumnVar* colvar = dynamic_cast<const ColumnVar*>(e);
       if (colvar == nullptr) {
-        throw std::runtime_error(
+        CIDER_THROW(
+            CiderCompileException,
             "Internal Error: targetlist in rewrite_agg_to_var is not all columns and "
             "aggregates.");
       }
@@ -2102,8 +2117,8 @@ std::shared_ptr<Analyzer::Expr> ColumnVar::rewrite_agg_to_var(
     }
     varno++;
   }
-  throw std::runtime_error(
-      "Internal error: cannot find ColumnVar from having clause in targetlist.");
+  CIDER_THROW(CiderCompileException,
+              "Internal error: cannot find ColumnVar from having clause in targetlist.");
 }
 
 std::shared_ptr<Analyzer::Expr> Var::rewrite_agg_to_var(
@@ -2116,8 +2131,8 @@ std::shared_ptr<Analyzer::Expr> Var::rewrite_agg_to_var(
     }
     varno++;
   }
-  throw std::runtime_error(
-      "Internal error: cannot find Var from having clause in targetlist.");
+  CIDER_THROW(CiderCompileException,
+              "Internal error: cannot find Var from having clause in targetlist.");
 }
 
 std::shared_ptr<Analyzer::Expr> InValues::rewrite_with_targetlist(
@@ -2158,7 +2173,8 @@ std::shared_ptr<Analyzer::Expr> AggExpr::rewrite_with_targetlist(
       }
     }
   }
-  throw std::runtime_error("Internal error: cannot find AggExpr in targetlist.");
+  CIDER_THROW(CiderCompileException,
+              "Internal error: cannot find AggExpr in targetlist.");
 }
 
 std::shared_ptr<Analyzer::Expr> AggExpr::rewrite_with_child_targetlist(
@@ -2183,8 +2199,8 @@ std::shared_ptr<Analyzer::Expr> AggExpr::rewrite_agg_to_var(
     }
     varno++;
   }
-  throw std::runtime_error(
-      "Internal error: cannot find AggExpr from having clause in targetlist.");
+  CIDER_THROW(CiderCompileException,
+              "Internal error: cannot find AggExpr from having clause in targetlist.");
 }
 
 std::shared_ptr<Analyzer::Expr> CaseExpr::rewrite_with_targetlist(
@@ -2375,8 +2391,8 @@ bool Datum_equal(const SQLTypeInfo& ti, Datum val1, Datum val2) {
     case kINTERVAL_YEAR_MONTH:
       return val1.bigintval == val2.bigintval;
     default:
-      throw std::runtime_error("Unrecognized type for Constant Datum equality: " +
-                               ti.get_type_name());
+      CIDER_THROW(CiderCompileException,
+                  "Unrecognized type for Constant Datum equality: " + ti.get_type_name());
   }
   UNREACHABLE();
   return false;

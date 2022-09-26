@@ -139,8 +139,8 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::CharLengthExpr* expr,
   if (str_lv.size() != 3) {
     CHECK_EQ(size_t(1), str_lv.size());
     if (g_enable_watchdog) {
-      throw WatchdogException(
-          "LENGTH / CHAR_LENGTH on dictionary-encoded strings would be slow");
+      CIDER_THROW(CiderWatchdogException,
+                  "LENGTH / CHAR_LENGTH on dictionary-encoded strings would be slow");
     }
     str_lv.push_back(cgen_state_->emitCall("extract_str_ptr", {str_lv.front()}));
     str_lv.push_back(cgen_state_->emitCall("extract_str_len", {str_lv.front()}));
@@ -282,7 +282,7 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::LikeExpr* expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   if (is_unnest(extract_cast_arg(expr->get_arg()))) {
-    throw std::runtime_error("LIKE not supported for unnested expressions");
+    CIDER_THROW(CiderCompileException, "LIKE not supported for unnested expressions");
   }
   char escape_char{'\\'};
   if (expr->get_escape_expr()) {
@@ -307,9 +307,9 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::LikeExpr* expr,
   const auto& ti = expr->get_arg()->get_type_info();
   CHECK(ti.is_string());
   if (g_enable_watchdog && ti.get_compression() != kENCODING_NONE) {
-    throw WatchdogException(
-        "Cannot do LIKE / ILIKE on this dictionary encoded column, its cardinality is "
-        "too high");
+    CIDER_THROW(CiderWatchdogException,
+                "Cannot do LIKE / ILIKE on this dictionary encoded column, its "
+                "cardinality is too high");
   }
   auto str_lv = codegen(expr->get_arg(), true, co);
   if (str_lv.size() != 3) {
@@ -352,9 +352,9 @@ llvm::Value* CodeGenerator::codegenDictLike(
   const auto dict_like_arg = cast_oper->get_own_operand();
   const auto& dict_like_arg_ti = dict_like_arg->get_type_info();
   if (!dict_like_arg_ti.is_string()) {
-    throw(std::runtime_error("Cast from " + dict_like_arg_ti.get_type_name() + " to " +
-                             cast_oper->get_type_info().get_type_name() +
-                             " not supported"));
+    CIDER_THROW(CiderCompileException,
+                "Cast from " + dict_like_arg_ti.get_type_name() + " to " +
+                    cast_oper->get_type_info().get_type_name() + " not supported");
   }
   CHECK_EQ(kENCODING_DICT, dict_like_arg_ti.get_compression());
   const auto sdp = executor()->getStringDictionaryProxy(
@@ -403,7 +403,7 @@ std::vector<int32_t> get_compared_ids(const StringDictionaryProxy* dict,
       ret = dict->getCompare(pattern, "<>");
       break;
     default:
-      std::runtime_error("unsuported operator for string comparision");
+      CIDER_THROW(CiderCompileException, "unsuported operator for string comparision");
   }
   return ret;
 }
@@ -432,7 +432,8 @@ llvm::Value* CodeGenerator::codegenDictStrCmp(const std::shared_ptr<Analyzer::Ex
     }
     // TODO (vraj): implement compare between two dictionary encoded columns which don't
     // shared dictionary
-    throw std::runtime_error("Decoding two Dictionary encoded columns will be slow");
+    CIDER_THROW(CiderCompileException,
+                "Decoding two Dictionary encoded columns will be slow");
   } else if (lhs_col_var && rhs_cast_oper) {
     cast_oper.swap(rhs_cast_oper);
     col_var.swap(lhs_col_var);
@@ -476,8 +477,7 @@ llvm::Value* CodeGenerator::codegenDictStrCmp(const std::shared_ptr<Analyzer::Ex
       col_ti.get_comp_param(), executor()->getRowSetMemoryOwner(), true);
 
   if (sdp->storageEntryCount() > 200000000) {
-    std::runtime_error("Cardinality for string dictionary is too high");
-    return nullptr;
+    CIDER_THROW(CiderCompileException, "Cardinality for string dictionary is too high");
   }
 
   const auto& pattern_str = *const_val.stringval;
@@ -496,7 +496,7 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::RegexpExpr* expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   if (is_unnest(extract_cast_arg(expr->get_arg()))) {
-    throw std::runtime_error("REGEXP not supported for unnested expressions");
+    CIDER_THROW(CiderCompileException, "REGEXP not supported for unnested expressions");
   }
   char escape_char{'\\'};
   if (expr->get_escape_expr()) {
@@ -517,9 +517,9 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::RegexpExpr* expr,
   const auto& ti = expr->get_arg()->get_type_info();
   CHECK(ti.is_string());
   if (g_enable_watchdog && ti.get_compression() != kENCODING_NONE) {
-    throw WatchdogException(
-        "Cannot do REGEXP_LIKE on this dictionary encoded column, its cardinality is too "
-        "high");
+    CIDER_THROW(CiderWatchdogException,
+                "Cannot do REGEXP_LIKE on this dictionary encoded column, its "
+                "cardinality is too high");
   }
   auto str_lv = codegen(expr->get_arg(), true, co);
   if (str_lv.size() != 3) {

@@ -25,6 +25,9 @@
 #include "exec/plan/parser/TypeUtils.h"
 #include "util/Logger.h"
 
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
+
 void DuckDbQueryRunner::createTableAndInsertData(
     const std::string& table_name,
     const std::string& create_ddl,
@@ -128,45 +131,45 @@ template <>
   return timestamp;
 }
 
-#define GEN_DUCK_VALUE_FUNC                                               \
-  [&]() {                                                                 \
-    switch (s_type.kind_case()) {                                         \
-      case ::substrait::Type::KindCase::kBool:                            \
-      case ::substrait::Type::KindCase::kI8: {                            \
-        return duckValueAt<int8_t>(current_batch->column(k), j);          \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kI16: {                           \
-        return duckValueAt<int16_t>(current_batch->column(k), j);         \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kI32: {                           \
-        return duckValueAt<int32_t>(current_batch->column(k), j);         \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kI64: {                           \
-        return duckValueAt<int64_t>(current_batch->column(k), j);         \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kFp32: {                          \
-        return duckValueAt<float>(current_batch->column(k), j);           \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kFp64: {                          \
-        return duckValueAt<double>(current_batch->column(k), j);          \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kDate: {                          \
-        return duckDateValueAt(current_batch->column(k), j);              \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kTime: {                          \
-        return duckTimeValueAt(current_batch->column(k), j);              \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kTimestamp: {                     \
-        return duckTimestampValueAt(current_batch->column(k), j);         \
-      }                                                                   \
-      case ::substrait::Type::KindCase::kFixedChar:                       \
-      case ::substrait::Type::KindCase::kVarchar:                         \
-      case ::substrait::Type::KindCase::kString: {                        \
-        return duckValueAt<std::string>(current_batch->column(k), j);     \
-      }                                                                   \
-      default:                                                            \
-        throw std::runtime_error("not supported type to gen duck value"); \
-    }                                                                     \
+#define GEN_DUCK_VALUE_FUNC                                                  \
+  [&]() {                                                                    \
+    switch (s_type.kind_case()) {                                            \
+      case ::substrait::Type::KindCase::kBool:                               \
+      case ::substrait::Type::KindCase::kI8: {                               \
+        return duckValueAt<int8_t>(current_batch->column(k), j);             \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kI16: {                              \
+        return duckValueAt<int16_t>(current_batch->column(k), j);            \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kI32: {                              \
+        return duckValueAt<int32_t>(current_batch->column(k), j);            \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kI64: {                              \
+        return duckValueAt<int64_t>(current_batch->column(k), j);            \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kFp32: {                             \
+        return duckValueAt<float>(current_batch->column(k), j);              \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kFp64: {                             \
+        return duckValueAt<double>(current_batch->column(k), j);             \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kDate: {                             \
+        return duckDateValueAt(current_batch->column(k), j);                 \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kTime: {                             \
+        return duckTimeValueAt(current_batch->column(k), j);                 \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kTimestamp: {                        \
+        return duckTimestampValueAt(current_batch->column(k), j);            \
+      }                                                                      \
+      case ::substrait::Type::KindCase::kFixedChar:                          \
+      case ::substrait::Type::KindCase::kVarchar:                            \
+      case ::substrait::Type::KindCase::kString: {                           \
+        return duckValueAt<std::string>(current_batch->column(k), j);        \
+      }                                                                      \
+      default:                                                               \
+        CIDER_THROW(CiderException, "not supported type to gen duck value"); \
+    }                                                                        \
   }
 
 void DuckDbQueryRunner::createTableAndInsertData(
@@ -274,7 +277,7 @@ size_t getTypeSize(const ::duckdb::LogicalType& type) {
     case ::duckdb::LogicalTypeId::VARCHAR:
       return 16;  // sizeof(CiderByteArray)
     default:
-      throw std::runtime_error("Unsupported type: " + type.ToString());
+      CIDER_THROW(CiderCompileException, "Unsupported type: " + type.ToString());
   }
 }
 
@@ -308,7 +311,7 @@ substrait::Type convertToSubstraitType(const ::duckdb::LogicalType& type) {
     case ::duckdb::LogicalTypeId::DECIMAL:
       return CREATE_SUBSTRAIT_TYPE(Decimal);
     default:
-      throw std::runtime_error("Unsupported type: " + type.ToString());
+      CIDER_THROW(CiderCompileException, "Unsupported type: " + type.ToString());
   }
 }
 
@@ -376,7 +379,8 @@ void addColumnDataToCiderBatch<CiderByteArray>(
     } else {
       std::string value = dataChunk->GetValue(i, j).GetValue<std::string>();
       // memory leak risk. user should manually free.
-      uint8_t* value_buf = (uint8_t*)std::malloc(value.length());
+      uint8_t* value_buf =
+          reinterpret_cast<uint8_t*>(allocator->allocate(value.length()));
       std::memcpy(value_buf, value.c_str(), value.length());
       buf[j].len = value.length();
       buf[j].ptr = value_buf;
@@ -398,8 +402,8 @@ CiderBatch DuckDbResultConvertor::fetchOneBatch(
     batch_types.emplace_back(std::move(convertToSubstraitType(type)));
     batch_names.emplace_back("");
     if (!isDuckDb2CiderBatchSupportType(type)) {
-      throw std::runtime_error("Non numberic type " + type.ToString() +
-                               " not supported yet");
+      CIDER_THROW(CiderCompileException,
+                  "Non numberic type " + type.ToString() + " not supported yet");
     }
     // allocate memory according to type.
     column_size.push_back(getTypeSize(type));
@@ -410,8 +414,8 @@ CiderBatch DuckDbResultConvertor::fetchOneBatch(
   for (int i = 0; i < col_num; i++) {
     ::duckdb::LogicalType type = types[i];
     if (!isDuckDb2CiderBatchSupportType(type)) {
-      throw std::runtime_error("Non numberic type " + type.ToString() +
-                               " not supported yet");
+      CIDER_THROW(CiderCompileException,
+                  "Non numberic type " + type.ToString() + " not supported yet");
     }
     // allocate memory according to type.
     auto type_size = getTypeSize(type);
@@ -446,7 +450,8 @@ CiderBatch DuckDbResultConvertor::fetchOneBatch(
         addColumnDataToCiderBatch<CiderByteArray>(chunk, i, row_num, col_buf);
         break;
       default:
-        throw std::runtime_error("Unsupported type convertor: " + type.ToString());
+        CIDER_THROW(CiderCompileException,
+                    "Unsupported type convertor: " + type.ToString());
     }
   }
   chunk->Destroy();

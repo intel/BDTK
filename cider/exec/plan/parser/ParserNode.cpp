@@ -20,16 +20,13 @@
  * under the License.
  */
 #include "ParserNode.h"
-
+#include <rapidjson/document.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/core/null_deleter.hpp>
-
-#include <rapidjson/document.h>
-
 #include <regex>
 #include <stdexcept>
 #include <string>
-
+#include "cider/CiderException.h"
 #include "util/measure.h"
 
 using namespace std::string_literals;
@@ -115,7 +112,8 @@ std::shared_ptr<Analyzer::Expr> OperExpr::normalize(
     // subquery not supported yet.
     CHECK(!std::dynamic_pointer_cast<Analyzer::Subquery>(right_expr));
     if (right_type.get_type() != kARRAY) {
-      throw std::runtime_error(
+      CIDER_THROW(
+          CiderCompileException,
           "Existential or universal qualifiers can only be used in front of a subquery "
           "or an "
           "expression of array type.");
@@ -175,7 +173,8 @@ std::shared_ptr<Analyzer::Expr> OperExpr::normalize(
 
 void LikeExpr::check_like_expr(const std::string& like_str, char escape_char) {
   if (like_str.back() == escape_char) {
-    throw std::runtime_error("LIKE pattern must not end with escape character.");
+    CIDER_THROW(CiderCompileException,
+                "LIKE pattern must not end with escape character.");
   }
 }
 
@@ -225,22 +224,26 @@ std::shared_ptr<Analyzer::Expr> LikeExpr::get(std::shared_ptr<Analyzer::Expr> ar
                                               const bool is_ilike,
                                               const bool is_not) {
   if (!arg_expr->get_type_info().is_string()) {
-    throw std::runtime_error("expression before LIKE must be of a string type.");
+    CIDER_THROW(CiderCompileException,
+                "expression before LIKE must be of a string type.");
   }
   if (!like_expr->get_type_info().is_string()) {
-    throw std::runtime_error("expression after LIKE must be of a string type.");
+    CIDER_THROW(CiderCompileException, "expression after LIKE must be of a string type.");
   }
   char escape_char = '\\';
   if (escape_expr != nullptr) {
     if (!escape_expr->get_type_info().is_string()) {
-      throw std::runtime_error("expression after ESCAPE must be of a string type.");
+      CIDER_THROW(CiderCompileException,
+                  "expression after ESCAPE must be of a string type.");
     }
     if (!escape_expr->get_type_info().is_string()) {
-      throw std::runtime_error("expression after ESCAPE must be of a string type.");
+      CIDER_THROW(CiderCompileException,
+                  "expression after ESCAPE must be of a string type.");
     }
     auto c = std::dynamic_pointer_cast<Analyzer::Constant>(escape_expr);
     if (c != nullptr && c->get_constval().stringval->length() > 1) {
-      throw std::runtime_error("String after ESCAPE must have a single character.");
+      CIDER_THROW(CiderCompileException,
+                  "String after ESCAPE must have a single character.");
     }
     escape_char = (*c->get_constval().stringval)[0];
   }
@@ -267,7 +270,8 @@ std::shared_ptr<Analyzer::Expr> LikeExpr::get(std::shared_ptr<Analyzer::Expr> ar
 
 void RegexpExpr::check_pattern_expr(const std::string& pattern_str, char escape_char) {
   if (pattern_str.back() == escape_char) {
-    throw std::runtime_error("REGEXP pattern must not end with escape character.");
+    CIDER_THROW(CiderCompileException,
+                "REGEXP pattern must not end with escape character.");
   }
 }
 
@@ -308,26 +312,31 @@ std::shared_ptr<Analyzer::Expr> RegexpExpr::get(
     std::shared_ptr<Analyzer::Expr> escape_expr,
     const bool is_not) {
   if (!arg_expr->get_type_info().is_string()) {
-    throw std::runtime_error("expression before REGEXP must be of a string type.");
+    CIDER_THROW(CiderCompileException,
+                "expression before REGEXP must be of a string type.");
   }
   if (!pattern_expr->get_type_info().is_string()) {
-    throw std::runtime_error("expression after REGEXP must be of a string type.");
+    CIDER_THROW(CiderCompileException,
+                "expression after REGEXP must be of a string type.");
   }
   char escape_char = '\\';
   if (escape_expr != nullptr) {
     if (!escape_expr->get_type_info().is_string()) {
-      throw std::runtime_error("expression after ESCAPE must be of a string type.");
+      CIDER_THROW(CiderCompileException,
+                  "expression after ESCAPE must be of a string type.");
     }
     if (!escape_expr->get_type_info().is_string()) {
-      throw std::runtime_error("expression after ESCAPE must be of a string type.");
+      CIDER_THROW(CiderCompileException,
+                  "expression after ESCAPE must be of a string type.");
     }
     auto c = std::dynamic_pointer_cast<Analyzer::Constant>(escape_expr);
     if (c != nullptr && c->get_constval().stringval->length() > 1) {
-      throw std::runtime_error("String after ESCAPE must have a single character.");
+      CIDER_THROW(CiderCompileException,
+                  "String after ESCAPE must have a single character.");
     }
     escape_char = (*c->get_constval().stringval)[0];
     if (escape_char != '\\') {
-      throw std::runtime_error("Only supporting '\\' escape character.");
+      CIDER_THROW(CiderCompileException, "Only supporting '\\' escape character.");
     }
   }
   auto c = std::dynamic_pointer_cast<Analyzer::Constant>(pattern_expr);
@@ -350,7 +359,7 @@ std::shared_ptr<Analyzer::Expr> LikelihoodExpr::get(
     float likelihood,
     const bool is_not) {
   if (!arg_expr->get_type_info().is_boolean()) {
-    throw std::runtime_error("likelihood expression expects boolean type.");
+    CIDER_THROW(CiderCompileException, "likelihood expression expects boolean type.");
   }
   std::shared_ptr<Analyzer::Expr> result = makeExpr<Analyzer::LikelihoodExpr>(
       arg_expr->decompress(), is_not ? 1 - likelihood : likelihood);
@@ -416,7 +425,8 @@ std::shared_ptr<Analyzer::Expr> CaseExpr::normalize(
       } else if (ti.is_boolean() && e2->get_type_info().is_boolean()) {
         ti = Analyzer::BinOper::common_numeric_type(ti, e2->get_type_info());
       } else {
-        throw std::runtime_error(
+        CIDER_THROW(
+            CiderCompileException,
             "expressions in THEN clause must be of the same or compatible types.");
       }
     }
@@ -450,7 +460,8 @@ std::shared_ptr<Analyzer::Expr> CaseExpr::normalize(
         ti = Analyzer::BinOper::common_numeric_type(ti, else_e->get_type_info());
       } else if (get_logical_type_info(ti) !=
                  get_logical_type_info(else_e->get_type_info())) {
-        throw std::runtime_error(
+        CIDER_THROW(
+            CiderCompileException,
             // types differing by encoding will be resolved at decode
 
             "expressions in ELSE clause must be of the same or compatible types as those "
@@ -473,8 +484,8 @@ std::shared_ptr<Analyzer::Expr> CaseExpr::normalize(
     else_e = makeExpr<Analyzer::Constant>(ti, true, d);
   }
   if (ti.get_type() == kNULLT) {
-    throw std::runtime_error(
-        "Can't deduce the type for case expressions, all branches null");
+    CIDER_THROW(CiderCompileException,
+                "Can't deduce the type for case expressions, all branches null");
   }
 
   auto case_expr = makeExpr<Analyzer::CaseExpr>(ti, has_agg, cast_expr_pair_list, else_e);
