@@ -483,7 +483,13 @@ llvm::Value* CodeGenerator::codegenLogical(const Analyzer::UOper* uoper,
   CHECK(operand_ti.is_boolean());
   const auto operand_lv = codegen(operand, true, co).front();
   CHECK(operand_lv->getType()->isIntegerTy());
-  const bool not_null = (operand_ti.get_notnull() || is_qualified_bin_oper(operand));
+  bool not_null = (operand_ti.get_notnull() || is_qualified_bin_oper(operand));
+  // Workaround for isNull expr.
+  if (auto operand_uoper = dynamic_cast<const Analyzer::UOper*>(operand)) {
+    if (kISNULL == operand_uoper->get_optype()) {
+      not_null = true;
+    }
+  }
   CHECK(not_null || operand_lv->getType()->isIntegerTy(8));
   return not_null
              ? cgen_state_->ir_builder_.CreateNot(toBool(operand_lv))
