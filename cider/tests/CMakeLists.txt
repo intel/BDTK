@@ -17,6 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+include_directories(${CMAKE_SOURCE_DIR}/thirdparty/velox)
+include_directories(${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait)
+include_directories(
+  ${CMAKE_SOURCE_DIR}/thirdparty/velox/third_party/xsimd/include)
+
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/tests ${CMAKE_CURRENT_BINARY_DIR})
 

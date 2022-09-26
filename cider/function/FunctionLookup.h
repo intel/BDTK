@@ -26,13 +26,31 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include "ExtensionFunction.h"
+#include "../thirdparty/velox/velox/substrait/SubstraitFunctionLookup.h"
+#include "../thirdparty/velox/velox/substrait/SubstraitType.h"
+#include "../thirdparty/velox/velox/substrait/VeloxToSubstraitMappings.h"
 #include "SubstraitFunctionMappings.h"
-#include "function/extensions/BasicFunctionLookUpContext.h"
-#include "function/extensions/PrestoFunctionLookUpContext.h"
-#include "function/extensions/SubstraitFunctionLookUpContext.h"
+
+struct FunctionSignature {
+  std::string func_name;
+  std::vector<facebook::velox::substrait::SubstraitTypePtr> arguments;
+  facebook::velox::substrait::SubstraitTypePtr returnType;
+  std::string from_platform;
+};
+
+struct FunctionDescriptor {
+  FunctionSignature func_sig;
+  SQLOpsPtr scalar_op_type_ptr = nullptr;
+  SQLAggPtr agg_op_type_ptr = nullptr;
+  OpSupportExprTypePtr op_support_expr_type_ptr = nullptr;
+};
+
+using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
+using SubstraitFunctionLookupPtr =
+    std::shared_ptr<const facebook::velox::substrait::SubstraitFunctionLookup>;
 
 class FunctionLookup {
  public:
@@ -41,21 +59,65 @@ class FunctionLookup {
     registerFunctionLookUpContext(function_mappings);
   }
 
-  /// lookup function variant by given substrait function Signature.
+  /// lookup function descriptor by given function Signature.
+  /// a) If sql_op is not null, means cider runtime function is selected for execution and
+  /// corresponding Analyzer::Expr will be created for this scalar function. b) If agg_op
+  /// is not null, means cider runtime function is selected for execution and
+  /// corresponding Analyzer::AggExpr will be created for this agg function. c) If
+  /// op_support_type is not null, means this function is imported from frontend and we
+  /// will use that directly, in cider internal, it will create Analyzer::FunctionOper
+  /// directly. d) If sql_op/agg_op/op_support_type are all null returned after lookup
+  /// done, it indicates that we don't support this function and execution can not be
+  /// offloaded.
   const FunctionDescriptorPtr lookupFunction(
       const FunctionSignature& function_signature) const;
 
  private:
-  void registerFunctionLookUpContext(SubstraitFunctionMappingsPtr function_mappings) {
-    extension_ptr_map_.insert(std::make_pair<std::string, BasicFunctionLookUpContextPtr>(
-        "substrait", SubstraitFunctionLookUpContext::loadExtension(function_mappings)));
-    extension_ptr_map_.insert(std::make_pair<std::string, BasicFunctionLookUpContextPtr>(
-        "presto", PrestoFunctionLookUpContext::loadExtension(function_mappings)));
+  void registerFunctionLookUpContext(SubstraitFunctionMappingsPtr function_mappings);
+
+  const SQLOpsPtr getFunctionScalarOp(const FunctionSignature& function_signature) const;
+  const SQLAggPtr getFunctionAggOp(const FunctionSignature& function_signature) const;
+  const OpSupportExprTypePtr getFunctionOpSupportType(
+      const FunctionSignature& function_signature) const;
+  const OpSupportExprTypePtr getScalarFunctionOpSupportType(
+      const FunctionSignature& function_signature) const;
+  const OpSupportExprTypePtr getAggFunctionOpSupportType(
+      const FunctionSignature& function_signature) const;
+  const OpSupportExprTypePtr getExtensionFunctionOpSupportType(
+      const FunctionSignature& function_signature) const;
+
+  static std::string getDataPath() {
+    const std::string absolute_path = __FILE__;
+    auto const pos = absolute_path.find_last_of('/');
+    return absolute_path.substr(0, pos) + "/extensions";
   }
 
  private:
   SubstraitFunctionMappingsPtr function_mappings_ = nullptr;
-  std::unordered_map<std::string, BasicFunctionLookUpContextPtr> extension_ptr_map_;
+
+  facebook::velox::substrait::SubstraitExtensionPtr cider_internal_function_ptr_ =
+      facebook::velox::substrait::SubstraitExtension::loadExtension();
+  facebook::velox::substrait::SubstraitExtensionPtr substrait_extension_function_ptr_ =
+      facebook::velox::substrait::SubstraitExtension::loadExtension(
+          {getDataPath() + "/substrait/" + "substrait_extension.yaml"});
+  facebook::velox::substrait::SubstraitExtensionPtr presto_extension_function_ptr_ =
+      facebook::velox::substrait::SubstraitExtension::loadExtension(
+          {getDataPath() + "/presto/" + "presto_extension.yaml"});
+
+  facebook::velox::substrait::SubstraitFunctionMappingsPtr substrait_mappings_ =
+      std::make_shared<const facebook::velox::substrait::SubstraitFunctionMappings>();
+  facebook::velox::substrait::SubstraitFunctionMappingsPtr presto_mappings_ =
+      std::make_shared<
+          const facebook::velox::substrait::VeloxToSubstraitFunctionMappings>();
+
+  std::unordered_map<std::string, SubstraitFunctionLookupPtr>
+      scalar_function_look_up_ptr_map_;
+  std::unordered_map<std::string, SubstraitFunctionLookupPtr>
+      aggregate_function_look_up_ptr_map_;
+  std::unordered_map<std::string, SubstraitFunctionLookupPtr>
+      extension_function_look_up_ptr_map_;
+
+  // static std::unordered_set<std::string> supported_engine = {"substrait", "presto"};
 };
 
 using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;

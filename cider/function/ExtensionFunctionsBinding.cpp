@@ -348,7 +348,7 @@ static int match_arguments(const SQLTypeInfo& arg_type,
                                "(type=" + std::to_string(arg_type.get_type()) + ")" +
                                +" not implemented: \n  pos=" + std::to_string(sig_pos) +
                                " max_pos=" + std::to_string(max_pos) + "\n  sig_types=(" +
-                               ExtensionFunction::toString(sig_types) + ")");
+                               ExtensionFunctionsWhitelist::toString(sig_types) + ")");
   }
   return -1;
 }

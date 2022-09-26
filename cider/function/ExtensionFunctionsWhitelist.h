@@ -27,9 +27,76 @@
 #include <unordered_set>
 #include <vector>
 
-#include "function/ExtensionFunction.h"
 #include "type/data/sqltypes.h"
 #include "util/toString.h"
+
+enum class ExtArgumentType {
+  Int8,
+  Int16,
+  Int32,
+  Int64,
+  Float,
+  Double,
+  Void,
+  PInt8,
+  PInt16,
+  PInt32,
+  PInt64,
+  PFloat,
+  PDouble,
+  PBool,
+  Bool,
+  ArrayInt8,
+  ArrayInt16,
+  ArrayInt32,
+  ArrayInt64,
+  ArrayFloat,
+  ArrayDouble,
+  ArrayBool,
+  Cursor,
+  ColumnInt8,
+  ColumnInt16,
+  ColumnInt32,
+  ColumnInt64,
+  ColumnFloat,
+  ColumnDouble,
+  ColumnBool,
+  TextEncodingNone,
+  TextEncodingDict,
+  ColumnListInt8,
+  ColumnListInt16,
+  ColumnListInt32,
+  ColumnListInt64,
+  ColumnListFloat,
+  ColumnListDouble,
+  ColumnListBool,
+  ColumnTextEncodingDict,
+  ColumnListTextEncodingDict,
+};
+
+SQLTypeInfo ext_arg_type_to_type_info(const ExtArgumentType ext_arg_type);
+
+class ExtensionFunction {
+ public:
+  ExtensionFunction(const std::string& name,
+                    const std::vector<ExtArgumentType>& args,
+                    const ExtArgumentType ret)
+      : name_(name), args_(args), ret_(ret) {}
+
+  const std::string getName(bool keep_suffix = true) const;
+
+  const std::vector<ExtArgumentType>& getArgs() const { return args_; }
+  const std::vector<ExtArgumentType>& getInputArgs() const { return args_; }
+
+  const ExtArgumentType getRet() const { return ret_; }
+  std::string toString() const;
+  std::string toStringSQL() const;
+
+ private:
+  const std::string name_;
+  const std::vector<ExtArgumentType> args_;
+  const ExtArgumentType ret_;
+};
 
 class ExtensionFunctionsWhitelist {
  public:
@@ -56,6 +123,10 @@ class ExtensionFunctionsWhitelist {
   static std::string toString(const std::vector<ExtensionFunction>& ext_funcs,
                               std::string tab = "");
   static std::string toString(const std::vector<SQLTypeInfo>& arg_types);
+  static std::string toString(const std::vector<ExtArgumentType>& sig_types);
+  static std::string toStringSQL(const std::vector<ExtArgumentType>& sig_types);
+  static std::string toString(const ExtArgumentType& sig_type);
+  static std::string toStringSQL(const ExtArgumentType& sig_type);
 
   static std::vector<std::string> getLLVMDeclarations(
       const std::unordered_set<std::string>& udf_decls);

@@ -1,23 +1,23 @@
 %YAML 1.2
 ---
 scalar_functions:
-  -
-    name: "Between"
-    description: "Between two values."
+  -      
+    name: "between__3"
+    description: >-
+      Whether the `expression` is greater than or equal to `low` and less than or equal to `high`.
+
+      `expression` BETWEEN `low` AND `high`
+
+      If `low`, `high`, or `expression` are `null`, `null` is returned.
     impls:
       - args:
-          - value: double
-          - value: double
-          - value: double
-        return: bool
-  -
-    name: "Between__3"
-    description: "Between two values."
-    impls:
-      - args:
-          - options: [ SILENT, SATURATE, ERROR ]
-            required: false
-          - value: i64
-          - value: i64
-          - value: i64
-        return: bool
+          - value: any1
+            name: expression
+            description: The expression to test for in the range defined by `low` and `high`.
+          - value: any1
+            name: low
+            description: The value to check if greater than or equal to.
+          - value: any1
+            name: high
+            description: The value to check if less than or equal to.
+        return: BOOLEAN

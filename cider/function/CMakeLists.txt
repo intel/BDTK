@@ -17,17 +17,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
+include_directories(${CMAKE_SOURCE_DIR}/thirdparty/velox)
+include_directories(${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait)
+include_directories(
+  ${CMAKE_SOURCE_DIR}/thirdparty/velox/third_party/xsimd/include)
+
 set(function_source_files
     scalar/RuntimeFunctions.cpp
     vector/ArrayOps.cpp
     RuntimeFunctions.bc
     ExtensionFunctionsBinding.cpp
     ExtensionFunctionsWhitelist.cpp
-    ExtensionFunction.cpp
     FunctionLookup.cpp
-    extensions/BasicFunctionLookUpContext.cpp
-    extensions/SubstraitFunctionLookUpContext.cpp
-    extensions/PrestoFunctionLookUpContext.cpp
     string/StringLike.cpp
     string/StringFunctions.cpp
     string/StringOpInfo.cpp

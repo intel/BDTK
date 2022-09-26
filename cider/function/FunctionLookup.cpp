@@ -22,31 +22,167 @@
 
 #include "function/FunctionLookup.h"
 
+void FunctionLookup::registerFunctionLookUpContext(
+    SubstraitFunctionMappingsPtr function_mappings) {
+  // internal scalar function
+  scalar_function_look_up_ptr_map_.insert(
+      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
+          "substrait",
+          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+              cider_internal_function_ptr_, substrait_mappings_)));
+  scalar_function_look_up_ptr_map_.insert(
+      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
+          "presto",
+          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+              cider_internal_function_ptr_, presto_mappings_)));
+  // internal aggregate function
+  aggregate_function_look_up_ptr_map_.insert(
+      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
+          "substrait",
+          std::make_shared<facebook::velox::substrait::SubstraitAggregateFunctionLookup>(
+              cider_internal_function_ptr_, substrait_mappings_)));
+  aggregate_function_look_up_ptr_map_.insert(
+      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
+          "presto",
+          std::make_shared<facebook::velox::substrait::SubstraitAggregateFunctionLookup>(
+              cider_internal_function_ptr_, presto_mappings_)));
+  // extension function
+  extension_function_look_up_ptr_map_.insert(
+      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
+          "substrait",
+          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+              substrait_extension_function_ptr_, substrait_mappings_)));
+  extension_function_look_up_ptr_map_.insert(
+      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
+          "presto",
+          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+              presto_extension_function_ptr_, presto_mappings_)));
+}
+
+const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
+    const FunctionSignature& function_signature) const {
+  const std::string& from_platform = function_signature.from_platform;
+  auto iter = scalar_function_look_up_ptr_map_.find(from_platform);
+  if (iter == scalar_function_look_up_ptr_map_.end()) {
+    return nullptr;
+  }
+  SubstraitFunctionLookupPtr scalar_function_look_up_ptr = iter->second;
+  const std::string& func_name = function_signature.func_name;
+  const auto& functionSignature =
+      facebook::velox::substrait::SubstraitFunctionSignature::of(
+          func_name, function_signature.arguments, function_signature.returnType);
+  const auto& functionOption =
+      scalar_function_look_up_ptr->lookupFunction(functionSignature);
+  if (functionOption.has_value()) {
+    return function_mappings_->getFunctionScalarOp(func_name);
+  }
+  return nullptr;
+}
+
+const SQLAggPtr FunctionLookup::getFunctionAggOp(
+    const FunctionSignature& function_signature) const {
+  const std::string& from_platform = function_signature.from_platform;
+  auto iter = aggregate_function_look_up_ptr_map_.find(from_platform);
+  if (iter == aggregate_function_look_up_ptr_map_.end()) {
+    return nullptr;
+  }
+  SubstraitFunctionLookupPtr agg_function_look_up_ptr = iter->second;
+  const std::string& func_name = function_signature.func_name;
+  const auto& functionSignature =
+      facebook::velox::substrait::SubstraitFunctionSignature::of(
+          func_name, function_signature.arguments, function_signature.returnType);
+  const auto& functionOption =
+      agg_function_look_up_ptr->lookupFunction(functionSignature);
+  if (functionOption.has_value()) {
+    return function_mappings_->getFunctionAggOp(func_name);
+  }
+  return nullptr;
+}
+
+const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
+    const FunctionSignature& function_signature) const {
+  const std::string& from_platform = function_signature.from_platform;
+  auto iter = scalar_function_look_up_ptr_map_.find(from_platform);
+  if (iter == scalar_function_look_up_ptr_map_.end()) {
+    return nullptr;
+  }
+  SubstraitFunctionLookupPtr scalar_function_look_up_ptr = iter->second;
+  const std::string& func_name = function_signature.func_name;
+  const auto& functionSignature =
+      facebook::velox::substrait::SubstraitFunctionSignature::of(
+          func_name, function_signature.arguments, function_signature.returnType);
+  const auto& functionOption =
+      scalar_function_look_up_ptr->lookupFunction(functionSignature);
+  if (functionOption.has_value()) {
+    return function_mappings_->getFunctionOpSupportType(func_name);
+  }
+  return nullptr;
+}
+
+const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
+    const FunctionSignature& function_signature) const {
+  const std::string& from_platform = function_signature.from_platform;
+  auto iter = aggregate_function_look_up_ptr_map_.find(from_platform);
+  if (iter == aggregate_function_look_up_ptr_map_.end()) {
+    return nullptr;
+  }
+  SubstraitFunctionLookupPtr agg_function_look_up_ptr = iter->second;
+  const std::string& func_name = function_signature.func_name;
+  const auto& functionSignature =
+      facebook::velox::substrait::SubstraitFunctionSignature::of(
+          func_name, function_signature.arguments, function_signature.returnType);
+  const auto& functionOption =
+      agg_function_look_up_ptr->lookupFunction(functionSignature);
+  if (functionOption.has_value()) {
+    return function_mappings_->getFunctionOpSupportType(func_name);
+  }
+  return nullptr;
+}
+
+const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
+    const FunctionSignature& function_signature) const {
+  const std::string& from_platform = function_signature.from_platform;
+  auto iter = extension_function_look_up_ptr_map_.find(from_platform);
+  if (iter == extension_function_look_up_ptr_map_.end()) {
+    return nullptr;
+  }
+  SubstraitFunctionLookupPtr extension_function_look_up_ptr = iter->second;
+  const std::string& func_name = function_signature.func_name;
+  const auto& functionSignature =
+      facebook::velox::substrait::SubstraitFunctionSignature::of(
+          func_name, function_signature.arguments, function_signature.returnType);
+  const auto& functionOption =
+      extension_function_look_up_ptr->lookupFunction(functionSignature);
+  if (functionOption.has_value()) {
+    return std::make_shared<OpSupportExprType>(OpSupportExprType::FunctionOper);
+  }
+  return nullptr;
+}
+
+const OpSupportExprTypePtr FunctionLookup::getFunctionOpSupportType(
+    const FunctionSignature& function_signature) const {
+  OpSupportExprTypePtr result_ptr = nullptr;
+  result_ptr = getScalarFunctionOpSupportType(function_signature);
+  if (result_ptr) {
+    return result_ptr;
+  }
+  result_ptr = getAggFunctionOpSupportType(function_signature);
+  if (result_ptr) {
+    return result_ptr;
+  }
+  result_ptr = getExtensionFunctionOpSupportType(function_signature);
+  return result_ptr;
+}
+
 const FunctionDescriptorPtr FunctionLookup::lookupFunction(
     const FunctionSignature& function_signature) const {
-  FunctionDescriptorPtr function_descriptor_ptr = nullptr;
-  // add:int_int
-  const std::string& func_sig = function_signature.func_sig;
-  std::string func_name = func_sig.substr(0, func_sig.find_first_of(':'));
+  FunctionDescriptorPtr function_descriptor_ptr = std::make_shared<FunctionDescriptor>();
   const std::string& from_platform = function_signature.from_platform;
-  function_descriptor_ptr = std::make_shared<FunctionDescriptor>();
   if (from_platform == "presto" || from_platform == "substrait") {
-    auto iter = extension_ptr_map_.find(from_platform);
-    if (iter == extension_ptr_map_.end()) {
-      throw std::runtime_error(from_platform + " function look up is not yet supported");
-    }
-
-    // todo, presto find failed, should find substrait
-    BasicFunctionLookUpContextPtr function_lookup_context_ptr = iter->second;
-    SQLOpsPtr sql_scalar_op_ptr =
-        function_lookup_context_ptr->lookupScalarFunctionSQLOp(func_name);
-    SQLAggPtr sql_agg_op_ptr =
-        function_lookup_context_ptr->lookupAggregateFunctionSQLOp(func_name);
-    OpSupportExprTypePtr op_support_expr_type_ptr =
-        function_lookup_context_ptr->lookupFunctionSupportType(func_name);
-    function_descriptor_ptr->scalar_op_type_ptr = sql_scalar_op_ptr;
-    function_descriptor_ptr->agg_op_type_ptr = sql_agg_op_ptr;
-    function_descriptor_ptr->op_support_expr_type_ptr = op_support_expr_type_ptr;
+    function_descriptor_ptr->scalar_op_type_ptr = getFunctionScalarOp(function_signature);
+    function_descriptor_ptr->agg_op_type_ptr = getFunctionAggOp(function_signature);
+    function_descriptor_ptr->op_support_expr_type_ptr =
+        getFunctionOpSupportType(function_signature);
     function_descriptor_ptr->func_sig = function_signature;
   } else {
     throw std::runtime_error(from_platform + " function look up is not yet supported");

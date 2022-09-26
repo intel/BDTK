@@ -37,6 +37,34 @@ using FunctionSQLOpSupportTypeMappings =
 /// own and Substrait system.
 class SubstraitFunctionMappings {
  public:
+  const SQLOpsPtr getFunctionScalarOp(const std::string& function_name) const {
+    const auto& scalar_op_map = scalarMappings();
+    auto iter = scalar_op_map.find(function_name);
+    if (iter == scalar_op_map.end()) {
+      return nullptr;
+    }
+    return std::make_shared<SQLOps>(iter->second);
+  }
+
+  const SQLAggPtr getFunctionAggOp(const std::string& function_name) const {
+    const auto& agg_op_map = aggregateMappings();
+    auto iter = agg_op_map.find(function_name);
+    if (iter == agg_op_map.end()) {
+      return nullptr;
+    }
+    return std::make_shared<SQLAgg>(iter->second);
+  }
+
+  const OpSupportExprTypePtr getFunctionOpSupportType(
+      const std::string& function_name) const {
+    const auto& op_support_map = opsSupportTypeMappings();
+    auto iter = op_support_map.find(function_name);
+    if (iter == op_support_map.end()) {
+      return nullptr;
+    }
+    return std::make_shared<OpSupportExprType>(iter->second);
+  }
+
   /// scalar function names in difference between engine own and Substrait.
   virtual const FunctionSQLScalarOpsMappings scalarMappings() const {
     static const FunctionSQLScalarOpsMappings scalarMappings{
@@ -116,7 +144,6 @@ class SubstraitFunctionMappings {
         {"year", OpSupportExprType::ExtractExpr},
         {"substring", OpSupportExprType::SubstringStringOper},
         {"like", OpSupportExprType::LikeExpr},
-        //{"between", OpSupportExprType::FunctionOper},
     };
     return opsSupportTypeMappings;
   };
