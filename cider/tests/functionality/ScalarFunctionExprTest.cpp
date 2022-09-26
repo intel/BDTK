@@ -29,7 +29,7 @@
       table_name_ = "tmp";                                                             \
       create_ddl_ = "CREATE TABLE tmp(c0 " #SQL_TYPE " NOT NULL);";                    \
       input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes( \
-          10, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}))};                              \
+          100, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}))};                             \
     }                                                                                  \
   };
 
@@ -39,6 +39,7 @@ GEN_BETWEEN_AND_CLASS(I32, INTEGER)
 GEN_BETWEEN_AND_CLASS(I64, BIGINT)
 GEN_BETWEEN_AND_CLASS(Fp32, FLOAT)
 GEN_BETWEEN_AND_CLASS(Fp64, DOUBLE)
+GEN_BETWEEN_AND_CLASS(Date, DATE)
 
 #define GEN_BETWEEN_AND_NULL_CLASS(S_TYPE, SQL_TYPE)                                   \
   class BetweenAnd##S_TYPE##NullTest : public CiderTestBase {                          \
@@ -47,7 +48,7 @@ GEN_BETWEEN_AND_CLASS(Fp64, DOUBLE)
       table_name_ = "tmp";                                                             \
       create_ddl_ = "CREATE TABLE tmp(c0 " #SQL_TYPE ");";                             \
       input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes( \
-          10, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}, {2}))};                         \
+          100, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}, {2}))};                        \
     }                                                                                  \
   };
 
@@ -57,9 +58,20 @@ GEN_BETWEEN_AND_NULL_CLASS(I32, INTEGER)
 GEN_BETWEEN_AND_NULL_CLASS(I64, BIGINT)
 GEN_BETWEEN_AND_NULL_CLASS(Fp32, FLOAT)
 GEN_BETWEEN_AND_NULL_CLASS(Fp64, DOUBLE)
+GEN_BETWEEN_AND_NULL_CLASS(Date, DATE)
 
 #define SQL_BETWEEN_AND_INT "SELECT c0 FROM tmp WHERE c0 between 0 and 5"
 #define SQL_BETWEEN_AND_FP "SELECT c0 FROM tmp WHERE c0 between 0.0 and 5.0"
+#define SQL_BETWEEN_AND_DATE \
+  "SELECT c0 FROM tmp WHERE c0 between date '1970-02-01' and date '1970-03-01'"
+
+TEST_F(BetweenAndDateNullTest, DateNullTest) {
+  assertQuery(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
+}
+
+TEST_F(BetweenAndDateTest, DateNotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
+}
 
 TEST_F(BetweenAndI8Test, NotNullTest) {
   assertQuery(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
@@ -121,7 +133,10 @@ TEST_F(BetweenAndI64Test, UnregisteredTest) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   generator::registerExtensionFunctions();
-
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();
