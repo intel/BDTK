@@ -27,6 +27,7 @@ foreach(cider_functionality_test_file ${cider_functionality_test_files})
   string(REGEX REPLACE "functionality/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${cider_functionality_test_file})
-  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS} velox_substrait_plan_converter)
+  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS} 
+                        velox_substrait_plan_converter)
   add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name} ${TEST_ARGS})
 endforeach()
