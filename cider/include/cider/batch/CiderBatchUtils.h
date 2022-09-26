@@ -34,7 +34,7 @@ namespace CiderBatchUtils {
 
 void ciderArrowSchemaReleaser(ArrowSchema* schema);
 
-void ciderArrowArrayReleaser(ArrowArray* schema);
+void ciderArrowArrayReleaser(ArrowArray* array);
 
 void freeArrowArray(ArrowArray* ptr);
 

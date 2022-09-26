@@ -66,6 +66,7 @@ class CiderOperator : public exec::Operator {
   bool buildSideEmpty_{false};
   bool buildTableFed_{false};
   bool finished_{false};
+  bool is_using_arrow_format_;
 
   // TODO: will be changed After refactor with arrow format
   // In order to preserve the lifecycle of unique_ptr<>
