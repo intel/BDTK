@@ -58,9 +58,10 @@ class DataConvertorTest : public testing::Test {
 template <typename T>
 void testToCiderDirect(RowVectorPtr rowVector,
                        const std::vector<std::optional<T>>& data,
-                       int numRows) {
+                       int numRows,
+                       memory::MemoryPool* pool) {
   std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
-  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr);
+  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr, pool);
   EXPECT_EQ(numRows, cb.row_num());
 
   const T* col_0 = reinterpret_cast<const T*>(cb.column(0));
@@ -85,9 +86,10 @@ void testToCiderDirect(RowVectorPtr rowVector,
 template <>
 void testToCiderDirect<bool>(RowVectorPtr rowVector,
                              const std::vector<std::optional<bool>>& data,
-                             int numRows) {
+                             int numRows,
+                             memory::MemoryPool* pool) {
   std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
-  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr);
+  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr, pool);
   EXPECT_EQ(numRows, cb.row_num());
 
   const int8_t* col_0 = cb.column(0);
@@ -103,9 +105,10 @@ void testToCiderDirect<bool>(RowVectorPtr rowVector,
 template <>
 void testToCiderDirect<Timestamp>(RowVectorPtr rowVector,
                                   const std::vector<std::optional<Timestamp>>& data,
-                                  int numRows) {
+                                  int numRows,
+                                  memory::MemoryPool* pool) {
   std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
-  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr);
+  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr, pool);
   EXPECT_EQ(numRows, cb.row_num());
 
   const int64_t* col_0 = reinterpret_cast<const int64_t*>(cb.column(0));
@@ -121,9 +124,10 @@ void testToCiderDirect<Timestamp>(RowVectorPtr rowVector,
 template <>
 void testToCiderDirect<StringView>(RowVectorPtr rowVector,
                                    const std::vector<std::optional<StringView>>& data,
-                                   int numRows) {
+                                   int numRows,
+                                   memory::MemoryPool* pool) {
   std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
-  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr);
+  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr, pool);
   EXPECT_EQ(numRows, cb.row_num());
 
   auto col_0 = reinterpret_cast<const CiderByteArray*>(cb.column(0));
@@ -150,11 +154,11 @@ TEST_F(DataConvertorTest, directToCiderVarcharOneCol) {
                                                  StringView("16cccccccccccccc", 16)};
   auto col_dict = makeDictionaryVector<StringView>(data);
   auto rowVector_dict = makeRowVector({col_dict});
-  testToCiderDirect<StringView>(rowVector_dict, data, data.size());
+  testToCiderDirect<StringView>(rowVector_dict, data, data.size(), pool_.get());
 
   auto col_flat = makeNullableFlatVector<StringView>(data);
   auto rowVector_flat = makeRowVector({col_flat});
-  testToCiderDirect<StringView>(rowVector_flat, data, data.size());
+  testToCiderDirect<StringView>(rowVector_flat, data, data.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderIntegerOneCol) {
@@ -163,11 +167,11 @@ TEST_F(DataConvertorTest, directToCiderIntegerOneCol) {
       0, std::nullopt, 1, 3, std::nullopt, -1234, -99, -999, 1000, -1};
   auto col_dict = makeDictionaryVector<int32_t>(data);
   auto rowVector_dict = makeRowVector({col_dict});
-  testToCiderDirect<int32_t>(rowVector_dict, data, data.size());
+  testToCiderDirect<int32_t>(rowVector_dict, data, data.size(), pool_.get());
 
   auto col_flat = makeNullableFlatVector<int32_t>(data);
   auto rowVector_flat = makeRowVector({col_flat});
-  testToCiderDirect<int32_t>(rowVector_flat, data, data.size());
+  testToCiderDirect<int32_t>(rowVector_flat, data, data.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderBigintOneCol) {
@@ -176,11 +180,11 @@ TEST_F(DataConvertorTest, directToCiderBigintOneCol) {
       0, 1, std::nullopt, 3, 1024, -123456, -99, -999, std::nullopt, -1};
   auto col_dict = makeDictionaryVector<int64_t>(data);
   auto rowVector_dict = makeRowVector({col_dict});
-  testToCiderDirect<int64_t>(rowVector_dict, data, data.size());
+  testToCiderDirect<int64_t>(rowVector_dict, data, data.size(), pool_.get());
 
   auto col_flat = makeNullableFlatVector<int64_t>(data);
   auto rowVector_flat = makeRowVector({col_flat});
-  testToCiderDirect<int64_t>(rowVector_flat, data, data.size());
+  testToCiderDirect<int64_t>(rowVector_flat, data, data.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderDoubleOneCol) {
@@ -189,11 +193,11 @@ TEST_F(DataConvertorTest, directToCiderDoubleOneCol) {
       0.5, 1, std::nullopt, 3.14, 1024, -123456, -99.99, -999, std::nullopt, -1};
   auto col_dict = makeDictionaryVector<double>(data);
   auto rowVector_dict = makeRowVector({col_dict});
-  testToCiderDirect<double>(rowVector_dict, data, data.size());
+  testToCiderDirect<double>(rowVector_dict, data, data.size(), pool_.get());
 
   auto col_flat = makeNullableFlatVector<double>(data);
   auto rowVector_flat = makeRowVector({col_flat});
-  testToCiderDirect<double>(rowVector_flat, data, data.size());
+  testToCiderDirect<double>(rowVector_flat, data, data.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderBoolOneCol) {
@@ -212,7 +216,7 @@ TEST_F(DataConvertorTest, directToCiderBoolOneCol) {
   };
   auto col = makeNullableFlatVector<bool>(data);
   auto rowVector = makeRowVector({col});
-  testToCiderDirect<bool>(rowVector, data, numRows);
+  testToCiderDirect<bool>(rowVector, data, numRows, pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderTimestampOneCol) {
@@ -231,15 +235,16 @@ TEST_F(DataConvertorTest, directToCiderTimestampOneCol) {
   };
   auto col = makeNullableFlatVector<Timestamp>(data);
   auto rowVector = makeRowVector({col});
-  testToCiderDirect<Timestamp>(rowVector, data, numRows);
+  testToCiderDirect<Timestamp>(rowVector, data, numRows, pool_.get());
 }
 
 template <typename T>
 void testToCiderWithArrow(RowVectorPtr rowVector,
                           const std::vector<std::optional<T>>& data,
-                          int numRows) {
+                          int numRows,
+                          memory::MemoryPool* pool) {
   std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::ARROW);
-  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr);
+  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr, pool);
   EXPECT_EQ(numRows, cb.row_num());
 
   const T* col_0 = reinterpret_cast<const T*>(cb.column(0));
@@ -266,7 +271,7 @@ TEST_F(DataConvertorTest, toCiderIntegerOneColArrow) {
       0, std::nullopt, 1, 3, std::nullopt, -1234, -99, -999, 1000, -1};
   auto col = makeNullableFlatVector<int32_t>(data);
   auto rowVector = makeRowVector({col});
-  testToCiderWithArrow<int32_t>(rowVector, data, numRows);
+  testToCiderWithArrow<int32_t>(rowVector, data, numRows, pool_.get());
 }
 
 TEST_F(DataConvertorTest, toCiderBigintOneColArrow) {
@@ -275,7 +280,7 @@ TEST_F(DataConvertorTest, toCiderBigintOneColArrow) {
       0, 1, std::nullopt, 3, 1024, -123456, -99, -999, std::nullopt, -1};
   auto col = makeNullableFlatVector<int64_t>(data);
   auto rowVector = makeRowVector({col});
-  testToCiderWithArrow<int64_t>(rowVector, data, numRows);
+  testToCiderWithArrow<int64_t>(rowVector, data, numRows, pool_.get());
 }
 
 TEST_F(DataConvertorTest, toCiderDoubleOneColArrow) {
@@ -284,7 +289,7 @@ TEST_F(DataConvertorTest, toCiderDoubleOneColArrow) {
       0.5, 1, std::nullopt, 3.14, 1024, -123456, -99.99, -999, std::nullopt, -1};
   auto col = makeNullableFlatVector<double>(data);
   auto rowVector = makeRowVector({col});
-  testToCiderWithArrow<double>(rowVector, data, numRows);
+  testToCiderWithArrow<double>(rowVector, data, numRows, pool_.get());
 }
 
 template <typename T>
@@ -435,7 +440,7 @@ void testToVeloxDecimalDirect(CiderBatch& input,
 
 TEST_F(DataConvertorTest, directToVeloxIntegerOneCol) {
   std::vector<const int8_t*> col_buffer;
-  int32_t* col_0 = (int32_t*)std::malloc(sizeof(int32_t) * 10);
+  int32_t* col_0 = reinterpret_cast<int32_t*>(pool_->allocate(sizeof(int32_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i;
@@ -466,7 +471,7 @@ TEST_F(DataConvertorTest, directToVeloxIntegerOneCol) {
 
 TEST_F(DataConvertorTest, directToVeloxBigintOneCol) {
   std::vector<const int8_t*> col_buffer;
-  int64_t* col_0 = (int64_t*)std::malloc(sizeof(int64_t) * 10);
+  int64_t* col_0 = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i * 123;
@@ -497,7 +502,7 @@ TEST_F(DataConvertorTest, directToVeloxBigintOneCol) {
 
 TEST_F(DataConvertorTest, directToVeloxDoubleOneCol) {
   std::vector<const int8_t*> col_buffer;
-  double* col_0 = (double*)std::malloc(sizeof(double) * 10);
+  double* col_0 = reinterpret_cast<double*>(pool_->allocate(sizeof(double) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i * 3.14;
@@ -528,7 +533,7 @@ TEST_F(DataConvertorTest, directToVeloxDoubleOneCol) {
 
 TEST_F(DataConvertorTest, directToVeloxDecimalOneCol) {
   std::vector<const int8_t*> col_buffer;
-  int64_t* col_0 = (int64_t*)std::malloc(sizeof(int64_t) * 10);
+  int64_t* col_0 = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i * 1.00;
@@ -574,8 +579,8 @@ TEST_F(DataConvertorTest, directToVeloxVarcharOneCol) {
       CiderByteArray(0, reinterpret_cast<const uint8_t*>("")),
       CiderByteArray(16, reinterpret_cast<const uint8_t*>("16cccccccccccccc"))};
 
-  // TODO: new allocator API will be used in the future.
-  int8_t* buf = (int8_t*)std::malloc(sizeof(CiderByteArray) * data.size());
+  int8_t* buf = reinterpret_cast<int8_t*>(
+      pool_.get()->allocate(sizeof(CiderByteArray) * data.size()));
   std::memcpy(buf, data.data(), sizeof(CiderByteArray) * data.size());
   col_buffer.push_back(buf);
   CiderBatch input(data.size(), col_buffer);
@@ -601,7 +606,7 @@ TEST_F(DataConvertorTest, directToVeloxVarcharOneCol) {
 
 TEST_F(DataConvertorTest, directToVeloxBoolOneCol) {
   std::vector<const int8_t*> col_buffer;
-  int8_t* col_0 = (int8_t*)std::malloc(sizeof(int8_t) * 10);
+  int8_t* col_0 = reinterpret_cast<int8_t*>(pool_->allocate(sizeof(int8_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i % 2 ? true : false;
@@ -632,7 +637,7 @@ TEST_F(DataConvertorTest, directToVeloxBoolOneCol) {
 
 TEST_F(DataConvertorTest, directToVeloxTimestampOneCol) {
   std::vector<const int8_t*> col_buffer;
-  int64_t* col_0 = (int64_t*)std::malloc(sizeof(int64_t) * 10);
+  int64_t* col_0 = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i + 86400000000;
@@ -704,7 +709,7 @@ void testToVeloxWithArrow(CiderBatch& input,
 
 TEST_F(DataConvertorTest, toVeloxIntegerOneColArrow) {
   std::vector<const int8_t*> col_buffer;
-  int32_t* col_0 = (int32_t*)std::malloc(sizeof(int32_t) * 10);
+  int32_t* col_0 = reinterpret_cast<int32_t*>(pool_->allocate(sizeof(int32_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i;
@@ -735,7 +740,7 @@ TEST_F(DataConvertorTest, toVeloxIntegerOneColArrow) {
 
 TEST_F(DataConvertorTest, toVeloxBigintOneColArrow) {
   std::vector<const int8_t*> col_buffer;
-  int64_t* col_0 = (int64_t*)std::malloc(sizeof(int64_t) * 10);
+  int64_t* col_0 = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i * 123;
@@ -766,7 +771,7 @@ TEST_F(DataConvertorTest, toVeloxBigintOneColArrow) {
 
 TEST_F(DataConvertorTest, toVeloxDoubleOneColArrow) {
   std::vector<const int8_t*> col_buffer;
-  double* col_0 = (double*)std::malloc(sizeof(double) * 10);
+  double* col_0 = reinterpret_cast<double*>(pool_->allocate(sizeof(double) * 10));
   int num_rows = 10;
   for (int i = 0; i < num_rows; i++) {
     col_0[i] = i * 3.14;

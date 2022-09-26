@@ -36,6 +36,9 @@ extern size_t g_watchdog_baseline_max_groups;
 
 using namespace TestHelpers;
 
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
+
 class CiderNewDataFormatTest : public ::testing::Test {
  protected:
   static MockTable* MockTableForTest;
@@ -194,7 +197,7 @@ void testScalarTypeSingleKey(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
 
@@ -292,7 +295,7 @@ void testScalarTypeMultipleKey(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
   CiderBitUtils::clearBitAt(null_vectors[1].as<uint8_t>(), 0);
@@ -393,7 +396,7 @@ void testScalarTypeArithemicExpr(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
   CiderBitUtils::clearBitAt(null_vectors[1].as<uint8_t>(), 0);
@@ -510,7 +513,7 @@ void testScalarTypeCmpExpr(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
   CiderBitUtils::clearBitAt(null_vectors[1].as<uint8_t>(), 0);
@@ -606,7 +609,7 @@ void testScalarTypeLogicalExpr(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      3, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      3, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
 
   if (!col1->type.get_notnull()) {
     CiderBitUtils::clearBitAt(null_vectors[1].as<uint8_t>(), 0);
@@ -736,7 +739,7 @@ void testScalarTypeFilter(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
   CiderBitUtils::clearBitAt(null_vectors[1].as<uint8_t>(), 0);

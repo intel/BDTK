@@ -106,7 +106,8 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
   ::substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
-  auto cider_compile_module = CiderCompileModule::Make();
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   cider_compile_module->feedBuildTable(std::move(buildCiderBatch()));
   cider_compile_module->compile(sub_plan);
 }

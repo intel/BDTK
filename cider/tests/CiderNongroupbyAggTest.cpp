@@ -24,7 +24,8 @@
 #include "TestHelpers.h"
 
 using namespace TestHelpers;
-
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
 class CiderNongroupbyAggArrowFormatTest : public ::testing::Test {
  protected:
   static MockTable* MockTableForTest;
@@ -170,7 +171,7 @@ void testScalarTypeSingleKey(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 4);
 
