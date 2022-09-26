@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Cider Sharing &#8212; Cider 1.0 documentation</title>
+    <title>Development Specification &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -16,8 +16,8 @@
     <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Development Specification" href="development-specification.html" />
-    <link rel="prev" title="Cider User Guide" href="user-guide.html" /> 
+    <link rel="next" title="CiderAllocator use guide" href="CiderAllocator-use-guide.html" />
+    <link rel="prev" title="Cider Sharing" href="cider-sharing.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -26,10 +26,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="development-specification.html" title="Development Specification"
+          <a href="CiderAllocator-use-guide.html" title="CiderAllocator use guide"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="user-guide.html" title="Cider User Guide"
+          <a href="cider-sharing.html" title="Cider Sharing"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
@@ -40,27 +40,23 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="cider-sharing">
-<h1>Cider Sharing<a class="headerlink" href="#cider-sharing" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="live-demo">
-<h2>Live Demo<a class="headerlink" href="#live-demo" title="Permalink to this headline">¶</a></h2>
-<p>maybe a video…</p>
-<div class="section" id="design-doc">
-<h3>Design Doc<a class="headerlink" href="#design-doc" title="Permalink to this headline">¶</a></h3>
-<p>document…</p>
+  <div class="section" id="development-specification">
+<h1>Development Specification<a class="headerlink" href="#development-specification" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="exception-specification">
+<h2>1 Exception Specification<a class="headerlink" href="#exception-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cider-exception">
+<h3>1.1 cider exception<a class="headerlink" href="#cider-exception" title="Permalink to this headline">¶</a></h3>
+<p>For exceptions in the cider directory, please import cider/include/cider/CiderException.h</p>
+<p>Exception types such as CiderException, CiderRuntimeException, and CiderCompileException are defined,</p>
+<p>please use the macro CIDER_THROW to throw exceptions, such as CIDER_THROW(CiderCompileException, “Exception message”);</p>
 </div>
-<div class="section" id="performance-report">
-<h3>Performance Report<a class="headerlink" href="#performance-report" title="Permalink to this headline">¶</a></h3>
-<p>charts or images…</p>
+<div class="section" id="cider-velox-exception">
+<h3>1.2 cider-velox Exception<a class="headerlink" href="#cider-velox-exception" title="Permalink to this headline">¶</a></h3>
+<p>For exceptions in the cider-velox directory, please use thirdparty/velox/velox/common/base/Exceptions.h,</p>
+<p>Exception types such as VeloxException, VeloxUserError, VeloxRuntimeError are defined,</p>
+<p>please use the macros VELOX_UNSUPPORTED, VELOX_FAIL, VELOX_USER_FAIL, VELOX_NYI to throw exceptions,</p>
+<p>for example VELOX_UNSUPPORTED(“Conversion is not supported yet, type is {}”, type);</p>
 </div>
-</div>
-<div class="section" id="external-link">
-<h2>External Link<a class="headerlink" href="#external-link" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://facebookincubator.github.io/velox/">Velox Documentation</a></p>
-</div>
-<div class="section" id="paper-conference-talk">
-<h2>Paper/ conference/ talk<a class="headerlink" href="#paper-conference-talk" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="http://sites.computer.org/debull/A14mar/p31.pdf#:~:text=Impala%20uses%20runtime%20code%20generation%20to%20produce%20query-speci%EF%AC%81c,function%E2%80%99s%20execution%20can%20result%20in%20large%20query%20speedups.">Runtime Code Generation in Cloudera Impala</a></p>
 </div>
 </div>
 
@@ -72,28 +68,26 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Cider Sharing</a><ul>
-<li><a class="reference internal" href="#live-demo">Live Demo</a><ul>
-<li><a class="reference internal" href="#design-doc">Design Doc</a></li>
-<li><a class="reference internal" href="#performance-report">Performance Report</a></li>
+<li><a class="reference internal" href="#">Development Specification</a><ul>
+<li><a class="reference internal" href="#exception-specification">1 Exception Specification</a><ul>
+<li><a class="reference internal" href="#cider-exception">1.1 cider exception</a></li>
+<li><a class="reference internal" href="#cider-velox-exception">1.2 cider-velox Exception</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#external-link">External Link</a></li>
-<li><a class="reference internal" href="#paper-conference-talk">Paper/ conference/ talk</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="user-guide.html"
-                        title="previous chapter">Cider User Guide</a></p>
+  <p class="topless"><a href="cider-sharing.html"
+                        title="previous chapter">Cider Sharing</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="development-specification.html"
-                        title="next chapter">Development Specification</a></p>
+  <p class="topless"><a href="CiderAllocator-use-guide.html"
+                        title="next chapter">CiderAllocator use guide</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/cider-sharing.rst.txt"
+      <li><a href="_sources/development-specification.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -120,10 +114,10 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="development-specification.html" title="Development Specification"
+          <a href="CiderAllocator-use-guide.html" title="CiderAllocator use guide"
              >next</a> |</li>
         <li class="right" >
-          <a href="user-guide.html" title="Cider User Guide"
+          <a href="cider-sharing.html" title="Cider Sharing"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
