@@ -22,8 +22,8 @@
 #ifndef CIDER_CIDERBATCHUTILS_H
 #define CIDER_CIDERBATCHUTILS_H
 
-#include "substrait/type.pb.h"
 #include "cider/CiderAllocator.h"
+#include "substrait/type.pb.h"
 #include "type/data/sqltypes.h"
 
 class CiderBatch;
