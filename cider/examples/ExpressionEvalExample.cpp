@@ -56,8 +56,12 @@ int main(int argc, char** argv) {
                           .setRowNum(2)
                           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {8, 15})
                           .build();
-  CiderExprEvaluator evaluator(
-      {add_expr}, builder->funcsInfo(), schema, generator::ExprType::ProjectExpr);
+  auto allocator = std::make_shared<CiderDefaultAllocator>();
+  CiderExprEvaluator evaluator({add_expr},
+                               builder->funcsInfo(),
+                               schema,
+                               allocator,
+                               generator::ExprType::ProjectExpr);
   auto out_batch = evaluator.eval(input_batch);
   // Verify result
   assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expect_batch),
@@ -85,6 +89,7 @@ int main(int argc, char** argv) {
   CiderExprEvaluator evaluator1({add_expr1},
                                 inc_builder->funcsInfo(),
                                 inc_schema,
+                                allocator,
                                 generator::ExprType::ProjectExpr);
   auto out_batch1 = evaluator1.eval(input_batch);
   // Verify result

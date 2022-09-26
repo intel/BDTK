@@ -33,6 +33,8 @@
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
 
+static const auto allocator = std::make_shared<CiderDefaultAllocator>();
+
 TEST(ExpressionEvalTest, Add_I64_I64) {
   // should be expression or Measure
   std::string expr_json = R"({
@@ -115,7 +117,8 @@ TEST(ExpressionEvalTest, Add_I64_I64) {
                           .build();
   EXPECT_EQ(2, input_batch.row_num());
 
-  CiderExprEvaluator evaluator({&sub_expr}, {&func_info}, &schema, ExprType::ProjectExpr);
+  CiderExprEvaluator evaluator(
+      {&sub_expr}, {&func_info}, &schema, allocator, ExprType::ProjectExpr);
   auto out_batch1 = evaluator.eval(input_batch);
   auto out_batch2 = evaluator.eval(input_batch);
   auto expect_batch_ptr = std::make_shared<CiderBatch>(expect_batch);
@@ -150,7 +153,7 @@ TEST(ExpressionEvalTest, Complex_I32_I32) {
                           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I32), {8, 15})
                           .build();
   CiderExprEvaluator evaluator(
-      {add_expr}, builder->funcsInfo(), schema, ExprType::ProjectExpr);
+      {add_expr}, builder->funcsInfo(), schema, allocator, ExprType::ProjectExpr);
   auto out_batch1 = evaluator.eval(input_batch);
   auto out_batch2 = evaluator.eval(input_batch);
   auto expect_batch_ptr = std::make_shared<CiderBatch>(expect_batch);
@@ -183,7 +186,7 @@ TEST(ExpressionEvalTest, GT_I64_I64) {
                           .addColumn<int64_t>("b", CREATE_SUBSTRAIT_TYPE(I64), {3})
                           .build();
   CiderExprEvaluator evaluator(
-      {gt_expr}, builder->funcsInfo(), schema, ExprType::FilterExpr);
+      {gt_expr}, builder->funcsInfo(), schema, allocator, ExprType::FilterExpr);
   auto out_batch1 = evaluator.eval(input_batch);
   auto out_batch2 = evaluator.eval(input_batch);
   auto expect_batch_ptr = std::make_shared<CiderBatch>(expect_batch);

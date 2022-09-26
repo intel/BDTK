@@ -177,7 +177,8 @@ TEST_F(AggWithRandomDataTest, AVG_Partial_Test) {
   auto substraitPlan =
       v2SPlanFragmentConvertor_->toSubstraitPlan(veloxPlan, veloxPlan->sources()[0]);
 
-  auto ciderCompileModule = CiderCompileModule::Make();
+  auto ciderCompileModule =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   auto result = ciderCompileModule->compile(substraitPlan);
 
   auto outputSchema = result->getOutputCiderTableSchema();

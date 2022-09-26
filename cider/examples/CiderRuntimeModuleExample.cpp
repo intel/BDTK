@@ -64,15 +64,16 @@ int main(int argc, char** argv) {
   auto exec_option = CiderExecutionOption::defaults();
   auto compile_option = CiderCompilationOption::defaults();
 
-  auto ciderCompileModule = CiderCompileModule::Make();
+  // Construct an allocator
+  auto allocator = std::make_shared<UserAllocator>();
+
+  auto ciderCompileModule = CiderCompileModule::Make(allocator);
   auto result = ciderCompileModule->compile({add_expr},
                                             *schema,
                                             builder->funcsInfo(),
                                             generator::ExprType::ProjectExpr,
                                             compile_option,
                                             exec_option);
-  // Construct an allocator
-  auto allocator = std::make_shared<UserAllocator>();
   // Create runtimemodule
   auto runner = std::make_shared<CiderRuntimeModule>(
       result, compile_option, exec_option, allocator);
