@@ -44,8 +44,8 @@
 <h1>Cider Developer Guide<a class="headerlink" href="#cider-developer-guide" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="how-to-build">
 <h2>1 How to build<a class="headerlink" href="#how-to-build" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="build-modular-sql">
-<h3>1.1 Build Modular SQL<a class="headerlink" href="#build-modular-sql" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="build-bdtk">
+<h3>1.1 Build BDTK<a class="headerlink" href="#build-bdtk" title="Permalink to this headline">¶</a></h3>
 <div class="line-block">
 <div class="line"><strong>Prerequisite:</strong></div>
 <div class="line">Install docker and set proxy according to the guidance in:</div>
@@ -53,37 +53,26 @@
 <div class="line"><a class="reference external" href="https://docs.docker.com/network/proxy/">https://docs.docker.com/network/proxy/</a></div>
 </div>
 <ol class="arabic simple">
-<li>Clone repo locally</li>
+<li>Get the BDTK Source</li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: ${workdir}</span>
-<span class="c1"># velox-plugin</span>
-<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">intel</span><span class="o">-</span><span class="n">innersource</span><span class="o">/</span><span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">velox</span><span class="o">-</span><span class="n">plugin</span><span class="o">.</span><span class="n">git</span>
-<span class="n">pushd</span> <span class="n">frameworks</span><span class="o">.</span><span class="n">ai</span><span class="o">.</span><span class="n">modular</span><span class="o">-</span><span class="n">sql</span><span class="o">.</span><span class="n">velox</span><span class="o">-</span><span class="n">plugin</span>
-<span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
-<span class="n">popd</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone --recursive https://github.com/intel/BDTK.git
+$ cd BDTK
+# if you are updating an existing checkout
+$ git submodule sync --recursive
+$ git submodule update --init --recursive
 </pre></div>
 </div>
-<ol class="arabic simple">
-<li>Build an image from a Dockerfile</li>
+<ol class="arabic" start="2">
+<li><p class="first">Setting up BDTK develop envirenmont on Linux Docker</p>
+<p>We provide Dockerfile to help developers setup and install BDTK dependencies.</p>
+</li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># WORKDIR: ${path_to_velox_plugin}/ci/docker
-docker build -t ${image_name} .
-
-# Note: If you are behind an HTTP or HTTPS proxy server, for example in corporate settings,
-#       you need to add this configuration in the Docker systemd service file,
-#       please follow the official guide: https://docs.docker.com/network/proxy/
-# example:
-# --build-arg HttpProxyHost=your.proxy.server --build-arg HttpsProxyHost=your.proxy.server --build-arg HttpProxyPort=your.proxy.server --build-arg HttpsProxyPort=your.proxy.port
-
-# Note: If the apt network still doesn&#39;t work, it may be a timezone problem. Here are two solutions:
-# 1. sync system time with a independent service.
-#    - config &#39;NTP&#39; /etc/systemd/timesyncd.conf, you need to find a service in your company or elsewhere.
-#    - run &#39;systemctl restart systemd-timesyncd.service&#39;
-# 2. add parameters after apt-get in Dockerfile to skip timezone check, like:
-#    RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Build an image from a Dockerfile
+$ cd ${path_to_source_of_bdtk}/ci/docker
+$ docker build -t ${image_name} .
 
 # Start a docker container for development
-docker run -d --name ${container_name} --privileged=true -v ${path_to_velox_plugin}:/workspace/velox-plugin ${image_name} /usr/sbin/init
+docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} /usr/sbin/init
 # Tips: you can run with more CPU cores to accelerate building time
 # docker run -d ... ${image_name} --cpus=&quot;30&quot; /usr/sbin/init
 
@@ -92,36 +81,13 @@ docker exec -it ${container_name} /bin/bash
 </div>
 <p><em>Note: files used for building image are from cider and presto,
 details are as follows:</em></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>.
-├── Dockerfile
-├── scripts-cider
-│   ├── common-functions.sh
-│   ├── llvm-9-glibc-2.31-708430.patch
-│   └── mapd-deps-ubuntu.sh
-└── scripts-presto
-    (from frameworks.ai.modular-sql.presto/presto-native-execution)
-    ├── scripts
-    │   └── setup-ubuntu.sh
-    └── velox
-        └── scripts
-            └── setup-ubuntu.sh
-</pre></div>
-</div>
-<ol class="arabic simple">
-<li>Build in container</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># velox-plugin</span>
-<span class="c1"># WORKDIR: /workspace/velox-plugin</span>
-<span class="c1"># default target is release version</span>
-<span class="n">make</span> <span class="n">debug</span><span class="o">/</span><span class="n">release</span>
-
-<span class="c1"># incremental compilation method:</span>
-<span class="c1"># 1. continue use &#39;make debug/release&#39;, some cmake actions will spend a little time</span>
-<span class="c1"># 2. use &#39;make build BUILD_TYPE=Debug/Release&#39;, the fastest method</span>
-</pre></div>
-</div>
-<ol class="arabic simple" start="4">
-<li>Setup ssh for debugging</li>
+<ol class="arabic" start="3">
+<li><p class="first">Build in container</p>
+<p>Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:</p>
+<p>Run <code class="docutils literal notranslate"><span class="pre">make</span></code> in the root directory to compile the sources. For development, use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> to build a non-optimized debug version, or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">release</span></code> to build an optimized version. Use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-debug</span></code> or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-release</span></code> to run tests.</p>
+</li>
+<li><p class="first">Setup ssh for debugging</p>
+</li>
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start ssh server in the docker</span>
 <span class="n">systemctl</span> <span class="n">start</span> <span class="n">ssh</span>
@@ -137,8 +103,8 @@ details are as follows:</em></p>
 <h2>2 How to run unit tests<a class="headerlink" href="#how-to-run-unit-tests" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="how-to-run-all-unit-tests">
 <h3>2.1 How to run all unit tests<a class="headerlink" href="#how-to-run-all-unit-tests" title="Permalink to this headline">¶</a></h3>
-<p>For velox-plugin:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: /workspace/velox-plugin</span>
+<p>For BDTK:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: /workspace/bdtk</span>
 <span class="c1"># test both cider and cider-velox</span>
 <span class="n">make</span> <span class="n">test</span><span class="o">-</span><span class="n">debug</span><span class="o">/</span><span class="n">release</span>
 
@@ -151,25 +117,22 @@ details are as follows:</em></p>
 <span class="c1"># Note: If you want to test both Debug and Release, just use &#39;&amp;&amp;&#39; to connect two commands.</span>
 </pre></div>
 </div>
+<p>2.2 How to run a single unit test</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># For Cider</span>
+<span class="c1"># Test Path: /workspace/bdtk/build-$BUILD_TYPE/cider/tests</span>
+<span class="o">./</span><span class="n">XXXtest</span>
+
+<span class="c1"># For CiderVelox</span>
+<span class="c1"># Test Path: /workspace/bdtk/build-$BUILD_TYPE/cider-velox/tests</span>
+
+<span class="c1"># Please check is there a function directory(auto generate when make test-$BUILD_TYPE) under cider-velox.</span>
+<span class="c1"># If not, please use follow commands to get one(under /workspace/bdtk/):</span>
+<span class="c1">#   mkdir /workspace/bdtk/build-${BUILD_TYPE}/cider-velox/function</span>
+<span class="c1">#   cp /workspace/bdtk/build-${BUILD_TYPE}/cider/function/*.bc /workspace/bdtk/build-{BUILD_TYPE}/cider-velox/function</span>
+<span class="c1">#   cd /workspace/bdtk/build-${BUILD_TYPE}cider-velox/test</span>
+<span class="o">./</span><span class="n">XXXtest</span>
+</pre></div>
 </div>
-<div class="section" id="how-to-run-a-single-unit-test">
-<h3>2.2 How to run a single unit test<a class="headerlink" href="#how-to-run-a-single-unit-test" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>::</dt>
-<dd><p class="first"># For Cider
-# Test Path: /workspace/velox-plugin/build-$BUILD_TYPE/cider/Tests
-./XXXtest</p>
-<p># For CiderVelox
-# Test Path: /workspace/velox-plugin/build-$BUILD_TYPE/cider-velox/Tests</p>
-<p># Please check is there a exec directory(auto generate when make test-$BUILD_TYPE) under cider-velox.
-# If not, please use follow commands to get one(under /workspace/velox-plugin/):
-#   mkdir /workspace/velox-plugin/build-${BUILD_TYPE}/cider-velox/function</p>
-<blockquote>
-<div>#   cp /workspace/velox-plugin/build-${BUILD_TYPE}/cider/function/<a href="#id1"><span class="problematic" id="id2">*</span></a>.bc /workspace/velox-plugin/build-{BUILD_TYPE}/cider-velox/function
-#   cd /workspace/velox-plugin/build-${BUILD_TYPE}cider-velox/test</div></blockquote>
-<p class="last">./XXXtest</p>
-</dd>
-</dl>
 <p>Then configure GDB with the built test binaries, like following:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>{
     // Use IntelliSense to learn about possible attributes.
@@ -511,12 +474,11 @@ Pull requests should pass <code class="docutils literal notranslate"><span class
   <ul>
 <li><a class="reference internal" href="#">Cider Developer Guide</a><ul>
 <li><a class="reference internal" href="#how-to-build">1 How to build</a><ul>
-<li><a class="reference internal" href="#build-modular-sql">1.1 Build Modular SQL</a></li>
+<li><a class="reference internal" href="#build-bdtk">1.1 Build BDTK</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#how-to-run-unit-tests">2 How to run unit tests</a><ul>
 <li><a class="reference internal" href="#how-to-run-all-unit-tests">2.1 How to run all unit tests</a></li>
-<li><a class="reference internal" href="#how-to-run-a-single-unit-test">2.2 How to run a single unit test</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#how-to-install">3 How to install</a></li>
