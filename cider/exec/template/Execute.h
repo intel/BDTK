@@ -233,10 +233,6 @@ inline std::vector<Analyzer::Expr*> get_exprs_not_owned(
   return exprs_not_owned;
 }
 
-
-
-
-
 class ExtensionFunction;
 
 class QueryCompilationDescriptor;
@@ -307,9 +303,9 @@ class Executor {
       const bool with_generation) const;
 
   enum class ExtModuleKinds {
-    template_module,     // RuntimeFunctions.bc
-    udf_cpu_module,      // Load-time UDFs for CPU execution
-    rt_udf_cpu_module,   // Run-time UDF/UDTFs for CPU execution
+    template_module,    // RuntimeFunctions.bc
+    udf_cpu_module,     // Load-time UDFs for CPU execution
+    rt_udf_cpu_module,  // Run-time UDF/UDTFs for CPU execution
   };
   // Globally available mapping of extension module sources. Not thread-safe.
   std::map<ExtModuleKinds, std::string> extension_module_sources;

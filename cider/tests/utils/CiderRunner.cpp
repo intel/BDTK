@@ -23,7 +23,7 @@
 #include <google/protobuf/util/json_util.h>
 
 CiderCompiler::CiderCompiler() {
-  cider_compile_module_ = CiderCompileModule::Make();
+  cider_compile_module_ = CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
 }
 
 std::shared_ptr<CiderCompilationResult> CiderCompiler::compile(
