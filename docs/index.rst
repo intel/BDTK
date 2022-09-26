@@ -11,3 +11,4 @@ Welcome to Cider's documentation!
     user-guide
     cider-sharing
     development-specification
+    CiderAllocator-use-guide
