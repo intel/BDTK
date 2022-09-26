@@ -51,6 +51,7 @@ TEST(CiderBatchCheckerTest, singleColumn) {
 }
 
 TEST(CiderBatchCheckerTest, stringBatchEq) {
+  // one to one ordered
   std::vector<CiderByteArray> vec;
   vec.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("aaaaa")));
   vec.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("bbbbb")));
@@ -68,10 +69,76 @@ TEST(CiderBatchCheckerTest, stringBatchEq) {
           .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(String), vec)
           .build());
 
-  EXPECT_TRUE(CiderBatchChecker::checkEq(expected_batch, actual_batch, true));
-  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch, expected_batch, true));
+  EXPECT_TRUE(CiderBatchChecker::checkEq(expected_batch, actual_batch));
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch, expected_batch));
 
-  // TODO: add multi batches to multi batches check
+  // one to one non-ordered
+  std::vector<CiderByteArray> vec2;
+  vec2.push_back(CiderByteArray(10, reinterpret_cast<const uint8_t*>("aaaaabbbbb")));
+  vec2.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("bbbbb")));
+  vec2.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("aaaaa")));
+
+  auto actual_batch_2 = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(3)
+          .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(String), vec2)
+          .build());
+
+  EXPECT_TRUE(CiderBatchChecker::checkEq(expected_batch, actual_batch_2, true));
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch_2, expected_batch, true));
+
+  // complex cases
+  std::vector<std::shared_ptr<CiderBatch>> actual_vec_1;
+  std::vector<CiderByteArray> vec3;
+  std::vector<CiderByteArray> vec4;
+
+  vec3.push_back(CiderByteArray(10, reinterpret_cast<const uint8_t*>("aaaaabbbbb")));
+  vec4.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("bbbbb")));
+  vec4.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("aaaaa")));
+  auto actual_batch_3 = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(1)
+          .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(String), vec3)
+          .build());
+  auto actual_batch_4 = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(2)
+          .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(String), vec4)
+          .build());
+  actual_vec_1.emplace_back(actual_batch_3);
+  actual_vec_1.emplace_back(actual_batch_4);
+
+  std::vector<std::shared_ptr<CiderBatch>> actual_vec_2;
+  std::vector<CiderByteArray> vec5;
+  std::vector<CiderByteArray> vec6;
+
+  vec5.push_back(CiderByteArray(10, reinterpret_cast<const uint8_t*>("aaaaabbbbb")));
+  vec5.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("bbbbb")));
+  vec6.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("aaaaa")));
+  auto actual_batch_5 = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(2)
+          .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(String), vec5)
+          .build());
+  auto actual_batch_6 = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(1)
+          .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(String), vec6)
+          .build());
+  actual_vec_2.emplace_back(actual_batch_5);
+  actual_vec_2.emplace_back(actual_batch_6);
+
+  // one to many non-ordered
+  EXPECT_TRUE(CiderBatchChecker::checkEq(expected_batch, actual_vec_1, true));
+  EXPECT_TRUE(CiderBatchChecker::checkEq(expected_batch, actual_vec_2, true));
+
+  // many to one non-ordered
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_vec_1, expected_batch, true));
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_vec_2, expected_batch, true));
+
+  // many to many non-ordered
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_vec_1, actual_vec_2, true));
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_vec_2, actual_vec_1, true));
 }
 
 TEST(CiderBatchCheckerTest, varcharBatchEq) {
