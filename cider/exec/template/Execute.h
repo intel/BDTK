@@ -309,11 +309,7 @@ class Executor {
   enum class ExtModuleKinds {
     template_module,     // RuntimeFunctions.bc
     udf_cpu_module,      // Load-time UDFs for CPU execution
-    udf_gpu_module,      // Load-time UDFs for GPU execution
     rt_udf_cpu_module,   // Run-time UDF/UDTFs for CPU execution
-    rt_udf_gpu_module,   // Run-time UDF/UDTFs for GPU execution
-    rt_geos_module,      // geos functions
-    rt_libdevice_module  // math library functions for GPU execution
   };
   // Globally available mapping of extension module sources. Not thread-safe.
   std::map<ExtModuleKinds, std::string> extension_module_sources;
@@ -323,10 +319,7 @@ class Executor {
   const std::unique_ptr<llvm::Module>& get_rt_module() const {
     return get_extension_module(ExtModuleKinds::template_module);
   }
-  const std::unique_ptr<llvm::Module>& get_udf_module(bool is_gpu = false) const {
-    return get_extension_module(
-        (is_gpu ? ExtModuleKinds::udf_gpu_module : ExtModuleKinds::udf_cpu_module));
-  }
+
   void update_extension_modules(bool update_runtime_modules_only = false);
   llvm::LLVMContext& getContext() { return *context_.get(); }
 

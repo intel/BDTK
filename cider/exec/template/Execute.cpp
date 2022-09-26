@@ -185,20 +185,10 @@ void Executor::update_extension_modules(bool update_runtime_modules_only) {
     CHECK(!source.empty());
     switch (module_kind) {
       case Executor::ExtModuleKinds::template_module:
-      case Executor::ExtModuleKinds::rt_geos_module:
-      case Executor::ExtModuleKinds::rt_libdevice_module: {
-        return read_llvm_module_from_bc_file(source, getContext());
-      }
       case Executor::ExtModuleKinds::udf_cpu_module: {
         return read_llvm_module_from_ir_file(source, getContext());
       }
-      case Executor::ExtModuleKinds::udf_gpu_module: {
-        return read_llvm_module_from_ir_file(source, getContext());
-      }
       case Executor::ExtModuleKinds::rt_udf_cpu_module: {
-        return read_llvm_module_from_ir_string(source, getContext());
-      }
-      case Executor::ExtModuleKinds::rt_udf_gpu_module: {
         return read_llvm_module_from_ir_string(source, getContext());
       }
       default: {
