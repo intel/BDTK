@@ -102,7 +102,7 @@ CiderRuntimeModule::CiderRuntimeModule(
 std::unique_ptr<CiderBatch> CiderRuntimeModule::prepareOneBatchOutput(int64_t len) {
   ArrowSchema* schema = CiderBatchUtils::convertCiderTableSchemaToArrowSchema(
       ciderCompilationResult_->getOutputCiderTableSchema());
-  auto root_batch = StructBatch::Create(schema);
+  auto root_batch = StructBatch::Create(schema, allocator_);
 
   std::function<void(CiderBatch*)> build_function =
       [len, &build_function](CiderBatch* batch) -> void {

@@ -339,6 +339,7 @@ void TargetExprCodegen::codegenAggregate(
       ++slot_index;
       ++target_lv_idx;
     }
+  }
 }
 
 void TargetExprCodegen::codegenAggregate(

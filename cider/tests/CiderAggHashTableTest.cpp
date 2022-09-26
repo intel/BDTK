@@ -810,7 +810,7 @@ void testScalarProject(MockTable* table,
                               0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
-      2, CiderBitUtils::CiderBitVector<>(5, 0xFF));
+      2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 0);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
 
