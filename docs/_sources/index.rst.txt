@@ -7,5 +7,6 @@ Welcome to Cider's documentation!
 
     cider-in-10-min
     develop-guide
+    syntax-support
     user-guide
     cider-sharing

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Cider User Guide &#8212; Cider 1.0 documentation</title>
+    <title>CiderAllocator use guide &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,9 +15,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Cider Sharing" href="cider-sharing.html" />
-    <link rel="prev" title="Syntax support in Cider" href="syntax-support.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -25,12 +23,6 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="cider-sharing.html" title="Cider Sharing"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="syntax-support.html" title="Syntax support in Cider"
-             accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
     </div>  
@@ -40,24 +32,49 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="cider-user-guide">
-<h1>Cider User Guide<a class="headerlink" href="#cider-user-guide" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>what we should prepare…</p>
-<div class="section" id="manual-install">
-<h3>Manual Install<a class="headerlink" href="#manual-install" title="Permalink to this headline">¶</a></h3>
-<p>how to install…</p>
-</div>
-<div class="section" id="further-pip-conda-apt-yum-source">
-<h3>(Further) pip/conda/apt/yum source<a class="headerlink" href="#further-pip-conda-apt-yum-source" title="Permalink to this headline">¶</a></h3>
-<p>some details…</p>
-</div>
-</div>
-<div class="section" id="a-demo-to-use">
-<h2>A Demo To Use<a class="headerlink" href="#a-demo-to-use" title="Permalink to this headline">¶</a></h2>
-<p>some thing about the demo…</p>
-</div>
+  <div class="section" id="ciderallocator-use-guide">
+<h1>CiderAllocator use guide<a class="headerlink" href="#ciderallocator-use-guide" title="Permalink to this headline">¶</a></h1>
+<p>1 introduction to CiderAllocator
+We provide the allocation interface in CiderAllocator.h and two default implementations
+1.1
+CiderDefaultAllocator provide the default allocate and deallocate function via system library
+1.2
+AlignAllocator provide the function to perform memory alignment</p>
+<p>or use the CiderDefaultAllocator, AlignAllocator if they don’t want to do it,
+but this allocator must be present and passed throughout the calling logic
+because Only in this way can you know the memory usage during the entire operation for memory managerment</p>
+<blockquote>
+<div><p><cite>std::shared_ptr&lt;CiderAllocator&gt; allocator</cite>
+and add it in the constructor
+<a href="#id1"><span class="problematic" id="id2">`</span></a>CiderRuntimeModule(</p>
+<blockquote>
+<div>std::shared_ptr&lt;CiderCompilationResult&gt; ciderCompilationResult,
+CiderCompilationOption ciderCompilationOption = CiderCompilationOption::defaults(),
+CiderExecutionOption ciderExecutionOption = CiderExecutionOption::defaults(),
+std::shared_ptr&lt;CiderAllocator&gt; allocator = std::make_shared&lt;CiderDefaultAllocator&gt;());`</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>2.2 in .cpp implementation class</dt>
+<dd><dl class="first last docutils">
+<dt><a href="#id3"><span class="problematic" id="id4">`</span></a>CiderRuntimeModule::CiderRuntimeModule(</dt>
+<dd>std::shared_ptr&lt;CiderCompilationResult&gt; ciderCompilationResult,
+CiderCompilationOption ciderCompilationOption,
+CiderExecutionOption ciderExecutionOption,
+std::shared_ptr&lt;CiderAllocator&gt; allocator)
+: ciderCompilationResult_(ciderCompilationResult)
+, ciderCompilationOption_(ciderCompilationOption)
+, ciderExecutionOption_(ciderExecutionOption)
+, allocator_(allocator)`</dd>
+</dl>
+</dd>
+<dt>2.3 Then we can use it in the implementation class for memory allocation and release</dt>
+<dd><p class="first"><cite>const int8_t** col_buffers = reinterpret_cast&lt;const int8_t**&gt;(allocator_-&gt;allocate(sizeof(int8_t**) * (total_col_num)));</cite></p>
+<p class="last"><cite>allocator_-&gt;deallocate(reinterpret_cast&lt;int8_t*&gt;(col_buffers),sizeof(int8_t**) * (total_col_num));</cite></p>
+</dd>
+<dt>2.4 Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default</dt>
+<dd><cite>auto customAllocator = std::make_shared&lt;CustomAllocator&gt;();
+cider_runtime_module_ = std::make_shared&lt;CiderRuntimeModule&gt;(compile_res_, compile_option, exe_option, customAllocator);</cite></dd>
+</dl>
 </div>
 
 
@@ -66,29 +83,10 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Cider User Guide</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a><ul>
-<li><a class="reference internal" href="#manual-install">Manual Install</a></li>
-<li><a class="reference internal" href="#further-pip-conda-apt-yum-source">(Further) pip/conda/apt/yum source</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#a-demo-to-use">A Demo To Use</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="syntax-support.html"
-                        title="previous chapter">Syntax support in Cider</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="cider-sharing.html"
-                        title="next chapter">Cider Sharing</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/user-guide.rst.txt"
+      <li><a href="_sources/CiderAllocator-use-guide.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -114,12 +112,6 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
-        <li class="right" >
-          <a href="cider-sharing.html" title="Cider Sharing"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="syntax-support.html" title="Syntax support in Cider"
-             >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
     </div>
