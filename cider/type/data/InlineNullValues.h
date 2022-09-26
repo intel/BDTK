@@ -23,6 +23,7 @@
 #ifndef INLINENULLVALUES_H
 #define INLINENULLVALUES_H
 
+#include "cider/CiderException.h"
 #include "type/data/funcannotations.h"
 #include "util/Logger.h"
 
@@ -148,7 +149,7 @@ inline int64_t inline_int_null_val(const SQL_TYPE_INFO& ti) {
     case kNUMERIC:
       return inline_int_null_value<int64_t>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 
@@ -198,7 +199,7 @@ inline double inline_fp_null_val(const SQL_TYPE_INFO& ti) {
     case kDOUBLE:
       return inline_fp_null_value<double>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 
@@ -236,7 +237,7 @@ inline int64_t inline_int_null_array_val(const SQL_TYPE_INFO& ti) {
     case kNUMERIC:
       return inline_int_null_array_value<int64_t>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 

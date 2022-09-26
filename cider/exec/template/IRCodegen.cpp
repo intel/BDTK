@@ -157,7 +157,7 @@ std::vector<llvm::Value*> CodeGenerator::codegen(const Analyzer::Expr* expr,
   if (dynamic_cast<const Analyzer::WindowFunction*>(expr)) {
     CIDER_THROW(CiderCompileException, "Window expression not supported in this context");
   }
-  abort();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("expr is {}", expr->toString()));
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* expr,
@@ -205,7 +205,7 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::BinOper* bin_oper,
   if (optype == kARRAY_AT) {
     return codegenArrayAt(bin_oper, co);
   }
-  abort();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("optype is {}", optype));
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
@@ -251,7 +251,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenBinOper(
     return codegenLogicalFun(bin_oper, co);
   }
   // TODO: Array At Support.
-  abort();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("optype is {}", optype));
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::UOper* u_oper,

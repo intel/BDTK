@@ -291,7 +291,7 @@ class NullLogger {
  public:
   NullLogger() {
     if /*constexpr*/ (severity == Severity::FATAL) {
-      abort();
+      CIDER_THROW(CheckFatalException, "");
     }
   }
   template <typename T>

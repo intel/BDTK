@@ -27,6 +27,7 @@
 
 #include "function/datetime/ExtractFromTime.h"
 #include <cstdlib>  // abort()
+#include "cider/CiderException.h"
 
 namespace {
 
@@ -297,5 +298,5 @@ int64_t ExtractFromTime(ExtractField field, const int64_t timeval) {
     case kYEAR:
       return extract_year(timeval);
   }
-  abort();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
 }

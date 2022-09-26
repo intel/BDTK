@@ -124,7 +124,9 @@ class CiderBatch {
 
   // This function will not resize nulls.
   // TODO: Change to pure virtual function.
-  virtual bool resizeData(int64_t size) { abort(); }
+  virtual bool resizeData(int64_t size) {
+    CIDER_THROW(CiderUnsupportedException, fmt::format("size is {}", size));
+  }
   bool resizeNulls(int64_t size, bool default_not_null);
 
   virtual size_t getNullVectorIndex() const { return 0; }

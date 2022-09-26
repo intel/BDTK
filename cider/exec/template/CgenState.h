@@ -176,7 +176,7 @@ struct CgenState {
         CIDER_THROW(CiderCompileException, "Encoded literal arrays are not supported");
       }
       default:
-        abort();
+        CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
     }
   }
 
@@ -380,7 +380,8 @@ struct CgenState {
       case 11:
         return 4;  // std::pair<std::vector<int8_t>, int>
       default:
-        abort();
+        CIDER_THROW(CiderUnsupportedException,
+                    fmt::format("lit which is {}", lit.which()));
     }
   }
 

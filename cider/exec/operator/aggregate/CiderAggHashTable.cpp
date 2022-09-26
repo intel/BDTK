@@ -65,7 +65,8 @@ std::vector<CiderHasher::kColumnInfo> CiderHasher::initColsRange(
         ans.push_back({kBIGINT, 0, -1, inline_int_null_value<int64_t>(), false});
         break;
       default:
-        abort();
+        CIDER_THROW(CiderUnsupportedException,
+                    fmt::format("type name is {}", type_info.get_type_name()));
     }
   }
 

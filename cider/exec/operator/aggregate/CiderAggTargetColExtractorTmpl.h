@@ -236,7 +236,7 @@ class AVGAggExtractor<DecimalPlaceHolder, COUNTT, AVGT>
   }
 
   void extract(const std::vector<const int8_t*>& rowAddrs, CiderBatch* output) override {
-    abort();
+    CIDER_THROW(CiderUnsupportedException, "");
   }
 
  private:
