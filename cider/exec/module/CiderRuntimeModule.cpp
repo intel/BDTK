@@ -388,7 +388,7 @@ void CiderRuntimeModule::extract_column(int32_t start_row,
     double* flattened_out_buffer = reinterpret_cast<double*>(flattened_out);
     while (i < max_read_rows) {
       // cast to cover float case
-      if (flattened_out_buffer[cur_col_offset] == NULL_VALUE_DOUBLE) {
+      if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue) {
         col_out_buffer[i++] = std::numeric_limits<T>::min();
       } else {
         col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];
@@ -398,7 +398,7 @@ void CiderRuntimeModule::extract_column(int32_t start_row,
   } else {
     // for other types, it uses 64bit to store a value
     while (i < max_read_rows) {
-      if (flattened_out[cur_col_offset] == NULL_VALUE_BIGINT) {
+      if (flattened_out[cur_col_offset] == kBigIntNullValue) {
         col_out_buffer[i++] = std::numeric_limits<T>::min();
       } else {
         col_out_buffer[i++] = flattened_out[cur_col_offset];
@@ -760,7 +760,7 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
             reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
         double* cast_buffer = reinterpret_cast<double*>(result);
         if (result[0] == std::numeric_limits<int64_t>::min()) {
-          cast_buffer[0] = NULL_VALUE_DOUBLE;
+          cast_buffer[0] = kDoubleNullValue;
         } else {
           cast_buffer[0] = (double)result[0];
         }
