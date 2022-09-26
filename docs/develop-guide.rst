@@ -33,7 +33,7 @@ Cider Developer Guide
    $ docker build -t ${image_name} .
 
    # Start a docker container for development
-   docker run -d --name ${container_name} --privileged=true -v ${path_to_velox_plugin}:/workspace/velox-plugin ${image_name} /usr/sbin/init
+   docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} /usr/sbin/init
    # Tips: you can run with more CPU cores to accelerate building time
    # docker run -d ... ${image_name} --cpus="30" /usr/sbin/init
 
@@ -65,11 +65,11 @@ details are as follows:*
 2.1 How to run all unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For velox-plugin:
+For BDTK:
 
 ::
 
-   # WORKDIR: /workspace/velox-plugin
+   # WORKDIR: /workspace/bdtk
    # test both cider and cider-velox
    make test-debug/release
 
@@ -87,17 +87,17 @@ For velox-plugin:
 ::
    
    # For Cider
-   # Test Path: /workspace/velox-plugin/build-$BUILD_TYPE/cider/Tests
+   # Test Path: /workspace/bdtk/build-$BUILD_TYPE/cider/tests
    ./XXXtest 
 
    # For CiderVelox
-   # Test Path: /workspace/velox-plugin/build-$BUILD_TYPE/cider-velox/Tests
+   # Test Path: /workspace/bdtk/build-$BUILD_TYPE/cider-velox/tests
 
-   # Please check is there a exec directory(auto generate when make test-$BUILD_TYPE) under cider-velox.
-   # If not, please use follow commands to get one(under /workspace/velox-plugin/): 
-   #   mkdir /workspace/velox-plugin/build-${BUILD_TYPE}/cider-velox/function
-   #   cp /workspace/velox-plugin/build-${BUILD_TYPE}/cider/function/*.bc /workspace/velox-plugin/build-{BUILD_TYPE}/cider-velox/function
-   #   cd /workspace/velox-plugin/build-${BUILD_TYPE}cider-velox/test
+   # Please check is there a function directory(auto generate when make test-$BUILD_TYPE) under cider-velox.
+   # If not, please use follow commands to get one(under /workspace/bdtk/): 
+   #   mkdir /workspace/bdtk/build-${BUILD_TYPE}/cider-velox/function
+   #   cp /workspace/bdtk/build-${BUILD_TYPE}/cider/function/*.bc /workspace/bdtk/build-{BUILD_TYPE}/cider-velox/function
+   #   cd /workspace/bdtk/build-${BUILD_TYPE}cider-velox/test
    ./XXXtest 
 
 Then configure GDB with the built test binaries, like following:
