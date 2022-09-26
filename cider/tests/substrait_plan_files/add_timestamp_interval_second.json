@@ -1,6 +1,19 @@
 {
-    "extensionUris": [],
-    "extensions": [],
+    "extensionUris": [
+        {
+            "extensionUriAnchor": 1,
+            "uri": "/functions_datetime.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 0,
+                "name": "add:ts_day"
+            }
+        }
+    ],
     "relations": [
         {
             "root": {
@@ -58,24 +71,42 @@
                         },
                         "expressions": [
                             {
-                                "cast": {
-                                    "type": {
-                                        "date": {
+                                "scalarFunction": {
+                                    "functionReference": 0,
+                                    "args": [],
+                                    "outputType": {
+                                        "timestamp": {
                                             "typeVariationReference": 0,
                                             "nullability": "NULLABILITY_NULLABLE"
                                         }
                                     },
-                                    "input": {
-                                        "selection": {
-                                            "directReference": {
-                                                "structField": {
-                                                    "field": 2
+                                    "arguments": [
+                                        {
+                                            "value": {
+                                                "selection": {
+                                                    "directReference": {
+                                                        "structField": {
+                                                            "field": 2
+                                                        }
+                                                    },
+                                                    "rootReference": {}
                                                 }
-                                            },
-                                            "rootReference": {}
+                                            }
+                                        },
+                                        {
+                                            "value": {
+                                                "literal": {
+                                                    "intervalDayToSecond": {
+                                                        "days": 0,
+                                                        "seconds": 1,
+                                                        "microseconds": 0
+                                                    },
+                                                    "nullable": false,
+                                                    "typeVariationReference": 0
+                                                }
+                                            }
                                         }
-                                    },
-                                    "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                                    ]
                                 }
                             }
                         ]

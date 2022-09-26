@@ -647,8 +647,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExp
   CHECK(s_scalar_function.arguments(1).has_value());
   auto from_expr =
       toAnalyzerExpr(s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
-  from_expr->set_type_info(from_expr->get_type_info());
-
   return ExtractExpr::generate(from_expr, time_unit);
 }
 
@@ -1004,10 +1002,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       // Default is none encoding
       // sqlTypeInfo.set_compression(EncodingType::kENCODING_NONE);
       Datum v;
-      // TODO: currently only support a string date representation. Seems it's possible to
-      // use a int32/int64 to represent under substrait protocol
       v.bigintval = dateToInt64(s_cast_expr.input().literal().fixed_char());
-
       return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
     } else if (isColumnVar(s_cast_expr.input().selection())) {
       int col_id =

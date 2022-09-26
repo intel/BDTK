@@ -33,9 +33,9 @@
                                 },
                                 "baseSchema": {
                                     "names": [
-                                        "COL_A",
-                                        "COL_B",
-                                        "COL_C"
+                                        "COL_DATE",
+                                        "COL_TIME",
+                                        "COL_TIMESTAMP"
                                     ],
                                     "struct": {
                                         "types": [

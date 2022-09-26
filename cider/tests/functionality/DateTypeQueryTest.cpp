@@ -251,30 +251,38 @@ class TimeTypeQueryTest : public CiderTestBase {
  public:
   TimeTypeQueryTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a DATE, col_b TIME, col_c TIMESTAMP);";
-    input_ = {std::make_shared<CiderBatch>(
-        QueryDataGenerator::generateBatchByTypes(100,
-                                                 {"col_a", "col_b", "col_c"},
-                                                 {CREATE_SUBSTRAIT_TYPE(Date),
-                                                  CREATE_SUBSTRAIT_TYPE(Time),
-                                                  CREATE_SUBSTRAIT_TYPE(Timestamp)},
-                                                 {2, 2, 2},
-                                                 GeneratePattern::Random))};
+    create_ddl_ =
+        "CREATE TABLE test(col_date DATE, col_time TIME, col_timestamp TIMESTAMP);";
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        100,
+        {"col_date", "col_time", "col_timestamp"},
+        {CREATE_SUBSTRAIT_TYPE(Date),
+         CREATE_SUBSTRAIT_TYPE(Time),
+         CREATE_SUBSTRAIT_TYPE(Timestamp)},
+        {2, 2, 2},
+        GeneratePattern::Random))};
   }
 };
 
-TEST_F(TimeTypeQueryTest, TimeStampTest) {
-  assertQuery("SELECT col_c +  interval '1' month  from test",
+TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
+  assertQuery("SELECT col_timestamp from test where col_timestamp > date '1970-01-01'",
+              "cast_literal_timestamp.json");
+  assertQuery("SELECT col_timestamp +  interval '1' month  from test",
               "add_timestamp_interval_month.json");
-  assertQuery("SELECT col_c +  interval '1' day  from test",
+  assertQuery("SELECT col_timestamp +  interval '1' day  from test",
               "add_timestamp_interval_day.json");
-  assertQuery("select extract(microsecond from col_c) from test",
+  assertQuery("SELECT col_timestamp +  interval '1' second  from test",
+              "add_timestamp_interval_second.json");
+
+  assertQuery("select extract(microsecond from col_timestamp) from test",
               "extract/microsecond_of_timestamp.json");
-  assertQuery("select cast(col_a as TIMESTAMP) from test", "cast_date_as_timestamp.json");
-  // equals to date trunc
-  assertQuery("SELECT cast(col_c as DATE) from test", "cast_timestamp_as_date.json");
-  assertQuery("select extract(second from col_b) from test",
+  assertQuery("select extract(second from col_time) from test",
               "extract/second_of_time.json");
+  assertQuery("select cast(col_date as TIMESTAMP) from test",
+              "cast_date_as_timestamp.json");
+  // equals to date trunc
+  assertQuery("SELECT cast(col_timestamp as DATE) from test",
+              "cast_timestamp_as_date.json");
 }
 
 int main(int argc, char** argv) {
