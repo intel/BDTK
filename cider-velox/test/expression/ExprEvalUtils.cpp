@@ -93,13 +93,14 @@ std::vector<InputTableInfo> ExprEvalUtils::buildInputTableInfo() {
   Fragmenter_Namespace::FragmentInfo fragmentInfo;
   fragmentInfo.fragmentId = 0;
   fragmentInfo.shadowNumTuples = 1024;
-  fragmentInfo.physicalTableId = 100;  // FIXME
+  // use 100 as the faked table id
+  fragmentInfo.physicalTableId = 100;
   fragmentInfo.setPhysicalNumTuples(1024);
 
   Fragmenter_Namespace::TableInfo tableInfo;
   tableInfo.fragments = {fragmentInfo};
   tableInfo.setPhysicalNumTuples(1024);
-  InputTableInfo inputTableInfo{100, -1};  // FIXME
+  InputTableInfo inputTableInfo{100, -1};
   queryInfos.push_back(inputTableInfo);
 
   return queryInfos;
@@ -154,7 +155,7 @@ SQLTypeInfo ExprEvalUtils::getCiderType(
     case TypeKind::TIMESTAMP:
       return SQLTypeInfo(SQLTypes::kTIMESTAMP, notNull);
     default:
-      throw std::runtime_error(expr_type->toString() + " is not yet supported.");
+      VELOX_UNSUPPORTED(expr_type->toString() + " is not yet supported.");
   }
 }
 
@@ -167,7 +168,7 @@ Analyzer::Expr* ExprEvalUtils::getExpr(std::shared_ptr<const Analyzer::Expr> exp
                                  bin_oper_expr->get_non_const_left_operand(),
                                  bin_oper_expr->get_non_const_right_operand());
   }
-  // FIXME: pay attention that UOper has different constructor
+  // Note that UOper has different constructors that be careful when create it
   if (auto u_oper_expr = std::dynamic_pointer_cast<const Analyzer::UOper>(expr)) {
     return new Analyzer::UOper(u_oper_expr->get_type_info(),
                                u_oper_expr->get_contains_agg(),
@@ -190,14 +191,13 @@ Analyzer::Expr* ExprEvalUtils::getExpr(std::shared_ptr<const Analyzer::Expr> exp
                              var_expr->get_which_row(),
                              var_expr->get_varno());
   }
-  // FIXME: should handle differently for Var and ColumnVar
-  // TODO: need consider about join
+  // For current expr evaluation, we don't consider aggregation, groupby and join cases
   if (auto column_var_expr = std::dynamic_pointer_cast<const Analyzer::ColumnVar>(expr)) {
     return new Analyzer::ColumnVar(column_var_expr->get_type_info(),
                                    column_var_expr->get_table_id(),
                                    column_var_expr->get_column_id(),
                                    column_var_expr->get_rte_idx());
   }
-  throw std::runtime_error("Failed to get target expr.");
+  VELOX_UNSUPPORTED("unsupported column type for target expr.");
 }
 }  // namespace facebook::velox::plugin

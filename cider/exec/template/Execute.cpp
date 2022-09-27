@@ -40,7 +40,6 @@
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/ColumnFetcher.h"
 #include "exec/template/DynamicWatchdog.h"
-#include "exec/template/ErrorHandling.h"
 #include "exec/template/ExpressionRewrite.h"
 #include "exec/template/ExternalCacheInvalidators.h"
 #include "exec/template/InPlaceSort.h"
@@ -59,6 +58,7 @@
 #include "robin_hood.h"
 #include "util/TypedDataAccessors.h"
 #include "util/checked_alloc.h"
+#include "util/filesystem/cider_path.h"
 #include "util/measure.h"
 #include "util/memory/DictDescriptor.h"
 #include "util/misc.h"
@@ -133,6 +133,16 @@ bool g_enable_automatic_ir_metadata{true};
 extern bool g_cache_string_hash;
 bool g_enable_multifrag_rs{false};
 
+extern std::unique_ptr<llvm::Module> read_llvm_module_from_bc_file(
+    const std::string& udf_ir_filename,
+    llvm::LLVMContext& ctx);
+extern std::unique_ptr<llvm::Module> read_llvm_module_from_ir_file(
+    const std::string& udf_ir_filename,
+    llvm::LLVMContext& ctx);
+extern std::unique_ptr<llvm::Module> read_llvm_module_from_ir_string(
+    const std::string& udf_ir_string,
+    llvm::LLVMContext& ctx);
+
 const int32_t Executor::ERR_SINGLE_VALUE_FOUND_MULTIPLE_VALUES;
 
 Executor::Executor(const ExecutorId executor_id,
@@ -140,15 +150,157 @@ Executor::Executor(const ExecutorId executor_id,
                    BufferProvider* buffer_provider,
                    const std::string& debug_dir,
                    const std::string& debug_file)
-    : cgen_state_(new CgenState({}, false))
+    : executor_id_(executor_id)
+    , context_(new llvm::LLVMContext())
+    , cgen_state_(new CgenState({}, false, this))
     , cpu_code_cache_(code_cache_size)
     , debug_dir_(debug_dir)
     , debug_file_(debug_file)
-    , executor_id_(executor_id)
     , data_provider_(data_provider)
     , buffer_provider_(buffer_provider)
     , temporary_tables_(nullptr)
-    , input_table_info_cache_(this) {}
+    , input_table_info_cache_(this) {
+  initialize_extension_module_sources();
+  update_extension_modules();
+}
+
+void Executor::initialize_extension_module_sources() {
+  if (extension_module_sources.find(Executor::ExtModuleKinds::template_module) ==
+      extension_module_sources.end()) {
+    auto root_path = cider::get_root_abs_path();
+    auto template_path = root_path + "/function/RuntimeFunctions.bc";
+    CHECK(boost::filesystem::exists(template_path));
+    extension_module_sources[Executor::ExtModuleKinds::template_module] = template_path;
+  }
+}
+
+void Executor::update_extension_modules(bool update_runtime_modules_only) {
+  auto read_module = [&](Executor::ExtModuleKinds module_kind,
+                         const std::string& source) {
+    /*
+      source can be either a filename of a LLVM IR
+      or LLVM BC source, or a string containing
+      LLVM IR code.
+     */
+    CHECK(!source.empty());
+    switch (module_kind) {
+      case Executor::ExtModuleKinds::template_module:
+      case Executor::ExtModuleKinds::udf_cpu_module: {
+        return read_llvm_module_from_ir_file(source, getContext());
+      }
+      case Executor::ExtModuleKinds::rt_udf_cpu_module: {
+        return read_llvm_module_from_ir_string(source, getContext());
+      }
+      default: {
+        UNREACHABLE();
+        return std::unique_ptr<llvm::Module>();
+      }
+    }
+  };
+  auto update_module = [&](Executor::ExtModuleKinds module_kind,
+                           bool erase_not_found = false) {
+    auto it = extension_module_sources.find(module_kind);
+    if (it != extension_module_sources.end()) {
+      auto llvm_module = read_module(module_kind, it->second);
+      if (llvm_module) {
+        extension_modules_[module_kind] = std::move(llvm_module);
+      } else if (erase_not_found) {
+        extension_modules_.erase(module_kind);
+      } else {
+        if (extension_modules_.find(module_kind) == extension_modules_.end()) {
+          LOG(WARNING) << "Failed to update " << ::toString(module_kind)
+                       << " LLVM module. The module will be unavailable.";
+        } else {
+          LOG(WARNING) << "Failed to update " << ::toString(module_kind)
+                       << " LLVM module. Using the existing module.";
+        }
+      }
+    } else {
+      if (erase_not_found) {
+        extension_modules_.erase(module_kind);
+      } else {
+        if (extension_modules_.find(module_kind) == extension_modules_.end()) {
+          LOG(WARNING) << "Source of " << ::toString(module_kind)
+                       << " LLVM module is unavailable. The module will be unavailable.";
+        } else {
+          LOG(WARNING) << "Source of " << ::toString(module_kind)
+                       << " LLVM module is unavailable. Using the existing module.";
+        }
+      }
+    }
+  };
+
+  if (!update_runtime_modules_only) {
+    // required compile-time modules, their requirements are enforced
+    // by Executor::initialize_extension_module_sources():
+    update_module(Executor::ExtModuleKinds::template_module);
+    // load-time modules, these are optional:
+    update_module(Executor::ExtModuleKinds::udf_cpu_module, true);
+  }
+  // run-time modules, these are optional and erasable:
+  update_module(Executor::ExtModuleKinds::rt_udf_cpu_module, true);
+}
+
+// Used by StubGenerator::generateStub
+Executor::CgenStateManager::CgenStateManager(Executor& executor)
+    : executor_(executor)
+    , lock_queue_clock_(timer_start())
+    , lock_(executor_.compilation_mutex_)
+    , cgen_state_(std::move(executor_.cgen_state_))  // store old CgenState instance
+{
+  executor_.compilation_queue_time_ms_ += timer_stop(lock_queue_clock_);
+  executor_.cgen_state_.reset(new CgenState(0, false, &executor));
+}
+
+Executor::CgenStateManager::CgenStateManager(
+    Executor& executor,
+    const bool allow_lazy_fetch,
+    const std::vector<InputTableInfo>& query_infos,
+    const RelAlgExecutionUnit* ra_exe_unit)
+    : executor_(executor)
+    , lock_queue_clock_(timer_start())
+    , lock_(executor_.compilation_mutex_)
+    , cgen_state_(std::move(executor_.cgen_state_))  // store old CgenState instance
+{
+  executor_.compilation_queue_time_ms_ += timer_stop(lock_queue_clock_);
+  // nukeOldState creates new CgenState and PlanState instances for
+  // the subsequent code generation.  It also resets
+  // kernel_queue_time_ms_ and compilation_queue_time_ms_ that we do
+  // not currently restore.. should we accumulate these timings?
+  executor_.nukeOldState(allow_lazy_fetch, query_infos, ra_exe_unit);
+}
+
+Executor::CgenStateManager::~CgenStateManager() {
+  // prevent memory leak from hoisted literals
+  for (auto& p : executor_.cgen_state_->row_func_hoisted_literals_) {
+    auto inst = llvm::dyn_cast<llvm::LoadInst>(p.first);
+    if (inst && inst->getNumUses() == 0 && inst->getParent() == nullptr) {
+      // The llvm::Value instance stored in p.first is created by the
+      // CodeGenerator::codegenHoistedConstantsPlaceholders method.
+      p.first->deleteValue();
+    }
+  }
+  executor_.cgen_state_->row_func_hoisted_literals_.clear();
+
+  // move generated StringDictionaryTranslationMgrs and InValueBitmaps
+  // to the old CgenState instance as the execution of the generated
+  // code uses these bitmaps
+
+  executor_.cgen_state_->in_values_bitmaps_.clear();
+
+  // Delete worker module that may have been set by
+  // set_module_shallow_copy. If QueryMustRunOnCpu is thrown, the
+  // worker module is not instantiated, so the worker module needs to
+  // be deleted conditionally [see "Managing LLVM modules" comment in
+  // CgenState.h]:
+  if (executor_.cgen_state_->module_) {
+    executor_.cgen_state_->module_ = nullptr;
+    //    delete executor_.cgen_state_->module_;
+  }
+
+  // restore the old CgenState instance
+  executor_.cgen_state_.reset(cgen_state_.release());
+}
 
 std::shared_ptr<Executor> Executor::getExecutor(const ExecutorId executor_id,
                                                 DataProvider* data_provider,
@@ -199,7 +351,7 @@ StringDictionaryProxy* RowSetMemoryOwner::getOrAddStringDictProxy(
   if (!lit_str_dict_proxy_) {
     const DictRef dict_ref(-1, 1);
     std::shared_ptr<StringDictionary> tsd = std::make_shared<StringDictionary>(
-        dict_ref, "", false, true, g_cache_string_hash);
+        dict_ref, "", allocator_, false, true, g_cache_string_hash);
     lit_str_dict_proxy_.reset(new StringDictionaryProxy(
         tsd, 0, 0));  // use 0 string_dict_id to denote literal proxy
   }
@@ -327,7 +479,7 @@ std::vector<int8_t> Executor::serializeLiterals(
     }
   }
   if (lit_buf_size > static_cast<size_t>(std::numeric_limits<int16_t>::max())) {
-    throw TooManyLiterals();
+    CIDER_THROW(CiderCompileException, "Too many literals in the query");
   }
   int16_t crt_real_str_off = lit_buf_size;
   for (const auto& real_str : real_strings) {
@@ -1153,7 +1305,8 @@ void Executor::nukeOldState(const bool allow_lazy_fetch,
                                   [](const JoinCondition& join_condition) {
                                     return join_condition.type == JoinType::LEFT;
                                   }) != ra_exe_unit->join_quals.end();
-  cgen_state_.reset(new CgenState(query_infos.size(), contains_left_deep_outer_join));
+  cgen_state_.reset(
+      new CgenState(query_infos.size(), contains_left_deep_outer_join, this));
   plan_state_.reset(new PlanState(
       allow_lazy_fetch && !contains_left_deep_outer_join, query_infos, this));
 }
@@ -1191,7 +1344,9 @@ Executor::JoinHashTableOrError Executor::buildHashTableForQualifier(
     const RegisteredQueryHint& query_hint,
     const TableIdToNodeMap& table_id_to_node_map) {
   if (g_enable_dynamic_watchdog && interrupted_.load()) {
-    throw QueryExecutionError(ERR_INTERRUPTED);
+    CIDER_THROW(CiderRuntimeException,
+                fmt::format("Query execution failed with error code {}",
+                            std::to_string(ERR_INTERRUPTED)));
   }
   try {
     auto tbl = HashJoin::getInstance(qual_bin_oper,
@@ -1207,7 +1362,7 @@ Executor::JoinHashTableOrError Executor::buildHashTableForQualifier(
                                      query_hint,
                                      table_id_to_node_map);
     return {tbl, ""};
-  } catch (const HashJoinFail& e) {
+  } catch (const CiderHashJoinException& e) {
     return {nullptr, e.what()};
   }
 }
@@ -1294,7 +1449,6 @@ std::tuple<bool, int64_t, int64_t> get_hpt_overflow_underflow_safe_scaled_values
                                              boost::multiprecision::signed_magnitude,
                                              boost::multiprecision::checked,
                                              void>>;
-
   try {
     auto ret =
         std::make_tuple(true,
@@ -1463,7 +1617,9 @@ void Executor::checkPendingQueryStatus(const QuerySessionId& query_session) {
     return;
   }
   if (queries_interrupt_flag_[query_session]) {
-    throw QueryExecutionError(Executor::ERR_INTERRUPTED);
+    CIDER_THROW(CiderRuntimeException,
+                fmt::format("Query execution failed with error code {}",
+                            std::to_string(ERR_INTERRUPTED)));
   }
 }
 

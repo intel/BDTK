@@ -100,12 +100,6 @@ class CodeGenerator {
                               std::vector<Analyzer::Expr*>& primary_quals,
                               std::vector<Analyzer::Expr*>& deferred_quals,
                               const PlanState::HoistedFiltersSet& hoisted_quals);
-
-  struct ExecutorRequired : public std::runtime_error {
-    ExecutorRequired()
-        : std::runtime_error("Executor required to generate this expression") {}
-  };
-
   struct NullCheckCodegen {
     NullCheckCodegen(CgenState* cgen_state,
                      Executor* executor,
@@ -570,7 +564,7 @@ class CodeGenerator {
  protected:
   Executor* executor() const {
     if (!executor_) {
-      throw ExecutorRequired();
+      CIDER_THROW(CiderCompileException, "Executor required to generate this expression");
     }
     return executor_;
   }
@@ -627,12 +621,6 @@ class ScalarCodeGenerator : public CodeGenerator {
   std::unique_ptr<PlanState> own_plan_state_;
   std::unique_ptr<llvm::TargetMachine> nvptx_target_machine_;
 };
-
-/**
- * Makes a shallow copy (just declarations) of the runtime module. Function definitions
- * are cloned only if they're used from the generated code.
- */
-std::unique_ptr<llvm::Module> runtime_module_shallow_copy(CgenState* cgen_state);
 
 /**
  *  Loads individual columns from a single, packed pointers buffer (the byte stream arg)

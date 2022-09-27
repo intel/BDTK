@@ -23,13 +23,17 @@
 #define CIDER_ARROW_BUFFER_HOLDER_H
 
 #include <vector>
+#include "cider/CiderAllocator.h"
 
 struct ArrowSchema;
 struct ArrowArray;
 
 class CiderArrowArrayBufferHolder {
  public:
-  CiderArrowArrayBufferHolder(size_t buffer_num, size_t children_num, bool dict);
+  CiderArrowArrayBufferHolder(size_t buffer_num,
+                              size_t children_num,
+                              std::shared_ptr<CiderAllocator> allocator,
+                              bool dict);
   ~CiderArrowArrayBufferHolder();
 
   const void** getBufferPtrs() { return const_cast<const void**>(buffers_.data()); }
@@ -50,25 +54,24 @@ class CiderArrowArrayBufferHolder {
   void relaseBuffer(size_t index);
 
   std::vector<void*> buffers_;
+  std::vector<size_t> buffers_bytes_;  // Used for allocator.
   std::vector<ArrowArray*> children_ptr_;
   std::vector<ArrowArray> children_and_dict_;
+  std::shared_ptr<CiderAllocator> allocator_;
   const bool has_dict_;
 };
 
 class CiderArrowSchemaBufferHolder {
  public:
-  CiderArrowSchemaBufferHolder(size_t children_num, bool null_vector, bool dict);
+  CiderArrowSchemaBufferHolder(size_t children_num, bool dict);
 
   ArrowSchema** getChildrenPtrs() { return children_ptr_.data(); }
 
   ArrowSchema* getDictPtr();
 
-  bool needNullVector() const { return null_vector_; }
-
  private:
   std::vector<ArrowSchema*> children_ptr_;
   std::vector<ArrowSchema> children_and_dict_;
-  const bool null_vector_;
   const bool has_dict_;
 };
 

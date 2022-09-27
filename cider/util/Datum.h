@@ -20,6 +20,37 @@
  * under the License.
  */
 
-#include <llvm/IR/LLVMContext.h>
+/**
+ * @file		Datum.h
+ * @brief	 Definitions for core Datum union type
+ *
+ */
 
-llvm::LLVMContext& getGlobalLLVMContext();
+#pragma once
+
+#include <string>
+#include "type/data/funcannotations.h"
+
+struct VarlenDatum {
+  size_t length;
+  int8_t* pointer;
+  bool is_null;
+
+  VarlenDatum() : length(0), pointer(nullptr), is_null(true) {}
+  virtual ~VarlenDatum() {}
+
+  VarlenDatum(const size_t l, int8_t* p, const bool n)
+      : length(l), pointer(p), is_null(n) {}
+};
+
+union Datum {
+  int8_t boolval;
+  int8_t tinyintval;
+  int16_t smallintval;
+  int32_t intval;
+  int64_t bigintval;
+  float floatval;
+  double doubleval;
+  VarlenDatum* arrayval;
+  std::string* stringval;  // string value
+};

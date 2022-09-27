@@ -72,7 +72,6 @@
 #include "type/data/string/StringDictionary.h"
 #include "type/data/string/StringDictionaryProxy.h"
 #include "type/schema/SchemaProvider.h"
-#include "util/Exception.h"
 #include "util/Logger.h"
 #include "util/MemoryInfo.h"
 #include "util/mapd_shared_mutex.h"
@@ -153,16 +152,9 @@ class QuerySessionStatus {
 using QuerySessionMap =
     std::map<const QuerySessionId, std::map<std::string, QuerySessionStatus>>;
 
-extern void read_rt_udf_cpu_module(const std::string& udf_ir);
 extern bool is_rt_udf_module_present(bool cpu_only = false);
 
 class ColumnFetcher;
-
-class WatchdogException : public std::runtime_error {
- public:
-  WatchdogException(const std::string& cause) : std::runtime_error(cause) {}
-};
-
 class Executor;
 
 inline llvm::Value* get_arg_by_name(llvm::Function* func, const std::string& name) {
@@ -241,50 +233,6 @@ inline std::vector<Analyzer::Expr*> get_exprs_not_owned(
   return exprs_not_owned;
 }
 
-class CompilationRetryNoLazyFetch : public std::runtime_error {
- public:
-  CompilationRetryNoLazyFetch() : std::runtime_error("Retry query compilation.") {}
-};
-
-class CompilationRetryNewScanLimit : public std::runtime_error {
- public:
-  CompilationRetryNewScanLimit(const size_t new_scan_limit)
-      : std::runtime_error("Retry query compilation with new scan limit.")
-      , new_scan_limit_(new_scan_limit) {}
-
-  size_t new_scan_limit_;
-};
-
-class TooManyLiterals : public std::runtime_error {
- public:
-  TooManyLiterals() : std::runtime_error("Too many literals in the query") {}
-};
-
-class CompilationRetryNoCompaction : public std::runtime_error {
- public:
-  CompilationRetryNoCompaction()
-      : std::runtime_error("Retry query compilation with no compaction.") {}
-};
-
-class QueryMustRunOnCpu : public std::runtime_error {
- public:
-  QueryMustRunOnCpu() : std::runtime_error("Query must run in cpu mode.") {}
-
-  QueryMustRunOnCpu(const std::string& err) : std::runtime_error(err) {}
-};
-
-class ParseIRError : public std::runtime_error {
- public:
-  ParseIRError(const std::string message) : std::runtime_error(message) {}
-};
-
-class StringConstInResultSet : public std::runtime_error {
- public:
-  StringConstInResultSet()
-      : std::runtime_error(
-            "NONE ENCODED String types are not supported as input result set.") {}
-};
-
 class ExtensionFunction;
 
 class QueryCompilationDescriptor;
@@ -298,6 +246,7 @@ class Executor {
  public:
   using ExecutorId = size_t;
   static const ExecutorId UNITARY_EXECUTOR_ID = 0;
+  static const ExecutorId INVALID_EXECUTOR_ID = SIZE_MAX;
 
   Executor(const ExecutorId id,
            DataProvider* data_provider,
@@ -305,9 +254,11 @@ class Executor {
            const std::string& debug_dir,
            const std::string& debug_file);
 
+  ~Executor() { extension_modules_.clear(); }
+
   static std::shared_ptr<Executor> getExecutor(const ExecutorId id,
-                                               DataProvider* data_provider,
-                                               BufferProvider* buffer_provider,
+                                               DataProvider* data_provider = nullptr,
+                                               BufferProvider* buffer_provider = nullptr,
                                                const std::string& debug_dir = "",
                                                const std::string& debug_file = "");
 
@@ -350,6 +301,23 @@ class Executor {
       const int dictId,
       const std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner,
       const bool with_generation) const;
+
+  enum class ExtModuleKinds {
+    template_module,    // RuntimeFunctions.bc
+    udf_cpu_module,     // Load-time UDFs for CPU execution
+    rt_udf_cpu_module,  // Run-time UDF/UDTFs for CPU execution
+  };
+  // Globally available mapping of extension module sources. Not thread-safe.
+  std::map<ExtModuleKinds, std::string> extension_module_sources;
+  void initialize_extension_module_sources();
+
+  // Convenience functions for retrieving executor-local extension modules, thread-safe:
+  const std::unique_ptr<llvm::Module>& get_rt_module() const {
+    return get_extension_module(ExtModuleKinds::template_module);
+  }
+
+  void update_extension_modules(bool update_runtime_modules_only = false);
+  llvm::LLVMContext& getContext() { return *context_.get(); }
 
   bool containsLeftDeepOuterJoin() const {
     return cgen_state_->contains_left_deep_outer_join_;
@@ -668,6 +636,26 @@ class Executor {
       const std::unordered_map<int, CgenState::LiteralValues>& literals,
       const int device_id);
 
+  // CgenStateManager uses RAII pattern to ensure that recursive code
+  // generation (e.g. as in multi-step multi-subqueries) uses a new
+  // CgenState instance for each recursion depth while restoring the
+  // old CgenState instances when returning from recursion.
+  class CgenStateManager {
+   public:
+    CgenStateManager(Executor& executor);
+    CgenStateManager(Executor& executor,
+                     const bool allow_lazy_fetch,
+                     const std::vector<InputTableInfo>& query_infos,
+                     const RelAlgExecutionUnit* ra_exe_unit);
+    ~CgenStateManager();
+
+   private:
+    Executor& executor_;
+    std::chrono::steady_clock::time_point lock_queue_clock_;
+    std::lock_guard<std::mutex> lock_;
+    std::unique_ptr<CgenState> cgen_state_;
+  };
+
  private:
   std::shared_ptr<CompilationContext> getCodeFromCache(const CodeCacheKey&,
                                                        const CodeCache&);
@@ -682,6 +670,16 @@ class Executor {
 
   std::unique_ptr<CgenState> cgen_state_;
 
+  const std::unique_ptr<llvm::Module>& get_extension_module(ExtModuleKinds kind) const {
+    auto it = extension_modules_.find(kind);
+    if (it != extension_modules_.end()) {
+      return it->second;
+    }
+    static const std::unique_ptr<llvm::Module> empty;
+    return empty;
+  }
+  std::map<ExtModuleKinds, std::unique_ptr<llvm::Module>> extension_modules_;
+
   class FetchCacheAnchor {
    public:
     FetchCacheAnchor(CgenState* cgen_state)
@@ -695,7 +693,7 @@ class Executor {
 
   std::unique_ptr<PlanState> plan_state_;
   std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner_;
-
+  std::unique_ptr<llvm::LLVMContext> context_;
   // indicates whether this executor has been interrupted
   std::atomic<bool> interrupted_;
 

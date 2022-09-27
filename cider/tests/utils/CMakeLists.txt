@@ -17,20 +17,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
-if(${CIDER_ENABLE_VELOX})
-  include_directories(
-    ${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto)
-else()
-  include_directories(${CMAKE_SOURCE_DIR}/thirdparty/substrait/proto)
-endif()
+set(CIDER_TESTS_UTILS_SOURCE
+    Utils.cpp
+    DuckDbQueryRunner.cpp
+    CiderQueryRunner.cpp
+    CiderTestBase.cpp
+    CiderBatchChecker.cpp
+    CiderBenchmarkRunner.cpp
+    CiderRunner.cpp)
 
-set(UTILS_SOURCE
-    Utils.cpp DuckDbQueryRunner.cpp CiderQueryRunner.cpp CiderTestBase.cpp
-    CiderBatchChecker.cpp CiderBenchmarkRunner.cpp)
-
-add_library(test_utils ${UTILS_SOURCE})
-target_link_libraries(test_utils util)
+add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
+target_link_libraries(test_utils cider_plan_parser)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
@@ -71,6 +68,10 @@ add_executable(CiderMultiBatchTest CiderMultiBatchTest.cpp)
 target_link_libraries(CiderMultiBatchTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(CiderMultiBatchTest ${EXECUTABLE_OUTPUT_PATH}/CiderMultiBatchTest
          ${TEST_ARGS})
+
+add_executable(CiderRunnerTest CiderRunnerTest.cpp)
+target_link_libraries(CiderRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderRunnerTest ${TEST_ARGS})
 
 set(TEST_PROGRAMS IsthmusTest DuckDbQueryRunnerTest CiderBatchBuilderTest
                   CiderBatchCheckerTest)

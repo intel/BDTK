@@ -22,6 +22,7 @@
 
 #include "StringDictionaryProxy.h"
 
+#include "cider/CiderException.h"
 #include "function/string/StringLike.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
@@ -271,7 +272,7 @@ bool do_compare(const std::string& str,
   } else if (comp_operator == "<>") {
     return res != 0;
   }
-  throw std::runtime_error("unsupported string compare operator");
+  CIDER_THROW(CiderCompileException, "unsupported string compare operator");
 }
 
 }  // namespace
@@ -457,7 +458,7 @@ size_t StringDictionaryProxy::transientLookupBulk(
   if (num_strings < tbb_parallel_threshold) {
     return transientLookupBulkUnlocked(lookup_strings, string_ids);
   } else {
-    throw std::runtime_error("not support parallel transient lookup.");
+    CIDER_THROW(CiderCompileException, "not support parallel transient lookup.");
   }
 }
 

@@ -30,27 +30,33 @@
 class StructBatch final : public CiderBatch {
  public:
   static std::unique_ptr<StructBatch> Create(ArrowSchema* schema,
+                                             std::shared_ptr<CiderAllocator> allocator,
                                              ArrowArray* array = nullptr) {
-    return array ? std::make_unique<StructBatch>(schema, array)
-                 : std::make_unique<StructBatch>(schema);
+    return array ? std::make_unique<StructBatch>(schema, array, allocator)
+                 : std::make_unique<StructBatch>(schema, allocator);
   }
 
-  explicit StructBatch(ArrowSchema* schema) : CiderBatch(schema) { checkArrowEntries(); }
-  explicit StructBatch(ArrowSchema* schema, ArrowArray* array)
-      : CiderBatch(schema, array) {
+  explicit StructBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, allocator) {
+    checkArrowEntries();
+  }
+  explicit StructBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, array, allocator) {
     checkArrowEntries();
   }
 
-  bool resizeBatch(int64_t size, bool default_not_null = false) override {
+ protected:
+  bool resizeData(int64_t size) override {
     CHECK(!isMoved());
     if (!permitBufferAllocate()) {
       return false;
     }
 
-    bool ret = resizeNullVector(0, size, default_not_null);
     setLength(size);
 
-    return ret;
+    return true;
   }
 
  private:

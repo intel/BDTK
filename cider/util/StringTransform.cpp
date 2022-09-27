@@ -21,17 +21,15 @@
  */
 
 #include "StringTransform.h"
-#include "util/Logger.h"
-
 #include <boost/algorithm/string/classification.hpp>  // Include boost::for is_any_of
 #include <boost/algorithm/string/split.hpp>           // Include for boost::split
-
+#include <boost/filesystem.hpp>
+#include <iomanip>
 #include <numeric>
 #include <random>
 #include <regex>
-
-#include <boost/filesystem.hpp>
-#include <iomanip>
+#include "cider/CiderException.h"
+#include "util/Logger.h"
 
 void apply_shim(std::string& result,
                 const boost::regex& reg_expr,

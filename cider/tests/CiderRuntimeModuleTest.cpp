@@ -31,6 +31,9 @@
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
+
 RelAlgExecutionUnit buildFakeRelAlgEU(SQLTypes coltype, Datum d) {
   int db_id = 100;
   int table_id = 100;
@@ -135,7 +138,7 @@ CiderTableSchema buildTableSchema(std::string type_json) {
 }
 
 TEST(CiderRuntimeModuleTest, processInt) {
-  auto ciderCompileModule = CiderCompileModule::Make();
+  auto ciderCompileModule = CiderCompileModule::Make(allocator);
 
   // build compile input parameters
   SQLTypes intType{SQLTypes::kINT};
@@ -204,7 +207,7 @@ TEST(CiderRuntimeModuleTest, processInt) {
 }
 
 TEST(CiderRuntimeModuleTest, processDouble) {
-  auto ciderCompileModule = CiderCompileModule::Make();
+  auto ciderCompileModule = CiderCompileModule::Make(allocator);
 
   // build compile input parameters
   SQLTypes doubleType{SQLTypes::kDOUBLE};
@@ -277,7 +280,7 @@ TEST(CiderRuntimeModuleTest, processDouble) {
 }
 
 TEST(CiderRuntimeModuleTest, processMultiple) {
-  auto ciderCompileModule = CiderCompileModule::Make();
+  auto ciderCompileModule = CiderCompileModule::Make(allocator);
 
   // build compile input parameters
   SQLTypes doubleType{SQLTypes::kDOUBLE};

@@ -35,6 +35,8 @@ CiderAggTargetColExtractorBuilder::buildCiderAggTargetColExtractor(
   switch (col_info.agg_type) {
     case kAVG:
       return buildAVGAggExtractor(hash_table, col_index);
+    case kCOUNT:
+      return buildCountAggExtractor(hash_table, col_index);
     default:
       return buildSimpleAggExtractor(hash_table, col_index, force_double_output);
   }
@@ -207,4 +209,30 @@ CiderAggTargetColExtractorBuilder::buildAVGAggExtractor(
       }
   }
   return nullptr;
+}
+
+std::unique_ptr<CiderAggTargetColExtractor>
+CiderAggTargetColExtractorBuilder::buildCountAggExtractor(
+    const CiderAggHashTable* hash_table,
+    size_t col_index) {
+  CHECK_LT(col_index, hash_table->getColNum());
+  auto& col_info = hash_table->getColEntryInfo(col_index);
+  size_t actual_size = hash_table->getActualDataWidth(col_index);
+
+  switch (col_info.sql_type_info.get_type()) {
+    case kINT:
+    case kBIGINT:
+      switch (actual_size) {
+        case 4:
+          return std::make_unique<CountAggExtractor<int32_t, int64_t>>(
+              "INT32_INT64", col_index, hash_table);
+        case 8:
+          return std::make_unique<CountAggExtractor<int64_t, int64_t>>(
+              "INT64_INT64", col_index, hash_table);
+      }
+    default:
+      LOG(ERROR) << "Unsupported count output type: "
+                 << col_info.sql_type_info.get_type_name();
+      return nullptr;
+  }
 }

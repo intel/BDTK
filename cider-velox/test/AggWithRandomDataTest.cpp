@@ -25,7 +25,7 @@
 #include "RangedBatchGenerator.h"
 #include "cider/CiderCompileModule.h"
 #include "cider/CiderRuntimeModule.h"
-//#include "velox/substrait/VeloxToSubstraitPlan.h"
+#include "substrait/VeloxPlanFragmentToSubstraitPlan.h"
 #include "substrait/plan.pb.h"
 #include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
@@ -79,6 +79,8 @@ class AggWithRandomDataTest : public OperatorTestBase {
                                                  {0, 10},
                                                  {0, 1000},
                                                  {0, 10}};
+  std::shared_ptr<VeloxPlanFragmentToSubstraitPlan> v2SPlanFragmentConvertor_ =
+      std::make_shared<VeloxPlanFragmentToSubstraitPlan>();
 };
 
 TEST_F(AggWithRandomDataTest, SUM_Test) {
@@ -163,79 +165,75 @@ TEST_F(AggWithRandomDataTest, MIN_MAX_Test) {
 // }
 
 // Data convertor doesn't support.
-// TODO: test partial avg with group by
-// TODO: No getSubstraitPlan() in current code, need add it after update convertor utils
-// which using latest version in upstream velox.
-// TEST_F(AggWithRandomDataTest,
-// AVG_Partial_Test) {
-//   auto veloxPlan =
-//       PlanBuilder()
-//           .values(vectors)
-//           .project({"l_linenumber"})
-//           .aggregation(
-//               {}, {"avg(l_linenumber)"}, {}, core::AggregationNode::Step::kPartial,
-//               false)
-//           .planNode();
+TEST_F(AggWithRandomDataTest, AVG_Partial_Test) {
+  auto veloxPlan =
+      PlanBuilder()
+          .values(vectors)
+          .project({"l_linenumber"})
+          .aggregation(
+              {}, {"avg(l_linenumber)"}, {}, core::AggregationNode::Step::kPartial, false)
+          .planNode();
 
-//   auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto substraitPlan =
+      v2SPlanFragmentConvertor_->toSubstraitPlan(veloxPlan, veloxPlan->sources()[0]);
 
-//   auto substraitPlan = ciderPlanNode->getSubstraitPlan();
-//   auto ciderCompileModule = CiderCompileModule::Make();
-//   auto result = ciderCompileModule->compile(substraitPlan);
+  auto ciderCompileModule =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
+  auto result = ciderCompileModule->compile(substraitPlan);
 
-//   auto outputSchema = result->getOutputCiderTableSchema();
-//   auto numCols = outputSchema.getColumnCount();
-//   CHECK_EQ(numCols, 1);
-//   auto outputHints = outputSchema.getColHints();
-//   CHECK_EQ(outputHints[0], ColumnHint::PartialAVG);
-//   auto outputType = outputSchema.getColumnTypeById(0);
-//   CHECK_EQ(outputType.has_struct_(), true);
+  auto outputSchema = result->getOutputCiderTableSchema();
+  auto numCols = outputSchema.getColumnCount();
+  CHECK_EQ(numCols, 1);
+  auto outputHints = outputSchema.getColHints();
+  CHECK_EQ(outputHints[0], ColumnHint::PartialAVG);
+  auto outputType = outputSchema.getColumnTypeById(0);
+  CHECK_EQ(outputType.has_struct_(), true);
 
-//   auto ciderRuntimeModule = std::make_shared<CiderRuntimeModule>(result);
+  auto ciderRuntimeModule = std::make_shared<CiderRuntimeModule>(result);
 
-//   int rows = 10;
-//   std::vector<const int8_t*> inputBuffers;
-//   std::vector<int64_t> colId0(rows);
-//   std::vector<int32_t> colId1(rows);
-//   std::vector<double> colId2(rows);
-//   std::vector<double> colId3(rows);
-//   std::vector<double> colId4(rows);
-//   for (int i = 0; i < rows; i++) {
-//     colId0[i] = i;
-//     colId1[i] = i;
-//     colId2[i] = i + 0.1;
-//     colId3[i] = i + 0.1;
-//     colId4[i] = i + 0.1;
-//   }
-//   inputBuffers.push_back(reinterpret_cast<int8_t*>(colId0.data()));
-//   inputBuffers.push_back(reinterpret_cast<int8_t*>(colId1.data()));
-//   inputBuffers.push_back(reinterpret_cast<int8_t*>(colId2.data()));
-//   inputBuffers.push_back(reinterpret_cast<int8_t*>(colId3.data()));
-//   inputBuffers.push_back(reinterpret_cast<int8_t*>(colId4.data()));
+  int rows = 10;
+  std::vector<const int8_t*> inputBuffers;
+  std::vector<int64_t> colId0(rows);
+  std::vector<int32_t> colId1(rows);
+  std::vector<double> colId2(rows);
+  std::vector<double> colId3(rows);
+  std::vector<double> colId4(rows);
+  for (int i = 0; i < rows; i++) {
+    colId0[i] = i;
+    colId1[i] = i;
+    colId2[i] = i + 0.1;
+    colId3[i] = i + 0.1;
+    colId4[i] = i + 0.1;
+  }
+  inputBuffers.push_back(reinterpret_cast<int8_t*>(colId0.data()));
+  inputBuffers.push_back(reinterpret_cast<int8_t*>(colId1.data()));
+  inputBuffers.push_back(reinterpret_cast<int8_t*>(colId2.data()));
+  inputBuffers.push_back(reinterpret_cast<int8_t*>(colId3.data()));
+  inputBuffers.push_back(reinterpret_cast<int8_t*>(colId4.data()));
 
-//   std::vector<const int8_t*> outputBuffers;
-//   std::vector<int64_t> outCol0(rows);
-//   std::vector<int64_t> outCol1(rows);
-//   for (int i = 0; i < rows; i++) {
-//     outCol0[i] = 0x00;
-//     outCol1[i] = 0x00;
-//   }
-//   outputBuffers.push_back(reinterpret_cast<int8_t*>(outCol0.data()));
-//   outputBuffers.push_back(reinterpret_cast<int8_t*>(outCol1.data()));
+  std::vector<const int8_t*> outputBuffers;
+  std::vector<int64_t> outCol0(rows);
+  std::vector<int64_t> outCol1(rows);
+  for (int i = 0; i < rows; i++) {
+    outCol0[i] = 0x00;
+    outCol1[i] = 0x00;
+  }
+  outputBuffers.push_back(reinterpret_cast<int8_t*>(outCol0.data()));
+  outputBuffers.push_back(reinterpret_cast<int8_t*>(outCol1.data()));
 
-//   CiderBatch inBatch(rows, inputBuffers);
-//   ciderRuntimeModule->processNextBatch(inBatch);
-//   auto [_, outBatch] = ciderRuntimeModule->fetchResults();
+  CiderBatch inBatch(rows, inputBuffers);
+  ciderRuntimeModule->processNextBatch(inBatch);
+  auto [_, outBatch] = ciderRuntimeModule->fetchResults();
 
-//   auto resSumPtr = outBatch->column(0);
-//   int64_t resSum = reinterpret_cast<const int64_t*>(resSumPtr)[0];
-//   auto resCountPtr = outBatch->column(1);
-//   int64_t resCount = reinterpret_cast<const int64_t*>(resCountPtr)[0];
+  auto resSumPtr = outBatch->column(0);
+  int64_t resSum = reinterpret_cast<const double*>(resSumPtr)[0];
+  auto resCountPtr = outBatch->column(1);
+  int64_t resCount = reinterpret_cast<const int64_t*>(resCountPtr)[0];
 
-//   // Only verifies Cider complie and compute
-//   CHECK_EQ(resSum, 45);
-//   CHECK_EQ(resCount, 10);
-// }
+  // Only verifies Cider complie and compute
+  CHECK_EQ(resSum, 45);
+  CHECK_EQ(resCount, 10);
+}
 
 TEST_F(AggWithRandomDataTest, Filter_LT_Test) {
   auto veloxPlan = PlanBuilder()

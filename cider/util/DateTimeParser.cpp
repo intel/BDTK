@@ -22,6 +22,7 @@
 
 #include "DateTimeParser.h"
 #include "StringTransform.h"
+#include "cider/CiderException.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -395,7 +396,7 @@ bool DateTimeParser::updateDateTimeAndStr(char const field, std::string_view& st
       }
       return true;
     default:
-      throw std::runtime_error(cat("Unrecognized format: %", field));
+      CIDER_THROW(CiderCompileException, cat("Unrecognized format: %", field));
   }
 }
 

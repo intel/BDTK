@@ -22,12 +22,15 @@
 #define CIDERBATCH_WITH_ARROW
 
 #include <gtest/gtest.h>
-#include "include/cider/batch/CiderBatch.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "include/cider/batch/StructBatch.h"
+#include "cider/batch/CiderBatch.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 
 using namespace CiderBatchUtils;
 using namespace std;
+
+static const std::shared_ptr<CiderAllocator> ciderAllocator =
+    std::make_shared<CiderDefaultAllocator>();
 
 class CiderArrowBatchTest : public ::testing::Test {};
 
@@ -42,8 +45,7 @@ void runScalarBatchTest(ScalarBatch<T>* batch,
 
   EXPECT_TRUE(batch->resizeBatch(data.size()));
   EXPECT_EQ(batch->getLength(), data.size());
-  EXPECT_EQ(batch->getNullCount(), not_null.empty() ? 0 : (int64_t)data.size());
-
+  EXPECT_EQ(batch->getNullCount(), 0);
   {
     auto raw_data = batch->getMutableRawData();
     EXPECT_NE(raw_data, nullptr);
@@ -52,14 +54,15 @@ void runScalarBatchTest(ScalarBatch<T>* batch,
     }
   }
 
-  int64_t null_count = data.size();
+  int64_t null_count = 0;
   if (!not_null.empty()) {
     auto not_null_data = batch->getMutableNulls();
+    EXPECT_EQ(batch->getNullCount(), 0);
     EXPECT_NE(not_null_data, nullptr);
     for (size_t i = 0; i < not_null.size(); ++i) {
-      if (not_null[i]) {
-        CiderBitUtils::setBitAt(not_null_data, i);
-        --null_count;
+      if (!not_null[i]) {
+        CiderBitUtils::clearBitAt(not_null_data, i);
+        ++null_count;
       }
     }
     batch->setNullCount(null_count);
@@ -95,7 +98,7 @@ void scalarBatchTest(const vector<T>& data, const vector<bool>& not_null = {}) {
   SQLTypeInfo type_info(SQLT, not_null.empty());
   ArrowSchema* schema = convertCiderTypeInfoToArrowSchema(type_info);
 
-  auto batch = ScalarBatch<T>::Create(schema);
+  auto batch = ScalarBatch<T>::Create(schema, ciderAllocator);
   EXPECT_TRUE(batch->isRootOwner());
 
   runScalarBatchTest<T, SQLT>(batch.get(), data, not_null);
@@ -194,12 +197,12 @@ TEST_F(CiderArrowBatchTest, StructBatchTest) {
              kSTRUCT, true, {SQLTypeInfo(kBIGINT, false), SQLTypeInfo(kFLOAT, true)})});
 
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
 
     EXPECT_TRUE(batch->isRootOwner());
     EXPECT_TRUE(batch->resizeBatch(10));
     EXPECT_EQ(batch->getLength(), 10);
-    EXPECT_EQ(batch->getNullCount(), 10);
+    EXPECT_EQ(batch->getNullCount(), 0);
     EXPECT_EQ(batch->getChildrenNum(), 8);
 
     {
@@ -311,7 +314,7 @@ TEST_F(CiderArrowBatchTest, StructBatchTest) {
     SQLTypeInfo type(kSTRUCT, true);
 
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
 
     EXPECT_TRUE(batch->isRootOwner());
     EXPECT_TRUE(batch->resizeBatch(10));
@@ -327,7 +330,7 @@ TEST_F(CiderArrowBatchTest, CopyFuncTest) {
 
   {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
     {
       StructBatch copy_batch(*batch);
       EXPECT_FALSE(copy_batch.isRootOwner());
@@ -379,11 +382,11 @@ TEST_F(CiderArrowBatchTest, CopyFuncTest) {
   }
   {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
     {
       auto type1 = SQLTypeInfo(kSTRUCT, true);
       auto schema1 = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type1);
-      StructBatch copy_batch(schema1);
+      StructBatch copy_batch(schema1, ciderAllocator);
 
       copy_batch.resizeBatch(100);
       copy_batch = *batch;
@@ -443,7 +446,7 @@ TEST_F(CiderArrowBatchTest, MoveFuncTest) {
   auto type2 = SQLTypeInfo(kSTRUCT, false, {SQLTypeInfo(kINT, false)});
   {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type2);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
     {
       batch->resizeBatch(10);
       auto child = batch->getChildAt(0);
@@ -456,7 +459,7 @@ TEST_F(CiderArrowBatchTest, MoveFuncTest) {
     }
     {
       auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type1);
-      StructBatch move_batch(schema);
+      StructBatch move_batch(schema, ciderAllocator);
       move_batch = std::move(*batch);
       EXPECT_FALSE(batch->isRootOwner());
       EXPECT_TRUE(batch->isMoved());
@@ -474,12 +477,12 @@ TEST_F(CiderArrowBatchTest, MoveFuncTest) {
   }
   {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type1);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
     batch->resizeBatch(100);
     EXPECT_EQ(batch->getChildrenNum(), 2);
     {
       auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type2);
-      batch = StructBatch::Create(schema);
+      batch = StructBatch::Create(schema, ciderAllocator);
       EXPECT_TRUE(batch->isRootOwner());
       EXPECT_FALSE(batch->isMoved());
       EXPECT_EQ(batch->getChildrenNum(), 1);
@@ -490,7 +493,7 @@ TEST_F(CiderArrowBatchTest, MoveFuncTest) {
   }
   {
     auto schema1 = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type1);
-    StructBatch batch(std::move(*StructBatch::Create(schema1)));
+    StructBatch batch(std::move(*StructBatch::Create(schema1, ciderAllocator)));
     EXPECT_TRUE(batch.isRootOwner());
     EXPECT_FALSE(batch.isMoved());
     EXPECT_EQ(batch.getChildrenNum(), 2);
@@ -504,7 +507,7 @@ TEST_F(CiderArrowBatchTest, ArrowEntryMoveTest) {
       kSTRUCT, false, {SQLTypeInfo(kBIGINT, false), SQLTypeInfo(kFLOAT, false)});
   {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-    auto batch = StructBatch::Create(schema);
+    auto batch = StructBatch::Create(schema, ciderAllocator);
     batch->resizeBatch(100);
 
     auto child1 = batch->getChildAt(0);
@@ -528,7 +531,7 @@ TEST_F(CiderArrowBatchTest, ArrowEntryMoveTest) {
     EXPECT_TRUE(batch->isMoved());
     batch.reset();
 
-    auto new_batch = StructBatch::Create(moved_schema, moved_array);
+    auto new_batch = StructBatch::Create(moved_schema, ciderAllocator, moved_array);
     EXPECT_TRUE(new_batch->isRootOwner());
     EXPECT_FALSE(new_batch->isMoved());
 

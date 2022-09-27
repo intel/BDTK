@@ -40,7 +40,8 @@ namespace facebook::velox::plugin {
 /// including integral and floating points.
 int8_t* convertToCider(const ArrowSchema& arrowSchema,
                        const ArrowArray& arrowArray,
-                       int num_rows);
+                       int num_rows,
+                       memory::MemoryPool* pool);
 
 /// Convert cider data buffer to ArrowArray and ArrowSchema.
 /// As ArrowArray has null buffer for null data while cider only has one
@@ -51,6 +52,7 @@ void convertToArrow(ArrowArray& arrowArray,
                     ArrowSchema& arrowSchema,
                     const int8_t* data_buffer,
                     ::substrait::Type col_type,
-                    int num_rows);
+                    int num_rows,
+                    memory::MemoryPool* pool);
 
 }  // namespace facebook::velox::plugin

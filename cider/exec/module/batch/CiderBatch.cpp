@@ -19,18 +19,21 @@
  * under the License.
  */
 
-#include "include/cider/batch/CiderBatch.h"
+#include "cider/batch/CiderBatch.h"
 #include "ArrowABI.h"
 
-CiderBatch::CiderBatch(ArrowSchema* schema)
-    : arrow_schema_(schema), ownership_(true), reallocate_(true) {
+CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+    : arrow_schema_(schema), ownership_(true), reallocate_(true), allocator_(allocator) {
   CHECK(arrow_schema_);
   CHECK(arrow_schema_->release);
   arrow_array_ = CiderBatchUtils::allocateArrowArray();
   arrow_array_->n_buffers = CiderBatchUtils::getBufferNum(arrow_schema_);
   arrow_array_->n_children = arrow_schema_->n_children;
-  CiderArrowArrayBufferHolder* root_holder = new CiderArrowArrayBufferHolder(
-      arrow_array_->n_buffers, arrow_schema_->n_children, arrow_schema_->dictionary);
+  CiderArrowArrayBufferHolder* root_holder =
+      new CiderArrowArrayBufferHolder(arrow_array_->n_buffers,
+                                      arrow_schema_->n_children,
+                                      allocator_,
+                                      arrow_schema_->dictionary);
   arrow_array_->buffers = root_holder->getBufferPtrs();
   arrow_array_->children = root_holder->getChildrenPtrs();
   arrow_array_->dictionary = root_holder->getDictPtr();
@@ -38,12 +41,19 @@ CiderBatch::CiderBatch(ArrowSchema* schema)
   arrow_array_->release = CiderBatchUtils::ciderArrowArrayReleaser;
 }
 
-CiderBatch::CiderBatch(ArrowSchema* schema, ArrowArray* array)
-    : arrow_schema_(schema), arrow_array_(array), ownership_(true), reallocate_(false) {
+CiderBatch::CiderBatch(ArrowSchema* schema,
+                       ArrowArray* array,
+                       std::shared_ptr<CiderAllocator> allocator)
+    : arrow_schema_(schema)
+    , arrow_array_(array)
+    , ownership_(true)
+    , reallocate_(false)
+    , allocator_(allocator) {
   CHECK(arrow_schema_);
   CHECK(arrow_schema_->release);
   CHECK(arrow_array_);
   CHECK(arrow_array_->release);
+  CHECK(allocator_);
 }
 
 CiderBatch::~CiderBatch() {
@@ -56,6 +66,7 @@ CiderBatch::CiderBatch(const CiderBatch& rh) {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = false;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 }
 
 CiderBatch& CiderBatch::operator=(const CiderBatch& rh) {
@@ -68,6 +79,7 @@ CiderBatch& CiderBatch::operator=(const CiderBatch& rh) {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = false;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   return *this;
 }
@@ -77,6 +89,7 @@ CiderBatch::CiderBatch(CiderBatch&& rh) noexcept {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = rh.ownership_;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   rh.arrow_array_ = nullptr;
   rh.arrow_schema_ = nullptr;
@@ -95,6 +108,7 @@ CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
   this->arrow_schema_ = rh.arrow_schema_;
   this->ownership_ = rh.ownership_;
   this->reallocate_ = rh.reallocate_;
+  this->allocator_ = rh.allocator_;
 
   rh.arrow_array_ = nullptr;
   rh.arrow_schema_ = nullptr;
@@ -120,12 +134,12 @@ SQLTypes CiderBatch::getCiderType() const {
 
 // TODO: Dictionary support is TBD.
 std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
-  CHECK(arrow_schema_ && arrow_array_);
+  CHECK(!isMoved());
   CHECK_LT(index, arrow_schema_->n_children);
   ArrowSchema* child_schema = arrow_schema_->children[index];
   ArrowArray* child_array = arrow_array_->children[index];
 
-  if (isMoved()) {
+  if (!child_schema || !child_schema->release) {
     // Child has been moved.
     return nullptr;
   }
@@ -134,8 +148,11 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
     // Lazy allocate child array.
     child_array->n_buffers = CiderBatchUtils::getBufferNum(child_schema);
     child_array->n_children = child_schema->n_children;
-    CiderArrowArrayBufferHolder* holder = new CiderArrowArrayBufferHolder(
-        child_array->n_buffers, child_schema->n_children, child_schema->dictionary);
+    CiderArrowArrayBufferHolder* holder =
+        new CiderArrowArrayBufferHolder(child_array->n_buffers,
+                                        child_schema->n_children,
+                                        allocator_,
+                                        child_schema->dictionary);
     child_array->buffers = holder->getBufferPtrs();
     child_array->children = holder->getChildrenPtrs();
     child_array->dictionary = holder->getDictPtr();
@@ -143,7 +160,8 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
     child_array->release = CiderBatchUtils::ciderArrowArrayReleaser;
   }
 
-  auto child_batch = CiderBatchUtils::createCiderBatch(child_schema, child_array);
+  auto child_batch =
+      CiderBatchUtils::createCiderBatch(allocator_, child_schema, child_array);
   child_batch->ownership_ = false;  // Only root batch has ownership.
   child_batch->reallocate_ =
       true;  // ArrowArray allocated from Cider could (re-)allocate buffer.
@@ -151,11 +169,62 @@ std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
   return child_batch;
 }
 
+bool CiderBatch::resizeBatch(int64_t size, bool default_not_null) {
+  if (getNulls()) {
+    if (!resizeNulls(size, default_not_null)) {
+      return false;
+    }
+  }
+  if (!resizeData(size)) {
+    return false;
+  }
+  return true;
+}
+
+bool CiderBatch::resizeNulls(int64_t size, bool default_not_null) {
+  CHECK(!isMoved());
+  if (!permitBufferAllocate()) {
+    return false;
+  }
+
+  ArrowArray* array = getArrowArray();
+  auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(array->private_data);
+
+  size_t bytes = ((size + 7) >> 3);
+  size_t null_index = getNullVectorIndex();
+  bool first_time = !array->buffers[null_index];
+
+  array_holder->allocBuffer(null_index, bytes);
+  uint8_t* null_vector = array_holder->getBufferAs<uint8_t>(null_index);
+
+  if (default_not_null) {
+    // TODO: Optimize
+    for (size_t i = (first_time ? 0 : getLength()); i < size; ++i) {
+      CiderBitUtils::setBitAt(null_vector, i);
+    }
+  } else {
+    // TODO: Optimize
+    for (size_t i = (first_time ? 0 : getLength()); i < size; ++i) {
+      CiderBitUtils::clearBitAt(null_vector, i);
+    }
+  }
+  size_t not_null_num = CiderBitUtils::countSetBits(null_vector, size);
+  setNullCount(size - not_null_num);
+
+  return true;
+}
+
 uint8_t* CiderBatch::getMutableNulls() {
   CHECK(!isMoved());
   ArrowArray* array = getArrowArray();
-
-  return reinterpret_cast<uint8_t*>(const_cast<void*>(array->buffers[0]));
+  const void* nulls = array->buffers[getNullVectorIndex()];
+  if (!nulls) {
+    if (resizeNulls(getLength(), true)) {
+      return reinterpret_cast<uint8_t*>(
+          const_cast<void*>(array->buffers[getNullVectorIndex()]));
+    }
+  }
+  return nullptr;
 }
 
 const uint8_t* CiderBatch::getNulls() const {
@@ -163,40 +232,6 @@ const uint8_t* CiderBatch::getNulls() const {
   ArrowArray* array = getArrowArray();
 
   return reinterpret_cast<const uint8_t*>(array->buffers[0]);
-}
-
-bool CiderBatch::resizeNullVector(size_t index, size_t size, bool default_not_null) {
-  if (!permitBufferAllocate()) {
-    return false;
-  }
-
-  ArrowSchema* schema = getArrowSchema();
-  ArrowArray* array = getArrowArray();
-
-  auto schema_holder =
-      reinterpret_cast<CiderArrowSchemaBufferHolder*>(schema->private_data);
-  auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(array->private_data);
-
-  if (schema_holder->needNullVector()) {
-    size_t bytes = ((size + 7) >> 3);
-    array_holder->allocBuffer(0, bytes);
-
-    uint8_t* null_vector = array_holder->getBufferAs<uint8_t>(index);
-
-    // TODO: Optimize
-    for (size_t i = array->length; i < size; ++i) {
-      if (default_not_null) {
-        CiderBitUtils::setBitAt(null_vector, i);
-      } else {
-        CiderBitUtils::clearBitAt(null_vector, i);
-      }
-    }
-    if (!default_not_null) {
-      array->null_count += size - array->length;
-    }
-  }
-
-  return true;
 }
 
 void CiderBatch::releaseArrowEntries() {
@@ -216,6 +251,15 @@ void CiderBatch::releaseArrowEntries() {
       arrow_array_ = nullptr;
     }
   }
+}
+
+void CiderBatch::move(ArrowSchema& schema, ArrowArray& array) {
+  CHECK(!isMoved());
+
+  schema = *arrow_schema_;
+  array = *arrow_array_;
+  arrow_schema_->release = nullptr;
+  arrow_array_->release = nullptr;
 }
 
 std::pair<ArrowSchema*, ArrowArray*> CiderBatch::move() {
@@ -279,7 +323,7 @@ int64_t CiderBatch::getLength() const {
 }
 
 bool CiderBatch::isMoved() const {
-  CHECK((arrow_schema_ && arrow_schema_) || (!arrow_array_ && !arrow_schema_));
+  CHECK((arrow_array_ && arrow_schema_) || (!arrow_array_ && !arrow_schema_));
   if (arrow_schema_ && arrow_array_) {
     CHECK((arrow_schema_->release && arrow_array_->release) ||
           (!arrow_schema_->release && !arrow_array_->release));
@@ -288,10 +332,7 @@ bool CiderBatch::isMoved() const {
   return true;
 }
 
-bool CiderBatch::isNullable() const {
+bool CiderBatch::containsNull() const {
   CHECK(!isMoved());
-  CiderArrowSchemaBufferHolder* holder =
-      reinterpret_cast<CiderArrowSchemaBufferHolder*>(arrow_schema_->private_data);
-
-  return holder->needNullVector();
+  return getNulls() && getNullCount();
 }

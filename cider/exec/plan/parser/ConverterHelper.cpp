@@ -57,8 +57,9 @@ std::string getFunctionName(const std::unordered_map<int, std::string> function_
                             int function_reference) {
   auto function = function_map.find(function_reference);
   if (function == function_map.end()) {
-    throw std::runtime_error("Failed to find function with id in map: " +
-                             std::to_string(function_reference));
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format("Failed to find function with id in map: {}", function_reference));
   }
   return function->second;
 }
@@ -102,7 +103,8 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Type& s_type) {
     case substrait::Type::kString:
       return SQLTypeInfo(SQLTypes::kTEXT, not_null);
     default:
-      throw std::runtime_error("Unsupported type " + std::to_string(s_type.kind_case()));
+      CIDER_THROW(CiderCompileException,
+                  fmt::format("Unsupported type {}", s_type.kind_case()));
   }
 }
 
@@ -144,8 +146,8 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Expression_Literal& s_literal_expr) 
     case substrait::Expression_Literal::LiteralTypeCase::kIntervalDayToSecond:
       return SQLTypeInfo(SQLTypes::kINTERVAL_DAY_TIME);
     default:
-      throw std::runtime_error("Unsupported type " +
-                               std::to_string(s_literal_expr.literal_type_case()));
+      CIDER_THROW(CiderCompileException,
+                  fmt::format("Unsupported type {}", s_literal_expr.literal_type_case()));
   }
 }
 
@@ -165,7 +167,7 @@ SQLTypeInfo getCiderAggType(const SQLAgg agg_kind, const Analyzer::Expr* arg_exp
     case SQLAgg::kAVG:
       return SQLTypeInfo(SQLTypes::kDOUBLE, false);
     default:
-      throw std::runtime_error("unsupported agg.");
+      CIDER_THROW(CiderCompileException, "unsupported agg.");
   }
   CHECK(false);
   return SQLTypeInfo();
@@ -263,8 +265,8 @@ substrait::Type getSubstraitType(const SQLTypeInfo& type_info) {
       return s_type;
     }
     default:
-      throw std::runtime_error(
-          "CiderTableSchema: fails to translate Cider type to Substrait type.");
+      CIDER_THROW(CiderCompileException,
+                  "CiderTableSchema: fails to translate Cider type to Substrait type.");
   }
 }
 
@@ -306,7 +308,7 @@ SQLOps getCiderSqlOps(const std::string op) {
   } else if (op == "is_distinct_from") {
     return SQLOps::kBW_NE;
   } else {
-    throw std::runtime_error(op + " is not yet supported");
+    CIDER_THROW(CiderCompileException, op + " is not yet supported");
   }
 }
 
@@ -322,7 +324,7 @@ SQLAgg getCiderAggOp(const std::string op) {
   } else if (op == "count") {
     return SQLAgg::kCOUNT;
   } else {
-    throw std::runtime_error(op + " is not yet supported");
+    CIDER_THROW(CiderCompileException, op + " is not yet supported");
   }
 }
 
@@ -338,7 +340,7 @@ bool isExtensionFunction(const std::string& function,
     //    futher simplified, such as calculating penalty score of func implementation.
     auto extension_function = bind_function(function, args);
     return true;
-  } catch (const ExtensionFunctionBindingError& e) {
+  } catch (const CiderCompileException& e) {
     return false;
   }
 }
@@ -359,29 +361,32 @@ int getSizeOfOutputColumns(const substrait::Rel& rel_node) {
       }
     case substrait::Rel::RelTypeCase::kAggregate:
       if (!rel_node.aggregate().common().has_direct()) {
-        throw std::runtime_error("Only support direct output mapping for AggregateRel.");
+        CIDER_THROW(CiderCompileException,
+                    "Only support direct output mapping for AggregateRel.");
       }
       // only support single grouping and multi measures
       return rel_node.aggregate().groupings(0).grouping_expressions_size() +
              rel_node.aggregate().measures_size();
     case substrait::Rel::RelTypeCase::kJoin:
       if (!rel_node.join().common().has_direct()) {
-        throw std::runtime_error("Only support direct output mapping for Join.");
+        CIDER_THROW(CiderCompileException,
+                    "Only support direct output mapping for Join.");
       }
       return getSizeOfOutputColumns(rel_node.join().left()) +
              getSizeOfOutputColumns(rel_node.join().right());
     default:
-      throw std::runtime_error("Couldn't get output column size for " +
-                               std::to_string(rel_node.rel_type_case()));
+      CIDER_THROW(CiderCompileException,
+                  fmt::format("Couldn't get output column size for {}",
+                              rel_node.rel_type_case()));
   }
 }
 
 int getLeftJoinDepth(const substrait::Plan& plan) {
   if (plan.relations_size() == 0) {
-    throw std::runtime_error("invalid plan with no root node.");
+    CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
   }
   if (!plan.relations(0).has_root()) {
-    throw std::runtime_error("invalid plan with no root node.");
+    CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
   }
   substrait::Rel rel_node = plan.relations(0).root().input();
   int join_depth = 0;
@@ -410,8 +415,9 @@ int getLeftJoinDepth(const substrait::Plan& plan) {
         continue;
       }
       default:
-        throw std::runtime_error("Unsupported substrait rel type " +
-                                 std::to_string(rel_node.rel_type_case()));
+        CIDER_THROW(
+            CiderCompileException,
+            fmt::format("Unsupported substrait rel type {}", rel_node.rel_type_case()));
     }
   }
   return join_depth;
@@ -478,8 +484,6 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr, bool is_partial_av
                              var_expr->get_which_row(),
                              var_expr->get_varno());
   }
-  // FIXME: should handle differently for Var and ColumnVar
-  // TODO: need consider about join
   if (auto column_var_expr = std::dynamic_pointer_cast<Analyzer::ColumnVar>(expr)) {
     return new Analyzer::ColumnVar(column_var_expr->get_type_info(),
                                    column_var_expr->get_table_id(),
@@ -510,10 +514,13 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr, bool is_partial_av
         extract_expr->get_field(),
         extract_expr->get_own_from_expr()->decompress());
   }
+  if (auto string_expr = std::dynamic_pointer_cast<Analyzer::TryStringCastOper>(expr)) {
+    return new Analyzer::TryStringCastOper(SQLTypes::kDATE, string_expr->getOwnArgs());
+  }
   if (auto string_expr = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
     return new Analyzer::StringOper(string_expr->get_kind(), string_expr->getOwnArgs());
   }
-  throw std::runtime_error("Failed to get target expr.");
+  CIDER_THROW(CiderCompileException, "Failed to get target expr.");
 }
 
 std::unordered_map<int, std::string> getFunctionMap(

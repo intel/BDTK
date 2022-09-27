@@ -71,6 +71,29 @@ class CiderNullableStringTest : public CiderTestBase {
   }
 };
 
+class CiderStringToDateTest : public CiderTestBase {
+ public:
+  CiderStringToDateTest() {
+    table_name_ = "test";
+    create_ddl_ = R"(CREATE TABLE test(col_int INTEGER, col_str VARCHAR(10));)";
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        50,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2},
+        GeneratePattern::Special_Date_format_String))};
+  }
+};
+
+TEST_F(CiderStringToDateTest, DateStrTest) {
+  assertQuery("SELECT CAST(col_str AS DATE) FROM test ",
+              "functions/date/string_to_date.json");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
+              "functions/date/extract_year_cast_string_to_date.json");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
+              "functions/date/year_cast_string_to_date.json");
+}
+
 TEST_F(CiderStringTest, SubstrTest) {
   // variable source string
   assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ");

@@ -27,7 +27,6 @@
 #include "IRCodegenUtils.h"
 #include "InValuesBitmap.h"
 #include "InputMetadata.h"
-#include "LLVMGlobalContext.h"
 
 #include "type/plan/Analyzer.h"
 #include "util/InsertionOrderedMap.h"
@@ -44,21 +43,11 @@ struct ArrayLoadCodegen {
 
 struct CgenState {
  public:
-  CgenState(const size_t num_query_infos, const bool contains_left_deep_outer_join)
-      : module_(nullptr)
-      , row_func_(nullptr)
-      , filter_func_(nullptr)
-      , current_func_(nullptr)
-      , row_func_bb_(nullptr)
-      , filter_func_bb_(nullptr)
-      , row_func_call_(nullptr)
-      , filter_func_call_(nullptr)
-      , context_(getGlobalLLVMContext())
-      , ir_builder_(context_)
-      , contains_left_deep_outer_join_(contains_left_deep_outer_join)
-      , outer_join_match_found_per_level_(std::max(num_query_infos, size_t(1)) - 1)
-      , query_func_(nullptr)
-      , query_func_entry_ir_builder_(context_){};
+  CgenState(const size_t num_query_infos,
+            const bool contains_left_deep_outer_join,
+            Executor* executor);
+
+  CgenState(const size_t num_query_infos, const bool contains_left_deep_outer_join);
 
   CgenState(llvm::LLVMContext& context)
       : module_(nullptr)
@@ -122,7 +111,8 @@ struct CgenState {
         }
         CHECK_EQ(kENCODING_NONE, enc_type);
         if (constant->get_is_null()) {
-          throw std::runtime_error(
+          CIDER_THROW(
+              CiderCompileException,
               "CHAR / VARCHAR NULL literal not supported in this context");  // TODO(alex):
                                                                              // support
                                                                              // null
@@ -170,9 +160,9 @@ struct CgenState {
             }
             return getOrAddLiteral(int8_array_literal, device_id);
           }
-          throw std::runtime_error("Unsupported literal array");
+          CIDER_THROW(CiderCompileException, "Unsupported literal array");
         }
-        throw std::runtime_error("Encoded literal arrays are not supported");
+        CIDER_THROW(CiderCompileException, "Encoded literal arrays are not supported");
       }
       default:
         abort();
@@ -392,6 +382,11 @@ struct CgenState {
   }
 
   void maybeCloneFunctionRecursive(llvm::Function* fn);
+
+  void set_module_shallow_copy(const std::unique_ptr<llvm::Module>& llvm_module,
+                               bool always_clone);
+  std::shared_ptr<Executor> getExecutor() const;
+  size_t executor_id_;
 
  private:
   template <class T>

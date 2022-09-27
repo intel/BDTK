@@ -21,6 +21,7 @@
  */
 
 #include "exec/template/CgenState.h"
+#include "exec/template/CodeGenerator.h"
 #include "exec/template/Execute.h"
 #include "exec/template/OutputBufferInitialization.h"
 
@@ -28,7 +29,31 @@
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
-extern std::unique_ptr<llvm::Module> g_rt_module;
+CgenState::CgenState(const size_t num_query_infos,
+                     const bool contains_left_deep_outer_join,
+                     Executor* executor)
+    : executor_id_(executor->getExecutorId())
+    , module_(nullptr)
+    , row_func_(nullptr)
+    , filter_func_(nullptr)
+    , current_func_(nullptr)
+    , row_func_bb_(nullptr)
+    , filter_func_bb_(nullptr)
+    , row_func_call_(nullptr)
+    , filter_func_call_(nullptr)
+    , context_(executor->getContext())
+    , ir_builder_(context_)
+    , contains_left_deep_outer_join_(contains_left_deep_outer_join)
+    , outer_join_match_found_per_level_(std::max(num_query_infos, size_t(1)) - 1)
+    , query_func_(nullptr)
+    , query_func_entry_ir_builder_(context_){};
+
+CgenState::CgenState(const size_t num_query_infos,
+                     const bool contains_left_deep_outer_join)
+    : CgenState(
+          num_query_infos,
+          contains_left_deep_outer_join,
+          Executor::getExecutor(Executor::UNITARY_EXECUTOR_ID, nullptr, nullptr).get()) {}
 
 llvm::ConstantInt* CgenState::inlineIntNull(const SQLTypeInfo& type_info) {
   auto type = type_info.get_type();
@@ -145,6 +170,11 @@ llvm::Value* CgenState::castToTypeIn(llvm::Value* val, const size_t dst_bits) {
   return ir_builder_.CreateFPCast(val, dst_type);
 }
 
+std::shared_ptr<Executor> CgenState::getExecutor() const {
+  CHECK(executor_id_ != Executor::INVALID_EXECUTOR_ID);
+  return Executor::getExecutor(executor_id_, nullptr, nullptr);
+}
+
 void CgenState::maybeCloneFunctionRecursive(llvm::Function* fn) {
   CHECK(fn);
   if (!fn->isDeclaration()) {
@@ -152,7 +182,7 @@ void CgenState::maybeCloneFunctionRecursive(llvm::Function* fn) {
   }
 
   // Get the implementation from the runtime module.
-  auto func_impl = g_rt_module->getFunction(fn->getName());
+  auto func_impl = getExecutor()->get_rt_module()->getFunction(fn->getName());
   CHECK(func_impl) << fn->getName().str();
 
   if (func_impl->isDeclaration()) {
@@ -202,4 +232,18 @@ void CgenState::emitErrorCheck(llvm::Value* condition,
   ir_builder_.SetInsertPoint(check_fail);
   ir_builder_.CreateRet(errorCode);
   ir_builder_.SetInsertPoint(check_ok);
+}
+
+void CgenState::set_module_shallow_copy(const std::unique_ptr<llvm::Module>& llvm_module,
+                                        bool always_clone) {
+  module_ =
+      llvm::CloneModule(*llvm_module, vmap_, [always_clone](const llvm::GlobalValue* gv) {
+        auto func = llvm::dyn_cast<llvm::Function>(gv);
+        if (!func) {
+          return true;
+        }
+        return (func->getLinkage() == llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
+                func->getLinkage() == llvm::GlobalValue::LinkageTypes::InternalLinkage ||
+                (CodeGenerator::alwaysCloneRuntimeFunction(func)));
+      }).release();
 }

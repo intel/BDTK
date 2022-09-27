@@ -109,6 +109,67 @@ ALWAYS_INLINE void cider_agg_id(T& agg_val, const T& val) {
 DEF_CIDER_SIMPLE_AGG_FUNCS(id, cider_agg_id)
 /********************************************************************************/
 
+/********************** Project Id Functions *****************************/
+
+#define DEF_CIDER_ID_PROJ_INT(width)                                                    \
+  extern "C" ALWAYS_INLINE void cider_agg_id_proj_int##width(                           \
+      int##width##_t* agg_val_buffer, const uint64_t index, const int##width##_t val) { \
+    cider_agg_id(*(agg_val_buffer + index), val);                                       \
+  }
+
+#define DEF_CIDER_ID_PROJ_INT_NULLABLE(width)                            \
+  extern "C" ALWAYS_INLINE void cider_agg_id_proj_int##width##_nullable( \
+      int##width##_t* agg_val_buffer,                                    \
+      const uint64_t index,                                              \
+      const int##width##_t val,                                          \
+      uint8_t* agg_null_buffer,                                          \
+      bool is_null) {                                                    \
+    if (is_null) {                                                       \
+      CiderBitUtils::clearBitAt(agg_null_buffer, index);                 \
+    } else {                                                             \
+      cider_agg_id(*(agg_val_buffer + index), val);                      \
+    }                                                                    \
+  }
+
+#define DEF_CIDER_ID_PROJ_FP(fpType, fpName, width)                             \
+  extern "C" ALWAYS_INLINE void cider_agg_id_proj_##fpName(                     \
+      int##width##_t* agg_val_buffer, const uint64_t index, const fpType val) { \
+    fpType* agg_val_alias =                                                     \
+        reinterpret_cast<fpType*>(may_alias_ptr(agg_val_buffer + index));       \
+    cider_agg_id(*agg_val_alias, val);                                          \
+  }
+
+#define DEF_CIDER_ID_PROJ_FP_NULLABLE(fpType, fpName, width)                \
+  extern "C" ALWAYS_INLINE void cider_agg_id_proj_##fpName##_nullable(      \
+      int##width##_t* agg_val_buffer,                                       \
+      const uint64_t index,                                                 \
+      const fpType val,                                                     \
+      uint8_t* agg_null_buffer,                                             \
+      bool is_null) {                                                       \
+    if (is_null) {                                                          \
+      CiderBitUtils::clearBitAt(agg_null_buffer, index);                    \
+    } else {                                                                \
+      fpType* agg_val_alias =                                               \
+          reinterpret_cast<fpType*>(may_alias_ptr(agg_val_buffer + index)); \
+      cider_agg_id(*agg_val_alias, val);                                    \
+    }                                                                       \
+  }
+
+DEF_CIDER_ID_PROJ_INT(8)
+DEF_CIDER_ID_PROJ_INT(16)
+DEF_CIDER_ID_PROJ_INT(32)
+DEF_CIDER_ID_PROJ_INT(64)
+DEF_CIDER_ID_PROJ_INT_NULLABLE(8)
+DEF_CIDER_ID_PROJ_INT_NULLABLE(16)
+DEF_CIDER_ID_PROJ_INT_NULLABLE(32)
+DEF_CIDER_ID_PROJ_INT_NULLABLE(64)
+DEF_CIDER_ID_PROJ_FP(float, float, 32)
+DEF_CIDER_ID_PROJ_FP(double, double, 64)
+DEF_CIDER_ID_PROJ_FP_NULLABLE(float, float, 32)
+DEF_CIDER_ID_PROJ_FP_NULLABLE(double, double, 64)
+
+/********************************************************************************/
+
 /********************** Count Aggregation Functions *****************************/
 #define DEF_CIDER_COUNT_AGG(width)                            \
   extern "C" ALWAYS_INLINE void cider_agg_count_int##width(   \

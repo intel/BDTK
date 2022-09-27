@@ -29,16 +29,12 @@
 
 #include "util/TargetInfo.h"
 
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
 
 #include <cstdint>
 #include <limits>
-
-class OverflowOrUnderflow : public std::runtime_error {
- public:
-  OverflowOrUnderflow() : std::runtime_error("Overflow or underflow") {}
-};
 
 inline const SQLTypeInfo get_compact_type(const TargetInfo& target) {
   if (!target.is_agg) {
@@ -195,7 +191,8 @@ inline size_t get_bit_width(const SQLTypeInfo& ti) {
       return 32;
     case kARRAY:
       if (ti.get_size() == -1) {
-        throw std::runtime_error("Projecting on unsized array column not supported.");
+        CIDER_THROW(CiderCompileException,
+                    "Projecting on unsized array column not supported.");
       }
       return ti.get_size() * 8;
     case kCOLUMN:

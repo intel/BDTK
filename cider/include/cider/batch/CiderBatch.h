@@ -26,6 +26,7 @@
 #include "../CiderTableSchema.h"
 #include "../CiderTypes.h"
 #include "CiderBatchUtils.h"
+#include "cider/CiderException.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "util/CiderBitUtils.h"
 
@@ -37,10 +38,12 @@ class CiderBatch {
   // buffers they hold, so ArrowSchema and ArrowArray should allocated from
   // CiderBatchUtils. Never construct distinct CiderBatches by this method with same
   // schema and array.
-  explicit CiderBatch(ArrowSchema* schema);
+  explicit CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator);
   // In this case, CiderBatch references the memory allocated by the Caller, therefore
   // resize is not allowed.
-  explicit CiderBatch(ArrowSchema* schema, ArrowArray* array);
+  explicit CiderBatch(ArrowSchema* schema,
+                      ArrowArray* array,
+                      std::shared_ptr<CiderAllocator> allocator);
 
   virtual ~CiderBatch();
 
@@ -48,14 +51,6 @@ class CiderBatch {
   CiderBatch(CiderBatch&& rh) noexcept;
   CiderBatch& operator=(const CiderBatch& rh);
   CiderBatch& operator=(CiderBatch&& rh) noexcept;
-
-#ifdef CIDERBATCH_WITH_ARROW
-
- public:
-#else
-
- private:
-#endif
 
   size_t getBufferNum() const;
   size_t getChildrenNum() const;
@@ -65,20 +60,16 @@ class CiderBatch {
 
   bool isMoved() const;
 
-  bool isNullable() const;
+  bool containsNull() const;
 
   std::unique_ptr<CiderBatch> getChildAt(size_t index);
 
   // Move ArrowSchema and ArrowArray out of the tree. The ownership will be moved to the
   // caller. Typical usage:
   /*
-    auto [schema, array] = CiderBatch.move();
-    ...
-    array->release(array);
-    schema->release(schema);
-    CiderBatchUtils::freeArrowArray(array); // Must be released by CiderBatchUtils.
-    CiderBatchUtils::freeArrowSchema(schema);
+    CiderBatch.move(array, schema);
   */
+  void move(ArrowSchema& schema, ArrowArray& array);
   std::pair<ArrowSchema*, ArrowArray*> move();
 
   template <typename T>
@@ -95,10 +86,12 @@ class CiderBatch {
     return dynamic_cast<const T*>(this);
   }
 
-  virtual bool resizeBatch(int64_t size, bool default_not_null = false) {
-    abort();
-  }  // TODO: Change to pure virtual function.
+  // TODO: Change to pure virtual function.
+  // CiderBatch dosen't contain null vector by default until getMutableNulls is called.
+  bool resizeBatch(int64_t size, bool default_not_null = false);
 
+  // This function has a side effect that the null vector will be allocated if there is no
+  // null vector exists.
   virtual uint8_t* getMutableNulls();
 
   virtual const uint8_t* getNulls() const;
@@ -117,13 +110,18 @@ class CiderBatch {
   using SchemaReleaser = void (*)(struct ArrowSchema*);
   using ArrayReleaser = void (*)(struct ArrowArray*);
 
+  // This function will not resize nulls.
+  // TODO: Change to pure virtual function.
+  virtual bool resizeData(int64_t size) { abort(); }
+  bool resizeNulls(int64_t size, bool default_not_null);
+
+  virtual size_t getNullVectorIndex() const { return 0; }
+
   bool permitBufferAllocate() const { return reallocate_; }
 
   ArrowSchema* getArrowSchema() const { return arrow_schema_; }
 
   ArrowArray* getArrowArray() const { return arrow_array_; }
-
-  virtual bool resizeNullVector(size_t index, size_t size, bool default_not_null);
 
   SchemaReleaser getSchemaReleaser() const;
   ArrayReleaser getArrayReleaser() const;
@@ -374,7 +372,7 @@ class CiderBatch {
           case 8:
             PRINT_BY_TYPE(int64_t)
           default:
-            throw std::runtime_error("Not supported type size to print value!");
+            CIDER_THROW(CiderCompileException, "Not supported type size to print value!");
         }
         ss << "\n";
       }
@@ -410,7 +408,7 @@ class CiderBatch {
             break;
           }
           default:
-            throw std::runtime_error("Not supported type to print value!");
+            CIDER_THROW(CiderCompileException, "Not supported type to print value!");
         }
         ss << "\n";
       }
@@ -427,7 +425,7 @@ class CiderBatch {
   int64_t row_capacity_ = 0;
   std::vector<size_t> column_type_size_{};
   std::vector<const int8_t*> table_ptr_{};  // underlayer format is Modular SQL format
-  std::shared_ptr<CiderAllocator> allocator_ = nullptr;
+  std::shared_ptr<CiderAllocator> allocator_;
   std::shared_ptr<CiderTableSchema> schema_ = nullptr;
   bool is_use_self_memory_manager_ = true;
   uint32_t align_ = kDefaultAlignment;

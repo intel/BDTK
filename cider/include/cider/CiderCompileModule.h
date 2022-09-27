@@ -31,6 +31,13 @@
 
 class AggregatedColRange;
 
+enum class QueryType {
+  kStateless = 0,
+  kStatefulGroupBy,
+  kStatefulNonGroupBy,
+  kInvalid = -1
+};
+
 class CiderCompilationResult {
  public:
   CiderCompilationResult();
@@ -44,16 +51,19 @@ class CiderCompilationResult {
 
   CiderTableSchema getOutputCiderTableSchema() const;
 
+  QueryType getQueryType() const;
+
   class Impl;
   std::unique_ptr<Impl> impl_;
 };
 
 class CiderCompileModule {
  public:
-  CiderCompileModule();
+  CiderCompileModule(std::shared_ptr<CiderAllocator> allocator);
   ~CiderCompileModule();
 
-  static std::shared_ptr<CiderCompileModule> Make();
+  static std::shared_ptr<CiderCompileModule> Make(
+      std::shared_ptr<CiderAllocator> allocator);
 
   std::shared_ptr<CiderCompilationResult> compile(
       const substrait::Plan& plan,
@@ -93,6 +103,7 @@ class CiderCompileModule {
 
   class Impl;
   std::unique_ptr<Impl> impl_;
+  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 #endif  // CIDER_CIDERCOMPILEMODULE_H

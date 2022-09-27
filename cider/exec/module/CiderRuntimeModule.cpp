@@ -81,7 +81,8 @@ CiderRuntimeModule::CiderRuntimeModule(
   // pass concrete agg func to set different init_agg_vals
   init_agg_vals_ = init_agg_val(rel_alg_exe->target_exprs,
                                 rel_alg_exe->simple_quals,
-                                *ciderCompilationResult_->impl_->query_mem_desc_);
+                                *ciderCompilationResult_->impl_->query_mem_desc_,
+                                allocator_);
 
   is_group_by_ = rel_alg_exe->groupby_exprs.size() && rel_alg_exe->groupby_exprs.front();
   if (is_group_by_) {
@@ -96,6 +97,27 @@ CiderRuntimeModule::CiderRuntimeModule(
       init_agg_vals_.push_back(0);
     }
   }
+}
+
+std::unique_ptr<CiderBatch> CiderRuntimeModule::prepareOneBatchOutput(int64_t len) {
+  ArrowSchema* schema = CiderBatchUtils::convertCiderTableSchemaToArrowSchema(
+      ciderCompilationResult_->getOutputCiderTableSchema());
+  auto root_batch = StructBatch::Create(schema, allocator_);
+
+  std::function<void(CiderBatch*)> build_function =
+      [len, &build_function](CiderBatch* batch) -> void {
+    batch->resizeBatch(len);
+    // Allocate nulls and assigned as not_null by default. Currently, all children will be
+    // allocated with nulls.
+    batch->getMutableNulls();
+    for (size_t i = 0; i < batch->getChildrenNum(); ++i) {
+      auto child = batch->getChildAt(i);
+      build_function(child.get());
+    }
+  };
+
+  build_function(root_batch.get());
+  return root_batch;
 }
 
 inline bool query_has_join(const std::shared_ptr<RelAlgExecutionUnit>& ra_exe_unit) {
@@ -118,8 +140,8 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
                           ? in_batch.getChildrenNum()
                           : in_batch.column_num() + build_table_.column_num();
 
-  const int8_t** col_buffers =
-      reinterpret_cast<const int8_t**>(std::malloc(sizeof(int8_t**) * (total_col_num)));
+  const int8_t** col_buffers = reinterpret_cast<const int8_t**>(
+      allocator_->allocate(sizeof(int8_t**) * (total_col_num)));
 
   if (use_cider_data_format) {
     const void** children_arraies = in_batch.getChildrenArrayPtr();
@@ -161,10 +183,17 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   int64_t* tmp_buffer;
   if (is_project) {
     // row memory layout
-    one_batch_result_.resize(scan_limit_, (int64_t)query_mem_desc->getRowSize());
-    tmp_buffer = const_cast<int64_t*>(
-        reinterpret_cast<const int64_t*>(one_batch_result_.column(0)));
-    out_vec = &tmp_buffer;
+    if (use_cider_data_format) {
+      one_batch_result_ptr_ = prepareOneBatchOutput(scan_limit_);
+      tmp_buffer =
+          (int64_t*)const_cast<void**>(one_batch_result_ptr_->getChildrenArrayPtr());
+      out_vec = &tmp_buffer;
+    } else {
+      one_batch_result_.resize(scan_limit_, (int64_t)query_mem_desc->getRowSize());
+      tmp_buffer = const_cast<int64_t*>(
+          reinterpret_cast<const int64_t*>(one_batch_result_.column(0)));
+      out_vec = &tmp_buffer;
+    }
   } else if (is_non_groupby_agg) {
     // columnar memory layout
     std::vector<size_t> column_type_size(init_agg_vals_.size(), sizeof(int64_t));
@@ -203,6 +232,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     if (hoist_literals_) {
       if (is_group_by_) {
         CiderBitUtils::CiderBitVector<> row_skip_mask(
+            allocator_,
             use_cider_data_format ? in_batch.getLength() : in_batch.row_num());
         multifrag_cols_ptr[1] = row_skip_mask.as<const int8_t*>();
 
@@ -259,7 +289,8 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
       }
     }
   }
-  std::free(col_buffers);
+  allocator_->deallocate(reinterpret_cast<int8_t*>(col_buffers),
+                         sizeof(int8_t**) * (total_col_num));
   if (error_code_ != 0) {
     CIDER_THROW(CiderRuntimeException, getErrorMessageFromCode(error_code_));
   }
@@ -352,8 +383,7 @@ void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
           extract_varchar_column(
               start_row, row_num, offsets[i], step, flattened_out, col);
         } else {
-          CIDER_THROW(CiderRuntimeException,
-                      "extract fixedChar col_len is " + std::to_string(col_len));
+          CIDER_THROW(CiderRuntimeException, fmt::format("col_len is {}", col_len));
         }
         break;
       }
@@ -421,7 +451,7 @@ void CiderRuntimeModule::extract_varchar_column_from_dict(int32_t start_row,
     int64_t key = flattened_out[cur_col_offset];
     std::string s =
         ciderCompilationResult_->impl_->ciderStringDictionaryProxy_->getString(key);
-    uint8_t* ptr = (uint8_t*)std::malloc(s.length());  // memleak
+    uint8_t* ptr = reinterpret_cast<uint8_t*>(allocator_->allocate(s.length()));
     std::memcpy(ptr, s.c_str(), s.length());
     col_out_buffer[i].ptr = reinterpret_cast<const uint8_t*>(ptr);
     col_out_buffer[i].len = (uint32_t)s.length();
@@ -513,26 +543,43 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
       ciderCompilationResult_->impl_->query_mem_desc_->getQueryDescriptionType();
   bool is_project = query_mem_desc_t == QueryDescriptionType::Projection;
   if (is_project) {
-    auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
-    int column_num = schema.getColumnCount();
+    if (ciderCompilationOption_.use_cider_data_format) {
+      std::function<void(CiderBatch*)> process_function =
+          [row_num = total_matched_rows_, &process_function](CiderBatch* batch) -> void {
+        batch->setLength(row_num);
+        batch->setNullCount(row_num -
+                            CiderBitUtils::countSetBits(batch->getNulls(), row_num));
+        for (size_t i = 0; i < batch->getChildrenNum(); ++i) {
+          auto child = batch->getChildAt(i);
+          process_function(child.get());
+        }
+      };
 
-    std::vector<size_t> column_size;
-    for (int i = 0; i < column_num; i++) {
-      column_size.push_back(schema.GetColumnTypeSize(i));
+      process_function(one_batch_result_ptr_.get());
+      return std::make_pair(kNoMoreOutput, std::move(one_batch_result_ptr_));
+    } else {
+      auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
+      int column_num = schema.getColumnCount();
+
+      std::vector<size_t> column_size;
+      for (int i = 0; i < column_num; i++) {
+        column_size.push_back(schema.GetColumnTypeSize(i));
+      }
+
+      int32_t row_num = total_matched_rows_ - fetched_rows_;
+      if (max_row > 0) {
+        row_num = std::min(row_num, max_row);
+      }
+      auto project_result =
+          std::make_unique<CiderBatch>(row_num, column_size, allocator_);
+      project_result->set_schema(std::make_shared<CiderTableSchema>(schema));
+      int64_t* row_buffer = const_cast<int64_t*>(
+          reinterpret_cast<const int64_t*>(one_batch_result_.column(0)));
+      fetchNonBlockingResults(fetched_rows_, row_buffer, *project_result, column_size);
+
+      fetched_rows_ += row_num;
+      return std::make_pair(kNoMoreOutput, std::move(project_result));
     }
-
-    int32_t row_num = total_matched_rows_ - fetched_rows_;
-    if (max_row > 0) {
-      row_num = std::min(row_num, max_row);
-    }
-    auto project_result = std::make_unique<CiderBatch>(row_num, column_size, allocator_);
-    project_result->set_schema(std::make_shared<CiderTableSchema>(schema));
-    int64_t* row_buffer = const_cast<int64_t*>(
-        reinterpret_cast<const int64_t*>(one_batch_result_.column(0)));
-    fetchNonBlockingResults(fetched_rows_, row_buffer, *project_result, column_size);
-
-    fetched_rows_ += row_num;
-    return std::make_pair(kNoMoreOutput, std::move(project_result));
   }
 
   bool is_non_groupby_agg = query_mem_desc_t == QueryDescriptionType::NonGroupedAggregate;
@@ -564,7 +611,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
   std::unique_ptr<CiderBatch> groupby_agg_result;
   if (ciderCompilationOption_.use_cider_data_format) {
     auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(output_type_);
-    groupby_agg_result = std::make_unique<StructBatch>(schema);
+    groupby_agg_result = std::make_unique<StructBatch>(schema, allocator_);
   } else {
     groupby_agg_result = std::make_unique<CiderBatch>(row_num, column_size, allocator_);
   }
@@ -636,7 +683,7 @@ size_t CiderRuntimeModule::getGroupByAggHashTableBufferNum() const {
 }
 
 const std::string CiderRuntimeModule::convertGroupByAggHashTableToString() const {
-  return group_by_agg_hashtable_->toString();
+  return group_by_agg_hashtable_ ? group_by_agg_hashtable_->toString() : "";
 }
 
 bool CiderRuntimeModule::isGroupBy() const {
@@ -733,7 +780,8 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           result[j] = count_distinct_set_address(
               address,
               ciderCompilationResult_->impl_->query_mem_desc_->getCountDistinctDescriptor(
-                  i));
+                  i),
+              allocator_);
         }
       }
     }

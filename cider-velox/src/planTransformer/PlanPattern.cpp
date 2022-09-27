@@ -27,7 +27,7 @@ std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(
   std::pair<bool, VeloxNodeAddrPlanSection> result = matchFromSrc(branchIte);
   if (result.first) {
     if (!result.second.isValid()) {
-      throw std::runtime_error("Match result is invalid.");
+      VELOX_UNSUPPORTED("Match result is invalid.");
     }
   }
   return result;

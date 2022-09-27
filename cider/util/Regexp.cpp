@@ -23,6 +23,7 @@
 #include "Regexp.h"
 #include <boost/regex.hpp>
 #include <stdexcept>
+#include "cider/CiderException.h"
 
 /*
  * @brief regexp_like performs the SQL REGEXP operation

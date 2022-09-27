@@ -31,7 +31,7 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::InValues* expr,
   AUTOMATIC_IR_METADATA(cgen_state_);
   const auto in_arg = expr->get_arg();
   if (is_unnest(in_arg)) {
-    throw std::runtime_error("IN not supported for unnested expressions");
+    CIDER_THROW(CiderCompileException, "IN not supported for unnested expressions");
   }
   const auto& expr_ti = expr->get_type_info();
   CHECK(expr_ti.is_boolean());
@@ -80,16 +80,16 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::InIntegerSet* in_integer_set
   AUTOMATIC_IR_METADATA(cgen_state_);
   const auto in_arg = in_integer_set->get_arg();
   if (is_unnest(in_arg)) {
-    throw std::runtime_error("IN not supported for unnested expressions");
+    CIDER_THROW(CiderCompileException, "IN not supported for unnested expressions");
   }
   const auto& ti = in_integer_set->get_arg()->get_type_info();
   const auto needle_null_val = inline_int_null_val(ti);
   if (!co.hoist_literals) {
     // We never run without literal hoisting in real world scenarios, this avoids a crash
     // when testing.
-    throw std::runtime_error(
-        "IN subquery with many right-hand side values not supported when literal "
-        "hoisting is disabled");
+    CIDER_THROW(CiderCompileException,
+                "IN subquery with many right-hand side values not supported when literal "
+                "hoisting is disabled");
   }
   auto in_vals_bitmap = std::make_unique<InValuesBitmap>(in_integer_set->get_value_list(),
                                                          needle_null_val,

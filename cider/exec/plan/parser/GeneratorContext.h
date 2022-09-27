@@ -29,6 +29,7 @@
 #include <cstdint>
 #include "ConverterHelper.h"
 #include "SubstraitToAnalyzerExpr.h"
+#include "cider/CiderException.h"
 #include "cider/CiderTableSchema.h"
 #include "exec/template/RelAlgExecutionUnit.h"
 #include "substrait/algebra.pb.h"
@@ -85,7 +86,7 @@ struct GeneratorContext {
 
   RelAlgExecutionUnit getExeUnitBasedOnContext() {
     if (!is_target_exprs_collected_) {
-      throw std::runtime_error("No target expressions collected.");
+      CIDER_THROW(CiderCompileException, "No target expressions collected.");
     }
     // change target_expr to normal pointer for RelAlgeExecutionUnit
     std::vector<Analyzer::Expr*> target_exprs;

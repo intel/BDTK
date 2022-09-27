@@ -28,10 +28,11 @@ namespace facebook::velox::plugin {
 template <typename T>
 int8_t* convertToCiderImpl(const ArrowSchema& arrowSchema,
                            const ArrowArray& arrowArray,
-                           int num_rows) {
+                           int num_rows,
+                           memory::MemoryPool* pool) {
   const uint64_t* nulls = static_cast<const uint64_t*>(arrowArray.buffers[0]);
   // cannot directly change arrow buffers as const array, need memcpy
-  T* column = (T*)std::malloc(sizeof(T) * num_rows);
+  T* column = reinterpret_cast<T*>(pool->allocate(sizeof(T) * num_rows));
   memcpy(column, arrowArray.buffers[1], sizeof(T) * num_rows);
   // set null value
   T nullValue = getNullValue<T>();
@@ -49,41 +50,43 @@ int8_t* convertToCiderImpl(const ArrowSchema& arrowSchema,
 int8_t* convertTimestamp(const char* arrow_type,
                          const ArrowSchema& arrowSchema,
                          const ArrowArray& arrowArray,
-                         int num_rows) {
+                         int num_rows,
+                         memory::MemoryPool* pool) {
   if (arrow_type[1] == 't') {
     if (arrow_type[2] == 's' || arrow_type[2] == 'm') {
-      return convertToCiderImpl<int32_t>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<int32_t>(arrowSchema, arrowArray, num_rows, pool);
     } else if (arrow_type[2] == 'u' || arrow_type[2] == 'n') {
-      return convertToCiderImpl<int64_t>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<int64_t>(arrowSchema, arrowArray, num_rows, pool);
     }
   }
-  throw std::runtime_error("Conversion is not supported yet");
+  VELOX_UNSUPPORTED("Conversion is not supported yet, arrow_type is {}", arrow_type);
 }
 
 int8_t* convertToCider(const ArrowSchema& arrowSchema,
                        const ArrowArray& arrowArray,
-                       int num_rows) {
+                       int num_rows,
+                       memory::MemoryPool* pool) {
   const char* arrow_type = arrowSchema.format;
   switch (arrow_type[0]) {
     case 'b':
-      return convertToCiderImpl<bool>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<bool>(arrowSchema, arrowArray, num_rows, pool);
     case 'c':
-      return convertToCiderImpl<int8_t>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<int8_t>(arrowSchema, arrowArray, num_rows, pool);
     case 's':
-      return convertToCiderImpl<int16_t>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<int16_t>(arrowSchema, arrowArray, num_rows, pool);
     case 'i':
-      return convertToCiderImpl<int32_t>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<int32_t>(arrowSchema, arrowArray, num_rows, pool);
     case 'l':
     case 'd':  // decimal
-      return convertToCiderImpl<int64_t>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<int64_t>(arrowSchema, arrowArray, num_rows, pool);
     case 'f':
-      return convertToCiderImpl<float>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<float>(arrowSchema, arrowArray, num_rows, pool);
     case 'g':
-      return convertToCiderImpl<double>(arrowSchema, arrowArray, num_rows);
+      return convertToCiderImpl<double>(arrowSchema, arrowArray, num_rows, pool);
     case 't':
-      return convertTimestamp(arrow_type, arrowSchema, arrowArray, num_rows);
+      return convertTimestamp(arrow_type, arrowSchema, arrowArray, num_rows, pool);
     default:
-      throw std::runtime_error("Conversion is not supported yet");
+      VELOX_UNSUPPORTED("Conversion is not supported yet, arrow_type is {}", arrow_type);
   }
 }
 
@@ -99,9 +102,13 @@ static void releaseArray(ArrowArray* array) {
 }
 
 template <typename T>
-void convertToArrowImpl(ArrowArray& arrowArray, const int8_t* data_buffer, int num_rows) {
+void convertToArrowImpl(ArrowArray& arrowArray,
+                        const int8_t* data_buffer,
+                        int num_rows,
+                        memory::MemoryPool* pool) {
   int64_t nullCount = 0;
-  uint64_t* nulls = (uint64_t*)std::malloc(sizeof(uint64_t*) * num_rows);
+  uint64_t* nulls =
+      reinterpret_cast<uint64_t*>(pool->allocate(sizeof(uint64_t*) * num_rows));
   const T* srcValues = reinterpret_cast<const T*>(data_buffer);
   T nullValue = getNullValue<T>();
   for (auto pos = 0; pos < num_rows; pos++) {
@@ -114,7 +121,8 @@ void convertToArrowImpl(ArrowArray& arrowArray, const int8_t* data_buffer, int n
   }
   // 2 for null buffer and value buffer
   arrowArray.n_buffers = 2;
-  const void** buffers = (const void**)malloc(sizeof(void*) * arrowArray.n_buffers);
+  const void** buffers = reinterpret_cast<const void**>(
+      pool->allocate(sizeof(void*) * arrowArray.n_buffers));
   buffers[0] = (nullCount == 0) ? nullptr : (const void*)nulls;
   buffers[1] = (num_rows == 0) ? nullptr : (const void*)srcValues;
   arrowArray.buffers = buffers;
@@ -137,12 +145,13 @@ static void releaseSchema(ArrowSchema* arrowSchema) {
 void convertTimestamp(const char* arrow_type,
                       ArrowArray& arrowArray,
                       const int8_t* data_buffer,
-                      int num_rows) {
+                      int num_rows,
+                      memory::MemoryPool* pool) {
   if (arrow_type[1] == 't') {
     if (arrow_type[2] == 's' || arrow_type[2] == 'm') {
-      convertToArrowImpl<int32_t>(arrowArray, data_buffer, num_rows);
+      convertToArrowImpl<int32_t>(arrowArray, data_buffer, num_rows, pool);
     } else if (arrow_type[2] == 'u' || arrow_type[2] == 'n') {
-      convertToArrowImpl<int64_t>(arrowArray, data_buffer, num_rows);
+      convertToArrowImpl<int64_t>(arrowArray, data_buffer, num_rows, pool);
     }
   }
 }
@@ -151,7 +160,8 @@ void convertToArrow(ArrowArray& arrowArray,
                     ArrowSchema& arrowSchema,
                     const int8_t* data_buffer,
                     ::substrait::Type col_type,
-                    int num_rows) {
+                    int num_rows,
+                    memory::MemoryPool* pool) {
   arrowSchema = {
       getArrowFormat(col_type),
       nullptr,
@@ -165,24 +175,24 @@ void convertToArrow(ArrowArray& arrowArray,
   const char* arrow_type = arrowSchema.format;
   switch (arrow_type[0]) {
     case 'b':
-      return convertToArrowImpl<bool>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<bool>(arrowArray, data_buffer, num_rows, pool);
     case 'c':
-      return convertToArrowImpl<int8_t>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<int8_t>(arrowArray, data_buffer, num_rows, pool);
     case 's':
-      return convertToArrowImpl<int16_t>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<int16_t>(arrowArray, data_buffer, num_rows, pool);
     case 'i':
-      return convertToArrowImpl<int32_t>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<int32_t>(arrowArray, data_buffer, num_rows, pool);
     case 'l':
     case 'd':  // decimal
-      return convertToArrowImpl<int64_t>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<int64_t>(arrowArray, data_buffer, num_rows, pool);
     case 'f':
-      return convertToArrowImpl<float>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<float>(arrowArray, data_buffer, num_rows, pool);
     case 'g':
-      return convertToArrowImpl<double>(arrowArray, data_buffer, num_rows);
+      return convertToArrowImpl<double>(arrowArray, data_buffer, num_rows, pool);
     case 't':
-      return convertTimestamp(arrow_type, arrowArray, data_buffer, num_rows);
+      return convertTimestamp(arrow_type, arrowArray, data_buffer, num_rows, pool);
     default:
-      throw std::runtime_error("Conversion is not supported yet");
+      VELOX_UNSUPPORTED("Conversion is not supported yet, arrow_type is {}", arrow_type);
   }
 }
 

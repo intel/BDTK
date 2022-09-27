@@ -21,6 +21,8 @@
 
 #include "CiderStatefulOperator.h"
 #include "cider/CiderRuntimeModule.h"
+#include "velox/vector/arrow/Abi.h"
+#include "velox/vector/arrow/Bridge.h"
 
 namespace facebook::velox::plugin {
 
@@ -42,6 +44,13 @@ RowVectorPtr CiderStatefulOperator::getOutput() {
   std::tie(ret, output_) = ciderRuntimeModule_->fetchResults();
   if (ret == CiderRuntimeModule::ReturnCode::kNoMoreOutput) {
     finished_ = true;
+  }
+  if (is_using_arrow_format_) {
+    ArrowSchema schema;
+    ArrowArray array;
+    output_->move(schema, array);
+    VectorPtr baseVec = importFromArrowAsOwner(schema, array, operatorCtx_->pool());
+    return std::reinterpret_pointer_cast<RowVector>(baseVec);
   }
   return dataConvertor_->convertToRowVector(
       *output_, *outputSchema_, operatorCtx_->pool());

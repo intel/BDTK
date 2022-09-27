@@ -31,10 +31,10 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/process/search_path.hpp>
 
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
 #include "util/DdlUtils.h"
-#include "util/sqldefs.h"
 
 #include <functional>
 
@@ -971,11 +971,11 @@ struct DefaultValidate<IntLiteral> {
   decltype(auto) operator()(T t) {
     const std::string property_name(boost::to_upper_copy<std::string>(*t->get_name()));
     if (!dynamic_cast<const IntLiteral*>(t->get_value())) {
-      throw std::runtime_error(property_name + " must be an integer literal.");
+      CIDER_THROW(CiderCompileException, property_name + " must be an integer literal.");
     }
     const auto val = static_cast<const IntLiteral*>(t->get_value())->get_intval();
     if (val <= 0) {
-      throw std::runtime_error(property_name + " must be a positive number.");
+      CIDER_THROW(CiderCompileException, property_name + " must be a positive number.");
     }
     return val;
   }

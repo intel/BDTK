@@ -224,11 +224,11 @@ void check_array_comp_cond(const Analyzer::BinOper* bin_oper) {
     auto lhs_ti = lhs_cv->get_type_info();
     auto rhs_ti = rhs_cv->get_type_info();
     if (lhs_ti.is_array() && rhs_ti.is_array()) {
-      throw std::runtime_error(
+      CIDER_THROW(
+          CiderCompileException,
           "Comparing two full array columns is not supported yet. Please consider "
           "rewriting the full array comparison to a comparison between indexed array "
-          "columns "
-          "(i.e., arr1[1] {<, <=, >, >=} arr2[1]).");
+          "columns (i.e., arr1[1] {<, <=, >, >=} arr2[1]).");
     }
   }
   auto lhs_bin_oper =
@@ -256,8 +256,8 @@ void check_array_comp_cond(const Analyzer::BinOper* bin_oper) {
           lhs_arr_cv->get_type_info().get_subtype() == SQLTypes::kTEXT) ||
          (rhs_arr_cv->get_type_info().is_string() &&
           rhs_arr_cv->get_type_info().get_subtype() == SQLTypes::kTEXT))) {
-      throw std::runtime_error(
-          "Comparison between string array columns is not supported yet.");
+      CIDER_THROW(CiderCompileException,
+                  "Comparison between string array columns is not supported yet.");
     }
   }
 }
@@ -283,7 +283,7 @@ llvm::Value* CodeGenerator::codegenCmp(const Analyzer::BinOper* bin_oper,
                             : codegenLogical(lower_bw_ne(bin_oper).get(), co);
   }
   if (is_unnest(lhs) || is_unnest(rhs)) {
-    throw std::runtime_error("Unnest not supported in comparisons");
+    CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
   }
   check_array_comp_cond(bin_oper);
   const auto& lhs_ti = lhs->get_type_info();
@@ -322,7 +322,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   // TBD: Multi-Col Comparison.
   // TBD: Bitwise EQ.
   if (is_unnest(lhs) || is_unnest(rhs)) {
-    throw std::runtime_error("Unnest not supported in comparisons");
+    CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
   }
   // TODO: String, Array support.
   // TODO: Decimal constant support.
@@ -592,9 +592,9 @@ llvm::Value* CodeGenerator::codegenQualifierCmp(const SQLOps optype,
                             target_ti.get_compression() != kENCODING_DICT};
   if (is_real_string) {
     if (g_enable_watchdog) {
-      throw WatchdogException(
-          "Comparison between a dictionary-encoded and a none-encoded string would be "
-          "slow");
+      CIDER_THROW(CiderWatchdogException,
+                  "Comparison between a dictionary-encoded and a none-encoded string "
+                  "would be slow");
     }
     CHECK_EQ(kENCODING_NONE, target_ti.get_compression());
     fname += "_str";

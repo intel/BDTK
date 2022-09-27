@@ -21,8 +21,8 @@
  */
 
 #include "DateTimeTranslator.h"
-
 #include <boost/algorithm/string.hpp>
+#include "cider/CiderException.h"
 
 namespace {
 
@@ -158,7 +158,7 @@ ExtractField ExtractExpr::to_extract_field(const std::string& field) {
   } else if (boost::iequals(field, "dateepoch")) {
     fieldno = kDATEEPOCH;
   } else {
-    throw std::runtime_error("Unsupported field in EXTRACT function " + field);
+    CIDER_THROW(CiderCompileException, "Unsupported field in EXTRACT function " + field);
   }
   return fieldno;
 }
@@ -175,13 +175,13 @@ std::shared_ptr<Analyzer::Expr> ExtractExpr::generate(
     const ExtractField& field) {
   const auto expr_ti = from_expr->get_type_info();
   if (!expr_ti.is_time()) {
-    throw std::runtime_error(
-        "Only TIME, TIMESTAMP and DATE types can be in EXTRACT function.");
+    CIDER_THROW(CiderCompileException,
+                "Only TIME, TIMESTAMP and DATE types can be in EXTRACT function.");
   }
   if (expr_ti.get_type() == kTIME && field != kHOUR && field != kMINUTE &&
       field != kSECOND) {
-    throw std::runtime_error("Cannot EXTRACT " + from_extract_field(field) +
-                             " from TIME.");
+    CIDER_THROW(CiderCompileException,
+                "Cannot EXTRACT " + from_extract_field(field) + " from TIME.");
   }
   const SQLTypeInfo ti(kBIGINT, 0, 0, expr_ti.get_notnull());
   auto constant = std::dynamic_pointer_cast<Analyzer::Constant>(from_expr);
@@ -237,7 +237,7 @@ DatetruncField DateTruncExpr::to_datetrunc_field(const std::string& field) {
   } else if (boost::iequals(field, "week_saturday")) {
     fieldno = dtWEEK_SATURDAY;
   } else {
-    throw std::runtime_error("Invalid field in DATE_TRUNC function " + field);
+    CIDER_THROW(CiderCompileException, "Invalid field in DATE_TRUNC function " + field);
   }
   return fieldno;
 }
@@ -254,13 +254,13 @@ std::shared_ptr<Analyzer::Expr> DateTruncExpr::generate(
     const DatetruncField& field) {
   const auto& expr_ti = from_expr->get_type_info();
   if (!expr_ti.is_time()) {
-    throw std::runtime_error(
-        "Only TIME, TIMESTAMP and DATE types can be in DATE_TRUNC function.");
+    CIDER_THROW(CiderCompileException,
+                "Only TIME, TIMESTAMP and DATE types can be in DATE_TRUNC function.");
   }
   if (from_expr->get_type_info().get_type() == kTIME && field != dtHOUR &&
       field != dtMINUTE && field != dtSECOND) {
-    throw std::runtime_error("Cannot DATE_TRUNC " + from_datetrunc_field(field) +
-                             " from TIME.");
+    CIDER_THROW(CiderCompileException,
+                "Cannot DATE_TRUNC " + from_datetrunc_field(field) + " from TIME.");
   }
   SQLTypeInfo ti(kTIMESTAMP, expr_ti.get_dimension(), 0, expr_ti.get_notnull());
   auto constant = std::dynamic_pointer_cast<Analyzer::Constant>(from_expr);

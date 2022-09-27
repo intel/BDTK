@@ -22,9 +22,12 @@
 #ifndef CIDER_CIDERBATCHUTILS_H
 #define CIDER_CIDERBATCHUTILS_H
 
+#include "cider/CiderAllocator.h"
+#include "substrait/type.pb.h"
 #include "type/data/sqltypes.h"
 
 class CiderBatch;
+class CiderTableSchema;
 
 struct ArrowSchema;
 struct ArrowArray;
@@ -33,7 +36,7 @@ namespace CiderBatchUtils {
 
 void ciderArrowSchemaReleaser(ArrowSchema* schema);
 
-void ciderArrowArrayReleaser(ArrowArray* schema);
+void ciderArrowArrayReleaser(ArrowArray* array);
 
 void freeArrowArray(ArrowArray* ptr);
 
@@ -43,16 +46,23 @@ ArrowArray* allocateArrowArray();
 
 ArrowSchema* allocateArrowSchema();
 
+ArrowSchema* allocateArrowSchema(const ArrowSchema& schema);
+
 int64_t getBufferNum(const ArrowSchema* schema);
 
 SQLTypes convertArrowTypeToCiderType(const char* format);
 
-std::unique_ptr<CiderBatch> createCiderBatch(ArrowSchema* schema,
+std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowSchema* schema,
                                              ArrowArray* array = nullptr);
 
 const char* convertCiderTypeToArrowType(SQLTypes type);
 
 ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
+
+const char* convertSubstraitTypeToArrowType(const substrait::Type& type);
+
+ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table);
 
 };  // namespace CiderBatchUtils
 

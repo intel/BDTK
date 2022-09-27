@@ -77,7 +77,7 @@ InValuesBitmap::InValuesBitmap(const std::vector<int64_t>& values,
   const auto bitmap_sz_bits =
       static_cast<int64_t>(checked_int64_t(max_val_) - min_val_ + 1);
   if (bitmap_sz_bits > MAX_BITMAP_BITS) {
-    throw FailedToCreateBitmap();
+    CIDER_THROW(CiderCompileException, "Failed To Create Bitmap");
   }
   const auto bitmap_sz_bytes = bitmap_bits_to_bytes(bitmap_sz_bits);
   auto cpu_bitset = static_cast<int8_t*>(checked_calloc(bitmap_sz_bytes, 1));
