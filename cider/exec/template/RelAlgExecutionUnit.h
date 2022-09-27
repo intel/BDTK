@@ -73,7 +73,7 @@ using HashTableBuildDagMap = std::unordered_map<JoinColumnsInfo, HashTableBuildD
 // note that disabling DAG extraction when we find sort node from join's input
 // is too restrict when a query becomes complex (and so have multiple joins)
 // since it eliminates a change of data recycling
-// TODO: map's value is used to be RelAlgNode*, which has been removed
+// map's value is used to be RelAlgNode*, which has been removed
 // can be Combined with scene modification here
 using TableIdToNodeMap = std::unordered_map<int, const void*>;
 
