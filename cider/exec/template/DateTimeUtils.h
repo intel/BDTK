@@ -189,7 +189,7 @@ constexpr inline int64_t get_datetime_scaled_epoch(const ScalingType direction,
     case ScaleDown:
       return epoch / get_timestamp_precision_scale(dimen);
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("direction is {}", direction));
   }
   return std::numeric_limits<int64_t>::min();
 }

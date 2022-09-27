@@ -57,7 +57,8 @@ inline bool is_null(const T& v, const SQLTypeInfo& t) {
     case 8:
       return v == inline_int_null_value<int64_t>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException,
+                  fmt::format("t.get_logical_size is {}", t.get_logical_size()));
   }
 }
 
@@ -96,7 +97,7 @@ inline bool is_null_string_index(const int size, const int32_t sidx) {
     case 4:
       return sidx == inline_int_null_value<int32_t>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("size is {}", size));
   }
 }
 
@@ -109,7 +110,7 @@ inline int32_t get_string_index(void* ptr, const int size) {
     case 4:
       return *(int32_t*)ptr;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("size is {}", size));
   }
 }
 
@@ -125,7 +126,8 @@ inline bool set_string_index(void* ptr, const SQLTypeInfo& etype, int32_t sidx) 
       return integer_setter(*(int32_t*)ptr, sidx, etype);
       break;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException,
+                  fmt::format("get_element_size(etype) is {}", get_element_size(etype)));
   }
 }
 
@@ -169,7 +171,7 @@ static void put_scalar(void* ndptr,
           integer_setter(*(int64_t*)ndptr, rval, etype);
           break;
         default:
-          abort();
+          CIDER_THROW(CiderUnsupportedException, fmt::format("esize is {}", esize));
       }
       break;
     case kFLOAT:
@@ -182,7 +184,7 @@ static void put_scalar(void* ndptr,
       if (etype.is_string() && !etype.is_varlen()) {
         set_string_index(ndptr, etype, rval);
       } else {
-        abort();
+        CIDER_THROW(CiderUnsupportedException, fmt::format("esize is {}", esize));
       }
       break;
   }
@@ -291,7 +293,8 @@ inline void put_null(void* ndptr, const SQLTypeInfo& ntype, const std::string co
           *(int64_t*)ndptr = inline_int_null_value<int64_t>();
           break;
         default:
-          abort();
+          CIDER_THROW(CiderUnsupportedException,
+                      fmt::format("ntype size is {}", ntype.get_size()));
       }
       break;
     case kFLOAT:
@@ -342,7 +345,8 @@ inline void put_null_array(void* ndptr,
           *(int64_t*)ndptr = inline_int_null_array_value<int64_t>();
           break;
         default:
-          abort();
+          CIDER_THROW(CiderUnsupportedException,
+                      fmt::format("ntype size is {}", ntype.get_size()));
       }
       break;
     case kFLOAT:
@@ -384,7 +388,8 @@ inline bool get_scalar(void* ndptr, const SQLTypeInfo& ntype, T& v) {
           return inline_int_null_value<int64_t>() == (v = *(int64_t*)ndptr);
           break;
         default:
-          abort();
+          CIDER_THROW(CiderUnsupportedException,
+                      fmt::format("ntype size is {}", ntype.get_size()));
       }
       break;
     case kFLOAT:
@@ -395,7 +400,8 @@ inline bool get_scalar(void* ndptr, const SQLTypeInfo& ntype, T& v) {
       v = get_string_index(ndptr, ntype.get_size());
       return is_null_string_index(ntype.get_size(), v);
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException,
+                  fmt::format("ntype type is {}", ntype.get_type()));
   }
 }
 

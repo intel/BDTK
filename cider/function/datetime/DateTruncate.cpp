@@ -25,6 +25,7 @@
  */
 
 #include "function/datetime/DateTruncate.h"
+#include "cider/CiderException.h"
 #include "function/datetime/ExtractFromTime.h"
 
 #include <cmath>
@@ -293,7 +294,7 @@ int64_t DateTruncate(DatetruncField field, const int64_t timeval) {
     case dtMILLENNIUM:
       return datetrunc_millennium_impl(timeval);
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
   }
 }
 
@@ -409,7 +410,7 @@ struct EraTime {
         return sgn * (millennia - (rem == 0 && ut.sign(MOY) == -1));
       }
       default:
-        abort();
+        CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
     }
   }
 };

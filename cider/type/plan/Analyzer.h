@@ -27,6 +27,7 @@
 #ifndef ANALYZER_H
 #define ANALYZER_H
 
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "type/schema/ColumnInfo.h"
 #include "util/Logger.h"
@@ -628,15 +629,15 @@ class Subquery : public Expr {
   }
   std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
-    abort();
+    CIDER_THROW(CiderUnsupportedException, fmt::format("tlist.size is {}", tlist.size()));
   }
   std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
-    abort();
+    CIDER_THROW(CiderUnsupportedException, fmt::format("tlist.size is {}", tlist.size()));
   }
   std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
-    abort();
+    CIDER_THROW(CiderUnsupportedException, fmt::format("tlist.size is {}", tlist.size()));
   }
   bool operator==(const Expr& rhs) const override {
     CHECK(false);

@@ -88,7 +88,7 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
                        4, ir_builder, !ti.get_notnull());
     }
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("enc_type is {}", enc_type));
   }
 }
 
@@ -649,7 +649,8 @@ llvm::Value* CodeGenerator::posArg(const Analyzer::Expr* expr) const {
       return &arg;
     }
   }
-  abort();
+  CIDER_THROW(CiderUnsupportedException,
+              fmt::format("col_val is {}", col_var->toString()));
 }
 
 const Analyzer::Expr* remove_cast_to_int(const Analyzer::Expr* expr) {

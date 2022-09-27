@@ -339,7 +339,7 @@ llvm::Value* CodeGenerator::codegenLogical(const Analyzer::BinOper* bin_oper,
       return cgen_state_->emitCall("logical_or",
                                    {lhs_lv, rhs_lv, cgen_state_->inlineIntNull(ti)});
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("optype is {}", optype));
   }
 }
 
@@ -358,7 +358,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenLogicalFun(
     case kOR:
       return codegenOrLogicalFun(bin_oper, co);
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("optype is {}", optype));
   }
 }
 
