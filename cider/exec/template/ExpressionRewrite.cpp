@@ -715,6 +715,12 @@ Analyzer::ExpressionPtr rewrite_expr(const Analyzer::Expr* expr) {
   if (avg_window) {
     return avg_window;
   }
+  // skip InValues expression rewrite
+  auto in_values_expr = dynamic_cast<const Analyzer::InValues*>(expr);
+  if (in_values_expr &&
+      dynamic_cast<const Analyzer::SubstringStringOper*>(in_values_expr->get_arg())) {
+    return in_values_expr->deep_copy();
+  }
   const auto expr_no_likelihood = strip_likelihood(expr);
   // The following check is not strictly needed, but seems silly to transform a
   // simple string comparison to an IN just to codegen the same thing anyway.
@@ -832,6 +838,18 @@ std::list<std::shared_ptr<Analyzer::Expr>> strip_join_covered_filter_quals(
 std::shared_ptr<Analyzer::Expr> fold_expr(const Analyzer::Expr* expr) {
   if (!expr) {
     return nullptr;
+  }
+  // Skip expr fold for InValues and BinOper with substr as left operand
+  auto in_values_expr = dynamic_cast<const Analyzer::InValues*>(expr);
+  if (in_values_expr &&
+      dynamic_cast<const Analyzer::SubstringStringOper*>(in_values_expr->get_arg())) {
+    return in_values_expr->deep_copy();
+  }
+
+  auto bin_substr = dynamic_cast<const Analyzer::BinOper*>(expr);
+  if (bin_substr && dynamic_cast<const Analyzer::SubstringStringOper*>(
+                        bin_substr->get_left_operand())) {
+    return bin_substr->deep_copy();
   }
   const auto expr_no_likelihood = strip_likelihood(expr);
   ConstantFoldingVisitor visitor;

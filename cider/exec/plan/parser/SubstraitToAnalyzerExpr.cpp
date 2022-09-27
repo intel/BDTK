@@ -617,12 +617,28 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildInValuesEx
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  CHECK(s_scalar_function.arguments_size() == 2);
-  CHECK(s_scalar_function.arguments(1).value().literal().has_list());
-  // TODO: need support "in cast(vector)" expression for velox integration
-  return makeExpr<Analyzer::InValues>(
-      toAnalyzerExpr(s_scalar_function.arguments(0).value(), function_map, expr_map_ptr),
-      toAnalyzerExprList(s_scalar_function.arguments(1).value().literal()));
+  // For expression like "col_str, 0, 3) in ('0000', '1111', '2222')", it will
+  // be parsed into substrait SingleOrList with semantics like
+  // col_str in (cast '0000':fixedcahr as varchar, ...)
+  if (s_scalar_function.arguments_size() > 2) {
+    std::list<std::shared_ptr<Analyzer::Expr>> args;
+    for (int i = 1; i < s_scalar_function.arguments_size(); i++) {
+      args.push_back(toAnalyzerExpr(
+          s_scalar_function.arguments(i).value(), function_map, expr_map_ptr));
+    }
+    return makeExpr<Analyzer::InValues>(
+        toAnalyzerExpr(
+            s_scalar_function.arguments(0).value(), function_map, expr_map_ptr),
+        args);
+  }
+  if (s_scalar_function.arguments_size() == 2 &&
+      s_scalar_function.arguments(1).value().literal().has_list()) {
+    return makeExpr<Analyzer::InValues>(
+        toAnalyzerExpr(
+            s_scalar_function.arguments(0).value(), function_map, expr_map_ptr),
+        toAnalyzerExprList(s_scalar_function.arguments(1).value().literal()));
+  }
+  // TODO: (yma11) need support "in cast(vector)" expression for velox integration
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExpr(

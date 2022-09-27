@@ -197,7 +197,19 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
     assertQuery(                                                                        \
         "SELECT * FROM test WHERE col_2 in ('0000000000', '1111111111', '2222222222')", \
         "in_string_array.json");                                                        \
-  }
+    assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111')",  \
+                "in_string_2_array_with_substr.json");                                  \
+    assertQuery(                                                                        \
+        "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222', "  \
+        "'3333')",                                                                      \
+        "in_string_array_with_substr.json");                                            \
+    // not supported for different type info of substr and literal
+    // assertQuery(
+    //   "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) = '0000'");
+    // assertQuery(
+    //     "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222',
+    //     '3333')");
+}
 
 BASIC_STRING_TEST_UNIT(CiderStringTest, basicStringTest)
 LIKE_STRING_TEST_UNIT(CiderStringTest, likeStringTest)
