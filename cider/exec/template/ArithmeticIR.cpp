@@ -135,7 +135,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColArithFun(
 
   if (overflow_check) {
     // TODO: overflow_check code generation.
-    abort();
+    CIDER_THROW(CiderUnsupportedException, "");
   }
 
   llvm::Value* value = nullptr;

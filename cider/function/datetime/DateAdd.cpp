@@ -108,7 +108,7 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t DateAdd(DateaddField field,
     case daMILLENNIUM:
       return MonthDaySecond(timeval).addMonths(number * 12000).unixtime();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
   }
 }
 

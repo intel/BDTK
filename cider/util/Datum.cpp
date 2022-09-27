@@ -526,7 +526,7 @@ int64_t extract_int_type_from_datum(const Datum datum, const SQLTypeInfo& ti) {
     case kDATE:
       return datum.bigintval;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 
@@ -538,7 +538,7 @@ double extract_fp_type_from_datum(const Datum datum, const SQLTypeInfo& ti) {
     case kDOUBLE:
       return datum.doubleval;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 

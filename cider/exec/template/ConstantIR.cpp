@@ -85,7 +85,7 @@ std::vector<llvm::Value*> CodeGenerator::codegen(const Analyzer::Constant* const
     default:
       CHECK(false);
   }
-  abort();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
 }
 
 llvm::ConstantInt* CodeGenerator::codegenIntConst(const Analyzer::Constant* constant,

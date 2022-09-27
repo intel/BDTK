@@ -118,4 +118,21 @@ class CiderTooManyHashEntriesException : public CiderHashJoinException {
   virtual ~CiderTooManyHashEntriesException() noexcept {}
 };
 
+// please use CIDER_THROW(CiderUnsupportedException, "Exception message");
+class CiderUnsupportedException : public CiderCompileException {
+ public:
+  explicit CiderUnsupportedException(const std::string& msg)
+      : CiderCompileException("CiderUnsupportedException", msg) {}
+
+  virtual ~CiderUnsupportedException() noexcept {}
+};
+
+// please use CIDER_THROW(CheckFatalException, "Exception message");
+class CheckFatalException : public CiderCompileException {
+ public:
+  explicit CheckFatalException(const std::string& msg)
+      : CiderCompileException("CheckFatalException", msg) {}
+
+  virtual ~CheckFatalException() noexcept {}
+};
 #endif  // CIDER_CIDEREXCEPTION_H

@@ -89,7 +89,8 @@ llvm::ConstantInt* CgenState::inlineIntNull(const SQLTypeInfo& type_info) {
     case kARRAY:
       return llInt(int64_t(0));
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException,
+                  fmt::format("type name is {}", type_info.get_type_name()));
   }
 }
 
@@ -101,7 +102,8 @@ llvm::ConstantFP* CgenState::inlineFpNull(const SQLTypeInfo& type_info) {
     case kDOUBLE:
       return llFp(NULL_DOUBLE);
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException,
+                  fmt::format("type name is {}", type_info.get_type_name()));
   }
 }
 
@@ -135,7 +137,7 @@ std::pair<llvm::ConstantInt*, llvm::ConstantInt*> CgenState::inlineIntMaxMin(
     case 8:
       return std::make_pair(::ll_int(max_int, context_), ::ll_int(min_int, context_));
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("byte_width is {}", byte_width));
   }
 }
 

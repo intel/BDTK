@@ -99,7 +99,7 @@ inline int64_t inline_int_null_val(const SQLTypeInfo& ti) {
     case kNUMERIC:
       return inline_int_null_value<int64_t>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 
@@ -147,7 +147,7 @@ inline double inline_fp_null_val(const SQLTypeInfo& ti) {
     case kDOUBLE:
       return inline_fp_null_value<double>();
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 }
 
@@ -230,7 +230,7 @@ inline int64_t get_max_value(SQLTypes type) {
       max_val = std::numeric_limits<int64_t>::max();
       break;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 
   return max_val;
@@ -258,7 +258,7 @@ inline int64_t get_min_value(SQLTypes type) {
       min_val = std::numeric_limits<int64_t>::min();
       break;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("type is {}", type));
   }
 
   return min_val;

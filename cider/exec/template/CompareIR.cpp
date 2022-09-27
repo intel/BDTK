@@ -47,7 +47,7 @@ llvm::CmpInst::Predicate llvm_icmp_pred(const SQLOps op_type) {
     case kGE:
       return llvm::ICmpInst::ICMP_SGE;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("op_type is {}", op_type));
   }
 }
 
@@ -66,7 +66,7 @@ std::string icmp_name(const SQLOps op_type) {
     case kGE:
       return "ge";
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("op_type is {}", op_type));
   }
 }
 
@@ -85,7 +85,7 @@ std::string icmp_arr_name(const SQLOps op_type) {
     case kGE:
       return "le";
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("op_type is {}", op_type));
   }
 }
 
@@ -104,7 +104,7 @@ llvm::CmpInst::Predicate llvm_fcmp_pred(const SQLOps op_type) {
     case kGE:
       return llvm::CmpInst::FCMP_OGE;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("op_type is {}", op_type));
   }
 }
 
@@ -127,7 +127,7 @@ std::string string_cmp_func(const SQLOps optype) {
     case kNE:
       return "string_ne";
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("op_type is {}", optype));
   }
 }
 
