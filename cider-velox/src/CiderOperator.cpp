@@ -28,6 +28,10 @@
 #include "Allocator.h"
 #include "velox/exec/Task.h"
 
+#include "cider/batch/CiderBatchUtils.h"
+#include "velox/vector/arrow/Abi.h"
+#include "velox/vector/arrow/Bridge.h"
+
 #include "CiderJoinBuild.h"
 #include "CiderStatefulOperator.h"
 #include "CiderStatelessOperator.h"
@@ -58,6 +62,8 @@ CiderOperator::CiderOperator(int32_t operatorId,
         ciderCompileResult, compile_option, exec_option, allocator);
     outputSchema_ = std::make_shared<CiderTableSchema>(
         ciderCompileResult->getOutputCiderTableSchema());
+
+    is_using_arrow_format_ = compile_option.use_cider_data_format;
   }
   // hardcode, init a DataConvertor here.
   dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT);
@@ -90,9 +96,24 @@ void CiderOperator::addInput(RowVectorPtr input) {
   }
 
   input_ = std::move(input);
-  auto inBatch = dataConvertor_->convertToCider(
-      input_, input_->size(), &convertorInternalCounter, operatorCtx_->pool());
-  ciderRuntimeModule_->processNextBatch(inBatch);
+  if (is_using_arrow_format_) {
+    for (size_t i = 0; i < input_->childrenSize(); i++) {
+      input_->childAt(i)->mutableRawNulls();
+    }
+    ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
+    exportToArrow(input_, *inputArrowArray);
+    ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
+    exportToArrow(input_, *inputArrowSchema);
+    input_.reset();
+    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
+    auto inBatch =
+        CiderBatchUtils::createCiderBatch(allocator, inputArrowSchema, inputArrowArray);
+    ciderRuntimeModule_->processNextBatch(*inBatch);
+  } else {
+    auto inBatch = dataConvertor_->convertToCider(
+        input_, input_->size(), &convertorInternalCounter, operatorCtx_->pool());
+    ciderRuntimeModule_->processNextBatch(inBatch);
+  }
 }
 
 exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {

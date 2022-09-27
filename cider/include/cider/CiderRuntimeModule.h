@@ -124,6 +124,9 @@ class CiderRuntimeModule {
                           int64_t** group_by_output_buffer,
                           const int64_t* join_hash_tables_ptr);
   void resetAggVal();
+
+  std::unique_ptr<CiderBatch> prepareOneBatchOutput(int64_t len);
+
   CiderBatch setSchemaAndUpdateCountDistinctResIfNeed(
       std::unique_ptr<CiderBatch> output_batch);
   std::shared_ptr<CiderCompilationResult> ciderCompilationResult_;
@@ -145,6 +148,7 @@ class CiderRuntimeModule {
 
   // intermediate result for project and non_groupby_agg
   CiderBatch one_batch_result_{allocator_};
+  std::unique_ptr<CiderBatch> one_batch_result_ptr_;
   int32_t total_matched_rows_{0};
   int32_t fetched_rows_{0};
   constexpr static size_t kMaxOutputRows = 1000;

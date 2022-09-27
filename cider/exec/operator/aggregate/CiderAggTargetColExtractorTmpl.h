@@ -245,4 +245,64 @@ class AVGAggExtractor<DecimalPlaceHolder, COUNTT, AVGT>
   size_t scale_;
 };
 
+template <typename ST, typename TT>
+class CountAggExtractor : public CiderAggTargetColExtractor {
+ public:
+  CountAggExtractor(const std::string& name,
+                    size_t colIndex,
+                    const CiderAggHashTable* hashtable)
+      : CiderAggTargetColExtractor(name, colIndex) {
+    auto& colInfo = hashtable->getColEntryInfo(colIndex);
+    offset_ = colInfo.slot_offset;
+    null_offset_ = colInfo.is_key ? hashtable->getKeyNullVectorOffset()
+                                  : hashtable->getTargetNullVectorOffset();
+    index_in_null_vector_ =
+        colInfo.is_key ? col_index_ : col_index_ - hashtable->getKeyColNum();
+  }
+
+  void extract(const std::vector<const int8_t*>& rowAddrs, int8_t* outAddrs) override {
+    size_t rowNum = rowAddrs.size();
+
+    TT* targetVector = reinterpret_cast<TT*>(outAddrs);
+
+    for (size_t i = 0; i < rowNum; ++i) {
+      const int8_t* rowPtr = rowAddrs[i];
+      targetVector[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+    }
+  }
+
+  void extract(const std::vector<const int8_t*>& rowAddrs, CiderBatch* output) override {
+    size_t rowNum = rowAddrs.size();
+    auto scalarOutput = output->asMutable<ScalarBatch<TT>>();
+
+    CHECK(scalarOutput->resizeBatch(rowNum, true));
+    TT* buffer = scalarOutput->getMutableRawData();
+    uint8_t* nulls = scalarOutput->getMutableNulls();
+
+    if (nulls) {
+      int64_t null_count = 0;
+      for (size_t i = 0; i < rowNum; ++i) {
+        const int8_t* rowPtr = rowAddrs[i];
+        auto value = *reinterpret_cast<const ST*>(rowPtr + offset_);
+        if (!value) {
+          CiderBitUtils::clearBitAt(nulls, i);
+          ++null_count;
+        } else {
+          buffer[i] = value;
+        }
+      }
+      output->setNullCount(null_count);
+    } else {
+      for (size_t i = 0; i < rowNum; ++i) {
+        const int8_t* rowPtr = rowAddrs[i];
+        buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+      }
+    }
+  }
+
+ private:
+  size_t offset_;
+  size_t index_in_null_vector_;
+};
+
 #endif

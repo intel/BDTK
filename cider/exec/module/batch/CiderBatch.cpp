@@ -253,6 +253,15 @@ void CiderBatch::releaseArrowEntries() {
   }
 }
 
+void CiderBatch::move(ArrowSchema& schema, ArrowArray& array) {
+  CHECK(!isMoved());
+
+  schema = *arrow_schema_;
+  array = *arrow_array_;
+  arrow_schema_->release = nullptr;
+  arrow_array_->release = nullptr;
+}
+
 std::pair<ArrowSchema*, ArrowArray*> CiderBatch::move() {
   CHECK(!isMoved());
   ArrowSchema* schema = CiderBatchUtils::allocateArrowSchema();

@@ -170,10 +170,11 @@ FORCE_INLINE void clearBitAt(uint8_t* bit_vector, size_t index) {
   bit_vector[index >> 3] &= kCiderBitReverseMask[index & 0x7];
 }
 
-inline size_t countSetBits(uint8_t* bit_vector, size_t end) {
+inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
   size_t i = 0, ans = 0;
   for (; i + 64 <= end; i += 64) {
-    ans += __builtin_popcountl(reinterpret_cast<uint64_t*>(bit_vector)[i >> 6]);
+    ans += __builtin_popcountl(
+        reinterpret_cast<uint64_t*>(const_cast<uint8_t*>(bit_vector))[i >> 6]);
   }
 
   for (; i < end; ++i) {

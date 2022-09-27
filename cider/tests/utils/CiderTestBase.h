@@ -41,10 +41,6 @@ class CiderTestBase : public testing::Test {
   void assertQuery(const std::string& sql,
                    const std::string& json_file_or_sql = "",
                    const bool ignore_order = false);
-  // use row checker
-  void assertQueryRowEqual(const std::string& sql,
-                           const std::string& json_file_or_sql = "",
-                           const bool ignore_order = false);
   // compare cider query result with a specified batch when duckdb doesn't support the op
   void assertQuery(const std::string& sql,
                    const std::shared_ptr<CiderBatch> expected_batch,

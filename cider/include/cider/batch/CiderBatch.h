@@ -52,14 +52,6 @@ class CiderBatch {
   CiderBatch& operator=(const CiderBatch& rh);
   CiderBatch& operator=(CiderBatch&& rh) noexcept;
 
-#ifdef CIDERBATCH_WITH_ARROW
-
- public:
-#else
-
- private:
-#endif
-
   size_t getBufferNum() const;
   size_t getChildrenNum() const;
   SQLTypes getCiderType() const;
@@ -75,13 +67,9 @@ class CiderBatch {
   // Move ArrowSchema and ArrowArray out of the tree. The ownership will be moved to the
   // caller. Typical usage:
   /*
-    auto [schema, array] = CiderBatch.move();
-    ...
-    array->release(array);
-    schema->release(schema);
-    CiderBatchUtils::freeArrowArray(array); // Must be released by CiderBatchUtils.
-    CiderBatchUtils::freeArrowSchema(schema);
+    CiderBatch.move(array, schema);
   */
+  void move(ArrowSchema& schema, ArrowArray& array);
   std::pair<ArrowSchema*, ArrowArray*> move();
 
   template <typename T>
