@@ -83,8 +83,6 @@ float g_fraction_code_cache_to_evict = 0.2;
 std::unique_ptr<llvm::Module> udf_cpu_module;
 std::unique_ptr<llvm::Module> rt_udf_cpu_module;
 
-extern std::unique_ptr<llvm::Module> g_rt_module;
-
 namespace {
 
 void throw_parseIR_error(const llvm::SMDiagnostic& parse_error, std::string src = "") {
@@ -638,6 +636,53 @@ bool CodeGenerator::alwaysCloneRuntimeFunction(const llvm::Function* func) {
          func->getName() == "init_shared_mem_nop" || func->getName() == "write_back_nop";
 }
 
+std::unique_ptr<llvm::Module> read_llvm_module_from_bc_file(
+    const std::string& bc_filename,
+    llvm::LLVMContext& context) {
+  llvm::SMDiagnostic err;
+
+  auto buffer_or_error = llvm::MemoryBuffer::getFile(bc_filename);
+  CHECK(!buffer_or_error.getError()) << "bc_filename=" << bc_filename;
+  llvm::MemoryBuffer* buffer = buffer_or_error.get().get();
+
+  auto owner = llvm::parseBitcodeFile(buffer->getMemBufferRef(), context);
+  CHECK(!owner.takeError());
+  CHECK(owner->get());
+  return std::move(owner.get());
+}
+
+std::unique_ptr<llvm::Module> read_llvm_module_from_ir_file(
+    const std::string& udf_ir_filename,
+    llvm::LLVMContext& ctx) {
+  llvm::SMDiagnostic parse_error;
+
+  llvm::StringRef file_name_arg(udf_ir_filename);
+
+  auto owner = llvm::parseIRFile(file_name_arg, parse_error, ctx);
+  if (!owner) {
+    throw_parseIR_error(parse_error, udf_ir_filename);
+  }
+
+  return owner;
+}
+
+std::unique_ptr<llvm::Module> read_llvm_module_from_ir_string(
+    const std::string& udf_ir_string,
+    llvm::LLVMContext& ctx) {
+  llvm::SMDiagnostic parse_error;
+
+  auto buf = std::make_unique<llvm::MemoryBufferRef>(udf_ir_string,
+                                                     "Runtime UDF/UDTF LLVM/NVVM IR");
+
+  auto owner = llvm::parseIR(*buf, parse_error, ctx);
+  if (!owner) {
+    LOG(IR) << "read_llvm_module_from_ir_string:\n"
+            << udf_ir_string << "\nEnd of LLVM/NVVM IR";
+    throw_parseIR_error(parse_error);
+  }
+  return owner;
+}
+
 llvm::Module* read_template_module(llvm::LLVMContext& context) {
   llvm::SMDiagnostic err;
 
@@ -935,41 +980,8 @@ std::vector<std::string> get_agg_fnames(const std::vector<Analyzer::Expr*>& targ
 
 }  // namespace
 
-std::unique_ptr<llvm::Module> g_rt_module(read_template_module(getGlobalLLVMContext()));
 bool is_rt_udf_module_present(bool cpu_only) {
   return cpu_only && (rt_udf_cpu_module != nullptr);
-}
-
-namespace {
-
-void read_udf_cpu_module(const std::string& udf_ir_filename) {
-  llvm::SMDiagnostic parse_error;
-
-  llvm::StringRef file_name_arg(udf_ir_filename);
-
-  udf_cpu_module = llvm::parseIRFile(file_name_arg, parse_error, getGlobalLLVMContext());
-  if (!udf_cpu_module) {
-    throw_parseIR_error(parse_error, udf_ir_filename);
-  }
-}
-
-}  // namespace
-
-void Executor::addUdfIrToModule(const std::string& udf_ir_filename) {
-  read_udf_cpu_module(udf_ir_filename);
-}
-
-void read_rt_udf_cpu_module(const std::string& udf_ir_string) {
-  llvm::SMDiagnostic parse_error;
-
-  auto buf =
-      std::make_unique<llvm::MemoryBufferRef>(udf_ir_string, "Runtime UDF for CPU");
-
-  rt_udf_cpu_module = llvm::parseIR(*buf, parse_error, getGlobalLLVMContext());
-  if (!rt_udf_cpu_module) {
-    LOG(IR) << "read_rt_udf_cpu_module:LLVM IR:\n" << udf_ir_string << "\nEnd of LLVM IR";
-    throw_parseIR_error(parse_error);
-  }
 }
 
 std::unordered_set<llvm::Function*> CodeGenerator::markDeadRuntimeFuncs(
@@ -1491,7 +1503,12 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
   LOG(ASM) << "CODEGEN #" << counter << ":";
 #endif
 
-  nukeOldState(allow_lazy_fetch, query_infos, &ra_exe_unit);
+  // cgenstate_manager uses RAII pattern to manage the live time of
+  // CgenState instances.
+  Executor::CgenStateManager cgenstate_manager(*this,
+                                               allow_lazy_fetch,
+                                               query_infos,
+                                               &ra_exe_unit);  // locks compilation_mutex
 
   GroupByAndAggregate group_by_and_aggregate(
       this,
@@ -1521,23 +1538,9 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
   // Read the module template and target either CPU
   // by binding the stream position functions to the right implementation:
   // contiguous for CPU
-  auto rt_module_copy = llvm::CloneModule(
-      *g_rt_module.get(), cgen_state_->vmap_, [](const llvm::GlobalValue* gv) {
-        auto func = llvm::dyn_cast<llvm::Function>(gv);
-        if (!func) {
-          return true;
-        }
-        return (func->getLinkage() == llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
-                func->getLinkage() == llvm::GlobalValue::LinkageTypes::InternalLinkage ||
-                CodeGenerator::alwaysCloneRuntimeFunction(func));
-      });
-  if (is_udf_module_present(true)) {
-    CodeGenerator::link_udf_module(udf_cpu_module, *rt_module_copy, cgen_state_.get());
-  }
-  if (is_rt_udf_module_present(true)) {
-    CodeGenerator::link_udf_module(rt_udf_cpu_module, *rt_module_copy, cgen_state_.get());
-  }
-  cgen_state_->module_ = rt_module_copy.release();
+
+  CHECK(cgen_state_->module_ == nullptr);
+  cgen_state_->set_module_shallow_copy(get_rt_module(), /*always_clone=*/true);
   AUTOMATIC_IR_METADATA(cgen_state_.get());
 
   auto agg_fnames =
@@ -1966,18 +1969,6 @@ bool Executor::compileBody(const RelAlgExecutionUnit& ra_exe_unit,
     }
   }
   return ret;
-}
-
-std::unique_ptr<llvm::Module> runtime_module_shallow_copy(CgenState* cgen_state) {
-  return llvm::CloneModule(
-      *g_rt_module.get(), cgen_state->vmap_, [](const llvm::GlobalValue* gv) {
-        auto func = llvm::dyn_cast<llvm::Function>(gv);
-        if (!func) {
-          return true;
-        }
-        return (func->getLinkage() == llvm::GlobalValue::LinkageTypes::PrivateLinkage ||
-                func->getLinkage() == llvm::GlobalValue::LinkageTypes::InternalLinkage);
-      });
 }
 
 std::vector<llvm::Value*> generate_column_heads_load(const int num_columns,

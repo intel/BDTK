@@ -25,14 +25,14 @@
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Value.h>
-#include "LLVMGlobalContext.h"
+
 #include "cider/CiderException.h"
 #include "util/Logger.h"
 
 llvm::CallInst* Decoder::extractBufferAt(llvm::Module* module,
                                          llvm::Value* byte_stream,
                                          size_t index) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
 
   auto col_buffer_extractor =
       module->getFunction("cider_ColDecoder_extractArrowBuffersAt");
@@ -60,7 +60,7 @@ FixedWidthInt::FixedWidthInt(const size_t byte_width,
 llvm::Instruction* FixedWidthInt::codegenDecode(llvm::Value* byte_stream,
                                                 llvm::Value* pos,
                                                 llvm::Module* module) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
   auto f = module->getFunction("fixed_width_int_decode");
   CHECK(f);
   llvm::Value* args[] = {
@@ -73,7 +73,7 @@ llvm::Instruction* FixedWidthInt::codegenDecode(llvm::Value* byte_stream,
 std::vector<llvm::Instruction*> FixedWidthInt::codegenDecode(llvm::Module* module,
                                                              llvm::Value* byte_stream,
                                                              llvm::Value* pos) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
 
   auto col_buffer = extractBufferAt(module, byte_stream, 1);
   auto nulls = extractNullVector(module, byte_stream);
@@ -103,7 +103,7 @@ FixedWidthUnsigned::FixedWidthUnsigned(const size_t byte_width,
 llvm::Instruction* FixedWidthUnsigned::codegenDecode(llvm::Value* byte_stream,
                                                      llvm::Value* pos,
                                                      llvm::Module* module) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
   auto f = module->getFunction("fixed_width_unsigned_decode");
   CHECK(f);
   llvm::Value* args[] = {
@@ -117,7 +117,7 @@ std::vector<llvm::Instruction*> FixedWidthUnsigned::codegenDecode(
     llvm::Module* module,
     llvm::Value* byte_stream,
     llvm::Value* pos) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
 
   auto col_buffer = extractBufferAt(module, byte_stream, 1);
   auto nulls = extractNullVector(module, byte_stream);
@@ -148,7 +148,7 @@ DiffFixedWidthInt::DiffFixedWidthInt(const size_t byte_width,
 llvm::Instruction* DiffFixedWidthInt::codegenDecode(llvm::Value* byte_stream,
                                                     llvm::Value* pos,
                                                     llvm::Module* module) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
   auto f = module->getFunction("diff_fixed_width_int_decode");
   CHECK(f);
   llvm::Value* args[] = {
@@ -162,7 +162,7 @@ llvm::Instruction* DiffFixedWidthInt::codegenDecode(llvm::Value* byte_stream,
 std::vector<llvm::Instruction*> DiffFixedWidthInt::codegenDecode(llvm::Module* module,
                                                                  llvm::Value* byte_stream,
                                                                  llvm::Value* pos) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
 
   auto col_buffer = extractBufferAt(module, byte_stream, 1);
   auto nulls = extractNullVector(module, byte_stream);
@@ -231,7 +231,7 @@ FixedWidthSmallDate::FixedWidthSmallDate(const size_t byte_width,
 llvm::Instruction* FixedWidthSmallDate::codegenDecode(llvm::Value* byte_stream,
                                                       llvm::Value* pos,
                                                       llvm::Module* module) const {
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
   auto f = module->getFunction("fixed_width_small_date_decode");
   CHECK(f);
   llvm::Value* args[] = {
@@ -250,7 +250,7 @@ std::vector<llvm::Instruction*> FixedWidthSmallDate::codegenDecode(
   CIDER_THROW(CiderCompileException,
               "FixedWidthSmallDate decoder is not fully supported.");
 
-  auto& context = getGlobalLLVMContext();
+  auto& context = module->getContext();
 
   auto col_buffer = extractBufferAt(module, byte_stream, 1);
   auto nulls = extractNullVector(module, byte_stream);
