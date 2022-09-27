@@ -127,8 +127,7 @@ class CiderRuntimeModule {
 
   std::unique_ptr<CiderBatch> prepareOneBatchOutput(int64_t len);
 
-  CiderBatch setSchemaAndUpdateAggResIfNeed(
-      std::unique_ptr<CiderBatch> output_batch);
+  CiderBatch setSchemaAndUpdateAggResIfNeed(std::unique_ptr<CiderBatch> output_batch);
   std::shared_ptr<CiderCompilationResult> ciderCompilationResult_;
   CiderCompilationOption ciderCompilationOption_;
   CiderExecutionOption ciderExecutionOption_;
