@@ -192,6 +192,14 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
     assertQuery("SELECT col_2 FROM test where col_2 LIKE '%aaaa' ESCAPE '$' "); \
   }
 
+/**
+  // not supported for different type info of substr and literal
+  assertQuery(
+    "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) = '0000'");
+  assertQuery(
+      "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222',
+      '3333')");
+**/
 #define IN_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                      \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     assertQuery(                                                                        \
@@ -203,13 +211,7 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
         "in_string_array_with_substr.json");                                            \
-    // not supported for different type info of substr and literal
-    // assertQuery(
-    //   "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) = '0000'");
-    // assertQuery(
-    //     "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222',
-    //     '3333')");
-}
+  }
 
 BASIC_STRING_TEST_UNIT(CiderStringTest, basicStringTest)
 LIKE_STRING_TEST_UNIT(CiderStringTest, likeStringTest)

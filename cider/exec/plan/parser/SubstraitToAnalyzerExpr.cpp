@@ -617,8 +617,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildInValuesEx
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  // For expression like "col_str, 0, 3) in ('0000', '1111', '2222')", it will
-  // be parsed into substrait SingleOrList with semantics like
+  // For expression like "substring(col_str, 0, 3) in ('0000', '1111', '2222')",
+  // it will be parsed into substrait SingleOrList with semantics like
   // col_str in (cast '0000':fixedcahr as varchar, ...)
   if (s_scalar_function.arguments_size() > 2) {
     std::list<std::shared_ptr<Analyzer::Expr>> args;
