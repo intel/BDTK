@@ -886,7 +886,7 @@ std::pair<int64_t, int32_t> Executor::reduceResults(const SQLAgg agg,
     default:
       CHECK(false);
   }
-  abort();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("agg is {}", agg));
 }
 
 namespace {

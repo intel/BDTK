@@ -178,7 +178,7 @@ inline uint32_t log2_bytes(const uint32_t bytes) {
     case 8:
       return 3;
     default:
-      abort();
+      CIDER_THROW(CiderUnsupportedException, fmt::format("bytes is {}", bytes));
   }
 }
 

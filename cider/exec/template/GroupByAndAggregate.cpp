@@ -1008,7 +1008,8 @@ std::tuple<llvm::Value*, llvm::Value*> GroupByAndAggregate::codegenGroupBy(
         } else if (8 == col_width_size) {
           type = llvm::Type::getInt64Ty(LL_CONTEXT);
         } else {
-          abort();
+          CIDER_THROW(CiderUnsupportedException,
+                      fmt::format("col_width_size is {}", col_width_size));
         }
         auto alloca_inst = LL_BUILDER.CreateAlloca(type, key_size_lv);
         alloca_inst->setAlignment(col_width_size);

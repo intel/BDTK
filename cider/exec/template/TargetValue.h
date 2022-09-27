@@ -26,6 +26,7 @@
 #include <boost/variant.hpp>
 #include "util/Logger.h"
 
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 
 #include <cstdint>
@@ -84,7 +85,8 @@ struct InternalTargetValue {
       case ITVType::Null:
         return false;
       default:
-        abort();
+        CIDER_THROW(CiderUnsupportedException,
+                    fmt::format("ty is {}, other is {}", ty, other.strVal()));
     }
   }
 
