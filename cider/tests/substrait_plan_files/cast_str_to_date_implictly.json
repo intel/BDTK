@@ -1,0 +1,143 @@
+{
+    "extensionUris": [
+        {
+            "extensionUriAnchor": 1,
+            "uri": "/functions_boolean.yaml"
+        },
+        {
+            "extensionUriAnchor": 2,
+            "uri": "/functions_comparison.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 0,
+                "name": "between:str_str_str"
+            }
+        }
+    ],
+    "relations": [
+        {
+            "root": {
+                "input": {
+                    "project": {
+                        "common": {
+                            "emit": {
+                                "outputMapping": [
+                                    2
+                                ]
+                            }
+                        },
+                        "input": {
+                            "filter": {
+                                "common": {
+                                    "direct": {}
+                                },
+                                "input": {
+                                    "read": {
+                                        "common": {
+                                            "direct": {}
+                                        },
+                                        "baseSchema": {
+                                            "names": [
+                                                "COL_INT",
+                                                "COL_STR"
+                                            ],
+                                            "struct": {
+                                                "types": [
+                                                    {
+                                                        "i32": {
+                                                            "typeVariationReference": 0,
+                                                            "nullability": "NULLABILITY_NULLABLE"
+                                                        }
+                                                    },
+                                                    {
+                                                        "varchar": {
+                                                            "length": 10,
+                                                            "typeVariationReference": 0,
+                                                            "nullability": "NULLABILITY_NULLABLE"
+                                                        }
+                                                    }
+                                                ],
+                                                "typeVariationReference": 0,
+                                                "nullability": "NULLABILITY_REQUIRED"
+                                            }
+                                        },
+                                        "namedTable": {
+                                            "names": [
+                                                "TEST"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "condition": {
+                                    "scalar_function": {
+                                        "function_reference": 0,
+                                        "arguments": [
+                                            {
+                                                "value": {
+                                                    "selection": {
+                                                        "direct_reference": {
+                                                            "struct_field": {
+                                                                "field": 1
+                                                            }
+                                                        },
+                                                        "root_reference": {}
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "value": {
+                                                    "literal": {
+                                                        "var_char": {
+                                                            "value": "1970-01-01",
+                                                            "length": 10
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "value": {
+                                                    "literal": {
+                                                        "var_char": {
+                                                            "value": "2077-12-31",
+                                                            "length": 10
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "output_type": {
+                                            "bool": {
+                                                "type_variation_reference": 0,
+                                                "nullability": "NULLABILITY_REQUIRED"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "expressions": [
+                            {
+                                "selection": {
+                                    "directReference": {
+                                        "structField": {
+                                            "field": 1
+                                        }
+                                    },
+                                    "rootReference": {}
+                                }
+                            }
+                        ]
+                    }
+                },
+                "names": [
+                    "COL_STR"
+                ]
+            }
+        }
+    ],
+    "expectedTypeUrls": []
+}
