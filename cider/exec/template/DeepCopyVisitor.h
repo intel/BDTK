@@ -178,6 +178,10 @@ class DeepCopyVisitor : public ScalarExprVisitor<std::shared_ptr<Analyzer::Expr>
                                               window_func->getCollation());
   }
 
+  RetType visitStringOper(const Analyzer::StringOper* string_oper) const override {
+    return string_oper->deep_copy();
+  }
+
   RetType visitFunctionOper(const Analyzer::FunctionOper* func_oper) const override {
     std::vector<std::shared_ptr<Analyzer::Expr>> args_copy;
     for (size_t i = 0; i < func_oper->getArity(); ++i) {

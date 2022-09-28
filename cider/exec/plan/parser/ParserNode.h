@@ -104,7 +104,8 @@ class StringLiteral : public Literal {
   explicit StringLiteral(std::string* s) : stringval_(s) {}
   const std::string* get_stringval() const { return stringval_.get(); }
 
-  static std::shared_ptr<Analyzer::Expr> analyzeValue(const std::string&);
+  static std::shared_ptr<Analyzer::Expr> analyzeValue(const std::string& stringval,
+                                                      const bool is_null);
   std::string to_string() const override { return "'" + *stringval_ + "'"; }
 
  private:

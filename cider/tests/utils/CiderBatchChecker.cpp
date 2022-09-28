@@ -241,6 +241,13 @@ bool CiderBatchChecker::compareRowVectors(
     std::vector<ConcatenatedRow> expected_row_vector,
     std::vector<ConcatenatedRow> actual_row_vector,
     bool ignore_order) {
+    for(auto expect : expected_row_vector){
+      std::cout << expect.getString() << std::endl;
+    }
+    for(auto actual : actual_row_vector){
+      std::cout << actual.getString() << std::endl;
+    }
+
   if (expected_row_vector.size() == actual_row_vector.size()) {
     std::map<size_t, int64_t> check_map;
     if (ignore_order) {

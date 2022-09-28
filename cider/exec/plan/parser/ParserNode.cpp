@@ -33,12 +33,16 @@ using namespace std::string_literals;
 
 namespace Parser {
 
-std::shared_ptr<Analyzer::Expr> StringLiteral::analyzeValue(
-    const std::string& stringval) {
-  SQLTypeInfo ti(kVARCHAR, stringval.length(), 0, true);
-  Datum d;
-  d.stringval = new std::string(stringval);
-  return makeExpr<Analyzer::Constant>(ti, false, d);
+std::shared_ptr<Analyzer::Expr> StringLiteral::analyzeValue(const std::string& stringval,
+                                                            const bool is_null) {
+  if (!is_null) {
+    const SQLTypeInfo ti(kVARCHAR, stringval.length(), 0, true);
+    Datum d;
+    d.stringval = new std::string(stringval);
+    return makeExpr<Analyzer::Constant>(ti, false, d);
+  }
+  // Null value
+  return makeExpr<Analyzer::Constant>(kVARCHAR, true);
 }
 
 std::shared_ptr<Analyzer::Expr> IntLiteral::analyzeValue(const int64_t intval) {
