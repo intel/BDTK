@@ -21,40 +21,39 @@
 
 #include "function/FunctionLookup.h"
 
-void FunctionLookup::registerFunctionLookUpContext(
-    SubstraitFunctionMappingsPtr function_mappings) {
+void FunctionLookup::registerFunctionLookUpContext() {
   // internal scalar function
   scalar_function_look_up_ptr_map_.insert(
       std::make_pair<std::string, SubstraitFunctionLookupPtr>(
           PRESTO_ENGINE,
-          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
               cider_internal_function_ptr_, substrait_mappings_)));
   scalar_function_look_up_ptr_map_.insert(
       std::make_pair<std::string, SubstraitFunctionLookupPtr>(
           SUBSTRAIT_ENGINE,
-          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
               cider_internal_function_ptr_, presto_mappings_)));
   // internal aggregate function
   aggregate_function_look_up_ptr_map_.insert(
       std::make_pair<std::string, SubstraitFunctionLookupPtr>(
           PRESTO_ENGINE,
-          std::make_shared<facebook::velox::substrait::SubstraitAggregateFunctionLookup>(
+          std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
               cider_internal_function_ptr_, substrait_mappings_)));
   aggregate_function_look_up_ptr_map_.insert(
       std::make_pair<std::string, SubstraitFunctionLookupPtr>(
           SUBSTRAIT_ENGINE,
-          std::make_shared<facebook::velox::substrait::SubstraitAggregateFunctionLookup>(
+          std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
               cider_internal_function_ptr_, presto_mappings_)));
   // extension function
   extension_function_look_up_ptr_map_.insert(
       std::make_pair<std::string, SubstraitFunctionLookupPtr>(
           PRESTO_ENGINE,
-          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
               substrait_extension_function_ptr_, substrait_mappings_)));
   extension_function_look_up_ptr_map_.insert(
       std::make_pair<std::string, SubstraitFunctionLookupPtr>(
           SUBSTRAIT_ENGINE,
-          std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
               presto_extension_function_ptr_, presto_mappings_)));
 }
 
@@ -68,7 +67,7 @@ const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
   SubstraitFunctionLookupPtr scalar_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
-      facebook::velox::substrait::SubstraitFunctionSignature::of(
+      cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
       scalar_function_look_up_ptr->lookupFunction(functionSignature);
@@ -88,7 +87,7 @@ const SQLAggPtr FunctionLookup::getFunctionAggOp(
   SubstraitFunctionLookupPtr agg_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
-      facebook::velox::substrait::SubstraitFunctionSignature::of(
+      cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
       agg_function_look_up_ptr->lookupFunction(functionSignature);
@@ -108,7 +107,7 @@ const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
   SubstraitFunctionLookupPtr scalar_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
-      facebook::velox::substrait::SubstraitFunctionSignature::of(
+      cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
       scalar_function_look_up_ptr->lookupFunction(functionSignature);
@@ -128,7 +127,7 @@ const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
   SubstraitFunctionLookupPtr agg_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
-      facebook::velox::substrait::SubstraitFunctionSignature::of(
+      cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
       agg_function_look_up_ptr->lookupFunction(functionSignature);
@@ -148,7 +147,7 @@ const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
   SubstraitFunctionLookupPtr extension_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
-      facebook::velox::substrait::SubstraitFunctionSignature::of(
+      cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
       extension_function_look_up_ptr->lookupFunction(functionSignature);

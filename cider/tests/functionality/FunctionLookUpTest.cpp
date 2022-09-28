@@ -20,52 +20,52 @@
  */
 
 #include <gtest/gtest.h>
-#include "../thirdparty/velox/velox/substrait/SubstraitFunctionLookup.h"
-#include "../thirdparty/velox/velox/substrait/SubstraitType.h"
-#include "../thirdparty/velox/velox/substrait/VeloxToSubstraitMappings.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "function/FunctionLookup.h"
-#include "function/SubstraitFunctionMappings.h"
+#include "function/SubstraitFunctionCiderMappings.h"
+#include "function/substrait/SubstraitFunctionLookup.h"
+#include "function/substrait/SubstraitType.h"
+#include "function/substrait/VeloxToSubstraitMappings.h"
 
 class FunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    mappings_ptr = std::make_shared<const SubstraitFunctionMappings>();
+    mappings_ptr = std::make_shared<const SubstraitFunctionCiderMappings>();
     function_lookup_ptr = std::make_shared<FunctionLookup>(mappings_ptr);
   }
 
  public:
-  SubstraitFunctionMappingsPtr mappings_ptr;
+  SubstraitFunctionCiderMappingsPtr mappings_ptr;
   FunctionLookupPtr function_lookup_ptr;
 };
 
 class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    extension_ = facebook::velox::substrait::SubstraitExtension::loadExtension();
+    extension_ = cider::function::substrait::SubstraitExtension::loadExtension();
     mappings_ = std::make_shared<
-        const facebook::velox::substrait::VeloxToSubstraitFunctionMappings>();
+        const cider::function::substrait::VeloxToSubstraitFunctionMappings>();
     scalarFunctionLookup_ =
-        std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
             extension_, mappings_);
     aggregateFunctionLookup_ =
-        std::make_shared<facebook::velox::substrait::SubstraitAggregateFunctionLookup>(
+        std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
             extension_, mappings_);
     const auto& testExtension =
-        facebook::velox::substrait::SubstraitExtension::loadExtension(
+        cider::function::substrait::SubstraitExtension::loadExtension(
             {getDataPath() + "functions_test.yaml"});
     testScalarFunctionLookup_ =
-        std::make_shared<facebook::velox::substrait::SubstraitScalarFunctionLookup>(
+        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
             testExtension, mappings_);
   }
 
   void assertTestSignature(
       const std::string& name,
-      const std::vector<facebook::velox::substrait::SubstraitTypePtr>& arguments,
-      const facebook::velox::substrait::SubstraitTypePtr& returnType,
+      const std::vector<cider::function::substrait::SubstraitTypePtr>& arguments,
+      const cider::function::substrait::SubstraitTypePtr& returnType,
       const std::string& outputSignature) {
     const auto& functionSignature =
-        facebook::velox::substrait::SubstraitFunctionSignature::of(
+        cider::function::substrait::SubstraitFunctionSignature::of(
             name, arguments, returnType);
     const auto& functionOption =
         testScalarFunctionLookup_->lookupFunction(functionSignature);
@@ -81,12 +81,12 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
     return absolute_path.substr(0, pos) + "/data/";
   }
 
-  facebook::velox::substrait::SubstraitExtensionPtr extension_;
-  facebook::velox::substrait::SubstraitFunctionMappingsPtr mappings_;
-  facebook::velox::substrait::SubstraitScalarFunctionLookupPtr scalarFunctionLookup_;
-  facebook::velox::substrait::SubstraitAggregateFunctionLookupPtr
+  cider::function::substrait::SubstraitExtensionPtr extension_;
+  cider::function::substrait::SubstraitFunctionMappingsPtr mappings_;
+  cider::function::substrait::SubstraitScalarFunctionLookupPtr scalarFunctionLookup_;
+  cider::function::substrait::SubstraitAggregateFunctionLookupPtr
       aggregateFunctionLookup_;
-  facebook::velox::substrait::SubstraitScalarFunctionLookupPtr testScalarFunctionLookup_;
+  cider::function::substrait::SubstraitScalarFunctionLookupPtr testScalarFunctionLookup_;
 };
 
 TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
@@ -94,16 +94,16 @@ TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
   function_signature.from_platform = "presto";
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -121,16 +121,16 @@ TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
   function_signature.from_platform = "presto";
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI8>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI8>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI8>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI8>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI8>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI8>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -148,16 +148,16 @@ TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
   function_signature.from_platform = "presto";
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI16>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI16>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI16>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI16>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI16>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI16>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -175,10 +175,10 @@ TEST_F(FunctionLookupTest, functionLookupPrestoIntentionAggTest) {
   function_signature.from_platform = "presto";
   function_signature.func_name = "avg";
   function_signature.arguments = {
-      facebook::velox::substrait::SubstraitType::decode("struct<fp64,i64>")};
+      cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -199,14 +199,14 @@ TEST_F(FunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
   function_signature.from_platform = "presto";
   function_signature.func_name = "equal";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI32>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI32>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -227,16 +227,16 @@ TEST_F(FunctionLookupTest, functionLookupPrestoUnregisteredTest) {
   function_signature.from_platform = "presto";
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -250,16 +250,16 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitExtentionTest) {
   function_signature.from_platform = "substrait";
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -277,10 +277,10 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
   function_signature.from_platform = "substrait";
   function_signature.func_name = "avg";
   function_signature.arguments = {
-      facebook::velox::substrait::SubstraitType::decode("struct<fp64,i64>")};
+      cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -301,14 +301,14 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
   function_signature.from_platform = "substrait";
   function_signature.func_name = "equal";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI32>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI32>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   ASSERT_NE(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
@@ -328,16 +328,16 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
   function_signature.from_platform = "substrait";
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
   auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -351,16 +351,16 @@ TEST_F(FunctionLookupTest, functionLookupSparkExtentionTest) {
   function_signature.from_platform = "spark";
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
 
   EXPECT_THROW(
       {
@@ -380,10 +380,10 @@ TEST_F(FunctionLookupTest, functionLookupSparkIntentionAggTest) {
   function_signature.from_platform = "spark";
   function_signature.func_name = "avg";
   function_signature.arguments = {
-      facebook::velox::substrait::SubstraitType::decode("struct<fp64,i64>")};
+      cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>();
 
   EXPECT_THROW(
       {
@@ -403,14 +403,14 @@ TEST_F(FunctionLookupTest, functionLookupSparkIntentionScalarTest) {
   function_signature.from_platform = "spark";
   function_signature.func_name = "equal";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI32>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kI32>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
 
   EXPECT_THROW(
       {
@@ -430,16 +430,16 @@ TEST_F(FunctionLookupTest, functionLookupSparkUnregisteredTest) {
   function_signature.from_platform = "spark";
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>();
 
   EXPECT_THROW(
       {
@@ -458,13 +458,13 @@ TEST_F(SubstraitFunctionLookupTest, substraitFunctionLookupTest) {
   assertTestSignature(
       "test",
       {
-          std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-              facebook::velox::substrait::SubstraitTypeKind::kFp32>>(),
-          std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-              facebook::velox::substrait::SubstraitTypeKind::kFp32>>(),
+          std::make_shared<const cider::function::substrait::SubstraitScalarType<
+              cider::function::substrait::SubstraitTypeKind::kFp32>>(),
+          std::make_shared<const cider::function::substrait::SubstraitScalarType<
+              cider::function::substrait::SubstraitTypeKind::kFp32>>(),
       },
-      std::make_shared<const facebook::velox::substrait::SubstraitScalarType<
-          facebook::velox::substrait::SubstraitTypeKind::kBool>>(),
+      std::make_shared<const cider::function::substrait::SubstraitScalarType<
+          cider::function::substrait::SubstraitTypeKind::kBool>>(),
       "test:fp32_fp32");
 }
 

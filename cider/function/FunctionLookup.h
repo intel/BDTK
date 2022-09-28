@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #ifndef CIDER_FUNCTION_FUNCTIONLOOKUP_H
 #define CIDER_FUNCTION_FUNCTIONLOOKUP_H
 
@@ -28,18 +29,18 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../thirdparty/velox/velox/substrait/SubstraitFunctionLookup.h"
-#include "../thirdparty/velox/velox/substrait/SubstraitType.h"
-#include "../thirdparty/velox/velox/substrait/VeloxToSubstraitMappings.h"
-#include "SubstraitFunctionMappings.h"
+#include "function/SubstraitFunctionCiderMappings.h"
+#include "function/substrait/SubstraitFunctionLookup.h"
+#include "function/substrait/SubstraitType.h"
+#include "function/substrait/VeloxToSubstraitMappings.h"
 
 #define SUBSTRAIT_ENGINE "substrait"
 #define PRESTO_ENGINE "presto"
 
 struct FunctionSignature {
   std::string func_name;
-  std::vector<facebook::velox::substrait::SubstraitTypePtr> arguments;
-  facebook::velox::substrait::SubstraitTypePtr return_type;
+  std::vector<cider::function::substrait::SubstraitTypePtr> arguments;
+  cider::function::substrait::SubstraitTypePtr return_type;
   std::string from_platform;
 };
 
@@ -52,13 +53,13 @@ struct FunctionDescriptor {
 
 using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
 using SubstraitFunctionLookupPtr =
-    std::shared_ptr<const facebook::velox::substrait::SubstraitFunctionLookup>;
+    std::shared_ptr<const cider::function::substrait::SubstraitFunctionLookup>;
 
 class FunctionLookup {
  public:
-  FunctionLookup(const SubstraitFunctionMappingsPtr& function_mappings)
+  FunctionLookup(const SubstraitFunctionCiderMappingsPtr& function_mappings)
       : function_mappings_(function_mappings) {
-    registerFunctionLookUpContext(function_mappings);
+    registerFunctionLookUpContext();
   }
 
   /// lookup function descriptor by given function Signature.
@@ -75,7 +76,7 @@ class FunctionLookup {
       const FunctionSignature& function_signature) const;
 
  private:
-  void registerFunctionLookUpContext(SubstraitFunctionMappingsPtr function_mappings);
+  void registerFunctionLookUpContext();
 
   const SQLOpsPtr getFunctionScalarOp(const FunctionSignature& function_signature) const;
   const SQLAggPtr getFunctionAggOp(const FunctionSignature& function_signature) const;
@@ -95,22 +96,22 @@ class FunctionLookup {
   }
 
  private:
-  SubstraitFunctionMappingsPtr function_mappings_ = nullptr;
+  SubstraitFunctionCiderMappingsPtr function_mappings_ = nullptr;
 
-  facebook::velox::substrait::SubstraitExtensionPtr cider_internal_function_ptr_ =
-      facebook::velox::substrait::SubstraitExtension::loadExtension();
-  facebook::velox::substrait::SubstraitExtensionPtr substrait_extension_function_ptr_ =
-      facebook::velox::substrait::SubstraitExtension::loadExtension(
+  cider::function::substrait::SubstraitExtensionPtr cider_internal_function_ptr_ =
+      cider::function::substrait::SubstraitExtension::loadExtension();
+  cider::function::substrait::SubstraitExtensionPtr substrait_extension_function_ptr_ =
+      cider::function::substrait::SubstraitExtension::loadExtension(
           {getDataPath() + "/substrait/" + "substrait_extension.yaml"});
-  facebook::velox::substrait::SubstraitExtensionPtr presto_extension_function_ptr_ =
-      facebook::velox::substrait::SubstraitExtension::loadExtension(
+  cider::function::substrait::SubstraitExtensionPtr presto_extension_function_ptr_ =
+      cider::function::substrait::SubstraitExtension::loadExtension(
           {getDataPath() + "/presto/" + "presto_extension.yaml"});
 
-  facebook::velox::substrait::SubstraitFunctionMappingsPtr substrait_mappings_ =
-      std::make_shared<const facebook::velox::substrait::SubstraitFunctionMappings>();
-  facebook::velox::substrait::SubstraitFunctionMappingsPtr presto_mappings_ =
+  cider::function::substrait::SubstraitFunctionMappingsPtr substrait_mappings_ =
+      std::make_shared<const cider::function::substrait::SubstraitFunctionMappings>();
+  cider::function::substrait::SubstraitFunctionMappingsPtr presto_mappings_ =
       std::make_shared<
-          const facebook::velox::substrait::VeloxToSubstraitFunctionMappings>();
+          const cider::function::substrait::VeloxToSubstraitFunctionMappings>();
 
   // internal scalar function map
   std::unordered_map<std::string, SubstraitFunctionLookupPtr>

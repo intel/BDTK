@@ -17,11 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-include_directories(${CMAKE_SOURCE_DIR}/thirdparty/velox)
-include_directories(${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait)
-include_directories(
-  ${CMAKE_SOURCE_DIR}/thirdparty/velox/third_party/xsimd/include)
-
 set(function_source_files
     scalar/RuntimeFunctions.cpp
     vector/ArrayOps.cpp
@@ -41,6 +36,7 @@ find_program(llvm_clangpp_cmd NAME clang++ HINTS ${LLVM_TOOLS_BINARY_DIR})
 
 list(APPEND ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/gen-cpp/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_subdirectory(substrait)
 
 if(ENABLE_JIT_DEBUG)
   set(RT_OPT_FLAGS -O0 -g)
@@ -74,3 +70,5 @@ add_custom_command(
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
 add_library(cider_function ${function_source_files})
+
+target_link_libraries(cider_function substrait_function_loop_up)

@@ -17,16 +17,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
-set(TEST_ARGS "--gtest_output=xml:../")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
-file(GLOB cider_functionality_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-foreach(cider_functionality_test_file ${cider_functionality_test_files})
-  string(REGEX MATCH "functionality/.*" test_relative_path
-               ${cider_functionality_test_file})
-  string(REGEX REPLACE "functionality/" "" target_name ${test_relative_path})
-  string(REGEX REPLACE ".cpp" "" target_name ${target_name})
-  add_executable(${target_name} ${cider_functionality_test_file})
-  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS})
-  add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name} ${TEST_ARGS})
-endforeach()
+set(SRCS
+    ${PROTO_SRCS}
+    SubstraitType.cpp
+    SubstraitSignature.cpp
+    SubstraitFunction.cpp
+    SubstraitExtension.cpp
+    SubstraitFunctionLookup.cpp)
+
+add_library(substrait_function_loop_up STATIC ${SRCS})
+target_link_libraries(substrait_function_loop_up substrait yaml-cpp)

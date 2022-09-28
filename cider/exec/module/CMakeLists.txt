@@ -36,7 +36,8 @@ target_link_libraries(
   ${Boost_LIBRARIES}
   ${CMAKE_DL_LIBS}
   ${GFLAGS_LIBRARIES}
-  ${TBB_LIBS})
+  ${TBB_LIBS}
+  yaml-cpp)
 
 install(
   TARGETS cider

@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #ifndef CIDER_FUNCTION_SUBSTRAITFUNCTIONMAPPINGS_H
 #define CIDER_FUNCTION_SUBSTRAITFUNCTIONMAPPINGS_H
 
@@ -32,7 +33,7 @@ using FunctionSQLAggOpsMappings = std::unordered_map<std::string, SQLAgg>;
 using FunctionSQLOpSupportTypeMappings =
     std::unordered_map<std::string, OpSupportExprType>;
 
-class SubstraitFunctionMappings {
+class SubstraitFunctionCiderMappings {
  public:
   const SQLOpsPtr getFunctionScalarOp(const std::string& function_name) const {
     const auto& scalar_op_map = scalarMappings();
@@ -146,6 +147,7 @@ class SubstraitFunctionMappings {
   };
 };
 
-using SubstraitFunctionMappingsPtr = std::shared_ptr<const SubstraitFunctionMappings>;
+using SubstraitFunctionCiderMappingsPtr =
+    std::shared_ptr<const SubstraitFunctionCiderMappings>;
 
 #endif  // CIDER_FUNCTION_SUBSTRAITFUNCTIONMAPPINGS_H
