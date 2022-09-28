@@ -31,10 +31,10 @@
 #include "exec/template/Execute.h"
 #include "exec/template/ScalarExprVisitor.h"
 #include "exec/template/WindowExpressionRewrite.h"
+#include "function/string/StringOps.h"
 #include "type/plan/Analyzer.h"
 #include "util/Logger.h"
 #include "util/sqldefs.h"
-#include "function/string/StringOps.h"
 
 extern bool g_strip_join_covered_quals;
 namespace {
