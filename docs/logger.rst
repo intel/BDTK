@@ -2,7 +2,7 @@
 Logger
 ======
 
-``#include "Logger/Logger.h"``
+``#include "util/Logger.h"``
 
 The BDTK Logger is based on `Boost.Log`_ with a design goal of being largely, though not completely, backward
 compatible with `glog`_ in usage, but with additional control over the logging format and other features.
@@ -38,15 +38,7 @@ To initialize the logging system, the function::
     }
 
 must be invoked with the ``logger::LogOptions`` object to be applied. It is recommended to run this from
-``main()`` as early as possible. This initializes two global logging objects, ``gChannelLogger`` and
-``gSeverityLogger``, that exist in the object file ``Logger.o``, which should never be referenced
-directly. Instead, use the ``LOG``/``CHECK`` macros for all normal logging. This is mentioned here so that
-issues such as global variable construction/destruction can be considered. More specifically, due to the
-unpredictability of `static initialization order fiasco`_, logging should never be done from other global
-constructors or destructors, directly or indirectly.
-
-.. _`static initialization order fiasco`: https://cryptopp.com/wiki/Static_Initialization_Order_Fiasco
-
+``main()`` as early as possible. use the ``LOG``/``CHECK`` macros for all normal logging.
 
 Usage
 -----
@@ -77,17 +69,11 @@ severity from most severe to least:
 ``DEBUG4``   More detailed information than ``DEBUG3``.
 ============ ============================================================================
 
-The program option ``--log-severity`` is set to exactly one of these, defaulting to ``INFO``. All ``LOG()``
-calls with a lesser severity are ignored and not logged. For example if ``--log-severity=DEBUG1`` then log
+All ``LOG()`` calls with a lesser severity are ignored and not logged. For example if ``LOG(DEBUG1)`` then log
 calls ``LOG(DEBUG1)``, ``LOG(INFO)``, ``LOG(WARNING)``, ``LOG(ERROR)``, and ``LOG(FATAL)`` are active and
 will produce log entries when executed, and log calls ``LOG(DEBUG4)``, ``LOG(DEBUG3)``, and ``LOG(DEBUG2)``
 are ignored. If a function is called in the input stream, e.g. ``LOG(DEBUG2) << f(x)``, then ``f(x)`` will
 be invoked if any only if ``DEBUG2`` is an active log severity.
-
-One guiding principle for deciding which of the debug levels to use is to consider it from the perspective of
-someone who is trying to diagnose/debug a problem. Running the database with ``--log-severity=DEBUG4`` will
-show ALL debug log lines, but more information must be searched through in order to find what is useful. Having
-a few different debug levels allows for some control over how verbose the logging is.
 
 Errors that are logged with ``ERROR`` and ``FATAL`` should be considered software errors, and not user errors.
 For example, if the user inputs a malformed SQL query, e.g. ``SELEKT`` instead of ``SELECT``, then this
@@ -95,15 +81,12 @@ should NOT be logged as an ``ERROR``, but instead logged as an ``INFO`` with an 
 the user. This would be considered correct behavior of the software. In contrast, anytime an ``ERROR`` or
 ``FATAL`` is logged, then it means there is a bug in the software that must be fixed.
 
-For backward compatibility, the flag ``--verbose=on`` is equivalent to ``--log-severity=DEBUG1``. If both
-are provided, then the lesser severity is active.
-
 Log Files
 ^^^^^^^^^
 
 A separate log file is produced for ``INFO``, ``WARNING``, ``ERROR``, and ``FATAL`` if the log severity is
 active.  If any of the ``DEBUG`` severities are active, they are included into the ``INFO`` log file.  Each log
-file redundantly includes all entries that are more severe than itself. For example if ``--log-severity=DEBUG1``
+file redundantly includes all entries that are more severe than itself. For example if ``LOG(DEBUG1)``
 then the ``INFO`` log file will include all log calls ``LOG(DEBUG1)``, ``LOG(INFO)``, ``LOG(WARNING)``,
 ``LOG(ERROR)``, and ``LOG(FATAL)``; the ``WARNING`` log file will include all log calls ``LOG(WARNING)``,
 ``LOG(ERROR)``, and ``LOG(FATAL)``.
@@ -111,14 +94,12 @@ then the ``INFO`` log file will include all log calls ``LOG(DEBUG1)``, ``LOG(INF
 The name of the log file by default includes the program name, severity, and timestamp of when its first entry
 was made. Example::
 
-    cider.INFO.20190918-162525.log
-
-This can be customized with the ``--log-file-name`` program option.
+    cider.INFO.20220928-162525.log
 
 New log files are started on each (re)start. A symbolic link without the timestamp and file extension
 suffix points to the latest version. Example::
 
-    cider.INFO -> cider.INFO.20190918-162525.log
+    cider.INFO -> cider.INFO.20220928-162525.log
 
 Format
 """"""
@@ -129,7 +110,7 @@ The general format of a log entry is::
 
 Example::
 
-    2019-09-18T16:25:25.659248 I 26481 5 DBHandler.cpp:181 BDTK Server 4.9.0dev-20190918-bd97353685
+    2019-09-18T16:25:25.659248 I 26481 0 0 measure.h:80 Timer start
 
 Field descriptions:
 
@@ -145,22 +126,6 @@ Field descriptions:
 
 Note that log entries can contain line breaks, thus not all log lines will begin with these fields if
 the message itself contains multiple lines.
-
-Channel
-^^^^^^^
-
-Channels are similar to severities, but exist outside of the severity hierarchy, have no ordering of their own,
-and can only be activated by explicitly including them in the ``--log-channels`` program option.
-
-Currently there are 3 channels: ``IR`` ``PTX`` ``ASM``
-
-which log intermediate representation, and parallel thread execution code, respectively. Scripts may be
-used for other purposes that parse and analyze these logs, therefore using channels outside of the severity
-hierarchy is convenient so that the output is not interleaved with unrelated ``INFO`` or ``DEBUG`` log lines.
-
-For example, ``LOG(IR) << "Foo = " << foo.getIr();`` will be activated if any only if ``IR`` is included
-in the ``--log-channels`` program option, which can accept multiple comma-delimited channel names. If activated,
-the output will be logged to a file named after the channel, e.g. ``cider.IR.20190918-162525.log``.
 
 Macros
 ^^^^^^
@@ -185,42 +150,6 @@ optionally catch the ``SIGABRT`` signal.
 | Similarly there are 6 binary ``CHECK`` comparison macros:
 | ``CHECK_EQ``, ``CHECK_NE``, ``CHECK_LT``, ``CHECK_LE``, ``CHECK_GT``, ``CHECK_GE``
 | which accept two parameters, and apply the comparison operators ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``, respectively. For example, ``CHECK_LT(1u, list.size())`` will evaluate ``1u < list.size()``, and log and ``abort()`` if not true. The advantage of calling ``CHECK_LT(1u, list.size())`` over ``CHECK(1u < list.size())`` is that the value of both operands will be logged if the test fails, which is not reported with ``CHECK()``.
-
-STDLOG
-""""""
-
-``DBHandler`` uses a logging helper class ``StdLog`` for logging query-specific information in
-a standard format::
-
- (timestamp) (severity) (process_id) (query_id) (thread_id) (filename:line_number) stdlog (function_name) (match_id)
- (time_ms) (username) (dbname) (public_session_id) (array of names) (array of values)
-
-Since this contains timing information, it is logged at the end of query execution.  If the ``DEBUG1`` severity is
-active, then a corresponding ``stdlog_begin`` line is also logged at the start of the query, with the same format.
-
-Example usage is given in the `QueryState`_ documentation.
-
-.. _QueryState: query_state.html
-
-Example entries::
-
- 2019-09-20T17:15:28.215590 1 13080 DBHandler.cpp:846 stdlog_begin sql_execute 2 0 BDTK testuser 528-dyM2 {"query_str"} {"SELECT * FROM bdtk_counties LIMIT 1;"}
- 2019-09-20T17:15:28.924512 I 13080 DBHandler.cpp:846 stdlog sql_execute 2 709 BDTK testuser 528-dyM2 {"query_str","execution_time_ms","total_time_ms"} {"SELECT * FROM bdtk_counties LIMIT 1;","708","709"}
-
-The first 4 fields are same as in the above `Format`_ section.  Additional field descriptions:
-
-#. ``stdlog_begin``/``stdlog`` -  logged when ``StdLog`` object is constructed/destructed.
-#. ``function_name`` - Name of function the ``StdLog`` object was constructed/destructed in.
-#. ``match_id`` - Integer to uniquely match ``stdlog_begin`` and ``stdlog`` lines together.
-#. ``time_ms`` - Time in milliseconds since constructor. For ``stdlog_begin`` it is always 0. For ``stdlog``
-   it is the time between the constructor and destructor, which is generally the duration of the function call.
-#. ``username`` - Session username. Blank if not available.
-#. ``dbname`` - Session database. Blank if not available.
-#. ``public_session_id`` - Identifier for session. May be publicly accessible without compromising security.
-   Blank if not available.
-#. ``names`` - List of optional value names in SQL-array format.
-#. ``values`` - List of optional values in SQL-array format, in same order as ``names``. Names and values are
-   logged in this way so as to be readily imported into a SQL table for analysis.
 
 DEBUG_TIMER
 """""""""""
@@ -282,19 +211,7 @@ as the destructor. The destructor then will have no further effect.
 To embed timers in a spawned child thread, call ``DEBUG_TIMER_NEW_THREAD(parent_thread_id);`` from the child
 thread. The ``parent_thread_id`` must get its value from ``logger::thread_id()`` before the new thread is spawned.
 This will not start a timer, but will record the child-parent relationship so that subsequent ``DEBUG_TIMER``
-calls are stored in the correct node of the parent tree. An example of a resulting report::
-
-    2020-01-30T16:58:19.926148 I 33266 DBHandler.cpp:956 DEBUG_TIMER thread_id(4)
-    591ms total duration for sql_execute
-      511ms start(41ms) executeRelAlgQuery RelAlgExecutor.cpp:71
-        6ms start(41ms) executeWorkUnit RelAlgExecutor.cpp:1858
-          4ms start(41ms) compileWorkUnit NativeCodegen.cpp:1571
-            New thread(5)
-              0ms start(0ms) fetchChunks Execute.cpp:2024
-              0ms start(0ms) getQueryExecutionContext QueryMemoryDescriptor.cpp:711
-              0ms start(0ms) executePlanWithoutGroupBy Execute.cpp:2276
-                0ms start(0ms) launchGpuCode QueryExecutionContext.cpp:195
-            End thread(5)
+calls are stored in the correct node of the parent tree.
 
 .. note::
 
@@ -305,37 +222,6 @@ calls are stored in the correct node of the parent tree. An example of a resulti
 
 .. warning::
 
-    Non-root timers that end *after* their root timer ends will result in a **segmentation fault** (but only
-    when the ``--enable-debug-timer`` option is active). This is easily avoided by not interleaving timer
+    Non-root timers that end *after* their root timer ends will result in a **segmentation fault** . This is easily avoided by not interleaving timer
     lifetimes with one another in the same block of code, and making sure that all child threads end prior
     to the ending of any corresponding root timer.
-
-The high-level class relationships are:
-
-.. uml::
-    :align: center
-
-    @startuml
-    object thread_id
-    class DurationTree
-    note right: Each node of DurationTree is of type\n**boost::variant<Duration, DurationTree&>**\nto hold both Durations and\nDurationTrees of child threads.
-    class DurationTreeMap
-    note right: Global singleton:\nlogger::g_duration_tree_map
-    class Duration {
-      int depth_
-      Clock::time_point start_
-      Clock::time_point stop_
-    }
-    thread_id - DurationTree
-    DurationTreeMap -- (thread_id, DurationTree)
-    DurationTree o- DurationTree
-    DurationTree *- Duration
-    class DebugTimer {
-      ---
-      void stop()
-    }
-    note left: Instantiate with macro:\nauto timer = DEBUG_TIMER(name);
-    Duration <.. DebugTimer
-    @enduml
-
-There is a single global instance of ``DurationTreeMap`` that tracks a separate ``DurationTree`` for each thread.
