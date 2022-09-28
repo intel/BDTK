@@ -78,10 +78,6 @@ class ScalarExprVisitor {
     if (width_bucket) {
       return visitWidthBucket(width_bucket);
     }
-    const auto lower = dynamic_cast<const Analyzer::LowerExpr*>(expr);
-    if (lower) {
-      return visitLower(lower);
-    }
     const auto cardinality = dynamic_cast<const Analyzer::CardinalityExpr*>(expr);
     if (cardinality) {
       return visitCardinality(cardinality);
@@ -207,10 +203,6 @@ class ScalarExprVisitor {
     T result = defaultResult();
     result = aggregateResult(result, visit(sample_ratio->get_arg()));
     return result;
-  }
-
-  virtual T visitLower(const Analyzer::LowerExpr* lower_expr) const {
-    return visit(lower_expr->get_arg());
   }
 
   virtual T visitCardinality(const Analyzer::CardinalityExpr* cardinality) const {

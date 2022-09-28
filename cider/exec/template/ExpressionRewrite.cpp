@@ -734,17 +734,6 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
     }
   }
 
-  std::shared_ptr<Analyzer::Expr> visitLower(
-      const Analyzer::LowerExpr* lower_expr) const override {
-    const auto constant_arg_expr =
-        dynamic_cast<const Analyzer::Constant*>(lower_expr->get_arg());
-    if (constant_arg_expr) {
-      return Parser::StringLiteral::analyzeValue(
-          boost::locale::to_lower(*constant_arg_expr->get_constval().stringval), false);
-    }
-    return makeExpr<Analyzer::LowerExpr>(lower_expr->get_own_arg());
-  }
-
  protected:
   mutable bool in_string_op_chain_{false};
   mutable std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
