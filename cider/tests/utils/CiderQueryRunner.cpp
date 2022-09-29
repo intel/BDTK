@@ -222,12 +222,11 @@ std::vector<CiderBatch> CiderQueryRunner::handleRes(
       size_t type_bytes = schema.GetColumnTypeSize(i);
       out_col_buffers[i] = new int8_t[type_bytes * max_output_row_num];
     }
-    auto schema_ptr = std::make_shared<CiderTableSchema>(schema);
     std::unique_ptr<CiderBatch> out_batch = nullptr;
     std::tie(has_more_output, out_batch) =
         cider_runtime_module->fetchResults(max_output_row_num);
     if (!out_batch->schema()) {
-      out_batch->set_schema(schema_ptr);
+      out_batch->set_schema(std::make_shared<CiderTableSchema>(schema));
     }
     if (compile_res->impl_->query_mem_desc_->hasCountDistinct()) {
       res.emplace_back(updateCountDistinctRes(std::move(out_batch), compile_res));

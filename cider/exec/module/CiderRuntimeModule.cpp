@@ -418,7 +418,8 @@ void CiderRuntimeModule::extract_column(int32_t start_row,
     double* flattened_out_buffer = reinterpret_cast<double*>(flattened_out);
     while (i < max_read_rows) {
       // cast to cover float case
-      if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue) {
+      if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue ||
+          flattened_out_buffer[cur_col_offset] == kFloatNullValue) {
         col_out_buffer[i++] = std::numeric_limits<T>::min();
       } else {
         col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];
@@ -802,15 +803,35 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
       // BIGINT. We should transfer null in integer to null in double here.
       if (schema->getColHints()[i] == ColumnHint::PartialAVG &&
           target_infos[flatten_index].agg_kind == SQLAgg::kSUM &&
-          target_infos[flatten_index].agg_arg_type.is_integer() &&
           schema->getColumnTypeById(i).struct_().types(0).has_fp64()) {
-        int64_t* result = const_cast<int64_t*>(
-            reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
-        double* cast_buffer = reinterpret_cast<double*>(result);
-        if (result[0] == std::numeric_limits<int64_t>::min()) {
-          cast_buffer[0] = kDoubleNullValue;
-        } else {
-          cast_buffer[0] = (double)result[0];
+        SQLTypes target_type = target_infos[flatten_index].agg_arg_type.get_type();
+        if (target_infos[flatten_index].agg_arg_type.is_integer()) {
+          int64_t* result = const_cast<int64_t*>(
+              reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
+          double* cast_buffer = reinterpret_cast<double*>(result);
+          if (result[0] == kBigIntNullValue) {
+            cast_buffer[0] = kDoubleNullValue;
+          } else {
+            cast_buffer[0] = (double)result[0];
+          }
+        } else if (target_type == SQLTypes::kFLOAT) {
+          float* result = const_cast<float*>(
+              reinterpret_cast<const float*>(outBuffers[flatten_index]));
+          double* cast_buffer = reinterpret_cast<double*>(result);
+          if (result[0] == kFloatNullValue) {
+            cast_buffer[0] = kDoubleNullValue;
+          } else {
+            cast_buffer[0] = (double)result[0];
+          }
+        } else if (target_type == SQLTypes::kDOUBLE) {
+          double* result = const_cast<double*>(
+              reinterpret_cast<const double*>(outBuffers[flatten_index]));
+          double* cast_buffer = reinterpret_cast<double*>(result);
+          if (result[0] == kBigIntNullValue) {
+            cast_buffer[0] = kDoubleNullValue;
+          } else {
+            cast_buffer[0] = (double)result[0];
+          }
         }
       }
     }
