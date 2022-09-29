@@ -21,8 +21,8 @@
 
 #include "function/substrait/SubstraitType.h"
 #include <sstream>
-#include "util/Logger.h"
 #include "cider/CiderException.h"
+#include "util/Logger.h"
 
 namespace cider::function::substrait {
 
