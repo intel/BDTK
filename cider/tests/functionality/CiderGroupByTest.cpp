@@ -610,12 +610,14 @@ WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByDoubleTest,
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, noConditionTinyintGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, havingTinyintGroupByTest)
 WHERE_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, whereTinyintGroupByTest)
-WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, whereAndHavingTinyintGroupByTest)
+WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest,
+                                    whereAndHavingTinyintGroupByTest)
 
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, noConditionSmallintGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, havingSmallintGroupByTest)
 WHERE_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, whereSmallintGroupByTest)
-WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, whereAndHavingSmallintGroupByTest)
+WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest,
+                                    whereAndHavingSmallintGroupByTest)
 
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupByIntegerTest, noConditionIntegerGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupByIntegerTest, havingIntegerGroupByTest)
