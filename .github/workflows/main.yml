@@ -31,7 +31,6 @@ env:
 jobs:
   build:
     runs-on: presto-integration-test
-    timeout-minutes: 90
     
     steps:
       - name: Clean up CI directory
