@@ -17,15 +17,6 @@ For the developer, log entries are made in a syntax that is similar to ``std::os
 where ``INFO`` is one common example of the log "severity" level. Other severities are ``WARNING``, ``FATAL``,
 ``DEBUG1``, etc. See `Severity`_.
 
-In addition, there are a number of ``CHECK`` macros which act like ``assert()`` but will report via the
-logging system upon failure, with an optional message, and subsequently call ``abort()``. Examples::
-
-    CHECK(ptr);
-    CHECK_LT(1u, list.size()) << "list must contain more than 1 element.";
-
-If ``ptr==nullptr`` or ``1u >= list.size()`` then the program will abort, and log a corresponding ``FATAL`` message.
-See `CHECK`_.
-
 Initialization and Global Instances
 -----------------------------------
 
@@ -37,8 +28,10 @@ To initialize the logging system, the function::
 
     }
 
-must be invoked with the ``logger::LogOptions`` object to be applied. It is recommended to run this from
-``main()`` as early as possible. use the ``LOG``/``CHECK`` macros for all normal logging.
+must be invoked with the ``logger::LogOptions`` object to be applied, used as part of the log file name . It is recommended 
+to run this from ``main()`` as early as possible. use the ``LOG``/``CHECK`` macros for all normal logging. Example::
+
+    logger::LogOptions log_options(argv[0]);
 
 Usage
 -----
@@ -52,7 +45,6 @@ severity from most severe to least:
 ============ ============================================================================
 **Severity** **When to Use**
 ``FATAL``    An unrecoverable error has occurred, and must be fixed in the software.
-             This is the only severity which will result in a call to ``abort()``.
 ``ERROR``    A recoverable error has occurred, and must be fixed in the software.
 ``WARNING``  Something that "should not have" happened happened, but is not as demanding
              of an immediate fix as an ``ERROR``. Example: A deprecated feature is still
@@ -141,11 +133,10 @@ In addition to the ``LOG()`` macro, there are:
 
 CHECK
 """""
-
-The ``CHECK(condition)`` macro evaluates ``condition`` as a boolean value. If true, then execution continues
+In release mode, the ``CHECK`` macro does nothing. In debug mode,
+the ``CHECK(condition)`` macro evaluates ``condition`` as a boolean value. If true, then execution continues
 with nothing logged. Otherwise both the ``condition`` source code string is logged at ``FATAL`` severity,
-along with any optional ``<< message``, before calling ``abort()``. The program may then either exit, or
-optionally catch the ``SIGABRT`` signal.
+along with any optional ``<< message``.
 
 | Similarly there are 6 binary ``CHECK`` comparison macros:
 | ``CHECK_EQ``, ``CHECK_NE``, ``CHECK_LT``, ``CHECK_LE``, ``CHECK_GT``, ``CHECK_GE``
