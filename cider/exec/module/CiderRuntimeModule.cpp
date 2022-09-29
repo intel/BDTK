@@ -418,13 +418,21 @@ void CiderRuntimeModule::extract_column(int32_t start_row,
     double* flattened_out_buffer = reinterpret_cast<double*>(flattened_out);
     while (i < max_read_rows) {
       // cast to cover float case
-      col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];
+      if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue) {
+        col_out_buffer[i++] = std::numeric_limits<T>::min();
+      } else {
+        col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];
+      }
       cur_col_offset += col_step;
     }
   } else {
     // for other types, it uses 64bit to store a value
     while (i < max_read_rows) {
-      col_out_buffer[i++] = flattened_out[cur_col_offset];
+      if (flattened_out[cur_col_offset] == kBigIntNullValue) {
+        col_out_buffer[i++] = std::numeric_limits<T>::min();
+      } else {
+        col_out_buffer[i++] = flattened_out[cur_col_offset];
+      }
       cur_col_offset += col_step;
     }
   }
@@ -580,8 +588,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
     // just ignore max_row here.
     auto non_groupby_agg_result =
         std::make_unique<CiderBatch>(std::move(one_batch_result_));
-    auto out_batch =
-        setSchemaAndUpdateCountDistinctResIfNeed(std::move(non_groupby_agg_result));
+    auto out_batch = setSchemaAndUpdateAggResIfNeed(std::move(non_groupby_agg_result));
     // reset need to be done after data consumed, like bitmap for count(distinct)
     resetAggVal();
     return std::make_pair(kNoMoreOutput,
@@ -650,7 +657,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
   return std::make_pair(
       group_by_agg_iterator_ ? kMoreOutput : kNoMoreOutput,
       std::move(std::make_unique<CiderBatch>(
-          setSchemaAndUpdateCountDistinctResIfNeed(std::move(groupby_agg_result)))));
+          setSchemaAndUpdateAggResIfNeed(std::move(groupby_agg_result)))));
 }
 
 CiderAggHashTableRowIteratorPtr CiderRuntimeModule::getGroupByAggHashTableIteratorAt(
@@ -754,7 +761,7 @@ void CiderRuntimeModule::resetAggVal() {
   }
 }
 
-CiderBatch CiderRuntimeModule::setSchemaAndUpdateCountDistinctResIfNeed(
+CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
     std::unique_ptr<CiderBatch> output_batch) {
   int column_num = ciderCompilationResult_->getOutputCiderTableSchema().getColumnCount();
   auto schema = std::make_shared<CiderTableSchema>(
@@ -782,24 +789,29 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateCountDistinctResIfNeed(
 
   if (ciderCompilationResult_->impl_->query_mem_desc_->getQueryDescriptionType() ==
       QueryDescriptionType::NonGroupedAggregate) {
-    // for non-groupby partial avg, sum(int) may has double output Type thus
-    // need cast original int value(based on cider rule) to double
+    // For non-groupby partial avg, the output type of SUM(integer-type col) must be
+    // double. Thus, we should cast original integer-type value(based on Cider's rule) to
+    // double.
     std::vector<TargetInfo> target_infos = target_exprs_to_infos(
         ciderCompilationResult_->impl_->rel_alg_exe_unit_->target_exprs,
         *ciderCompilationResult_->impl_->query_mem_desc_);
     const int8_t** outBuffers = output_batch->table();
     for (int i = 0; i < schema->getColumnTypes().size(); i++) {
       int flatten_index = schema->getFlattenColIndex(i);
+      // When handling AVG as SUM/COUNT, SUM should be double while COUNT should be
+      // BIGINT. We should transfer null in integer to null in double here.
       if (schema->getColHints()[i] == ColumnHint::PartialAVG &&
           target_infos[flatten_index].agg_kind == SQLAgg::kSUM &&
           target_infos[flatten_index].agg_arg_type.is_integer() &&
-          generator::getSQLTypeInfo(schema->getColumnTypeById(i).struct_().types(0))
-                  .get_type() == SQLTypes::kDOUBLE) {
+          schema->getColumnTypeById(i).struct_().types(0).has_fp64()) {
         int64_t* result = const_cast<int64_t*>(
             reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
-        double value = (double)result[0];
         double* cast_buffer = reinterpret_cast<double*>(result);
-        cast_buffer[0] = value;
+        if (result[0] == std::numeric_limits<int64_t>::min()) {
+          cast_buffer[0] = kDoubleNullValue;
+        } else {
+          cast_buffer[0] = (double)result[0];
+        }
       }
     }
   }

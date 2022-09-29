@@ -23,6 +23,9 @@
 #include <gtest/gtest.h>
 #include "tests/utils/CiderTestBase.h"
 
+#define NULL_VALUE_I32 std::numeric_limits<int32_t>::min()
+#define NULL_VALUE_DOUBLE std::numeric_limits<double>::min()
+
 class CiderAggTest : public CiderTestBase {
  public:
   CiderAggTest() {
@@ -513,7 +516,8 @@ class CiderPartialAVGTest : public CiderTestBase {
  public:
   CiderPartialAVGTest() {
     table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_i32 INT, col_i16 SMALLINT);)";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_i32 INT, col_i16 SMALLINT, col_i32_with_null INT, col_i32_all_null INT);)";
     std::vector<int32_t> vec_i32;
     vec_i32.push_back(100);
     vec_i32.push_back(110);
@@ -522,11 +526,23 @@ class CiderPartialAVGTest : public CiderTestBase {
     vec_i16.push_back(100);
     vec_i16.push_back(110);
     vec_i16.push_back(120);
+    std::vector<int32_t> vec_i32_with_null;
+    vec_i32_with_null.push_back(100);
+    vec_i32_with_null.push_back(NULL_VALUE_I32);
+    vec_i32_with_null.push_back(NULL_VALUE_I32);
+    std::vector<int32_t> vec_i32_all_null;
+    vec_i32_all_null.push_back(NULL_VALUE_I32);
+    vec_i32_all_null.push_back(NULL_VALUE_I32);
+    vec_i32_all_null.push_back(NULL_VALUE_I32);
     auto batch = std::make_shared<CiderBatch>(
         CiderBatchBuilder()
             .setRowNum(3)
             .addColumn<int32_t>("col_i32", CREATE_SUBSTRAIT_TYPE(I32), vec_i32)
             .addColumn<int16_t>("col_i16", CREATE_SUBSTRAIT_TYPE(I16), vec_i16)
+            .addColumn<int32_t>(
+                "col_i32_with_null", CREATE_SUBSTRAIT_TYPE(I32), vec_i32_with_null)
+            .addColumn<int32_t>(
+                "col_i32_all_null", CREATE_SUBSTRAIT_TYPE(I32), vec_i32_all_null)
             .build());
     input_.push_back(batch);
   }
@@ -575,6 +591,96 @@ TEST_F(CiderPartialAVGTest, singlePartialAVG) {
   expect_batch->set_schema(schema);
   // select avg(col_i32) from test
   assertQuery("avg_partial.json", expect_batch);
+}
+
+TEST_F(CiderPartialAVGTest, withNullPartialAVG) {
+  std::vector<double> expect_sum;
+  expect_sum.push_back(100.0);
+  std::vector<int64_t> expect_count;
+  expect_count.push_back(1);
+
+  auto expect_batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(1)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
+          .build());
+  std::string type_json = R"(
+    {
+        "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+        }
+    }
+    )";
+  ::substrait::Type col_type;
+  google::protobuf::util::JsonStringToMessage(type_json, &col_type);
+  std::vector<::substrait::Type> col_types;
+  col_types.push_back(col_type);
+  std::vector<std::string> col_names{"a0"};
+  auto schema = std::make_shared<CiderTableSchema>(col_names, col_types);
+  expect_batch->set_schema(schema);
+  // select avg(col_i32_all_null) from test
+  assertQuery("avg_with_null_partial.json", expect_batch);
+}
+
+TEST_F(CiderPartialAVGTest, allNullPartialAVG) {
+  std::vector<double> expect_sum;
+  expect_sum.push_back(NULL_VALUE_DOUBLE);
+  std::vector<int64_t> expect_count;
+  expect_count.push_back(0);
+
+  auto expect_batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(1)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
+          .build());
+  std::string type_json = R"(
+    {
+        "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+        }
+    }
+    )";
+  ::substrait::Type col_type;
+  google::protobuf::util::JsonStringToMessage(type_json, &col_type);
+  std::vector<::substrait::Type> col_types;
+  col_types.push_back(col_type);
+  std::vector<std::string> col_names{"a0"};
+  auto schema = std::make_shared<CiderTableSchema>(col_names, col_types);
+  expect_batch->set_schema(schema);
+  // select avg(col_i32_all_null) from test
+  assertQuery("avg_all_null_partial.json", expect_batch);
 }
 
 TEST_F(CiderPartialAVGTest, mixedPartialAVG) {
