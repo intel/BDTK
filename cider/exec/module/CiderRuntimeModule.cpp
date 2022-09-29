@@ -63,6 +63,9 @@ using agg_query_hoist_literals = void (*)(const int8_t***,  // col_buffers
                                           const int64_t*);  // join_hash_tables_ptr
 namespace {
 
+constexpr static double kDoubleNullValue = std::numeric_limits<double>::min();
+constexpr static int64_t kBigIntNullValue = std::numeric_limits<int64_t>::min();
+
 template <typename T>
 std::enable_if_t<std::is_integral<T>::value, void> extract_column(int32_t start_row,
                                                                   int64_t max_read_rows,
