@@ -21,6 +21,8 @@
 
 #include "function/substrait/SubstraitType.h"
 #include <sstream>
+#include "util/Logger.h"
+#include "cider/CiderException.h"
 
 namespace cider::function::substrait {
 
@@ -67,9 +69,7 @@ SubstraitTypePtr SubstraitType::decode(const std::string& rawType) {
     }
   }
   const auto& rightAngleBracketPos = rawType.rfind('>');
-  /*VELOX_CHECK(
-      rightAngleBracketPos != std::string::npos,
-      "Couldn't find the closing angle bracket.");*/
+  CHECK(rightAngleBracketPos != std::string::npos);
 
   auto baseType = matchingType.substr(0, leftAngleBracketPos);
 
@@ -87,54 +87,38 @@ SubstraitTypePtr SubstraitType::decode(const std::string& rawType) {
   nestedTypes.emplace_back(decode(token));
 
   if (baseType == "list") {
-    /*VELOX_CHECK(
-        nestedTypes.size() == 1,
-        "list type can only have one parameterized type");*/
+    CHECK(nestedTypes.size() == 1);
     return std::make_shared<SubstraitListType>(nestedTypes[0]);
   } else if (baseType == "map") {
-    /*VELOX_CHECK(
-        nestedTypes.size() == 2,
-        "map type must have a parameterized type for key and a parameterized type for
-       value");*/
+    CHECK(nestedTypes.size() == 2);
     return std::make_shared<SubstraitMapType>(nestedTypes[0], nestedTypes[1]);
   } else if (baseType == "decimal") {
-    /*VELOX_CHECK(
-        nestedTypes.size() == 2,
-        "decimal type must have a parameterized type for precision and a parameterized
-       type for scale");*/
+    CHECK(nestedTypes.size() == 2);
     auto precision =
         std::dynamic_pointer_cast<const SubstraitStringLiteralType>(nestedTypes[0]);
     auto scale =
         std::dynamic_pointer_cast<const SubstraitStringLiteralType>(nestedTypes[1]);
     return std::make_shared<SubstraitDecimalType>(precision, scale);
   } else if (baseType == "varchar") {
-    /*VELOX_CHECK(
-        nestedTypes.size() == 1,
-        "varchar type must have a parameterized type length");*/
+    CHECK(nestedTypes.size() == 1);
     auto length =
         std::dynamic_pointer_cast<const SubstraitStringLiteralType>(nestedTypes[0]);
     return std::make_shared<SubstraitVarcharType>(length);
   } else if (baseType == "fixedchar") {
-    /*VELOX_CHECK(
-        nestedTypes.size() == 1,
-        "fixedchar type must have a parameterized type length");*/
+    CHECK(nestedTypes.size() == 1);
     auto length =
         std::dynamic_pointer_cast<const SubstraitStringLiteralType>(nestedTypes[0]);
     return std::make_shared<SubstraitFixedCharType>(length);
   } else if (baseType == "fixedbinary") {
-    /*VELOX_CHECK(
-        nestedTypes.size() == 1,
-        "fixedbinary type must have a parameterized type length");*/
+    CHECK(nestedTypes.size() == 1);
     auto length =
         std::dynamic_pointer_cast<const SubstraitStringLiteralType>(nestedTypes[0]);
     return std::make_shared<SubstraitFixedBinaryType>(length);
   } else if (baseType == "struct") {
-    /*VELOX_CHECK(
-        !nestedTypes.empty(),
-        "struct type must have at least one parameterized type");*/
+    CHECK(!nestedTypes.empty());
     return std::make_shared<SubstraitStructType>(nestedTypes);
   } else {
-    // VELOX_NYI("Unsupported typed {}", rawType);
+    CIDER_THROW(CiderCompileException, std::string("Unsupported typed ") + rawType);
   }
 }
 

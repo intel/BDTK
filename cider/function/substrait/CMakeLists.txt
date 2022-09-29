@@ -18,12 +18,8 @@
 # under the License.
 
 set(SRCS
-    ${PROTO_SRCS}
-    SubstraitType.cpp
-    SubstraitSignature.cpp
-    SubstraitFunction.cpp
-    SubstraitExtension.cpp
-    SubstraitFunctionLookup.cpp)
+    ${PROTO_SRCS} SubstraitType.cpp SubstraitSignature.cpp
+    SubstraitFunction.cpp SubstraitExtension.cpp SubstraitFunctionLookup.cpp)
 
 add_library(substrait_function_loop_up STATIC ${SRCS})
 target_link_libraries(substrait_function_loop_up substrait yaml-cpp)
