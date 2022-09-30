@@ -236,9 +236,6 @@ void TargetExprCodegen::codegenAggregate(
     // TBD: Window Function support.
     // TBD: Lazy fetch support.
 
-    // TODO: Non-Groupby Agg support.
-    // TODO: Projection support.
-
     if (auto window_func = dynamic_cast<const Analyzer::WindowFunction*>(target_expr)) {
       CIDER_THROW(CiderCompileException,
                   "TargetExpr codegen is not support window function now.");
