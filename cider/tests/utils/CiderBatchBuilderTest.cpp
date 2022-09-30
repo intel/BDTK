@@ -205,10 +205,11 @@ TEST(CiderBatchBuilderTest, DateTypebatch) {
   vec1.push_back(CiderDateType("2030-01-01"));
   vec1.push_back(CiderDateType("1970-01-01"));
 
-  auto batch1 = CiderBatchBuilder()
-                    .setRowNum(5)
-                    .addColumn<CiderDateType>("col1", CREATE_SUBSTRAIT_TYPE(Date), vec1)
-                    .build();
+  auto batch1 =
+      CiderBatchBuilder()
+          .setRowNum(5)
+          .addTimingColumn<CiderDateType>("col1", CREATE_SUBSTRAIT_TYPE(Date), vec1)
+          .build();
 
   EXPECT_EQ(5, batch1.row_num());
   EXPECT_EQ(1, batch1.column_num());
@@ -219,7 +220,7 @@ TEST(CiderBatchBuilderTest, DateTypebatch) {
         vec2.push_back(CiderDateType("1970-13-01"));
         auto batch2 =
             CiderBatchBuilder()
-                .addColumn<CiderDateType>("col1", CREATE_SUBSTRAIT_TYPE(Date), vec2)
+                .addTimingColumn<CiderDateType>("col1", CREATE_SUBSTRAIT_TYPE(Date), vec2)
                 .build();
       },
       CiderCompileException);

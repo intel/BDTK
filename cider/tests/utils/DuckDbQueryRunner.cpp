@@ -423,6 +423,8 @@ CiderBatch DuckDbResultConvertor::fetchOneBatch(
     switch (type.id()) {
       case ::duckdb::LogicalTypeId::HUGEINT:
       case ::duckdb::LogicalTypeId::BIGINT:
+      case ::duckdb::LogicalTypeId::TIMESTAMP:
+      case ::duckdb::LogicalTypeId::TIME:
         addColumnDataToCiderBatch<int64_t>(chunk, i, row_num, col_buf);
         break;
       case ::duckdb::LogicalTypeId::INTEGER:

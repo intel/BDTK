@@ -158,7 +158,7 @@ TEST(DuckDBQueryRunnerTest, dateTest) {
 
   auto in_batch_ptr = std::make_shared<CiderBatch>(
       CiderBatchBuilder()
-          .addColumn<CiderDateType>("col_a", CREATE_SUBSTRAIT_TYPE(Date), col)
+          .addTimingColumn<CiderDateType>("col_a", CREATE_SUBSTRAIT_TYPE(Date), col)
           .build());
   std::vector<std::shared_ptr<CiderBatch>> input_vec{in_batch_ptr};
 
@@ -176,7 +176,8 @@ TEST(DuckDBQueryRunnerTest, dateTest) {
   expected_col.push_back(CiderDateType("1970-01-05"));
   auto expected_batch = std::make_shared<CiderBatch>(
       CiderBatchBuilder()
-          .addColumn<CiderDateType>("col_a", CREATE_SUBSTRAIT_TYPE(Date), expected_col)
+          .addTimingColumn<CiderDateType>(
+              "col_a", CREATE_SUBSTRAIT_TYPE(Date), expected_col)
           .build());
   EXPECT_TRUE(CiderBatchChecker::checkEq(res_batch, expected_batch));
 }
