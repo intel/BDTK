@@ -65,6 +65,7 @@ namespace {
 
 constexpr static double kDoubleNullValue = std::numeric_limits<double>::min();
 constexpr static int64_t kBigIntNullValue = std::numeric_limits<int64_t>::min();
+constexpr static float kFloatNullValue = std::numeric_limits<float>::min();
 
 template <typename T>
 std::enable_if_t<std::is_integral<T>::value, void> extract_column(int32_t start_row,
@@ -102,8 +103,7 @@ std::enable_if_t<std::is_floating_point<T>::value, void> extract_column(
   double* flattened_out_buffer = reinterpret_cast<double*>(flattened_out);
   while (i < max_read_rows) {
     // cast to cover float case
-    if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue ||
-        flattened_out_buffer[cur_col_offset] == kFloatNullValue) {
+    if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue) {
       col_out_buffer[i++] = std::numeric_limits<T>::min();
     } else {
       col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];

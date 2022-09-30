@@ -119,6 +119,9 @@ class CiderRuntimeModule {
   int32_t total_matched_rows_{0};
   int32_t fetched_rows_{0};
   constexpr static size_t kMaxOutputRows = 1000;
+  constexpr static double kDoubleNullValue = std::numeric_limits<double>::min();
+  constexpr static float kFloatNullValue = std::numeric_limits<float>::min();
+  constexpr static int64_t kBigIntNullValue = std::numeric_limits<int64_t>::min();
 
   bool is_group_by_;
 };
