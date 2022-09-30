@@ -21,6 +21,8 @@
 
 Big Data Analytic Toolkit is a set of acceleration libraries aimed to optimize big data analytic frameworks.
 
+By using this library, frontend SQL engines like Prestodb/Spark query performance will be significant improved.
+
 The following diagram shows the design architecture.
 
 ![BDTK-INTRODUCTION](docs/images/BDTK-arch.PNG)
@@ -77,6 +79,7 @@ an optimized version.  Use `make test-debug` or `make test-release` to run tests
 Examples of major APIs [can be found here](cider/examples)
 
 ## How to Enable in Presto
+To use it with Prestodb, Intel version [Prestodb](https://github.com/intel-bigdata/presto/) is required together with Intel version [Velox](https://github.com/intel-bigdata/velox).
 
 # Code Of Conduct
 Big Data Analytic Toolkit's Code of Conduct [can be found here.](CODE_OF_CONDUCT.md)
