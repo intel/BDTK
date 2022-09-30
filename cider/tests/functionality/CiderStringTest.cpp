@@ -77,7 +77,7 @@ class CiderStringToDateTest : public CiderTestBase {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_int INTEGER, col_str VARCHAR(10));)";
     input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-        50,
+        100,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {2, 2},
@@ -86,6 +86,10 @@ class CiderStringToDateTest : public CiderTestBase {
 };
 
 TEST_F(CiderStringToDateTest, DateStrTest) {
+  assertQuery(
+      "select col_str from test where col_str between date '1970-01-01' and date "
+      "'2077-12-31'",
+      "cast_str_to_date_implictly.json");
   assertQuery("SELECT CAST(col_str AS DATE) FROM test ",
               "functions/date/string_to_date.json");
   assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
@@ -348,6 +352,10 @@ TEST_F(CiderDuplicateStringTest, MultiGroupKeyTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();

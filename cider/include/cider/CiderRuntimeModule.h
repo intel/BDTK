@@ -81,39 +81,7 @@ class CiderRuntimeModule {
   // should only be called after process batch
   void fetchNonBlockingResults(int32_t start_row,
                                int64_t* flattened_out,
-                               CiderBatch& outBatch,
-                               std::vector<size_t> column_size);
-  // helper function for fecth results
-  template <typename T>
-  void extract_column(int32_t start_row,
-                      int64_t max_read_rows,
-                      size_t col_offset,
-                      size_t col_step,
-                      int64_t* flattened_out,
-                      int8_t* out_col);
-
-  void extract_varchar_column(int32_t start_row,
-                              int64_t max_read_rows,
-                              size_t col_offset,
-                              size_t col_step,
-                              int64_t* flattened_out,
-                              int8_t* out_col);
-
-  void extract_varchar_column_from_dict(int32_t start_row,
-                                        int64_t max_read_rows,
-                                        size_t col_offset,
-                                        size_t col_step,
-                                        int64_t* flattened_out,
-                                        int8_t* out_col);
-
-  // extract 64bits decimal column value
-  void extract_decimal_column(int32_t scale,
-                              int32_t start_row,
-                              int64_t max_read_rows,
-                              size_t col_offset,
-                              size_t col_step,
-                              int64_t* flattened_out,
-                              int8_t* out_col);
+                               CiderBatch& outBatch);
 
   void groupByProcessImpl(const int8_t*** input_cols,
                           uint8_t* row_skip_mask,
@@ -127,8 +95,7 @@ class CiderRuntimeModule {
 
   std::unique_ptr<CiderBatch> prepareOneBatchOutput(int64_t len);
 
-  CiderBatch setSchemaAndUpdateCountDistinctResIfNeed(
-      std::unique_ptr<CiderBatch> output_batch);
+  CiderBatch setSchemaAndUpdateAggResIfNeed(std::unique_ptr<CiderBatch> output_batch);
   std::shared_ptr<CiderCompilationResult> ciderCompilationResult_;
   CiderCompilationOption ciderCompilationOption_;
   CiderExecutionOption ciderExecutionOption_;
