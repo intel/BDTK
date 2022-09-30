@@ -28,10 +28,34 @@ To initialize the logging system, the function::
 
     }
 
-must be invoked with the ``logger::LogOptions`` object to be applied, used as part of the log file name . It is recommended 
+LogOptions has the following public member variables and member functions:
+
+    boost::filesystem::path log_dir_{"mapd_log"};
+    // file_name_pattern and symlink are prepended with base_name.
+    std::string file_name_pattern_{".{SEVERITY}.%Y%m%d-%H%M%S.log"};
+    std::string symlink_{".{SEVERITY}"};
+    Severity severity_{Severity::INFO};
+    Severity severity_clog_{Severity::ERROR};
+    Channels channels_;
+    bool auto_flush_{true};
+    size_t max_files_{100};
+    size_t min_free_space_{20 << 20};
+    bool rotate_daily_{true};
+    size_t rotation_size_{10 << 20};
+
+    LogOptions(char const* argv0);
+    boost::filesystem::path full_log_dir() const;
+    boost::program_options::options_description const& get_options() const;
+    void parse_command_line(int, char const* const*);
+    void set_base_path(std::string const& base_path);
+    void set_options();
+
+must be invoked with the ``logger::LogOptions`` object to be applied. It is recommended 
 to run this from ``main()`` as early as possible. use the ``LOG``/``CHECK`` macros for all normal logging. Example::
 
     logger::LogOptions log_options(argv[0]);
+    log_options.parse_command_line(argc, argv);
+    logger::init(log_options);
 
 Usage
 -----
