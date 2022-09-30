@@ -286,8 +286,9 @@ Executor::CgenStateManager::~CgenStateManager() {
   // to the old CgenState instance as the execution of the generated
   // code uses these bitmaps
 
-  executor_.cgen_state_->in_values_bitmaps_.clear();
-
+  for (auto& bm : executor_.cgen_state_->in_values_bitmaps_) {
+    cgen_state_->moveInValuesBitmap(bm);
+  }
   // Delete worker module that may have been set by
   // set_module_shallow_copy. If QueryMustRunOnCpu is thrown, the
   // worker module is not instantiated, so the worker module needs to
