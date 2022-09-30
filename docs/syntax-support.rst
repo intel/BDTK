@@ -184,7 +184,7 @@ is equal to
 6 SELECT DISTINCT
 --------------------------------------
 
-Mainstream databases such as Spark and Presto will transform 'SELECT DISTINCT' sql to 'GROUP BY' sql on the logical plan level.
+Mainstream databases such as Spark and Presto will transform 'SELECT DISTINCT' sql to 'GROUP BY' sql when do optimization on logical plan.
 
 Spark: 
 
@@ -231,9 +231,7 @@ When execute sql `select distinct nationkey from customer`, part of the json gen
                 }
         }
 
-Can be seen that the original 'SELECT DISTINCT' sql is converted to a Aggregation type, and the columns shoule be distinct will become 'GROUP BY' keys.
-
-So the support to 'SELECT DISTINCT' can be displaced by that of 'GROUP BY'.
+In above cases, the original 'SELECT DISTINCT' sql is converted to an Aggregation type, and the columns shoule be distinct will become 'GROUP BY' keys.
 
 7 GROUP BY related function
 --------------------------------------
