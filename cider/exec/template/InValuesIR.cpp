@@ -122,77 +122,47 @@ std::unique_ptr<InValuesBitmap> CodeGenerator::createInValuesBitmap(
   if (!(ti.is_integer() || (ti.is_string() && ti.get_compression() == kENCODING_DICT))) {
     return nullptr;
   }
-  const auto sdp =
-      ti.is_string() ? executor()->getStringDictionaryProxy(
-                           ti.get_comp_param(), executor()->getRowSetMemoryOwner(), true)
-                     : nullptr;
-  if (val_count > 3) {
+  const auto sdp = ti.is_string() ? executor()->getCiderStringDictionaryProxy() : nullptr;
+  // FIXME: (yma11) in heavydb, use bitmap only when values count > 3
+  // and switch to normal OR op if not. We make this change because of
+  // type info check will fail for case substring(col, const_1, const_2) = "value"
+  // as substring has SQLTypeInfo(kTEXT, kENCODING_DICT, 0, kNULLT) while
+  // const_1/const_2 has SQLTypeInfo(kVARCHAR, kENCODING_NONE, 0, kNULLT)
+  if (val_count > 3 || ti.is_string()) {
     using ListIterator = decltype(value_list.begin());
     std::vector<int64_t> values;
     const auto needle_null_val = inline_int_null_val(ti);
-    const int worker_count = val_count > 10000 ? cpu_threads() : int(1);
-    std::vector<std::vector<int64_t>> values_set(worker_count, std::vector<int64_t>());
-    std::vector<std::future<bool>> worker_threads;
-    auto start_it = value_list.begin();
-    for (size_t i = 0,
-                start_val = 0,
-                stride = (val_count + worker_count - 1) / worker_count;
-         i < val_count && start_val < val_count;
-         ++i, start_val += stride, std::advance(start_it, stride)) {
-      auto end_it = start_it;
-      std::advance(end_it, std::min(stride, val_count - start_val));
-      const auto do_work = [&](std::vector<int64_t>& out_vals,
-                               const ListIterator start,
-                               const ListIterator end) -> bool {
-        for (auto val_it = start; val_it != end; ++val_it) {
-          const auto& in_val = *val_it;
-          const auto in_val_const =
-              dynamic_cast<const Analyzer::Constant*>(extract_cast_arg(in_val.get()));
-          if (!in_val_const) {
-            return false;
-          }
-          const auto& in_val_ti = in_val->get_type_info();
-          CHECK(in_val_ti == ti || get_nullable_type_info(in_val_ti) == ti);
-          if (ti.is_string()) {
-            CHECK(sdp);
-            const auto string_id =
-                in_val_const->get_is_null()
-                    ? needle_null_val
-                    : sdp->getIdOfString(*in_val_const->get_constval().stringval);
-            if (string_id != StringDictionary::INVALID_STR_ID) {
-              out_vals.push_back(string_id);
-            }
-          } else {
-            out_vals.push_back(CodeGenerator::codegenIntConst(in_val_const, cgen_state_)
-                                   ->getSExtValue());
-          }
+    const auto do_work = [&](std::vector<int64_t>& out_vals,
+                             const ListIterator start,
+                             const ListIterator end) -> bool {
+      for (auto val_it = start; val_it != end; ++val_it) {
+        const auto& in_val = *val_it;
+        const auto in_val_const =
+            dynamic_cast<const Analyzer::Constant*>(extract_cast_arg(in_val.get()));
+        if (!in_val_const) {
+          return false;
         }
-        return true;
-      };
-      if (worker_count > 1) {
-        worker_threads.push_back(std::async(
-            std::launch::async, do_work, std::ref(values_set[i]), start_it, end_it));
-      } else {
-        do_work(std::ref(values), start_it, end_it);
+        const auto& in_val_ti = in_val->get_type_info();
+        // For string type, we don't need in_val_ti = ti, like substr() vs varchar
+        CHECK(ti.is_string() || in_val_ti == ti ||
+              get_nullable_type_info(in_val_ti) == ti);
+        if (ti.is_string()) {
+          CHECK(sdp);
+          const auto string_id =
+              in_val_const->get_is_null()
+                  ? needle_null_val
+                  : sdp->getOrAddTransient(*in_val_const->get_constval().stringval);
+          if (string_id != StringDictionary::INVALID_STR_ID) {
+            out_vals.push_back(string_id);
+          }
+        } else {
+          out_vals.push_back(
+              CodeGenerator::codegenIntConst(in_val_const, cgen_state_)->getSExtValue());
+        }
       }
-    }
-    bool success = true;
-    for (auto& worker : worker_threads) {
-      success &= worker.get();
-    }
-    if (!success) {
-      return nullptr;
-    }
-    if (worker_count > 1) {
-      size_t total_val_count = 0;
-      for (auto& vals : values_set) {
-        total_val_count += vals.size();
-      }
-      values.reserve(total_val_count);
-      for (auto& vals : values_set) {
-        values.insert(values.end(), vals.begin(), vals.end());
-      }
-    }
+      return true;
+    };
+    do_work(std::ref(values), value_list.begin(), value_list.end());
     try {
       return std::make_unique<InValuesBitmap>(values,
                                               needle_null_val,

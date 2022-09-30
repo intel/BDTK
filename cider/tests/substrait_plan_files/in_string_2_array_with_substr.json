@@ -1,0 +1,172 @@
+{
+    "extension_uris": [
+        {
+            "extension_uri_anchor": 1,
+            "uri": "/WorkSpace/repo/frameworks.ai.modular-sql.velox-plugin/velox/substrait/extensions/functions_comparison.yaml"
+        },
+        {
+            "extension_uri_anchor": 2,
+            "uri": "/WorkSpace/repo/frameworks.ai.modular-sql.velox-plugin/velox/substrait/extensions/functions_arithmetic.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extension_function": {
+                "extension_uri_reference": 1,
+                "function_anchor": 0,
+                "name": "in:string_string"
+            }
+        },         {
+            "extension_function": {
+                "extension_uri_reference": 1,
+                "function_anchor": 1,
+                "name": "substring:vchar_i32_i32"
+            }
+        }
+    ],
+    "relations": [
+        {
+            "root": {
+                "input": {
+                    "filter": {
+                        "common": {
+                            "direct": {}
+                        },
+                        "input": {
+                            "read": {
+                                "common": {
+                                    "direct": {}
+                                },
+                                "base_schema": {
+                                    "names": [
+                                        "col_1",
+                                        "col_2"
+                                    ],
+                                    "struct": {
+                                        "types": [
+                                            {
+                                                "i32": {
+                                                    "type_variation_reference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            }, {
+                                                "varchar": {
+                                                  "length": 10,
+                                                  "typeVariationReference": 0,
+                                                  "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            }
+                                        ],
+                                        "type_variation_reference": 0,
+                                        "nullability": "NULLABILITY_UNSPECIFIED"
+                                    }
+                                }
+                            }
+                        },
+                        "condition": {
+                            "scalar_function": {
+                                "function_reference": 0,
+                                "arguments": [{
+                                    "value": {
+                                      "scalarFunction": {
+                                        "functionReference": 1,
+                                        "args": [],
+                                        "outputType": {
+                                          "varchar": {
+                                            "length": 10,
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                          }
+                                        },
+                                        "arguments": [{
+                                          "value": {
+                                            "selection": {
+                                              "directReference": {
+                                                "structField": {
+                                                  "field": 1
+                                                }
+                                              },
+                                              "rootReference": {
+                                              }
+                                            }
+                                          }
+                                        }, {
+                                          "value": {
+                                            "literal": {
+                                              "i32": 1,
+                                              "nullable": false,
+                                              "typeVariationReference": 0
+                                            }
+                                          }
+                                        }, {
+                                          "value": {
+                                            "literal": {
+                                              "i32": 4,
+                                              "nullable": false,
+                                              "typeVariationReference": 0
+                                            }
+                                          }
+                                        }]
+                                      }
+                                    }
+                                  },{
+                                    "value": {
+                                      "cast": {
+                                        "type": {
+                                          "varchar": {
+                                            "length": 10,
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                          }
+                                        },
+                                        "input": {
+                                          "literal": {
+                                            "fixedChar": "0000",
+                                            "nullable": false,
+                                            "typeVariationReference": 0
+                                          }
+                                        },
+                                        "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                                      }
+                                    }
+                                  }, {
+                                    "value": {
+                                      "cast": {
+                                        "type": {
+                                          "varchar": {
+                                            "length": 10,
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                          }
+                                        },
+                                        "input": {
+                                          "literal": {
+                                            "fixedChar": "1111",
+                                            "nullable": false,
+                                            "typeVariationReference": 0
+                                          }
+                                        },
+                                        "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                                      }
+                                    }
+                                  }
+                                ],
+                                "output_type": {
+                                    "bool": {
+                                        "type_variation_reference": 0,
+                                        "nullability": "NULLABILITY_REQUIRED"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "names": [
+                    "col_1",
+                    "col_2"
+                ]
+            }
+        }
+    ],
+    "expected_type_urls": []
+}
