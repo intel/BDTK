@@ -57,9 +57,8 @@ using SubstraitFunctionLookupPtr =
 
 class FunctionLookup {
  public:
-  FunctionLookup(const SubstraitFunctionCiderMappingsPtr& function_mappings)
-      : function_mappings_(function_mappings) {
-    registerFunctionLookUpContext();
+  FunctionLookup(const std::string& from_platform) : from_platform_(from_platform) {
+    registerFunctionLookUpContext(from_platform);
   }
 
   /// lookup function descriptor by given function Signature.
@@ -76,7 +75,7 @@ class FunctionLookup {
       const FunctionSignature& function_signature) const;
 
  private:
-  void registerFunctionLookUpContext();
+  void registerFunctionLookUpContext(const std::string& from_platform);
 
   const SQLOpsPtr getFunctionScalarOp(const FunctionSignature& function_signature) const;
   const SQLAggPtr getFunctionAggOp(const FunctionSignature& function_signature) const;
@@ -96,32 +95,17 @@ class FunctionLookup {
   }
 
  private:
-  SubstraitFunctionCiderMappingsPtr function_mappings_ = nullptr;
+  SubstraitFunctionCiderMappingsPtr function_mappings_ =
+      std::make_shared<const SubstraitFunctionCiderMappings>();
 
-  cider::function::substrait::SubstraitExtensionPtr cider_internal_function_ptr_ =
-      cider::function::substrait::SubstraitExtension::loadExtension();
-  cider::function::substrait::SubstraitExtensionPtr substrait_extension_function_ptr_ =
-      cider::function::substrait::SubstraitExtension::loadExtension(
-          {getDataPath() + "/substrait/" + "substrait_extension.yaml"});
-  cider::function::substrait::SubstraitExtensionPtr presto_extension_function_ptr_ =
-      cider::function::substrait::SubstraitExtension::loadExtension(
-          {getDataPath() + "/presto/" + "presto_extension.yaml"});
+  // internal scalar function lookup ptr
+  SubstraitFunctionLookupPtr scalar_function_look_up_ptr_;
+  // internal aggregate function lookup ptr
+  SubstraitFunctionLookupPtr aggregate_function_look_up_ptr_;
+  // extension function lookup ptr
+  SubstraitFunctionLookupPtr extension_function_look_up_ptr_;
 
-  cider::function::substrait::SubstraitFunctionMappingsPtr substrait_mappings_ =
-      std::make_shared<const cider::function::substrait::SubstraitFunctionMappings>();
-  cider::function::substrait::SubstraitFunctionMappingsPtr presto_mappings_ =
-      std::make_shared<
-          const cider::function::substrait::VeloxToSubstraitFunctionMappings>();
-
-  // internal scalar function map
-  std::unordered_map<std::string, SubstraitFunctionLookupPtr>
-      scalar_function_look_up_ptr_map_;
-  // internal aggregate function map
-  std::unordered_map<std::string, SubstraitFunctionLookupPtr>
-      aggregate_function_look_up_ptr_map_;
-  // extension function map
-  std::unordered_map<std::string, SubstraitFunctionLookupPtr>
-      extension_function_look_up_ptr_map_;
+  const std::string from_platform_;
 };
 
 using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;

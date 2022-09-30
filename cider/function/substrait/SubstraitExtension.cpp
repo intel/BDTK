@@ -254,17 +254,9 @@ std::shared_ptr<SubstraitExtension> SubstraitExtension::loadExtension() {
 
 std::shared_ptr<SubstraitExtension> SubstraitExtension::loadDefault() {
   static const std::vector<std::string> extensionFiles = {
-      "functions_aggregate_approx.yaml",
-      "functions_aggregate_generic.yaml",
       "functions_arithmetic.yaml",
       "functions_arithmetic_decimal.yaml",
-      "functions_boolean.yaml",
       "functions_comparison.yaml",
-      "functions_datetime.yaml",
-      "functions_logarithmic.yaml",
-      "functions_rounding.yaml",
-      "functions_string.yaml",
-      "functions_set.yaml",
       "unknown.yaml",
   };
   const auto& extensionRootPath = getSubstraitExtensionAbsolutePath();

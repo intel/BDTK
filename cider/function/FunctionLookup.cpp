@@ -20,57 +20,61 @@
  */
 
 #include "function/FunctionLookup.h"
+#include "cider/CiderException.h"
 
-void FunctionLookup::registerFunctionLookUpContext() {
-  // internal scalar function
-  scalar_function_look_up_ptr_map_.insert(
-      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
-          PRESTO_ENGINE,
-          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-              cider_internal_function_ptr_, substrait_mappings_)));
-  scalar_function_look_up_ptr_map_.insert(
-      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
-          SUBSTRAIT_ENGINE,
-          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-              cider_internal_function_ptr_, presto_mappings_)));
-  // internal aggregate function
-  aggregate_function_look_up_ptr_map_.insert(
-      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
-          PRESTO_ENGINE,
-          std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
-              cider_internal_function_ptr_, substrait_mappings_)));
-  aggregate_function_look_up_ptr_map_.insert(
-      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
-          SUBSTRAIT_ENGINE,
-          std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
-              cider_internal_function_ptr_, presto_mappings_)));
-  // extension function
-  extension_function_look_up_ptr_map_.insert(
-      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
-          PRESTO_ENGINE,
-          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-              substrait_extension_function_ptr_, substrait_mappings_)));
-  extension_function_look_up_ptr_map_.insert(
-      std::make_pair<std::string, SubstraitFunctionLookupPtr>(
-          SUBSTRAIT_ENGINE,
-          std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-              presto_extension_function_ptr_, presto_mappings_)));
+void FunctionLookup::registerFunctionLookUpContext(const std::string& from_platform) {
+  cider::function::substrait::SubstraitExtensionPtr cider_internal_function_ptr =
+      cider::function::substrait::SubstraitExtension::loadExtension();
+  if (from_platform == SUBSTRAIT_ENGINE) {
+    cider::function::substrait::SubstraitExtensionPtr substrait_extension_function_ptr =
+        cider::function::substrait::SubstraitExtension::loadExtension(
+            {getDataPath() + "/substrait/" + "substrait_extension.yaml"});
+    cider::function::substrait::SubstraitFunctionMappingsPtr substrait_mappings =
+        std::make_shared<const cider::function::substrait::SubstraitFunctionMappings>();
+    scalar_function_look_up_ptr_ =
+        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
+            cider_internal_function_ptr, substrait_mappings);
+    aggregate_function_look_up_ptr_ =
+        std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
+            cider_internal_function_ptr, substrait_mappings);
+    extension_function_look_up_ptr_ =
+        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
+            substrait_extension_function_ptr, substrait_mappings);
+  } else if (from_platform == PRESTO_ENGINE) {
+    cider::function::substrait::SubstraitExtensionPtr presto_extension_function_ptr =
+        cider::function::substrait::SubstraitExtension::loadExtension(
+            {getDataPath() + "/presto/" + "presto_extension.yaml"});
+    cider::function::substrait::SubstraitFunctionMappingsPtr presto_mappings =
+        std::make_shared<
+            const cider::function::substrait::VeloxToSubstraitFunctionMappings>();
+    scalar_function_look_up_ptr_ =
+        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
+            cider_internal_function_ptr, presto_mappings);
+    aggregate_function_look_up_ptr_ =
+        std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
+            cider_internal_function_ptr, presto_mappings);
+    extension_function_look_up_ptr_ =
+        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
+            presto_extension_function_ptr, presto_mappings);
+  } else {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
+  }
 }
 
 const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
     const FunctionSignature& function_signature) const {
   const std::string& from_platform = function_signature.from_platform;
-  auto iter = scalar_function_look_up_ptr_map_.find(from_platform);
-  if (iter == scalar_function_look_up_ptr_map_.end()) {
-    return nullptr;
+  if (from_platform != from_platform_) {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
   }
-  SubstraitFunctionLookupPtr scalar_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
       cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
-      scalar_function_look_up_ptr->lookupFunction(functionSignature);
+      scalar_function_look_up_ptr_->lookupFunction(functionSignature);
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionScalarOp(func_name);
   }
@@ -80,17 +84,16 @@ const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
 const SQLAggPtr FunctionLookup::getFunctionAggOp(
     const FunctionSignature& function_signature) const {
   const std::string& from_platform = function_signature.from_platform;
-  auto iter = aggregate_function_look_up_ptr_map_.find(from_platform);
-  if (iter == aggregate_function_look_up_ptr_map_.end()) {
-    return nullptr;
+  if (from_platform != from_platform_) {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
   }
-  SubstraitFunctionLookupPtr agg_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
       cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
-      agg_function_look_up_ptr->lookupFunction(functionSignature);
+      aggregate_function_look_up_ptr_->lookupFunction(functionSignature);
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionAggOp(func_name);
   }
@@ -100,17 +103,16 @@ const SQLAggPtr FunctionLookup::getFunctionAggOp(
 const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const std::string& from_platform = function_signature.from_platform;
-  auto iter = scalar_function_look_up_ptr_map_.find(from_platform);
-  if (iter == scalar_function_look_up_ptr_map_.end()) {
-    return nullptr;
+  if (from_platform != from_platform_) {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
   }
-  SubstraitFunctionLookupPtr scalar_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
       cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
-      scalar_function_look_up_ptr->lookupFunction(functionSignature);
+      scalar_function_look_up_ptr_->lookupFunction(functionSignature);
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionOpSupportType(func_name);
   }
@@ -120,17 +122,16 @@ const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
 const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const std::string& from_platform = function_signature.from_platform;
-  auto iter = aggregate_function_look_up_ptr_map_.find(from_platform);
-  if (iter == aggregate_function_look_up_ptr_map_.end()) {
-    return nullptr;
+  if (from_platform != from_platform_) {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
   }
-  SubstraitFunctionLookupPtr agg_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
       cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
-      agg_function_look_up_ptr->lookupFunction(functionSignature);
+      aggregate_function_look_up_ptr_->lookupFunction(functionSignature);
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionOpSupportType(func_name);
   }
@@ -140,35 +141,35 @@ const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
 const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const std::string& from_platform = function_signature.from_platform;
-  auto iter = extension_function_look_up_ptr_map_.find(from_platform);
-  if (iter == extension_function_look_up_ptr_map_.end()) {
-    return nullptr;
+  if (from_platform != from_platform_) {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
   }
-  SubstraitFunctionLookupPtr extension_function_look_up_ptr = iter->second;
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
       cider::function::substrait::SubstraitFunctionSignature::of(
           func_name, function_signature.arguments, function_signature.return_type);
   const auto& functionOption =
-      extension_function_look_up_ptr->lookupFunction(functionSignature);
+      extension_function_look_up_ptr_->lookupFunction(functionSignature);
   if (functionOption.has_value()) {
     return std::make_shared<OpSupportExprType>(OpSupportExprType::FunctionOper);
   }
   return nullptr;
 }
 
+/// first search extension function, second search internal function
 const OpSupportExprTypePtr FunctionLookup::getFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   OpSupportExprTypePtr result_ptr = nullptr;
+  result_ptr = getExtensionFunctionOpSupportType(function_signature);
+  if (result_ptr) {
+    return result_ptr;
+  }
   result_ptr = getScalarFunctionOpSupportType(function_signature);
   if (result_ptr) {
     return result_ptr;
   }
   result_ptr = getAggFunctionOpSupportType(function_signature);
-  if (result_ptr) {
-    return result_ptr;
-  }
-  result_ptr = getExtensionFunctionOpSupportType(function_signature);
   return result_ptr;
 }
 
@@ -176,14 +177,22 @@ const FunctionDescriptorPtr FunctionLookup::lookupFunction(
     const FunctionSignature& function_signature) const {
   FunctionDescriptorPtr function_descriptor_ptr = std::make_shared<FunctionDescriptor>();
   const std::string& from_platform = function_signature.from_platform;
-  if (from_platform == PRESTO_ENGINE || from_platform == SUBSTRAIT_ENGINE) {
-    function_descriptor_ptr->scalar_op_type_ptr = getFunctionScalarOp(function_signature);
-    function_descriptor_ptr->agg_op_type_ptr = getFunctionAggOp(function_signature);
-    function_descriptor_ptr->op_support_expr_type_ptr =
-        getFunctionOpSupportType(function_signature);
-    function_descriptor_ptr->func_sig = function_signature;
-  } else {
-    throw std::runtime_error(from_platform + " function look up is not yet supported");
+  if (from_platform != from_platform_) {
+    CIDER_THROW(CiderCompileException,
+                std::string("Function lookup unsupported platform ") + from_platform);
   }
+  function_descriptor_ptr->func_sig = function_signature;
+  function_descriptor_ptr->op_support_expr_type_ptr =
+      getFunctionOpSupportType(function_signature);
+  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr &&
+      *(function_descriptor_ptr->op_support_expr_type_ptr) ==
+          OpSupportExprType::FunctionOper) {
+    return function_descriptor_ptr;
+  }
+  function_descriptor_ptr->scalar_op_type_ptr = getFunctionScalarOp(function_signature);
+  if (function_descriptor_ptr->scalar_op_type_ptr != nullptr) {
+    return function_descriptor_ptr;
+  }
+  function_descriptor_ptr->agg_op_type_ptr = getFunctionAggOp(function_signature);
   return function_descriptor_ptr;
 }

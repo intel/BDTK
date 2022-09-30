@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "cider/CiderException.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "function/FunctionLookup.h"
 #include "function/SubstraitFunctionCiderMappings.h"
@@ -27,69 +28,34 @@
 #include "function/substrait/SubstraitType.h"
 #include "function/substrait/VeloxToSubstraitMappings.h"
 
-class FunctionLookupTest : public ::testing::Test {
- protected:
-  void SetUp() override {
-    mappings_ptr = std::make_shared<const SubstraitFunctionCiderMappings>();
-    function_lookup_ptr = std::make_shared<FunctionLookup>(mappings_ptr);
-  }
-
- public:
-  SubstraitFunctionCiderMappingsPtr mappings_ptr;
-  FunctionLookupPtr function_lookup_ptr;
-};
-
 class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    extension_ = cider::function::substrait::SubstraitExtension::loadExtension();
-    mappings_ = std::make_shared<
-        const cider::function::substrait::VeloxToSubstraitFunctionMappings>();
-    scalarFunctionLookup_ =
-        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-            extension_, mappings_);
-    aggregateFunctionLookup_ =
-        std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
-            extension_, mappings_);
-    const auto& testExtension =
-        cider::function::substrait::SubstraitExtension::loadExtension(
-            {getDataPath() + "functions_test.yaml"});
-    testScalarFunctionLookup_ =
-        std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-            testExtension, mappings_);
+    function_lookup_ptr = std::make_shared<FunctionLookup>("substrait");
   }
 
-  void assertTestSignature(
-      const std::string& name,
-      const std::vector<cider::function::substrait::SubstraitTypePtr>& arguments,
-      const cider::function::substrait::SubstraitTypePtr& returnType,
-      const std::string& outputSignature) {
-    const auto& functionSignature =
-        cider::function::substrait::SubstraitFunctionSignature::of(
-            name, arguments, returnType);
-    const auto& functionOption =
-        testScalarFunctionLookup_->lookupFunction(functionSignature);
-
-    ASSERT_TRUE(functionOption.has_value());
-    ASSERT_EQ(functionOption.value()->anchor().key, outputSignature);
+  bool containsTips(const std::string& exception_str, const std::string& expect_str) {
+    if (exception_str.find(expect_str) != std::string::npos) {
+      return true;
+    }
+    return false;
   }
 
- private:
-  static std::string getDataPath() {
-    const std::string absolute_path = __FILE__;
-    auto const pos = absolute_path.find_last_of('/');
-    return absolute_path.substr(0, pos) + "/data/";
-  }
-
-  cider::function::substrait::SubstraitExtensionPtr extension_;
-  cider::function::substrait::SubstraitFunctionMappingsPtr mappings_;
-  cider::function::substrait::SubstraitScalarFunctionLookupPtr scalarFunctionLookup_;
-  cider::function::substrait::SubstraitAggregateFunctionLookupPtr
-      aggregateFunctionLookup_;
-  cider::function::substrait::SubstraitScalarFunctionLookupPtr testScalarFunctionLookup_;
+ public:
+  FunctionLookupPtr function_lookup_ptr;
 };
 
-TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
+class PrestoFunctionLookupTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    function_lookup_ptr = std::make_shared<FunctionLookup>("presto");
+  }
+
+ public:
+  FunctionLookupPtr function_lookup_ptr;
+};
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "presto";
   function_signature.func_name = "between__3";
@@ -116,7 +82,7 @@ TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
   FunctionSignature function_signature;
   function_signature.from_platform = "presto";
   function_signature.func_name = "between__3";
@@ -143,7 +109,7 @@ TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
   FunctionSignature function_signature;
   function_signature.from_platform = "presto";
   function_signature.func_name = "between__3";
@@ -170,7 +136,7 @@ TEST_F(FunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupPrestoIntentionAggTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "presto";
   function_signature.func_name = "avg";
@@ -194,7 +160,7 @@ TEST_F(FunctionLookupTest, functionLookupPrestoIntentionAggTest) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "presto";
   function_signature.func_name = "equal";
@@ -222,7 +188,7 @@ TEST_F(FunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupPrestoUnregisteredTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "presto";
   function_signature.func_name = "between_unregisterd";
@@ -245,7 +211,7 @@ TEST_F(FunctionLookupTest, functionLookupPrestoUnregisteredTest) {
   ASSERT_EQ(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
 }
 
-TEST_F(FunctionLookupTest, functionLookupSubstraitExtentionTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "substrait";
   function_signature.func_name = "between__3";
@@ -272,7 +238,7 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitExtentionTest) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "substrait";
   function_signature.func_name = "avg";
@@ -296,7 +262,7 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "substrait";
   function_signature.func_name = "equal";
@@ -323,7 +289,7 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
   }
 }
 
-TEST_F(FunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "substrait";
   function_signature.func_name = "between_unregisterd";
@@ -346,7 +312,7 @@ TEST_F(FunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
   ASSERT_EQ(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
 }
 
-TEST_F(FunctionLookupTest, functionLookupSparkExtentionTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "spark";
   function_signature.func_name = "between__3";
@@ -367,15 +333,16 @@ TEST_F(FunctionLookupTest, functionLookupSparkExtentionTest) {
         try {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
-        } catch (const std::runtime_error& e) {
-          EXPECT_STREQ("spark function look up is not yet supported", e.what());
+        } catch (const CiderCompileException& e) {
+          EXPECT_TRUE(
+              containsTips(e.what(), "Function lookup unsupported platform spark"));
           throw;
         }
       },
-      std::runtime_error);
+      CiderCompileException);
 }
 
-TEST_F(FunctionLookupTest, functionLookupSparkIntentionAggTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionAggTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "spark";
   function_signature.func_name = "avg";
@@ -390,15 +357,16 @@ TEST_F(FunctionLookupTest, functionLookupSparkIntentionAggTest) {
         try {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
-        } catch (const std::runtime_error& e) {
-          EXPECT_STREQ("spark function look up is not yet supported", e.what());
+        } catch (const CiderCompileException& e) {
+          EXPECT_TRUE(
+              containsTips(e.what(), "Function lookup unsupported platform spark"));
           throw;
         }
       },
-      std::runtime_error);
+      CiderCompileException);
 }
 
-TEST_F(FunctionLookupTest, functionLookupSparkIntentionScalarTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionScalarTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "spark";
   function_signature.func_name = "equal";
@@ -417,15 +385,16 @@ TEST_F(FunctionLookupTest, functionLookupSparkIntentionScalarTest) {
         try {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
-        } catch (const std::runtime_error& e) {
-          EXPECT_STREQ("spark function look up is not yet supported", e.what());
+        } catch (const CiderCompileException& e) {
+          EXPECT_TRUE(
+              containsTips(e.what(), "Function lookup unsupported platform spark"));
           throw;
         }
       },
-      std::runtime_error);
+      CiderCompileException);
 }
 
-TEST_F(FunctionLookupTest, functionLookupSparkUnregisteredTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSparkUnregisteredTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = "spark";
   function_signature.func_name = "between_unregisterd";
@@ -446,26 +415,13 @@ TEST_F(FunctionLookupTest, functionLookupSparkUnregisteredTest) {
         try {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
-        } catch (const std::runtime_error& e) {
-          EXPECT_STREQ("spark function look up is not yet supported", e.what());
+        } catch (const CiderCompileException& e) {
+          EXPECT_TRUE(
+              containsTips(e.what(), "Function lookup unsupported platform spark"));
           throw;
         }
       },
-      std::runtime_error);
-}
-
-TEST_F(SubstraitFunctionLookupTest, substraitFunctionLookupTest) {
-  assertTestSignature(
-      "test",
-      {
-          std::make_shared<const cider::function::substrait::SubstraitScalarType<
-              cider::function::substrait::SubstraitTypeKind::kFp32>>(),
-          std::make_shared<const cider::function::substrait::SubstraitScalarType<
-              cider::function::substrait::SubstraitTypeKind::kFp32>>(),
-      },
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>(),
-      "test:fp32_fp32");
+      CiderCompileException);
 }
 
 int main(int argc, char** argv) {
