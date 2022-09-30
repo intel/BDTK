@@ -81,39 +81,7 @@ class CiderRuntimeModule {
   // should only be called after process batch
   void fetchNonBlockingResults(int32_t start_row,
                                int64_t* flattened_out,
-                               CiderBatch& outBatch,
-                               std::vector<size_t> column_size);
-  // helper function for fecth results
-  template <typename T>
-  void extract_column(int32_t start_row,
-                      int64_t max_read_rows,
-                      size_t col_offset,
-                      size_t col_step,
-                      int64_t* flattened_out,
-                      int8_t* out_col);
-
-  void extract_varchar_column(int32_t start_row,
-                              int64_t max_read_rows,
-                              size_t col_offset,
-                              size_t col_step,
-                              int64_t* flattened_out,
-                              int8_t* out_col);
-
-  void extract_varchar_column_from_dict(int32_t start_row,
-                                        int64_t max_read_rows,
-                                        size_t col_offset,
-                                        size_t col_step,
-                                        int64_t* flattened_out,
-                                        int8_t* out_col);
-
-  // extract 64bits decimal column value
-  void extract_decimal_column(int32_t scale,
-                              int32_t start_row,
-                              int64_t max_read_rows,
-                              size_t col_offset,
-                              size_t col_step,
-                              int64_t* flattened_out,
-                              int8_t* out_col);
+                               CiderBatch& outBatch);
 
   void groupByProcessImpl(const int8_t*** input_cols,
                           uint8_t* row_skip_mask,
@@ -151,9 +119,6 @@ class CiderRuntimeModule {
   int32_t total_matched_rows_{0};
   int32_t fetched_rows_{0};
   constexpr static size_t kMaxOutputRows = 1000;
-  constexpr static double kDoubleNullValue = std::numeric_limits<double>::min();
-  constexpr static float kFloatNullValue = std::numeric_limits<float>::min();
-  constexpr static int64_t kBigIntNullValue = std::numeric_limits<int64_t>::min();
 
   bool is_group_by_;
 };

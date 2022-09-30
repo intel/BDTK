@@ -22,9 +22,12 @@
 #define CIDERBATCH_WITH_ARROW
 
 #include "cider/CiderRuntimeModule.h"
-#include "CiderCompilationResultImpl.h"
+
+#include <type_traits>
+
 #include "cider/CiderException.h"
 #include "cider/batch/StructBatch.h"
+#include "exec/module/CiderCompilationResultImpl.h"
 #include "exec/operator/aggregate/CiderAggHashTable.h"
 #include "exec/operator/aggregate/CiderAggHashTableUtils.h"
 #include "exec/operator/aggregate/CiderAggTargetColExtractor.h"
@@ -58,6 +61,116 @@ using agg_query_hoist_literals = void (*)(const int8_t***,  // col_buffers
                                           int32_t*,         // error_code
                                           const uint32_t*,  // num_tables_
                                           const int64_t*);  // join_hash_tables_ptr
+namespace {
+
+constexpr static double kDoubleNullValue = std::numeric_limits<double>::min();
+constexpr static int64_t kBigIntNullValue = std::numeric_limits<int64_t>::min();
+
+template <typename T>
+std::enable_if_t<std::is_integral<T>::value, void> extract_column(int32_t start_row,
+                                                                  int64_t max_read_rows,
+                                                                  size_t col_offset,
+                                                                  size_t col_step,
+                                                                  int64_t* flattened_out,
+                                                                  int8_t* out_col) {
+  T* col_out_buffer = reinterpret_cast<T*>(out_col);
+  int64_t i = 0;
+  size_t cur_col_offset = start_row * col_step + col_offset;
+  // for other types, it uses 64bit to store a value
+  while (i < max_read_rows) {
+    if (flattened_out[cur_col_offset] == kBigIntNullValue) {
+      col_out_buffer[i++] = std::numeric_limits<T>::min();
+    } else {
+      col_out_buffer[i++] = flattened_out[cur_col_offset];
+    }
+    cur_col_offset += col_step;
+  }
+}
+
+template <typename T>
+std::enable_if_t<std::is_floating_point<T>::value, void> extract_column(
+    int32_t start_row,
+    int64_t max_read_rows,
+    size_t col_offset,
+    size_t col_step,
+    int64_t* flattened_out,
+    int8_t* out_col) {
+  T* col_out_buffer = reinterpret_cast<T*>(out_col);
+  int64_t i = 0;
+  size_t cur_col_offset = start_row * col_step + col_offset;
+  // float is stored as 64bits
+  double* flattened_out_buffer = reinterpret_cast<double*>(flattened_out);
+  while (i < max_read_rows) {
+    // cast to cover float case
+    if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue ||
+        flattened_out_buffer[cur_col_offset] == kFloatNullValue) {
+      col_out_buffer[i++] = std::numeric_limits<T>::min();
+    } else {
+      col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];
+    }
+    cur_col_offset += col_step;
+  }
+}
+
+void extract_varchar_column_from_dict(
+    std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy,
+    std::shared_ptr<CiderAllocator> allocator,
+    int32_t start_row,
+    int64_t max_read_rows,
+    size_t col_offset,
+    size_t col_step,
+    int64_t* flattened_out,
+    int8_t* out_col) {
+  CiderByteArray* col_out_buffer = reinterpret_cast<CiderByteArray*>(out_col);
+  int64_t i = 0;
+  size_t cur_col_offset = start_row * col_step + col_offset;
+  while (i < max_read_rows) {
+    int64_t key = flattened_out[cur_col_offset];
+    std::string s = ciderStringDictionaryProxy->getString(key);
+    uint8_t* ptr = reinterpret_cast<uint8_t*>(allocator->allocate(s.length()));
+    std::memcpy(ptr, s.c_str(), s.length());
+    col_out_buffer[i].ptr = reinterpret_cast<const uint8_t*>(ptr);
+    col_out_buffer[i].len = (uint32_t)s.length();
+    i++;
+    cur_col_offset += col_step;
+  }
+}
+
+void extract_varchar_column(int32_t start_row,
+                            int64_t max_read_rows,
+                            size_t col_offset,
+                            size_t col_step,
+                            int64_t* flattened_out,
+                            int8_t* out_col) {
+  CiderByteArray* col_out_buffer = reinterpret_cast<CiderByteArray*>(out_col);
+  int64_t i = 0;
+  size_t cur_col_offset = start_row * col_step + col_offset;
+  while (i < max_read_rows) {
+    col_out_buffer[i].ptr =
+        reinterpret_cast<const uint8_t*>(flattened_out[cur_col_offset]);
+    col_out_buffer[i].len = (uint32_t)(flattened_out[cur_col_offset + 1]);
+    i++;
+    cur_col_offset += col_step;
+  }
+}
+
+void extract_decimal_column(int32_t scale,
+                            int32_t start_row,
+                            int64_t max_read_rows,
+                            size_t col_offset,
+                            size_t col_step,
+                            int64_t* flattened_out,
+                            int8_t* out_col) {
+  double* col_out_buffer = reinterpret_cast<double*>(out_col);
+  int64_t i = 0;
+  size_t cur_col_offset = start_row * col_step + col_offset;
+  while (i < max_read_rows) {
+    col_out_buffer[i++] = (flattened_out[cur_col_offset] / pow(10, scale));
+    cur_col_offset += col_step;
+  }
+}
+
+}  // namespace
 
 CiderRuntimeModule::CiderRuntimeModule(
     std::shared_ptr<CiderCompilationResult> ciderCompilationResult,
@@ -317,181 +430,87 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   }
 }
 
-#define INDEX_SIZE 8
-#define EIGHT_BYTES 8
 void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
                                                  int64_t* flattened_out,
-                                                 CiderBatch& outBatch,
-                                                 std::vector<size_t> column_size) {
+                                                 CiderBatch& outBatch) {
   // follow IR write logic, it writes out results as flattened row
   // it always use 8 bytes(an int64 or double or 64bit pointer) to represent one valid
   // value. The first 8 bytes is row index, which means row id of the original input.
   // following values are column value of this row, numeric values use 64 bits(8 bytes).
   // For string type, it uses 2 64-bits value, the first is pointer, the latter is length.
-  CHECK_EQ(outBatch.column_num(), column_size.size());
   size_t col_num = outBatch.column_num();
   int64_t row_num = outBatch.row_num();
-
-  // step is row size in 8 bytes, equal to query_mem_desc->getRowSize() / 8
-  size_t step = ciderCompilationResult_->impl_->query_mem_desc_->getRowSize() / 8;
-  std::vector<size_t> offsets(col_num, 0);
-  for (int i = 0; i < col_num; i++) {
-    offsets[i] = ciderCompilationResult_->impl_->query_mem_desc_->getColOffInBytes(i) /
-                 EIGHT_BYTES;
-  }
 
   auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
   if (!outBatch.schema()) {
     outBatch.set_schema(std::make_shared<CiderTableSchema>(schema));
   }
+
+  const auto& query_mem_desc = ciderCompilationResult_->impl_->query_mem_desc_;
+  const auto col_slot_context = query_mem_desc->getColSlotContext();
+  // offset start from 1 to skip the 64 bits rowid
+  size_t offset = 1;
+  // step is row size in 8 bytes, equal to query_mem_desc->getRowSize() / 8
+  size_t step = ciderCompilationResult_->impl_->query_mem_desc_->getRowSize() / 8;
   for (size_t i = 0; i < col_num; i++) {
+    const auto col_slots = col_slot_context.getSlotsForCol(i);
     int8_t* col = const_cast<int8_t*>(outBatch.column(i));
     substrait::Type type = schema.getColumnTypeById(i);
     // need to convert flattened row to columns as outbatch
     switch (type.kind_case()) {
       case substrait::Type::kBool:
       case substrait::Type::kI8:
-        extract_column<int8_t>(start_row, row_num, offsets[i], step, flattened_out, col);
+        extract_column<int8_t>(start_row, row_num, offset, step, flattened_out, col);
         break;
       case substrait::Type::kI16:
-        extract_column<int16_t>(start_row, row_num, offsets[i], step, flattened_out, col);
+        extract_column<int16_t>(start_row, row_num, offset, step, flattened_out, col);
         break;
       case substrait::Type::kI32:
-        extract_column<int32_t>(start_row, row_num, offsets[i], step, flattened_out, col);
+        extract_column<int32_t>(start_row, row_num, offset, step, flattened_out, col);
         break;
       case substrait::Type::kI64:
       case substrait::Type::kDate:
       case substrait::Type::kTime:
       case substrait::Type::kTimestamp:
-        extract_column<int64_t>(start_row, row_num, offsets[i], step, flattened_out, col);
+        extract_column<int64_t>(start_row, row_num, offset, step, flattened_out, col);
         break;
       case substrait::Type::kFp32:
-        extract_column<float>(start_row, row_num, offsets[i], step, flattened_out, col);
+        extract_column<float>(start_row, row_num, offset, step, flattened_out, col);
         break;
       case substrait::Type::kFp64:
-        extract_column<double>(start_row, row_num, offsets[i], step, flattened_out, col);
+        extract_column<double>(start_row, row_num, offset, step, flattened_out, col);
         break;
       case substrait::Type::kString:
       case substrait::Type::kVarchar:
       case substrait::Type::kFixedChar: {
-        int col_len =
-            (i == col_num - 1) ? (step - offsets[i]) : ((offsets[i + 1] - offsets[i]));
+        int col_len = col_slots.size();
         if (col_len == 1) {  // string function, decode from StringDictionary
           extract_varchar_column_from_dict(
-              start_row, row_num, offsets[i], step, flattened_out, col);
+              ciderCompilationResult_->impl_->ciderStringDictionaryProxy_,
+              allocator_,
+              start_row,
+              row_num,
+              offset,
+              step,
+              flattened_out,
+              col);
         } else if (col_len == 2) {
-          extract_varchar_column(
-              start_row, row_num, offsets[i], step, flattened_out, col);
+          extract_varchar_column(start_row, row_num, offset, step, flattened_out, col);
+          offset += col_slot_context.getSlotInfo(col_slots[1]).padded_size / 8;
         } else {
           CIDER_THROW(CiderRuntimeException, fmt::format("col_len is {}", col_len));
         }
         break;
       }
       case substrait::Type::kDecimal: {
-        extract_decimal_column(type.decimal().scale(),
-                               start_row,
-                               row_num,
-                               offsets[i],
-                               step,
-                               flattened_out,
-                               col);
+        extract_decimal_column(
+            type.decimal().scale(), start_row, row_num, offset, step, flattened_out, col);
         break;
       }
       default:
         LOG(ERROR) << "Unsupported type: " << type.kind_case();
     }
-  }
-}
-
-template <typename T>
-void CiderRuntimeModule::extract_column(int32_t start_row,
-                                        int64_t max_read_rows,
-                                        size_t col_offset,
-                                        size_t col_step,
-                                        int64_t* flattened_out,
-                                        int8_t* out_col) {
-  T* col_out_buffer = reinterpret_cast<T*>(out_col);
-  int64_t i = 0;
-  size_t cur_col_offset = start_row * col_step + col_offset;
-  if (std::is_floating_point<T>::value) {
-    // float is stored as 64bits
-    double* flattened_out_buffer = reinterpret_cast<double*>(flattened_out);
-    while (i < max_read_rows) {
-      // cast to cover float case
-      if (flattened_out_buffer[cur_col_offset] == kDoubleNullValue ||
-          flattened_out_buffer[cur_col_offset] == kFloatNullValue) {
-        col_out_buffer[i++] = std::numeric_limits<T>::min();
-      } else {
-        col_out_buffer[i++] = (T)flattened_out_buffer[cur_col_offset];
-      }
-      cur_col_offset += col_step;
-    }
-  } else {
-    // for other types, it uses 64bit to store a value
-    while (i < max_read_rows) {
-      if (flattened_out[cur_col_offset] == kBigIntNullValue) {
-        col_out_buffer[i++] = std::numeric_limits<T>::min();
-      } else {
-        col_out_buffer[i++] = flattened_out[cur_col_offset];
-      }
-      cur_col_offset += col_step;
-    }
-  }
-}
-
-void CiderRuntimeModule::extract_varchar_column_from_dict(int32_t start_row,
-                                                          int64_t max_read_rows,
-                                                          size_t col_offset,
-                                                          size_t col_step,
-                                                          int64_t* flattened_out,
-                                                          int8_t* out_col) {
-  CiderByteArray* col_out_buffer = reinterpret_cast<CiderByteArray*>(out_col);
-  int64_t i = 0;
-  size_t cur_col_offset = start_row * col_step + col_offset;
-  while (i < max_read_rows) {
-    int64_t key = flattened_out[cur_col_offset];
-    std::string s =
-        ciderCompilationResult_->impl_->ciderStringDictionaryProxy_->getString(key);
-    uint8_t* ptr = reinterpret_cast<uint8_t*>(allocator_->allocate(s.length()));
-    std::memcpy(ptr, s.c_str(), s.length());
-    col_out_buffer[i].ptr = reinterpret_cast<const uint8_t*>(ptr);
-    col_out_buffer[i].len = (uint32_t)s.length();
-    i++;
-    cur_col_offset += col_step;
-  }
-}
-
-void CiderRuntimeModule::extract_varchar_column(int32_t start_row,
-                                                int64_t max_read_rows,
-                                                size_t col_offset,
-                                                size_t col_step,
-                                                int64_t* flattened_out,
-                                                int8_t* out_col) {
-  CiderByteArray* col_out_buffer = reinterpret_cast<CiderByteArray*>(out_col);
-  int64_t i = 0;
-  size_t cur_col_offset = start_row * col_step + col_offset;
-  while (i < max_read_rows) {
-    col_out_buffer[i].ptr =
-        reinterpret_cast<const uint8_t*>(flattened_out[cur_col_offset]);
-    col_out_buffer[i].len = (uint32_t)(flattened_out[cur_col_offset + 1]);
-    i++;
-    cur_col_offset += col_step;
-  }
-}
-
-void CiderRuntimeModule::extract_decimal_column(int32_t scale,
-                                                int32_t start_row,
-                                                int64_t max_read_rows,
-                                                size_t col_offset,
-                                                size_t col_step,
-                                                int64_t* flattened_out,
-                                                int8_t* out_col) {
-  double* col_out_buffer = reinterpret_cast<double*>(out_col);
-  int64_t i = 0;
-  size_t cur_col_offset = start_row * col_step + col_offset;
-  while (i < max_read_rows) {
-    col_out_buffer[i++] = (flattened_out[cur_col_offset] / pow(10, scale));
-    cur_col_offset += col_step;
+    offset += col_slot_context.getSlotInfo(col_slots[0]).padded_size / 8;
   }
 }
 
@@ -576,8 +595,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
       project_result->set_schema(std::make_shared<CiderTableSchema>(schema));
       int64_t* row_buffer = const_cast<int64_t*>(
           reinterpret_cast<const int64_t*>(one_batch_result_.column(0)));
-      fetchNonBlockingResults(fetched_rows_, row_buffer, *project_result, column_size);
-
+      fetchNonBlockingResults(fetched_rows_, row_buffer, *project_result);
       fetched_rows_ += row_num;
       return std::make_pair(kNoMoreOutput, std::move(project_result));
     }
