@@ -392,6 +392,8 @@ class CiderBatch {
           case ::substrait::Type::KindCase::kI32:
             PRINT_BY_TYPE(int32_t)
           case ::substrait::Type::KindCase::kI64:
+          case ::substrait::Type::KindCase::kTimestamp:
+          case ::substrait::Type::KindCase::kTime:
           case ::substrait::Type::KindCase::kDate:
             PRINT_BY_TYPE(int64_t)
           case ::substrait::Type::KindCase::kFp32:

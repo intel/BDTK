@@ -32,24 +32,13 @@
 
 #include <google/protobuf/util/json_util.h>
 
-#define DEBUG_SUBSTRAIT_OUTPUT()                             \
-  if (print_substrait_) {                                    \
-    std::cout << "substrait json is: " << json << std::endl; \
-  }
-
-#define DEBUG_LLVM_IR()                                               \
-  if (print_IR_) {                                                    \
-    std::cout << "LLVM IR is: " << compile_res->getIR() << std::endl; \
-  }
-
 #define COMPILE_AND_GEN_RUNTIME_MODULE()                                             \
   compile_option.needs_error_check = true;                                           \
   auto compile_res = ciderCompileModule_->compile(plan, compile_option, exe_option); \
   auto cider_runtime_module =                                                        \
       std::make_shared<CiderRuntimeModule>(compile_res, compile_option, exe_option); \
   auto output_schema =                                                               \
-      std::make_shared<CiderTableSchema>(compile_res->getOutputCiderTableSchema());  \
-  DEBUG_LLVM_IR();
+      std::make_shared<CiderTableSchema>(compile_res->getOutputCiderTableSchema());
 
 std::string getSubstraitPlanFilesPath() {
   const std::string absolute_path = __FILE__;
@@ -82,7 +71,7 @@ std::string getFileContent(const std::string& file_name) {
 
   ::substrait::Plan plan;
   google::protobuf::util::JsonStringToMessage(json, &plan);
-  DEBUG_SUBSTRAIT_OUTPUT();
+  LOG(DEBUG1) << "substrait json is: " << json << "\n";
   return std::move(plan);
 }
 
@@ -175,7 +164,6 @@ CiderBatch CiderQueryRunner::runJoinQueryOneBatch(const std::string& file_or_sql
   ciderCompileModule_->feedBuildTable(std::move(right_batch));
   auto compile_res = ciderCompileModule_->compile(plan);
   auto cider_runtime_module = std::make_shared<CiderRuntimeModule>(compile_res);
-  DEBUG_LLVM_IR();
 
   auto output_schema =
       std::make_shared<CiderTableSchema>(compile_res->getOutputCiderTableSchema());

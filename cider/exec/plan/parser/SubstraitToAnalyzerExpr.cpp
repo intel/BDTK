@@ -541,6 +541,16 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       return std::make_shared<Analyzer::Constant>(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }
+    case substrait::Expression_Literal::LiteralTypeCase::kTimestamp: {
+      constant_value.bigintval = s_literal_expr.timestamp();
+      return std::make_shared<Analyzer::Constant>(
+          getSQLTypeInfo(s_literal_expr), false, constant_value);
+    }
+    case substrait::Expression_Literal::LiteralTypeCase::kTime: {
+      constant_value.bigintval = s_literal_expr.time();
+      return std::make_shared<Analyzer::Constant>(
+          getSQLTypeInfo(s_literal_expr), false, constant_value);
+    }
     case substrait::Expression_Literal::LiteralTypeCase::kFixedChar: {
       constant_value.stringval = new std::string(s_literal_expr.fixed_char());
       return std::make_shared<Analyzer::Constant>(
@@ -637,8 +647,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExp
   CHECK(s_scalar_function.arguments(1).has_value());
   auto from_expr =
       toAnalyzerExpr(s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
-  from_expr->set_type_info(
-      SQLTypeInfo(SQLTypes::kDATE, from_expr->get_type_info().get_notnull()));
   return ExtractExpr::generate(from_expr, time_unit);
 }
 
@@ -655,7 +663,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildNotNullExp
   return std::make_shared<Analyzer::UOper>(kBOOLEAN, kNOT, is_null);
 }
 
-std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildDateAddExpr(
+std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildTimeAddExpr(
     const substrait::Expression_ScalarFunction& s_scalar_function,
     const std::string& function_name,
     const std::unordered_map<int, std::string> function_map,
@@ -664,8 +672,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildDateAddExp
   CHECK(function_name == "add" || function_name == "subtract");
   const std::shared_ptr<Analyzer::Expr> datetime =
       toAnalyzerExpr(s_scalar_function.arguments(0).value(), function_map, expr_map_ptr);
-  SQLTypeInfo datetime_ti(
-      SQLTypeInfo(SQLTypes::kDATE, datetime->get_type_info().get_notnull()));
+  SQLTypeInfo datetime_ti = datetime->get_type_info();
   if (s_scalar_function.arguments(1).value().literal().has_interval_year_to_month()) {
     Datum interval_value;
     SQLTypeInfo interval_ti(SQLTypes::kINTERVAL_YEAR_MONTH, true);
@@ -919,10 +926,9 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   }
 
   // translate Date type function (DateAdd/DateSubtract)
-  // FIXME: from Function_datetime.yaml, some date functions return type is `timestamp`
-  // rather than `date`
-  if (s_scalar_function.has_output_type() && s_scalar_function.output_type().has_date()) {
-    return buildDateAddExpr(s_scalar_function, function, function_map, expr_map_ptr);
+  if (s_scalar_function.has_output_type() &&
+      isTimeType(s_scalar_function.output_type())) {
+    return buildTimeAddExpr(s_scalar_function, function, function_map, expr_map_ptr);
   }
 
   if (function == "like") {
@@ -990,22 +996,19 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  // For date type, return an Analyzer::Constant expr directly, will not do cast.
+  // TODO: (spevenhe) this branch should only cover cast_string_to_date case.
+  // encapsulate and support nested function like cast(cast(xx as String) AS Date).
+  // CAST(SUBSTRING(col_string, 0, 5) AS DATE
+  // Now only supports cast(col_string AS Date)
   if (s_cast_expr.type().kind_case() == substrait::Type::kDate) {
     SQLTypeInfo sqlTypeInfo = getSQLTypeInfo(s_cast_expr.type());
-    // Default is none encoding
-    // sqlTypeInfo.set_compression(EncodingType::kENCODING_NONE);
-    Datum v;
-    // TODO: currently only support a string date representation. Seems it's possible to
-    // use a int32/int64 to represent under substrait protocol
     if (!s_cast_expr.input().literal().fixed_char().empty()) {
+      // Default is none encoding
+      // sqlTypeInfo.set_compression(EncodingType::kENCODING_NONE);
+      Datum v;
       v.bigintval = dateToInt64(s_cast_expr.input().literal().fixed_char());
-    }
-    // TODO: spevenhe.
-    // support nested function like cast(cast(xx as String) AS Date).
-    // CAST(SUBSTRING(col_string, 0, 5) AS DATE
-    // Now only supports cast(col_string AS Date)
-    else if (isColumnVar(s_cast_expr.input().selection())) {
+      return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
+    } else if (isColumnVar(s_cast_expr.input().selection())) {
       int col_id =
           s_cast_expr.input().selection().direct_reference().struct_field().field();
       if (expr_map_ptr != nullptr) {
@@ -1018,6 +1021,12 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
                 s_cast_expr.input().selection(), function_map, expr_map_ptr));
 
             return makeExpr<Analyzer::TryStringCastOper>(SQLTypes::kDATE, args);
+          } else if (sqlTypeInfo.is_time()) {
+            return std::make_shared<Analyzer::UOper>(
+                sqlTypeInfo,
+                false,
+                SQLOps::kCAST,
+                toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr));
           } else {
             CIDER_THROW(CiderCompileException,
                         "Not supported date cast type other than string.");
@@ -1027,13 +1036,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
         }
       }
       CIDER_THROW(CiderCompileException, "Can not get the origin type of CAST to DATE.");
-    } else {
-      CIDER_THROW(CiderCompileException,
-                  "Not supported Expression or Not supported literal type for CAST to "
-                  "DATE, literal id " +
-                      std::to_string(s_cast_expr.input().literal().literal_type_case()));
     }
-    return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
   }
   // CAST is a normal UOper expr in Analyzer
   return std::make_shared<Analyzer::UOper>(
@@ -1104,6 +1107,14 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
 bool Substrait2AnalyzerExprConverter::isColumnVar(
     const substrait::Expression_FieldReference& selection_expr) {
   if (selection_expr.has_direct_reference() && selection_expr.has_root_reference()) {
+    return true;
+  }
+  return false;
+}
+
+bool Substrait2AnalyzerExprConverter::isTimeType(const substrait::Type& type) {
+  if (type.has_date() || type.has_time() || type.has_timestamp() ||
+      type.has_timestamp_tz()) {
     return true;
   }
   return false;

@@ -179,7 +179,52 @@ TEST(QueryDataGeneratorTest, genDateColumn) {
 
   auto expected_batch = std::make_shared<CiderBatch>(
       CiderBatchBuilder()
-          .addColumn<CiderDateType>("col_date", CREATE_SUBSTRAIT_TYPE(Date), col)
+          .addTimingColumn<CiderDateType>("col_date", CREATE_SUBSTRAIT_TYPE(Date), col)
+          .build());
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch, expected_batch));
+}
+
+TEST(QueryDataGeneratorTest, genTimeColumn) {
+  auto actual_batch =
+      std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+          5, {"col_time"}, {CREATE_SUBSTRAIT_TYPE(Time)}));
+
+  EXPECT_EQ(actual_batch->row_num(), 5);
+  EXPECT_EQ(actual_batch->column_num(), 1);
+
+  std::vector<CiderTimeType> col;
+  col.push_back(CiderTimeType("00:00:00.000000"));
+  col.push_back(CiderTimeType("00:00:00.000001"));
+  col.push_back(CiderTimeType("00:00:00.000002"));
+  col.push_back(CiderTimeType("00:00:00.000003"));
+  col.push_back(CiderTimeType("00:00:00.000004"));
+
+  auto expected_batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .addTimingColumn<CiderTimeType>("col_time", CREATE_SUBSTRAIT_TYPE(Time), col)
+          .build());
+  EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch, expected_batch));
+}
+
+TEST(QueryDataGeneratorTest, genTimestampColumn) {
+  auto actual_batch =
+      std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+          5, {"col_timestamp"}, {CREATE_SUBSTRAIT_TYPE(Timestamp)}));
+
+  EXPECT_EQ(actual_batch->row_num(), 5);
+  EXPECT_EQ(actual_batch->column_num(), 1);
+
+  std::vector<CiderTimestampType> col;
+  col.push_back(CiderTimestampType("1970-01-01 00:00:00.000000"));
+  col.push_back(CiderTimestampType("1970-01-01 00:00:00.000001"));
+  col.push_back(CiderTimestampType("1970-01-01 00:00:00.000002"));
+  col.push_back(CiderTimestampType("1970-01-01 00:00:00.000003"));
+  col.push_back(CiderTimestampType("1970-01-01 00:00:00.000004"));
+
+  auto expected_batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .addTimingColumn<CiderTimestampType>(
+              "col_timestamp", CREATE_SUBSTRAIT_TYPE(Timestamp), col)
           .build());
   EXPECT_TRUE(CiderBatchChecker::checkEq(actual_batch, expected_batch));
 }

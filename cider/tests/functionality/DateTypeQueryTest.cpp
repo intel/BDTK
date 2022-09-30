@@ -247,9 +247,50 @@ TEST_F(DateRandomAndNullQueryTest, DateOpTest) {
       "< date '1980-01-01'");
 }
 
+class TimeTypeQueryTest : public CiderTestBase {
+ public:
+  TimeTypeQueryTest() {
+    table_name_ = "test";
+    create_ddl_ =
+        "CREATE TABLE test(col_date DATE, col_time TIME, col_timestamp TIMESTAMP);";
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        100,
+        {"col_date", "col_time", "col_timestamp"},
+        {CREATE_SUBSTRAIT_TYPE(Date),
+         CREATE_SUBSTRAIT_TYPE(Time),
+         CREATE_SUBSTRAIT_TYPE(Timestamp)},
+        {2, 2, 2},
+        GeneratePattern::Random))};
+  }
+};
+
+TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
+  assertQuery("SELECT col_timestamp from test where col_timestamp > date '1970-01-01'",
+              "cast_literal_timestamp.json");
+  assertQuery("SELECT col_timestamp +  interval '1' month  from test",
+              "add_timestamp_interval_month.json");
+  assertQuery("SELECT col_timestamp +  interval '1' day  from test",
+              "add_timestamp_interval_day.json");
+  assertQuery("SELECT col_timestamp +  interval '1' second  from test",
+              "add_timestamp_interval_second.json");
+
+  assertQuery("select extract(microsecond from col_timestamp) from test",
+              "extract/microsecond_of_timestamp.json");
+  assertQuery("select extract(second from col_time) from test",
+              "extract/second_of_time.json");
+  assertQuery("select cast(col_date as TIMESTAMP) from test",
+              "cast_date_as_timestamp.json");
+  // equals to date trunc
+  assertQuery("SELECT cast(col_timestamp as DATE) from test",
+              "cast_timestamp_as_date.json");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();
