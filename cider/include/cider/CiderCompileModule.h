@@ -49,7 +49,7 @@ class CiderCompilationResult {
 
   void* func() const;
 
-  CiderTableSchema getOutputCiderTableSchema() const;
+  std::shared_ptr<CiderTableSchema> getOutputCiderTableSchema() const;
 
   QueryType getQueryType() const;
 

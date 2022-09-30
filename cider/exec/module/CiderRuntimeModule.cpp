@@ -213,7 +213,7 @@ CiderRuntimeModule::CiderRuntimeModule(
 
 std::unique_ptr<CiderBatch> CiderRuntimeModule::prepareOneBatchOutput(int64_t len) {
   ArrowSchema* schema = CiderBatchUtils::convertCiderTableSchemaToArrowSchema(
-      ciderCompilationResult_->getOutputCiderTableSchema());
+      *(ciderCompilationResult_->getOutputCiderTableSchema()));
   auto root_batch = StructBatch::Create(schema, allocator_);
 
   std::function<void(CiderBatch*)> build_function =
@@ -442,7 +442,7 @@ void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
 
   auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
   if (!outBatch.schema()) {
-    outBatch.set_schema(std::make_shared<CiderTableSchema>(schema));
+    outBatch.set_schema(schema);
   }
 
   const auto& query_mem_desc = ciderCompilationResult_->impl_->query_mem_desc_;
@@ -454,7 +454,7 @@ void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
   for (size_t i = 0; i < col_num; i++) {
     const auto col_slots = col_slot_context.getSlotsForCol(i);
     int8_t* col = const_cast<int8_t*>(outBatch.column(i));
-    substrait::Type type = schema.getColumnTypeById(i);
+    substrait::Type type = schema->getColumnTypeById(i);
     // need to convert flattened row to columns as outbatch
     switch (type.kind_case()) {
       case substrait::Type::kBool:
@@ -578,11 +578,11 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
       return std::make_pair(kNoMoreOutput, std::move(one_batch_result_ptr_));
     } else {
       auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
-      int column_num = schema.getColumnCount();
+      int column_num = schema->getColumnCount();
 
       std::vector<size_t> column_size;
       for (int i = 0; i < column_num; i++) {
-        column_size.push_back(schema.GetColumnTypeSize(i));
+        column_size.push_back(schema->GetColumnTypeSize(i));
       }
 
       int32_t row_num = total_matched_rows_ - fetched_rows_;
@@ -591,7 +591,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
       }
       auto project_result =
           std::make_unique<CiderBatch>(row_num, column_size, allocator_);
-      project_result->set_schema(std::make_shared<CiderTableSchema>(schema));
+      project_result->set_schema(schema);
       int64_t* row_buffer = const_cast<int64_t*>(
           reinterpret_cast<const int64_t*>(one_batch_result_.column(0)));
       fetchNonBlockingResults(fetched_rows_, row_buffer, *project_result);
@@ -715,7 +715,7 @@ void CiderRuntimeModule::initCiderAggTargetColExtractors() {
       std::vector<std::unique_ptr<CiderAggTargetColExtractor>>(col_num);
 
   const auto& output_hint =
-      ciderCompilationResult_->getOutputCiderTableSchema().getColHints();
+      ciderCompilationResult_->getOutputCiderTableSchema()->getColHints();
 
   std::vector<bool> is_partial_avg_sum(col_num, false);
   for (size_t i = 0, j = 0; i < output_hint.size() && j < col_num; ++j) {
@@ -781,9 +781,7 @@ void CiderRuntimeModule::resetAggVal() {
 
 CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
     std::unique_ptr<CiderBatch> output_batch) {
-  int column_num = ciderCompilationResult_->getOutputCiderTableSchema().getColumnCount();
-  auto schema = std::make_shared<CiderTableSchema>(
-      ciderCompilationResult_->getOutputCiderTableSchema());
+  auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
   output_batch->set_schema(schema);
   // no need to update if no count(distinct)
   if (ciderCompilationResult_->impl_->query_mem_desc_->hasCountDistinct()) {

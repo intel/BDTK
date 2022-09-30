@@ -82,7 +82,8 @@ void* CiderCompilationResult::func() const {
   return impl_->func();
 }
 
-CiderTableSchema CiderCompilationResult::getOutputCiderTableSchema() const {
+std::shared_ptr<CiderTableSchema> CiderCompilationResult::getOutputCiderTableSchema()
+    const {
   return impl_->getOutputCiderTableSchema();
 }
 
@@ -150,7 +151,7 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
     ciderCompilationResult->impl_->outputSchema_ =
-        translator_->getOutputCiderTableSchema();
+        std::make_shared<CiderTableSchema>(translator_->getOutputCiderTableSchema());
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     ciderCompilationResult->impl_->build_table_ = std::move(build_table_);
     ciderCompilationResult->impl_->ciderStringDictionaryProxy_ =
@@ -212,7 +213,7 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
     ciderCompilationResult->impl_->outputSchema_ =
-        translator_->getOutputCiderTableSchema();
+        std::make_shared<CiderTableSchema>(translator_->getOutputCiderTableSchema());
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     return ciderCompilationResult;
   }
@@ -300,7 +301,8 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->hoist_literals_ = co.hoist_literals;
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
-    ciderCompilationResult->impl_->outputSchema_ = schema;
+    ciderCompilationResult->impl_->outputSchema_ =
+        std::make_shared<CiderTableSchema>(schema);
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     return ciderCompilationResult;
   }

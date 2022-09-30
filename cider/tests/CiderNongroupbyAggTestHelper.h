@@ -300,8 +300,11 @@ void runTest(const std::string& test_name,
   std::vector<InputTableInfo> table_infos = {table_ptr->getInputTableInfo()};
 
   // FIXME: output table schema not set
-  auto compile_result = cider_compile_module->compile(
-      ra_exe_unit_ptr.get(), &table_infos, compile_option, exe_option);
+  auto compile_result = cider_compile_module->compile(ra_exe_unit_ptr.get(),
+                                                      &table_infos,
+                                                      *(new CiderTableSchema()),
+                                                      compile_option,
+                                                      exe_option);
 
   CiderRuntimeModule cider_runtime_module(compile_result, compile_option, exe_option);
 

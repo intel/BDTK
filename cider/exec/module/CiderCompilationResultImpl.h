@@ -40,7 +40,9 @@ class CiderCompilationResult::Impl {
     return cpu_generated_code->func();
   }
 
-  CiderTableSchema getOutputCiderTableSchema() const { return outputSchema_; }
+  std::shared_ptr<CiderTableSchema> getOutputCiderTableSchema() const {
+    return outputSchema_;
+  }
 
   QueryType getQueryType() const {
     switch (query_mem_desc_->getQueryDescriptionType()) {
@@ -61,7 +63,7 @@ class CiderCompilationResult::Impl {
   std::shared_ptr<RelAlgExecutionUnit> rel_alg_exe_unit_;
   bool hoist_literals_;
   std::vector<int8_t> hoist_buf;
-  CiderTableSchema outputSchema_;
+  std::shared_ptr<CiderTableSchema> outputSchema_;
   CiderBatch build_table_;
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
 };
