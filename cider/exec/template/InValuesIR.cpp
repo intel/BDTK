@@ -148,7 +148,6 @@ std::unique_ptr<InValuesBitmap> CodeGenerator::createInValuesBitmap(
               get_nullable_type_info(in_val_ti) == ti);
         if (ti.is_string()) {
           CHECK(sdp);
-          std::cout << *in_val_const->get_constval().stringval << std::endl;
           const auto string_id =
               in_val_const->get_is_null()
                   ? needle_null_val
