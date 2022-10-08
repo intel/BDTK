@@ -22,12 +22,12 @@
 #include "function/FunctionLookup.h"
 #include "cider/CiderException.h"
 
-void FunctionLookup::registerFunctionLookUpContext(const EngineType from_platform) {
+void FunctionLookup::registerFunctionLookUpContext(const PlatformType from_platform) {
   // Load cider support function default yaml files first.
   cider::function::substrait::SubstraitExtensionPtr cider_internal_function_ptr =
       cider::function::substrait::SubstraitExtension::loadExtension();
   // Load engine's extension function yaml files second.
-  if (from_platform == EngineType::SubstraitEngine) {
+  if (from_platform == PlatformType::SubstraitPlatform) {
     cider::function::substrait::SubstraitExtensionPtr substrait_extension_function_ptr =
         cider::function::substrait::SubstraitExtension::loadExtension(
             {getDataPath() + "/substrait/" + "substrait_extension.yaml"});
@@ -42,7 +42,7 @@ void FunctionLookup::registerFunctionLookUpContext(const EngineType from_platfor
     extension_function_look_up_ptr_ =
         std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
             substrait_extension_function_ptr, func_mappings);
-  } else if (from_platform == EngineType::PrestoEngine) {
+  } else if (from_platform == PlatformType::PrestoPlatform) {
     cider::function::substrait::SubstraitExtensionPtr presto_extension_function_ptr =
         cider::function::substrait::SubstraitExtension::loadExtension(
             {getDataPath() + "/presto/" + "presto_extension.yaml"});
@@ -66,7 +66,7 @@ void FunctionLookup::registerFunctionLookUpContext(const EngineType from_platfor
 
 const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
     const FunctionSignature& function_signature) const {
-  const EngineType& from_platform = function_signature.from_platform;
+  const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
         CiderCompileException,
@@ -89,7 +89,7 @@ const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
 
 const SQLAggPtr FunctionLookup::getFunctionAggOp(
     const FunctionSignature& function_signature) const {
-  const EngineType& from_platform = function_signature.from_platform;
+  const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
         CiderCompileException,
@@ -112,7 +112,7 @@ const SQLAggPtr FunctionLookup::getFunctionAggOp(
 
 const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  const EngineType& from_platform = function_signature.from_platform;
+  const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
         CiderCompileException,
@@ -135,7 +135,7 @@ const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
 
 const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  const EngineType& from_platform = function_signature.from_platform;
+  const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
         CiderCompileException,
@@ -158,7 +158,7 @@ const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
 
 const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  const EngineType& from_platform = function_signature.from_platform;
+  const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
         CiderCompileException,
@@ -198,7 +198,7 @@ const OpSupportExprTypePtr FunctionLookup::getFunctionOpSupportType(
 const FunctionDescriptorPtr FunctionLookup::lookupFunction(
     const FunctionSignature& function_signature) const {
   FunctionDescriptorPtr function_descriptor_ptr = std::make_shared<FunctionDescriptor>();
-  const EngineType& from_platform = function_signature.from_platform;
+  const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
         CiderCompileException,
