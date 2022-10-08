@@ -163,6 +163,8 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
     assertQuery("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'"); \
     assertQuery("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");           \
     assertQuery("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");        \
+    assertQuery("SELECT col_2 FROM test where col_2 IS NOT NULL");            \
+    assertQuery("SELECT col_2 FROM test where col_2 < 'uuu'");                \
   }
 
 #define LIKE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                     \
