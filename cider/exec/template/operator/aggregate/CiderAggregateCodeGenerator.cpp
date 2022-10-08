@@ -195,6 +195,8 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
         generator->base_fname_ += "_int64";
         break;
     }
+  } else if (target_info.sql_type.is_date()) {
+    generator->base_fname_ += "_int64";
   } else {
     throw std::runtime_error("Unsuppored data type for ProjectIDCodeGenerator.");
   }
