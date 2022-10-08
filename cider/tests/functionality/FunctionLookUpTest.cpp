@@ -31,7 +31,7 @@
 class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    function_lookup_ptr = std::make_shared<FunctionLookup>("substrait");
+    function_lookup_ptr = std::make_shared<FunctionLookup>(EngineType::SubstraitEngine);
   }
 
   bool containsTips(const std::string& exception_str, const std::string& expect_str) {
@@ -48,7 +48,7 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
 class PrestoFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    function_lookup_ptr = std::make_shared<FunctionLookup>("presto");
+    function_lookup_ptr = std::make_shared<FunctionLookup>(EngineType::PrestoEngine);
   }
 
  public:
@@ -57,7 +57,7 @@ class PrestoFunctionLookupTest : public ::testing::Test {
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "presto";
+  function_signature.from_platform = EngineType::PrestoEngine;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -84,7 +84,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest)
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "presto";
+  function_signature.from_platform = EngineType::PrestoEngine;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -111,7 +111,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "presto";
+  function_signature.from_platform = EngineType::PrestoEngine;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -138,7 +138,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "presto";
+  function_signature.from_platform = EngineType::PrestoEngine;
   function_signature.func_name = "avg";
   function_signature.arguments = {
       cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
@@ -162,7 +162,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "presto";
+  function_signature.from_platform = EngineType::PrestoEngine;
   function_signature.func_name = "equal";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -190,7 +190,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "presto";
+  function_signature.from_platform = EngineType::PrestoEngine;
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -213,7 +213,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "substrait";
+  function_signature.from_platform = EngineType::SubstraitEngine;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -240,7 +240,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "substrait";
+  function_signature.from_platform = EngineType::SubstraitEngine;
   function_signature.func_name = "avg";
   function_signature.arguments = {
       cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
@@ -264,7 +264,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "substrait";
+  function_signature.from_platform = EngineType::SubstraitEngine;
   function_signature.func_name = "equal";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -291,7 +291,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) 
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "substrait";
+  function_signature.from_platform = EngineType::SubstraitEngine;
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -314,7 +314,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "spark";
+  function_signature.from_platform = EngineType::SparkEngine;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -334,8 +334,9 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
-          EXPECT_TRUE(
-              containsTips(e.what(), "Function lookup unsupported platform spark"));
+          EXPECT_TRUE(containsTips(
+              e.what(),
+              "Platform of target function is 2, mismatched with registered platform 0"));
           throw;
         }
       },
@@ -344,7 +345,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionAggTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "spark";
+  function_signature.from_platform = EngineType::SparkEngine;
   function_signature.func_name = "avg";
   function_signature.arguments = {
       cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
@@ -358,8 +359,9 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionAggTest) {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
-          EXPECT_TRUE(
-              containsTips(e.what(), "Function lookup unsupported platform spark"));
+          EXPECT_TRUE(containsTips(
+              e.what(),
+              "Platform of target function is 2, mismatched with registered platform 0"));
           throw;
         }
       },
@@ -368,7 +370,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionAggTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionScalarTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "spark";
+  function_signature.from_platform = EngineType::SparkEngine;
   function_signature.func_name = "equal";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -386,8 +388,9 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionScalarTest) {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
-          EXPECT_TRUE(
-              containsTips(e.what(), "Function lookup unsupported platform spark"));
+          EXPECT_TRUE(containsTips(
+              e.what(),
+              "Platform of target function is 2, mismatched with registered platform 0"));
           throw;
         }
       },
@@ -396,7 +399,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionScalarTest) {
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSparkUnregisteredTest) {
   FunctionSignature function_signature;
-  function_signature.from_platform = "spark";
+  function_signature.from_platform = EngineType::SparkEngine;
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
@@ -416,8 +419,9 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkUnregisteredTest) {
           auto function_descriptor_ptr =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
-          EXPECT_TRUE(
-              containsTips(e.what(), "Function lookup unsupported platform spark"));
+          EXPECT_TRUE(containsTips(
+              e.what(),
+              "Platform of target function is 2, mismatched with registered platform 0"));
           throw;
         }
       },

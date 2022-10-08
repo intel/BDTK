@@ -39,7 +39,6 @@ std::vector<ExtensionFunction>* ExtensionFunctionsWhitelist::get(
   }
   return &it->second;
 }
-
 std::vector<ExtensionFunction>* ExtensionFunctionsWhitelist::get_udf(
     const std::string& name) {
   const auto it = udf_functions_.find(to_upper(name));

@@ -37,11 +37,13 @@
 #define SUBSTRAIT_ENGINE "substrait"
 #define PRESTO_ENGINE "presto"
 
+enum EngineType { SubstraitEngine, PrestoEngine, SparkEngine };
+
 struct FunctionSignature {
   std::string func_name;
   std::vector<cider::function::substrait::SubstraitTypePtr> arguments;
   cider::function::substrait::SubstraitTypePtr return_type;
-  std::string from_platform;
+  EngineType from_platform;
 };
 
 struct FunctionDescriptor {
@@ -57,7 +59,7 @@ using SubstraitFunctionLookupPtr =
 
 class FunctionLookup {
  public:
-  FunctionLookup(const std::string& from_platform) : from_platform_(from_platform) {
+  FunctionLookup(const EngineType from_platform) : from_platform_(from_platform) {
     registerFunctionLookUpContext(from_platform);
   }
 
@@ -75,7 +77,7 @@ class FunctionLookup {
       const FunctionSignature& function_signature) const;
 
  private:
-  void registerFunctionLookUpContext(const std::string& from_platform);
+  void registerFunctionLookUpContext(const EngineType from_platform);
 
   const SQLOpsPtr getFunctionScalarOp(const FunctionSignature& function_signature) const;
   const SQLAggPtr getFunctionAggOp(const FunctionSignature& function_signature) const;
@@ -105,7 +107,7 @@ class FunctionLookup {
   // extension function lookup ptr
   SubstraitFunctionLookupPtr extension_function_look_up_ptr_;
 
-  const std::string from_platform_;
+  const EngineType from_platform_;
 };
 
 using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;

@@ -22,25 +22,27 @@
 #include "function/FunctionLookup.h"
 #include "cider/CiderException.h"
 
-void FunctionLookup::registerFunctionLookUpContext(const std::string& from_platform) {
+void FunctionLookup::registerFunctionLookUpContext(const EngineType from_platform) {
+  // Load cider support function default yaml files first.
   cider::function::substrait::SubstraitExtensionPtr cider_internal_function_ptr =
       cider::function::substrait::SubstraitExtension::loadExtension();
-  if (from_platform == SUBSTRAIT_ENGINE) {
+  // Load engine's extension function yaml files second.
+  if (from_platform == EngineType::SubstraitEngine) {
     cider::function::substrait::SubstraitExtensionPtr substrait_extension_function_ptr =
         cider::function::substrait::SubstraitExtension::loadExtension(
             {getDataPath() + "/substrait/" + "substrait_extension.yaml"});
-    cider::function::substrait::SubstraitFunctionMappingsPtr substrait_mappings =
+    cider::function::substrait::SubstraitFunctionMappingsPtr func_mappings =
         std::make_shared<const cider::function::substrait::SubstraitFunctionMappings>();
     scalar_function_look_up_ptr_ =
         std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-            cider_internal_function_ptr, substrait_mappings);
+            cider_internal_function_ptr, func_mappings);
     aggregate_function_look_up_ptr_ =
         std::make_shared<cider::function::substrait::SubstraitAggregateFunctionLookup>(
-            cider_internal_function_ptr, substrait_mappings);
+            cider_internal_function_ptr, func_mappings);
     extension_function_look_up_ptr_ =
         std::make_shared<cider::function::substrait::SubstraitScalarFunctionLookup>(
-            substrait_extension_function_ptr, substrait_mappings);
-  } else if (from_platform == PRESTO_ENGINE) {
+            substrait_extension_function_ptr, func_mappings);
+  } else if (from_platform == EngineType::PrestoEngine) {
     cider::function::substrait::SubstraitExtensionPtr presto_extension_function_ptr =
         cider::function::substrait::SubstraitExtension::loadExtension(
             {getDataPath() + "/presto/" + "presto_extension.yaml"});
@@ -58,16 +60,20 @@ void FunctionLookup::registerFunctionLookUpContext(const std::string& from_platf
             presto_extension_function_ptr, presto_mappings);
   } else {
     CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+                fmt::format("Function lookup unsupported platform {}", from_platform));
   }
 }
 
 const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
     const FunctionSignature& function_signature) const {
-  const std::string& from_platform = function_signature.from_platform;
+  const EngineType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
-    CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
   }
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
@@ -83,10 +89,14 @@ const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
 
 const SQLAggPtr FunctionLookup::getFunctionAggOp(
     const FunctionSignature& function_signature) const {
-  const std::string& from_platform = function_signature.from_platform;
+  const EngineType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
-    CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
   }
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
@@ -102,10 +112,14 @@ const SQLAggPtr FunctionLookup::getFunctionAggOp(
 
 const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  const std::string& from_platform = function_signature.from_platform;
+  const EngineType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
-    CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
   }
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
@@ -121,10 +135,14 @@ const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
 
 const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  const std::string& from_platform = function_signature.from_platform;
+  const EngineType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
-    CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
   }
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
@@ -140,10 +158,14 @@ const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
 
 const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  const std::string& from_platform = function_signature.from_platform;
+  const EngineType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
-    CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
   }
   const std::string& func_name = function_signature.func_name;
   const auto& functionSignature =
@@ -176,10 +198,14 @@ const OpSupportExprTypePtr FunctionLookup::getFunctionOpSupportType(
 const FunctionDescriptorPtr FunctionLookup::lookupFunction(
     const FunctionSignature& function_signature) const {
   FunctionDescriptorPtr function_descriptor_ptr = std::make_shared<FunctionDescriptor>();
-  const std::string& from_platform = function_signature.from_platform;
+  const EngineType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
-    CIDER_THROW(CiderCompileException,
-                std::string("Function lookup unsupported platform ") + from_platform);
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
   }
   function_descriptor_ptr->func_sig = function_signature;
   function_descriptor_ptr->op_support_expr_type_ptr =
