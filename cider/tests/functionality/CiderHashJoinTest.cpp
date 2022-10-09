@@ -272,7 +272,7 @@ HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest2, *, d, = 2 *)
 HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest3, *, d, *2 = 2 *)
 
 // using OR to avoid 0 results
-// todo: (spevenhe) OR will fail back to loop join while AND is still hash join
+// TODO: (spevenhe) OR will fail back to loop join while AND is still hash join
 #define DOUBLE_JOIN_OR_CONDITION_TEST(TEST_CLASS, UNIT_NAME, PROJECT)               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
     /*INNER JOIN ON INTEGER OR FLOAT*/                                              \
