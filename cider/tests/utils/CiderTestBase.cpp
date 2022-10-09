@@ -105,6 +105,7 @@ void CiderJoinTestBase::assertJoinQuery(const std::string& sql,
 void CiderJoinTestBase::assertJoinQueryRowEqual(const std::string& sql,
                                                 const std::string& json_file,
                                                 const bool ignore_order) {
+  VLOG(4) << sql;
   auto duck_res = duckDbQueryRunner_.runSql(sql);
   auto duck_res_batches = DuckDbResultConvertor::fetchDataToCiderBatch(duck_res);
 

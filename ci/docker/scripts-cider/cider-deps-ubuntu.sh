@@ -108,7 +108,7 @@ install_llvm
 install_awscpp -j $(nproc)
 
 VERS=0.16.0
-wget --continue https://dlcdn.apache.org/thrift/$VERS/thrift-$VERS.tar.gz
+wget --continue -O thrift-$VERS.tar.gz https://github.com/apache/thrift/archive/refs/tags/v$VERS.tar.gz
 tar xvf thrift-$VERS.tar.gz
 pushd thrift-$VERS
 CFLAGS="-fPIC" CXXFLAGS="-fPIC" JAVA_PREFIX=$PREFIX/lib ./configure \

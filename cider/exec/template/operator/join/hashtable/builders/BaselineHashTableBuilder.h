@@ -306,7 +306,7 @@ class BaselineJoinHashTableBuilder {
     hash_table_ = std::make_unique<BaselineHashTable>(
         layout, keyspace_entry_count, keys_for_all_rows, hash_table_size);
     auto cpu_hash_table_ptr = hash_table_->getCpuBuffer();
-    int thread_count = cpu_threads();
+    int thread_count = 1;
     std::vector<std::future<void>> init_cpu_buff_threads;
     setHashLayout(layout);
     for (int thread_idx = 0; thread_idx < thread_count; ++thread_idx) {

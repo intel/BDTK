@@ -272,24 +272,64 @@ HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest2, *, d, = 2 *)
 HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest3, *, d, *2 = 2 *)
 
 // using OR to avoid 0 results
-#define DOUBLE_JOIN_CONDITION_TEST_UNIT(TEST_CLASS, UNIT_NAME, PROJECT)              \
+// todo: (spevenhe) OR will fail back to loop join while AND is still hash join
+#define DOUBLE_JOIN_OR_CONDITION_TEST(TEST_CLASS, UNIT_NAME, PROJECT)               \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
+    /*INNER JOIN ON INTEGER OR FLOAT*/                                              \
+    assertJoinQueryRowEqualAndReset(                                                \
+        "SELECT " #PROJECT                                                          \
+        " from table_probe JOIN table_hash ON l_b = r_b OR l_c =  r_c ");           \
+    /*LEFT JOIN ON BIGINT OR DOUBLE*/                                               \
+    assertJoinQueryRowEqualAndReset(                                                \
+        "SELECT " #PROJECT                                                          \
+        " from table_probe LEFT JOIN table_hash ON l_a = r_a OR l_d = r_d ");       \
+    /*INNER JOIN ON INTEGER OR CONSTANT*/                                           \
+    assertJoinQueryRowEqualAndReset(                                                \
+        "SELECT " #PROJECT                                                          \
+        " from table_probe JOIN table_hash ON l_b = r_b OR l_b = 10 ");             \
+    /*LEFT JOIN ON BIGINT OR CONSTANT*/                                             \
+    assertJoinQueryRowEqualAndReset(                                                \
+        "SELECT " #PROJECT                                                          \
+        " from table_probe LEFT JOIN table_hash ON l_a = r_a OR l_a = 10 ");        \
+    /*INNER JOIN ON INTEGER AND NOT NULL*/                                          \
+    assertJoinQueryRowEqualAndReset(                                                \
+        "SELECT " #PROJECT                                                          \
+        " from table_probe JOIN table_hash ON l_b = r_b OR l_b IS NOT NULL ");      \
+    /*LEFT JOIN ON BIGINT AND NOT NULL*/                                            \
+    assertJoinQueryRowEqualAndReset(                                                \
+        "SELECT " #PROJECT                                                          \
+        " from table_probe LEFT JOIN table_hash ON l_a = r_a OR l_a IS NOT NULL "); \
+  }
+
+// DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToOneSeqJoinTest, ORJoinConditionTest1, *)
+// DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToManySeqJoinTest, ORJoinConditionTest2, *)
+// DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToOneRandomJoinTest, ORJoinConditionTest3, *)
+// DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToManyRandomJoinTest, ORJoinConditionTest4, *)
+// DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToOneRandomJoinTest,
+//                               ORJoinConditionWithAggTest1,
+//                               SUM(l_a))
+// DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToManyRandomJoinTest,
+//                               ORJoinConditionWithAggTest2,
+//                               SUM(r_a))
+
+#define DOUBLE_JOIN_AND_CONDITION_TEST(TEST_CLASS, UNIT_NAME, PROJECT)               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                    \
     /*INNER JOIN ON INTEGER OR FLOAT*/                                               \
     assertJoinQueryRowEqualAndReset(                                                 \
         "SELECT " #PROJECT                                                           \
-        " from table_probe JOIN table_hash ON l_b = r_b OR l_c =  r_c ");            \
+        " from table_probe JOIN table_hash ON l_b = r_b AND l_c =  r_c ");           \
     /*LEFT JOIN ON BIGINT OR DOUBLE*/                                                \
     assertJoinQueryRowEqualAndReset(                                                 \
         "SELECT " #PROJECT                                                           \
-        " from table_probe LEFT JOIN table_hash ON l_a = r_a OR l_d = r_d ");        \
+        " from table_probe LEFT JOIN table_hash ON l_a = r_a AND l_d = r_d ");       \
     /*INNER JOIN ON INTEGER OR CONSTANT*/                                            \
     assertJoinQueryRowEqualAndReset(                                                 \
         "SELECT " #PROJECT                                                           \
-        " from table_probe JOIN table_hash ON l_b = r_b OR l_b = 10 ");              \
+        " from table_probe JOIN table_hash ON l_b = r_b AND l_b = 10 ");             \
     /*LEFT JOIN ON BIGINT OR CONSTANT*/                                              \
     assertJoinQueryRowEqualAndReset(                                                 \
         "SELECT " #PROJECT                                                           \
-        " from table_probe LEFT JOIN table_hash ON l_a = r_a OR l_a = 10 ");         \
+        " from table_probe LEFT JOIN table_hash ON l_a = r_a AND l_a = 10 ");        \
     /*INNER JOIN ON INTEGER AND NOT NULL*/                                           \
     assertJoinQueryRowEqualAndReset(                                                 \
         "SELECT " #PROJECT                                                           \
@@ -300,16 +340,16 @@ HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest3, *, d, *2 = 2 *)
         " from table_probe LEFT JOIN table_hash ON l_a = r_a AND l_a IS NOT NULL "); \
   }
 
-DOUBLE_JOIN_CONDITION_TEST_UNIT(CiderOneToOneSeqJoinTest, doubleJoinConditionTest1, *)
-DOUBLE_JOIN_CONDITION_TEST_UNIT(CiderOneToManySeqJoinTest, doubleJoinConditionTest2, *)
-DOUBLE_JOIN_CONDITION_TEST_UNIT(CiderOneToOneRandomJoinTest, doubleJoinConditionTest3, *)
-DOUBLE_JOIN_CONDITION_TEST_UNIT(CiderOneToManyRandomJoinTest, doubleJoinConditionTest4, *)
-DOUBLE_JOIN_CONDITION_TEST_UNIT(CiderOneToOneRandomJoinTest,
-                                doubleJoinConditionWithAggTest1,
-                                SUM(l_a))
-DOUBLE_JOIN_CONDITION_TEST_UNIT(CiderOneToManyRandomJoinTest,
-                                doubleJoinConditionWithAggTest2,
-                                SUM(r_a))
+DOUBLE_JOIN_AND_CONDITION_TEST(CiderOneToOneSeqJoinTest, ANDJoinConditionTest1, *)
+DOUBLE_JOIN_AND_CONDITION_TEST(CiderOneToManySeqJoinTest, ANDJoinConditionTest2, *)
+DOUBLE_JOIN_AND_CONDITION_TEST(CiderOneToOneRandomJoinTest, ANDJoinConditionTest3, *)
+DOUBLE_JOIN_AND_CONDITION_TEST(CiderOneToManyRandomJoinTest, ANDJoinConditionTest4, *)
+DOUBLE_JOIN_AND_CONDITION_TEST(CiderOneToOneRandomJoinTest,
+                               ANDJoinConditionWithAggTest1,
+                               SUM(l_a))
+DOUBLE_JOIN_AND_CONDITION_TEST(CiderOneToManyRandomJoinTest,
+                               ANDJoinConditionWithAggTest2,
+                               SUM(r_a))
 
 #define HASH_JOIN_WITH_FILTER_TEST_UNIT(TEST_CLASS, UNIT_NAME, PROJECT)               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                     \

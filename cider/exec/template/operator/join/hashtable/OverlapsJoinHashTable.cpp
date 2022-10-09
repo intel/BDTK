@@ -180,7 +180,7 @@ std::vector<double> compute_bucket_sizes(
       << std::to_string(bucket_thresholds[1]);
 
   if (effective_memory_level == Data_Namespace::MemoryLevel::CPU_LEVEL) {
-    const int thread_count = cpu_threads();
+    const int thread_count = 1;
     compute_bucket_sizes_on_cpu(
         bucket_sizes, join_column, join_column_type, bucket_thresholds, thread_count);
   }
@@ -904,7 +904,7 @@ std::pair<size_t, size_t> OverlapsJoinHashTable::approximateTupleCount(
               << ", emitted keys count: " << cached_count_info->second;
       return *cached_count_info;
     }
-    int thread_count = cpu_threads();
+    int thread_count = 1;
     std::vector<uint8_t> hll_buffer_all_cpus(thread_count * padded_size_bytes);
     auto hll_result = &hll_buffer_all_cpus[0];
 
