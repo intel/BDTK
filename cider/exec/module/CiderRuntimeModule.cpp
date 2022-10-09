@@ -841,15 +841,6 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           } else {
             cast_buffer[0] = (double)result[0];
           }
-        } else if (target_type == SQLTypes::kDOUBLE) {
-          double* result = const_cast<double*>(
-              reinterpret_cast<const double*>(outBuffers[flatten_index]));
-          double* cast_buffer = reinterpret_cast<double*>(result);
-          if (result[0] == kBigIntNullValue) {
-            cast_buffer[0] = kDoubleNullValue;
-          } else {
-            cast_buffer[0] = (double)result[0];
-          }
         }
       }
     }

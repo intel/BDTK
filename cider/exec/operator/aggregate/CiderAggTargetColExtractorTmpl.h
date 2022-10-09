@@ -161,7 +161,7 @@ class AVGAggExtractor : public CiderAggTargetColExtractor {
 
       AVGT sumVal = *reinterpret_cast<const SUMT*>(rowPtr + sum_offset_);
       int64_t countVal = *reinterpret_cast<const COUNTT*>(rowPtr + count_offset_);
-      if (sumVal == 0 && countVal == 0) {
+      if (countVal == 0) {
         avgResultVector[i] = std::numeric_limits<double>::min();
       } else {
         avgResultVector[i] = sumVal / countVal;
@@ -199,7 +199,7 @@ class AVGAggExtractor : public CiderAggTargetColExtractor {
 
         AVGT sumVal = *reinterpret_cast<const SUMT*>(rowPtr + sum_offset_);
         int64_t countVal = *reinterpret_cast<const COUNTT*>(rowPtr + count_offset_);
-        if (sumVal == 0 && countVal == 0) {
+        if (countVal == 0) {
           buffer[i] = std::numeric_limits<double>::min();
         } else {
           buffer[i] = sumVal / countVal;
@@ -239,7 +239,7 @@ class AVGAggExtractor<DecimalPlaceHolder, COUNTT, AVGT>
       AVGT sumVal = static_cast<double>(
           *reinterpret_cast<const int64_t*>(rowPtr + sum_offset_) / scale_);
       int64_t countVal = *reinterpret_cast<const COUNTT*>(rowPtr + count_offset_);
-      if (sumVal == 0 && countVal == 0) {
+      if (countVal == 0) {
         avgResultVector[i] = std::numeric_limits<double>::min();
       } else {
         avgResultVector[i] = sumVal / countVal;
