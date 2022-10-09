@@ -57,11 +57,10 @@ class DateAndTimeType {
   // used to desc how to use a 64 bit integer to represent time
   static int getTypeDimension(Type type) {
     switch (type) {
-      case Type::Date:
-        return 0;
       case Type::Time:
       case Type::Timestamp:
         return 6;
+      case Type::Date:
       default:
         return 0;
     }

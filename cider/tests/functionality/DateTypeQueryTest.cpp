@@ -265,24 +265,32 @@ class TimeTypeQueryTest : public CiderTestBase {
 };
 
 TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
-  assertQuery("SELECT col_timestamp from test where col_timestamp > date '1970-01-01'",
+  assertQuery("SELECT col_timestamp FROM test WHERE col_timestamp > DATE '1970-01-01'",
               "cast_literal_timestamp.json");
-  assertQuery("SELECT col_timestamp +  interval '1' month  from test",
+  assertQuery("SELECT col_timestamp + INTERVAL '1' MONTH FROM test",
               "add_timestamp_interval_month.json");
-  assertQuery("SELECT col_timestamp +  interval '1' day  from test",
+  assertQuery("SELECT col_timestamp + INTERVAL '1' DAY FROM test",
               "add_timestamp_interval_day.json");
-  assertQuery("SELECT col_timestamp +  interval '1' second  from test",
+  assertQuery("SELECT col_timestamp + INTERVAL '1' SECOND FROM test",
               "add_timestamp_interval_second.json");
 
-  assertQuery("select extract(microsecond from col_timestamp) from test",
+  // multiple columns with carry-out
+  assertQuery(
+      "SELECT col_timestamp + INTERVAL '20' MONTH, col_timestamp + INTERVAL '50' DAY, "
+      "col_timestamp + INTERVAL '5000' SECOND FROM test",
+      "add_timestamp_interval_mixed.json");
+
+  assertQuery("SELECT EXTRACT(microsecond FROM col_timestamp) FROM test",
               "extract/microsecond_of_timestamp.json");
-  assertQuery("select extract(second from col_time) from test",
+  assertQuery("SELECT EXTRACT(second FROM col_time) FROM test",
               "extract/second_of_time.json");
-  assertQuery("select cast(col_date as TIMESTAMP) from test",
+  assertQuery("SELECT CAST(col_date AS TIMESTAMP) FROM test",
               "cast_date_as_timestamp.json");
   // equals to date trunc
-  assertQuery("SELECT cast(col_timestamp as DATE) from test",
+  assertQuery("SELECT CAST(col_timestamp AS DATE) FROM test",
               "cast_timestamp_as_date.json");
+
+  //
 }
 
 int main(int argc, char** argv) {
