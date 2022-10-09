@@ -289,8 +289,6 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
   // equals to date trunc
   assertQuery("SELECT CAST(col_timestamp AS DATE) FROM test",
               "cast_timestamp_as_date.json");
-
-  //
 }
 
 int main(int argc, char** argv) {
