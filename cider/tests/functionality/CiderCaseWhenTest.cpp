@@ -47,8 +47,8 @@ class CiderCaseWhenSequenceWithNullTestBase : public CiderTestBase {
     create_ddl_ =
         R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-        10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        100,
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
@@ -64,9 +64,9 @@ class CiderCaseWhenRandomWithNullTestBase : public CiderTestBase {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
-    // FIXME: (yma11) for col_str, filter result in some cases(if len is random from 0) will be
-    // incorrect in DuckDB as the different handlement of len 0 varchar and null varchar,
-    // refer POAE7-2385 which may not need fix after switch to arrow format
+    // FIXME: (yma11) for col_str, filter result in some cases(if len is random from 0)
+    // will be incorrect in DuckDB as the different handlement of len 0 varchar and null
+    // varchar, refer POAE7-2385 which may not need fix after switch to arrow format
     input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
         100,
         {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
