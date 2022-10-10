@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include "planTransformer/PlanPattern.h"
+#include "../planTransformer/PlanPattern.h"
 #include "planTransformer/SequencePlanPattern.h"
 
 namespace facebook::velox::plugin::plantransformer {
