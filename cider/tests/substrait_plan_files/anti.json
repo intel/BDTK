@@ -16,7 +16,7 @@
         "project": {
           "common": {
             "emit": {
-              "outputMapping": [11]
+              "outputMapping": [10]
             }
           },
           "input": {
@@ -32,7 +32,7 @@
                     }
                   },
                   "baseSchema": {
-                    "names": ["L_A", "L_B", "L_C", "L_D", "L_E"],
+                    "names": ["L_LONG", "L_INT", "L_DOUBLE", "L_FLOAT", "L_BOOL"],
                     "struct": {
                       "types": [{
                         "i64": {
@@ -76,7 +76,7 @@
                     }
                   },
                   "baseSchema": {
-                    "names": ["R_A", "R_B", "R_C", "R_D", "R_E", "R_F"],
+                    "names": ["R_LONG", "R_INT", "R_DOUBLE", "R_FLOAT", "R_BOOL"],
                     "struct": {
                       "types": [{
                         "i64": {
@@ -100,11 +100,6 @@
                         }
                       }, {
                         "bool": {
-                          "typeVariationReference": 0,
-                          "nullability": "NULLABILITY_NULLABLE"
-                        }
-                      }, {
-                        "i32": {
                           "typeVariationReference": 0,
                           "nullability": "NULLABILITY_NULLABLE"
                         }
@@ -171,7 +166,7 @@
           }]
         }
       },
-      "names": ["L_A"]
+      "names": ["L_LONG"]
     }
   }],
   "expectedTypeUrls": []
