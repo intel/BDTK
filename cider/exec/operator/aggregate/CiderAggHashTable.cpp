@@ -252,9 +252,6 @@ CiderAggHashTable::CiderAggHashTable(
                        : (query_mem_desc->getGroupbyColCount() +
                           query_mem_desc->getBufferColSlotCount()))
     , key_columns_num_(query_mem_desc->getKeyCount())
-    , is_keyless_(query_mem_desc->hasKeylessHash())
-    , keyless_key_index_(query_mem_desc->getTargetIdxForKey())
-    , is_columnar_layout_(query_mem_desc->didOutputColumnar())
     , row_width_(query_mem_desc->getRowSize())
     , buffer_memory_limit_(buffer_memory_limit)
     , query_mem_desc_(query_mem_desc.get())
@@ -278,10 +275,8 @@ CiderAggHashTable::CiderAggHashTable(
 
   // Initialization of initial row data vector.
   const auto row_data_ptr = initial_row_data_.data();
-  if (!is_columnar_layout_) {
-    for (const auto& col_info : cols_info_) {
-      std::memcpy(row_data_ptr + col_info.slot_offset, &col_info.init_val, slot_width_);
-    }
+  for (const auto& col_info : cols_info_) {
+    std::memcpy(row_data_ptr + col_info.slot_offset, &col_info.init_val, slot_width_);
   }
 
   if (force_direct_hash || hasher_.getHashMode() == CiderHasher::kDirectHash) {
@@ -312,7 +307,7 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
   std::vector<CiderAggHashTableEntryInfo> cols_info(columns_num_);
 
   size_t offset = 0, col_slot_context_index = 0;
-  bool is_key = !is_keyless_;
+  bool is_key = true;
   auto groupby_expr_iter = rel_alg_exec_unit_->groupby_exprs.begin();
   auto target_expr_iter = rel_alg_exec_unit_->target_exprs.begin();
 
@@ -322,20 +317,6 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
   auto init_vals_vec_iter = init_vals_vec.begin();
 
   for (size_t i = 0; i < columns_num_; ++i) {
-    if (!is_keyless_ && i == key_columns_num_) {
-      is_key = false;
-
-      if (query_mem_desc_->useCiderDataFormat()) {
-        group_key_null_offset_ = offset;
-        CHECK_EQ(group_key_null_offset_,
-                 query_mem_desc_->getNullVectorOffsetOfGroupKeys());
-
-        offset += ((key_columns_num_ + 7) >> 3);
-      }
-
-      offset = align_to_int64(offset);
-      group_target_offset_ = offset;
-    }
     cols_info[i].count_distinct_desc =
         i < key_columns_num_
             ? CountDistinctDescriptor{CountDistinctImplType::Invalid,
@@ -357,15 +338,21 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
       cols_info[i].sql_type_info = expr->get_type_info();
       cols_info[i].arg_type_info = cols_info[i].sql_type_info;
 
-      if (is_columnar_layout_) {
-        offset += align_to_int64(std::max(query_mem_desc_->groupColWidth(i),
-                                          static_cast<int8_t>(sizeof(int64_t))) *
-                                 buffer_entry_num_);
-
-      } else {
-        offset += effective_key_slot_width_;
-      }
+      offset += effective_key_slot_width_;
       ++groupby_expr_iter;
+
+      if ((i + 1) == key_columns_num_) {
+        is_key = false;
+        if (query_mem_desc_->useCiderDataFormat()) {
+          group_key_null_offset_ = offset;
+          CHECK_EQ(group_key_null_offset_,
+                   query_mem_desc_->getNullVectorOffsetOfGroupKeys());
+
+          offset += ((key_columns_num_ + 7) >> 3);
+        }
+        offset = align_to_int64(offset);
+        group_target_offset_ = offset;
+      }
     } else {
       while (0 == query_mem_desc_->getPaddedSlotWidthBytes(col_slot_context_index)) {
         ++col_slot_context_index;
@@ -375,13 +362,7 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
       cols_info[i].sql_type_info = (*target_expr_iter)->get_type_info();
       cols_info[i].init_val = *init_vals_vec_iter;
 
-      if (is_columnar_layout_) {
-        offset += align_to_int64(
-            query_mem_desc_->getPaddedSlotWidthBytes(col_slot_context_index) *
-            buffer_entry_num_);
-      } else {
-        offset += slot_width_;
-      }
+      offset += slot_width_;
 
       auto expr = dynamic_cast<Analyzer::AggExpr*>(*target_expr_iter);
       if (expr) {
@@ -407,13 +388,7 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
           cols_info[i].arg_type_info = cols_info[i].sql_type_info;
           cols_info[i].init_val = *init_vals_vec_iter;
 
-          if (is_columnar_layout_) {
-            offset += align_to_int64(
-                query_mem_desc_->getPaddedSlotWidthBytes(col_slot_context_index) *
-                buffer_entry_num_);
-          } else {
-            offset += slot_width_;
-          }
+          offset += slot_width_;
         }
       } else {
         cols_info[i].agg_type = kSINGLE_VALUE;
@@ -432,16 +407,9 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
   }
   offset = align_to_int64(offset);
 
-  if (!is_columnar_layout_) {
-    row_width_ = offset;
-    CHECK_EQ(row_width_, query_mem_desc_->getRowSize());
-    buffer_width_ = row_width_ * buffer_entry_num_;
-  } else {
-    CIDER_THROW(CiderCompileException,
-                "Columnar layout of CiderAggHashTable is not supported now.");
-    row_width_ = slot_width_ * columns_num_;
-    buffer_width_ = offset;
-  }
+  row_width_ = offset;
+  CHECK_EQ(row_width_, query_mem_desc_->getRowSize());
+  buffer_width_ = row_width_ * buffer_entry_num_;
 
   return cols_info;
 }
@@ -498,9 +466,6 @@ std::string CiderAggHashTable::toString() const {
   ss << "Slot Width: " << slot_width_ << "\n";
   ss << "Columns Num: " << columns_num_ << "\n";
   ss << "Key Columns Num: " << key_columns_num_ << "\n";
-  ss << "Keyless: " << (is_keyless_ ? "True" : "False") << "\n";
-  ss << "Keyless Index: " << keyless_key_index_ << "\n";
-  ss << "Columnar: " << (is_columnar_layout_ ? "True" : "False") << "\n";
   ss << "Row Width: " << row_width_ << "\n";
 
   ss << "TargetIndexMap: [";
@@ -646,19 +611,9 @@ void CiderAggHashTable::freeBufferAt(size_t buffer_id) {
 void CiderAggHashTable::resetBuffer(size_t buffer_index) {
   auto target_ptr = buffer_memory_[buffer_index];
   CHECK(target_ptr);
-  if (!is_columnar_layout_) {
-    const auto row_data_ptr = initial_row_data_.data();
-    for (size_t i = 0; i < buffer_entry_num_; ++i, target_ptr += row_width_) {
-      std::memcpy(target_ptr, row_data_ptr, row_width_);
-    }
-  } else {
-    for (auto& col_info : cols_info_) {
-      auto col_ptr = target_ptr + col_info.slot_offset;
-      for (size_t i = 0; i < buffer_entry_num_; ++i) {
-        std::memcpy(col_ptr, &col_info.init_val, slot_width_);
-        col_ptr += slot_width_;
-      }
-    }
+  const auto row_data_ptr = initial_row_data_.data();
+  for (size_t i = 0; i < buffer_entry_num_; ++i, target_ptr += row_width_) {
+    std::memcpy(target_ptr, row_data_ptr, row_width_);
   }
 
   buffer_empty_map_[buffer_index].resetBits(0);
@@ -730,7 +685,9 @@ bool CiderAggHashTable::rehash() {
   allocateBufferAt(0);
   resetBuffer(0);
 
-  const size_t target_offset = cols_info_[key_columns_num_].slot_offset;
+  const size_t target_offset = (columns_num_ == key_columns_num_)
+                                   ? row_width_
+                                   : cols_info_[key_columns_num_].slot_offset;
   for (size_t i = 0; i < prev_buffer_entry_num; ++i) {
     if (CiderBitUtils::isBitSetAt(prev_empty_map.as<uint8_t>(), i)) {
       const int64_t* prev_row =
@@ -765,16 +722,7 @@ size_t CiderAggHashTable::getActualDataWidth(size_t column_index) const {
 size_t CiderAggHashTable::getNextRowIndex(const int8_t* buffer_ptr,
                                           const uint8_t* empty_map_ptr,
                                           const size_t start_row_index) const {
-  if (is_columnar_layout_) {
-    // Unsupported now
-    CIDER_THROW(CiderCompileException,
-                "Columnar layout group-by hashtable is unsupported.");
-    return slot_width_ == 8
-               ? getNextRowIndexColumnar<int64_t>(buffer_ptr, start_row_index)
-               : getNextRowIndexColumnar<int32_t>(buffer_ptr, start_row_index);
-  } else {
-    return getNextRowIndexRow(buffer_ptr, empty_map_ptr, start_row_index);
-  }
+  return getNextRowIndexRow(buffer_ptr, empty_map_ptr, start_row_index);
 }
 
 size_t CiderAggHashTable::getNextRowIndexRow(const int8_t* buffer_ptr,
@@ -840,16 +788,9 @@ const int32_t* CiderAggHashTableRowIterator::getColumn(size_t column_index) cons
     return nullptr;
   }
 
-  if (table_ptr_->is_columnar_layout_) {
-    const auto col_ptr = buffer_ptr_ + table_ptr_->cols_info_[column_index].slot_offset;
-    const int32_t* ans_ptr = reinterpret_cast<const int32_t*>(col_ptr);
-
-    return ans_ptr + (row_index_ << ((table_ptr_->slot_width_ >> 2) - 1));
-  } else {
-    const auto col_ptr = buffer_ptr_ + table_ptr_->cols_info_[column_index].slot_offset +
-                         table_ptr_->row_width_ * row_index_;
-    return reinterpret_cast<int32_t*>(col_ptr);
-  }
+  const auto col_ptr = buffer_ptr_ + table_ptr_->cols_info_[column_index].slot_offset +
+                       table_ptr_->row_width_ * row_index_;
+  return reinterpret_cast<int32_t*>(col_ptr);
 }
 
 const int8_t* CiderAggHashTableRowIterator::getColumnBase(size_t column_index) const {
@@ -858,13 +799,8 @@ const int8_t* CiderAggHashTableRowIterator::getColumnBase(size_t column_index) c
     return nullptr;
   }
 
-  if (table_ptr_->is_columnar_layout_) {
-    const auto col_ptr = buffer_ptr_ + table_ptr_->slot_width_ * row_index_;
-    return col_ptr;
-  } else {
-    const auto col_ptr = buffer_ptr_ + table_ptr_->row_width_ * row_index_;
-    return col_ptr;
-  }
+  const auto col_ptr = buffer_ptr_ + table_ptr_->row_width_ * row_index_;
+  return col_ptr;
 }
 
 size_t CiderAggHashTableRowIterator::getColumnActualWidth(size_t column_index) const {
