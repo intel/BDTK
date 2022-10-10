@@ -742,10 +742,16 @@ void CiderRuntimeModule::initCiderAggTargetColExtractors() {
         CiderAggTargetColExtractorBuilder::buildCiderAggTargetColExtractor(
             group_by_agg_hashtable_.get(), target_col_index, is_partial_avg_sum[i]);
 
-    // TODO: Partial Avg
     if (kAVG == col_info.agg_type) {
+      // handle tow nearby columns for AVG since it's divided into SUM and COUNT
       children.emplace_back(kDOUBLE, col_info.arg_type_info.get_notnull());
       ++i;
+      target_col_index = target_index_map[i];
+      auto& col_info_cnt = group_by_agg_hashtable_->getColEntryInfo(target_col_index);
+      group_by_agg_extractors_[i] =
+          CiderAggTargetColExtractorBuilder::buildCiderAggTargetColExtractor(
+              group_by_agg_hashtable_.get(), target_col_index, is_partial_avg_sum[i]);
+      children.emplace_back(kBIGINT, col_info_cnt.arg_type_info.get_notnull());
     } else {
       children.emplace_back(col_info.sql_type_info);
     }
