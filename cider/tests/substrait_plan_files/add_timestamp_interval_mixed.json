@@ -1,0 +1,206 @@
+{
+    "extensionUris": [
+        {
+            "extensionUriAnchor": 1,
+            "uri": "/functions_datetime.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 0,
+                "name": "add:ts_day"
+            }
+        },
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 1,
+                "name": "add:ts_year"
+            }
+        }
+    ],
+    "relations": [
+        {
+            "root": {
+                "input": {
+                    "project": {
+                        "common": {
+                            "emit": {
+                                "outputMapping": [
+                                    3, 4, 5
+                                ]
+                            }
+                        },
+                        "input": {
+                            "read": {
+                                "common": {
+                                    "direct": {}
+                                },
+                                "baseSchema": {
+                                    "names": [
+                                        "COL_DATE",
+                                        "COL_TIME",
+                                        "COL_TIMESTAMP"
+                                    ],
+                                    "struct": {
+                                        "types": [
+                                            {
+                                                "date": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "time": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "timestamp": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            }
+                                        ],
+                                        "typeVariationReference": 0,
+                                        "nullability": "NULLABILITY_REQUIRED"
+                                    }
+                                },
+                                "namedTable": {
+                                    "names": [
+                                        "TEST"
+                                    ]
+                                }
+                            }
+                        },
+                        "expressions": [
+                            {
+                                "scalarFunction": {
+                                    "functionReference": 1,
+                                    "args": [],
+                                    "outputType": {
+                                        "timestamp": {
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                        }
+                                    },
+                                    "arguments": [
+                                        {
+                                            "value": {
+                                                "selection": {
+                                                    "directReference": {
+                                                        "structField": {
+                                                            "field": 2
+                                                        }
+                                                    },
+                                                    "rootReference": {}
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "value": {
+                                                "literal": {
+                                                    "intervalYearToMonth": {
+                                                        "years": 0,
+                                                        "months": 20
+                                                    },
+                                                    "nullable": false,
+                                                    "typeVariationReference": 0
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "scalarFunction": {
+                                    "functionReference": 0,
+                                    "args": [],
+                                    "outputType": {
+                                        "timestamp": {
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                        }
+                                    },
+                                    "arguments": [
+                                        {
+                                            "value": {
+                                                "selection": {
+                                                    "directReference": {
+                                                        "structField": {
+                                                            "field": 2
+                                                        }
+                                                    },
+                                                    "rootReference": {}
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "value": {
+                                                "literal": {
+                                                    "intervalDayToSecond": {
+                                                        "days": 500,
+                                                        "seconds": 0,
+                                                        "microseconds": 0
+                                                    },
+                                                    "nullable": false,
+                                                    "typeVariationReference": 0
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "scalarFunction": {
+                                    "functionReference": 0,
+                                    "args": [],
+                                    "outputType": {
+                                        "timestamp": {
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                        }
+                                    },
+                                    "arguments": [
+                                        {
+                                            "value": {
+                                                "selection": {
+                                                    "directReference": {
+                                                        "structField": {
+                                                            "field": 2
+                                                        }
+                                                    },
+                                                    "rootReference": {}
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "value": {
+                                                "literal": {
+                                                    "intervalDayToSecond": {
+                                                        "days": 0,
+                                                        "seconds": 5000,
+                                                        "microseconds": 0
+                                                    },
+                                                    "nullable": false,
+                                                    "typeVariationReference": 0
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "names": [
+                    "EXPR$0", "EXPR$1", "EXPR$2"
+                ]
+            }
+        }
+    ],
+    "expectedTypeUrls": []
+}
