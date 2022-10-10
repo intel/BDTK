@@ -34,8 +34,7 @@ PlanTransformer::PlanTransformer(PatternRewriterList& rewriterList,
 VeloxPlanNodePtr PlanTransformer::transform() {
   matchFromSrcToTarget();
   if (hasMatchResult_) {
-    VeloxPlanNodePtr rewrittenRoot = rewriteAllBranches();
-    return rewrittenRoot;
+    return rewriteAllBranches();
   } else {
     return root_;
   }
@@ -68,7 +67,7 @@ void PlanTransformer::updateMatchResultForBranch(
       std::make_shared<PlanSectionRewriterPair>(resultRewriterPair));
 }
 
-bool PlanTransformer::acceptMatchResult(VeloxNodeAddrPlanSection& matchResult) {
+bool PlanTransformer::acceptMatchResult(const VeloxNodeAddrPlanSection& matchResult) const {
   if (VeloxPlanNodeAddr::invalid().equal(matchResult.source) ||
       VeloxPlanNodeAddr::invalid().equal(matchResult.target)) {
     return false;
@@ -78,8 +77,8 @@ bool PlanTransformer::acceptMatchResult(VeloxNodeAddrPlanSection& matchResult) {
     return true;
   }
   std::shared_ptr<MatchResultRewriterList> targetBranchMatchResult =
-      branchIdMatchResultMap_[branchId];
-  if (targetBranchMatchResult->empty() or targetBranchMatchResult->size() == 0) {
+      branchIdMatchResultMap_.at(branchId);
+  if (targetBranchMatchResult->empty() || targetBranchMatchResult->size() == 0) {
     return true;
   } else {
     std::shared_ptr<PlanSectionRewriterPair> latestResult =
@@ -177,7 +176,7 @@ VeloxPlanNodePtr PlanTransformer::rewriteAllBranches() {
   return lookupRewrittenMap(1, 0);
 }
 
-bool PlanTransformer::coveredByMatchResult(int32_t branchId) {
+bool PlanTransformer::coveredByMatchResult(int32_t branchId) const {
   auto found = std::find(
       matchResultCoveredBranchIds_.begin(), matchResultCoveredBranchIds_.end(), branchId);
   // the whole branch is not covered by match results
@@ -188,13 +187,8 @@ bool PlanTransformer::coveredByMatchResult(int32_t branchId) {
   }
 }
 
-bool PlanTransformer::foundBranchMatchResults(int32_t branchId) {
-  auto found = branchIdMatchResultMap_.find(branchId);
-  if (found == branchIdMatchResultMap_.end()) {
-    return false;
-  } else {
-    return true;
-  }
+bool PlanTransformer::foundBranchMatchResults(int32_t branchId) const {
+  return branchIdMatchResultMap_.count(branchId) > 0;
 }
 
 VeloxPlanNodePtr PlanTransformer::cloneBranchWithRewrittenSrc(int32_t branchId,
@@ -205,7 +199,7 @@ VeloxPlanNodePtr PlanTransformer::cloneBranchWithRewrittenSrc(int32_t branchId,
   VeloxPlanNodePtr curClonedNode = nullptr;
   for (int idx = branchSize - 1; idx >= startNodeId; idx--) {
     curNode = branch[idx];
-    if (idx == branchSize - 1 and PlanUtil::isJoin(curNode)) {
+    if (idx == branchSize - 1 && PlanUtil::isJoin(curNode)) {
       int32_t leftBranchId = orgBranches_->getLeftSrcBranchId(branchId);
       int32_t rightBranchId = orgBranches_->getRightSrcBranchId(branchId);
       auto left = lookupRewrittenMap(leftBranchId, 0);
@@ -263,7 +257,7 @@ void PlanTransformer::rewriteBranch(int32_t branchId) {
           break;
         }
       }
-      if (idx == 0 and curMatchResult->source.nodeId < branchSize - 1) {
+      if (idx == 0 && curMatchResult->source.nodeId < branchSize - 1) {
         cloneBranchWithRewrittenSrc(branchId, curMatchResult->source.nodeId + 1);
       }
       VeloxPlanNodePtr matchResultPtr = rewriteMatchResult(*curPair);
@@ -358,4 +352,5 @@ std::shared_ptr<PlanTransformer> PlanTransformerFactory::getTransformer(
     VeloxPlanNodePtr root) {
   return std::make_shared<PlanTransformer>(patternRewriters_, root);
 }
+
 }  // namespace facebook::velox::plugin::plantransformer

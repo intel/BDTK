@@ -24,17 +24,31 @@
 #include "PlanBranches.h"
 #include "PlanPattern.h"
 #include "PlanRewriter.h"
+#include "../ciderTransformer/CiderPlanPatterns.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 class PatternRewriter {
  public:
   PatternRewriter(std::shared_ptr<PlanPattern> pattern,
                   std::shared_ptr<PlanRewriter> rewriter)
       : pattern_(pattern), rewriter_(rewriter) {}
 
+  std::shared_ptr<PlanPattern> clonePattern(std::shared_ptr<PlanPattern> ptr) const {
+    if (std::dynamic_pointer_cast<CompoundPattern>(ptr) != nullptr) {
+      return std::make_shared<CompoundPattern>();
+    } else if (std::dynamic_pointer_cast<LeftDeepJoinPattern>(ptr) != nullptr) {
+      return std::make_shared<LeftDeepJoinPattern>();
+    } else if (std::dynamic_pointer_cast<FilterPattern>(ptr) != nullptr) {
+      return std::make_shared<FilterPattern>();
+    }
+    return nullptr;
+  }
+
   std::pair<bool, VeloxNodeAddrPlanSection> matchFromSrc(
       BranchSrcToTargetIterator branchIte) const {
-    return pattern_->match(branchIte);
+    std::shared_ptr<PlanPattern> p = clonePattern(pattern_);
+    return p->match(branchIte);
   }
 
   VeloxPlanNodePtr rewrite(VeloxNodeAddrPlanSection& planSection,
@@ -51,4 +65,5 @@ class PatternRewriter {
   std::shared_ptr<PlanPattern> pattern_;
   std::shared_ptr<PlanRewriter> rewriter_;
 };
+
 }  // namespace facebook::velox::plugin::plantransformer

@@ -37,10 +37,7 @@ VeloxPlanNodePtr CiderVeloxPluginCtx::transformVeloxPlan(VeloxPlanNodePtr origin
 }
 
 void CiderVeloxPluginCtx::registerTranslator() {
-  static std::once_flag flag;
-  std::call_once(flag, []() {
-    exec::Operator::registerOperator(std::make_unique<CiderPlanNodeTranslator>());
-  });
+  exec::Operator::registerOperator(std::make_unique<CiderPlanNodeTranslator>());
 }
 
 void CiderVeloxPluginCtx::registerVeloxExtensionFunction() {
