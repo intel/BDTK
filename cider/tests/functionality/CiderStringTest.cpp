@@ -192,17 +192,41 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
     assertQuery("SELECT col_2 FROM test where col_2 LIKE '%aaaa' ESCAPE '$' "); \
   }
 
+/**
+  // not supported for different type info of substr and literal
+  assertQuery(
+    "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) = '0000'");
+  assertQuery(
+      "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222',
+      '3333')");
+**/
+#define IN_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                      \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertQuery(                                                                        \
+        "SELECT * FROM test WHERE col_2 in ('0000000000', '1111111111', '2222222222')", \
+        "in_string_array.json");                                                        \
+    assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111')",  \
+                "in_string_2_array_with_substr.json");                                  \
+    assertQuery(                                                                        \
+        "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222', "  \
+        "'3333')",                                                                      \
+        "in_string_array_with_substr.json");                                            \
+  }
+
 BASIC_STRING_TEST_UNIT(CiderStringTest, basicStringTest)
 LIKE_STRING_TEST_UNIT(CiderStringTest, likeStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderStringTest, escapeStringTest)
+IN_STRING_TEST_UNIT(CiderStringTest, inStringTest)
 
 BASIC_STRING_TEST_UNIT(CiderRandomStringTest, basicRandomStringTest)
 LIKE_STRING_TEST_UNIT(CiderRandomStringTest, likeRandomStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderRandomStringTest, escapeRandomStringTest)
+IN_STRING_TEST_UNIT(CiderRandomStringTest, inRandomStringTest)
 
 BASIC_STRING_TEST_UNIT(CiderNullableStringTest, basicNullableStringTest)
 LIKE_STRING_TEST_UNIT(CiderNullableStringTest, likeNullableStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderNullableStringTest, escapeNullableStringTest)
+IN_STRING_TEST_UNIT(CiderNullableStringTest, inNullableStringTest)
 
 class CiderConstantStringTest : public CiderTestBase {
  public:
@@ -246,7 +270,8 @@ TEST_F(CiderConstantStringTest, likeStringTest) {
                               .build();
   // FIXME(jikunshang): Cider only support [],%,_ pattern, !/^ is not supported yet.
   // listed on document.
-  // assertQuery("SELECT col_1 FROM test where col_1 LIKE '[!aa]%'", expected_batch_3);
+  // assertQuery("SELECT col_1 FROM test where col_1 LIKE '[!aa]%'",
+  // expected_batch_3);
 }
 
 TEST_F(CiderRandomStringTest, SubstrTest) {

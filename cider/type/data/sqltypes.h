@@ -747,7 +747,7 @@ class SQLTypeInfo {
   inline bool is_date() const { return type == kDATE; }
 
   inline bool is_high_precision_timestamp() const {
-    if (type == kTIMESTAMP) {
+    if (type == kTIMESTAMP || type == kTIME) {
       const auto dimension = get_dimension();
       if (dimension > 0) {
         return true;
