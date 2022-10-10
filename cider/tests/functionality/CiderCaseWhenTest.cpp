@@ -196,68 +196,74 @@ IF_TEST(CiderCaseWhenSequenceTestBase, ifTest);
 IF_TEST(CiderCaseWhenSequenceWithNullTestBase, ifTest);
 IF_TEST(CiderCaseWhenRandomWithNullTestBase, ifTest);
 
-#define CASE_WHEN_TEST(TEST_CLASS, UNIT_NAME)                                                                                               \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                                                                           \
-    assertQuery("SELECT col_int, CASE WHEN col_int > 3 THEN 1 ELSE 0 END FROM test");                                                       \
-    assertQuery("SELECT col_int, CASE WHEN col_bigint < 9 THEN 2 ELSE 1 END FROM test");                                                    \
-    assertQuery(                                                                                                                            \
-        "SELECT col_bigint, CASE WHEN col_double > 5 THEN 3 ELSE 2 END FROM test");                                                         \
-    assertQuery("SELECT col_double, CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test");                                                    \
-    assertQuery("SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");                                                      \
-    assertQuery(                                                                                                                            \
-        "SELECT col_bigint, CASE WHEN col_double > 50 THEN 3 ELSE 2 END FROM test");                                                        \
-    assertQuery("SELECT SUM(CASE WHEN col_int >50 THEN 10 ELSE 1 END) FROM test");                                                          \
-    assertQuery(                                                                                                                            \
-        R"(SELECT SUM(CASE WHEN col_bigint < 30 THEN 10 WHEN col_bigint > 70 THEN 20 WHEN col_bigint = 50 THEN 30 ELSE 1 END) FROM test)"); \
-    assertQuery(                                                                                                                            \
-        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 ELSE 0 "                                                    \
-        "END "                                                                                                                              \
-        "FROM test");                                                                                                                       \
-    assertQuery(                                                                                                                            \
-        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 WHEN "                                                      \
-        "col_int = 3 THEN 30 ELSE 0 END FROM test");                                                                                        \
-    assertQuery("SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");                                                             \
-    assertQuery(                                                                                                                            \
-        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN "                                                      \
-        "col_int = 3 THEN 30 END FROM test");                                                                                               \
+#define CASE_WHEN_TEST(TEST_CLASS, UNIT_NAME)                                           \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertQuery("SELECT col_int, CASE WHEN col_int > 3 THEN 1 ELSE 0 END FROM test");   \
+    assertQuery(                                                                        \
+        "SELECT col_int, CASE WHEN col_bigint < 9 THEN 2 ELSE 1"                        \
+        " END FROM test");                                                              \
+    assertQuery(                                                                        \
+        "SELECT col_bigint, CASE WHEN col_double > 5 THEN 3 ELSE 2"                     \
+        " END FROM test");                                                              \
+    assertQuery(                                                                        \
+        "SELECT col_double, CASE WHEN col_int > 5 THEN 4 ELSE 3"                        \
+        " END FROM test");                                                              \
+    assertQuery("SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");  \
+    assertQuery(                                                                        \
+        "SELECT col_bigint, CASE WHEN col_double > 50 THEN 3 ELSE 2"                    \
+        " END FROM test");                                                              \
+    assertQuery("SELECT SUM(CASE WHEN col_int >50 THEN 10 ELSE 1 END) FROM test");      \
+    assertQuery(                                                                        \
+        "(SELECT SUM(CASE WHEN col_bigint < 30 THEN 10 WHEN col_bigint > 70"            \
+        " THEN 20 WHEN col_bigint = 50 THEN 30 ELSE 1 END) FROM test)");                \
+    assertQuery(                                                                        \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 ELSE 0" \
+        " END FROM test");                                                              \
+    assertQuery(                                                                        \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 WHEN "  \
+        "col_int = 3 THEN 30 ELSE 0 END FROM test");                                    \
+    assertQuery("SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");         \
+    assertQuery(                                                                        \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN "  \
+        "col_int = 3 THEN 30 END FROM test");                                           \
   }
 
-#define CASE_WHEN_AGG_TEST(TEST_CLASS, UNIT_NAME)                                                                               \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                                                               \
-    assertQuery("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test");                                              \
-    assertQuery(                                                                                                                \
-        R"(SELECT SUM(CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN col_int = 3 THEN 30 ELSE 1 END) FROM test)"); \
-    assertQuery(                                                                                                                \
-        R"(SELECT SUM(CASE WHEN col_int = 3 THEN 11 ELSE 2 END), SUM(CASE WHEN col_double = 3 THEN 12 ELSE 3 END) FROM test)"); \
-    assertQuery(                                                                                                                \
-        R"(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END), SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");     \
-    assertQuery(                                                                                                                \
-        "SELECT sum(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "                                            \
-        "GROUP BY CASE "                                                                                                        \
-        "WHEN col_int > 5 THEN 4 ELSE 3 END");                                                                                  \
-    assertQuery(                                                                                                                \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "                                          \
-        "FROM test GROUP BY "                                                                                                   \
-        "col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",                                                                \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "                                          \
-        "FROM test GROUP BY "                                                                                                   \
-        "col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",                                                                \
-        true);                                                                                                                  \
-    assertQuery(                                                                                                                \
-        R"(SELECT SUM(CASE WHEN col_int < 10 THEN 11 END), SUM(CASE WHEN col_double > 10 THEN 12 END) FROM test)");             \
-    assertQuery(                                                                                                                \
-        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "                                             \
-        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "                                           \
-        "END");                                                                                                                 \
-    assertQuery(                                                                                                                \
-        "SELECT count(1), SUM(CASE WHEN col_int = 7 THEN col_bigint END), SUM(CASE "                                            \
-        "WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE WHEN col_int = 7 THEN "                                            \
-        "col_double * 2 "                                                                                                       \
-        "ELSE col_double / 2 END) FROM test");                                                                                  \
-    assertQuery(                                                                                                                \
-        "SELECT col_int,  SUM(CASE WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE "                                        \
-        "WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END) FROM test GROUP "                                        \
-        "BY col_int");                                                                                                          \
+#define CASE_WHEN_AGG_TEST(TEST_CLASS, UNIT_NAME)                                      \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                      \
+    assertQuery("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test");     \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN"      \
+        " col_int = 3 THEN 30 ELSE 1 END) FROM test)");                                \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE WHEN col_int = 3 THEN 11 ELSE 2 END),"                       \
+        " SUM(CASE WHEN col_double = 3 THEN 12 ELSE 3 END) FROM test)");               \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END),"                         \
+        " SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");                 \
+    assertQuery(                                                                       \
+        "SELECT sum(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "   \
+        "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                           \
+    assertQuery(                                                                       \
+        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",    \
+        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",    \
+        true);                                                                         \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE WHEN col_int < 10 THEN 11 END),"                             \
+        " SUM(CASE WHEN col_double > 10 THEN 12 END) FROM test)");                     \
+    assertQuery(                                                                       \
+        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "    \
+        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "  \
+        "END");                                                                        \
+    assertQuery(                                                                       \
+        "SELECT count(1), SUM(CASE WHEN col_int = 7 THEN col_bigint END), SUM(CASE "   \
+        "WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE WHEN col_int = 7 THEN "   \
+        "col_double * 2 ELSE col_double / 2 END) FROM test");                          \
+    assertQuery(                                                                       \
+        "SELECT col_int,  SUM(CASE WHEN col_int = 5 THEN col_bigint + 3 END),"         \
+        " SUM(CASE WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END)"      \
+        " FROM test GROUP BY col_int");                                                \
   }
 CASE_WHEN_TEST(CiderCaseWhenSequenceTestBase, caseWhenTest);
 CASE_WHEN_TEST(CiderCaseWhenSequenceWithNullTestBase, caseWhenTest);
@@ -286,7 +292,9 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
     assertQuery(                                                                         \
         "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
         "ELSE 3 "                                                                        \
-        "END");                                                                          \
+        "END",                                                                           \
+        "",                                                                              \
+        true);                                                                           \
     assertQuery(                                                                         \
         "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
         "ELSE 3 "                                                                        \
