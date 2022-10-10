@@ -38,6 +38,10 @@ QualsConjunctiveForm qual_to_conjunctive_form(
 
   if (!bin_oper) {
     const auto rewritten_qual_expr = rewrite_expr(qual_expr.get());
+    auto up_oper = std::dynamic_pointer_cast<const Analyzer::UOper>(qual_expr);
+    if (up_oper && up_oper->get_optype() == kNOT) {
+      return {{rewritten_qual_expr ? rewritten_qual_expr : qual_expr}, {}};
+    }
     return {{}, {rewritten_qual_expr ? rewritten_qual_expr : qual_expr}};
   }
 
