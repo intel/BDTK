@@ -74,6 +74,24 @@ int8_t* toCiderImplWithDictEncoding(VectorPtr& child,
   return reinterpret_cast<int8_t*>(column);
 }
 
+template <TypeKind kind>
+int8_t* toCiderImplWithConstantEncoding(VectorPtr& child,
+                                        int idx,
+                                        int num_rows,
+                                        memory::MemoryPool* pool) {
+  using T = typename TypeTraits<kind>::NativeType;
+  auto constant = dynamic_cast<const ConstantVector<T>*>(child.get());
+  T* column = reinterpret_cast<T*>(pool->allocate(sizeof(T) * num_rows));
+  T value = getNullValue<T>();
+  if (!constant->mayHaveNulls()) {
+    value = *constant->rawValues();
+  }
+  for (auto i = 0; i < num_rows; i++) {
+    column[i] = value;
+  }
+  return reinterpret_cast<int8_t*>(column);
+}
+
 template <>
 int8_t* toCiderImpl<TypeKind::BOOLEAN>(VectorPtr& child,
                                        int idx,
@@ -141,6 +159,36 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::VARCHAR>(VectorPtr& child,
 }
 
 template <>
+int8_t* toCiderImplWithConstantEncoding<TypeKind::VARCHAR>(VectorPtr& child,
+                                                           int idx,
+                                                           int num_rows,
+                                                           memory::MemoryPool* pool) {
+  auto constant = dynamic_cast<const ConstantVector<StringView>*>(child.get());
+  CiderByteArray* column = reinterpret_cast<CiderByteArray*>(
+      pool->allocate(sizeof(CiderByteArray) * num_rows));
+  uint32_t len = 0;
+  uint8_t* ptr = nullptr;
+  if (!constant->mayHaveNulls()) {
+    len = (*constant->rawValues()).size();
+    ptr = reinterpret_cast<uint8_t*>(pool->allocate(sizeof(uint8_t) * len));
+    std::memcpy(ptr, (*constant->rawValues()).data(), len);
+  }
+  for (auto i = 0; i < num_rows; i++) {
+    column[i].len = len;
+    column[i].ptr = ptr;
+  }
+  return reinterpret_cast<int8_t*>(column);
+}
+
+template <>
+int8_t* toCiderImpl<TypeKind::VARBINARY>(VectorPtr& child,
+                                         int idx,
+                                         int num_rows,
+                                         memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported yet");
+}
+
+template <>
 int8_t* toCiderImplWithDictEncoding<TypeKind::VARBINARY>(VectorPtr& child,
                                                          int idx,
                                                          int num_rows,
@@ -150,10 +198,18 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::VARBINARY>(VectorPtr& child,
 }
 
 template <>
-int8_t* toCiderImpl<TypeKind::VARBINARY>(VectorPtr& child,
-                                         int idx,
-                                         int num_rows,
-                                         memory::MemoryPool* pool) {
+int8_t* toCiderImplWithConstantEncoding<TypeKind::VARBINARY>(VectorPtr& child,
+                                                             int idx,
+                                                             int num_rows,
+                                                             memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported with constant encoding", child->typeKind());
+}
+
+template <>
+int8_t* toCiderImpl<TypeKind::INTERVAL_DAY_TIME>(VectorPtr& child,
+                                                 int idx,
+                                                 int num_rows,
+                                                 memory::MemoryPool* pool) {
   VELOX_NYI(" {} conversion is not supported yet");
 }
 
@@ -168,26 +224,18 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::INTERVAL_DAY_TIME>(
 }
 
 template <>
-int8_t* toCiderImpl<TypeKind::INTERVAL_DAY_TIME>(VectorPtr& child,
-                                                 int idx,
-                                                 int num_rows,
-                                                 memory::MemoryPool* pool) {
-  VELOX_NYI(" {} conversion is not supported yet");
+int8_t* toCiderImplWithConstantEncoding<TypeKind::INTERVAL_DAY_TIME>(
+    VectorPtr& child,
+    int idx,
+    int num_rows,
+    memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported with constant encoding", child->typeKind());
 }
 
 static constexpr int64_t kNanoSecsPerSec = 1000000000;
 static constexpr int64_t kMicroSecsPerSec = 1000000;
 static constexpr int64_t kMilliSecsPerSec = 1000;
 static constexpr int64_t kSecsPerSec = 1;
-
-template <>
-int8_t* toCiderImplWithDictEncoding<TypeKind::TIMESTAMP>(VectorPtr& child,
-                                                         int idx,
-                                                         int num_rows,
-                                                         memory::MemoryPool* pool) {
-  VELOX_NYI(" {} conversion is not supported with dictionary encoding",
-            child->typeKind());
-}
 
 template <>
 int8_t* toCiderImpl<TypeKind::TIMESTAMP>(VectorPtr& child,
@@ -212,12 +260,20 @@ int8_t* toCiderImpl<TypeKind::TIMESTAMP>(VectorPtr& child,
 }
 
 template <>
-int8_t* toCiderImplWithDictEncoding<TypeKind::DATE>(VectorPtr& child,
-                                                    int idx,
-                                                    int num_rows,
-                                                    memory::MemoryPool* pool) {
-  VELOX_NYI(" {} conversion is not supported yet with dictionary encoding",
+int8_t* toCiderImplWithDictEncoding<TypeKind::TIMESTAMP>(VectorPtr& child,
+                                                         int idx,
+                                                         int num_rows,
+                                                         memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported with dictionary encoding",
             child->typeKind());
+}
+
+template <>
+int8_t* toCiderImplWithConstantEncoding<TypeKind::TIMESTAMP>(VectorPtr& child,
+                                                             int idx,
+                                                             int num_rows,
+                                                             memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported with constant encoding", child->typeKind());
 }
 
 template <>
@@ -240,6 +296,24 @@ int8_t* toCiderImpl<TypeKind::DATE>(VectorPtr& child,
   return reinterpret_cast<int8_t*>(column);
 }
 
+template <>
+int8_t* toCiderImplWithDictEncoding<TypeKind::DATE>(VectorPtr& child,
+                                                    int idx,
+                                                    int num_rows,
+                                                    memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported yet with dictionary encoding",
+            child->typeKind());
+}
+
+template <>
+int8_t* toCiderImplWithConstantEncoding<TypeKind::DATE>(VectorPtr& child,
+                                                        int idx,
+                                                        int num_rows,
+                                                        memory::MemoryPool* pool) {
+  VELOX_NYI(" {} conversion is not supported yet with constant encoding",
+            child->typeKind());
+}
+
 int8_t* toCiderResult(VectorPtr& child, int idx, int num_rows, memory::MemoryPool* pool) {
   switch (child->encoding()) {
     case VectorEncoding::Simple::FLAT:
@@ -249,6 +323,9 @@ int8_t* toCiderResult(VectorPtr& child, int idx, int num_rows, memory::MemoryPoo
     case VectorEncoding::Simple::DICTIONARY:
       return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
           toCiderImplWithDictEncoding, child->typeKind(), child, idx, num_rows, pool);
+    case VectorEncoding::Simple::CONSTANT:
+      return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
+          toCiderImplWithConstantEncoding, child->typeKind(), child, idx, num_rows, pool);
     default:
       VELOX_NYI(" {} conversion is not supported yet", child->encoding());
   }
@@ -267,6 +344,7 @@ CiderBatch RawDataConvertor::convertToCider(RowVectorPtr input,
     switch (child->encoding()) {
       case VectorEncoding::Simple::FLAT:
       case VectorEncoding::Simple::DICTIONARY:
+      case VectorEncoding::Simple::CONSTANT:
         table_ptr.push_back(toCiderResult(child, idx, num_rows, pool));
         break;
       case VectorEncoding::Simple::LAZY: {
