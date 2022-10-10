@@ -72,10 +72,7 @@ bool VeloxNodeAddrPlanSection::isBefore(VeloxNodeAddrPlanSection section) const 
 }
 
 bool VeloxNodeAddrPlanSection::crossBranch() const {
-  if (target.branchId != source.branchId) {
-    return true;
-  }
-  return false;
+  return target.branchId != source.branchId;
 }
 
 std::vector<int32_t> VeloxNodeAddrPlanSection::coveredBranches() const {

@@ -67,7 +67,8 @@ void PlanTransformer::updateMatchResultForBranch(
       std::make_shared<PlanSectionRewriterPair>(resultRewriterPair));
 }
 
-bool PlanTransformer::acceptMatchResult(const VeloxNodeAddrPlanSection& matchResult) const {
+bool PlanTransformer::acceptMatchResult(
+    const VeloxNodeAddrPlanSection& matchResult) const {
   if (VeloxPlanNodeAddr::invalid().equal(matchResult.source) ||
       VeloxPlanNodeAddr::invalid().equal(matchResult.target)) {
     return false;

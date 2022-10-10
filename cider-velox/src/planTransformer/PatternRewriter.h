@@ -21,10 +21,10 @@
 
 #pragma once
 
+#include "../ciderTransformer/CiderPlanPatterns.h"
 #include "PlanBranches.h"
 #include "PlanPattern.h"
 #include "PlanRewriter.h"
-#include "../ciderTransformer/CiderPlanPatterns.h"
 
 namespace facebook::velox::plugin::plantransformer {
 
