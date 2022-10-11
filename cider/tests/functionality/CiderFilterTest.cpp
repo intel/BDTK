@@ -69,7 +69,7 @@ class CiderFilterRandomTestBase : public CiderTestBase {
                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
-                                                 {2, 2, 2, 2, 2, 2, 2, 2, 0, 0}))};
+                                                 {2, 2, 2, 2, 2, 2, 2, 2, 2, 2}))};
   }
 };
 
