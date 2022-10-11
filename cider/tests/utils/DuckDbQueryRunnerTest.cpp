@@ -26,9 +26,59 @@
 #include "CiderBatchBuilder.h"
 #include "CiderBatchChecker.h"
 #include "DuckDbQueryRunner.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 #include "util/Logger.h"
 
 #include <vector>
+
+TEST(DuckDBResultConvertorTest, simpleArrowTest) {
+  // create table, insert data, run a simple query
+  // check with expected arrow batch... manually!
+  /// TODO: (YBRua) Add more comprehensive and elegant tests
+  /// after CiderBatchBuilder and CiderBatchChecker are updated
+
+  DuckDbQueryRunner runner;
+
+  std::vector<int> col{0, 1, 2, 3, 4};
+  std::vector<std::vector<int>> table_data{col, col};
+
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a INTEGER, col_b INTEGER)";
+
+  runner.createTableAndInsertData(table_name, create_ddl, table_data);
+
+  auto res = runner.runSql("select * from table_test;");
+
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 2);
+
+  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+  CHECK_EQ(actual_batches.size(), 1);
+
+  auto actual_batch = actual_batches[0];
+
+  CHECK_EQ(actual_batch->getChildrenNum(), 2);
+  CHECK_EQ(actual_batch->getLength(), col.size());
+  CHECK_EQ(actual_batch->getNullCount(), 0);
+  CHECK_EQ(actual_batch->getBufferNum(), 1);
+  CHECK_EQ(actual_batch->getCiderType(), SQLTypes::kSTRUCT);
+
+  for (auto i = 0; i < actual_batch->getChildrenNum(); ++i) {
+    auto child = actual_batch->getChildAt(i);
+    CHECK_EQ(child->getLength(), col.size());
+    CHECK_EQ(child->getNullCount(), 0);
+    CHECK_EQ(child->getBufferNum(), 2);
+    CHECK_EQ(child->getCiderType(), SQLTypes::kINT);
+
+    auto data_buffer = child->as<ScalarBatch<int32_t>>()->getRawData();
+    auto null_buffer = child->getNulls();
+    for (auto j = 0; j < child->getLength(); ++j) {
+      CHECK_EQ(data_buffer[j], j);
+      CHECK(CiderBitUtils::isBitSetAt(null_buffer, j));
+    }
+  }
+}
 
 TEST(DuckDBQueryRunnerTest, basicTest) {
   DuckDbQueryRunner runner;
