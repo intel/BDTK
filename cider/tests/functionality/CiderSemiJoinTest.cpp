@@ -22,6 +22,12 @@
 #include <gtest/gtest.h>
 #include "tests/utils/CiderTestBase.h"
 
+// FOR explicit semi join query like:
+// SELECT l_long FROM table_probe SEMI JOIN table_hash ON l_long = r_long,
+// it's equal to IN clause:
+// SELECT l_long FROM table_probe WHERE l_long IN (SELECT r_long FROM table_hash)
+// And same for anti join.
+
 class CiderSemiJoinTest : public CiderJoinTestBase {
  public:
   CiderSemiJoinTest() {
@@ -98,16 +104,12 @@ class CiderSemiJoinNullableTest : public CiderJoinTestBase {
 };
 
 TEST_F(CiderSemiJoinTest, semi) {
-  std::string sql_semi =
-      "SELECT l_long FROM table_probe SEMI JOIN table_hash ON l_long = r_long";
   std::string sql_semi_in =
       "SELECT l_long FROM table_probe WHERE l_long IN (SELECT r_long FROM table_hash)";
   assertJoinQueryAndReset(sql_semi_in, "semi.json");
 }
 
 TEST_F(CiderSemiJoinTest, anti) {
-  std::string sql_anti =
-      "SELECT l_long FROM table_probe ANTI JOIN table_hash ON l_long = r_long";
   std::string sql_anti_in =
       "SELECT l_long FROM table_probe WHERE l_long NOT IN (SELECT r_long FROM "
       "table_hash)";
@@ -115,8 +117,6 @@ TEST_F(CiderSemiJoinTest, anti) {
 }
 
 TEST_F(CiderSemiJoinNullableTest, semi) {
-  std::string sql_semi =
-      "SELECT l_long FROM table_probe SEMI JOIN table_hash ON l_long = r_long";
   std::string sql_semi_in =
       "SELECT l_long FROM table_probe WHERE l_long IN (SELECT r_long FROM table_hash)";
   assertJoinQueryAndReset(sql_semi_in, "semi.json");
@@ -124,8 +124,6 @@ TEST_F(CiderSemiJoinNullableTest, semi) {
 
 TEST_F(CiderSemiJoinNullableTest, anti) {
   GTEST_SKIP_("DuckDB not in NULL will filter all rows.");
-  std::string sql_anti =
-      "SELECT l_long FROM table_probe ANTI JOIN table_hash ON l_long = r_long";
   std::string sql_anti_in =
       "SELECT l_long FROM table_probe WHERE l_long NOT IN (SELECT r_long FROM "
       "table_hash)";
