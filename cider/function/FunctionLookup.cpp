@@ -209,8 +209,7 @@ const FunctionDescriptor FunctionLookup::lookupFunction(
   }
   function_descriptor.func_sig = function_signature;
   function_descriptor.op_support_expr_type = getFunctionOpSupportType(function_signature);
-  if (function_descriptor.op_support_expr_type != OpSupportExprType::kUNDEFINED_EXPR &&
-      function_descriptor.op_support_expr_type == OpSupportExprType::kFUNCTION_OPER) {
+  if (function_descriptor.op_support_expr_type == OpSupportExprType::kFUNCTION_OPER) {
     return function_descriptor;
   }
   function_descriptor.scalar_op_type = getFunctionScalarOp(function_signature);
