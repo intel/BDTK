@@ -540,7 +540,7 @@ std::unique_ptr<CiderBatch> DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     }
   }
   chunk->Destroy();
-  return std::move(batch);
+  return batch;
 }
 
 CiderBatch DuckDbResultConvertor::fetchOneBatch(
@@ -644,7 +644,7 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
       return batch_res;
     }
     auto ret_temp = fetchOneArrowFormattedBatch(chunk);
-    batch_res.push_back(std::make_shared<CiderBatch>(std::move(*std::move(ret_temp))));
+    batch_res.push_back(std::make_shared<CiderBatch>(std::move(*ret_temp)));
   }
   return batch_res;
 }
