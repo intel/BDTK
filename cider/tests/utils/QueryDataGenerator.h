@@ -309,7 +309,7 @@ class QueryDataGenerator {
       case GeneratePattern::Random:
         for (auto i = 0; i < row_num; ++i) {
           int len = rand() % (default_char_len - min_len + 1) + min_len;  // NOLINT
-          null_data[i] = Random::oneIn(null_chance, rng)
+          null_data[i] = Random::oneIn(null_chance, rng) || len == 0
                              ? (col_data[i] = CiderByteArray(), true)
                              : (col_data[i] = genRandomCiderByteArray(len), false);
         }
