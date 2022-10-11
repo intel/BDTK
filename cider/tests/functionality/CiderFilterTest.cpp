@@ -48,7 +48,7 @@ class CiderFilterRandomTestBase : public CiderTestBase {
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
            col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10), col_10 VARCHAR(10));)";
     input_ = {std::make_shared<CiderBatch>(
-        QueryDataGenerator::generateBatchByTypes(10,
+        QueryDataGenerator::generateBatchByTypes(999,
                                                  {"col_1",
                                                   "col_2",
                                                   "col_3",
@@ -69,7 +69,10 @@ class CiderFilterRandomTestBase : public CiderTestBase {
                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
-                                                 {2, 2, 2, 2, 2, 2, 2, 2, 2, 2}))};
+                                                 {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+                                                 GeneratePattern::Random,
+                                                 1,
+                                                 100))};
   }
 };
 
