@@ -22,6 +22,8 @@
 #include "DuckDbQueryRunner.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "util/Logger.h"
 
@@ -386,6 +388,86 @@ void addColumnDataToCiderBatch<CiderByteArray>(
       buf[j].ptr = value_buf;
     }
   }
+}
+
+template <typename T>
+void addColumnDataToScalarBatch(std::unique_ptr<duckdb::DataChunk>& dataChunk,
+                                int i,
+                                int row_num,
+                                CiderBatch* child) {
+  CHECK(child->resizeBatch(row_num, true));
+  auto data_buffer = child->asMutable<ScalarBatch<T>>()->getMutableRawData();
+  auto null_buffer = child->getMutableNulls();
+  int64_t null_count = 0;
+
+  T value = std::numeric_limits<T>::min();  // init with Cider null value
+  for (int j = 0; j < row_num; j++) {
+    if (dataChunk->GetValue(i, j).IsNull()) {
+      CiderBitUtils::clearBitAt(null_buffer, j);
+      ++null_count;
+    } else {
+      value = dataChunk->GetValue(i, j).GetValue<T>();
+      CiderBitUtils::setBitAt(null_buffer, j);
+    }
+    std::memcpy(data_buffer + j * sizeof(T), &value, sizeof(T));
+  }
+  child->setNullCount(null_count);
+}
+
+template <>
+void addColumnDataToScalarBatch<CiderDateType>(
+    std::unique_ptr<duckdb::DataChunk>& dataChunk,
+    int i,
+    int row_num,
+    CiderBatch* child) {
+  CHECK(child->resizeBatch(row_num, true));
+  auto data_buffer = child->asMutable<ScalarBatch<int64_t>>()->getMutableRawData();
+  auto null_buffer = child->getMutableNulls();
+  int64_t null_count = 0;
+
+  int64_t value = std::numeric_limits<int64_t>::min();  // init with Cider null value
+  for (int j = 0; j < row_num; j++) {
+    if (dataChunk->GetValue(i, j).IsNull()) {
+      CiderBitUtils::clearBitAt(null_buffer, j);
+      ++null_count;
+    } else {
+      value = dataChunk->GetValue(i, j).GetValue<int32_t>() * kSecondsInOneDay;
+      CiderBitUtils::setBitAt(null_buffer, j);
+    }
+    std::memcpy(data_buffer + j * sizeof(int64_t), &value, sizeof(int64_t));
+  }
+  child->setNullCount(null_count);
+}
+
+template <>
+void addColumnDataToScalarBatch<CiderByteArray>(
+    std::unique_ptr<duckdb::DataChunk>& dataChunk,
+    int i,
+    int row_num,
+    CiderBatch* child) {
+  CHECK(child->resizeBatch(row_num, true));
+  auto data_buffer = child->asMutable<ScalarBatch<CiderByteArray>>()->getMutableRawData();
+  auto null_buffer = child->getMutableNulls();
+  int64_t null_count = 0;
+
+  CiderByteArray* buf = (CiderByteArray*)data_buffer;
+  for (int j = 0; j < row_num; j++) {
+    if (dataChunk->GetValue(i, j).IsNull()) {
+      std::memset(data_buffer + j * sizeof(CiderByteArray), 0, sizeof(CiderByteArray));
+      CiderBitUtils::clearBitAt(null_buffer, j);
+      ++null_count;
+    } else {
+      std::string value = dataChunk->GetValue(i, j).GetValue<std::string>();
+      // memory leak risk. user should manually free.
+      uint8_t* value_buf =
+          reinterpret_cast<uint8_t*>(allocator->allocate(value.length()));
+      std::memcpy(value_buf, value.c_str(), value.length());
+      buf[j].len = value.length();
+      buf[j].ptr = value_buf;
+      CiderBitUtils::setBitAt(null_buffer, j);
+    }
+  }
+  child->setNullCount(null_count);
 }
 
 CiderBatch DuckDbResultConvertor::fetchOneBatch(
