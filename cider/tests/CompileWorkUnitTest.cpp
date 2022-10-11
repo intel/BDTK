@@ -145,7 +145,7 @@ TEST(APITest, case1) {
   auto ceo = CiderExecutionOption::defaults();
   auto cco = CiderCompilationOption::defaults();
   auto compile_result = cider_compile_module->compile(
-      &ra_exe_unit, &query_infos, *(new CiderTableSchema()), cco, ceo);
+      &ra_exe_unit, &query_infos, std::make_shared<CiderTableSchema>(), cco, ceo);
 
   // build data input parameters
   std::vector<const int8_t*> input_buf;

@@ -151,7 +151,7 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
     ciderCompilationResult->impl_->outputSchema_ =
-        std::make_shared<CiderTableSchema>(translator_->getOutputCiderTableSchema());
+        translator_->getOutputCiderTableSchema();
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     ciderCompilationResult->impl_->build_table_ = std::move(build_table_);
     ciderCompilationResult->impl_->ciderStringDictionaryProxy_ =
@@ -213,7 +213,7 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
     ciderCompilationResult->impl_->outputSchema_ =
-        std::make_shared<CiderTableSchema>(translator_->getOutputCiderTableSchema());
+        translator_->getOutputCiderTableSchema();
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     return ciderCompilationResult;
   }
@@ -264,7 +264,7 @@ class CiderCompileModule::Impl {
   std::shared_ptr<CiderCompilationResult> compile(
       const RelAlgExecutionUnit& ra_exe_unit,
       const std::vector<InputTableInfo>& table_infos,
-      CiderTableSchema schema,
+      std::shared_ptr<CiderTableSchema> schema,
       CiderCompilationOption cco,
       CiderExecutionOption ceo) {
     auto co = CiderCompilationOptionToCo(cco);
@@ -301,8 +301,7 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->hoist_literals_ = co.hoist_literals;
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
-    ciderCompilationResult->impl_->outputSchema_ =
-        std::make_shared<CiderTableSchema>(schema);
+    ciderCompilationResult->impl_->outputSchema_ = schema;
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     return ciderCompilationResult;
   }
@@ -534,7 +533,7 @@ std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
 std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
     void* ra_exe_unit_,
     void* table_infos_,
-    CiderTableSchema schema,
+    std::shared_ptr<CiderTableSchema> schema,
     CiderCompilationOption cco,
     CiderExecutionOption ceo) {
   RelAlgExecutionUnit ra_exe_unit = *(RelAlgExecutionUnit*)ra_exe_unit_;
