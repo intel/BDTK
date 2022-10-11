@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#define CIDERBATCH_WITH_ARROW
 
 #include <gtest/gtest.h>
 #include "CiderAggTestHelper.h"

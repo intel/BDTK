@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
 #include <gtest/gtest.h>
 #include "type/schema/ColumnInfo.h"
 #include "type/schema/TableInfo.h"

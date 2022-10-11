@@ -22,8 +22,6 @@
 #ifndef CIDER_SCALAR_BATCH_H
 #define CIDER_SCALAR_BATCH_H
 
-#define CIDERBATCH_WITH_ARROW
-
 #include <cstdint>
 #include "CiderBatch.h"
 

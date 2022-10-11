@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
