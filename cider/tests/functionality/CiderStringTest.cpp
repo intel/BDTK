@@ -50,7 +50,7 @@ class CiderRandomStringTest : public CiderTestBase {
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {},
         GeneratePattern::Random,
-        2,
+        0,
         20))};
   }
 };
@@ -66,7 +66,7 @@ class CiderNullableStringTest : public CiderTestBase {
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {0, 2},
         GeneratePattern::Random,
-        2,
+        0,
         20))};
   }
 };
