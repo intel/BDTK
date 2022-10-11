@@ -25,8 +25,9 @@
 #include "velox/core/PlanNode.h"
 
 namespace facebook::velox::plugin {
-using namespace facebook::velox::plugin::plantransformer;
+
 using VeloxPlanNodePtr = std::shared_ptr<const facebook::velox::core::PlanNode>;
+
 class CiderVeloxPluginCtx {
  public:
   static void init();
@@ -35,6 +36,7 @@ class CiderVeloxPluginCtx {
  private:
   static void registerTranslator();
   static void registerVeloxExtensionFunction();
-  inline static CiderPlanTransformerFactory ciderTransformerFactory_;
+  inline static plantransformer::CiderPlanTransformerFactory ciderTransformerFactory_;
 };
+
 }  // namespace facebook::velox::plugin

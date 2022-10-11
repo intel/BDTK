@@ -30,10 +30,12 @@
 #include "PlanRewriter.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 struct PlanSectionRewriterPair {
   std::shared_ptr<VeloxNodeAddrPlanSection> planSection;
   std::shared_ptr<PatternRewriter> rewriter;
 };
+
 using PatternRewriterList = std::vector<std::shared_ptr<PatternRewriter>>;
 using MatchResultRewriterList = std::vector<std::shared_ptr<PlanSectionRewriterPair>>;
 
@@ -47,7 +49,7 @@ class PlanTransformer {
   void updateMatchResultForBranch(int32_t branchId,
                                   VeloxNodeAddrPlanSection& matchResult,
                                   std::shared_ptr<PatternRewriter> rewriterPtr);
-  bool acceptMatchResult(VeloxNodeAddrPlanSection& matchResult);
+  bool acceptMatchResult(const VeloxNodeAddrPlanSection& matchResult) const;
   void matchSourceBranch(BranchSrcToTargetIterator& srcBranchIte);
   // rewrite from source branch to parent branch.Cross branch match result will
   // be rewritten during rewriting target branch.
@@ -62,8 +64,8 @@ class PlanTransformer {
   VeloxPlanNodePtr rewriteMatchResult(PlanSectionRewriterPair& resultPair);
   VeloxPlanNodePtr lookupRewrittenMap(int32_t branchId, int32_t nodeId);
   void insertRewrittenMap(int32_t branchId, int32_t nodeId, VeloxPlanNodePtr planNode);
-  bool coveredByMatchResult(int32_t branchId);
-  bool foundBranchMatchResults(int32_t branchId);
+  bool coveredByMatchResult(int32_t branchId) const;
+  bool foundBranchMatchResults(int32_t branchId) const;
 
   PatternRewriterList rewriterList_;
   VeloxPlanNodePtr root_;
@@ -77,6 +79,7 @@ class PlanTransformer {
   // map: (branchId,nodeId)->nodePtr after rewrite
   std::map<std::pair<int32_t, int32_t>, VeloxPlanNodePtr> rewrittenNodePtrMap_;
 };
+
 // PlanTransformerFactory is responsible for registering the user implemented
 // PlanPattern, PlanRewriter. After (PlanPattern, PlanRewriter) is registered,
 // getTransformer can be called to get the transformer.
@@ -90,4 +93,5 @@ class PlanTransformerFactory {
  private:
   PatternRewriterList patternRewriters_;
 };
+
 }  // namespace facebook::velox::plugin::plantransformer
