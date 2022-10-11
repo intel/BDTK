@@ -495,9 +495,8 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
       CiderBatchUtils::convertCiderTableSchemaToArrowSchema(*cider_schema);
 
   // Construct ArrowArray
-  /// NOTE: DuckDb provides an API DataChunk::ToArrowArray()
-  /// for exporting data to ArrowArray, but we are NOT using it
-  /// since the structs for DATE and VARCHAR differ from those used in DuckDB
+  /// NOTE: (YBRua) DuckDb provides an API ToArrowArray(), but we are NOT using it
+  /// since the structs for DATE and VARCHAR in Cider differ from those used in DuckDB
   auto batch =
       StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>());
   for (int i = 0; i < col_num; ++i) {
