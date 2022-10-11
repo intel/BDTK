@@ -336,38 +336,24 @@ Start the CLI to connect to the server and run SQL queries:
 7 How to run simple examples with Prestodb in distributed environment
 ---------------------------------------------------------------------
 
-(1) Create a folder to install cider files, for example ``cider``
-
-(2) | Copy the lib folder under the cider docker build environment to
-      every node, for example, copy
-      ``/usr/local/lib/`` folder to
-      ``/path/to/cider`` on every Prestodb node
+(1) Unzip the Prestodb package and enter the unzip package
 
 ::
 
-   cp -a /usr/local/lib/ /path/to/cider
+   tar -zxvf Prestodb-xxx-xxx-xxx.tar.gz
+   cd Prestodb-xxx-xxx-xxx
 
-(4) Copy the ``ExtensionFunctions.ast``, and
-    ``RuntimeFunctions.bc`` from the function folder under the
-    cider build folder to function folder
-
-::
-
-   cp /path/to/cider/build/function/ExtensionFunctions.ast   /path/to/cider/function
-   cp /path/to/cider/build/function/RuntimeFunctions.bc   /path/to/cider/function
-
-(7) Set the LD_LIBRARY_PATH environment variable include the lib folder.
+(2) Set the LD_LIBRARY_PATH environment variable include the lib folder.
 
 ::
 
-   export LD_LIBRARY_PATH=/path/to/cider/lib:$LD_LIBRARY_PATH
+   export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
 
-(8) You may also need include the libjvm.so in your LD_LIBRARY_PATH if
-    it is not
+(3) run presto_server
 
 ::
-
-   export LD_LIBRARY_PATH= $JAVA_HOME/jre/lib/amd64/server/:$LD_LIBRARY_PATH
+   
+   ./bin/presto_server -etc_dir=./etc
 
 
 8 How to contribute document
