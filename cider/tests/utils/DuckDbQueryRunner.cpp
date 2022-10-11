@@ -409,7 +409,7 @@ void addColumnDataToScalarBatch(std::unique_ptr<duckdb::DataChunk>& dataChunk,
       value = dataChunk->GetValue(i, j).GetValue<T>();
       CiderBitUtils::setBitAt(null_buffer, j);
     }
-    std::memcpy(data_buffer + j * sizeof(T), &value, sizeof(T));
+    std::memcpy(data_buffer + j, &value, sizeof(T));
   }
   child->setNullCount(null_count);
 }
@@ -434,7 +434,7 @@ void addColumnDataToScalarBatch<CiderDateType>(
       value = dataChunk->GetValue(i, j).GetValue<int32_t>() * kSecondsInOneDay;
       CiderBitUtils::setBitAt(null_buffer, j);
     }
-    std::memcpy(data_buffer + j * sizeof(int64_t), &value, sizeof(int64_t));
+    std::memcpy(data_buffer + j, &value, sizeof(int64_t));
   }
   child->setNullCount(null_count);
 }
@@ -470,7 +470,7 @@ void addColumnDataToScalarBatch<CiderByteArray>(
   child->setNullCount(null_count);
 }
 
-CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
+std::unique_ptr<CiderBatch> DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk) {
   // Construct ArrowSchema
   // First build a CiderTableSchema and then convert it
@@ -499,6 +499,7 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
   /// since the structs for DATE and VARCHAR in Cider differ from those used in DuckDB
   auto batch =
       StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>());
+  CHECK(batch->resizeBatch(row_num, true));
   for (int i = 0; i < col_num; ++i) {
     auto child = batch->getChildAt(i);
     auto type = types[i];
@@ -538,6 +539,8 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
                     "Unsupported type convertor: " + type.ToString());
     }
   }
+  chunk->Destroy();
+  return std::move(batch);
 }
 
 CiderBatch DuckDbResultConvertor::fetchOneBatch(
@@ -628,7 +631,8 @@ std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToCider
   return batch_res;
 }
 
-std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
+std::vector<std::shared_ptr<CiderBatch>>
+DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
     std::unique_ptr<::duckdb::MaterializedQueryResult>& result) {
   std::vector<std::shared_ptr<CiderBatch>> batch_res;
   for (;;) {
@@ -639,7 +643,8 @@ std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToArrow
       }
       return batch_res;
     }
-    batch_res.push_back(std::make_shared<CiderBatch>(fetchOneArrowFormattedBatch(chunk)));
+    auto ret_temp = fetchOneArrowFormattedBatch(chunk);
+    batch_res.push_back(std::make_shared<CiderBatch>(std::move(*std::move(ret_temp))));
   }
   return batch_res;
 }
