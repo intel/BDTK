@@ -23,6 +23,13 @@
         "functionAnchor": 1,
         "name": "is_distinct_from:any_any"
       }
+    },
+    {
+      "extensionFunction": {
+        "extensionUriReference": 3,
+        "functionAnchor": 2,
+        "name": "is_not_distinct_from:any_any"
+      }
     }
   ],
   "relations": [
@@ -197,7 +204,7 @@
                       {
                         "value": {
                           "scalarFunction": {
-                            "functionReference": 1,
+                            "functionReference": 2,
                             "args": [],
                             "outputType": {
                               "bool": {
@@ -211,7 +218,7 @@
                                   "selection": {
                                     "directReference": {
                                       "structField": {
-                                        "field": 3
+                                        "field": 0
                                       }
                                     },
                                     "rootReference": {}
@@ -223,7 +230,7 @@
                                   "selection": {
                                     "directReference": {
                                       "structField": {
-                                        "field": 7
+                                        "field": 4
                                       }
                                     },
                                     "rootReference": {}
