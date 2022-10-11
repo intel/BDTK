@@ -28,8 +28,10 @@
 #include "velox/core/PlanNode.h"
 
 namespace facebook::velox::plugin::plantransformer {
+
 using VeloxPlanNodePtr = std::shared_ptr<const facebook::velox::core::PlanNode>;
 using VeloxPlanNodeVec = std::vector<VeloxPlanNodePtr>;
+
 struct VeloxPlanSection {
   VeloxPlanNodePtr target;
   VeloxPlanNodePtr source;
@@ -41,17 +43,18 @@ struct VeloxPlanNodeAddr {
   int32_t branchId = -1;
   int32_t nodeId = -1;
   VeloxPlanNodePtr nodePtr;
-  bool equal(VeloxPlanNodeAddr addr);
-  static VeloxPlanNodeAddr invalid();
+  bool equal(VeloxPlanNodeAddr addr) const;
+  static VeloxPlanNodeAddr& invalid();
 };
 
 struct VeloxNodeAddrPlanSection {
   VeloxPlanNodeAddr target;
   VeloxPlanNodeAddr source;
-  bool isValid();
-  bool isBefore(VeloxNodeAddrPlanSection section);
-  bool crossBranch();
-  std::vector<int32_t> coveredBranches();
+  bool isValid() const;
+  bool isBefore(VeloxNodeAddrPlanSection section) const;
+  bool crossBranch() const;
+  std::vector<int32_t> coveredBranches() const;
 };
 using VeloxPlanNodeAddrList = std::vector<VeloxPlanNodeAddr>;
+
 }  // namespace facebook::velox::plugin::plantransformer
