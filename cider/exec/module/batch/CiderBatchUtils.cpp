@@ -67,6 +67,9 @@ ArrowSchema* allocateArrowSchema() {
   return ptr;
 }
 
+void ciderEmptyArrowSchemaReleaser(ArrowSchema* schema) {}
+void ciderEmptyArrowArrayReleaser(ArrowArray* array) {}
+
 ArrowSchema* allocateArrowSchema(const ArrowSchema& schema) {
   ArrowSchema* ptr = new ArrowSchema(schema);
   return ptr;
