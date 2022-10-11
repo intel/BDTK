@@ -85,15 +85,28 @@ class CiderStringToDateTest : public CiderTestBase {
   }
 };
 
+TEST_F(CiderStringToDateTest, NestedTryCastStringOpTest) {
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
+  assertQuery("SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > 2000");
+  assertQuery(
+      "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > col_int");
+}
+
+// encoded string's bin_oper support is still in progress in heavydb.
+// TEST_F(CiderNullableStringTest, NestedSubstrStringOpBinOperTest) {
+// assertQuery("SELECT * FROM test where SUBSTRING(col_2, 1, 10) = '0000000000'");
+// assertQuery("SELECT * FROM test where SUBSTRING(col_2, 1, 10) IS NOT NULL");
+// }
+
 TEST_F(CiderStringToDateTest, DateStrTest) {
   assertQuery(
       "select col_str from test where col_str between date '1970-01-01' and date "
       "'2077-12-31'",
       "cast_str_to_date_implictly.json");
-  assertQuery("SELECT CAST(col_str AS DATE) FROM test ",
-              "functions/date/string_to_date.json");
-  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
-              "functions/date/extract_year_cast_string_to_date.json");
+  assertQuery("SELECT CAST(col_str AS DATE) FROM test");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test");
   assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
               "functions/date/year_cast_string_to_date.json");
 }
