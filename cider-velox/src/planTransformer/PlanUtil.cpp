@@ -222,7 +222,7 @@ VeloxPlanNodePtr PlanUtil::cloneMultiSourcePlanSectionWithNewSources(
     curNode = planSectionIte.next();
     auto nodeSrcPtrs = curNode.nodePtr->sources();
     if (curNode.equal(planSection.source)) {
-      if (nodeSrcPtrs.size() == 1 and nodeSrcPtrs[0] != nullptr) {
+      if (nodeSrcPtrs.size() == 1 && nodeSrcPtrs[0] != nullptr) {
         auto foundInSrcNodeAddMap =
             findInNodeAddrMap(sourcePtrMap, curNode.branchId, curNode.nodeId + 1);
         if (foundInSrcNodeAddMap.first) {

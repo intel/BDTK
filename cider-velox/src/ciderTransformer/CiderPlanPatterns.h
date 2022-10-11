@@ -20,8 +20,8 @@
  */
 #pragma once
 
-#include "planTransformer/PlanPattern.h"
-#include "planTransformer/SequencePlanPattern.h"
+#include "../planTransformer/PlanPattern.h"
+#include "../planTransformer/SequencePlanPattern.h"
 
 namespace facebook::velox::plugin::plantransformer {
 class CompoundStateMachine : public StateMachine {

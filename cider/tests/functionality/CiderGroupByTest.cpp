@@ -247,11 +247,6 @@ class CiderGroupByPrimitiveTypeMixTest : public CiderTestBase {
         "col_a, col_b HAVING col_a IS NOT NULL AND col_b IS NOT NULL",                   \
         "",                                                                              \
         true);                                                                           \
-    /*TODO: open this case after EU refactor is done.*/                                  \
-    /*Now the bug POAE7-2263 in this case is that quals will be empty and */             \
-    /*simple_quals will get the values. Wrong EU leads to wrong init agg value for */    \
-    /*SUM, and results in wrong output data.*/                                           \
-    GTEST_SKIP();                                                                        \
     assertQuery(                                                                         \
         "SELECT SUM(col_d) AS col_d_sum FROM table_test GROUP BY col_d HAVING col_d IS " \
         "NOT NULL",                                                                      \
@@ -605,30 +600,24 @@ NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupByFloatTest, noConditionFloatGroupByTe
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupByFloatTest, havingFloatGroupByTest)
 WHERE_GROUP_BY_TEST_UNIT(CiderGroupByFloatTest, whereFloatGroupByTest)
 WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByFloatTest, whereAndHavingFloatGroupByTest)
+
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupByDoubleTest, noConditionDoubleGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupByDoubleTest, havingDoubleGroupByTest)
 WHERE_GROUP_BY_TEST_UNIT(CiderGroupByDoubleTest, whereDoubleGroupByTest)
 WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByDoubleTest,
                                     whereAndHavingDoubleGroupByTest)
+
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, noConditionTinyintGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, havingTinyintGroupByTest)
-
-/*
- * [POAE7-2263] Unsupport tinyint and smallint simple qual filter
- * WHERE_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, whereTinyintGroupByTest)
- * WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest,
- * whereAndHavingTinyintGroupByTest)
- */
+WHERE_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest, whereTinyintGroupByTest)
+WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByTinyintTest,
+                                    whereAndHavingTinyintGroupByTest)
 
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, noConditionSmallintGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, havingSmallintGroupByTest)
-
-/*
- * [POAE7-2263] Unsupport tinyint and smallint simple qual filter
- * WHERE_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, whereSmallintGroupByTest)
- * WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest,
- * whereAndHavingSmallintGroupByTest)
- */
+WHERE_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest, whereSmallintGroupByTest)
+WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupBySmallintTest,
+                                    whereAndHavingSmallintGroupByTest)
 
 NO_CONDITION_GROUP_BY_TEST_UNIT(CiderGroupByIntegerTest, noConditionIntegerGroupByTest)
 HAVING_GROUP_BY_TEST_UNIT(CiderGroupByIntegerTest, havingIntegerGroupByTest)

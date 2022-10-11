@@ -332,9 +332,6 @@ class CiderAggHashTable {
   size_t slot_width_;                // width of slot (byte)
   size_t columns_num_;               // number of columns
   size_t key_columns_num_;           // number of key columns
-  const bool is_keyless_;
-  const size_t keyless_key_index_;
-  const bool is_columnar_layout_;
   size_t row_width_;
   size_t buffer_width_;
   size_t buffer_memory_limit_;
