@@ -71,16 +71,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest)
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::FunctionOper);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
@@ -98,16 +94,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::FunctionOper);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
@@ -125,16 +117,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::FunctionOper);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
@@ -146,19 +134,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kFp64>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  if (function_descriptor_ptr->agg_op_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->agg_op_type_ptr) == SQLAgg::kAVG);
-  }
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::AggExpr);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kAVG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
@@ -174,19 +155,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_NE(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  if (function_descriptor_ptr->scalar_op_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->scalar_op_type_ptr) == SQLOps::kEQ);
-  }
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::BinOper);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
@@ -204,12 +178,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kUNDEFINED_EXPR);
 }
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
@@ -227,16 +201,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::FunctionOper);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
 }
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
@@ -248,19 +218,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kFp64>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  if (function_descriptor_ptr->agg_op_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->agg_op_type_ptr) == SQLAgg::kAVG);
-  }
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::AggExpr);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kAVG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
 }
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
@@ -276,18 +239,11 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) 
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
-  ASSERT_NE(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  if (function_descriptor_ptr->scalar_op_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->scalar_op_type_ptr) == SQLOps::kEQ);
-  }
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_NE(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr) {
-    ASSERT_TRUE(*(function_descriptor_ptr->op_support_expr_type_ptr) ==
-                OpSupportExprType::BinOper);
-  }
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
 }
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
@@ -305,12 +261,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
   function_signature.return_type =
       std::make_shared<const cider::function::substrait::SubstraitScalarType<
           cider::function::substrait::SubstraitTypeKind::kBool>>();
-  auto function_descriptor_ptr = function_lookup_ptr->lookupFunction(function_signature);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
-  ASSERT_EQ(function_descriptor_ptr->scalar_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->agg_op_type_ptr, nullptr);
-  ASSERT_EQ(function_descriptor_ptr->op_support_expr_type_ptr, nullptr);
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kUNDEFINED_EXPR);
 }
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
@@ -332,7 +288,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
   EXPECT_THROW(
       {
         try {
-          auto function_descriptor_ptr =
+          auto function_descriptor =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
           EXPECT_TRUE(containsTips(
@@ -357,7 +313,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionAggTest) {
   EXPECT_THROW(
       {
         try {
-          auto function_descriptor_ptr =
+          auto function_descriptor =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
           EXPECT_TRUE(containsTips(
@@ -386,7 +342,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionScalarTest) {
   EXPECT_THROW(
       {
         try {
-          auto function_descriptor_ptr =
+          auto function_descriptor =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
           EXPECT_TRUE(containsTips(
@@ -417,7 +373,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkUnregisteredTest) {
   EXPECT_THROW(
       {
         try {
-          auto function_descriptor_ptr =
+          auto function_descriptor =
               function_lookup_ptr->lookupFunction(function_signature);
         } catch (const CiderCompileException& e) {
           EXPECT_TRUE(containsTips(

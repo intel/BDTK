@@ -64,7 +64,7 @@ void FunctionLookup::registerFunctionLookUpContext(const PlatformType from_platf
   }
 }
 
-const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
+const SQLOps FunctionLookup::getFunctionScalarOp(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -84,10 +84,10 @@ const SQLOpsPtr FunctionLookup::getFunctionScalarOp(
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionScalarOp(func_name);
   }
-  return nullptr;
+  return SQLOps::kUNDEFINED_OP;
 }
 
-const SQLAggPtr FunctionLookup::getFunctionAggOp(
+const SQLAgg FunctionLookup::getFunctionAggOp(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -107,10 +107,10 @@ const SQLAggPtr FunctionLookup::getFunctionAggOp(
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionAggOp(func_name);
   }
-  return nullptr;
+  return SQLAgg::kUNDEFINED_AGG;
 }
 
-const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
+const OpSupportExprType FunctionLookup::getScalarFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -130,10 +130,10 @@ const OpSupportExprTypePtr FunctionLookup::getScalarFunctionOpSupportType(
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionOpSupportType(func_name);
   }
-  return nullptr;
+  return OpSupportExprType::kUNDEFINED_EXPR;
 }
 
-const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
+const OpSupportExprType FunctionLookup::getAggFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -153,10 +153,10 @@ const OpSupportExprTypePtr FunctionLookup::getAggFunctionOpSupportType(
   if (functionOption.has_value()) {
     return function_mappings_->getFunctionOpSupportType(func_name);
   }
-  return nullptr;
+  return OpSupportExprType::kUNDEFINED_EXPR;
 }
 
-const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
+const OpSupportExprType FunctionLookup::getExtensionFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -174,30 +174,30 @@ const OpSupportExprTypePtr FunctionLookup::getExtensionFunctionOpSupportType(
   const auto& functionOption =
       extension_function_look_up_ptr_->lookupFunction(functionSignature);
   if (functionOption.has_value()) {
-    return std::make_shared<OpSupportExprType>(OpSupportExprType::FunctionOper);
+    return OpSupportExprType::kFUNCTION_OPER;
   }
-  return nullptr;
+  return OpSupportExprType::kUNDEFINED_EXPR;
 }
 
 /// first search extension function, second search internal function
-const OpSupportExprTypePtr FunctionLookup::getFunctionOpSupportType(
+const OpSupportExprType FunctionLookup::getFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
-  OpSupportExprTypePtr result_ptr = nullptr;
-  result_ptr = getExtensionFunctionOpSupportType(function_signature);
-  if (result_ptr) {
-    return result_ptr;
+  OpSupportExprType result = OpSupportExprType::kUNDEFINED_EXPR;
+  result = getExtensionFunctionOpSupportType(function_signature);
+  if (result != OpSupportExprType::kUNDEFINED_EXPR) {
+    return result;
   }
-  result_ptr = getScalarFunctionOpSupportType(function_signature);
-  if (result_ptr) {
-    return result_ptr;
+  result = getScalarFunctionOpSupportType(function_signature);
+  if (result != OpSupportExprType::kUNDEFINED_EXPR) {
+    return result;
   }
-  result_ptr = getAggFunctionOpSupportType(function_signature);
-  return result_ptr;
+  result = getAggFunctionOpSupportType(function_signature);
+  return result;
 }
 
-const FunctionDescriptorPtr FunctionLookup::lookupFunction(
+const FunctionDescriptor FunctionLookup::lookupFunction(
     const FunctionSignature& function_signature) const {
-  FunctionDescriptorPtr function_descriptor_ptr = std::make_shared<FunctionDescriptor>();
+  FunctionDescriptor function_descriptor;
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
     CIDER_THROW(
@@ -207,18 +207,16 @@ const FunctionDescriptorPtr FunctionLookup::lookupFunction(
             from_platform,
             from_platform_));
   }
-  function_descriptor_ptr->func_sig = function_signature;
-  function_descriptor_ptr->op_support_expr_type_ptr =
-      getFunctionOpSupportType(function_signature);
-  if (function_descriptor_ptr->op_support_expr_type_ptr != nullptr &&
-      *(function_descriptor_ptr->op_support_expr_type_ptr) ==
-          OpSupportExprType::FunctionOper) {
-    return function_descriptor_ptr;
+  function_descriptor.func_sig = function_signature;
+  function_descriptor.op_support_expr_type = getFunctionOpSupportType(function_signature);
+  if (function_descriptor.op_support_expr_type != OpSupportExprType::kUNDEFINED_EXPR &&
+      function_descriptor.op_support_expr_type == OpSupportExprType::kFUNCTION_OPER) {
+    return function_descriptor;
   }
-  function_descriptor_ptr->scalar_op_type_ptr = getFunctionScalarOp(function_signature);
-  if (function_descriptor_ptr->scalar_op_type_ptr != nullptr) {
-    return function_descriptor_ptr;
+  function_descriptor.scalar_op_type = getFunctionScalarOp(function_signature);
+  if (function_descriptor.scalar_op_type != SQLOps::kUNDEFINED_OP) {
+    return function_descriptor;
   }
-  function_descriptor_ptr->agg_op_type_ptr = getFunctionAggOp(function_signature);
-  return function_descriptor_ptr;
+  function_descriptor.agg_op_type = getFunctionAggOp(function_signature);
+  return function_descriptor;
 }

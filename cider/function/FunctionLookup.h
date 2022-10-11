@@ -45,9 +45,9 @@ struct FunctionSignature {
 
 struct FunctionDescriptor {
   FunctionSignature func_sig;
-  SQLOpsPtr scalar_op_type_ptr = nullptr;
-  SQLAggPtr agg_op_type_ptr = nullptr;
-  OpSupportExprTypePtr op_support_expr_type_ptr = nullptr;
+  SQLOps scalar_op_type = SQLOps::kUNDEFINED_OP;
+  SQLAgg agg_op_type = SQLAgg::kUNDEFINED_AGG;
+  OpSupportExprType op_support_expr_type = OpSupportExprType::kUNDEFINED_EXPR;
 };
 
 using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
@@ -61,30 +61,30 @@ class FunctionLookup {
   }
 
   /// lookup function descriptor by given function Signature.
-  /// a) If sql_op is not null, means cider runtime function is selected for execution and
-  /// corresponding Analyzer::Expr will be created for this scalar function. b) If agg_op
-  /// is not null, means cider runtime function is selected for execution and
-  /// corresponding Analyzer::AggExpr will be created for this agg function. c) If
-  /// op_support_type is not null, means this function is imported from frontend and we
-  /// will use that directly, in cider internal, it will create Analyzer::FunctionOper
-  /// directly. d) If sql_op/agg_op/op_support_type are all null returned after lookup
-  /// done, it indicates that we don't support this function and execution can not be
-  /// offloaded.
-  const FunctionDescriptorPtr lookupFunction(
+  /// a) If sql_op is not kUNDEFINED_OP, means cider runtime function is selected for
+  /// execution and corresponding Analyzer::Expr will be created for this scalar function.
+  /// b) If agg_op is not kUNDEFINED_AGG, means cider runtime function is selected for
+  /// execution and corresponding Analyzer::AggExpr will be created for this agg function.
+  /// c) If op_support_type is not kUNDEFINED_EXPR, means this function is imported from
+  /// frontend and we will use that directly, in cider internal, it will create
+  /// Analyzer::FunctionOper directly. d) If sql_op/agg_op/op_support_type are all
+  /// kUNDEFINED returned after lookup done, it indicates that we don't support this
+  /// function and execution can not be offloaded.
+  const FunctionDescriptor lookupFunction(
       const FunctionSignature& function_signature) const;
 
  private:
   void registerFunctionLookUpContext(const PlatformType from_platform);
 
-  const SQLOpsPtr getFunctionScalarOp(const FunctionSignature& function_signature) const;
-  const SQLAggPtr getFunctionAggOp(const FunctionSignature& function_signature) const;
-  const OpSupportExprTypePtr getFunctionOpSupportType(
+  const SQLOps getFunctionScalarOp(const FunctionSignature& function_signature) const;
+  const SQLAgg getFunctionAggOp(const FunctionSignature& function_signature) const;
+  const OpSupportExprType getFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  const OpSupportExprTypePtr getScalarFunctionOpSupportType(
+  const OpSupportExprType getScalarFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  const OpSupportExprTypePtr getAggFunctionOpSupportType(
+  const OpSupportExprType getAggFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  const OpSupportExprTypePtr getExtensionFunctionOpSupportType(
+  const OpSupportExprType getExtensionFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
 
   static std::string getDataPath() {

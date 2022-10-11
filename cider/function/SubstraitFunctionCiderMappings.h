@@ -35,32 +35,32 @@ using FunctionSQLOpSupportTypeMappings =
 
 class SubstraitFunctionCiderMappings {
  public:
-  const SQLOpsPtr getFunctionScalarOp(const std::string& function_name) const {
+  const SQLOps getFunctionScalarOp(const std::string& function_name) const {
     const auto& scalar_op_map = scalarMappings();
     auto iter = scalar_op_map.find(function_name);
     if (iter == scalar_op_map.end()) {
-      return nullptr;
+      return SQLOps::kUNDEFINED_OP;
     }
-    return std::make_shared<SQLOps>(iter->second);
+    return iter->second;
   }
 
-  const SQLAggPtr getFunctionAggOp(const std::string& function_name) const {
+  const SQLAgg getFunctionAggOp(const std::string& function_name) const {
     const auto& agg_op_map = aggregateMappings();
     auto iter = agg_op_map.find(function_name);
     if (iter == agg_op_map.end()) {
-      return nullptr;
+      return SQLAgg::kUNDEFINED_AGG;
     }
-    return std::make_shared<SQLAgg>(iter->second);
+    return iter->second;
   }
 
-  const OpSupportExprTypePtr getFunctionOpSupportType(
+  const OpSupportExprType getFunctionOpSupportType(
       const std::string& function_name) const {
     const auto& op_support_map = opsSupportTypeMappings();
     auto iter = op_support_map.find(function_name);
     if (iter == op_support_map.end()) {
-      return nullptr;
+      return OpSupportExprType::kUNDEFINED_EXPR;
     }
-    return std::make_shared<OpSupportExprType>(iter->second);
+    return iter->second;
   }
 
   /// scalar function names in difference between engine own and Substrait.
@@ -108,40 +108,40 @@ class SubstraitFunctionCiderMappings {
   /// window function names in difference between engine own and Substrait.
   virtual const FunctionSQLOpSupportTypeMappings opsSupportTypeMappings() const {
     static const FunctionSQLOpSupportTypeMappings opsSupportTypeMappings{
-        {"sum", OpSupportExprType::AggExpr},
-        {"min", OpSupportExprType::AggExpr},
-        {"max", OpSupportExprType::AggExpr},
-        {"avg", OpSupportExprType::AggExpr},
-        {"count", OpSupportExprType::AggExpr},
-        {"lt", OpSupportExprType::BinOper},
-        {"and", OpSupportExprType::UOper},
-        {"or", OpSupportExprType::UOper},
-        {"not", OpSupportExprType::UOper},
-        {"gt", OpSupportExprType::BinOper},
-        {"eq", OpSupportExprType::BinOper},
-        {"equal", OpSupportExprType::BinOper},
-        {"neq", OpSupportExprType::BinOper},
-        {"ne", OpSupportExprType::BinOper},
-        {"not_equal", OpSupportExprType::BinOper},
-        {"gte", OpSupportExprType::BinOper},
-        {"lte", OpSupportExprType::BinOper},
-        {"multiply", OpSupportExprType::BinOper},
-        {"divide", OpSupportExprType::BinOper},
-        {"plus", OpSupportExprType::BinOper},
-        {"add", OpSupportExprType::BinOper},
-        {"subtract", OpSupportExprType::BinOper},
-        {"minus", OpSupportExprType::BinOper},
-        {"modulus", OpSupportExprType::BinOper},
-        {"is_not_null", OpSupportExprType::UOper},
-        {"is_null", OpSupportExprType::UOper},
-        {"is_not_distinct_from", OpSupportExprType::BinOper},
-        {"is_distinct_from", OpSupportExprType::BinOper},
-        {"in", OpSupportExprType::InValues},
-        {"extract", OpSupportExprType::ExtractExpr},
-        {"coalesce", OpSupportExprType::CaseExpr},
-        {"year", OpSupportExprType::ExtractExpr},
-        {"substring", OpSupportExprType::SubstringStringOper},
-        {"like", OpSupportExprType::LikeExpr},
+        {"sum", OpSupportExprType::kAGG_EXPR},
+        {"min", OpSupportExprType::kAGG_EXPR},
+        {"max", OpSupportExprType::kAGG_EXPR},
+        {"avg", OpSupportExprType::kAGG_EXPR},
+        {"count", OpSupportExprType::kAGG_EXPR},
+        {"lt", OpSupportExprType::kBIN_OPER},
+        {"and", OpSupportExprType::kU_OPER},
+        {"or", OpSupportExprType::kU_OPER},
+        {"not", OpSupportExprType::kU_OPER},
+        {"gt", OpSupportExprType::kBIN_OPER},
+        {"eq", OpSupportExprType::kBIN_OPER},
+        {"equal", OpSupportExprType::kBIN_OPER},
+        {"neq", OpSupportExprType::kBIN_OPER},
+        {"ne", OpSupportExprType::kBIN_OPER},
+        {"not_equal", OpSupportExprType::kBIN_OPER},
+        {"gte", OpSupportExprType::kBIN_OPER},
+        {"lte", OpSupportExprType::kBIN_OPER},
+        {"multiply", OpSupportExprType::kBIN_OPER},
+        {"divide", OpSupportExprType::kBIN_OPER},
+        {"plus", OpSupportExprType::kBIN_OPER},
+        {"add", OpSupportExprType::kBIN_OPER},
+        {"subtract", OpSupportExprType::kBIN_OPER},
+        {"minus", OpSupportExprType::kBIN_OPER},
+        {"modulus", OpSupportExprType::kBIN_OPER},
+        {"is_not_null", OpSupportExprType::kU_OPER},
+        {"is_null", OpSupportExprType::kU_OPER},
+        {"is_not_distinct_from", OpSupportExprType::kBIN_OPER},
+        {"is_distinct_from", OpSupportExprType::kBIN_OPER},
+        {"in", OpSupportExprType::kIN_VALUES},
+        {"extract", OpSupportExprType::kEXTRACT_EXPR},
+        {"coalesce", OpSupportExprType::kCASE_EXPR},
+        {"year", OpSupportExprType::kEXTRACT_EXPR},
+        {"substring", OpSupportExprType::kSUBSTRING_STRING_OPER},
+        {"like", OpSupportExprType::kLIKE_EXPR},
     };
     return opsSupportTypeMappings;
   };
