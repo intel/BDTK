@@ -470,6 +470,77 @@ void addColumnDataToScalarBatch<CiderByteArray>(
   child->setNullCount(null_count);
 }
 
+CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
+    std::unique_ptr<duckdb::DataChunk>& chunk) {
+  // Construct ArrowSchema
+  // First build a CiderTableSchema and then convert it
+  std::vector<::substrait::Type> batch_types;
+  std::vector<std::string> batch_names;
+
+  int col_num = chunk->ColumnCount();
+  int row_num = chunk->size();
+  std::vector<::duckdb::LogicalType> types = chunk->GetTypes();
+  for (int i = 0; i < col_num; ++i) {
+    auto type = types[i];
+    batch_types.emplace_back(std::move(convertToSubstraitType(type)));
+    batch_names.emplace_back("");
+    if (!isDuckDb2CiderBatchSupportType(type)) {
+      CIDER_THROW(CiderCompileException,
+                  "Non numberic type " + type.ToString() + " not supported yet");
+    }
+  }
+
+  auto cider_schema = std::make_shared<CiderTableSchema>(batch_names, batch_types, "");
+  auto arrow_schema =
+      CiderBatchUtils::convertCiderTableSchemaToArrowSchema(*cider_schema);
+
+  // Construct ArrowArray
+  /// NOTE: DuckDb provides an API DataChunk::ToArrowArray()
+  /// for exporting data to ArrowArray, but we are NOT using it
+  /// since the structs for DATE and VARCHAR differ from those used in DuckDB
+  auto batch =
+      StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>());
+  for (int i = 0; i < col_num; ++i) {
+    auto child = batch->getChildAt(i);
+    auto type = types[i];
+    switch (type.id()) {
+      case ::duckdb::LogicalTypeId::HUGEINT:
+      case ::duckdb::LogicalTypeId::BIGINT:
+      case ::duckdb::LogicalTypeId::TIMESTAMP:
+      case ::duckdb::LogicalTypeId::TIME:
+        addColumnDataToScalarBatch<int64_t>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::INTEGER:
+        addColumnDataToScalarBatch<int32_t>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::SMALLINT:
+        addColumnDataToScalarBatch<int16_t>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::BOOLEAN:
+      case ::duckdb::LogicalTypeId::TINYINT:
+        addColumnDataToScalarBatch<int8_t>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::FLOAT:
+        addColumnDataToScalarBatch<float>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::DOUBLE:
+      case ::duckdb::LogicalTypeId::DECIMAL:
+        addColumnDataToScalarBatch<double>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::DATE:
+        addColumnDataToScalarBatch<CiderDateType>(chunk, i, row_num, child.get());
+        break;
+      case ::duckdb::LogicalTypeId::CHAR:
+      case ::duckdb::LogicalTypeId::VARCHAR:
+        addColumnDataToScalarBatch<CiderByteArray>(chunk, i, row_num, child.get());
+        break;
+      default:
+        CIDER_THROW(CiderCompileException,
+                    "Unsupported type convertor: " + type.ToString());
+    }
+  }
+}
+
 CiderBatch DuckDbResultConvertor::fetchOneBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk) {
   const int col_num = chunk->ColumnCount();
@@ -554,6 +625,22 @@ std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToCider
       return batch_res;
     }
     batch_res.push_back(std::make_shared<CiderBatch>(fetchOneBatch(chunk)));
+  }
+  return batch_res;
+}
+
+std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
+    std::unique_ptr<::duckdb::MaterializedQueryResult>& result) {
+  std::vector<std::shared_ptr<CiderBatch>> batch_res;
+  for (;;) {
+    auto chunk = result->Fetch();
+    if (!chunk || (chunk->size() == 0)) {
+      if (batch_res.empty()) {
+        batch_res.push_back(std::make_shared<CiderBatch>());
+      }
+      return batch_res;
+    }
+    batch_res.push_back(std::make_shared<CiderBatch>(fetchOneArrowFormattedBatch(chunk)));
   }
   return batch_res;
 }

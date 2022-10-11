@@ -66,9 +66,13 @@ class DuckDbResultConvertor {
  public:
   static std::vector<std::shared_ptr<CiderBatch>> fetchDataToCiderBatch(
       std::unique_ptr<::duckdb::MaterializedQueryResult>& result);
+  static std::vector<std::shared_ptr<CiderBatch>> fetchDataToArrowFormattedCiderBatch(
+      std::unique_ptr<::duckdb::MaterializedQueryResult>& result);
 
  private:
   static CiderBatch fetchOneBatch(std::unique_ptr<duckdb::DataChunk>& chunk);
+  static CiderBatch fetchOneArrowFormattedBatch(
+      std::unique_ptr<duckdb::DataChunk>& chunk);
 };
 
 #endif  // CIDER_DUCKDBQUERYRUNNER_H
