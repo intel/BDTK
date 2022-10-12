@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef CIDER_FUNCTION_FUNCTIONLOOKUP_H
-#define CIDER_FUNCTION_FUNCTIONLOOKUP_H
+#ifndef CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
+#define CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
 
 #include <memory>
 #include <optional>
@@ -54,9 +54,9 @@ using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
 using SubstraitFunctionLookupPtr =
     std::shared_ptr<const cider::function::substrait::SubstraitFunctionLookup>;
 
-class FunctionLookup {
+class FunctionLookupEngine {
  public:
-  FunctionLookup(const PlatformType from_platform) : from_platform_(from_platform) {
+  FunctionLookupEngine(const PlatformType from_platform) : from_platform_(from_platform) {
     registerFunctionLookUpContext(from_platform);
   }
 
@@ -93,7 +93,6 @@ class FunctionLookup {
     return absolute_path.substr(0, pos) + "/extensions";
   }
 
- private:
   SubstraitFunctionCiderMappingsPtr function_mappings_ =
       std::make_shared<const SubstraitFunctionCiderMappings>();
 
@@ -107,6 +106,6 @@ class FunctionLookup {
   const PlatformType from_platform_;
 };
 
-using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;
+using FunctionLookupEnginePtr = std::shared_ptr<const FunctionLookupEngine>;
 
-#endif  // CIDER_FUNCTION_FUNCTIONLOOKUP_H
+#endif  // CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H

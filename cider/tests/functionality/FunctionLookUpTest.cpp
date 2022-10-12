@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 #include "cider/CiderException.h"
 #include "function/ExtensionFunctionsWhitelist.h"
-#include "function/FunctionLookup.h"
+#include "function/FunctionLookupEngine.h"
 #include "function/SubstraitFunctionCiderMappings.h"
 #include "function/substrait/SubstraitFunctionLookup.h"
 #include "function/substrait/SubstraitType.h"
@@ -32,7 +32,7 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
     function_lookup_ptr =
-        std::make_shared<FunctionLookup>(PlatformType::SubstraitPlatform);
+        std::make_shared<FunctionLookupEngine>(PlatformType::SubstraitPlatform);
   }
 
   bool containsTips(const std::string& exception_str, const std::string& expect_str) {
@@ -43,17 +43,18 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
   }
 
  public:
-  FunctionLookupPtr function_lookup_ptr;
+  FunctionLookupEnginePtr function_lookup_ptr;
 };
 
 class PrestoFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    function_lookup_ptr = std::make_shared<FunctionLookup>(PlatformType::PrestoPlatform);
+    function_lookup_ptr =
+        std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
   }
 
  public:
-  FunctionLookupPtr function_lookup_ptr;
+  FunctionLookupEnginePtr function_lookup_ptr;
 };
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {

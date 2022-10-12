@@ -23,7 +23,7 @@ set(function_source_files
     RuntimeFunctions.bc
     ExtensionFunctionsBinding.cpp
     ExtensionFunctionsWhitelist.cpp
-    FunctionLookup.cpp
+    FunctionLookupEngine.cpp
     string/StringLike.cpp
     string/StringFunctions.cpp
     string/StringOpInfo.cpp
