@@ -34,10 +34,9 @@ bool PlanUtil::isJoin(VeloxPlanNodePtr node) {
   return false;
 }
 
-void PlanUtil::changeNodeSource(VeloxPlanNodePtr node,
-                                VeloxPlanNodePtr source) {
+void PlanUtil::changeNodeSource(VeloxPlanNodePtr node, VeloxPlanNodePtr source) {
   std::vector<std::shared_ptr<const PlanNode>>& nodeSources =
-      const_cast < std::vector<std::shared_ptr<const PlanNode>> &>(node->sources());
+       const_cast<std::vector<std::shared_ptr<const PlanNode>>&>(node->sources());
   nodeSources = {source};
 }
 
@@ -46,32 +45,28 @@ void PlanUtil::changeJoinNodeSource(VeloxPlanNodePtr node,
                                     VeloxPlanNodePtr right) {
   std::vector<std::shared_ptr<const PlanNode>>& nodeSources =
       const_cast<std::vector<std::shared_ptr<const PlanNode>>&>(node->sources());
-  nodeSources = {left,right};
+  nodeSources = {left, right};
 }
 
-void PlanUtil::changeJoinNodeLeftSource(VeloxPlanNodePtr node,
-                                        VeloxPlanNodePtr left) {
+void PlanUtil::changeJoinNodeLeftSource(VeloxPlanNodePtr node, VeloxPlanNodePtr left) {
   std::vector<std::shared_ptr<const PlanNode>>& nodeSources =
       const_cast<std::vector<std::shared_ptr<const PlanNode>>&>(node->sources());
   nodeSources = {left, nodeSources[1]};
 }
 
-void PlanUtil::changeJoinNodeRightSource(VeloxPlanNodePtr node,
-                                         VeloxPlanNodePtr right) {
+void PlanUtil::changeJoinNodeRightSource(VeloxPlanNodePtr node, VeloxPlanNodePtr right) {
   std::vector<std::shared_ptr<const PlanNode>>& nodeSources =
       const_cast<std::vector<std::shared_ptr<const PlanNode>>&>(node->sources());
-  nodeSources = {nodeSources[0],right};
+  nodeSources = {nodeSources[0], right};
 }
 
-void PlanUtil::changeSingleSourcePlanSectionSource(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddr& source) {
+void PlanUtil::changeSingleSourcePlanSectionSource(VeloxNodeAddrPlanSection& planSection,
+                                                   VeloxPlanNodeAddr& source) {
   PlanUtil::changeNodeSource(planSection.source.nodePtr, source.nodePtr);
 }
 
-void PlanUtil::changeMultiSourcePlanSectionSources(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddrList& sourceList) {
+void PlanUtil::changeMultiSourcePlanSectionSources(VeloxNodeAddrPlanSection& planSection,
+                                                   VeloxPlanNodeAddrList& sourceList) {
   NodeAddrMapPtr newSrcPtrMap = toNodeAddrMap(sourceList);
   PlanBranches planBranches{planSection.target.root};
   VeloxPlanNodeAddrList sources = planBranches.getAllSourcesOf(planSection);
@@ -80,7 +75,7 @@ void PlanUtil::changeMultiSourcePlanSectionSources(
     auto foundInSrcNodeAddMap =
         findInNodeAddrMap(newSrcPtrMap, oldSrc.branchId, oldSrc.nodeId);
     if (foundInSrcNodeAddMap.first) {
-      if (target.branchId == oldSrc.branchId) { // target is not a join
+      if (target.branchId == oldSrc.branchId) {  // target is not a join
         changeNodeSource(target.nodePtr, foundInSrcNodeAddMap.second);
       } else {
         if (planBranches.getLeftSrcBranchId(target.branchId) == oldSrc.branchId) {
@@ -134,4 +129,4 @@ std::pair<bool, VeloxPlanNodePtr> PlanUtil::findInNodeAddrMap(NodeAddrMapPtr map
   return std::pair<bool, VeloxPlanNodePtr>(found, foundSrcPtr);
 }
 
-} // namespace facebook::velox::plugin::plantransformer
+}  // namespace facebook::velox::plugin::plantransformer

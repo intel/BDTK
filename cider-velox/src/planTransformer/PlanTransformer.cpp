@@ -218,13 +218,12 @@ void PlanTransformer::rewriteBranch(int32_t branchId) {
         int32_t matchResultTargetBranchId = matchResultTarget.branchId;
         if (matchResultTargetBranchId == branchId) {
           PlanUtil::changeNodeSource(matchResultTarget.nodePtr, matchResultPtr);
-        } else { //matchResult target node is a Join
+        } else {  // matchResult target node is a Join
           if (branchId == orgBranches_->getLeftSrcBranchId(matchResultTargetBranchId)) {
-            PlanUtil::changeJoinNodeLeftSource(
-                matchResultTarget.nodePtr, matchResultPtr);
+            PlanUtil::changeJoinNodeLeftSource(matchResultTarget.nodePtr, matchResultPtr);
           } else {
-            PlanUtil::changeJoinNodeRightSource(
-                matchResultTarget.nodePtr, matchResultPtr);          
+            PlanUtil::changeJoinNodeRightSource(matchResultTarget.nodePtr,
+                                                matchResultPtr);         
           }
         }  
       }
