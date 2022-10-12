@@ -147,7 +147,7 @@ bool CiderBatchChecker::checkArrowEq(
     // can be the same while schemas are different.
     if (!checkColumnCount(expected_schema, expected_batches[i]->schema())) {
       std::cout << "Not all schemas of expected batches are the same in expected batches."
-      << std::endl;
+                << std::endl;
       schema_check = false;
     }
     expected_row_num += expected_batches[i]->row_num();
@@ -158,9 +158,9 @@ bool CiderBatchChecker::checkArrowEq(
     if (actual_batches[i]->getChildrenNum() != expected_col_num) {
       std::cout << "Not all col nums of actual batches are same to those of expected "
                    "batches. "
-                   << "Expected col num is " << expected_col_num << ", while actual batch "
-                   << i << " has " << actual_batches[i]->getChildrenNum() << " cols."
-                   << std::endl;
+                << "Expected col num is " << expected_col_num << ", while actual batch "
+                << i << " has " << actual_batches[i]->getChildrenNum() << " cols."
+                << std::endl;
       schema_check = false;
     }
     // 2.Column count check
@@ -168,7 +168,7 @@ bool CiderBatchChecker::checkArrowEq(
     // can be the same while schemas are different.
     if (!checkColumnCount(expected_schema, actual_batches[i]->schema())) {
       std::cout << "Not all schemas of actual batches are the same as expected batches."
-      << std::endl;
+                << std::endl;
       schema_check = false;
     }
     actual_row_num += actual_batches[i]->getLength();
@@ -182,8 +182,8 @@ bool CiderBatchChecker::checkArrowEq(
   // 3. Row num check
   if (expected_row_num != actual_row_num) {
     std::cout << "Expected row num and actual row num are not equal. "
-    << "Actual row num is " << actual_row_num << ", while expected row num is "
-    << expected_row_num << std::endl;
+              << "Actual row num is " << actual_row_num << ", while expected row num is "
+              << expected_row_num << std::endl;
     return false;
   }
   return true;

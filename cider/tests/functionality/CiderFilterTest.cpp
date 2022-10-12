@@ -268,16 +268,19 @@ TEST_F(CiderFilterSequenceTestBase, multiColEqualTest) {
 TEST_F(CiderFilterSequenceTestArrow, ArrowInTest) {
   GTEST_SKIP_("codegen not ready.");
   prepareArrowBatch();
-  assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)", "in_int32_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)", "in_int64_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_3 in (24, 25, 26)", "in_fp32_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_4 in (24, 25, 26)", "in_fp64_array.json");
+  assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
+                   "in_int32_array.json");
+  assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",
+                   "in_int64_array.json");
+  assertQueryArrow("SELECT * FROM test WHERE col_3 in (24, 25, 26)",
+                   "in_fp32_array.json");
+  assertQueryArrow("SELECT * FROM test WHERE col_4 in (24, 25, 26)",
+                   "in_fp64_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_3 not in (24, 25, 26)",
-              "not_in_fp32_array.json");
+                   "not_in_fp32_array.json");
   // TODO: (yma1) add in (str_1, str_2, str_3)
   assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26) and col_2 > 20");
-  assertQueryArrow(
-      "SELECT * FROM test WHERE col_1 in (24 * 2 + 2, (25 + 2) * 10, 26)");
+  assertQueryArrow("SELECT * FROM test WHERE col_1 in (24 * 2 + 2, (25 + 2) * 10, 26)");
 }
 
 TEST_F(CiderFilterSequenceTestArrow, ArrowIntegerFilterTest) {
