@@ -470,7 +470,7 @@ void addColumnDataToScalarBatch<CiderByteArray>(
   child->setNullCount(null_count);
 }
 
-std::unique_ptr<CiderBatch> DuckDbResultConvertor::fetchOneArrowFormattedBatch(
+CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk) {
   // Construct ArrowSchema
   // First build a CiderTableSchema and then convert it
@@ -540,7 +540,7 @@ std::unique_ptr<CiderBatch> DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     }
   }
   chunk->Destroy();
-  return batch;
+  return std::move(*batch);
 }
 
 CiderBatch DuckDbResultConvertor::fetchOneBatch(
@@ -643,8 +643,7 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
       }
       return batch_res;
     }
-    auto ret_temp = fetchOneArrowFormattedBatch(chunk);
-    batch_res.push_back(std::make_shared<CiderBatch>(std::move(*ret_temp)));
+    batch_res.push_back(std::make_shared<CiderBatch>(fetchOneArrowFormattedBatch(chunk)));
   }
   return batch_res;
 }

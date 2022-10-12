@@ -71,7 +71,7 @@ class DuckDbResultConvertor {
 
  private:
   static CiderBatch fetchOneBatch(std::unique_ptr<duckdb::DataChunk>& chunk);
-  static std::unique_ptr<CiderBatch> fetchOneArrowFormattedBatch(
+  static CiderBatch fetchOneArrowFormattedBatch(
       std::unique_ptr<duckdb::DataChunk>& chunk);
 };
 
