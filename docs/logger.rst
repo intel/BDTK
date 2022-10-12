@@ -30,32 +30,39 @@ To initialize the logging system, the function::
 
 LogOptions has the following public member variables and member functions:
 
-    boost::filesystem::path log_dir_{"mapd_log"};
-    // file_name_pattern and symlink are prepended with base_name.
-    std::string file_name_pattern_{".{SEVERITY}.%Y%m%d-%H%M%S.log"};
-    std::string symlink_{".{SEVERITY}"};
-    Severity severity_{Severity::INFO};
-    Severity severity_clog_{Severity::ERROR};
-    Channels channels_;
-    bool auto_flush_{true};
-    size_t max_files_{100};
-    size_t min_free_space_{20 << 20};
-    bool rotate_daily_{true};
-    size_t rotation_size_{10 << 20};
+  - ``boost::filesystem::path log_dir_{"bdtk_log"};`` // Logging directory. May be relative to data directory, or absolute.
+  - ``std::string file_name_pattern_{".{SEVERITY}.%Y%m%d-%H%M%S.log"};`` // file_name_pattern is prepended with base_name.
+  - ``std::string symlink_{".{SEVERITY}"};`` // symlink is prepended with base_name.
+  - ``Severity severity_{Severity::INFO};``  // log level.
+  - ``Severity severity_clog_{Severity::ERROR};`` //Log to console severity level.
+  - ``bool auto_flush_{true};`` // Flush logging buffer to file after each message.
+  - ``size_t max_files_{100};`` // The maximum number of log files, if it is 0, no log will be recorded
+  - ``size_t min_free_space_{20 << 20};`` // Minimum number of bytes left on device before oldest log files are deleted.
+  - ``size_t rotation_size_{10 << 20};`` // Maximum file size in bytes before new log files are started.
+  - ``LogOptions(char const* argv0);``
+  - ``boost::filesystem::path full_log_dir() const;`` // get log path
+  - ``void set_base_path(std::string const& base_path);`` // set log base path
+  - ``void parse_command_line(int, char const* const*);`` // Pass parameters using the command line
 
-    LogOptions(char const* argv0);
-    boost::filesystem::path full_log_dir() const;
-    boost::program_options::options_description const& get_options() const;
-    void parse_command_line(int, char const* const*);
-    void set_base_path(std::string const& base_path);
-    void set_options();
+    + ``--log-directory`` : Logging directory. May be relative to data directory, or absolute.
+    + ``--log-file-name`` : Log file name relative to log-directory.
+    + ``--log-symlink`` : Symlink to active log.
+    + ``--log-severity`` : Log to file severity level.
+    + ``--log-severity-clog`` : Log to console severity level.
+    + ``--log-auto-flush`` : Flush logging buffer to file after each message.
+    + ``--log-max-files`` : Maximum number of log files to keep.
+    + ``--log-min-free-space`` : Minimum number of bytes left on device before oldest log files are deleted.
+    + ``--log-rotation-size`` : Maximum file size in bytes before new log files are started.
 
 must be invoked with the ``logger::LogOptions`` object to be applied. It is recommended 
 to run this from ``main()`` as early as possible. use the ``LOG``/``CHECK`` macros for all normal logging. Example::
 
-    logger::LogOptions log_options(argv[0]);
-    log_options.parse_command_line(argc, argv);
-    logger::init(log_options);
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;
+  log_options.set_base_path("/root/work");
+  log_options.log_dir_ = "bdtk_log";
+  logger::init(log_options);
 
 Usage
 -----
