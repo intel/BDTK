@@ -26,6 +26,7 @@
 // in sync.
 enum SQLOps {
   kEQ = 0,
+  // BitWise Equal <=> a = b or (a is null and b is null)
   // The only difference between EQ and BW_EQ is that BW_EQ will check nullability of both
   // sides while EQ won't.
   kBW_EQ,
