@@ -82,7 +82,8 @@ void* CiderCompilationResult::func() const {
   return impl_->func();
 }
 
-CiderTableSchema CiderCompilationResult::getOutputCiderTableSchema() const {
+std::shared_ptr<CiderTableSchema> CiderCompilationResult::getOutputCiderTableSchema()
+    const {
   return impl_->getOutputCiderTableSchema();
 }
 
@@ -263,7 +264,7 @@ class CiderCompileModule::Impl {
   std::shared_ptr<CiderCompilationResult> compile(
       const RelAlgExecutionUnit& ra_exe_unit,
       const std::vector<InputTableInfo>& table_infos,
-      CiderTableSchema schema,
+      std::shared_ptr<CiderTableSchema> schema,
       CiderCompilationOption cco,
       CiderExecutionOption ceo) {
     auto co = CiderCompilationOptionToCo(cco);
@@ -532,7 +533,7 @@ std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
 std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
     void* ra_exe_unit_,
     void* table_infos_,
-    CiderTableSchema schema,
+    std::shared_ptr<CiderTableSchema> schema,
     CiderCompilationOption cco,
     CiderExecutionOption ceo) {
   RelAlgExecutionUnit ra_exe_unit = *(RelAlgExecutionUnit*)ra_exe_unit_;

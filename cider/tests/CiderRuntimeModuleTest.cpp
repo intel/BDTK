@@ -128,13 +128,12 @@ std::vector<InputTableInfo> buildQueryInfo() {
   return query_infos;
 }
 
-CiderTableSchema buildTableSchema(std::string type_json) {
+std::shared_ptr<CiderTableSchema> buildTableSchema(std::string type_json) {
   std::vector<std::string> col_names = {"col_0", "col_1", "col_2", "col_3"};
   ::substrait::Type col_type;
   google::protobuf::util::JsonStringToMessage(type_json, &col_type);
   std::vector<::substrait::Type> col_types = {col_type, col_type, col_type, col_type};
-  CiderTableSchema schema(col_names, col_types);
-  return schema;
+  return std::make_shared<CiderTableSchema>(col_names, col_types);
 }
 
 TEST(CiderRuntimeModuleTest, processInt) {
@@ -155,7 +154,7 @@ TEST(CiderRuntimeModuleTest, processInt) {
       }
     }
     )";
-  CiderTableSchema schema = buildTableSchema(type_json);
+  auto schema = buildTableSchema(type_json);
 
   auto cco = CiderCompilationOption::defaults();
   cco.use_default_col_range = false;
@@ -224,7 +223,7 @@ TEST(CiderRuntimeModuleTest, processDouble) {
       }
     }
     )";
-  CiderTableSchema schema = buildTableSchema(type_json);
+  auto schema = buildTableSchema(type_json);
   auto cco = CiderCompilationOption::defaults();
   cco.use_default_col_range = false;
   auto result =
@@ -297,7 +296,7 @@ TEST(CiderRuntimeModuleTest, processMultiple) {
       }
     }
     )";
-  CiderTableSchema schema = buildTableSchema(type_json);
+  auto schema = buildTableSchema(type_json);
   auto cco = CiderCompilationOption::defaults();
   cco.use_default_col_range = false;
   auto result =

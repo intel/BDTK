@@ -255,8 +255,8 @@ void runTest(const std::string& test_name,
     column_types.push_back(generator::getSubstraitType(
         ra_exe_unit_ptr->target_exprs[i_target]->get_type_info()));
   }
-  CiderTableSchema schema(col_names, column_types, "", col_hints);
-
+  auto schema =
+      std::make_shared<CiderTableSchema>(col_names, column_types, "", col_hints);
   auto compile_result = cider_compile_module->compile(
       ra_exe_unit_ptr.get(), &table_infos, schema, compile_option, exe_option);
 

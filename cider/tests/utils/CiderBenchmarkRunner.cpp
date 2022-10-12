@@ -25,8 +25,7 @@ void CiderBenchmarkRunner::compile(const std::string& sql) {
   compile_res_ = ciderCompileModule_->compile(plan, compile_option, exe_option);
   cider_runtime_module_ =
       std::make_shared<CiderRuntimeModule>(compile_res_, compile_option, exe_option);
-  output_schema_ =
-      std::make_shared<CiderTableSchema>(compile_res_->getOutputCiderTableSchema());
+  output_schema_ = compile_res_->getOutputCiderTableSchema();
 }
 
 CiderBatch CiderBenchmarkRunner::runNextBatch(
