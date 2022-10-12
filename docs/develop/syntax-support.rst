@@ -2,7 +2,7 @@
 Syntax support in Cider
 =================================
 
-1 Having syntax support
+Having syntax support
 -----------------------------------
 
 Generally, there are two cases in having. 
@@ -12,7 +12,7 @@ Case1:
 
 .. code-block:: sql
 
-        SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING col_a > 2
+        SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING col_a > 2;
 
 The other one is agg condition(See Case2 below) which should be handled after group by final agg.
 
@@ -20,7 +20,7 @@ Case2:
 
 .. code-block:: sql
 
-    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING SUM(col_a) > 2
+    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING SUM(col_a) > 2;
 
 For Case1 in Cider, we will get substrait plan in which having clause is transfered to filter operator already.
 When it comes to Case3 that contains multiple conditions, we will receive a substrait plan with multiple
@@ -30,7 +30,7 @@ Case3:
 
 .. code-block:: sql
 
-        SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING col_a > 2
+        SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING col_a > 2;
 
 For Case2 in Cider, we expect to get two plans. One is table scan and partial agg, the other is final agg, filter and project.
 So when it comes to Case4, two different conditions from where and having won't appear in a same substrait plan and be merged
@@ -40,13 +40,13 @@ Case4:
 
 .. code-block:: sql
 
-    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING SUM(col_a) > 2
+    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING SUM(col_a) > 2;
 
 In addition to those above, if we get an unexpected substrait plan like putting having agg condition together with partial
 agg plan, we will get wrong result batch without throwing exception.
 
 
-2 In syntax support
+In syntax support
 -----------------------------------
 
 The IN clause allows multi values definition in WHERE conditions. For example:
@@ -77,11 +77,11 @@ when 'eno' col is known as a primary key or an unique index, like following:
 
         SELECT eno
         FROM employee join dept
-        WHERE employee.dno = dept.dno and dept.floor = 3
+        WHERE employee.dno = dept.dno and dept.floor = 3;
 
 Thus this IN clause is handled through join op in Cider.
 
-3 AVG support in Cider
+AVG support in Cider
 -----------------------------------
 
 Similar as other aggregation functions, 'AVG' has 2 phases(Partial/Final) in distributing data analytic engines. But computation is different in different phase. In AVG partial, computation is split into sum() and count() on target column/expression and in AVG final, sum() is done on previous summation and count value, then do a divide between these 2 values.
@@ -111,7 +111,7 @@ Similar special handle will be needed when output type of agg functions from fro
      - If g_bigint_count is true(default false), output type is BIGINT. Otherwise uses INT.
 
 
-4 String Function support in Cider
+String Function support in Cider
 -----------------------------------
 Currently, Cider do not distinguish empty string and null string.
 
@@ -119,10 +119,10 @@ Currently, Cider do not distinguish empty string and null string.
 ^^^^^^^^^^^^^^^^^^^^
 
 a. Acceptable wildcards: %, _, []
-b. Unacceptable wildcards: *, [^], [!]
+b. Unacceptable wildcards: `*`, [^], [!] 
 c. Escape clause is not supported yet.
 
-5 Conditional Expressions in Cider
+Conditional Expressions in Cider
 -----------------------------------
 1) COALESCE
 ^^^^^^^^^^^^^
@@ -198,7 +198,7 @@ is equal to
 
         CASE WHEN condition THEN true_value ELSE false_value END
 
-6 SELECT DISTINCT
+SELECT DISTINCT
 --------------------------------------
 
 Mainstream databases such as Spark and Presto will transform 'SELECT DISTINCT' sql to 'GROUP BY' sql when do optimization on logical plan.
@@ -250,7 +250,7 @@ When execute sql `select distinct nationkey from customer`, part of the json gen
 
 In above cases, the original 'SELECT DISTINCT' sql is converted to an Aggregation type, and the columns shoule be distinct will become 'GROUP BY' keys.
 
-7 GROUP BY related function
+GROUP BY related function
 --------------------------------------
 
 This part will explain extended usage of GROUP BY including GROUPING SETS() , CUBE() , ROLLUP() , GROUP BY ALL/DISTINCT, and together with those combined cases.

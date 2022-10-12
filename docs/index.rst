@@ -1,4 +1,3 @@
-###################################
 Welcome to Cider's documentation!
 ###################################
 
@@ -6,10 +5,14 @@ Welcome to Cider's documentation!
     :maxdepth: 2
 
     cider-in-10-min
-    develop-guide
-    syntax-support
-    user-guide
+
+.. toctree::
+    :maxdepth: 3
+
+    user
+    develop
+    
+.. toctree::
+    :maxdepth: 2
+
     cider-sharing
-    development-specification
-    CiderAllocator-use-guide
-    logger
