@@ -195,7 +195,7 @@ void DuckDbQueryRunner::createTableAndInsertData(
       for (int k = 0; k < col_num; ++k) {
         if (null_data.empty() || null_data[k].empty() ||  // this column is not nullable
             !null_data[k][j]) {  // ture is null, false is non-null
-          auto s_type = current_batch->schema()->getColumnTypeById(k);
+          auto& s_type = current_batch->schema()->getColumnTypeById(k);
           auto value = GEN_DUCK_VALUE_FUNC();
           appender.Append(value);
         } else {
@@ -229,7 +229,7 @@ void DuckDbQueryRunner::createTableAndInsertData(
     for (int k = 0; k < col_num; ++k) {
       if (null_data[k].empty() ||  // this column is not nullable
           !null_data[k][j]) {
-        auto s_type = current_batch->schema()->getColumnTypeById(k);
+        auto& s_type = current_batch->schema()->getColumnTypeById(k);
         auto value = GEN_DUCK_VALUE_FUNC();
         appender.Append(value);
       } else {

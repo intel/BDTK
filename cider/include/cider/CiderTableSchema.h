@@ -62,7 +62,7 @@ class CiderTableSchema {
 
   std::vector<substrait::Type> getColumnTypes() const { return columnTypes_; }
 
-  substrait::Type getColumnTypeById(const int column) const {
+  const substrait::Type& getColumnTypeById(const int column) const {
     CHECK(columnTypes_.size() > 0 && column < columnTypes_.size());
     return columnTypes_[column];
   }
