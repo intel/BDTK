@@ -272,7 +272,6 @@ HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest2, *, d, = 2 *)
 HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest3, *, d, *2 = 2 *)
 
 // using OR to avoid 0 results
-// TODO: (spevenhe) OR will fail back to loop join while AND is still hash join
 #define DOUBLE_JOIN_OR_CONDITION_TEST(TEST_CLASS, UNIT_NAME, PROJECT)               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
     /*INNER JOIN ON INTEGER OR FLOAT*/                                              \
@@ -300,7 +299,8 @@ HASH_JOIN_TEST_UNIT(CiderOneToOneSeqJoinTest, ExprJoinSeqTest3, *, d, *2 = 2 *)
         "SELECT " #PROJECT                                                          \
         " from table_probe LEFT JOIN table_hash ON l_a = r_a OR l_a IS NOT NULL "); \
   }
-
+// TODO: (spevenhe) comment due to OR will fail back to loop join
+// while AND is still hash join
 // DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToOneSeqJoinTest, ORJoinConditionTest1, *)
 // DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToManySeqJoinTest, ORJoinConditionTest2, *)
 // DOUBLE_JOIN_OR_CONDITION_TEST(CiderOneToOneRandomJoinTest, ORJoinConditionTest3, *)
