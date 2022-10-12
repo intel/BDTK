@@ -226,6 +226,10 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
         "in_string_array_with_substr.json");                                            \
+    assertQuery(                                                                        \
+        "SELECT * FROM test WHERE col_1 >= 0 and SUBSTRING(col_2, 1, 4) in "            \
+        "('0000', '1111', '2222', '3333')",                                             \
+        "in_string_nest_with_binop.json");                                              \
   }
 
 BASIC_STRING_TEST_UNIT(CiderStringTest, basicStringTest)
