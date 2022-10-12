@@ -57,8 +57,6 @@ class PlanTransformer {
   // rewrite all single branch match results of the branch and the cross branch
   // match result whose target point belongs to the branch.
   void rewriteBranch(int32_t branchId);
-  VeloxPlanNodePtr cloneBranchWithRewrittenSrc(int32_t branchId, int32_t startNodeId);
-  VeloxPlanNodePtr rewriteBranchSection(VeloxNodeAddrPlanSection branchSection);
   // rewrite a single match result and insert the rewrittern result into the
   // rewritten map
   VeloxPlanNodePtr rewriteMatchResult(PlanSectionRewriterPair& resultPair);
