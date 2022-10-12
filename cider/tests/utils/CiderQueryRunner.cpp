@@ -77,10 +77,11 @@ std::string getFileContent(const std::string& file_name) {
 
 CiderBatch CiderQueryRunner::runQueryOneBatch(
     const std::string& file_or_sql,
-    const std::shared_ptr<CiderBatch>& input_batch) {
+    const std::shared_ptr<CiderBatch>& input_batch,
+    bool is_arrow_format) {
   // Step 1: construct substrait plan
   auto plan = genSubstraitPlan(file_or_sql);
-
+  compile_option.use_cider_data_format = is_arrow_format;
   // Step 2: compile and gen runtime module
   COMPILE_AND_GEN_RUNTIME_MODULE();
 
