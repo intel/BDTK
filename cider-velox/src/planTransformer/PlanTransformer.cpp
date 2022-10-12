@@ -223,9 +223,9 @@ void PlanTransformer::rewriteBranch(int32_t branchId) {
             PlanUtil::changeJoinNodeLeftSource(matchResultTarget.nodePtr, matchResultPtr);
           } else {
             PlanUtil::changeJoinNodeRightSource(matchResultTarget.nodePtr,
-                                                matchResultPtr);         
+                                                matchResultPtr);
           }
-        }  
+        }
       }
     }
 }

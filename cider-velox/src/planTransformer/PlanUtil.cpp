@@ -36,7 +36,7 @@ bool PlanUtil::isJoin(VeloxPlanNodePtr node) {
 
 void PlanUtil::changeNodeSource(VeloxPlanNodePtr node, VeloxPlanNodePtr source) {
   std::vector<std::shared_ptr<const PlanNode>>& nodeSources =
-       const_cast<std::vector<std::shared_ptr<const PlanNode>>&>(node->sources());
+      const_cast<std::vector<std::shared_ptr<const PlanNode>>&>(node->sources());
   nodeSources = {source};
 }
 
