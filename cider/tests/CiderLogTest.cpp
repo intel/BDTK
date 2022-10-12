@@ -34,16 +34,14 @@ TEST_F(CiderLogTest, log) {
   LOG(WARNING) << "WARNING log";
   LOG(ERROR) << "ERROR log";
   LOG(FATAL) << "FATAL log";
-
 }
 
 int main(int argc, char** argv) {
-  std::cout <<"argc = " << argc << std::endl;
-  for (size_t i = 0; i < argc; i++)
-  {
+  std::cout << "argc = " << argc << std::endl;
+  for (size_t i = 0; i < argc; i++) {
     std::cout << "argc[" << i << "] = " << argv[i] << std::endl;
   }
-  
+
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);
   log_options.parse_command_line(argc, argv);
@@ -53,8 +51,6 @@ int main(int argc, char** argv) {
   // log_options.set_base_path("/root/work");
   std::cout << log_options.full_log_dir() << std::endl;
   logger::init(log_options);
-
-  
 
   int err{0};
   try {
