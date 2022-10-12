@@ -266,7 +266,8 @@ class QueryDataGenerator {
   }
 
   static CiderByteArray genDateFormatCiderByteArray(int len) {
-    char* buf = (char*)std::malloc(len);
+    auto allocator = std::make_shared<CiderDefaultAllocator>();
+    char* buf = reinterpret_cast<char*>(allocator->allocate(len));
     char base = '0';
     std::mt19937 rng(std::random_device{}());  // NOLINT
     buf[0] = base + Random::randInt32(1, 2, rng);

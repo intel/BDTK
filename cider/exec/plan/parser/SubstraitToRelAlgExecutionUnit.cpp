@@ -137,7 +137,7 @@ SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit(
       quals = quals_filter.quals;
       simple_quals = quals_filter.simple_quals;
       // Create output table schema
-      output_cider_table_schema_ = table_schema;
+      output_cider_table_schema_ = std::make_shared<CiderTableSchema>(table_schema);
       break;
     }
     case ExprType::ProjectExpr: {
@@ -156,8 +156,8 @@ SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit(
         o_col_hints.push_back(ColumnHint::Normal);
         target_exprs.emplace_back(p_evaluated_expr);
       }
-      CiderTableSchema output_schema(o_names, o_column_types, "", o_col_hints);
-      output_cider_table_schema_ = output_schema;
+      output_cider_table_schema_ =
+          std::make_shared<CiderTableSchema>(o_names, o_column_types, "", o_col_hints);
       break;
     }
     default:
@@ -203,8 +203,9 @@ substrait::Type SubstraitToRelAlgExecutionUnit::reconstructStructType(size_t ind
   return s_type;
 }
 
-CiderTableSchema SubstraitToRelAlgExecutionUnit::getOutputCiderTableSchema() {
-  if (!output_cider_table_schema_.getColumnCount()) {
+std::shared_ptr<CiderTableSchema>
+SubstraitToRelAlgExecutionUnit::getOutputCiderTableSchema() {
+  if (output_cider_table_schema_ == nullptr) {
     if (plan_.relations_size() == 0) {
       CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
     }
@@ -234,8 +235,8 @@ CiderTableSchema SubstraitToRelAlgExecutionUnit::getOutputCiderTableSchema() {
       }
       i_target += length;
     }
-    CiderTableSchema schema(names, column_types, "", col_hints);
-    output_cider_table_schema_ = schema;
+    output_cider_table_schema_ =
+        std::make_shared<CiderTableSchema>(names, column_types, "", col_hints);
   }
   return output_cider_table_schema_;
 }

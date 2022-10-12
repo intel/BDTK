@@ -60,8 +60,7 @@ CiderOperator::CiderOperator(int32_t operatorId,
         ciderCompileModule_->compile(plan, compile_option, exec_option);
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
         ciderCompileResult, compile_option, exec_option, allocator);
-    outputSchema_ = std::make_shared<CiderTableSchema>(
-        ciderCompileResult->getOutputCiderTableSchema());
+    outputSchema_ = ciderCompileResult->getOutputCiderTableSchema();
 
     is_using_arrow_format_ = compile_option.use_cider_data_format;
   }
@@ -155,8 +154,7 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
     ciderRuntimeModule_ = std::make_shared<CiderRuntimeModule>(
         compileResult, compile_option, exec_option, allocator);
 
-    outputSchema_ =
-        std::make_shared<CiderTableSchema>(compileResult->getOutputCiderTableSchema());
+    outputSchema_ = compileResult->getOutputCiderTableSchema();
     buildTableFed_ = true;
   }
   return exec::BlockingReason::kNotBlocked;
