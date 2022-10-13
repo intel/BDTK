@@ -211,8 +211,6 @@ void checkDuckDbBooleanOutput(
     checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_nulls);     \
   }
 
-#define ARROW_SIMPLE_TEST_PROCEDURE(C_TYPE, SQL_TYPE)
-
 TEST(DuckDBResultConvertorTest, simpleIntegerArrowTest) {
   ARROW_SIMPLE_TEST_SUITE(int32_t, I32, INTEGER);
 }
