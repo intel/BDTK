@@ -118,7 +118,7 @@ void checkDuckDbScalarOutput(
     // check child row nums
     EXPECT_EQ(child->getLength(), expected_data[i].size());
 
-    auto data_buffer = child->as<ScalarBatch<int32_t>>()->getRawData();
+    auto data_buffer = child->as<ScalarBatch<T>>()->getRawData();
     auto null_buffer = child->getNulls();
     auto null_count = int{0};
     for (auto j = 0; j < child->getLength(); ++j) {
