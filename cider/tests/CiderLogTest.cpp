@@ -36,6 +36,11 @@ TEST_F(CiderLogTest, log) {
   LOG(FATAL) << "FATAL log";
 }
 
+/*
+ * Run the CiderLogTest test file alone, for example: ./CiderLogTest
+ * Or run CiderLogTest with parameters, for example: ./CiderLogTest --log-directory
+ * bdtk_log --log-file-name bdtk_log
+ */
 int main(int argc, char** argv) {
   std::cout << "argc = " << argc << std::endl;
   for (size_t i = 0; i < argc; i++) {
@@ -45,10 +50,6 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);
   log_options.parse_command_line(argc, argv);
-  // log_options.severity_ = logger::WARNING;
-  // log_options.severity_clog_ = logger::INFO;
-  // log_options.max_files_ = 0;  // stderr only by default
-  // log_options.set_base_path("/root/work");
   std::cout << log_options.full_log_dir() << std::endl;
   logger::init(log_options);
 
