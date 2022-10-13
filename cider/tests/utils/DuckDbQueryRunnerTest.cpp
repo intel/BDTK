@@ -60,6 +60,33 @@ generateSequenceData(int n_rows = 10, int n_nulls = 5) {
   return {cols, valids};
 }
 
+std::tuple<std::vector<std::vector<int8_t>>, std::vector<std::vector<bool>>>
+generateSequenceBooleanData(int n_rows = 10, int n_nulls = 5) {
+  CHECK(n_nulls <= n_rows);
+  int n_not_nulls = n_rows - n_nulls;
+
+  // col_1 will never contain null
+  std::vector<int8_t> col_1;
+  std::vector<bool> valid_1(n_rows, true);
+
+  // last n_nulls elements of col_2 will be null
+  std::vector<int8_t> col_2;
+  std::vector<bool> valid_2;
+
+  for (int i = 0; i < n_rows; ++i) {
+    bool is_valid = (i < n_not_nulls);
+    int8_t value = static_cast<int8_t>(i) % 2;
+    col_1.push_back(value);
+    col_2.push_back(is_valid ? value : std::numeric_limits<int8_t>::min());
+    valid_2.push_back(is_valid);
+  }
+
+  std::vector<std::vector<int8_t>> cols{col_1, col_2};
+  std::vector<std::vector<bool>> valids{valid_1, valid_2};
+
+  return {cols, valids};
+}
+
 template <typename T>
 void checkDuckDbScalarOutput(
     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
@@ -101,69 +128,94 @@ void checkDuckDbScalarOutput(
   }
 }
 
-#define ARROW_SIMPLE_TEST_SUITE(C_TYPE, S_TYPE, SQL_TYPE)                               \
-  {                                                                                     \
-    DuckDbQueryRunner runner;                                                           \
-    auto [expected_data, expected_nulls] = generateSequenceData<C_TYPE>();              \
-                                                                                        \
-    /* CiderBatchBuilder expects a NULL vector                                          \
-     * but expected_nulls is actually a VALID vector so we flip it here*/               \
-    auto null_vecs = expected_nulls;                                                    \
-    std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) { \
-      null_vec.flip();                                                                  \
-    });                                                                                 \
-                                                                                        \
-    /* TODO: (YBRua) The CiderBatch generated here is not in Arrow format               \
-     * Change it to an Arrow-formatted batch after CiderBatchBuilder is updated */      \
-    auto batch = std::make_shared<CiderBatch>(                                          \
-        CiderBatchBuilder()                                                             \
-            .setRowNum(10)                                                              \
-            .addColumn<C_TYPE>(                                                         \
-                "col_1", CREATE_SUBSTRAIT_TYPE(S_TYPE), expected_data[0], null_vecs[0]) \
-            .addColumn<C_TYPE>(                                                         \
-                "col_2", CREATE_SUBSTRAIT_TYPE(S_TYPE), expected_data[1], null_vecs[1]) \
-            .build());                                                                  \
-                                                                                        \
-    std::string table_name = "table_test";                                              \
-    std::string create_ddl =                                                            \
-        "CREATE TABLE table_test(col_a " #SQL_TYPE ", col_b " #SQL_TYPE ")";            \
-                                                                                        \
-    runner.createTableAndInsertData(table_name, create_ddl, batch);                     \
-    auto res = runner.runSql("select * from table_test;");                              \
-    CHECK(!res->HasError());                                                            \
-    CHECK_EQ(res->ColumnCount(), 2);                                                    \
-                                                                                        \
-    auto actual_batches =                                                               \
-        DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);                \
-    checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_nulls);     \
-  }
+#define ARROW_SIMPLE_TEST_DATAGEN(C_TYPE, S_TYPE)                                     \
+  DuckDbQueryRunner runner;                                                           \
+  auto [expected_data, expected_nulls] = generateSequenceData<C_TYPE>();              \
+                                                                                      \
+  /* CiderBatchBuilder expects a NULL vector                                          \
+   * but expected_nulls is actually a VALID vector so we flip it here*/               \
+  auto null_vecs = expected_nulls;                                                    \
+  std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) { \
+    null_vec.flip();                                                                  \
+  });                                                                                 \
+                                                                                      \
+  /* TODO: (YBRua) The CiderBatch generated here is not in Arrow format               \
+   * Change it to an Arrow-formatted batch after CiderBatchBuilder is updated */      \
+  auto batch = std::make_shared<CiderBatch>(                                          \
+      CiderBatchBuilder()                                                             \
+          .setRowNum(10)                                                              \
+          .addColumn<C_TYPE>(                                                         \
+              "col_1", CREATE_SUBSTRAIT_TYPE(S_TYPE), expected_data[0], null_vecs[0]) \
+          .addColumn<C_TYPE>(                                                         \
+              "col_2", CREATE_SUBSTRAIT_TYPE(S_TYPE), expected_data[1], null_vecs[1]) \
+          .build())
 
-TEST(DuckDBResultConvertorTest, simpleI32ArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(int32_t, I32, INTEGER);
+#define ARROW_SIMPLE_TEST_PROCEDURE(C_TYPE, SQL_TYPE)                                    \
+  std::string table_name = "table_test";                                                 \
+  std::string create_ddl =                                                               \
+      "CREATE TABLE table_test(col_a " #SQL_TYPE ", col_b " #SQL_TYPE ")";               \
+                                                                                         \
+  runner.createTableAndInsertData(table_name, create_ddl, batch);                        \
+  auto res = runner.runSql("select * from table_test;");                                 \
+  CHECK(!res->HasError());                                                               \
+  CHECK_EQ(res->ColumnCount(), 2);                                                       \
+                                                                                         \
+  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res); \
+  checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_nulls)
+
+TEST(DuckDBResultConvertorTest, simpleIntegerArrowTest) {
+  ARROW_SIMPLE_TEST_DATAGEN(int32_t, I32);
+  ARROW_SIMPLE_TEST_PROCEDURE(int32_t, INTEGER);
+
 }
 
-TEST(DuckDBResultConvertorTest, simpleI8ArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(int8_t, I8, TINYINT);
+TEST(DuckDBResultConvertorTest, simpleTinyIntArrowTest) {
+  ARROW_SIMPLE_TEST_DATAGEN(int8_t, I8);
+  ARROW_SIMPLE_TEST_PROCEDURE(int8_t, TINYINT);
 }
 
-TEST(DuckDBResultConvertorTest, simpleI16ArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(int16_t, I16, SMALLINT);
+TEST(DuckDBResultConvertorTest, simpleSmallIntArrowTest) {
+  ARROW_SIMPLE_TEST_DATAGEN(int16_t, I16);
+  ARROW_SIMPLE_TEST_PROCEDURE(int16_t, SMALLINT);
+
 }
 
-TEST(DuckDBResultConvertorTest, simpleI64ArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(int64_t, I64, BIGINT);
+TEST(DuckDBResultConvertorTest, simpleBigIntArrowTest) {
+  ARROW_SIMPLE_TEST_DATAGEN(int64_t, I64);
+  ARROW_SIMPLE_TEST_PROCEDURE(int64_t, BIGINT);
+
 }
 
-TEST(DuckDBResultConvertorTest, simpleFp32ArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(float, Fp32, FLOAT);
+TEST(DuckDBResultConvertorTest, simpleFloatArrowTest) {
+  ARROW_SIMPLE_TEST_DATAGEN(float, Fp32);
+  ARROW_SIMPLE_TEST_PROCEDURE(float, FLOAT);
+
 }
 
-TEST(DuckDBResultConvertorTest, simpleI64ArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(double, Fp64, DOUBLE);
+TEST(DuckDBResultConvertorTest, simpleDoubleArrowTest) {
+  ARROW_SIMPLE_TEST_DATAGEN(double, Fp64);
+  ARROW_SIMPLE_TEST_PROCEDURE(double, DOUBLE);
 }
 
-TEST(DuckDBResultConvertorTest, simpleBoolArrowTest) {
-  ARROW_SIMPLE_TEST_SUITE(bool, Bool, BOOLEAN);
+TEST(DuckDBResultConvertorTest, simpleBooleanArrowTest) {
+  DuckDbQueryRunner runner;
+  auto [expected_data, expected_nulls] = generateSequenceBooleanData();
+
+  auto null_vecs = expected_nulls;
+  std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) {
+    null_vec.flip();
+  });
+
+  auto batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(10)
+          .addColumn<int8_t>(
+              "col_1", CREATE_SUBSTRAIT_TYPE(Bool), expected_data[0], null_vecs[0])
+          .addColumn<int8_t>(
+              "col_2", CREATE_SUBSTRAIT_TYPE(Bool), expected_data[1], null_vecs[1])
+          .build());
+
+  ARROW_SIMPLE_TEST_PROCEDURE(int8_t, BOOLEAN);
 }
 
 TEST(DuckDBQueryRunnerTest, basicTest) {
