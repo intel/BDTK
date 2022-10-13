@@ -33,11 +33,39 @@
 #include <vector>
 
 template <typename T>
+std::tuple<std::vector<std::vector<T>>, std::vector<std::vector<bool>>>
+generateSequenceData(int n_rows = 10, int n_nulls = 5) {
+  CHECK(n_nulls <= n_rows);
+  int n_not_nulls = n_rows - n_nulls;
+
+  // col_1 will never contain null
+  std::vector<T> col_1;
+  std::vector<bool> valid_1(n_rows, true);
+
+  // last n_nulls elements of col_2 will be null
+  std::vector<T> col_2;
+  std::vector<bool> valid_2;
+
+  for (int i = 0; i < n_rows; ++i) {
+    bool is_valid = (i < n_not_nulls);
+    T value = static_cast<T>(i);
+    col_1.push_back(value);
+    col_2.push_back(is_valid ? value : std::numeric_limits<T>::min());
+    valid_2.push_back(is_valid);
+  }
+
+  std::vector<std::vector<T>> cols{col_1, col_2};
+  std::vector<std::vector<bool>> valids{valid_1, valid_2};
+
+  return {cols, valids};
+}
+
+template <typename T>
 void checkDuckDbScalarOutput(
     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
     const std::vector<std::vector<T>>& expected_data,
     const std::vector<std::vector<bool>>& expected_nulls = {}) {
-  /// NOTE: (YBRua) To be deprecated.
+  /// TODO: (YBRua) To be deprecated.
   /// Change this to CiderBatchChecker after Checker is implemented
 
   // expected data should at least contain something
@@ -73,22 +101,33 @@ void checkDuckDbScalarOutput(
   }
 }
 
-TEST(DuckDBResultConvertorTest, simpleArrowTest) {
+TEST(DuckDBResultConvertorTest, simpleI32ArrowTest) {
   DuckDbQueryRunner runner;
 
-  int null_value = std::numeric_limits<int>::min();
-  std::vector<int> col_1{0, 1, 2, 3, 4};
-  std::vector<int> col_2{0, 1, 2, null_value, null_value};
-  std::vector<bool> col_1_null(col_1.size(), true);
-  std::vector<bool> col_2_null{true, true, true, false, false};
-  std::vector<std::vector<int>> expected_data{col_1, col_2};
-  std::vector<std::vector<bool>> expected_nulls{col_1_null, col_2_null};
+  auto [expected_data, expected_nulls] = generateSequenceData<int>();
+
+  // CiderBatchBuilder expects a NULL vector,
+  // but expected_nulls is actually a VALID vector so we flip it here
+  auto null_vecs = expected_nulls;
+  std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) {
+    null_vec.flip();
+  });
+
+  /// TODO: (YBRua) The CiderBatch generated here is not in Arrow format
+  /// Change it to an Arrow-formatted batch after CiderBatchBuilder is updated
+  auto batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(10)
+          .addColumn<int32_t>(
+              "col_1", CREATE_SUBSTRAIT_TYPE(I32), expected_data[0], null_vecs[0])
+          .addColumn<int32_t>(
+              "col_2", CREATE_SUBSTRAIT_TYPE(I32), expected_data[1], null_vecs[1])
+          .build());
 
   std::string table_name = "table_test";
   std::string create_ddl = "CREATE TABLE table_test(col_a INTEGER, col_b INTEGER)";
 
-  runner.createTableAndInsertData(
-      table_name, create_ddl, expected_data, false, expected_nulls);
+  runner.createTableAndInsertData(table_name, create_ddl, batch);
   auto res = runner.runSql("select * from table_test;");
 
   CHECK(!res->HasError());

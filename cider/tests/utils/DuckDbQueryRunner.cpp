@@ -491,6 +491,9 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
   }
 
   auto cider_schema = std::make_shared<CiderTableSchema>(batch_names, batch_types, "");
+
+  /// NOTE: (YBRua) This function currently only support primitive scalar types
+  /// It cannot convert Date/Time/Varchar to ArrowSchema
   auto arrow_schema =
       CiderBatchUtils::convertCiderTableSchemaToArrowSchema(*cider_schema);
 
