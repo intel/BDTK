@@ -73,10 +73,6 @@ class CiderQueryRunner {
       std::shared_ptr<CiderCompilationResult> compile_res);
 
  private:
-  // for debug
-  bool print_substrait_ = false;
-  bool print_IR_ = false;
-
   CiderBatch updateCountDistinctRes(std::unique_ptr<CiderBatch> output_batch,
                                     std::shared_ptr<CiderCompilationResult> compile_res);
 };

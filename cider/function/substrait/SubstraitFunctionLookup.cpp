@@ -20,7 +20,6 @@
  */
 
 #include "function/substrait/SubstraitFunctionLookup.h"
-#include <folly/String.h>
 #include "function/substrait/SubstraitSignature.h"
 
 namespace cider::function::substrait {

@@ -20,10 +20,8 @@
  */
 
 #include "function/substrait/SubstraitSignature.h"
-#include <folly/String.h>
 #include <sstream>
-
-using namespace folly;
+#include "util/StringTransform.h"
 
 namespace cider::function::substrait {
 
@@ -50,8 +48,7 @@ const std::string SubstraitFunctionSignature::signature(
     const SubstraitFunctionMappingsPtr& functionMappings) {
   // try to replace function name with function mappings
   if (functionMappings) {
-    std::vector<std::string> functionAndSignatures;
-    folly::split(":", functionSignature, functionAndSignatures);
+    std::vector<std::string> functionAndSignatures = split(functionSignature, ":");
     const auto& scalarMappings = functionMappings->scalarMappings();
     const auto& aggregateMappings = functionMappings->aggregateMappings();
     if (functionAndSignatures.size() == 2) {
