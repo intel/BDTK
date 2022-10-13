@@ -85,7 +85,8 @@ TEST(DuckDBResultConvertorTest, simpleArrowTest) {
   std::string table_name = "table_test";
   std::string create_ddl = "CREATE TABLE table_test(col_a INTEGER, col_b INTEGER)";
 
-  runner.createTableAndInsertData(table_name, create_ddl, expected_data);
+  runner.createTableAndInsertData(
+      table_name, create_ddl, expected_data, false, expected_nulls);
 
   auto res = runner.runSql("select * from table_test;");
 
