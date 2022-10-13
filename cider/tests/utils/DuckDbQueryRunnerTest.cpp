@@ -76,10 +76,12 @@ void checkDuckDbScalarOutput(
 TEST(DuckDBResultConvertorTest, simpleArrowTest) {
   DuckDbQueryRunner runner;
 
-  std::vector<int> col{0, 1, 2, 3, 4};
-  std::vector<bool> col_1_null(col.size(), true);
+  int null_value = std::numeric_limits<int>::min();
+  std::vector<int> col_1{0, 1, 2, 3, 4};
+  std::vector<int> col_2{0, 1, 2, null_value, null_value};
+  std::vector<bool> col_1_null(col_1.size(), true);
   std::vector<bool> col_2_null{true, true, true, false, false};
-  std::vector<std::vector<int>> expected_data{col, col};
+  std::vector<std::vector<int>> expected_data{col_1, col_2};
   std::vector<std::vector<bool>> expected_nulls{col_1_null, col_2_null};
 
   std::string table_name = "table_test";
@@ -87,18 +89,13 @@ TEST(DuckDBResultConvertorTest, simpleArrowTest) {
 
   runner.createTableAndInsertData(
       table_name, create_ddl, expected_data, false, expected_nulls);
-
   auto res = runner.runSql("select * from table_test;");
 
   CHECK(!res->HasError());
   CHECK_EQ(res->ColumnCount(), 2);
 
   auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
-  CHECK_EQ(actual_batches.size(), 1);
-
-  auto actual_batch = actual_batches[0];
-
-  checkDuckDbScalarOutput<int>(actual_batches, expected_data, expected_nulls);
+  checkDuckDbScalarOutput<int32_t>(actual_batches, expected_data, expected_nulls);
 }
 
 TEST(DuckDBQueryRunnerTest, basicTest) {
@@ -207,7 +204,7 @@ TEST(DuckDBQueryRunnerTest, insertCiderBatchTest) {
   auto res = runner.runSql("select * from table_test;");
   CHECK(!res->HasError());
   CHECK_EQ(res->ColumnCount(), 2);
-  std::cout << "error: " << res->error << std::endl;
+  std::cout << "error: " << res->error << std::endl;  // YBRua: wrap this into an if?
 
   auto actual_batch = DuckDbResultConvertor::fetchDataToCiderBatch(res);
 
