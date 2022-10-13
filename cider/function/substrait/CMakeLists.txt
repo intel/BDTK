@@ -17,39 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-find_package(gflags COMPONENTS shared)
-set(SRC_FILE
-    CiderCompileModule.cpp
-    CiderRuntimeModule.cpp
-    CiderExprEvaluator.cpp
-    CiderTypes.cpp
-    CiderOptions.cpp
-    batch/CiderBatchUtils.cpp
-    batch/CiderArrowBufferHolder.cpp
-    batch/CiderBatch.cpp)
-add_library(cider SHARED ${SRC_FILE})
-target_link_libraries(
-  cider
-  QueryEngine
-  memory
-  cider_plan_parser
-  ${Boost_LIBRARIES}
-  ${CMAKE_DL_LIBS}
-  ${GFLAGS_LIBRARIES}
-  ${TBB_LIBS}
-  yaml-cpp)
+set(SRCS
+    ${PROTO_SRCS} SubstraitType.cpp SubstraitSignature.cpp
+    SubstraitFunction.cpp SubstraitExtension.cpp SubstraitFunctionLookup.cpp)
 
-install(
-  TARGETS cider
-  DESTINATION "lib"
-  COMPONENT "CIDER")
-install(
-  FILES CiderInterface.h
-        CiderRuntimeModule.h
-        CiderCompileModule.h
-        CiderBatch.h
-        CiderOptions.h
-        CiderTableSchema.h
-        CiderException.h
-  DESTINATION "Cider"
-  COMPONENT "include")
+add_library(substrait_function_look_up STATIC ${SRCS})
+target_link_libraries(substrait_function_look_up substrait yaml-cpp)

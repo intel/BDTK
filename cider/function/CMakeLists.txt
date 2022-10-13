@@ -23,6 +23,7 @@ set(function_source_files
     RuntimeFunctions.bc
     ExtensionFunctionsBinding.cpp
     ExtensionFunctionsWhitelist.cpp
+    FunctionLookupEngine.cpp
     string/StringLike.cpp
     string/StringFunctions.cpp
     string/StringOpInfo.cpp
@@ -35,6 +36,7 @@ find_program(llvm_clangpp_cmd NAME clang++ HINTS ${LLVM_TOOLS_BINARY_DIR})
 
 list(APPEND ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/gen-cpp/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_subdirectory(substrait)
 
 if(ENABLE_JIT_DEBUG)
   set(RT_OPT_FLAGS -O0 -g)
@@ -68,3 +70,5 @@ add_custom_command(
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
 add_library(cider_function ${function_source_files})
+
+target_link_libraries(cider_function substrait_function_look_up)

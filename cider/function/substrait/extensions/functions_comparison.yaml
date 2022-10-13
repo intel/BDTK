@@ -1,0 +1,18 @@
+%YAML 1.2
+---
+scalar_functions:
+  -
+    name: "equal"
+    description: >
+      Whether two values are equal.
+
+      `equal(x, y) := (x == y)`
+
+      If either/both of `x` and `y` are `null`, `null` is returned.
+    impls:
+      - args:
+          - value: any1
+            name: x
+          - value: any1
+            name: y
+        return: BOOLEAN

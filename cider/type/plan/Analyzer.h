@@ -54,6 +54,41 @@ makeExpr(Args&&... args) {
   return std::make_shared<Tp>(std::forward<Args>(args)...);
 }
 
+enum OpSupportExprType {
+  kCOLUMN_VAR,
+  kEXPRESSION_TUPLE,
+  kCONSTANT,
+  kU_OPER,
+  kBIN_OPER,
+  kRANGE_OPER,
+  kSUBQUERY,
+  kIN_VALUES,
+  kIN_INTEGER_SET,
+  kCHAR_LENGTH_EXPR,
+  kKEY_FOR_STRING_EXPR,
+  kSAMPLE_RATIO_EXPR,
+  kLOWER_EXPR,
+  kCARDINALITY_EXPR,
+  kLIKE_EXPR,
+  kREGEXP_EXPR,
+  kWIDTH_BUCKET_EXPR,
+  kLIKELIHOOD_EXPR,
+  kAGG_EXPR,
+  kCASE_EXPR,
+  kEXTRACT_EXPR,
+  kDATEADD_EXPR,
+  kDATEDIFF_EXPR,
+  kDATETRUNC_EXPR,
+  kSTRING_OPER,
+  kLOWER_STRING_OPER,
+  kSUBSTRING_STRING_OPER,
+  kFUNCTION_OPER,
+  kOFFSET_IN_FRAGMENT,
+  kWINDOW_FUNCTION,
+  kARRAY_EXPR,
+  kUNDEFINED_EXPR
+};
+
 namespace Analyzer {
 
 class ColumnVar;
