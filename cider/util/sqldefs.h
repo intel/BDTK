@@ -50,7 +50,8 @@ enum SQLOps {
   kUNNEST,
   kFUNCTION,
   kIN,
-  kBW_NE
+  kBW_NE,
+  kUNDEFINED_OP
 };
 
 #define IS_COMPARISON(X)                                                    \
@@ -76,7 +77,8 @@ enum SQLAgg {
   kAPPROX_COUNT_DISTINCT,
   kAPPROX_QUANTILE,
   kSAMPLE,
-  kSINGLE_VALUE
+  kSINGLE_VALUE,
+  kUNDEFINED_AGG
 };
 
 enum class SqlStringOpKind {

@@ -21,4 +21,7 @@ cider/exec/plan/parser/Plan*
 cider/exec/plan/parser/*Visitor*
 cider/exec/plan/parser/Substrait*
 cider/exec/plan/parser/ConverterHelper.*
+cider/function/FunctionLookupEngine.*
+cider/function/SubstraitFunctionCiderMappings.h
+cider/function/substrait/*
 Makefile
