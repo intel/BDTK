@@ -32,21 +32,61 @@
 
 #include <vector>
 
+template <typename T>
+void checkDuckDbScalarOutput(
+    const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
+    const std::vector<std::vector<T>>& expected_data,
+    const std::vector<std::vector<bool>>& expected_nulls = {}) {
+  // expected data should at least contain something
+  EXPECT_TRUE(expected_data.size() > 0);
+  // currently only supports one CiderBatch
+  EXPECT_EQ(actual_batches.size(), 1);
+  auto actual_batch = actual_batches[0];
+
+  // output should be a CiderBatch containing one struct type
+  EXPECT_EQ(actual_batch->getNullCount(), 0);
+  EXPECT_EQ(actual_batch->getBufferNum(), 1);
+  EXPECT_EQ(actual_batch->getCiderType(), SQLTypes::kSTRUCT);
+
+  // check col and row nums
+  EXPECT_EQ(actual_batch->getChildrenNum(), expected_data.size());
+  EXPECT_EQ(actual_batch->getLength(), expected_data[0].size());
+
+  // check data
+  for (auto i = 0; i < actual_batch->getChildrenNum(); ++i) {
+    auto child = actual_batch->getChildAt(i);
+    // scalar (primitive type) result should contain 2 buffers
+    EXPECT_EQ(child->getBufferNum(), 2);
+    // check child row nums
+    EXPECT_EQ(child->getLength(), col.size());
+
+    auto data_buffer = child->as<ScalarBatch<int32_t>>()->getRawData();
+    auto null_buffer = child->getNulls();
+    auto null_count = int{0};
+    for (auto j = 0; j < child->getLength(); ++j) {
+      EXPECT_EQ(data_buffer[j], expected_data[i][j]);
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(null_buffer, j), expected_nulls[i][j]);
+    }
+  }
+}
+
 TEST(DuckDBResultConvertorTest, simpleArrowTest) {
-  // create table, insert data, run a simple query
-  // check with expected arrow batch... manually!
+  // create table, insert data, run a simple query and manually check the result
   /// TODO: (YBRua) Add more comprehensive and elegant tests
   /// after CiderBatchBuilder and CiderBatchChecker are updated
 
   DuckDbQueryRunner runner;
 
   std::vector<int> col{0, 1, 2, 3, 4};
-  std::vector<std::vector<int>> table_data{col, col};
+  std::vector<bool> col_1_null(col.size(), true);
+  std::vector<bool> col_2_null{true, true, true, false, false};
+  std::vector<std::vector<int>> expected_data{col, col};
+  std::vector<std::vector<bool>> expected_nulls{col_1_null, col_2_null};
 
   std::string table_name = "table_test";
   std::string create_ddl = "CREATE TABLE table_test(col_a INTEGER, col_b INTEGER)";
 
-  runner.createTableAndInsertData(table_name, create_ddl, table_data);
+  runner.createTableAndInsertData(table_name, create_ddl, expected_data);
 
   auto res = runner.runSql("select * from table_test;");
 
@@ -58,26 +98,7 @@ TEST(DuckDBResultConvertorTest, simpleArrowTest) {
 
   auto actual_batch = actual_batches[0];
 
-  CHECK_EQ(actual_batch->getChildrenNum(), 2);
-  CHECK_EQ(actual_batch->getLength(), col.size());
-  CHECK_EQ(actual_batch->getNullCount(), 0);
-  CHECK_EQ(actual_batch->getBufferNum(), 1);
-  CHECK_EQ(actual_batch->getCiderType(), SQLTypes::kSTRUCT);
-
-  for (auto i = 0; i < actual_batch->getChildrenNum(); ++i) {
-    auto child = actual_batch->getChildAt(i);
-    CHECK_EQ(child->getLength(), col.size());
-    CHECK_EQ(child->getNullCount(), 0);
-    CHECK_EQ(child->getBufferNum(), 2);
-    CHECK_EQ(child->getCiderType(), SQLTypes::kINT);
-
-    auto data_buffer = child->as<ScalarBatch<int32_t>>()->getRawData();
-    auto null_buffer = child->getNulls();
-    for (auto j = 0; j < child->getLength(); ++j) {
-      CHECK_EQ(data_buffer[j], j);
-      CHECK(CiderBitUtils::isBitSetAt(null_buffer, j));
-    }
-  }
+  checkDuckDbScalarOutput<int>(actual_batches, expected_data, expected_nulls);
 }
 
 TEST(DuckDBQueryRunnerTest, basicTest) {
