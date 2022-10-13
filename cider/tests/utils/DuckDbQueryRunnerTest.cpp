@@ -128,73 +128,113 @@ void checkDuckDbScalarOutput(
   }
 }
 
-#define ARROW_SIMPLE_TEST_DATAGEN(C_TYPE, S_TYPE)                                     \
-  DuckDbQueryRunner runner;                                                           \
-  auto [expected_data, expected_nulls] = generateSequenceData<C_TYPE>();              \
-                                                                                      \
-  /* CiderBatchBuilder expects a NULL vector                                          \
-   * but expected_nulls is actually a VALID vector so we flip it here*/               \
-  auto null_vecs = expected_nulls;                                                    \
-  std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) { \
-    null_vec.flip();                                                                  \
-  });                                                                                 \
-                                                                                      \
-  /* TODO: (YBRua) The CiderBatch generated here is not in Arrow format               \
-   * Change it to an Arrow-formatted batch after CiderBatchBuilder is updated */      \
-  auto batch = std::make_shared<CiderBatch>(                                          \
-      CiderBatchBuilder()                                                             \
-          .setRowNum(10)                                                              \
-          .addColumn<C_TYPE>(                                                         \
-              "col_1", CREATE_SUBSTRAIT_TYPE(S_TYPE), expected_data[0], null_vecs[0]) \
-          .addColumn<C_TYPE>(                                                         \
-              "col_2", CREATE_SUBSTRAIT_TYPE(S_TYPE), expected_data[1], null_vecs[1]) \
-          .build())
+void checkDuckDbBooleanOutput(
+    const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
+    const std::vector<std::vector<int8_t>>& expected_data,
+    const std::vector<std::vector<bool>>& expected_nulls = {}) {
+  /// TODO: (YBRua) To be deprecated.
 
-#define ARROW_SIMPLE_TEST_PROCEDURE(C_TYPE, SQL_TYPE)                                    \
-  std::string table_name = "table_test";                                                 \
-  std::string create_ddl =                                                               \
-      "CREATE TABLE table_test(col_a " #SQL_TYPE ", col_b " #SQL_TYPE ")";               \
-                                                                                         \
-  runner.createTableAndInsertData(table_name, create_ddl, batch);                        \
-  auto res = runner.runSql("select * from table_test;");                                 \
-  CHECK(!res->HasError());                                                               \
-  CHECK_EQ(res->ColumnCount(), 2);                                                       \
-                                                                                         \
-  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res); \
-  checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_nulls)
+  EXPECT_TRUE(expected_data.size() > 0);
+  EXPECT_EQ(actual_batches.size(), 1);
+  auto actual_batch = actual_batches[0];
+
+  // output should be a CiderBatch containing one struct type
+  EXPECT_EQ(actual_batch->getNullCount(), 0);
+  EXPECT_EQ(actual_batch->getBufferNum(), 1);
+  EXPECT_EQ(actual_batch->getCiderType(), SQLTypes::kSTRUCT);
+
+  // check col and row nums
+  EXPECT_EQ(actual_batch->getChildrenNum(), expected_data.size());
+  EXPECT_EQ(actual_batch->getLength(), expected_data[0].size());
+
+  // check data
+  for (auto i = 0; i < actual_batch->getChildrenNum(); ++i) {
+    auto child = actual_batch->getChildAt(i);
+    // scalar (primitive type) result should contain 2 buffers
+    EXPECT_EQ(child->getBufferNum(), 2);
+    // check child row nums
+    EXPECT_EQ(child->getLength(), expected_data[i].size());
+
+    auto data_buffer = child->as<ScalarBatch<bool>>()->getRawData();
+    auto null_buffer = child->getNulls();
+    auto null_count = int{0};
+    for (auto j = 0; j < child->getLength(); ++j) {
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(null_buffer, j), expected_nulls[i][j]);
+      // for boolean null value, it is set to -128 (min of int8_t) during data gen
+      // which is not equal to false, so we skip checking all null values
+      if (CiderBitUtils::isBitSetAt(null_buffer, j)) {
+        EXPECT_EQ(data_buffer[j], expected_data[i][j]);
+      }
+    }
+  }
+}
+
+#define ARROW_SIMPLE_TEST_SUITE(C_TYPE, SUBSTRAIT_TYPE, SQL_TYPE)                       \
+  {                                                                                     \
+    DuckDbQueryRunner runner;                                                           \
+    auto [expected_data, expected_nulls] = generateSequenceData<C_TYPE>();              \
+                                                                                        \
+    /* CiderBatchBuilder expects a NULL vector                                          \
+     * but expected_nulls is actually a VALID vector so we flip it here*/               \
+    auto null_vecs = expected_nulls;                                                    \
+    std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) { \
+      null_vec.flip();                                                                  \
+    });                                                                                 \
+                                                                                        \
+    /* TODO: (YBRua) The CiderBatch generated here is not in Arrow format               \
+     * Change it to an Arrow-formatted batch after CiderBatchBuilder is updated */      \
+    auto batch = std::make_shared<CiderBatch>(                                          \
+        CiderBatchBuilder()                                                             \
+            .setRowNum(10)                                                              \
+            .addColumn<C_TYPE>("col_1",                                                 \
+                               CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE),                   \
+                               expected_data[0],                                        \
+                               null_vecs[0])                                            \
+            .addColumn<C_TYPE>("col_2",                                                 \
+                               CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE),                   \
+                               expected_data[1],                                        \
+                               null_vecs[1])                                            \
+            .build());                                                                  \
+                                                                                        \
+    /* Create table, run query and check results */                                     \
+    std::string table_name = "table_test";                                              \
+    std::string create_ddl =                                                            \
+        "CREATE TABLE table_test(col_a " #SQL_TYPE ", col_b " #SQL_TYPE ")";            \
+                                                                                        \
+    runner.createTableAndInsertData(table_name, create_ddl, batch);                     \
+    auto res = runner.runSql("select * from table_test;");                              \
+    CHECK(!res->HasError());                                                            \
+    CHECK_EQ(res->ColumnCount(), 2);                                                    \
+                                                                                        \
+    auto actual_batches =                                                               \
+        DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);                \
+    checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_nulls);     \
+  }
+
+#define ARROW_SIMPLE_TEST_PROCEDURE(C_TYPE, SQL_TYPE)
 
 TEST(DuckDBResultConvertorTest, simpleIntegerArrowTest) {
-  ARROW_SIMPLE_TEST_DATAGEN(int32_t, I32);
-  ARROW_SIMPLE_TEST_PROCEDURE(int32_t, INTEGER);
-
+  ARROW_SIMPLE_TEST_SUITE(int32_t, I32, INTEGER);
 }
 
 TEST(DuckDBResultConvertorTest, simpleTinyIntArrowTest) {
-  ARROW_SIMPLE_TEST_DATAGEN(int8_t, I8);
-  ARROW_SIMPLE_TEST_PROCEDURE(int8_t, TINYINT);
+  ARROW_SIMPLE_TEST_SUITE(int8_t, I8, TINYINT);
 }
 
 TEST(DuckDBResultConvertorTest, simpleSmallIntArrowTest) {
-  ARROW_SIMPLE_TEST_DATAGEN(int16_t, I16);
-  ARROW_SIMPLE_TEST_PROCEDURE(int16_t, SMALLINT);
-
+  ARROW_SIMPLE_TEST_SUITE(int16_t, I16, SMALLINT);
 }
 
 TEST(DuckDBResultConvertorTest, simpleBigIntArrowTest) {
-  ARROW_SIMPLE_TEST_DATAGEN(int64_t, I64);
-  ARROW_SIMPLE_TEST_PROCEDURE(int64_t, BIGINT);
-
+  ARROW_SIMPLE_TEST_SUITE(int64_t, I64, BIGINT);
 }
 
 TEST(DuckDBResultConvertorTest, simpleFloatArrowTest) {
-  ARROW_SIMPLE_TEST_DATAGEN(float, Fp32);
-  ARROW_SIMPLE_TEST_PROCEDURE(float, FLOAT);
-
+  ARROW_SIMPLE_TEST_SUITE(float, Fp32, FLOAT);
 }
 
 TEST(DuckDBResultConvertorTest, simpleDoubleArrowTest) {
-  ARROW_SIMPLE_TEST_DATAGEN(double, Fp64);
-  ARROW_SIMPLE_TEST_PROCEDURE(double, DOUBLE);
+  ARROW_SIMPLE_TEST_SUITE(double, Fp64, DOUBLE);
 }
 
 TEST(DuckDBResultConvertorTest, simpleBooleanArrowTest) {
@@ -215,7 +255,16 @@ TEST(DuckDBResultConvertorTest, simpleBooleanArrowTest) {
               "col_2", CREATE_SUBSTRAIT_TYPE(Bool), expected_data[1], null_vecs[1])
           .build());
 
-  ARROW_SIMPLE_TEST_PROCEDURE(int8_t, BOOLEAN);
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a BOOLEAN, col_b BOOLEAN)";
+
+  runner.createTableAndInsertData(table_name, create_ddl, batch);
+  auto res = runner.runSql("select * from table_test;");
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 2);
+
+  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+  checkDuckDbBooleanOutput(actual_batches, expected_data, expected_nulls);
 }
 
 TEST(DuckDBQueryRunnerTest, basicTest) {

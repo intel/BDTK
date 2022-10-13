@@ -520,6 +520,8 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
         addColumnDataToScalarBatch<int16_t>(chunk, i, row_num, child.get());
         break;
       case ::duckdb::LogicalTypeId::BOOLEAN:
+        addColumnDataToScalarBatch<bool>(chunk, i, row_num, child.get());
+        break;
       case ::duckdb::LogicalTypeId::TINYINT:
         addColumnDataToScalarBatch<int8_t>(chunk, i, row_num, child.get());
         break;
