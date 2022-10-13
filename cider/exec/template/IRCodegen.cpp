@@ -164,7 +164,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
                                                          const CompilationOptions& co,
                                                          const bool fetch_columns) {
   AUTOMATIC_IR_METADATA(cgen_state_);
-  // TODO
   if (!expr) {
     return nullptr;
   }

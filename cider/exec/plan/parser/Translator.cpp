@@ -27,8 +27,21 @@ QualsConjunctiveForm qual_to_conjunctive_form(
     const std::shared_ptr<Analyzer::Expr> qual_expr) {
   CHECK(qual_expr);
   auto bin_oper = std::dynamic_pointer_cast<const Analyzer::BinOper>(qual_expr);
+  // skip translate if its left operand is substr()
+  if (bin_oper &&
+      dynamic_cast<const Analyzer::SubstringStringOper*>(bin_oper->get_left_operand())) {
+    int rte_idx{0};
+    const auto simple_qual = bin_oper->normalize_simple_predicate(rte_idx);
+    return simple_qual ? QualsConjunctiveForm{{simple_qual}, {}}
+                       : QualsConjunctiveForm{{}, {qual_expr}};
+  }
+
   if (!bin_oper) {
     const auto rewritten_qual_expr = rewrite_expr(qual_expr.get());
+    auto up_oper = std::dynamic_pointer_cast<const Analyzer::UOper>(qual_expr);
+    if (up_oper && up_oper->get_optype() == kNOT) {
+      return {{rewritten_qual_expr ? rewritten_qual_expr : qual_expr}, {}};
+    }
     return {{}, {rewritten_qual_expr ? rewritten_qual_expr : qual_expr}};
   }
 

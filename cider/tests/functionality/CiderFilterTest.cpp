@@ -46,22 +46,33 @@ class CiderFilterRandomTestBase : public CiderTestBase {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
-           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE);)";
-    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-        999,
-        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
-        {CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64)},
-        {2, 2, 2, 2, 2, 2, 2, 2},
-        GeneratePattern::Random,
-        -100,
-        100))};
+           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10), col_10 VARCHAR(10));)";
+    input_ = {std::make_shared<CiderBatch>(
+        QueryDataGenerator::generateBatchByTypes(999,
+                                                 {"col_1",
+                                                  "col_2",
+                                                  "col_3",
+                                                  "col_4",
+                                                  "col_5",
+                                                  "col_6",
+                                                  "col_7",
+                                                  "col_8",
+                                                  "col_9",
+                                                  "col_10"},
+                                                 {CREATE_SUBSTRAIT_TYPE(I32),
+                                                  CREATE_SUBSTRAIT_TYPE(I64),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                  CREATE_SUBSTRAIT_TYPE(I32),
+                                                  CREATE_SUBSTRAIT_TYPE(I64),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                  CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                  CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                 {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+                                                 GeneratePattern::Random,
+                                                 1,
+                                                 100))};
   }
 };
 
@@ -124,10 +135,10 @@ TEST_F(CiderProjectAllTestBase, filterProjectAllTest) {
 }
 
 TEST_F(CiderFilterSequenceTestBase, inTest) {
-  assertQuery("SELECT * FROM test WHERE col_1 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_2 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_3 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_4 in (24, 25, 26)");
+  assertQuery("SELECT * FROM test WHERE col_1 in (24, 25, 26)", "in_int32_array.json");
+  assertQuery("SELECT * FROM test WHERE col_2 in (24, 25, 26)", "in_int64_array.json");
+  assertQuery("SELECT * FROM test WHERE col_3 in (24, 25, 26)", "in_fp32_array.json");
+  assertQuery("SELECT * FROM test WHERE col_4 in (24, 25, 26)", "in_fp64_array.json");
   assertQuery("SELECT * FROM test WHERE col_3 not in (24, 25, 26)",
               "not_in_fp32_array.json");
   // TODO: (yma1) add in (str_1, str_2, str_3)
@@ -276,10 +287,14 @@ TEST_F(CiderFilterRandomTestBase, BetweenAnd) {
 
 TEST_F(CiderFilterRandomTestBase, inTest) {
   // select these columns instead of *, due to schema is not aligned.
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)");
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 in (24, 25, 26)");
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 in (24, 25, 26)");
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_4 in (24, 25, 26)");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
+              "in_int32_array.json");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 in (24, 25, 26)",
+              "in_int64_array.json");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 in (24, 25, 26)",
+              "in_fp32_array.json");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_4 in (24, 25, 26)",
+              "in_fp64_array.json");
   assertQuery(
       "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 not in (24, 25, 26)",
       "not_in_fp32_array.json");
@@ -302,10 +317,10 @@ TEST_F(CiderFilterNullTestBase, integerNullFilterTest) {
 // supported in CiderStringTest.
 
 TEST_F(CiderFilterNullTestBase, inTest) {
-  assertQuery("SELECT * FROM test WHERE col_1 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_2 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_3 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_4 in (24, 25, 26)");
+  assertQuery("SELECT * FROM test WHERE col_1 in (24, 25, 26)", "in_int32_array.json");
+  assertQuery("SELECT * FROM test WHERE col_2 in (24, 25, 26)", "in_int64_array.json");
+  assertQuery("SELECT * FROM test WHERE col_3 in (24, 25, 26)", "in_fp32_array.json");
+  assertQuery("SELECT * FROM test WHERE col_4 in (24, 25, 26)", "in_fp64_array.json");
   assertQuery("SELECT * FROM test WHERE col_1 IS NOT NULL AND col_1 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_2 IS NOT NULL AND col_2 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_3 IS NOT NULL AND col_3 in (24, 25, 26)");
@@ -316,16 +331,32 @@ TEST_F(CiderFilterNullTestBase, inTest) {
 }
 
 TEST_F(CiderFilterRandomTestBase, DistinctFromTest) {
+  // IS DISTINCT FROM
   assertQuery(
-      "select * from test where col_3 is distinct from col_7 or "
-      "col_4 is distinct from col_8",
+      "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_4 IS DISTINCT FROM "
+      "col_8",
       "is_distinct_from.json",
       true);
 
+  // IS NOT DISTINCT FROM
   assertQuery(
-      "select * from test where col_2 is not distinct from col_6 or "
-      "col_1 is not distinct from col_5",
+      "SELECT * FROM test WHERE col_2 IS NOT DISTINCT FROM col_6 OR col_1 IS NOT "
+      "DISTINCT FROM col_5",
       "is_not_distinct_from.json",
+      true);
+
+  // mixed case
+  assertQuery(
+      "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_1 IS NOT DISTINCT "
+      "FROM col_5",
+      "mixed_distinct_from.json",
+      true);
+
+  // mixed case with string
+  assertQuery(
+      "SELECT * FROM test WHERE col_9 IS DISTINCT FROM col_10 OR col_10 IS NOT DISTINCT "
+      "FROM col_9",
+      "mixed_distinct_from_string.json",
       true);
 }
 

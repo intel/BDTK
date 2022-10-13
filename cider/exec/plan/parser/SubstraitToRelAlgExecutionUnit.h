@@ -45,13 +45,18 @@ static const std::string enum_str[] = {"FilterExpr", "ProjectExpr", "Aggregation
 class SubstraitToRelAlgExecutionUnit {
  public:
   explicit SubstraitToRelAlgExecutionUnit(const substrait::Plan& plan)
-      : toAnalyzerExprConverter_(), ctx_{nullptr}, input_table_schemas_{}, plan_(plan) {}
+      : toAnalyzerExprConverter_()
+      , ctx_{nullptr}
+      , input_table_schemas_{}
+      , plan_(plan)
+      , output_cider_table_schema_(nullptr) {}
 
   explicit SubstraitToRelAlgExecutionUnit()
       : toAnalyzerExprConverter_()
       , ctx_{nullptr}
       , input_table_schemas_{}
-      , plan_(substrait::Plan()) {}
+      , plan_(substrait::Plan())
+      , output_cider_table_schema_(nullptr) {}
 
   std::shared_ptr<RelAlgExecutionUnit> createRelAlgExecutionUnit(
       const std::vector<substrait::Expression*> exprs,
@@ -79,7 +84,7 @@ class SubstraitToRelAlgExecutionUnit {
    * return the output table schema info
    * @param plan: substrait plan
    */
-  CiderTableSchema getOutputCiderTableSchema();
+  std::shared_ptr<CiderTableSchema> getOutputCiderTableSchema();
 
   const std::vector<CiderTableSchema> getInputCiderTableSchema() const {
     return input_table_schemas_;
@@ -118,6 +123,6 @@ class SubstraitToRelAlgExecutionUnit {
   std::shared_ptr<GeneratorContext> ctx_;
   std::vector<CiderTableSchema> input_table_schemas_;
   const substrait::Plan& plan_;
-  CiderTableSchema output_cider_table_schema_;
+  std::shared_ptr<CiderTableSchema> output_cider_table_schema_;
 };
 }  // namespace generator

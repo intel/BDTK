@@ -31,6 +31,7 @@
 #include "exec/template/Execute.h"
 #include "exec/template/ScalarExprVisitor.h"
 #include "exec/template/WindowExpressionRewrite.h"
+#include "function/string/StringOps.h"
 #include "type/plan/Analyzer.h"
 #include "util/Logger.h"
 #include "util/sqldefs.h"
@@ -671,18 +672,71 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
                                        rhs);
   }
 
-  std::shared_ptr<Analyzer::Expr> visitLower(
-      const Analyzer::LowerExpr* lower_expr) const override {
-    const auto constant_arg_expr =
-        dynamic_cast<const Analyzer::Constant*>(lower_expr->get_arg());
-    if (constant_arg_expr) {
-      return Parser::StringLiteral::analyzeValue(
-          boost::locale::to_lower(*constant_arg_expr->get_constval().stringval));
+  std::shared_ptr<Analyzer::Expr> visitStringOper(
+      const Analyzer::StringOper* string_oper) const override {
+    // Todo(todd): For clarity and modularity we should move string
+    // operator rewrites into their own visitor class.
+    // String operation rewrites were originally put here as they only
+    // handled string operators on rewrite, but now handle variable
+    // inputs as well.
+    const auto original_args = string_oper->getOwnArgs();
+    std::vector<std::shared_ptr<Analyzer::Expr>> rewritten_args;
+    const bool parent_in_string_op_chain = in_string_op_chain_;
+    if (!parent_in_string_op_chain) {
+      chained_string_op_exprs_.clear();
+      in_string_op_chain_ = true;
     }
-    return makeExpr<Analyzer::LowerExpr>(lower_expr->get_own_arg());
+    size_t rewritten_arg_literal_arity = 0;
+    for (auto original_arg : original_args) {
+      rewritten_args.emplace_back(visit(original_arg.get()));
+      if (dynamic_cast<const Analyzer::Constant*>(rewritten_args.back().get())) {
+        rewritten_arg_literal_arity++;
+      }
+    }
+    if (!parent_in_string_op_chain) {
+      in_string_op_chain_ = false;
+    }
+    const auto kind = string_oper->get_kind();
+    const auto& return_ti = string_oper->get_type_info();
+
+    if (string_oper->getArity() == rewritten_arg_literal_arity) {
+      Analyzer::StringOper literal_string_oper(
+          kind, string_oper->get_type_info(), rewritten_args);
+      const auto literal_args = literal_string_oper.getLiteralArgs();
+      const auto string_op_info =
+          StringOps_Namespace::StringOpInfo(kind, return_ti, literal_args);
+      if (return_ti.is_string()) {
+        const auto literal_result =
+            StringOps_Namespace::apply_string_op_to_literals(string_op_info);
+        return Parser::StringLiteral::analyzeValue(literal_result.first,
+                                                   literal_result.second);
+      }
+      const auto literal_datum =
+          StringOps_Namespace::apply_numeric_op_to_literals(string_op_info);
+      auto nullable_return_ti = return_ti;
+      nullable_return_ti.set_notnull(false);
+      return makeExpr<Analyzer::Constant>(nullable_return_ti,
+                                          IsNullDatum(literal_datum, nullable_return_ti),
+                                          literal_datum);
+    }
+    chained_string_op_exprs_.emplace_back(
+        makeExpr<Analyzer::StringOper>(kind, return_ti, rewritten_args));
+    if (parent_in_string_op_chain) {
+      CHECK(in_string_op_chain_);
+      CHECK(rewritten_args[0]->get_type_info().is_string());
+      CHECK(
+          dynamic_cast<const Analyzer::ColumnVar*>(remove_cast(rewritten_args[0].get())));
+      return rewritten_args[0]->deep_copy();
+    } else {
+      CHECK(!in_string_op_chain_);
+      return makeExpr<Analyzer::StringOper>(
+          kind, return_ti, rewritten_args, chained_string_op_exprs_);
+    }
   }
 
  protected:
+  mutable bool in_string_op_chain_{false};
+  mutable std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
   mutable std::unordered_map<const Analyzer::Expr*, const SQLTypeInfo> casts_;
   mutable int32_t num_overflows_;
 
@@ -714,6 +768,12 @@ Analyzer::ExpressionPtr rewrite_expr(const Analyzer::Expr* expr) {
   const auto avg_window = rewrite_avg_window(expr);
   if (avg_window) {
     return avg_window;
+  }
+  // skip InValues expression rewrite
+  auto in_values_expr = dynamic_cast<const Analyzer::InValues*>(expr);
+  if (in_values_expr &&
+      dynamic_cast<const Analyzer::SubstringStringOper*>(in_values_expr->get_arg())) {
+    return in_values_expr->deep_copy();
   }
   const auto expr_no_likelihood = strip_likelihood(expr);
   // The following check is not strictly needed, but seems silly to transform a
@@ -832,6 +892,18 @@ std::list<std::shared_ptr<Analyzer::Expr>> strip_join_covered_filter_quals(
 std::shared_ptr<Analyzer::Expr> fold_expr(const Analyzer::Expr* expr) {
   if (!expr) {
     return nullptr;
+  }
+  // Skip expr fold for InValues and BinOper with substr as left operand
+  auto in_values_expr = dynamic_cast<const Analyzer::InValues*>(expr);
+  if (in_values_expr &&
+      dynamic_cast<const Analyzer::SubstringStringOper*>(in_values_expr->get_arg())) {
+    return in_values_expr->deep_copy();
+  }
+
+  auto bin_substr = dynamic_cast<const Analyzer::BinOper*>(expr);
+  if (bin_substr && dynamic_cast<const Analyzer::SubstringStringOper*>(
+                        bin_substr->get_left_operand())) {
+    return bin_substr->deep_copy();
   }
   const auto expr_no_likelihood = strip_likelihood(expr);
   ConstantFoldingVisitor visitor;

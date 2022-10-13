@@ -1,0 +1,11 @@
+%YAML 1.2
+---
+types:
+  - name: unknown
+aggregate_functions:
+  - name: "avg"
+    impls:
+      - args:
+          - value: unknown
+        intermediate: unknown
+        return: unknown

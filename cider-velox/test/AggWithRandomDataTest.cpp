@@ -182,11 +182,11 @@ TEST_F(AggWithRandomDataTest, AVG_Partial_Test) {
   auto result = ciderCompileModule->compile(substraitPlan);
 
   auto outputSchema = result->getOutputCiderTableSchema();
-  auto numCols = outputSchema.getColumnCount();
+  auto numCols = outputSchema->getColumnCount();
   CHECK_EQ(numCols, 1);
-  auto outputHints = outputSchema.getColHints();
+  auto outputHints = outputSchema->getColHints();
   CHECK_EQ(outputHints[0], ColumnHint::PartialAVG);
-  auto outputType = outputSchema.getColumnTypeById(0);
+  auto outputType = outputSchema->getColumnTypeById(0);
   CHECK_EQ(outputType.has_struct_(), true);
 
   auto ciderRuntimeModule = std::make_shared<CiderRuntimeModule>(result);

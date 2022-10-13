@@ -50,7 +50,7 @@ class CiderRandomStringTest : public CiderTestBase {
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {},
         GeneratePattern::Random,
-        2,
+        0,
         20))};
   }
 };
@@ -66,7 +66,7 @@ class CiderNullableStringTest : public CiderTestBase {
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {0, 2},
         GeneratePattern::Random,
-        2,
+        0,
         20))};
   }
 };
@@ -85,15 +85,28 @@ class CiderStringToDateTest : public CiderTestBase {
   }
 };
 
+TEST_F(CiderStringToDateTest, NestedTryCastStringOpTest) {
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
+  assertQuery("SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > 2000");
+  assertQuery(
+      "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > col_int");
+}
+
+// encoded string's bin_oper support is still in progress in heavydb.
+// TEST_F(CiderNullableStringTest, NestedSubstrStringOpBinOperTest) {
+// assertQuery("SELECT * FROM test where SUBSTRING(col_2, 1, 10) = '0000000000'");
+// assertQuery("SELECT * FROM test where SUBSTRING(col_2, 1, 10) IS NOT NULL");
+// }
+
 TEST_F(CiderStringToDateTest, DateStrTest) {
   assertQuery(
       "select col_str from test where col_str between date '1970-01-01' and date "
       "'2077-12-31'",
       "cast_str_to_date_implictly.json");
-  assertQuery("SELECT CAST(col_str AS DATE) FROM test ",
-              "functions/date/string_to_date.json");
-  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
-              "functions/date/extract_year_cast_string_to_date.json");
+  assertQuery("SELECT CAST(col_str AS DATE) FROM test");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test");
   assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
               "functions/date/year_cast_string_to_date.json");
 }
@@ -163,6 +176,8 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
     assertQuery("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'"); \
     assertQuery("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");           \
     assertQuery("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");        \
+    assertQuery("SELECT col_2 FROM test where col_2 IS NOT NULL");            \
+    assertQuery("SELECT col_2 FROM test where col_2 < 'uuu'");                \
   }
 
 #define LIKE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                     \
@@ -192,17 +207,41 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
     assertQuery("SELECT col_2 FROM test where col_2 LIKE '%aaaa' ESCAPE '$' "); \
   }
 
+/**
+  // not supported for different type info of substr and literal
+  assertQuery(
+    "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) = '0000'");
+  assertQuery(
+      "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222',
+      '3333')");
+**/
+#define IN_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                      \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertQuery(                                                                        \
+        "SELECT * FROM test WHERE col_2 in ('0000000000', '1111111111', '2222222222')", \
+        "in_string_array.json");                                                        \
+    assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111')",  \
+                "in_string_2_array_with_substr.json");                                  \
+    assertQuery(                                                                        \
+        "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) in ('0000', '1111', '2222', "  \
+        "'3333')",                                                                      \
+        "in_string_array_with_substr.json");                                            \
+  }
+
 BASIC_STRING_TEST_UNIT(CiderStringTest, basicStringTest)
 LIKE_STRING_TEST_UNIT(CiderStringTest, likeStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderStringTest, escapeStringTest)
+IN_STRING_TEST_UNIT(CiderStringTest, inStringTest)
 
 BASIC_STRING_TEST_UNIT(CiderRandomStringTest, basicRandomStringTest)
 LIKE_STRING_TEST_UNIT(CiderRandomStringTest, likeRandomStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderRandomStringTest, escapeRandomStringTest)
+IN_STRING_TEST_UNIT(CiderRandomStringTest, inRandomStringTest)
 
 BASIC_STRING_TEST_UNIT(CiderNullableStringTest, basicNullableStringTest)
 LIKE_STRING_TEST_UNIT(CiderNullableStringTest, likeNullableStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderNullableStringTest, escapeNullableStringTest)
+IN_STRING_TEST_UNIT(CiderNullableStringTest, inNullableStringTest)
 
 class CiderConstantStringTest : public CiderTestBase {
  public:
@@ -246,7 +285,8 @@ TEST_F(CiderConstantStringTest, likeStringTest) {
                               .build();
   // FIXME(jikunshang): Cider only support [],%,_ pattern, !/^ is not supported yet.
   // listed on document.
-  // assertQuery("SELECT col_1 FROM test where col_1 LIKE '[!aa]%'", expected_batch_3);
+  // assertQuery("SELECT col_1 FROM test where col_1 LIKE '[!aa]%'",
+  // expected_batch_3);
 }
 
 TEST_F(CiderRandomStringTest, SubstrTest) {

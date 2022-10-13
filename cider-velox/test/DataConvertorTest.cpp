@@ -50,6 +50,11 @@ class DataConvertorTest : public testing::Test {
     return vectorMaker_.dictionaryVector(data);
   }
 
+  template <typename T>
+  ConstantVectorPtr<T> makeConstantVector(const std::vector<std::optional<T>>& data) {
+    return vectorMaker_.constantVector(data);
+  }
+
  protected:
   std::unique_ptr<memory::ScopedMemoryPool> pool_{memory::getDefaultScopedMemoryPool()};
   VectorMaker vectorMaker_{pool_.get()};
@@ -159,10 +164,22 @@ TEST_F(DataConvertorTest, directToCiderVarcharOneCol) {
   auto col_flat = makeNullableFlatVector<StringView>(data);
   auto rowVector_flat = makeRowVector({col_flat});
   testToCiderDirect<StringView>(rowVector_flat, data, data.size(), pool_.get());
+
+  std::vector<std::optional<StringView>> data_constant = {
+      StringView("abc", 3), StringView("abc", 3), StringView("abc", 3)};
+  auto col_constant = makeConstantVector<StringView>(data_constant);
+  auto rowVector_constant = makeRowVector({col_constant});
+  testToCiderDirect<StringView>(
+      rowVector_constant, data_constant, data_constant.size(), pool_.get());
+
+  std::vector<std::optional<StringView>> data_null = {
+      std::nullopt, std::nullopt, std::nullopt};
+  auto col_null = makeConstantVector<StringView>(data_null);
+  auto rowVector_null = makeRowVector({col_null});
+  testToCiderDirect<StringView>(rowVector_null, data_null, data_null.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderIntegerOneCol) {
-  int numRows = 10;
   std::vector<std::optional<int32_t>> data = {
       0, std::nullopt, 1, 3, std::nullopt, -1234, -99, -999, 1000, -1};
   auto col_dict = makeDictionaryVector<int32_t>(data);
@@ -172,10 +189,21 @@ TEST_F(DataConvertorTest, directToCiderIntegerOneCol) {
   auto col_flat = makeNullableFlatVector<int32_t>(data);
   auto rowVector_flat = makeRowVector({col_flat});
   testToCiderDirect<int32_t>(rowVector_flat, data, data.size(), pool_.get());
+
+  std::vector<std::optional<int32_t>> data_constant = {1, 1, 1};
+  auto col_constant = makeConstantVector<int32_t>(data_constant);
+  auto rowVector_constant = makeRowVector({col_constant});
+  testToCiderDirect<int32_t>(
+      rowVector_constant, data_constant, data_constant.size(), pool_.get());
+
+  std::vector<std::optional<int32_t>> data_null = {
+      std::nullopt, std::nullopt, std::nullopt};
+  auto col_null = makeConstantVector<int32_t>(data_null);
+  auto rowVector_null = makeRowVector({col_null});
+  testToCiderDirect<int32_t>(rowVector_null, data_null, data_null.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderBigintOneCol) {
-  int numRows = 10;
   std::vector<std::optional<int64_t>> data = {
       0, 1, std::nullopt, 3, 1024, -123456, -99, -999, std::nullopt, -1};
   auto col_dict = makeDictionaryVector<int64_t>(data);
@@ -185,10 +213,21 @@ TEST_F(DataConvertorTest, directToCiderBigintOneCol) {
   auto col_flat = makeNullableFlatVector<int64_t>(data);
   auto rowVector_flat = makeRowVector({col_flat});
   testToCiderDirect<int64_t>(rowVector_flat, data, data.size(), pool_.get());
+
+  std::vector<std::optional<int64_t>> data_constant = {1, 1, 1};
+  auto col_constant = makeConstantVector<int64_t>(data_constant);
+  auto rowVector_constant = makeRowVector({col_constant});
+  testToCiderDirect<int64_t>(
+      rowVector_constant, data_constant, data_constant.size(), pool_.get());
+
+  std::vector<std::optional<int64_t>> data_null = {
+      std::nullopt, std::nullopt, std::nullopt};
+  auto col_null = makeConstantVector<int64_t>(data_null);
+  auto rowVector_null = makeRowVector({col_null});
+  testToCiderDirect<int64_t>(rowVector_null, data_null, data_null.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderDoubleOneCol) {
-  int numRows = 10;
   std::vector<std::optional<double>> data = {
       0.5, 1, std::nullopt, 3.14, 1024, -123456, -99.99, -999, std::nullopt, -1};
   auto col_dict = makeDictionaryVector<double>(data);
@@ -198,6 +237,18 @@ TEST_F(DataConvertorTest, directToCiderDoubleOneCol) {
   auto col_flat = makeNullableFlatVector<double>(data);
   auto rowVector_flat = makeRowVector({col_flat});
   testToCiderDirect<double>(rowVector_flat, data, data.size(), pool_.get());
+
+  std::vector<std::optional<double>> data_constant = {1.23, 1.23, 1.23};
+  auto col_constant = makeConstantVector<double>(data_constant);
+  auto rowVector_constant = makeRowVector({col_constant});
+  testToCiderDirect<double>(
+      rowVector_constant, data_constant, data_constant.size(), pool_.get());
+
+  std::vector<std::optional<double>> data_null = {
+      std::nullopt, std::nullopt, std::nullopt};
+  auto col_null = makeConstantVector<double>(data_null);
+  auto rowVector_null = makeRowVector({col_null});
+  testToCiderDirect<double>(rowVector_null, data_null, data_null.size(), pool_.get());
 }
 
 TEST_F(DataConvertorTest, directToCiderBoolOneCol) {

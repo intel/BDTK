@@ -25,6 +25,7 @@
 #include <util/Logger.h>
 #include <string>
 #include <vector>
+#include "cider/CiderException.h"
 #include "substrait/type.pb.h"
 
 enum ColumnHint { Normal, PartialAVG };
@@ -107,14 +108,15 @@ class CiderTableSchema {
       case substrait::Type::kDate:
       case substrait::Type::kTime:
       case substrait::Type::kTimestamp:
+      case substrait::Type::kDecimal:
         return 8;
       case substrait::Type::kVarchar:
       case substrait::Type::kString:
       case substrait::Type::kFixedChar:
         return 16;  // sizeof(CiderByteArray)
       default:
-        // TODO: handle unsupport type
-        return 8;
+        CIDER_THROW(CiderUnsupportedException,
+                    fmt::format("Unsupport column type {}", type_kind));
     }
   }
 

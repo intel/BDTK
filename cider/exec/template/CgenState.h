@@ -194,6 +194,12 @@ struct CgenState {
     return str_lv;
   }
 
+  void moveInValuesBitmap(std::unique_ptr<const InValuesBitmap>& in_values_bitmap) {
+    if (!in_values_bitmap->isEmpty()) {
+      in_values_bitmaps_.emplace_back(std::move(in_values_bitmap));
+    }
+  }
+
   const InValuesBitmap* addInValuesBitmap(
       std::unique_ptr<InValuesBitmap>& in_values_bitmap) {
     if (in_values_bitmap->isEmpty()) {

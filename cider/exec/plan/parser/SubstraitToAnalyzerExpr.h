@@ -130,7 +130,7 @@ class Substrait2AnalyzerExprConverter {
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 
-  std::shared_ptr<Analyzer::Expr> buildDateAddExpr(
+  std::shared_ptr<Analyzer::Expr> buildTimeAddExpr(
       const substrait::Expression_ScalarFunction& s_scalar_function,
       const std::string& function_name,
       const std::unordered_map<int, std::string> function_map,
@@ -180,6 +180,8 @@ class Substrait2AnalyzerExprConverter {
           expr_map_ptr = nullptr);
 
   bool isColumnVar(const substrait::Expression_FieldReference& selection_expr);
+
+  bool isTimeType(const substrait::Type& type);
 
   // This cols update stat is used for avoiding duplicated index update in ColumnVar/Var
   std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> cols_update_stat_;

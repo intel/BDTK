@@ -32,24 +32,12 @@
 
 #include <google/protobuf/util/json_util.h>
 
-#define DEBUG_SUBSTRAIT_OUTPUT()                             \
-  if (print_substrait_) {                                    \
-    std::cout << "substrait json is: " << json << std::endl; \
-  }
-
-#define DEBUG_LLVM_IR()                                               \
-  if (print_IR_) {                                                    \
-    std::cout << "LLVM IR is: " << compile_res->getIR() << std::endl; \
-  }
-
 #define COMPILE_AND_GEN_RUNTIME_MODULE()                                             \
   compile_option.needs_error_check = true;                                           \
   auto compile_res = ciderCompileModule_->compile(plan, compile_option, exe_option); \
   auto cider_runtime_module =                                                        \
       std::make_shared<CiderRuntimeModule>(compile_res, compile_option, exe_option); \
-  auto output_schema =                                                               \
-      std::make_shared<CiderTableSchema>(compile_res->getOutputCiderTableSchema());  \
-  DEBUG_LLVM_IR();
+  auto output_schema = compile_res->getOutputCiderTableSchema();
 
 std::string getSubstraitPlanFilesPath() {
   const std::string absolute_path = __FILE__;
@@ -82,7 +70,7 @@ std::string getFileContent(const std::string& file_name) {
 
   ::substrait::Plan plan;
   google::protobuf::util::JsonStringToMessage(json, &plan);
-  DEBUG_SUBSTRAIT_OUTPUT();
+  LOG(DEBUG1) << "substrait json is: " << json << "\n";
   return std::move(plan);
 }
 
@@ -175,10 +163,8 @@ CiderBatch CiderQueryRunner::runJoinQueryOneBatch(const std::string& file_or_sql
   ciderCompileModule_->feedBuildTable(std::move(right_batch));
   auto compile_res = ciderCompileModule_->compile(plan);
   auto cider_runtime_module = std::make_shared<CiderRuntimeModule>(compile_res);
-  DEBUG_LLVM_IR();
 
-  auto output_schema =
-      std::make_shared<CiderTableSchema>(compile_res->getOutputCiderTableSchema());
+  auto output_schema = compile_res->getOutputCiderTableSchema();
 
   // Step 3: run on this batch
   cider_runtime_module->processNextBatch(left_batch);
@@ -212,21 +198,21 @@ std::vector<CiderBatch> CiderQueryRunner::handleRes(
     const int max_output_row_num,
     std::shared_ptr<CiderRuntimeModule> cider_runtime_module,
     std::shared_ptr<CiderCompilationResult> compile_res) {
-  int column_num = compile_res->getOutputCiderTableSchema().getColumnCount();
   auto schema = compile_res->getOutputCiderTableSchema();
+  int column_num = schema->getColumnCount();
   std::vector<CiderBatch> res;
   auto has_more_output = CiderRuntimeModule::ReturnCode::kMoreOutput;
   while (has_more_output == CiderRuntimeModule::ReturnCode::kMoreOutput) {
     std::vector<const int8_t*> out_col_buffers(column_num);
     for (size_t i = 0; i < column_num; ++i) {
-      size_t type_bytes = schema.GetColumnTypeSize(i);
+      size_t type_bytes = schema->GetColumnTypeSize(i);
       out_col_buffers[i] = new int8_t[type_bytes * max_output_row_num];
     }
     std::unique_ptr<CiderBatch> out_batch = nullptr;
     std::tie(has_more_output, out_batch) =
         cider_runtime_module->fetchResults(max_output_row_num);
     if (!out_batch->schema()) {
-      out_batch->set_schema(std::make_shared<CiderTableSchema>(schema));
+      out_batch->set_schema(schema);
     }
     if (compile_res->impl_->query_mem_desc_->hasCountDistinct()) {
       res.emplace_back(updateCountDistinctRes(std::move(out_batch), compile_res));

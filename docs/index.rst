@@ -12,3 +12,4 @@ Welcome to Cider's documentation!
     cider-sharing
     development-specification
     CiderAllocator-use-guide
+    logger

@@ -116,7 +116,7 @@ class LogOptions {
 
  public:
   // Initialize to default values
-  boost::filesystem::path log_dir_{"mapd_log"};
+  boost::filesystem::path log_dir_{"bdtk_log"};
   // file_name_pattern and symlink are prepended with base_name.
   std::string file_name_pattern_{".{SEVERITY}.%Y%m%d-%H%M%S.log"};
   std::string symlink_{".{SEVERITY}"};
@@ -283,7 +283,7 @@ CIDER_CHECKOP_FUNCTION(GE, >=)
 #undef CIDER_CHECKOP_FUNCTION
 
 #define UNREACHABLE() LOG(FATAL) << "UNREACHABLE "
-#else
+#else  // NO_BOOST
 
 // Provided for backward compatibility to allow code to compile.
 template <Severity severity>
@@ -323,7 +323,7 @@ class NullLogger {
 
 #define UNREACHABLE() LOG(FATAL)
 
-#endif
+#endif  // NO_BOOST
 
 #define LOG_IF(severity, condition) \
   if (condition)                    \
