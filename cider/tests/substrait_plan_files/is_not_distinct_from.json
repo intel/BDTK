@@ -33,14 +33,16 @@
             "common": {
               "emit": {
                 "outputMapping": [
-                  8,
-                  9,
                   10,
                   11,
                   12,
                   13,
                   14,
-                  15
+                  15,
+                  16,
+                  17,
+                  18,
+                  19
                 ]
               }
             },
@@ -63,7 +65,9 @@
                         "COL_5",
                         "COL_6",
                         "COL_7",
-                        "COL_8"
+                        "COL_8",
+                        "COL_9",
+                        "COL_10"
                       ],
                       "struct": {
                         "types": [
@@ -111,6 +115,18 @@
                           },
                           {
                             "fp64": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "varchar": {
+                              "typeVariationReference": 0,
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "varchar": {
                               "typeVariationReference": 0,
                               "nullability": "NULLABILITY_NULLABLE"
                             }
@@ -303,6 +319,26 @@
                   },
                   "rootReference": {}
                 }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 8
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 9
+                    }
+                  },
+                  "rootReference": {}
+                }
               }
             ]
           }
@@ -315,7 +351,9 @@
           "COL_5",
           "COL_6",
           "COL_7",
-          "COL_8"
+          "COL_8",
+          "COL_9",
+          "COL_10"
         ]
       }
     }

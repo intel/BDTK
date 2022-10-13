@@ -29,15 +29,12 @@
 
 class ConcatenatedRow {
  public:
-  ConcatenatedRow() {
-    col_num_ = 0;
-    str_ = "";
-  }
+  ConcatenatedRow() { col_num_ = 0; }
 
   ConcatenatedRow(int32_t col_num, std::string str) : col_num_{col_num}, str_{str} {}
 
   void addCol(std::string str) {
-    str_ += (str + ",");
+    str_.append(str).append(",");
     col_num_++;
   }
 
