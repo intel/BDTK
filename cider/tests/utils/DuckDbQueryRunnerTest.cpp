@@ -37,6 +37,9 @@ void checkDuckDbScalarOutput(
     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
     const std::vector<std::vector<T>>& expected_data,
     const std::vector<std::vector<bool>>& expected_nulls = {}) {
+  /// NOTE: (YBRua) To be deprecated.
+  /// Change this to CiderBatchChecker after Checker is implemented
+
   // expected data should at least contain something
   EXPECT_TRUE(expected_data.size() > 0);
   // currently only supports one CiderBatch
@@ -58,7 +61,7 @@ void checkDuckDbScalarOutput(
     // scalar (primitive type) result should contain 2 buffers
     EXPECT_EQ(child->getBufferNum(), 2);
     // check child row nums
-    EXPECT_EQ(child->getLength(), col.size());
+    EXPECT_EQ(child->getLength(), expected_data[i].size());
 
     auto data_buffer = child->as<ScalarBatch<int32_t>>()->getRawData();
     auto null_buffer = child->getNulls();
@@ -71,10 +74,6 @@ void checkDuckDbScalarOutput(
 }
 
 TEST(DuckDBResultConvertorTest, simpleArrowTest) {
-  // create table, insert data, run a simple query and manually check the result
-  /// TODO: (YBRua) Add more comprehensive and elegant tests
-  /// after CiderBatchBuilder and CiderBatchChecker are updated
-
   DuckDbQueryRunner runner;
 
   std::vector<int> col{0, 1, 2, 3, 4};
