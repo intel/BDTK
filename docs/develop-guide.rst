@@ -348,10 +348,6 @@ Start the CLI to connect to the server and run SQL queries:
    git clone --recursive https://github.com/intel/BDTK.git
    pushd BDTK  
    make release
-   if [ $? -ne 0 ]; then
-      echo "compile BDTK failed"
-      exit
-   fi
    popd
    mkdir -p ./presto_cpp/main/lib
    cp ./BDTK/build-Release/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
@@ -367,10 +363,6 @@ Start the CLI to connect to the server and run SQL queries:
    sed -i 's/\"velox-plugin\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/\"BDTK\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/' ./presto_cpp/main/TaskResource.cpp
    sed -i 's/\"velox-plugin\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/\"BDTK\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/' ./presto_cpp/main/PrestoServer.cpp
    make PRESTO_ENABLE_PARQUET=ON -j ${CPU_COUNT:-`nproc`} release
-   if [ $? -ne 0 ]; then
-      echo "compile presto failed"
-      exit
-   fi
    mkdir -p ./_build/release/presto_cpp/function
    cp ./BDTK/build-Release/cider/function/RuntimeFunctions.bc ./_build/release/presto_cpp/function/
    popd
