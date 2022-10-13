@@ -7,6 +7,7 @@ Live Demo
 maybe a video...
 
 .. code-block:: c++
+
 	if __name__ == "__main__":
 	    sys.exit(main())
 

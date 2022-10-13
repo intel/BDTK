@@ -38,6 +38,7 @@ add_executable(ExpressionEvalTest ExpressionEvalTest.cpp)
 add_executable(CiderAllocatorTest CiderAllocatorTest.cpp)
 add_executable(CiderArrowBatchTest CiderArrowBatchTest.cpp)
 add_executable(CiderExceptionTest CiderExceptionTest.cpp)
+add_executable(CiderLogTest CiderLogTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     cider
@@ -64,6 +65,7 @@ target_link_libraries(ExpressionEvalTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderAllocatorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderArrowBatchTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
+target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
 
 set(TEST_ARGS "--gtest_output=xml:../")
 add_test(CodeGeneratorTest CodeGeneratorTest ${TEST_ARGS})
@@ -81,6 +83,7 @@ add_test(ExpressionEvalTest ExpressionEvalTest ${TEST_ARGS})
 add_test(CiderAllocatorTest CiderAllocatorTest ${TEST_ARGS})
 add_test(CiderArrowBatchTest CiderArrowBatchTest ${TEST_ARGS})
 add_test(CiderExceptionTest CiderExceptionTest ${TEST_ARGS})
+add_test(CiderLogTest CiderLogTest ${TEST_ARGS})
 
 find_package(fmt REQUIRED)
 

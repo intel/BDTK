@@ -929,7 +929,7 @@ inline SQLTypes get_int_type_by_size(size_t const nbytes) {
     case 8:
       return kBIGINT;
     default:
-#if !(defined(__CUDACC__) || defined(NO_BOOST))
+#ifndef NO_BOOST
       UNREACHABLE() << "Invalid number of bytes=" << nbytes;
 #endif
       return {};
