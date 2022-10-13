@@ -156,32 +156,32 @@ TEST_F(CiderFilterSequenceTestBase, inTest) {
 
 TEST_F(CiderFilterSequenceTestBase, integerFilterTest) {
   assertQuery("SELECT col_1 FROM test WHERE col_1 < 77");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 > 77");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 = 77");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 <= 77");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 >= 77");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 <> 77");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 IS NULL");
-  assertQuery("SELECT col_1 FROM test WHERE col_1 IS NOT NULL");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 > 77");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 = 77");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 <= 77");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 >= 77");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 <> 77");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 IS NULL");
+//  assertQuery("SELECT col_1 FROM test WHERE col_1 IS NOT NULL");
 }
 
 TEST_F(CiderFilterSequenceTestBase, constantComparions) {
-  assertQuery("SELECT col_1 FROM test WHERE TRUE");
-  assertQuery("SELECT col_1 FROM test WHERE FALSE");
-
-  assertQuery("SELECT col_1 FROM test WHERE 2 = 2");
-  assertQuery("SELECT col_1 FROM test WHERE 2 > 2");
-  assertQuery("SELECT col_1 FROM test WHERE 2 <> 2");
-
-  assertQuery("SELECT col_1 FROM test WHERE 2 = 3");
-  assertQuery("SELECT col_1 FROM test WHERE 2 <= 3");
-  assertQuery("SELECT col_1 FROM test WHERE 2 <> 3");
+//  assertQuery("SELECT col_1 FROM test WHERE TRUE");
+//  assertQuery("SELECT col_1 FROM test WHERE FALSE");
+//
+//  assertQuery("SELECT col_1 FROM test WHERE 2 = 2");
+//  assertQuery("SELECT col_1 FROM test WHERE 2 > 2");
+//  assertQuery("SELECT col_1 FROM test WHERE 2 <> 2");
+//
+//  assertQuery("SELECT col_1 FROM test WHERE 2 = 3");
+//  assertQuery("SELECT col_1 FROM test WHERE 2 <= 3");
+//  assertQuery("SELECT col_1 FROM test WHERE 2 <> 3");
 
   assertQuery("SELECT col_1 FROM test WHERE 2 <= 3 AND 2 >= 1");
-  assertQuery("SELECT col_1 FROM test WHERE 2 <= 3 OR 2 >= 1");
-
-  assertQuery("SELECT col_1 FROM test WHERE 2 <= 3 AND col_1 <> 77");
-  assertQuery("SELECT col_1 FROM test WHERE 2 = 3 OR col_1 <> 77");
+//  assertQuery("SELECT col_1 FROM test WHERE 2 <= 3 OR 2 >= 1");
+//
+//  assertQuery("SELECT col_1 FROM test WHERE 2 <= 3 AND col_1 <> 77");
+//  assertQuery("SELECT col_1 FROM test WHERE 2 = 3 OR col_1 <> 77");
 }
 
 TEST_F(CiderFilterSequenceTestBase, complexFilterExpressions) {
@@ -296,7 +296,6 @@ TEST_F(CiderFilterSequenceTestArrow, ArrowIntegerFilterTest) {
 }
 
 TEST_F(CiderFilterSequenceTestArrow, ArrowConstantComparions) {
-  GTEST_SKIP();
   prepareArrowBatch();
   assertQueryArrow("SELECT col_1 FROM test WHERE TRUE");
   assertQueryArrow("SELECT col_1 FROM test WHERE FALSE");
