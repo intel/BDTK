@@ -71,11 +71,9 @@ ProjcetFilterSwapRewriter::rewritePlanSectionWithSingleSource(
   } else {
     VeloxPlanNodeAddr filterNode = planSection.target;
     VeloxPlanNodeAddr projectNode = planSection.source;
-    VeloxPlanNodePtr newFilterPtr =
-        PlanUtil::cloneNodeWithNewSource(filterNode.nodePtr, source.nodePtr);
-    VeloxPlanNodePtr newProjectPtr =
-        PlanUtil::cloneNodeWithNewSource(projectNode.nodePtr, newFilterPtr);
-    return std::pair<bool, VeloxPlanNodePtr>(true, newProjectPtr);
+    PlanUtil::changeNodeSource(filterNode.nodePtr, source.nodePtr);
+    PlanUtil::changeNodeSource(projectNode.nodePtr, filterNode.nodePtr);
+    return std::pair<bool, VeloxPlanNodePtr>(true, projectNode.nodePtr);
   }
 }
 

@@ -37,9 +37,10 @@ VeloxPlanNodePtr PlanRewriter::rewrite(VeloxNodeAddrPlanSection& planSection,
     }
     return resultPtr;
   } else {
-    // if this plan section needn't to be rewitten,simply copy one and link it
+    // if this plan section needn't to be rewitten,simply link it
     // to the new source.
-    return PlanUtil::cloneSingleSourcePlanSectionWithNewSource(planSection, source);
+    PlanUtil::changeSingleSourcePlanSectionSource(planSection, source);
+    return planSection.target.nodePtr;
   }
 }
 
@@ -58,9 +59,10 @@ VeloxPlanNodePtr PlanRewriter::rewriteWithMultiSrc(VeloxNodeAddrPlanSection& pla
     }
     return resultPtr;
   } else {
-    // if this plan section needn't to be rewitten,simply copy one and link it
+    // if this plan section needn't to be rewitten,simply link it
     // to the new source.
-    return PlanUtil::cloneMultiSourcePlanSectionWithNewSources(planSection, srcList);
+    PlanUtil::changeMultiSourcePlanSectionSources(planSection, srcList);
+    return planSection.target.nodePtr;
   }
 }
 

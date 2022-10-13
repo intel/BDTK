@@ -29,17 +29,16 @@ using NodeAddrMapPtr = std::shared_ptr<NodeAddrMap>;
 class PlanUtil {
  public:
   static bool isJoin(VeloxPlanNodePtr node);
-  static VeloxPlanNodePtr cloneNodeWithNewSource(VeloxPlanNodePtr node,
-                                                 VeloxPlanNodePtr source);
-  static VeloxPlanNodePtr cloneSingleSourcePlanSectionWithNewSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source);
-  static VeloxPlanNodePtr cloneMultiSourcePlanSectionWithNewSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& source);
-  static VeloxPlanNodePtr cloneJoinNodeWithNewSources(VeloxPlanNodePtr node,
-                                                      VeloxPlanNodePtr left,
-                                                      VeloxPlanNodePtr right);
+  static void changeNodeSource(VeloxPlanNodePtr node, VeloxPlanNodePtr source);
+  static void changeJoinNodeSource(VeloxPlanNodePtr node,
+                                   VeloxPlanNodePtr left,
+                                   VeloxPlanNodePtr right);
+  static void changeJoinNodeLeftSource(VeloxPlanNodePtr node, VeloxPlanNodePtr left);
+  static void changeJoinNodeRightSource(VeloxPlanNodePtr node, VeloxPlanNodePtr right);
+  static void changeSingleSourcePlanSectionSource(VeloxNodeAddrPlanSection& planSection,
+                                                  VeloxPlanNodeAddr& source);
+  static void changeMultiSourcePlanSectionSources(VeloxNodeAddrPlanSection& planSection,
+                                                  VeloxPlanNodeAddrList& source);
   static VeloxPlanNodeAddrList getPlanNodeListForPlanSection(
       VeloxNodeAddrPlanSection& planSection);
 
