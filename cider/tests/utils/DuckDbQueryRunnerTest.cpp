@@ -142,6 +142,30 @@ TEST(DuckDBResultConvertorTest, simpleI32ArrowTest) {
   ARROW_SIMPLE_TEST_SUITE(int32_t, I32, INTEGER);
 }
 
+TEST(DuckDBResultConvertorTest, simpleI8ArrowTest) {
+  ARROW_SIMPLE_TEST_SUITE(int8_t, I8, TINYINT);
+}
+
+TEST(DuckDBResultConvertorTest, simpleI16ArrowTest) {
+  ARROW_SIMPLE_TEST_SUITE(int16_t, I16, SMALLINT);
+}
+
+TEST(DuckDBResultConvertorTest, simpleI64ArrowTest) {
+  ARROW_SIMPLE_TEST_SUITE(int64_t, I64, BIGINT);
+}
+
+TEST(DuckDBResultConvertorTest, simpleFp32ArrowTest) {
+  ARROW_SIMPLE_TEST_SUITE(float, Fp32, FLOAT);
+}
+
+TEST(DuckDBResultConvertorTest, simpleI64ArrowTest) {
+  ARROW_SIMPLE_TEST_SUITE(double, Fp64, DOUBLE);
+}
+
+TEST(DuckDBResultConvertorTest, simpleBoolArrowTest) {
+  ARROW_SIMPLE_TEST_SUITE(bool, Bool, BOOLEAN);
+}
+
 TEST(DuckDBQueryRunnerTest, basicTest) {
   DuckDbQueryRunner runner;
 
