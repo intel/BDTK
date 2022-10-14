@@ -373,7 +373,7 @@ class CiderBatch {
   // Only for debug usage.
   std::string toValueString() const {
     std::stringstream ss;
-    ss << "row num: " + row_num_ << ", column num: " << column_num() << ".\n";
+    ss << "row num: " << row_num_ << ", column num: " << column_num() << ".\n";
     // don't have an valid schema
     if (schema_ == nullptr) {
       for (int loc = 0; loc < column_type_size_.size(); loc++) {
