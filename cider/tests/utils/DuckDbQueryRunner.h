@@ -84,6 +84,7 @@ class DuckDbResultConvertor {
   static CiderBatch fetchOneArrowFormattedBatch(std::unique_ptr<duckdb::DataChunk>& chunk,
                                                 std::vector<std::string>& names,
                                                 std::string& config_timezone);
+  static void updateChildrenNullCounts(CiderBatch& batch);
 };
 
 #endif  // CIDER_DUCKDBQUERYRUNNER_H

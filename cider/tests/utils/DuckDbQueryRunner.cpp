@@ -395,6 +395,25 @@ void addColumnDataToCiderBatch<CiderByteArray>(
   }
 }
 
+void DuckDbResultConvertor::updateChildrenNullCounts(CiderBatch& batch) {
+  for (int i = 0; i < batch.getChildrenNum(); ++i) {
+    auto child = batch.getChildAt(i);
+    auto validity_map = child->getNulls();
+    int null_count = 0;
+    if (validity_map) {
+      for (int j = 0; j < batch.getLength(); ++j) {
+        if (!CiderBitUtils::isBitSetAt(validity_map, j)) {
+          // 0 stands for a null value
+          ++null_count;
+        }
+      }
+    } else {
+      CHECK_EQ(child->getNullCount(), 0);
+    }
+    child->setNullCount(null_count);
+  }
+}
+
 CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk,
     std::vector<std::string>& names,
@@ -416,22 +435,8 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
       arrow_schema, std::make_shared<CiderDefaultAllocator>(), arrow_array);
 
   // ToArrowArray() will not compute null_count, so we do it manually here
-  for (int i = 0; i < col_num; ++i) {
-    auto child = batch->getChildAt(i);
-    auto validity_map = child->getNulls();
-    int null_count = 0;
-    if (validity_map) {
-      for (int j = 0; j < row_num; ++j) {
-        if (!CiderBitUtils::isBitSetAt(validity_map, j)) {
-          // 0 stands for a null value
-          ++null_count;
-        }
-      }
-    } else {
-      CHECK_EQ(child->getNullCount(), 0);
-    }
-    child->setNullCount(null_count);
-  }
+  updateChildrenNullCounts(*batch);
+
   chunk->Destroy();
   return std::move(*batch);
 }
