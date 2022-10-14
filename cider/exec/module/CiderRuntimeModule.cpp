@@ -620,10 +620,10 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
   column_size.reserve(column_num);
   for (int column_index = 0, type_index = 0; column_index < column_num;
        column_index++, type_index++) {
-    ColumnHint hint = schema.getColHints()[type_index];
+    ColumnHint hint = schema->getColHints()[type_index];
     // FIXME: kStruct is not supported in old CiderBatch and CiderTableSchema
     if (hint == ColumnHint::Normal) {
-      column_size.push_back(schema.GetColumnTypeSize(type_index));
+      column_size.push_back(schema->GetColumnTypeSize(type_index));
     } else if (hint == ColumnHint::PartialAVG) {
       // FIXME: Workaround for Partial AVG
       column_size.push_back(sizeof(int64_t));
