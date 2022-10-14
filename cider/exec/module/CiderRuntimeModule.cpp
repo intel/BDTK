@@ -446,7 +446,7 @@ void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
   }
 
   const auto& query_mem_desc = ciderCompilationResult_->impl_->query_mem_desc_;
-  const auto col_slot_context = query_mem_desc->getColSlotContext();
+  const auto& col_slot_context = query_mem_desc->getColSlotContext();
   // offset start from 1 to skip the 64 bits rowid
   size_t offset = 1;
   // step is row size in 8 bytes, equal to query_mem_desc->getRowSize() / 8
@@ -454,7 +454,7 @@ void CiderRuntimeModule::fetchNonBlockingResults(int32_t start_row,
   for (size_t i = 0; i < col_num; i++) {
     const auto col_slots = col_slot_context.getSlotsForCol(i);
     int8_t* col = const_cast<int8_t*>(outBatch.column(i));
-    substrait::Type type = schema->getColumnTypeById(i);
+    auto& type = schema->getColumnTypeById(i);
     // need to convert flattened row to columns as outbatch
     switch (type.kind_case()) {
       case substrait::Type::kBool:

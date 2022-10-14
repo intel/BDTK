@@ -62,7 +62,7 @@ inline const char* getArrowFormat(::substrait::Type& typeName) {
   }
 }
 
-inline TypePtr getVeloxType(::substrait::Type& typeName) {
+inline TypePtr getVeloxType(const ::substrait::Type& typeName) {
   switch (typeName.kind_case()) {
     case ::substrait::Type::KindCase::kBool:
       return BOOLEAN();
