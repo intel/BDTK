@@ -34,7 +34,7 @@
 
 template <typename T>
 std::tuple<std::vector<std::vector<T>>, std::vector<std::vector<bool>>>
-generateSequenceData(int n_rows = 10, int n_nulls = 5) {
+generateSequenceData(int n_rows = 10, int n_nulls = 3) {
   CHECK(n_nulls <= n_rows);
   int n_not_nulls = n_rows - n_nulls;
 
