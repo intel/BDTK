@@ -417,7 +417,7 @@ void DuckDbResultConvertor::updateChildrenNullCounts(CiderBatch& batch) {
 CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk,
     std::vector<std::string>& names,
-    std::string& config_timezone) {
+    std::string config_timezone) {
   int col_num = chunk->ColumnCount();
   int row_num = chunk->size();
 
