@@ -395,30 +395,6 @@ void addColumnDataToCiderBatch<CiderByteArray>(
   }
 }
 
-template <typename T>
-void addColumnDataToScalarBatch(std::unique_ptr<duckdb::DataChunk>& dataChunk,
-                                int i,
-                                int row_num,
-                                CiderBatch* child) {
-  CHECK(child->resizeBatch(row_num, true));
-  auto data_buffer = child->asMutable<ScalarBatch<T>>()->getMutableRawData();
-  auto null_buffer = child->getMutableNulls();
-  int64_t null_count = 0;
-
-  for (int j = 0; j < row_num; j++) {
-    T value = 0;  // No need to set to Cider null value (min) now. 0 would be fine.
-    if (dataChunk->GetValue(i, j).IsNull()) {
-      CiderBitUtils::clearBitAt(null_buffer, j);
-      ++null_count;
-    } else {
-      value = dataChunk->GetValue(i, j).GetValue<T>();
-      CiderBitUtils::setBitAt(null_buffer, j);
-    }
-    std::memcpy(data_buffer + j, &value, sizeof(T));
-  }
-  child->setNullCount(null_count);
-}
-
 CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk,
     std::vector<std::string>& names,
