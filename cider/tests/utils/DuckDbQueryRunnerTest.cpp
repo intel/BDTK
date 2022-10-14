@@ -96,7 +96,7 @@ void checkDuckDbScalarOutput(
   /// Change this to CiderBatchChecker after Checker is implemented
 
   // expected data should at least contain something
-  EXPECT_TRUE(expected_data.size() > 0);
+  EXPECT_GT(expected_data.size(), 0);
   // currently only supports one CiderBatch
   EXPECT_EQ(actual_batches.size(), 1);
   auto actual_batch = actual_batches[0];
@@ -153,7 +153,7 @@ void checkDuckDbBooleanOutput(
     const std::vector<std::vector<bool>>& expected_valids = {}) {
   /// TODO: (YBRua) To be deprecated.
 
-  EXPECT_TRUE(expected_data.size() > 0);
+  EXPECT_GT(expected_data.size(), 0);
   EXPECT_EQ(actual_batches.size(), 1);
   auto actual_batch = actual_batches[0];
 
@@ -209,15 +209,15 @@ void checkDuckDbBooleanOutput(
     DuckDbQueryRunner runner;                                                           \
     auto [expected_data, expected_valids] = generateSequenceData<C_TYPE>();             \
                                                                                         \
-    /* CiderBatchBuilder expects a NULL vector                                          \
-     * but expected_valids is actually a VALID vector so we flip it here*/              \
+    /* CiderBatchBuilder expects a NULL vector */                                       \
+    /* but expected_valids is actually a VALID vector so we flip it here*/              \
     auto null_vecs = expected_valids;                                                   \
     std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) { \
       null_vec.flip();                                                                  \
     });                                                                                 \
                                                                                         \
-    /* TODO: (YBRua) The CiderBatch generated here is not in Arrow format               \
-     * Change it to an Arrow-formatted batch after CiderBatchBuilder is updated */      \
+    /* TODO: (YBRua) The CiderBatch generated here is not in Arrow format */            \
+    /* Change it to an Arrow-formatted batch after CiderBatchBuilder is updated */      \
     auto batch = std::make_shared<CiderBatch>(                                          \
         CiderBatchBuilder()                                                             \
             .setRowNum(10)                                                              \

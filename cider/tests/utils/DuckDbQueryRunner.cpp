@@ -428,7 +428,7 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
         }
       }
     } else {
-      CHECK(child->getNullCount() == 0);
+      CHECK_EQ(child->getNullCount(), 0);
     }
     child->setNullCount(null_count);
   }
