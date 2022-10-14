@@ -248,8 +248,13 @@ std::unique_ptr<::duckdb::MaterializedQueryResult> DuckDbQueryRunner::runSql(
   auto duck_result = con.Query(sql);
   CHECK(duck_result->success) << "DuckDB query failed: " << duck_result->error << "\n"
                               << sql;
-
+  // to be used when exporting ArrowSchema
+  config_timezone_ = ::duckdb::QueryResult::GetConfigTimezone(*duck_result);
   return duck_result;
+}
+
+std::string DuckDbQueryRunner::getConfigTimeZone() {
+  return config_timezone_;
 }
 
 namespace {
@@ -415,38 +420,25 @@ void addColumnDataToScalarBatch(std::unique_ptr<duckdb::DataChunk>& dataChunk,
 }
 
 CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
-    std::unique_ptr<duckdb::DataChunk>& chunk) {
-  // Construct ArrowSchema
-  // First build a CiderTableSchema and then convert it
-  std::vector<::substrait::Type> batch_types;
-  std::vector<std::string> batch_names;
-
+    std::unique_ptr<duckdb::DataChunk>& chunk,
+    std::vector<std::string>& names,
+    std::string& config_timezone) {
   int col_num = chunk->ColumnCount();
   int row_num = chunk->size();
+
+  // Construct ArrowSchema using methods from duckdb
   std::vector<::duckdb::LogicalType> types = chunk->GetTypes();
-  for (int i = 0; i < col_num; ++i) {
-    auto type = types[i];
-    batch_types.emplace_back(std::move(convertToSubstraitType(type)));
-    batch_names.emplace_back("");
-    if (!isDuckDb2CiderBatchSupportType(type)) {
-      CIDER_THROW(CiderCompileException,
-                  "Non numberic type " + type.ToString() + " not supported yet");
-    }
-  }
-
-  auto cider_schema = std::make_shared<CiderTableSchema>(batch_names, batch_types, "");
-
-  auto arrow_schema =
-      CiderBatchUtils::convertCiderTableSchemaToArrowSchema(*cider_schema);
+  auto arrow_schema = CiderBatchUtils::allocateArrowSchema();
+  ::duckdb::QueryResult::ToArrowSchema(arrow_schema, types, names, config_timezone);
 
   // Construct ArrowArray
   auto arrow_array = CiderBatchUtils::allocateArrowArray();
   chunk->ToArrowArray(arrow_array);
 
   // Build CiderBatch
-  auto batch =
-      StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>(), arrow_array);
-  
+  auto batch = StructBatch::Create(
+      arrow_schema, std::make_shared<CiderDefaultAllocator>(), arrow_array);
+
   // ToArrowArray() will not compute null_count, so we do it manually here
   for (int i = 0; i < col_num; ++i) {
     auto child = batch->getChildAt(i);
@@ -558,7 +550,9 @@ std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToCider
 
 std::vector<std::shared_ptr<CiderBatch>>
 DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
-    std::unique_ptr<::duckdb::MaterializedQueryResult>& result) {
+    std::unique_ptr<::duckdb::MaterializedQueryResult>& result,
+    std::string config_timezone) {
+  auto names = result->names;
   std::vector<std::shared_ptr<CiderBatch>> batch_res;
   for (;;) {
     auto chunk = result->Fetch();
@@ -568,7 +562,8 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
       }
       return batch_res;
     }
-    batch_res.push_back(std::make_shared<CiderBatch>(fetchOneArrowFormattedBatch(chunk)));
+    batch_res.push_back(std::make_shared<CiderBatch>(
+        fetchOneArrowFormattedBatch(chunk, names, config_timezone)));
   }
   return batch_res;
 }
