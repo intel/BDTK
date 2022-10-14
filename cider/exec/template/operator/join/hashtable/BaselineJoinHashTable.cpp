@@ -284,7 +284,7 @@ std::pair<size_t, size_t> BaselineJoinHashTable::approximateTupleCount(
               << ", emitted keys count: " << cached_count_info.second;
       return std::make_pair(*cached_count_info.first, cached_count_info.second);
     }
-    int thread_count = cpu_threads();
+    int thread_count = 1;
     std::vector<uint8_t> hll_buffer_all_cpus(thread_count * padded_size_bytes);
     auto hll_result = &hll_buffer_all_cpus[0];
 
