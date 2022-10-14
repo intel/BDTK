@@ -414,62 +414,6 @@ void addColumnDataToScalarBatch(std::unique_ptr<duckdb::DataChunk>& dataChunk,
   child->setNullCount(null_count);
 }
 
-template <>
-void addColumnDataToScalarBatch<CiderDateType>(
-    std::unique_ptr<duckdb::DataChunk>& dataChunk,
-    int i,
-    int row_num,
-    CiderBatch* child) {
-  CHECK(child->resizeBatch(row_num, true));
-  auto data_buffer = child->asMutable<ScalarBatch<int64_t>>()->getMutableRawData();
-  auto null_buffer = child->getMutableNulls();
-  int64_t null_count = 0;
-
-  int64_t value = std::numeric_limits<int64_t>::min();  // init with Cider null value
-  for (int j = 0; j < row_num; j++) {
-    if (dataChunk->GetValue(i, j).IsNull()) {
-      CiderBitUtils::clearBitAt(null_buffer, j);
-      ++null_count;
-    } else {
-      value = dataChunk->GetValue(i, j).GetValue<int32_t>() * kSecondsInOneDay;
-      CiderBitUtils::setBitAt(null_buffer, j);
-    }
-    std::memcpy(data_buffer + j, &value, sizeof(int64_t));
-  }
-  child->setNullCount(null_count);
-}
-
-template <>
-void addColumnDataToScalarBatch<CiderByteArray>(
-    std::unique_ptr<duckdb::DataChunk>& dataChunk,
-    int i,
-    int row_num,
-    CiderBatch* child) {
-  CHECK(child->resizeBatch(row_num, true));
-  auto data_buffer = child->asMutable<ScalarBatch<CiderByteArray>>()->getMutableRawData();
-  auto null_buffer = child->getMutableNulls();
-  int64_t null_count = 0;
-
-  CiderByteArray* buf = (CiderByteArray*)data_buffer;
-  for (int j = 0; j < row_num; j++) {
-    if (dataChunk->GetValue(i, j).IsNull()) {
-      std::memset(data_buffer + j * sizeof(CiderByteArray), 0, sizeof(CiderByteArray));
-      CiderBitUtils::clearBitAt(null_buffer, j);
-      ++null_count;
-    } else {
-      std::string value = dataChunk->GetValue(i, j).GetValue<std::string>();
-      // memory leak risk. user should manually free.
-      uint8_t* value_buf =
-          reinterpret_cast<uint8_t*>(allocator->allocate(value.length()));
-      std::memcpy(value_buf, value.c_str(), value.length());
-      buf[j].len = value.length();
-      buf[j].ptr = value_buf;
-      CiderBitUtils::setBitAt(null_buffer, j);
-    }
-  }
-  child->setNullCount(null_count);
-}
-
 CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk) {
   // Construct ArrowSchema
@@ -533,12 +477,9 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
         addColumnDataToScalarBatch<double>(chunk, i, row_num, child.get());
         break;
       case ::duckdb::LogicalTypeId::DATE:
-        addColumnDataToScalarBatch<CiderDateType>(chunk, i, row_num, child.get());
-        break;
       case ::duckdb::LogicalTypeId::CHAR:
       case ::duckdb::LogicalTypeId::VARCHAR:
-        addColumnDataToScalarBatch<CiderByteArray>(chunk, i, row_num, child.get());
-        break;
+        CIDER_THROW(CiderUnsupportedException, "Date and Varchar are not supported yet");
       default:
         CIDER_THROW(CiderCompileException,
                     "Unsupported type convertor: " + type.ToString());
