@@ -140,7 +140,6 @@ The code COALESCE(expression1,...n) is executed in Cider as the following CASE e
         END
 
 Example: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -168,7 +167,6 @@ The IF function is actually a language construct that is executed in Cider as th
         END
 
 IF Functions: 
->>>>>>>>>>>>>>>
 
 1. .. code-block
 
@@ -310,7 +308,6 @@ This is important not only for performance, data quality will also be a signific
 The ROLLUP operator generates all possible subtotals for a given set of columns.
 
 Example: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -346,7 +343,7 @@ is **equivalent** to:
 The CUBE operator generates all possible grouping sets (i.e. a power set) for a given set of columns.
 
 Example: 
->>>>>>>>>>>
+
 
 .. code-block:: sql
 
@@ -386,7 +383,6 @@ The ALL and DISTINCT quantifiers determine whether duplicate grouping sets each 
 This is particularly useful when multiple complex grouping sets are combined in the same query.
 
 Example1: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -417,7 +413,6 @@ is **equivalent** to:
         GROUPING SETS((col_a, col_b), (col_a), (col_b), ()); 
 
 Example2: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -448,7 +443,7 @@ is **equivalent** to:
 
 Using ALL will leave all duplicate grouping sets while DISTINCT will dedup them.
 
-5) GROUPING() operation
+1) GROUPING() operation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We can find the usage of SELECT GROUPING(col_a, col_b ...) FROM table GROUP BY ROLLUP (col_a, col_b ...)  in TPC-DS Query27.
@@ -456,7 +451,6 @@ The grouping operation returns a bit set converted to decimal, indicating which 
 It must be used in conjunction with GROUPING SETS, ROLLUP, CUBE or GROUP BY and its arguments must match exactly the columns referenced in the corresponding GROUPING SETS, ROLLUP, CUBE or GROUP BY clause.
 
 Example: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -582,5 +576,3 @@ For '**=**' in 'ALL' cases, there will be two aggregate functions **MIN** and **
 While for '**!=**', there will be only a semi join between left rows(expr) and right rows to get boolean results, then a **NOT** operation will be implemented to get final results.
 
 For 'ANY' cases, the plans for '**=**' and '**!=**' are exactly the same as those of '**!=**' and '**=**' in 'ALL' cases.
-
-

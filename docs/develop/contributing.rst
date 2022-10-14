@@ -9,9 +9,8 @@ Pull requests should pass ``format-check`` and ``header-check`` without errors b
 
 More details can be found at `ci/scripts/run_cpplint.py <https://github.com/intel-innersource/frameworks.ai.modular-sql.velox-plugin/blob/40591b915bfee8068749218725f9c95a4704bacd/ci/scripts/run_cpplint.py>`_
 
-
 Documentation
------------------
+------------------------
 
 Cider documentation uses sphinx to produce html structure.
 Github pages refer to "docs" directory on "gh-pages" branch.
@@ -34,6 +33,3 @@ Last, share some tools and documents, hope it can help:
 - How to write rst(reStructuredText) files: `rst-tutorial <https://www.devdungeon.com/content/restructuredtext-rst-tutorial-0>`_
 
 - Transfer markdown to rst: `md-to-rst <https://cloudconvert.com/md-to-rst>`_
-
-
-
