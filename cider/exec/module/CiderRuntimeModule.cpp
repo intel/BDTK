@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include "cider/CiderRuntimeModule.h"
 
 #include <type_traits>

@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
@@ -68,6 +66,9 @@ ArrowSchema* allocateArrowSchema() {
                      .private_data = nullptr};
   return ptr;
 }
+
+void ciderEmptyArrowSchemaReleaser(ArrowSchema* schema) {}
+void ciderEmptyArrowArrayReleaser(ArrowArray* array) {}
 
 ArrowSchema* allocateArrowSchema(const ArrowSchema& schema) {
   ArrowSchema* ptr = new ArrowSchema(schema);

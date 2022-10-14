@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include "CiderAggTargetColExtractorBuilder.h"
 #include "CiderAggTargetColExtractorTmpl.h"
 

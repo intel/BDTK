@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include <gtest/gtest.h>
 #include "cider/batch/CiderBatch.h"
 #include "cider/batch/ScalarBatch.h"

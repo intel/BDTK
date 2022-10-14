@@ -253,6 +253,51 @@ void CiderBatch::releaseArrowEntries() {
   }
 }
 
+// to be deprecated, just for test not nullable data.
+void CiderBatch::convertToArrowRepresentation() {
+  CHECK(!arrow_array_ && !arrow_schema_);
+  arrow_array_ = CiderBatchUtils::allocateArrowArray();
+  arrow_schema_ = CiderBatchUtils::allocateArrowSchema();
+
+  arrow_array_->length = row_num();
+  arrow_array_->n_children = column_num();
+  arrow_array_->buffers = nullptr;  // ?
+  arrow_array_->n_buffers = 0;      // ?
+  arrow_array_->private_data = nullptr;
+  arrow_array_->children = (ArrowArray**)std::malloc(sizeof(ArrowArray) * column_num());
+  arrow_array_->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
+
+  arrow_schema_->format = "+s";
+  arrow_schema_->dictionary = nullptr;
+  arrow_schema_->n_children = column_num();
+  arrow_schema_->children =
+      (ArrowSchema**)std::malloc(sizeof(ArrowSchema*) * column_num());
+  arrow_schema_->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+
+  for (int i = 0; i < column_num(); i++) {
+    arrow_array_->children[i] = new ArrowArray();
+    arrow_array_->children[i]->length = row_num();
+    arrow_array_->children[i]->n_children = 0;
+    arrow_array_->children[i]->buffers = (const void**)std::malloc(sizeof(void*) * 2);
+    // FIXME: fill actual null
+    void* null_buf = std::malloc(row_num() / 8 + 1);
+    std::memset(null_buf, 0xFF, row_num() / 8 + 1);
+    arrow_array_->children[i]->buffers[0] = null_buf;
+    arrow_array_->children[i]->buffers[1] = table_ptr_[i];
+    arrow_array_->children[i]->n_buffers = 2;
+    arrow_array_->children[i]->private_data = nullptr;
+    arrow_array_->children[i]->dictionary = nullptr;
+    arrow_array_->children[i]->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
+
+    arrow_schema_->children[i] = new ArrowSchema();
+    // todo: velox-plugin does not provide schema.
+    arrow_schema_->children[i]->format = "";
+    arrow_schema_->children[i]->n_children = 0;
+    arrow_schema_->children[i]->children = nullptr;
+    arrow_schema_->children[i]->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+  }
+}
+
 void CiderBatch::move(ArrowSchema& schema, ArrowArray& array) {
   CHECK(!isMoved());
 
