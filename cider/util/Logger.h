@@ -172,7 +172,7 @@ class Logger {
   explicit Logger(Channel);
   explicit Logger(Severity);
   Logger(Logger&&) = default;
-  ~Logger();
+  ~Logger() noexcept(false);
   operator bool() const;
   // Must check operator bool() first before calling stream().
   boost::log::record_ostream& stream(char const* file, int line);
