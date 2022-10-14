@@ -436,57 +436,34 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
 
   auto cider_schema = std::make_shared<CiderTableSchema>(batch_names, batch_types, "");
 
-  /// NOTE: (YBRua) This function currently only support primitive scalar types
-  /// It cannot convert Date/Time/Varchar to ArrowSchema
   auto arrow_schema =
       CiderBatchUtils::convertCiderTableSchemaToArrowSchema(*cider_schema);
+
+  // Construct ArrowArray
   auto arrow_array = CiderBatchUtils::allocateArrowArray();
   chunk->ToArrowArray(arrow_array);
 
-  // Construct ArrowArray
-  /// NOTE: (YBRua) DuckDb provides an API ToArrowArray(), but we are NOT using it
-  /// since the structs for DATE and VARCHAR in Cider differ from those used in DuckDB
+  // Build CiderBatch
   auto batch =
       StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>(), arrow_array);
-  CHECK(batch->resizeBatch(row_num, true));
-  // for (int i = 0; i < col_num; ++i) {
-  //   auto child = batch->getChildAt(i);
-  //   auto type = types[i];
-  //   switch (type.id()) {
-  //     case ::duckdb::LogicalTypeId::HUGEINT:
-  //     case ::duckdb::LogicalTypeId::BIGINT:
-  //     case ::duckdb::LogicalTypeId::TIMESTAMP:
-  //     case ::duckdb::LogicalTypeId::TIME:
-  //       addColumnDataToScalarBatch<int64_t>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::INTEGER:
-  //       addColumnDataToScalarBatch<int32_t>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::SMALLINT:
-  //       addColumnDataToScalarBatch<int16_t>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::BOOLEAN:
-  //       addColumnDataToScalarBatch<bool>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::TINYINT:
-  //       addColumnDataToScalarBatch<int8_t>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::FLOAT:
-  //       addColumnDataToScalarBatch<float>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::DOUBLE:
-  //     case ::duckdb::LogicalTypeId::DECIMAL:
-  //       addColumnDataToScalarBatch<double>(chunk, i, row_num, child.get());
-  //       break;
-  //     case ::duckdb::LogicalTypeId::DATE:
-  //     case ::duckdb::LogicalTypeId::CHAR:
-  //     case ::duckdb::LogicalTypeId::VARCHAR:
-  //       CIDER_THROW(CiderUnsupportedException, "Date and Varchar are not supported yet");
-  //     default:
-  //       CIDER_THROW(CiderCompileException,
-  //                   "Unsupported type convertor: " + type.ToString());
-  //   }
-  // }
+  
+  // ToArrowArray() will not compute null_count, so we do it manually here
+  for (int i = 0; i < col_num; ++i) {
+    auto child = batch->getChildAt(i);
+    auto validity_map = child->getNulls();
+    int null_count = 0;
+    if (validity_map) {
+      for (int j = 0; j < row_num; ++j) {
+        if (!CiderBitUtils::isBitSetAt(validity_map, j)) {
+          // 0 stands for a null value
+          ++null_count;
+        }
+      }
+    } else {
+      CHECK(child->getNullCount() == 0);
+    }
+    child->setNullCount(null_count);
+  }
   chunk->Destroy();
   return std::move(*batch);
 }

@@ -61,7 +61,7 @@ generateSequenceData(int n_rows = 10, int n_nulls = 5) {
 }
 
 std::tuple<std::vector<std::vector<int8_t>>, std::vector<std::vector<bool>>>
-generateSequenceBooleanData(int n_rows = 10, int n_nulls = 5) {
+generateSequenceBooleanData(int n_rows = 10, int n_nulls = 3) {
   CHECK(n_nulls <= n_rows);
   int n_not_nulls = n_rows - n_nulls;
 
@@ -77,7 +77,7 @@ generateSequenceBooleanData(int n_rows = 10, int n_nulls = 5) {
     bool is_valid = (i < n_not_nulls);
     int8_t value = static_cast<int8_t>(i) % 2;
     col_1.push_back(value);
-    col_2.push_back(is_valid ? value : std::numeric_limits<int8_t>::min());
+    col_2.push_back(is_valid ? value : 0);
     valid_2.push_back(is_valid);
   }
 
@@ -112,18 +112,37 @@ void checkDuckDbScalarOutput(
 
   // check data
   for (auto i = 0; i < actual_batch->getChildrenNum(); ++i) {
+    // compute expected null count for current column
+    int expected_null_count = 0;
+    for (auto b : expected_nulls[i]) {
+      if (!b) {
+        expected_null_count++;
+      }
+    }
+    // get child and check results
     auto child = actual_batch->getChildAt(i);
     // scalar (primitive type) result should contain 2 buffers
     EXPECT_EQ(child->getBufferNum(), 2);
     // check child row nums
     EXPECT_EQ(child->getLength(), expected_data[i].size());
+    // check child null counts
+    EXPECT_EQ(expected_null_count, child->getNullCount());
 
     auto data_buffer = child->as<ScalarBatch<T>>()->getRawData();
-    auto null_buffer = child->getNulls();
-    auto null_count = int{0};
+    auto validity_map = child->getNulls();
     for (auto j = 0; j < child->getLength(); ++j) {
-      EXPECT_EQ(data_buffer[j], expected_data[i][j]);
-      EXPECT_EQ(CiderBitUtils::isBitSetAt(null_buffer, j), expected_nulls[i][j]);
+      if (validity_map) {
+        if (CiderBitUtils::isBitSetAt(validity_map, j)) {
+          // we expect valid values should be equal to expected data
+          EXPECT_EQ(data_buffer[j], expected_data[i][j]);
+        }
+        // we expect all bits in validity map are correctly set
+        EXPECT_EQ(CiderBitUtils::isBitSetAt(validity_map, j), expected_nulls[i][j]);
+      } else {
+        // validity_map can be nullptr if no null value exists,
+        // in this case all values are valid and should be checked
+        EXPECT_EQ(data_buffer[j], expected_data[i][j]);
+      }
     }
   }
 }
