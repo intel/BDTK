@@ -401,7 +401,7 @@ void addColumnDataToScalarBatch(std::unique_ptr<duckdb::DataChunk>& dataChunk,
   int64_t null_count = 0;
 
   for (int j = 0; j < row_num; j++) {
-    T value = std::numeric_limits<T>::min();  // init with Cider null value
+    T value = 0;  // No need to set to Cider null value (min) now. 0 would be fine.
     if (dataChunk->GetValue(i, j).IsNull()) {
       CiderBitUtils::clearBitAt(null_buffer, j);
       ++null_count;
