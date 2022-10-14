@@ -91,7 +91,7 @@ template <typename T>
 void checkDuckDbScalarOutput(
     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
     const std::vector<std::vector<T>>& expected_data,
-    const std::vector<std::vector<bool>>& expected_nulls = {}) {
+    const std::vector<std::vector<bool>>& expected_valids = {}) {
   /// TODO: (YBRua) To be deprecated.
   /// Change this to CiderBatchChecker after Checker is implemented
 
@@ -114,7 +114,7 @@ void checkDuckDbScalarOutput(
   for (auto i = 0; i < actual_batch->getChildrenNum(); ++i) {
     // compute expected null count for current column
     int expected_null_count = 0;
-    for (auto b : expected_nulls[i]) {
+    for (auto b : expected_valids[i]) {
       if (!b) {
         expected_null_count++;
       }
@@ -137,7 +137,7 @@ void checkDuckDbScalarOutput(
           EXPECT_EQ(data_buffer[j], expected_data[i][j]);
         }
         // we expect all bits in validity map are correctly set
-        EXPECT_EQ(CiderBitUtils::isBitSetAt(validity_map, j), expected_nulls[i][j]);
+        EXPECT_EQ(CiderBitUtils::isBitSetAt(validity_map, j), expected_valids[i][j]);
       } else {
         // validity_map can be nullptr if no null value exists,
         // in this case all values are valid and should be checked
@@ -150,7 +150,7 @@ void checkDuckDbScalarOutput(
 void checkDuckDbBooleanOutput(
     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
     const std::vector<std::vector<int8_t>>& expected_data,
-    const std::vector<std::vector<bool>>& expected_nulls = {}) {
+    const std::vector<std::vector<bool>>& expected_valids = {}) {
   /// TODO: (YBRua) To be deprecated.
 
   EXPECT_TRUE(expected_data.size() > 0);
@@ -178,7 +178,7 @@ void checkDuckDbBooleanOutput(
     auto null_buffer = child->getNulls();
     auto null_count = int{0};
     for (auto j = 0; j < child->getLength(); ++j) {
-      EXPECT_EQ(CiderBitUtils::isBitSetAt(null_buffer, j), expected_nulls[i][j]);
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(null_buffer, j), expected_valids[i][j]);
       // for boolean null value, it is set to -128 (min of int8_t) during data gen
       // which is not equal to false, so we skip checking all null values
       if (CiderBitUtils::isBitSetAt(null_buffer, j)) {
@@ -191,11 +191,11 @@ void checkDuckDbBooleanOutput(
 #define ARROW_SIMPLE_TEST_SUITE(C_TYPE, SUBSTRAIT_TYPE, SQL_TYPE)                       \
   {                                                                                     \
     DuckDbQueryRunner runner;                                                           \
-    auto [expected_data, expected_nulls] = generateSequenceData<C_TYPE>();              \
+    auto [expected_data, expected_valids] = generateSequenceData<C_TYPE>();             \
                                                                                         \
     /* CiderBatchBuilder expects a NULL vector                                          \
-     * but expected_nulls is actually a VALID vector so we flip it here*/               \
-    auto null_vecs = expected_nulls;                                                    \
+     * but expected_valids is actually a VALID vector so we flip it here*/              \
+    auto null_vecs = expected_valids;                                                   \
     std::for_each(null_vecs.begin(), null_vecs.end(), [](std::vector<bool>& null_vec) { \
       null_vec.flip();                                                                  \
     });                                                                                 \
@@ -227,7 +227,7 @@ void checkDuckDbBooleanOutput(
                                                                                         \
     auto actual_batches =                                                               \
         DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);                \
-    checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_nulls);     \
+    checkDuckDbScalarOutput<C_TYPE>(actual_batches, expected_data, expected_valids);    \
   }
 
 TEST(DuckDBResultConvertorTest, simpleIntegerArrowTest) {
