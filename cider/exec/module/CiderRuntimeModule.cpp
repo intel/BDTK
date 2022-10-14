@@ -618,7 +618,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
   auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
   std::vector<size_t> column_size;
   column_size.reserve(column_num);
-  for (int column_index = 0, type_index = 0; column_index < column_num;
+  for (size_t column_index = 0, type_index = 0; column_index < column_num;
        column_index++, type_index++) {
     ColumnHint hint = schema->getColHints()[type_index];
     // FIXME: kStruct is not supported in old CiderBatch and CiderTableSchema
