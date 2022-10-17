@@ -422,7 +422,7 @@ Logger::Logger(Severity severity)
   }
 }
 
-Logger::~Logger() {
+Logger::~Logger() noexcept(false) {
   if (stream_) {
     if (is_channel_) {
       get_channel_logger(static_cast<Channel>(enum_value_))

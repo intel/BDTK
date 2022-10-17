@@ -612,16 +612,26 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
   }
 
   // for group_by_agg
-
-  // FIXME: some testcase(CiderAggHashTableTest) does not setup output table schema
-  // correctly.
-  // int column_num =
-  // ciderCompilationResult_->getOutputCiderTableSchema().getColumnCount();
   int column_num = ciderCompilationResult_->impl_->rel_alg_exe_unit_->target_exprs.size();
+  auto schema = ciderCompilationResult_->getOutputCiderTableSchema();
   std::vector<size_t> column_size;
-  for (int i = 0; i < column_num; i++) {
-    column_size.push_back(sizeof(int64_t));
+  column_size.reserve(column_num);
+  for (size_t column_index = 0, type_index = 0; column_index < column_num;
+       column_index++, type_index++) {
+    ColumnHint hint = schema->getColHints()[type_index];
+    // FIXME: kStruct is not supported in old CiderBatch and CiderTableSchema
+    if (hint == ColumnHint::Normal) {
+      column_size.push_back(schema->GetColumnTypeSize(type_index));
+    } else if (hint == ColumnHint::PartialAVG) {
+      // FIXME: Workaround for Partial AVG
+      column_size.push_back(sizeof(int64_t));
+      column_size.push_back(sizeof(int64_t));
+      ++column_index;
+    } else {
+      CIDER_THROW(CiderRuntimeException, "Unknow ColumnHint of output schema.");
+    }
   }
+
   // TODO: should we read all data or just some row by once?
   int32_t row_num = max_row > 0 ? max_row : kMaxOutputRows;
   std::unique_ptr<CiderBatch> groupby_agg_result;
