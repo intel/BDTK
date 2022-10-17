@@ -412,7 +412,6 @@ TEST(DuckDBQueryRunnerTest, insertCiderBatchTest) {
   auto res = runner.runSql("select * from table_test;");
   CHECK(!res->HasError());
   CHECK_EQ(res->ColumnCount(), 2);
-  std::cout << "error: " << res->error << std::endl;  // YBRua: wrap this into an if?
 
   auto actual_batch = DuckDbResultConvertor::fetchDataToCiderBatch(res);
 
