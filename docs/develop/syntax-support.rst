@@ -443,7 +443,7 @@ is **equivalent** to:
 
 Using ALL will leave all duplicate grouping sets while DISTINCT will dedup them.
 
-1) GROUPING() operation
+5) GROUPING() operation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We can find the usage of SELECT GROUPING(col_a, col_b ...) FROM table GROUP BY ROLLUP (col_a, col_b ...)  in TPC-DS Query27.

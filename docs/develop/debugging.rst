@@ -236,13 +236,13 @@ Start the CLI to connect to the server and run SQL queries:
 How to run simple examples with Prestodb in distributed environment
 ---------------------------------------------------------------------
 
-7.1 build presto native execution
+Build presto native execution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Copy ci/build-presto-package.sh to an empty folder and run it. 
 Generate Prestodb.tar.gz archive
 
-7.2 Unzip the Prestodb package and enter the unzip package
+Unzip the Prestodb package and enter the unzip package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
@@ -250,14 +250,14 @@ Generate Prestodb.tar.gz archive
    tar -zxvf Prestodb.tar.gz
    cd Prestodb
 
-7.3 Set the LD_LIBRARY_PATH environment variable include the lib folder
+Set the LD_LIBRARY_PATH environment variable include the lib folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
    export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
 
-7.4 run presto_server with parameter point to etc folder
+Run presto_server with parameter point to etc folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
