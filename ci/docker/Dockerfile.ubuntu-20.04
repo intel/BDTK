@@ -17,13 +17,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM quay.io/centos/centos:8.4.2105
+FROM ubuntu:20.04
 
-RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
-RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
-RUN yum install -y epel-release \
-    && yum --enablerepo=powertools install -y \
-        gcc-toolset-9 \
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    && apt-get update \
+    && apt-get install -y \
+        tzdata \
+        software-properties-common \
+        build-essential \
         autoconf \
         automake \
         autoconf-archive \
@@ -41,29 +43,25 @@ RUN yum install -y epel-release \
         unzip \
         vim \
         curl \
-        java-1.8.0-openjdk-devel \
+        openjdk-8-jdk \
         swig \
-        libedit-devel \
-        double-conversion-devel \
-        re2-devel \
-        libuuid-devel \
-        libsodium-devel \
+        libedit-dev \
+        libdouble-conversion-dev \
+        libre2-dev \
+        uuid-dev \
+        libsodium-dev \
         gperf \
-        python3-devel \
-        openssl-devel \
-        libevent-devel \
-        zlib-devel \
-        lz4-devel \
-        snappy-devel \
-        libzstd-devel \
-        bzip2-devel \
-        lzo-devel \
-    && yum clean all \
-    && rm -rf /var/cache/yum/*
-
-ENV PATH=/opt/rh/gcc-toolset-9/root/usr/bin:$PATH
-RUN echo 'C_INCLUDE_PATH="/opt/rh/gcc-toolset-9/root/usr/include/c++/9:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/x86_64-redhat-linux:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/backward:/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9/include:/usr/local/include:/opt/rh/gcc-toolset-9/root/usr/include:/usr/include":$C_INCLUDE_PATH' >> /etc/bashrc
-RUN echo 'CPLUS_INCLUDE_PATH="/opt/rh/gcc-toolset-9/root/usr/include/c++/9:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/x86_64-redhat-linux:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/backward:/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9/include:/usr/local/include:/opt/rh/gcc-toolset-9/root/usr/include:/usr/include":$CPLUS_INCLUDE_PATH' >> /etc/bashrc
+        libssl-dev \
+        python-dev \
+        libevent-dev \
+        zlib1g-dev \
+        liblz4-dev \
+        libsnappy-dev \
+        libzstd-dev \
+        libbz2-dev \
+        liblzo2-dev \
+    && apt-get remove --purge -y \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG CMAKE_VERSION=3.17.0
 RUN mkdir /opt/cmake-${CMAKE_VERSION}

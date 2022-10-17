@@ -36,7 +36,7 @@ THRIFT_VERSION=0.15.0
 FB_OS_VERSION=v2022.07.11.00
 HTTP_DEPS="https://dependencies.mapd.com/thirdparty"
 
-BUILD_DIR=_thirdparty_build
+BUILD_DIR=${SCRIPTS_DIR}/_thirdparty_build
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
@@ -206,7 +206,7 @@ function install_llvm() {
   fi
 
   cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DLLVM_ENABLE_RTTI=on -DLLVM_USE_INTEL_JITEVENTS=on $LLVM_SHARED ../llvm-$VERS.src
-  make -j ${nproc}
+  make -j ${nproc:-16}
   sudo make install
   popd
 }

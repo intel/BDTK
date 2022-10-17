@@ -24,25 +24,25 @@
 set -e
 
 function usage {
-	echo "Usage:"
-	echo "    build-image.sh <OS-VER>"
-	echo "where <OS-VER>, for example, can be 'ubuntu-20.04', provided " \
-		"a Dockerfile named 'Dockerfile.ubuntu-20.04' exists in the " \
-		"current directory."
+echo "Usage:"
+echo "    build-image.sh <OS-VER>"
+echo "where <OS-VER>, for example, can be 'ubuntu-20.04', provided" \
+     "a Dockerfile named 'Dockerfile.ubuntu-20.04' exists in the" \
+     "current directory."
 }
 
 if [[ -z "$1" ]]; then
-	usage
-	exit 1
+  usage
+  exit 1
 fi
 
 if [[ ! -f "Dockerfile.$1" ]]; then
-	echo "ERROR: wrong argument."
-	usage
-	exit 1
+  echo "ERROR: wrong argument."
+  usage
+  exit 1
 fi
 
-docker build -t BDTK/$1 \
-	--build-arg http_proxy=$http_proxy \
-	--build-arg https_proxy=$https_proxy \
-	-f Dockerfile.$1 .
+docker build -t bdtk/$1 \
+  --build-arg http_proxy=$http_proxy \
+  --build-arg https_proxy=$https_proxy \
+  -f Dockerfile.$1 .
