@@ -37,7 +37,7 @@ class AggRelVisitor : public RelVisitor {
                 Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
                 const std::unordered_map<int, std::string>& function_map,
                 std::shared_ptr<VariableContext> variable_context_shared_ptr,
-                bool is_right_join_node);
+                bool is_join_right_node);
 
   virtual ~AggRelVisitor();
 
@@ -56,7 +56,7 @@ class FilterRelVisitor : public RelVisitor {
                    Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
                    const std::unordered_map<int, std::string>& function_map,
                    std::shared_ptr<VariableContext> variable_context_shared_ptr,
-                   bool is_right_join_node);
+                   bool is_join_right_node);
 
   virtual ~FilterRelVisitor();
 
@@ -73,7 +73,7 @@ class JoinRelVisitor : public RelVisitor {
                  Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
                  const std::unordered_map<int, std::string>& function_map,
                  std::shared_ptr<VariableContext> variable_context_shared_ptr,
-                 bool is_right_join_node);
+                 bool is_join_right_node);
 
   virtual ~JoinRelVisitor();
 
@@ -90,7 +90,7 @@ class ProjectRelVisitor : public RelVisitor {
                     Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
                     const std::unordered_map<int, std::string>& function_map,
                     std::shared_ptr<VariableContext> variable_context_shared_ptr,
-                    bool is_right_join_node);
+                    bool is_join_right_node);
 
   virtual ~ProjectRelVisitor();
 
@@ -108,7 +108,7 @@ class ReadRelVisitor : public RelVisitor {
                  const std::unordered_map<int, std::string>& function_map,
                  std::shared_ptr<VariableContext> variable_context_shared_ptr,
                  std::vector<CiderTableSchema>* input_table_schemas_ptr,
-                 bool is_right_join_node);
+                 bool is_join_right_node);
   virtual ~ReadRelVisitor();
 
   // read

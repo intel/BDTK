@@ -33,11 +33,11 @@ AggRelVisitor::AggRelVisitor(const substrait::AggregateRel& rel_node,
                              Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
                              const std::unordered_map<int, std::string>& function_map,
                              std::shared_ptr<VariableContext> variable_context_shared_ptr,
-                             bool is_right_join_node)
+                             bool is_join_right_node)
     : RelVisitor(toAnalyzerExprConverter,
                  function_map,
                  variable_context_shared_ptr,
-                 is_right_join_node)
+                 is_join_right_node)
     , rel_node_(rel_node) {}
 
 AggRelVisitor::~AggRelVisitor() {}
@@ -80,7 +80,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
     auto cider_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
         rel_node_.groupings(0).grouping_expressions(i),
         function_map_,
-        variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+        variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
     if (auto column_var = std::dynamic_pointer_cast<Analyzer::ColumnVar>(cider_expr)) {
       auto target_expr = toAnalyzerExprConverter_->makeVar(cider_expr->get_type_info(),
                                                            column_var->get_table_id(),
@@ -118,7 +118,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
           toAnalyzerExprConverter_->toAnalyzerExpr(
               s_expr,
               function_map_fake,
-              variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_)),
+              variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_)),
           s_expr.output_type().struct_().types(0));
       target_exprs_ptr->push_back(sum_target_expr);
       expr_map_ptr->insert(std::pair(count, sum_target_expr));
@@ -128,7 +128,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
           toAnalyzerExprConverter_->toAnalyzerExpr(
               s_expr,
               function_map_fake,
-              variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_)),
+              variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_)),
           s_expr.output_type().struct_().types(1));
       target_exprs_ptr->push_back(count_target_expr);
       expr_map_ptr->insert(std::pair(count, count_target_expr));
@@ -137,7 +137,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
       auto target_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
           s_expr,
           function_map_,
-          variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+          variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
       target_exprs_ptr->push_back(target_expr);
       col_hint_records_ptr->push_back(std::make_pair(ColumnHint::Normal, 1));
       expr_map_ptr->insert(std::pair(count, target_expr));
@@ -145,7 +145,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
     }
   }
   // merge to update expr map
-  variable_context_shared_ptr_->mergeOutExprMapsInside(expr_map_ptr, is_right_join_node_);
+  variable_context_shared_ptr_->mergeOutExprMapsInside(expr_map_ptr, is_join_right_node_);
   variable_context_shared_ptr_->setIsTargetExprsCollected(true);
 }
 
@@ -172,7 +172,7 @@ void AggRelVisitor::visit(GroupbyContext* groupby_context) {
     auto cider_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
         rel_node_.groupings(0).grouping_expressions(i),
         function_map_,
-        variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+        variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
     groupby_exprs_ptr->push_back(cider_expr);
   }
 
@@ -194,11 +194,11 @@ FilterRelVisitor::FilterRelVisitor(
     Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
     const std::unordered_map<int, std::string>& function_map,
     std::shared_ptr<VariableContext> variable_context_shared_ptr,
-    bool is_right_join_node)
+    bool is_join_right_node)
     : RelVisitor(toAnalyzerExprConverter,
                  function_map,
                  variable_context_shared_ptr,
-                 is_right_join_node)
+                 is_join_right_node)
     , rel_node_(rel_node) {}
 
 FilterRelVisitor::~FilterRelVisitor() {}
@@ -214,7 +214,7 @@ void FilterRelVisitor::visit(FilterQualContext* filter_qual_context) {
   auto cider_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
       rel_node_.condition(),
       function_map_,
-      variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+      variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
   auto quals_cf = qual_to_conjunctive_form(fold_expr(cider_expr.get()));
   // some cases like `where` together with `group by having`
   // will get multiple conditions from different places
@@ -237,11 +237,11 @@ JoinRelVisitor::JoinRelVisitor(
     Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
     const std::unordered_map<int, std::string>& function_map,
     std::shared_ptr<VariableContext> variable_context_shared_ptr,
-    bool is_right_join_node)
+    bool is_join_right_node)
     : RelVisitor(toAnalyzerExprConverter,
                  function_map,
                  variable_context_shared_ptr,
-                 is_right_join_node)
+                 is_join_right_node)
     , rel_node_(rel_node) {}
 
 JoinRelVisitor::~JoinRelVisitor() {}
@@ -261,7 +261,7 @@ void JoinRelVisitor::visit(JoinQualContext* join_qual_context) {
   auto cider_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
       rel_node_.expression(),
       function_map_,
-      variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+      variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
   auto quals_cf = qual_to_conjunctive_form(fold_expr(cider_expr.get()));
   std::list<std::shared_ptr<Analyzer::Expr>> join_condition_quals;
   join_condition_quals.insert(
@@ -278,11 +278,11 @@ ProjectRelVisitor::ProjectRelVisitor(
     Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
     const std::unordered_map<int, std::string>& function_map,
     std::shared_ptr<VariableContext> variable_context_shared_ptr,
-    bool is_right_join_node)
+    bool is_join_right_node)
     : RelVisitor(toAnalyzerExprConverter,
                  function_map,
                  variable_context_shared_ptr,
-                 is_right_join_node)
+                 is_join_right_node)
     , rel_node_(rel_node) {}
 
 ProjectRelVisitor::~ProjectRelVisitor() {}
@@ -307,7 +307,7 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
       auto c_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
           s_expr,
           function_map_,
-          variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+          variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
       expr_map_ptr->insert(std::pair(i - max_index, c_expr));
     }
     // check whether the project field need to add in target_exprs
@@ -336,14 +336,14 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
         auto c_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
             s_expr,
             function_map_,
-            variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+            variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
         col_hint_records_ptr->push_back(std::make_pair(ColumnHint::Normal, 1));
         target_exprs_ptr->emplace_back(c_expr);
       }
     }
     variable_context_shared_ptr_->setIsTargetExprsCollected(true);
     variable_context_shared_ptr_->mergeOutExprMapsInside(expr_map_ptr,
-                                                         is_right_join_node_);
+                                                         is_join_right_node_);
   }
   // if project is actually do a remapping, need to update all column index in ctx_, which
   // may refers an input column or a new expression
@@ -360,7 +360,7 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
         auto c_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
             s_expr,
             function_map_,
-            variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+            variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
         expr_map_ptr->insert(std::pair(emit.output_mapping(i) - max_index, c_expr));
       }
     }
@@ -373,10 +373,10 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
     for (int i = 0; i < emit.output_mapping_size(); i++) {
       if (emit.output_mapping(i) < max_index) {
         col_hint_records_ptr->push_back(std::make_pair(ColumnHint::Normal, 1));
-        auto iter = variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_)
+        auto iter = variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_)
                         ->find(emit.output_mapping(i));
         if (iter !=
-            variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_)->end()) {
+            variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_)->end()) {
           target_exprs_ptr->push_back(iter->second);
         } else {
           CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
@@ -386,14 +386,14 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
         auto c_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
             s_expr,
             function_map_,
-            variable_context_shared_ptr_->getExprMapPtr(is_right_join_node_));
+            variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
         col_hint_records_ptr->push_back(std::make_pair(ColumnHint::Normal, 1));
         target_exprs_ptr->emplace_back(c_expr);
       }
     }
     variable_context_shared_ptr_->setIsTargetExprsCollected(true);
     variable_context_shared_ptr_->mergeOutExprMapsInside(expr_map_ptr,
-                                                         is_right_join_node_);
+                                                         is_join_right_node_);
   }
 }
 
@@ -403,11 +403,11 @@ ReadRelVisitor::ReadRelVisitor(
     const std::unordered_map<int, std::string>& function_map,
     std::shared_ptr<VariableContext> variable_context_shared_ptr,
     std::vector<CiderTableSchema>* input_table_schemas_ptr,
-    bool is_right_join_node)
+    bool is_join_right_node)
     : RelVisitor(toAnalyzerExprConverter,
                  function_map,
                  variable_context_shared_ptr,
-                 is_right_join_node)
+                 is_join_right_node)
     , rel_node_(rel_node)
     , input_table_schemas_ptr_(input_table_schemas_ptr) {}
 
@@ -431,15 +431,15 @@ void ReadRelVisitor::visit(InputDescContext* input_desc_context) {
   for (int i = 0; i < rel_node_.base_schema().struct_().types_size(); i++) {
     auto type = rel_node_.base_schema().struct_().types(i);
     auto sti = getSQLTypeInfo(type);
-    ColumnInfoPtr colum_info_ptr =
-        std::make_shared<ColumnInfo>(100, cur_table_id, i, "col_" + i, sti, false);
+    ColumnInfoPtr colum_info_ptr = std::make_shared<ColumnInfo>(
+        fake_db_id, cur_table_id, i, "col_" + std::to_string(i), sti, false);
     input_col_descs_ptr->push_back(
         std::make_shared<const InputColDescriptor>(colum_info_ptr,
                                                    cur_nest_level));  // FIXME
     auto col_var = std::make_shared<Analyzer::ColumnVar>(colum_info_ptr, cur_nest_level);
     expr_map_ptr->insert(std::pair(i, col_var));
   }
-  variable_context_shared_ptr_->mergeOutExprMapsInside(expr_map_ptr, is_right_join_node_);
+  variable_context_shared_ptr_->mergeOutExprMapsInside(expr_map_ptr, is_join_right_node_);
 }
 
 void ReadRelVisitor::visit(TargetContext* target_context) {
