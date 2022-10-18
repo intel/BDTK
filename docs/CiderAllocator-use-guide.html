@@ -45,8 +45,12 @@
 <div class="section" id="introduction-to-ciderallocator">
 <h2>1 introduction to CiderAllocator<a class="headerlink" href="#introduction-to-ciderallocator" title="Permalink to this headline">¶</a></h2>
 <p>We provide the allocation interface in CiderAllocator.h and two default implementations</p>
-<p>1.1 CiderDefaultAllocator provide the default allocate and deallocate function via system library
-1.2 AlignAllocator provide the function to perform memory alignment</p>
+<div class="section" id="ciderdefaultallocator-provide-the-default-allocate-and-deallocate-function-via-system-library">
+<h3>1.1 CiderDefaultAllocator provide the default allocate and deallocate function via system library<a class="headerlink" href="#ciderdefaultallocator-provide-the-default-allocate-and-deallocate-function-via-system-library" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="alignallocator-provide-the-function-to-perform-memory-alignment">
+<h3>1.2 AlignAllocator provide the function to perform memory alignment<a class="headerlink" href="#alignallocator-provide-the-function-to-perform-memory-alignment" title="Permalink to this headline">¶</a></h3>
+</div>
 </div>
 <div class="section" id="how-to-use">
 <h2>2 how to use<a class="headerlink" href="#how-to-use" title="Permalink to this headline">¶</a></h2>
@@ -54,50 +58,49 @@
 or use the CiderDefaultAllocator, AlignAllocator if they don’t want to do it,
 but this allocator must be present and passed throughout the calling logic
 because Only in this way can you know the memory usage during the entire operation for memory managerment</p>
-<div class="section" id="a-typical-usage-in-ciderruntimemodule">
-<h3>A typical usage in CiderRunTimeModule<a class="headerlink" href="#a-typical-usage-in-ciderruntimemodule" title="Permalink to this headline">¶</a></h3>
-<ol class="arabic simple">
-<li>add the member variables in .h file</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>`std::shared_ptr&lt;CiderAllocator&gt; allocator`
-and add it in the constructor
-`CiderRuntimeModule(
-  std::shared_ptr&lt;CiderCompilationResult&gt; ciderCompilationResult,
-  CiderCompilationOption ciderCompilationOption = CiderCompilationOption::defaults(),
-  CiderExecutionOption ciderExecutionOption = CiderExecutionOption::defaults(),
-  std::shared_ptr&lt;CiderAllocator&gt; allocator = std::make_shared&lt;CiderDefaultAllocator&gt;());`
+<p>A typical usage in CiderRunTimeModule</p>
+<div class="section" id="add-the-member-variables-in-h-file">
+<h3>2.1  add the member variables in .h file<a class="headerlink" href="#add-the-member-variables-in-h-file" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">std::shared_ptr&lt;CiderAllocator&gt;</span> <span class="pre">allocator</span></code></dt>
+<dd><p class="first">and add it in the constructor:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CiderRuntimeModule</span><span class="p">(</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderCompilationResult</span><span class="o">&gt;</span> <span class="n">ciderCompilationResult</span><span class="p">,</span>
+  <span class="n">CiderCompilationOption</span> <span class="n">ciderCompilationOption</span> <span class="o">=</span> <span class="n">CiderCompilationOption</span><span class="p">::</span><span class="n">defaults</span><span class="p">(),</span>
+  <span class="n">CiderExecutionOption</span> <span class="n">ciderExecutionOption</span> <span class="o">=</span> <span class="n">CiderExecutionOption</span><span class="p">::</span><span class="n">defaults</span><span class="p">(),</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderAllocator</span><span class="o">&gt;</span> <span class="n">allocator</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">CiderDefaultAllocator</span><span class="o">&gt;</span><span class="p">());</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="2">
-<li>in .cpp implementation class</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>`CiderRuntimeModule::CiderRuntimeModule(
-    std::shared_ptr&lt;CiderCompilationResult&gt; ciderCompilationResult,
-    CiderCompilationOption ciderCompilationOption,
-    CiderExecutionOption ciderExecutionOption,
-    std::shared_ptr&lt;CiderAllocator&gt; allocator)
-    : ciderCompilationResult_(ciderCompilationResult)
-    , ciderCompilationOption_(ciderCompilationOption)
-    , ciderExecutionOption_(ciderExecutionOption)
-    , allocator_(allocator)`
+</dd>
+</dl>
+</div>
+<div class="section" id="in-cpp-implementation-class">
+<h3>2.2 in .cpp implementation class<a class="headerlink" href="#in-cpp-implementation-class" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CiderRuntimeModule</span><span class="p">::</span><span class="n">CiderRuntimeModule</span><span class="p">(</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderCompilationResult</span><span class="o">&gt;</span> <span class="n">ciderCompilationResult</span><span class="p">,</span>
+    <span class="n">CiderCompilationOption</span> <span class="n">ciderCompilationOption</span><span class="p">,</span>
+    <span class="n">CiderExecutionOption</span> <span class="n">ciderExecutionOption</span><span class="p">,</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderAllocator</span><span class="o">&gt;</span> <span class="n">allocator</span><span class="p">)</span>
+    <span class="p">:</span> <span class="n">ciderCompilationResult_</span><span class="p">(</span><span class="n">ciderCompilationResult</span><span class="p">)</span>
+    <span class="p">,</span> <span class="n">ciderCompilationOption_</span><span class="p">(</span><span class="n">ciderCompilationOption</span><span class="p">)</span>
+    <span class="p">,</span> <span class="n">ciderExecutionOption_</span><span class="p">(</span><span class="n">ciderExecutionOption</span><span class="p">)</span>
+    <span class="p">,</span> <span class="n">allocator_</span><span class="p">(</span><span class="n">allocator</span><span class="p">)</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="3">
-<li>Then we can use it in the implementation class for memory allocation and release</li>
-</ol>
-<dl class="docutils">
-<dt>::</dt>
-<dd><cite>const int8_t** col_buffers = reinterpret_cast&lt;const int8_t**&gt;(allocator_-&gt;allocate(sizeof(int8_t**) * (total_col_num)));</cite>
-<cite>allocator_-&gt;deallocate(reinterpret_cast&lt;int8_t*&gt;(col_buffers),sizeof(int8_t**) * (total_col_num));</cite></dd>
-</dl>
-<ol class="arabic simple" start="4">
-<li>Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default</li>
-</ol>
-<dl class="docutils">
-<dt>::</dt>
-<dd><cite>auto customAllocator = std::make_shared&lt;CustomAllocator&gt;();
-cider_runtime_module_ = std::make_shared&lt;CiderRuntimeModule&gt;(compile_res_, compile_option, exe_option, customAllocator);</cite></dd>
-</dl>
+</div>
+<div class="section" id="then-we-can-use-it-in-the-implementation-class-for-memory-allocation-and-release">
+<h3>2.3 Then we can use it in the implementation class for memory allocation and release<a class="headerlink" href="#then-we-can-use-it-in-the-implementation-class-for-memory-allocation-and-release" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">const</span> <span class="n">int8_t</span><span class="o">**</span> <span class="n">col_buffers</span> <span class="o">=</span> <span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="n">const</span> <span class="n">int8_t</span><span class="o">**&gt;</span><span class="p">(</span><span class="n">allocator_</span><span class="o">-&gt;</span><span class="n">allocate</span><span class="p">(</span><span class="n">sizeof</span><span class="p">(</span><span class="n">int8_t</span><span class="o">**</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">total_col_num</span><span class="p">)));</span>
+<span class="n">allocator_</span><span class="o">-&gt;</span><span class="n">deallocate</span><span class="p">(</span><span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="n">int8_t</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">col_buffers</span><span class="p">),</span><span class="n">sizeof</span><span class="p">(</span><span class="n">int8_t</span><span class="o">**</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">total_col_num</span><span class="p">));</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="finally-we-can-pass-a-custom-allocator-when-creating-ciderruntimemodule-or-use-the-default">
+<h3>2.4 Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default<a class="headerlink" href="#finally-we-can-pass-a-custom-allocator-when-creating-ciderruntimemodule-or-use-the-default" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">auto</span> <span class="n">customAllocator</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">CustomAllocator</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">cider_runtime_module_</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">CiderRuntimeModule</span><span class="o">&gt;</span><span class="p">(</span><span class="n">compile_res_</span><span class="p">,</span> <span class="n">compile_option</span><span class="p">,</span> <span class="n">exe_option</span><span class="p">,</span> <span class="n">customAllocator</span><span class="p">);</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -111,9 +114,16 @@ cider_runtime_module_ = std::make_shared&lt;CiderRuntimeModule&gt;(compile_res_,
   <h3><a href="index.html">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">CiderAllocator use guide</a><ul>
-<li><a class="reference internal" href="#introduction-to-ciderallocator">1 introduction to CiderAllocator</a></li>
+<li><a class="reference internal" href="#introduction-to-ciderallocator">1 introduction to CiderAllocator</a><ul>
+<li><a class="reference internal" href="#ciderdefaultallocator-provide-the-default-allocate-and-deallocate-function-via-system-library">1.1 CiderDefaultAllocator provide the default allocate and deallocate function via system library</a></li>
+<li><a class="reference internal" href="#alignallocator-provide-the-function-to-perform-memory-alignment">1.2 AlignAllocator provide the function to perform memory alignment</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#how-to-use">2 how to use</a><ul>
-<li><a class="reference internal" href="#a-typical-usage-in-ciderruntimemodule">A typical usage in CiderRunTimeModule</a></li>
+<li><a class="reference internal" href="#add-the-member-variables-in-h-file">2.1  add the member variables in .h file</a></li>
+<li><a class="reference internal" href="#in-cpp-implementation-class">2.2 in .cpp implementation class</a></li>
+<li><a class="reference internal" href="#then-we-can-use-it-in-the-implementation-class-for-memory-allocation-and-release">2.3 Then we can use it in the implementation class for memory allocation and release</a></li>
+<li><a class="reference internal" href="#finally-we-can-pass-a-custom-allocator-when-creating-ciderruntimemodule-or-use-the-default">2.4 Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default</a></li>
 </ul>
 </li>
 </ul>

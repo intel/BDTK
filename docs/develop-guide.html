@@ -342,41 +342,29 @@ nodes in the cluster:</p>
 </div>
 <div class="section" id="how-to-run-simple-examples-with-prestodb-in-distributed-environment">
 <h2>7 How to run simple examples with Prestodb in distributed environment<a class="headerlink" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p class="first">Create a folder to install cider files, for example <code class="docutils literal notranslate"><span class="pre">cider</span></code></p>
-</li>
-<li><div class="first line-block">
-<div class="line">Copy the lib folder under the cider docker build environment to
-every node, for example, copy
-<code class="docutils literal notranslate"><span class="pre">/usr/local/lib/</span></code> folder to
-<code class="docutils literal notranslate"><span class="pre">/path/to/cider</span></code> on every Prestodb node</div>
+<div class="section" id="build-presto-native-execution">
+<h3>7.1 build presto native execution<a class="headerlink" href="#build-presto-native-execution" title="Permalink to this headline">¶</a></h3>
+<p>Copy ci/build-presto-package.sh to an empty folder and run it.
+Generate Prestodb.tar.gz archive</p>
 </div>
-</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">cider</span>
+<div class="section" id="unzip-the-prestodb-package-and-enter-the-unzip-package">
+<h3>7.2 Unzip the Prestodb package and enter the unzip package<a class="headerlink" href="#unzip-the-prestodb-package-and-enter-the-unzip-package" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tar</span> <span class="o">-</span><span class="n">zxvf</span> <span class="n">Prestodb</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">cd</span> <span class="n">Prestodb</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="4">
-<li>Copy the <code class="docutils literal notranslate"><span class="pre">ExtensionFunctions.ast</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">RuntimeFunctions.bc</span></code> from the function folder under the
-cider build folder to function folder</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">cider</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">function</span><span class="o">/</span><span class="n">ExtensionFunctions</span><span class="o">.</span><span class="n">ast</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">cider</span><span class="o">/</span><span class="n">function</span>
-<span class="n">cp</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">cider</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">function</span><span class="o">/</span><span class="n">RuntimeFunctions</span><span class="o">.</span><span class="n">bc</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">cider</span><span class="o">/</span><span class="n">function</span>
+</div>
+<div class="section" id="set-the-ld-library-path-environment-variable-include-the-lib-folder">
+<h3>7.3 Set the LD_LIBRARY_PATH environment variable include the lib folder<a class="headerlink" href="#set-the-ld-library-path-environment-variable-include-the-lib-folder" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
 </pre></div>
 </div>
-<ol class="arabic simple" start="7">
-<li>Set the LD_LIBRARY_PATH environment variable include the lib folder.</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export LD_LIBRARY_PATH=/path/to/cider/lib:$LD_LIBRARY_PATH
+</div>
+<div class="section" id="run-presto-server-with-parameter-point-to-etc-folder">
+<h3>7.4 run presto_server with parameter point to etc folder<a class="headerlink" href="#run-presto-server-with-parameter-point-to-etc-folder" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">presto_server</span> <span class="o">-</span><span class="n">etc_dir</span><span class="o">=./</span><span class="n">etc</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="8">
-<li>You may also need include the libjvm.so in your LD_LIBRARY_PATH if
-it is not</li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export LD_LIBRARY_PATH= $JAVA_HOME/jre/lib/amd64/server/:$LD_LIBRARY_PATH
-</pre></div>
 </div>
 </div>
 <div class="section" id="how-to-contribute-document">
@@ -504,7 +492,13 @@ Pull requests should pass <code class="docutils literal notranslate"><span class
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment">7 How to run simple examples with Prestodb in distributed environment</a></li>
+<li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment">7 How to run simple examples with Prestodb in distributed environment</a><ul>
+<li><a class="reference internal" href="#build-presto-native-execution">7.1 build presto native execution</a></li>
+<li><a class="reference internal" href="#unzip-the-prestodb-package-and-enter-the-unzip-package">7.2 Unzip the Prestodb package and enter the unzip package</a></li>
+<li><a class="reference internal" href="#set-the-ld-library-path-environment-variable-include-the-lib-folder">7.3 Set the LD_LIBRARY_PATH environment variable include the lib folder</a></li>
+<li><a class="reference internal" href="#run-presto-server-with-parameter-point-to-etc-folder">7.4 run presto_server with parameter point to etc folder</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#how-to-contribute-document">8 How to contribute document</a><ul>
 <li><a class="reference internal" href="#introduction">8.1 Introduction</a></li>
 <li><a class="reference internal" href="#build-and-commit">8.2 Build and commit</a></li>
