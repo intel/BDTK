@@ -479,73 +479,73 @@ bool CiderBatchChecker::checkEq(
   return compareRowVectors(expected_row_vector, actual_row_vector, ignore_order);
 }
 
-// bool CiderBatchChecker::checkArrowEq(
-//     const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
-//     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches) {
-//   if (expected_batches.size() == 0 || actual_batches.size() == 0) {
-//     std::cout << "Input params error, shouldn't exist empty vector." << std::endl;
-//     return false;
-//   }
+bool CiderBatchChecker::checkArrowEqTemp(
+    const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+    const std::vector<std::shared_ptr<CiderBatch>>& actual_batches) {
+  if (expected_batches.size() == 0 || actual_batches.size() == 0) {
+    std::cout << "Input params error, shouldn't exist empty vector." << std::endl;
+    return false;
+  }
 
-//   int actual_row_num = 0;
-//   int expected_col_num = expected_batches[0]->column_num();
-//   int expected_row_num = expected_batches[0]->row_num();
-//   auto expected_schema = expected_batches[0]->schema();
+  int actual_row_num = 0;
+  int expected_col_num = expected_batches[0]->column_num();
+  int expected_row_num = expected_batches[0]->row_num();
+  auto expected_schema = expected_batches[0]->schema();
 
-//   bool schema_check = true;
-//   // 1.Col num check
-//   //  check col num of each expected batch
-//   for (auto i = 1; i < expected_batches.size(); i++) {
-//     if (expected_batches[i]->column_num() != expected_col_num) {
-//       std::cout << "Not all col nums of expected batches are equal." << std::endl;
-//       schema_check = false;
-//     }
-//     // 2.Column count check
-//     // we don't check each column type since data
-//     // can be the same while schemas are different.
-//     if (!checkColumnCount(expected_schema, expected_batches[i]->schema())) {
-//       std::cout << "Not all schemas of expected batches are the same in expected batches."
-//                 << std::endl;
-//       schema_check = false;
-//     }
-//     expected_row_num += expected_batches[i]->row_num();
-//   }
+  bool schema_check = true;
+  // 1.Col num check
+  //  check col num of each expected batch
+  for (auto i = 1; i < expected_batches.size(); i++) {
+    if (expected_batches[i]->column_num() != expected_col_num) {
+      std::cout << "Not all col nums of expected batches are equal." << std::endl;
+      schema_check = false;
+    }
+    // 2.Column count check
+    // we don't check each column type since data
+    // can be the same while schemas are different.
+    if (!checkColumnCount(expected_schema, expected_batches[i]->schema())) {
+      std::cout << "Not all schemas of expected batches are the same in expected batches."
+                << std::endl;
+      schema_check = false;
+    }
+    expected_row_num += expected_batches[i]->row_num();
+  }
 
-//   // check col num of each actual batch
-//   for (auto i = 0; i < actual_batches.size(); i++) {
-//     if (actual_batches[i]->getChildrenNum() != expected_col_num) {
-//       std::cout << "Not all col nums of actual batches are same to those of expected "
-//                    "batches. "
-//                 << "Expected col num is " << expected_col_num << ", while actual batch "
-//                 << i << " has " << actual_batches[i]->getChildrenNum() << " cols."
-//                 << std::endl;
-//       schema_check = false;
-//     }
-//     // 2.Column count check
-//     // we don't check each column type since data
-//     // can be the same while schemas are different.
-//     if (!checkColumnCount(expected_schema, actual_batches[i]->schema())) {
-//       std::cout << "Not all schemas of actual batches are the same as expected batches."
-//                 << std::endl;
-//       schema_check = false;
-//     }
-//     actual_row_num += actual_batches[i]->getLength();
-//   }
+  // check col num of each actual batch
+  for (auto i = 0; i < actual_batches.size(); i++) {
+    if (actual_batches[i]->getChildrenNum() != expected_col_num) {
+      std::cout << "Not all col nums of actual batches are same to those of expected "
+                   "batches. "
+                << "Expected col num is " << expected_col_num << ", while actual batch "
+                << i << " has " << actual_batches[i]->getChildrenNum() << " cols."
+                << std::endl;
+      schema_check = false;
+    }
+    // 2.Column count check
+    // we don't check each column type since data
+    // can be the same while schemas are different.
+    if (!checkColumnCount(expected_schema, actual_batches[i]->schema())) {
+      std::cout << "Not all schemas of actual batches are the same as expected batches."
+                << std::endl;
+      schema_check = false;
+    }
+    actual_row_num += actual_batches[i]->getLength();
+  }
 
-//   // skip schema check when row num is zero
-//   if (!schema_check && expected_row_num && actual_row_num) {
-//     return false;
-//   }
+  // skip schema check when row num is zero
+  if (!schema_check && expected_row_num && actual_row_num) {
+    return false;
+  }
 
-//   // 3. Row num check
-//   if (expected_row_num != actual_row_num) {
-//     std::cout << "Expected row num and actual row num are not equal. "
-//               << "Actual row num is " << actual_row_num << ", while expected row num is "
-//               << expected_row_num << std::endl;
-//     return false;
-//   }
-//   return true;
-// }
+  // 3. Row num check
+  if (expected_row_num != actual_row_num) {
+    std::cout << "Expected row num and actual row num are not equal. "
+              << "Actual row num is " << actual_row_num << ", while expected row num is "
+              << expected_row_num << std::endl;
+    return false;
+  }
+  return true;
+}
 
 std::vector<ConcatenatedRow> CiderBatchChecker::toConcatenatedRowVector(
     const std::vector<std::shared_ptr<CiderBatch>>& cider_batches) {
