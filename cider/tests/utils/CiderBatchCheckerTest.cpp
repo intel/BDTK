@@ -29,27 +29,49 @@
 template <typename T>
 void fillSequenceChildScalarBatch(ScalarBatch<T>* child, int n_rows, int n_nulls) {
   CHECK_LE(n_nulls, n_rows);
-  CHECK(child->resizeBatch(n_rows));
-  auto data_buffer = child->getMutableRawData();
-  auto null_buffer = child->getMutableNulls();
+  std::vector<T> data;
+  std::vector<bool> valids;
 
   int n_not_nulls = n_rows - n_nulls;
   for (int i = 0; i < n_rows; ++i) {
     bool is_valid = (i < n_not_nulls);
     T value = static_cast<T>(i);
-    data_buffer[i] = is_valid ? i : 0;
+    data.push_back(is_valid ? i : 0);
+    valids.push_back(is_valid);
+  }
+
+  copyDataToChildScalarBatch(child, data, valids);
+}
+
+template <typename T>
+void copyDataToChildScalarBatch(ScalarBatch<T>* child,
+                                const std::vector<T>& data,
+                                const std::vector<bool>& valids) {
+  auto n_rows = data.size();
+  CHECK(child->resizeBatch(n_rows));
+
+  auto data_buffer = child->getMutableRawData();
+  auto null_buffer = child->getMutableNulls();
+  int null_count = 0;
+
+  for (int i = 0; i < n_rows; ++i) {
+    auto is_valid = valids[i];
+    data_buffer[i] = is_valid ? data[i] : 0;
     if (is_valid) {
       CiderBitUtils::setBitAt(null_buffer, i);
     } else {
       CiderBitUtils::clearBitAt(null_buffer, i);
+      ++null_count;
     }
   }
+  child->setNullCount(null_count);
 }
 
-std::shared_ptr<CiderBatch> generateSimpleArrowCiderBatch(
+std::shared_ptr<CiderBatch> generateSequenceArrowCiderBatch(
     int n_rows = 10,
     int n_nulls = 3,
     const std::vector<SQLTypeInfo>& c = {}) {
+  // generate a CiderBatch containing data that are sequentially increasing
   std::vector<SQLTypeInfo> children_types;
   if (c.size()) {
     children_types = c;
@@ -101,33 +123,46 @@ std::shared_ptr<CiderBatch> generateSimpleArrowCiderBatch(
   return std::make_shared<CiderBatch>(std::move(*batch));
 }
 
-TEST(CiderBatchCheckerArrowTest, ifItRuns) {
-  auto expected = generateSimpleArrowCiderBatch();
-  auto actual = generateSimpleArrowCiderBatch();
-  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected}, {actual}));
+#define TEST_SINGLE_COLUMN_ARROW(C_TYPE, SQLTYPE)                                       \
+  {                                                                                     \
+    auto types##C_TYPE = {SQLTypeInfo(SQLTYPE, false)};                                 \
+    auto expected##C_TYPE = generateSequenceArrowCiderBatch(10, 3, types##C_TYPE);      \
+    auto actual##C_TYPE = generateSequenceArrowCiderBatch(10, 3, types##C_TYPE);        \
+                                                                                        \
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected##C_TYPE}, {actual##C_TYPE})); \
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq({actual##C_TYPE}, {expected##C_TYPE})); \
+  }
+
+TEST(CiderBatchCheckerArrowTest, singleColumn) {
+  TEST_SINGLE_COLUMN_ARROW(int8_t, kTINYINT);
+  TEST_SINGLE_COLUMN_ARROW(int16_t, kSMALLINT);
+  TEST_SINGLE_COLUMN_ARROW(int32_t, kINT);
+  TEST_SINGLE_COLUMN_ARROW(int64_t, kBIGINT);
+  TEST_SINGLE_COLUMN_ARROW(float, kFLOAT);
+  TEST_SINGLE_COLUMN_ARROW(double, kDOUBLE);
 }
 
 TEST(CiderBatchCheckerArrowTest, colNumCheck) {
-  auto expected_1 = generateSimpleArrowCiderBatch();
-  auto actual_1 = generateSimpleArrowCiderBatch();
+  auto expected_1 = generateSequenceArrowCiderBatch();
+  auto actual_1 = generateSequenceArrowCiderBatch();
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected_1}, {actual_1}));
 
-  auto expected_2 = generateSimpleArrowCiderBatch();
-  auto actual_2 = generateSimpleArrowCiderBatch(10, 3, {SQLTypeInfo(kINT, false)});
+  auto expected_2 = generateSequenceArrowCiderBatch();
+  auto actual_2 = generateSequenceArrowCiderBatch(10, 3, {SQLTypeInfo(kINT, false)});
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq({expected_2}, {actual_2}));
 
-  auto expected_3 = generateSimpleArrowCiderBatch(10, 3, {SQLTypeInfo(kINT, false)});
-  auto actual_3 = generateSimpleArrowCiderBatch();
+  auto expected_3 = generateSequenceArrowCiderBatch(10, 3, {SQLTypeInfo(kINT, false)});
+  auto actual_3 = generateSequenceArrowCiderBatch();
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq({expected_3}, {actual_3}));
 
-  auto expected_4 = generateSimpleArrowCiderBatch(0, 0);
-  auto actual_4 = generateSimpleArrowCiderBatch(0, 0, {SQLTypeInfo(kINT, false)});
+  auto expected_4 = generateSequenceArrowCiderBatch(0, 0);
+  auto actual_4 = generateSequenceArrowCiderBatch(0, 0, {SQLTypeInfo(kINT, false)});
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected_4}, {actual_4}));
 }
 
 TEST(CiderBatchCheckerArrowTest, rowNumCheck) {
-  auto expected_1 = generateSimpleArrowCiderBatch();
-  auto actual_1 = generateSimpleArrowCiderBatch(20, 6);
+  auto expected_1 = generateSequenceArrowCiderBatch();
+  auto actual_1 = generateSequenceArrowCiderBatch(20, 6);
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq({expected_1}, {actual_1}));
 }
 
