@@ -132,10 +132,25 @@ class CiderBatchChecker {
   }
 
   // DO NOT deprecate this one. This is a new method.
+  // This method follows the logic of the old checkEq method
+  // 1. Col num check: two batches should have the same number of columns
+  // 2. Row num check: two batches should have the same total number of rows
+  // 3. memcmp check: use memcmp if both vectors contain only one batch
+  //    which is more efficient and works as a shortcut
+  // 4. Full check: if previous check fails, or cannot be applied,
+  //    convert inputs to vectors of ConcatenatedRow and check with hashing
   static bool checkArrowEq(
       const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
       const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
       const bool ignore_order = false);
+
+  static bool checkArrowEq(std::shared_ptr<CiderBatch> expected_batch,
+                           std::shared_ptr<CiderBatch> actual_batch,
+                           const bool ignore_order = false) {
+    std::vector<std::shared_ptr<CiderBatch>> expected_batches{expected_batch};
+    std::vector<std::shared_ptr<CiderBatch>> actual_batches{actual_batch};
+    return checkArrowEq(expected_batches, actual_batches, ignore_order);
+  }
 
   // To be deprecated. actual_batch will be arrow based batch, just check whether
   // row/column are equal, won't check actual data.
