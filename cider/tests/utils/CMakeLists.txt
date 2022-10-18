@@ -45,6 +45,11 @@ target_link_libraries(DuckDbQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(DuckDbQueryRunnerTest ${EXECUTABLE_OUTPUT_PATH}/DuckDbQueryRunnerTest
          ${TEST_ARGS})
 
+add_executable(ArrowArrayBuilderTest ArrowArrayBuilderTest.cpp)
+target_link_libraries(ArrowArrayBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(ArrowArrayBuilderTest ${EXECUTABLE_OUTPUT_PATH}/ArrowArrayBuilderTest
+         ${TEST_ARGS})
+
 add_executable(CiderBatchBuilderTest CiderBatchBuilderTest.cpp)
 target_link_libraries(CiderBatchBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(CiderBatchBuilderTest ${EXECUTABLE_OUTPUT_PATH}/CiderBatchBuilderTest
