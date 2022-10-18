@@ -22,4 +22,4 @@ set(SRCS
     SubstraitFunction.cpp SubstraitExtension.cpp SubstraitFunctionLookup.cpp)
 
 add_library(substrait_function_look_up STATIC ${SRCS})
-target_link_libraries(substrait_function_look_up substrait yaml-cpp)
+target_link_libraries(substrait_function_look_up substrait yaml-cpp cider_util)

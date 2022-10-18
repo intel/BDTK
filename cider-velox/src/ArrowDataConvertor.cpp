@@ -77,7 +77,7 @@ CiderBatch ArrowDataConvertor::convertToCider(RowVectorPtr input,
 VectorPtr toVeloxVectorWithArrow(ArrowArray& arrowArray,
                                  ArrowSchema& arrowSchema,
                                  const int8_t* data_buffer,
-                                 ::substrait::Type col_type,
+                                 const ::substrait::Type& col_type,
                                  int num_rows,
                                  memory::MemoryPool* pool,
                                  int32_t dimen = 0) {

@@ -43,7 +43,8 @@ class CiderQueryRunner {
   void prepare(const std::string& create_ddl) { create_ddl_ = create_ddl; }
 
   CiderBatch runQueryOneBatch(const std::string& file_or_sql,
-                              const std::shared_ptr<CiderBatch>& input_batch);
+                              const std::shared_ptr<CiderBatch>& input_batch,
+                              bool is_arrow_format = false);
 
   std::vector<CiderBatch> runQueryMultiBatches(
       const std::string& file_or_sql,
@@ -73,10 +74,6 @@ class CiderQueryRunner {
       std::shared_ptr<CiderCompilationResult> compile_res);
 
  private:
-  // for debug
-  bool print_substrait_ = false;
-  bool print_IR_ = false;
-
   CiderBatch updateCountDistinctRes(std::unique_ptr<CiderBatch> output_batch,
                                     std::shared_ptr<CiderCompilationResult> compile_res);
 };

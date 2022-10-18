@@ -177,7 +177,7 @@ class PerfectJoinHashTableBuilder {
 
     auto cpu_hash_table_buff = reinterpret_cast<int32_t*>(hash_table_->getCpuBuffer());
     const auto inner_outer_str_dict_proxies = getStrDictProxies(cols, executor);
-    int thread_count = cpu_threads();
+    int thread_count = 1;
     std::vector<std::future<void>> init_threads;
     {
       auto timer = DEBUG_TIMER("Perfect Hash OneToMany: Init Hash Join Buffer");

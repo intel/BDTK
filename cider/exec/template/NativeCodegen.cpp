@@ -1896,8 +1896,9 @@ bool Executor::compileBody(const RelAlgExecutionUnit& ra_exe_unit,
       filter_lv = cgen_state_->ir_builder_.CreateAnd(
           filter_lv, cgen_state_->ir_builder_.CreateNot(is_null));
     }
-    return cgen_state_->ir_builder_.CreateAnd(filter_lv,
-                                              fixedsize_expr_value->getValue());
+    // need to convert to bool expr first.
+    auto cond = code_generator.toBool(fixedsize_expr_value->getValue());
+    return cgen_state_->ir_builder_.CreateAnd(filter_lv, cond);
   };
   for (auto expr : primary_quals) {
     // Generate the filter for primary quals

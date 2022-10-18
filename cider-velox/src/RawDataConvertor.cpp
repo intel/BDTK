@@ -552,7 +552,7 @@ VectorPtr toVeloxDecimalImpl(const TypePtr& vType,
 }
 
 VectorPtr toVeloxVector(const TypePtr& vType,
-                        const ::substrait::Type sType,
+                        const ::substrait::Type& sType,
                         const int8_t* data_buffer,
                         int num_rows,
                         memory::MemoryPool* pool,
@@ -582,7 +582,7 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
   int inputColIndex = 0;
 
   for (int i = 0; i < num_cols; i++) {
-    ::substrait::Type sType = schema.getColumnTypeById(i);
+    auto& sType = schema.getColumnTypeById(i);
     types.push_back(getVeloxType(sType));
     auto currentData = input.column(i);
     auto columNum = input.column_num();
