@@ -32,7 +32,6 @@ class DuckDbQueryRunner {
     duckdb::DBConfig config;
     config.maximum_threads = 1;
     db_ = std::move(duckdb::DuckDB("", &config));
-    config_timezone_ = "";
   }
 
   // create a basic table and insert data for test, only int32 type support.
@@ -51,7 +50,6 @@ class DuckDbQueryRunner {
                                 const std::shared_ptr<CiderBatch>& data);
 
   std::unique_ptr<::duckdb::MaterializedQueryResult> runSql(const std::string& sql);
-  std::string getConfigTimeZone();
 
  private:
   ::duckdb::DuckDB db_;
@@ -62,7 +60,6 @@ class DuckDbQueryRunner {
   void appendTableData(::duckdb::Connection& con,
                        const std::string& table_name,
                        const std::vector<std::vector<int32_t>>& table_data);
-  std::string config_timezone_;
 };
 
 class DuckDbResultConvertor {
@@ -76,15 +73,16 @@ class DuckDbResultConvertor {
   /// include microsecond-timestamps w/ timezone (format `tsu:...` in ArrowSchema).
   /// Will be appended as-is after the colon character.
   static std::vector<std::shared_ptr<CiderBatch>> fetchDataToArrowFormattedCiderBatch(
-      std::unique_ptr<::duckdb::MaterializedQueryResult>& result,
-      std::string config_timezone = "");
+      std::unique_ptr<::duckdb::MaterializedQueryResult>& result);
 
  private:
   static CiderBatch fetchOneBatch(std::unique_ptr<duckdb::DataChunk>& chunk);
   static CiderBatch fetchOneArrowFormattedBatch(std::unique_ptr<duckdb::DataChunk>& chunk,
-                                                std::vector<std::string>& names,
-                                                std::string config_timezone = "");
+                                                std::vector<std::string>& names);
   static void updateChildrenNullCounts(CiderBatch& batch);
+  static void duckdbResultToArrowSchema(ArrowSchema* out_schema,
+                                        std::vector<::duckdb::LogicalType>& types,
+                                        std::vector<std::string>& names);
 };
 
 #endif  // CIDER_DUCKDBQUERYRUNNER_H

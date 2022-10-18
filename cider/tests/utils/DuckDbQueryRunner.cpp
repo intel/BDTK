@@ -20,6 +20,7 @@
  */
 
 #include "DuckDbQueryRunner.h"
+#include "DuckDbArrowAdaptor.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
 #include "cider/batch/ScalarBatch.h"
@@ -248,13 +249,7 @@ std::unique_ptr<::duckdb::MaterializedQueryResult> DuckDbQueryRunner::runSql(
   auto duck_result = con.Query(sql);
   CHECK(duck_result->success) << "DuckDB query failed: " << duck_result->error << "\n"
                               << sql;
-  // to be used when exporting ArrowSchema
-  config_timezone_ = ::duckdb::QueryResult::GetConfigTimezone(*duck_result);
   return duck_result;
-}
-
-std::string DuckDbQueryRunner::getConfigTimeZone() {
-  return config_timezone_;
 }
 
 namespace {
@@ -416,15 +411,14 @@ void DuckDbResultConvertor::updateChildrenNullCounts(CiderBatch& batch) {
 
 CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk,
-    std::vector<std::string>& names,
-    std::string config_timezone) {
+    std::vector<std::string>& names) {
   int col_num = chunk->ColumnCount();
   int row_num = chunk->size();
 
   // Construct ArrowSchema using methods from duckdb
   std::vector<::duckdb::LogicalType> types = chunk->GetTypes();
   auto arrow_schema = CiderBatchUtils::allocateArrowSchema();
-  ::duckdb::QueryResult::ToArrowSchema(arrow_schema, types, names, config_timezone);
+  duckdbResultToArrowSchema(arrow_schema, types, names);
 
   // Construct ArrowArray
   auto arrow_array = CiderBatchUtils::allocateArrowArray();
@@ -531,8 +525,7 @@ std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToCider
 
 std::vector<std::shared_ptr<CiderBatch>>
 DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
-    std::unique_ptr<::duckdb::MaterializedQueryResult>& result,
-    std::string config_timezone) {
+    std::unique_ptr<::duckdb::MaterializedQueryResult>& result) {
   auto names = result->names;
   std::vector<std::shared_ptr<CiderBatch>> batch_res;
   for (;;) {
@@ -543,8 +536,46 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
       }
       return batch_res;
     }
-    batch_res.push_back(std::make_shared<CiderBatch>(
-        fetchOneArrowFormattedBatch(chunk, names, config_timezone)));
+    batch_res.push_back(
+        std::make_shared<CiderBatch>(fetchOneArrowFormattedBatch(chunk, names)));
   }
   return batch_res;
+}
+
+void DuckDbResultConvertor::duckdbResultToArrowSchema(
+    ArrowSchema* out_schema,
+    std::vector<::duckdb::LogicalType>& types,
+    std::vector<std::string>& names) {
+  CHECK(out_schema);
+  CHECK_EQ(types.size(), names.size());
+  idx_t column_count = types.size();
+  // Allocate as unique_ptr first to cleanup properly on error
+  auto root_holder = std::make_unique<DuckDBArrowSchemaHolder>();
+
+  // Allocate the children
+  root_holder->children.resize(column_count);
+  root_holder->children_ptrs.resize(column_count, nullptr);
+  for (size_t i = 0; i < column_count; ++i) {
+    root_holder->children_ptrs[i] = &root_holder->children[i];
+  }
+  out_schema->children = root_holder->children_ptrs.data();
+  out_schema->n_children = column_count;
+
+  // Store the schema
+  out_schema->format = "+s";  // struct apparently
+  out_schema->flags = 0;
+  out_schema->metadata = nullptr;
+  out_schema->name = "duckdb_query_result";
+  out_schema->dictionary = nullptr;
+
+  // Configure all child schemas
+  for (idx_t col_idx = 0; col_idx < column_count; col_idx++) {
+    auto& child = root_holder->children[col_idx];
+    DuckDbArrowSchemaAdaptor::InitializeChild(child, names[col_idx]);
+    DuckDbArrowSchemaAdaptor::SetArrowFormat(*root_holder, child, types[col_idx]);
+  }
+
+  // Release ownership to caller
+  out_schema->private_data = root_holder.release();
+  out_schema->release = DuckDbArrowSchemaAdaptor::ReleaseDuckDBArrowSchema;
 }
