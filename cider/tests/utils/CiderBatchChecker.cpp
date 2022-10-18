@@ -35,7 +35,7 @@ std::string CiderBatchStringifier::stringifyScalarBatchAt(const ScalarBatch<T>* 
   auto data_buffer = batch->getRawData();
   auto valid_bitmap = batch->getNulls();
 
-  if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
   } else {
     T value = data_buffer[row_index];
@@ -55,7 +55,7 @@ std::string CiderBatchStringifier::stringifyScalarBatchAt<float>(
   auto data_buffer = batch->getRawData();
   auto valid_bitmap = batch->getNulls();
 
-  if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
   } else {
     std::stringstream fps;
@@ -78,7 +78,7 @@ std::string CiderBatchStringifier::stringifyScalarBatchAt<double>(
   auto data_buffer = batch->getRawData();
   auto valid_bitmap = batch->getNulls();
 
-  if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+  if (valid_bitmap && CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
   } else {
     std::stringstream fps;
@@ -99,12 +99,10 @@ std::string CiderBatchStringifier::stringifyStructBatchAt(CiderBatch* batch,
   int col_num = batch->getChildrenNum();
   auto valid_bitmap = batch->getNulls();
 
-  if (valid_bitmap) {
-    if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
-      // this usually should not happen, values in struct batch are expected to be valid
-      // but just in case
-      return NULL_VALUE;
-    }
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    // this usually should not happen, values in struct batch are expected to be valid
+    // but just in case
+    return NULL_VALUE;
   }
 
   for (int col_index = 0; col_index < col_num; col_index++) {
