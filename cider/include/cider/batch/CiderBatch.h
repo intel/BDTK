@@ -356,18 +356,9 @@ class CiderBatch {
     ss << "column type: " << #C_TYPE << " "; \
     C_TYPE* buf = (C_TYPE*)table_ptr_[loc];  \
     for (int j = 0; j < row_num_; j++) {     \
-      ss << std::to_string(buf[j]) << "\t";  \
+      ss << buf[j] << "\t";                  \
     }                                        \
     break;                                   \
-  }
-#define PRINT_BY_TYPE_PTR(C_TYPE)             \
-  {                                           \
-    *ss << "column type: " << #C_TYPE << " "; \
-    C_TYPE* buf = (C_TYPE*)table_ptr_[loc];   \
-    for (int j = 0; j < row_num_; j++) {      \
-      *ss << std::to_string(buf[j]) << "\t";  \
-    }                                         \
-    break;                                    \
   }
 
   // Only for debug usage.
@@ -391,49 +382,49 @@ class CiderBatch {
       auto types = schema_->getColumnTypes();
       for (auto loc = 0; loc < types.size(); loc++) {
         // print by Type kind
-        printByType(&ss, types[loc], loc);
+        printByType(ss, types[loc], loc);
         ss << "\n";
       }
     }
     return ss.str();
   }
 
-  void printByType(std::stringstream* ss, substrait::Type type, int64_t loc) const {
+  void printByType(std::stringstream& ss, substrait::Type type, int64_t loc) const {
     switch (type.kind_case()) {
       case ::substrait::Type::KindCase::kBool:
       case ::substrait::Type::KindCase::kI8:
-        PRINT_BY_TYPE_PTR(int8_t)
+        PRINT_BY_TYPE(int8_t)
       case ::substrait::Type::KindCase::kI16:
-        PRINT_BY_TYPE_PTR(int16_t)
+        PRINT_BY_TYPE(int16_t)
       case ::substrait::Type::KindCase::kI32:
-        PRINT_BY_TYPE_PTR(int32_t)
+        PRINT_BY_TYPE(int32_t)
       case ::substrait::Type::KindCase::kI64:
       case ::substrait::Type::KindCase::kTimestamp:
       case ::substrait::Type::KindCase::kTime:
       case ::substrait::Type::KindCase::kDate:
-        PRINT_BY_TYPE_PTR(int64_t)
+        PRINT_BY_TYPE(int64_t)
       case ::substrait::Type::KindCase::kFp32:
-        PRINT_BY_TYPE_PTR(float)
+        PRINT_BY_TYPE(float)
       case ::substrait::Type::KindCase::kFp64:
       case ::substrait::Type::KindCase::kDecimal:
-        PRINT_BY_TYPE_PTR(double)
+        PRINT_BY_TYPE(double)
       case ::substrait::Type::KindCase::kFixedChar:
       case ::substrait::Type::KindCase::kVarchar:
       case ::substrait::Type::KindCase::kString: {
-        *ss << "column type: CiderByteArray ";
+        ss << "column type: CiderByteArray ";
         CiderByteArray* buf = (CiderByteArray*)table_ptr_[loc];
         for (int j = 0; j < row_num_; j++) {
-          *ss << CiderByteArray::toString(buf[j]) << "\t";
+          ss << CiderByteArray::toString(buf[j]) << "\t";
         }
         break;
       }
       case ::substrait::Type::KindCase::kStruct: {
-        *ss << "column type: Struct "
-            << "\n";
+        ss << "column type: Struct "
+           << "\n";
         auto structSize = type.struct_().types_size();
         for (int typeId = 0; typeId < structSize; typeId++) {
           printByType(ss, type.struct_().types(typeId), loc + typeId);
-          *ss << "\n";
+          ss << "\n";
         }
         break;
       }
@@ -446,7 +437,9 @@ class CiderBatch {
     return schema_;
   }
 
-  void set_schema(const std::shared_ptr<CiderTableSchema> schema) { schema_ = schema; }
+  void set_schema(const std::shared_ptr<CiderTableSchema> schema) {
+    schema_ = schema;
+  }
 
  private:
   int64_t row_num_ = 0;
