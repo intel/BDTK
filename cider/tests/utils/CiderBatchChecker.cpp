@@ -21,6 +21,364 @@
 
 #include "CiderBatchChecker.h"
 #include "Utils.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
+
+template <typename T>
+std::string CiderBatchStringifier::stringifyScalarBatchAt(const ScalarBatch<T>* batch,
+                                                          int row_index) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = batch->getRawData();
+  auto valid_bitmap = batch->getNulls();
+
+  if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    T value = data_buffer[row_index];
+    return std::to_string(static_cast<int64_t>(value));
+  }
+}
+
+template <>
+std::string CiderBatchStringifier::stringifyScalarBatchAt<float>(
+    const ScalarBatch<float>* batch,
+    int row_index) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = batch->getRawData();
+  auto valid_bitmap = batch->getNulls();
+
+  if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    std::stringstream fps;
+    fps.clear();
+    float value = data_buffer[row_index];
+    fps << std::setprecision(16) << value;
+    return fps.str();
+  }
+}
+
+template <>
+std::string CiderBatchStringifier::stringifyScalarBatchAt<double>(
+    const ScalarBatch<double>* batch,
+    int row_index) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = batch->getRawData();
+  auto valid_bitmap = batch->getNulls();
+
+  if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    std::stringstream fps;
+    fps.clear();
+    double value = data_buffer[row_index];
+    fps << std::setprecision(16) << value;
+    return fps.str();
+  }
+}
+
+std::string CiderBatchStringifier::stringifyStructBatchAt(CiderBatch* batch,
+                                                          int row_index) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException, "StructBatch is nullptr.");
+  }
+
+  ConcatenatedRow row;
+  int col_num = batch->getChildrenNum();
+  auto valid_bitmap = batch->getNulls();
+
+  if (valid_bitmap) {
+    if (!CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+      // this usually should not happen, values in struct batch are expected to be valid
+      // but just in case
+      return NULL_VALUE;
+    }
+  }
+
+  for (int col_index = 0; col_index < col_num; col_index++) {
+    auto child = batch->getChildAt(col_index);
+    std::string cell_str;
+
+    switch (child->getCiderType()) {
+      case SQLTypes::kBOOLEAN:
+        CIDER_THROW(CiderCompileException, "Boolean is currently not supported.");
+      case SQLTypes::kTINYINT:
+        cell_str =
+            stringifyScalarBatchAt<int8_t>(child->as<ScalarBatch<int8_t>>(), row_index);
+        break;
+      case SQLTypes::kSMALLINT:
+        cell_str =
+            stringifyScalarBatchAt<int16_t>(child->as<ScalarBatch<int16_t>>(), row_index);
+        break;
+      case SQLTypes::kINT:
+        cell_str =
+            stringifyScalarBatchAt<int32_t>(child->as<ScalarBatch<int32_t>>(), row_index);
+        break;
+      case SQLTypes::kBIGINT:
+        cell_str =
+            stringifyScalarBatchAt<int64_t>(child->as<ScalarBatch<int64_t>>(), row_index);
+        break;
+      case SQLTypes::kFLOAT:
+        cell_str =
+            stringifyScalarBatchAt<float>(child->as<ScalarBatch<float>>(), row_index);
+        break;
+      case SQLTypes::kDOUBLE:
+        cell_str =
+            stringifyScalarBatchAt<double>(child->as<ScalarBatch<double>>(), row_index);
+        break;
+      case SQLTypes::kSTRUCT:
+        cell_str =
+            stringifyStructBatchAt(dynamic_cast<StructBatch*>(child.get()), row_index);
+        break;
+      default:
+        CIDER_THROW(CiderCompileException, "Unsupported type for stringification.");
+    }
+
+    CHECK(cell_str.size());
+    row.addCol(cell_str);
+  }
+
+  row.finish();
+  return row.getString();
+}
+
+std::vector<ConcatenatedRow> CiderBatchChecker::arrowToConcatenatedRowVector(
+    const std::vector<std::shared_ptr<CiderBatch>>& cider_batches) {
+  std::vector<ConcatenatedRow> total_row;
+  for (auto batch : cider_batches) {
+    auto col_num = batch->getChildrenNum();
+
+    for (int row_index = 0; row_index < batch->getLength(); row_index++) {
+      auto batch_str =
+          CiderBatchStringifier::stringifyStructBatchAt(batch.get(), row_index);
+
+      CHECK_NE(batch_str, NULL_VALUE);
+
+      ConcatenatedRow row(col_num, batch_str);
+      row.finish();
+      total_row.push_back(row);
+    }
+  }
+
+  return total_row;
+}
+
+bool CiderBatchChecker::colNumCheck(
+    const std::vector<std::shared_ptr<CiderBatch>>& batches,
+    int expected_col_num) {
+  bool passed = true;
+  for (auto i = 0; i < batches.size(); ++i) {
+    if (batches[i]->getChildrenNum() != expected_col_num) {
+      std::cout << "Batch " << i << " is not having the same number of cols. "
+                << "Expected " << expected_col_num << "; Got "
+                << batches[i]->getChildrenNum() << std::endl;
+      passed = false;
+    }
+  }
+  return passed;
+}
+
+int CiderBatchChecker::getTotalNumOfRows(
+    const std::vector<std::shared_ptr<CiderBatch>>& batches) {
+  int num_rows = 0;
+  for (auto batch : batches) {
+    num_rows += batch->getLength();
+  }
+  return num_rows;
+}
+
+bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batch,
+                                                 const CiderBatch* actual_batch) {
+  auto expected_buffer = expected_batch->getNulls();
+  auto actual_buffer = actual_batch->getNulls();
+  auto expected_count = expected_batch->getNullCount();
+  auto actual_count = actual_batch->getNullCount();
+
+  if (expected_count != actual_count) {
+    std::cout << "expected_null_count != actual_null_count. "
+              << "Expected: " << expected_count << ". Actual: " << actual_count
+              << std::endl;
+    return false;
+  }
+
+  int buffer_size = (expected_count + 7) >> 3;
+
+  if (!expected_buffer && !actual_buffer) {
+    // both buffers are nullptr, no need to check
+    return true;
+  } else if (expected_buffer && actual_buffer) {
+    // both buffers exist
+    return !memcmp(expected_buffer, actual_buffer, buffer_size);
+  }
+
+  // one buffer is nullptr while the other exists, cannot happen
+  return false;
+}
+
+template <typename T>
+bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_batch,
+                                                 const ScalarBatch<T>* actual_batch) {
+  auto expected_data_buffer = expected_batch->getRawData();
+  auto actual_data_buffer = actual_batch->getRawData();
+
+  int row_num = actual_batch->getLength();
+
+  // compare nulls
+  bool null_buffer_eq = checkValidityBitmapEqual(expected_batch, actual_batch);
+  if (!null_buffer_eq) {
+    std::cout << "Null buffer compare failed." << std::endl;
+    return false;
+  }
+
+  // compare data
+  bool data_buffer_eq = true;
+  data_buffer_eq = !memcmp(expected_data_buffer, actual_data_buffer, row_num * sizeof(T));
+  if (!data_buffer_eq) {
+    std::cout << "Data buffer compare failed." << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
+                                                 CiderBatch* actual_batch) {
+  // compare nulls
+  bool null_buffer_eq =
+      checkValidityBitmapEqual(const_cast<const CiderBatch*>(expected_batch),
+                               const_cast<const CiderBatch*>(actual_batch));
+  if (!null_buffer_eq) {
+    std::cout << "Null buffer compare failed." << std::endl;
+    return false;
+  }
+
+  // compare all children
+  auto expected_col_num = expected_batch->getChildrenNum();
+  int i = 0;
+  for (i = 0; i < expected_col_num; ++i) {
+    bool is_equal = true;
+    auto expected_child = expected_batch->getChildAt(i);
+    auto actual_child = actual_batch->getChildAt(i);
+    switch (expected_child->getCiderType()) {
+      case SQLTypes::kTINYINT:
+        is_equal =
+            checkOneScalarBatchEqual<int8_t>(expected_child->as<ScalarBatch<int8_t>>(),
+                                             actual_child->as<ScalarBatch<int8_t>>());
+        break;
+      case SQLTypes::kSMALLINT:
+        is_equal =
+            checkOneScalarBatchEqual<int16_t>(expected_child->as<ScalarBatch<int16_t>>(),
+                                              actual_child->as<ScalarBatch<int16_t>>());
+        break;
+      case SQLTypes::kINT:
+        is_equal =
+            checkOneScalarBatchEqual<int32_t>(expected_child->as<ScalarBatch<int32_t>>(),
+                                              actual_child->as<ScalarBatch<int32_t>>());
+        break;
+      case SQLTypes::kBIGINT:
+        is_equal =
+            checkOneScalarBatchEqual<int64_t>(expected_child->as<ScalarBatch<int64_t>>(),
+                                              actual_child->as<ScalarBatch<int64_t>>());
+        break;
+      case SQLTypes::kFLOAT:
+        is_equal =
+            checkOneScalarBatchEqual<float>(expected_child->as<ScalarBatch<float>>(),
+                                            actual_child->as<ScalarBatch<float>>());
+        break;
+      case SQLTypes::kDOUBLE:
+        is_equal =
+            checkOneScalarBatchEqual<double>(expected_child->as<ScalarBatch<double>>(),
+                                             actual_child->as<ScalarBatch<double>>());
+        break;
+      case SQLTypes::kSTRUCT:
+        is_equal = checkOneStructBatchEqual(expected_child.get(), actual_child.get());
+        break;
+      default:
+        CIDER_THROW(CiderCompileException, "Unsupported type for checking.");
+    }
+    if (!is_equal) {
+      std::cout << "checkOneStructBatch failed at child: " << i << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+bool CiderBatchChecker::checkArrowEq(
+    const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+    const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
+    const bool ignore_order) {
+  if (expected_batches.size() == 0 || actual_batches.size() == 0) {
+    std::cout << "Input params error, shouldn't exist empty vector." << std::endl;
+    return false;
+  }
+
+  /// FIXME: (YBRua) We are not checking the actual ArrowSchema
+  /// because this method is a protected member, and we cannot get the schema
+  // auto expected_schema = expected_batches[0]->getArrowSchema();
+
+  // 1. Column & schema check:
+  // expected_batches and actual_batches must have the same number of columns
+  bool schema_check = true;  // this flag indicates whether we pass step 1
+  int expected_col_num = expected_batches[0]->getChildrenNum();
+
+  schema_check &= colNumCheck(expected_batches, expected_col_num);
+  schema_check &= colNumCheck(actual_batches, expected_col_num);
+
+  int expected_row_num = getTotalNumOfRows(expected_batches);
+  int actual_row_num = getTotalNumOfRows(actual_batches);
+
+  // consider check fail if num of cols do not match
+  // unless the results does not contain tuples
+  if (!schema_check && expected_row_num && actual_row_num) {
+    return false;
+  }
+
+  // 2. Row num check:
+  // expected result and actual result must have the same number of rows (tuples)
+  if (expected_row_num != actual_row_num) {
+    std::cout << "expected_row_num != actual_row_num: "
+              << "Expected: " << expected_row_num << ". Actual: " << actual_row_num
+              << std::endl;
+    return false;
+  }
+
+  // no need for further check if outputs contain 0 tuples
+  if (expected_row_num == 0 && actual_row_num == 0) {
+    return true;
+  }
+
+  // 3. Hi-efficiency data check via memcmp
+  // if input only have one batch, we can check with memcmp() which is more efficient
+  // this check is only a shortcut
+  // even if it fails, it does not necessarily means the results are wrong
+  // we can goto step 4 and check the results row-by-row
+  if (expected_batches.size() == 1 && actual_batches.size() == 1) {
+    bool one_batch_check =
+        checkOneStructBatchEqual(expected_batches[0].get(), actual_batches[0].get());
+    if (one_batch_check) {
+      return true;
+    }
+  }
+
+  // 4. Row vector check
+  // convert CiderBatches to vectors of concatenated rows, and compare the rows
+  auto expected_rowvec = arrowToConcatenatedRowVector(expected_batches);
+  auto actual_rowvec = arrowToConcatenatedRowVector(actual_batches);
+
+  return compareRowVectors(expected_rowvec, actual_rowvec, ignore_order);
+}
 
 bool CiderBatchChecker::checkEq(
     const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
@@ -121,73 +479,73 @@ bool CiderBatchChecker::checkEq(
   return compareRowVectors(expected_row_vector, actual_row_vector, ignore_order);
 }
 
-bool CiderBatchChecker::checkArrowEq(
-    const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
-    const std::vector<std::shared_ptr<CiderBatch>>& actual_batches) {
-  if (expected_batches.size() == 0 || actual_batches.size() == 0) {
-    std::cout << "Input params error, shouldn't exist empty vector." << std::endl;
-    return false;
-  }
+// bool CiderBatchChecker::checkArrowEq(
+//     const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+//     const std::vector<std::shared_ptr<CiderBatch>>& actual_batches) {
+//   if (expected_batches.size() == 0 || actual_batches.size() == 0) {
+//     std::cout << "Input params error, shouldn't exist empty vector." << std::endl;
+//     return false;
+//   }
 
-  int actual_row_num = 0;
-  int expected_col_num = expected_batches[0]->column_num();
-  int expected_row_num = expected_batches[0]->row_num();
-  auto expected_schema = expected_batches[0]->schema();
+//   int actual_row_num = 0;
+//   int expected_col_num = expected_batches[0]->column_num();
+//   int expected_row_num = expected_batches[0]->row_num();
+//   auto expected_schema = expected_batches[0]->schema();
 
-  bool schema_check = true;
-  // 1.Col num check
-  //  check col num of each expected batch
-  for (auto i = 1; i < expected_batches.size(); i++) {
-    if (expected_batches[i]->column_num() != expected_col_num) {
-      std::cout << "Not all col nums of expected batches are equal." << std::endl;
-      schema_check = false;
-    }
-    // 2.Column count check
-    // we don't check each column type since data
-    // can be the same while schemas are different.
-    if (!checkColumnCount(expected_schema, expected_batches[i]->schema())) {
-      std::cout << "Not all schemas of expected batches are the same in expected batches."
-                << std::endl;
-      schema_check = false;
-    }
-    expected_row_num += expected_batches[i]->row_num();
-  }
+//   bool schema_check = true;
+//   // 1.Col num check
+//   //  check col num of each expected batch
+//   for (auto i = 1; i < expected_batches.size(); i++) {
+//     if (expected_batches[i]->column_num() != expected_col_num) {
+//       std::cout << "Not all col nums of expected batches are equal." << std::endl;
+//       schema_check = false;
+//     }
+//     // 2.Column count check
+//     // we don't check each column type since data
+//     // can be the same while schemas are different.
+//     if (!checkColumnCount(expected_schema, expected_batches[i]->schema())) {
+//       std::cout << "Not all schemas of expected batches are the same in expected batches."
+//                 << std::endl;
+//       schema_check = false;
+//     }
+//     expected_row_num += expected_batches[i]->row_num();
+//   }
 
-  // check col num of each actual batch
-  for (auto i = 0; i < actual_batches.size(); i++) {
-    if (actual_batches[i]->getChildrenNum() != expected_col_num) {
-      std::cout << "Not all col nums of actual batches are same to those of expected "
-                   "batches. "
-                << "Expected col num is " << expected_col_num << ", while actual batch "
-                << i << " has " << actual_batches[i]->getChildrenNum() << " cols."
-                << std::endl;
-      schema_check = false;
-    }
-    // 2.Column count check
-    // we don't check each column type since data
-    // can be the same while schemas are different.
-    if (!checkColumnCount(expected_schema, actual_batches[i]->schema())) {
-      std::cout << "Not all schemas of actual batches are the same as expected batches."
-                << std::endl;
-      schema_check = false;
-    }
-    actual_row_num += actual_batches[i]->getLength();
-  }
+//   // check col num of each actual batch
+//   for (auto i = 0; i < actual_batches.size(); i++) {
+//     if (actual_batches[i]->getChildrenNum() != expected_col_num) {
+//       std::cout << "Not all col nums of actual batches are same to those of expected "
+//                    "batches. "
+//                 << "Expected col num is " << expected_col_num << ", while actual batch "
+//                 << i << " has " << actual_batches[i]->getChildrenNum() << " cols."
+//                 << std::endl;
+//       schema_check = false;
+//     }
+//     // 2.Column count check
+//     // we don't check each column type since data
+//     // can be the same while schemas are different.
+//     if (!checkColumnCount(expected_schema, actual_batches[i]->schema())) {
+//       std::cout << "Not all schemas of actual batches are the same as expected batches."
+//                 << std::endl;
+//       schema_check = false;
+//     }
+//     actual_row_num += actual_batches[i]->getLength();
+//   }
 
-  // skip schema check when row num is zero
-  if (!schema_check && expected_row_num && actual_row_num) {
-    return false;
-  }
+//   // skip schema check when row num is zero
+//   if (!schema_check && expected_row_num && actual_row_num) {
+//     return false;
+//   }
 
-  // 3. Row num check
-  if (expected_row_num != actual_row_num) {
-    std::cout << "Expected row num and actual row num are not equal. "
-              << "Actual row num is " << actual_row_num << ", while expected row num is "
-              << expected_row_num << std::endl;
-    return false;
-  }
-  return true;
-}
+//   // 3. Row num check
+//   if (expected_row_num != actual_row_num) {
+//     std::cout << "Expected row num and actual row num are not equal. "
+//               << "Actual row num is " << actual_row_num << ", while expected row num is "
+//               << expected_row_num << std::endl;
+//     return false;
+//   }
+//   return true;
+// }
 
 std::vector<ConcatenatedRow> CiderBatchChecker::toConcatenatedRowVector(
     const std::vector<std::shared_ptr<CiderBatch>>& cider_batches) {
