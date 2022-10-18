@@ -315,6 +315,7 @@ int8_t* toCiderImplWithConstantEncoding<TypeKind::DATE>(VectorPtr& child,
 }
 
 int8_t* toCiderResult(VectorPtr& child, int idx, int num_rows, memory::MemoryPool* pool) {
+  child->loadedVector();
   switch (child->encoding()) {
     case VectorEncoding::Simple::FLAT:
     case VectorEncoding::Simple::LAZY:
