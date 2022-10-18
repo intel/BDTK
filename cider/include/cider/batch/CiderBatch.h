@@ -437,9 +437,7 @@ class CiderBatch {
     return schema_;
   }
 
-  void set_schema(const std::shared_ptr<CiderTableSchema> schema) {
-    schema_ = schema;
-  }
+  const std::shared_ptr<CiderTableSchema> schema() const { return schema_; }
 
  private:
   int64_t row_num_ = 0;
