@@ -327,7 +327,7 @@ bool CiderBatchChecker::checkArrowEq(
     return false;
   }
 
-  /// FIXME: (YBRua) We are not checking the actual ArrowSchema
+  /// NOTE: (YBRua) We are not checking the actual ArrowSchema
   /// because this method is a protected member, and we cannot get the schema
   // auto expected_schema = expected_batches[0]->getArrowSchema();
 
@@ -364,8 +364,8 @@ bool CiderBatchChecker::checkArrowEq(
 
   // 3. Hi-efficiency data check via memcmp
   // if input only have one batch, we can check with memcmp() which is more efficient
-  // this check is only a shortcut
-  // even if it fails, it does not necessarily means the results are wrong
+  // This check is only a shortcut
+  // even if it fails, it does not necessarily mean the results are wrong
   // we can goto step 4 and check the results row-by-row
   if (expected_batches.size() == 1 && actual_batches.size() == 1) {
     bool one_batch_check =
