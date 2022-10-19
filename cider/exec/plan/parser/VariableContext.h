@@ -41,7 +41,7 @@ class VariableContext {
   int getCurJoinDepth();
   bool getIsTargetExprsCollected();
   std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>> getExprMapPtr(
-      bool is_right_join_node = false);
+      bool is_join_right_node = false);
   void setMaxJoinDepth(int max_join_depth);
   void setCurJoinDepth(int cur_join_depth);
   void setIsTargetExprsCollected(bool is_target_exprs_collected);
@@ -51,7 +51,7 @@ class VariableContext {
   void mergeOutExprMapsInside(
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           src_expr_map_ptr,
-      bool is_right_join_node = false);
+      bool is_join_right_node = false);
 
  private:
   void mergeTwoExprMaps(
