@@ -65,12 +65,9 @@ class CiderOperatorJoinTest : public HiveConnectorTestBase {
   }
 
   void testJoin(int32_t numThreads,
-                int32_t leftSize,
-                int32_t rightSize,
+                const std::vector<RowVectorPtr>& leftBatch,
+                const std::vector<RowVectorPtr>& rightBatch,
                 const std::string& referenceQuery) {
-    auto leftBatch = {makeSimpleRowVector(leftSize)};
-    auto rightBatch = {makeSimpleRowVector(rightSize)};
-
     CursorParameters params;
     auto planNodeIdGenerator = std::make_shared<PlanNodeIdGenerator>();
 
@@ -100,7 +97,15 @@ class CiderOperatorJoinTest : public HiveConnectorTestBase {
 };
 
 TEST_F(CiderOperatorJoinTest, basic) {
-  testJoin(1, 10, 10, "SELECT t.c0, u.c0 FROM t JOIN u ON t.c0 = u.c0");
+  auto leftBatch = {makeSimpleRowVector(10)};
+  auto rightBatch = {makeSimpleRowVector(10)};
+  testJoin(1, leftBatch, rightBatch, "SELECT t.c0, u.c0 FROM t JOIN u ON t.c0 = u.c0");
+}
+
+TEST_F(CiderOperatorJoinTest, multiBuild) {
+  auto leftBatch = {makeSimpleRowVector(10)};
+  auto rightBatch = {makeSimpleRowVector(20), makeSimpleRowVector(30)};
+  testJoin(1, leftBatch, rightBatch, "SELECT t.c0, u.c0 FROM t JOIN u ON t.c0 = u.c0");
 }
 
 int main(int argc, char** argv) {
