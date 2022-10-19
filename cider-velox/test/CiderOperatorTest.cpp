@@ -497,6 +497,53 @@ TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
   assertQuery(resultPtr, duckdbSql);
 }
 
+TEST_F(CiderOperatorTest, partialAggPattern) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+  createDuckDbTable({data});
+  auto veloxPlan =
+      PlanBuilder().values({data}).partialAggregation({}, {"sum(c0)"}, {}).planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT sum(c0) from tmp ";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
+TEST_F(CiderOperatorTest, FilterPattern) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+  createDuckDbTable({data});
+  auto veloxPlan = PlanBuilder().values({data}).filter("c0 > 5").planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT * FROM tmp WHERE c0 > 5";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, false);

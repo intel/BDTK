@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <memory>
 #include "../ciderTransformer/CiderPlanPatterns.h"
 #include "PlanBranches.h"
 #include "PlanPattern.h"
@@ -41,6 +42,9 @@ class PatternRewriter {
       return std::make_shared<LeftDeepJoinPattern>();
     } else if (std::dynamic_pointer_cast<FilterPattern>(ptr) != nullptr) {
       return std::make_shared<FilterPattern>();
+    }
+     else if (std::dynamic_pointer_cast<PartialAggPattern>(ptr) != nullptr) {
+      return std::make_shared<PartialAggPattern>();
     }
     return nullptr;
   }
