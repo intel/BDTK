@@ -110,7 +110,7 @@ std::unique_ptr<AggregateCodeGenerator> SimpleAggregateCodeGenerator::Make(
     }
   } else {
     CIDER_THROW(CiderCompileException,
-                "Unsuppored data type for SimpleAggregateCodeGenerator.");
+                "Unsupported data type for SimpleAggregateCodeGenerator.");
   }
 
   if (target_info.skip_null_val) {
@@ -160,7 +160,9 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
   CHECK(cgen_state);
   CHECK(base_fname == "agg_id");
 
-  auto generator = std::make_unique<ProjectIDCodeGenerator>();
+  auto generator = target_info.sql_type.is_string()
+                       ? std::make_unique<ProjectIDStringCodeGenerator>()
+                       : std::make_unique<ProjectIDCodeGenerator>();
 
   generator->base_fname_ = "cider_" + base_fname + "_proj";
   generator->target_info_ = target_info;
@@ -199,8 +201,10 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
     generator->base_fname_ += "_int64";
   } else if (target_info.sql_type.is_boolean()) {
     generator->base_fname_ += "_bool";
+  } else if (target_info.sql_type.is_string()) {
+    generator->base_fname_ += "_string";
   } else {
-    throw std::runtime_error("Unsuppored data type for ProjectIDCodeGenerator.");
+    throw std::runtime_error("Unsupported data type for ProjectIDCodeGenerator.");
   }
 
   if (target_info.skip_null_val) {
@@ -208,6 +212,36 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
   }
 
   return generator;
+}
+
+void ProjectIDStringCodeGenerator::codegen(CodegenColValues* input,
+                                           llvm::Value* output_buffer,
+                                           llvm::Value* index,
+                                           llvm::Value* output_null_buffer) const {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  CHECK(output_buffer);
+  CHECK(index);
+  MultipleValueColValues* args = dynamic_cast<MultipleValueColValues*>(input);
+  if (nullptr == args) {
+    CIDER_THROW(CiderCompileException,
+                "ProjectIDStringCodeGenerator only support MultipleValueCol data now.");
+  }
+  auto value_str_ptr = args->getValueAt(0), value_str_len = args->getValueAt(1),
+       is_null = args->getNull();
+  output_buffer = castToIntPtrTyIn(output_buffer, 8);
+  index = cgen_state_->castToTypeIn(index, 64);
+
+  std::vector<llvm::Value*> fun_args = {
+      output_buffer, index, value_str_ptr, value_str_len};
+  if (target_info_.skip_null_val) {
+    CHECK(output_null_buffer);
+    CHECK(is_null);
+    output_null_buffer = castToIntPtrTyIn(output_null_buffer, 8);
+    fun_args.push_back(output_null_buffer);
+    fun_args.push_back(is_null);
+  }
+  cgen_state_->emitCall(base_fname_, fun_args);
+  return;
 }
 
 std::unique_ptr<AggregateCodeGenerator> CountAggregateCodeGenerator::Make(

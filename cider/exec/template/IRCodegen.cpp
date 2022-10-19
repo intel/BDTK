@@ -235,6 +235,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
 
   switch (ti.get_type()) {
     case kVARCHAR:
+      constant_value.erase(constant_value.begin());
+      return std::make_unique<MultipleValueColValues>(
+          constant_value,
+          constant_expr->get_is_null()
+              ? llvm::ConstantInt::getTrue(cgen_state_->context_)
+              : llvm::ConstantInt::getFalse(cgen_state_->context_));
     case kARRAY:
       UNREACHABLE();
     default:

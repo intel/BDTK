@@ -58,11 +58,6 @@ std::vector<std::string> agg_fn_base_names(const TargetInfo& target_info,
     return {"agg_id_varlen"};
   }
   if (!target_info.is_agg || target_info.agg_kind == kSAMPLE) {
-    if (chosen_type.is_varlen()) {
-      // not a varlen projection (not creating new varlen outputs). Just store the pointer
-      // and offset into the input buffer in the output slots.
-      return {"agg_id", "agg_id"};
-    }
     return {"agg_id"};
   }
   switch (target_info.agg_kind) {

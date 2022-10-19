@@ -162,6 +162,12 @@ class CodeGenerator {
       CodegenColValues* rhs,
       llvm::Value* null);
 
+  std::unique_ptr<CodegenColValues> codegenVarcharCmpFun(
+      const Analyzer::BinOper* bin_oper,
+      CodegenColValues* lhs,
+      CodegenColValues* rhs,
+      llvm::Value* null);
+
   llvm::Value* codegenCmp(const SQLOps,
                           const SQLQualifier,
                           std::vector<llvm::Value*>,
@@ -321,6 +327,12 @@ class CodeGenerator {
       llvm::Value* pos_arg,
       const CompilationOptions& co);
 
+  std::unique_ptr<CodegenColValues> codegenVarCharColVar(
+      const Analyzer::ColumnVar* col_var,
+      llvm::Value* col_byte_stream,
+      llvm::Value* pos_arg,
+      const CompilationOptions& co);
+
   llvm::Value* codegenFixedLengthColVar(const Analyzer::ColumnVar* col_var,
                                         llvm::Value* col_byte_stream,
                                         llvm::Value* pos_arg);
@@ -335,6 +347,10 @@ class CodeGenerator {
                                      llvm::Value* pos_arg);
 
   std::vector<llvm::Value*> codegenVariableLengthStringColVar(
+      llvm::Value* col_byte_stream,
+      llvm::Value* pos_arg);
+
+  std::vector<llvm::Value*> codegenVariableLengthStringColVarArrow(
       llvm::Value* col_byte_stream,
       llvm::Value* pos_arg);
 
