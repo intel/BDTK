@@ -176,16 +176,15 @@ std::vector<ConcatenatedRow> CiderBatchChecker::arrowToConcatenatedRowVector(
 bool CiderBatchChecker::colNumCheck(
     const std::vector<std::shared_ptr<CiderBatch>>& batches,
     int expected_col_num) {
-  bool passed = true;
   for (auto i = 0; i < batches.size(); ++i) {
     if (batches[i]->getChildrenNum() != expected_col_num) {
       std::cout << "Batch " << i << " is not having the same number of cols. "
                 << "Expected " << expected_col_num << "; Got "
                 << batches[i]->getChildrenNum() << std::endl;
-      passed = false;
+      return false;
     }
   }
-  return passed;
+  return true;
 }
 
 int CiderBatchChecker::getTotalNumOfRows(
