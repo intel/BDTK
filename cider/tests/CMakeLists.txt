@@ -40,6 +40,7 @@ add_executable(CiderArrowBatchTest CiderArrowBatchTest.cpp)
 add_executable(CiderExceptionTest CiderExceptionTest.cpp)
 add_executable(CiderLogTest CiderLogTest.cpp)
 add_executable(CiderDateFunctionTest CiderDateFunctionTest.cpp)
+add_executable(JITLibTest JITLibTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     cider
@@ -68,6 +69,7 @@ target_link_libraries(CiderArrowBatchTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderDateFunctionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
+target_link_libraries(JITLibTest ${EXECUTE_TEST_LIBS} jitlib)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 add_test(CodeGeneratorTest CodeGeneratorTest ${TEST_ARGS})
@@ -87,6 +89,7 @@ add_test(CiderArrowBatchTest CiderArrowBatchTest ${TEST_ARGS})
 add_test(CiderExceptionTest CiderExceptionTest ${TEST_ARGS})
 add_test(CiderDateFunctionTest CiderDateFunctionTest ${TEST_ARGS})
 add_test(CiderLogTest CiderLogTest ${TEST_ARGS})
+add_test(JITLibTest JITLibTest ${TEST_ARGS})
 
 find_package(fmt REQUIRED)
 
