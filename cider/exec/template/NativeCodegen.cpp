@@ -1723,8 +1723,10 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
           (cgen_state_->filter_func_ ? serialize_llvm_object(cgen_state_->filter_func_)
                                      : "");
 
+#ifndef NDEBUG
       llvm_ir += serialize_llvm_metadata_footnotes(query_func, cgen_state_.get());
-    } else if (eo.just_plain == EXPLAIN_MODULE) {
+#endif
+    } else if (eo.just_explain == EXPLAIN_MODULE) {
       llvm_ir = serialize_llvm_object(cgen_state_->module_);
     }
   }

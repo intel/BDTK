@@ -27,6 +27,7 @@
 
 #include "cider/CiderAllocator.h"
 #include "cider/CiderCompileModule.h"
+#include "cider/CiderOptions.h"
 #include "cider/CiderTableSchema.h"
 #include "cider/batch/CiderBatch.h"
 #include "substrait/plan.pb.h"
@@ -95,7 +96,9 @@ int main(int argc, char** argv) {
   // set option
   std::string sql, create_ddl;
   bool dump_plan = false;
-  po::options_description options("Logging");
+  uint32_t dump_ir_level = 1;
+  bool gen_cfg = false;  // need dump_ir_level == 2
+  po::options_description options("Allowed Options");
   options.add_options()("sql", po::value<std::string>(&sql)->default_value(sql), "sql");
   options.add_options()("create-ddl",
                         po::value<std::string>(&create_ddl)->default_value(create_ddl),
@@ -103,6 +106,12 @@ int main(int argc, char** argv) {
   options.add_options()("dump-plan",
                         po::value<bool>(&dump_plan)->default_value(dump_plan),
                         "dump substait plan");
+  options.add_options()("dump-ir-level",
+                        po::value<uint32_t>(&dump_ir_level)->default_value(dump_ir_level),
+                        "dump ir level. 1: func, 2: module");
+  options.add_options()("gen-cfg",
+                        po::value<bool>(&gen_cfg)->default_value(gen_cfg),
+                        "generate module cfg");
 
   // parse option
   po::variables_map vm;
@@ -114,7 +123,9 @@ int main(int argc, char** argv) {
   // output substrait plan
   std::string json = RunIsthmus::processSql(sql, create_ddl);
   if (dump_plan) {
-    std::cout << "substrait plan:" << std::endl << json << std::endl;
+    std::ofstream substrait_plan_file("./sql_2_ir_substrait_plan.json");
+    substrait_plan_file << json;
+    substrait_plan_file.close();
   }
 
   ::substrait::Plan plan;
@@ -127,9 +138,21 @@ int main(int argc, char** argv) {
   feedBuildTable(plan, cider_compile_module);
 
   // compile
-  auto res = cider_compile_module->compile(plan);
+  auto cco = CiderCompilationOption::defaults();
+  auto ceo = CiderExecutionOption::defaults();
+  ceo.just_explain = dump_ir_level;
+  auto res = cider_compile_module->compile(plan, cco, ceo);
 
   // output IR
-  std::cout << res->getIR() << std::endl;
+  auto llvm_ir = res->getIR();
+  std::ofstream llvm_ir_file("./sql_2_ir_module.ll");
+  llvm_ir_file << llvm_ir;
+  llvm_ir_file.close();
+
+  if (dump_ir_level == 2 && gen_cfg) {
+    const char* cmd = "opt -dot-cfg -dot-callgraph -disable-output sql_2_ir_module.ll";
+    system(cmd);
+  }
+
   return 0;
 }
