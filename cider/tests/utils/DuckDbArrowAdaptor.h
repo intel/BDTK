@@ -43,7 +43,7 @@ struct DuckDBArrowSchemaHolder {
 };
 
 class DuckDbArrowSchemaAdaptor {
- public:
+ private:
   static void ReleaseDuckDBArrowSchema(ArrowSchema* schema);
 
   static void InitializeChild(ArrowSchema& child, const std::string& name = "") {
@@ -67,6 +67,11 @@ class DuckDbArrowSchemaAdaptor {
   static void SetArrowFormat(DuckDBArrowSchemaHolder& root_holder,
                              ArrowSchema& child,
                              const ::duckdb::LogicalType& type);
+
+ public:
+  static void duckdbResultToArrowSchema(ArrowSchema* out_schema,
+                                        std::vector<::duckdb::LogicalType>& types,
+                                        std::vector<std::string>& names);
 };
 
 #endif  // CIDER_DUCKDBARROWADAPTOR_H
