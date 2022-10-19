@@ -1,0 +1,88 @@
+# Copyright (c) 2022 Intel Corporation.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+FROM quay.io/centos/centos:8.4.2105
+
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
+RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+RUN yum install -y epel-release \
+    && yum --enablerepo=powertools install -y \
+        gcc-toolset-9 \
+        autoconf \
+        automake \
+        autoconf-archive \
+        ninja-build \
+        bison \
+        flex \
+        pkg-config \
+        libtool \
+        patch \
+        patchelf \
+        gdb \
+        sudo \
+        git \
+        wget \
+        unzip \
+        vim \
+        curl \
+        java-1.8.0-openjdk-devel \
+        swig \
+        libedit-devel \
+        double-conversion-devel \
+        re2-devel \
+        libuuid-devel \
+        libsodium-devel \
+        gperf \
+        python3-devel \
+        openssl-devel \
+        libevent-devel \
+        zlib-devel \
+        lz4-devel \
+        snappy-devel \
+        libzstd-devel \
+        bzip2-devel \
+        lzo-devel \
+    && yum clean all \
+    && rm -rf /var/cache/yum/*
+
+ENV PATH=/opt/rh/gcc-toolset-9/root/usr/bin:$PATH
+RUN echo 'C_INCLUDE_PATH="/opt/rh/gcc-toolset-9/root/usr/include/c++/9:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/x86_64-redhat-linux:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/backward:/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9/include:/usr/local/include:/opt/rh/gcc-toolset-9/root/usr/include:/usr/include":$C_INCLUDE_PATH' >> /etc/bashrc
+RUN echo 'CPLUS_INCLUDE_PATH="/opt/rh/gcc-toolset-9/root/usr/include/c++/9:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/x86_64-redhat-linux:/opt/rh/gcc-toolset-9/root/usr/include/c++/9/backward:/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9/include:/usr/local/include:/opt/rh/gcc-toolset-9/root/usr/include:/usr/include":$CPLUS_INCLUDE_PATH' >> /etc/bashrc
+
+ARG CMAKE_VERSION=3.17.0
+RUN mkdir /opt/cmake-${CMAKE_VERSION}
+RUN wget -nv -O - https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz | \
+    tar -xzf - --strip-components=1 -C /opt/cmake-${CMAKE_VERSION}
+ENV PATH=/opt/cmake-${CMAKE_VERSION}/bin:$PATH
+
+ARG MAVEN_VERSION=3.6.3
+RUN mkdir /opt/maven-${MAVEN_VERSION}
+RUN wget -nv -O - https://mirrors.bfsu.edu.cn/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | \
+    tar -xzf - --strip-components=1 -C /opt/maven-${MAVEN_VERSION}
+ENV PATH=/opt/maven-${MAVEN_VERSION}/bin:$PATH
+
+ENV ISTHMUS_EXEC=/opt/substrait-java/isthmus/build/graal/isthmus
+
+COPY install.sh /tmp
+COPY llvm-9-glibc-2.31-708430-remove-cyclades.patch /tmp
+RUN chmod a+x /tmp/install.sh && /tmp/install.sh && rm -rf /tmp/install.sh /tmp/llvm-9-glibc-2.31-708430-remove-cyclades.patch
+
+WORKDIR /WorkSpace
+
+ENTRYPOINT ["/bin/bash"]
