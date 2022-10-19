@@ -340,7 +340,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   if (lhs_nullable && rhs_nullable) {
     if (lhs_nullable->getNull() && rhs_nullable->getNull()) {
       null = cgen_state_->ir_builder_.CreateOr(lhs_nullable->getNull(),
-                                                rhs_nullable->getNull());
+                                               rhs_nullable->getNull());
     } else {
       null = lhs_nullable->getNull() ? lhs_nullable->getNull() : rhs_nullable->getNull();
     }

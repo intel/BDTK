@@ -241,12 +241,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarCharColVar(
     llvm::Value* pos_arg,
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
-  const size_t size =8;
+  const size_t size = 8;
   VarcharDecoder decoder(
       size, &cgen_state_->ir_builder_, !col_var->get_type_info().get_notnull());
   std::vector<llvm::Instruction*> values =
       decoder.codegenDecode(cgen_state_->module_, col_byte_stream, pos_arg);
-  for(auto v: values) {
+  for (auto v : values) {
     cgen_state_->ir_builder_.Insert(v);
   }
   llvm::Instruction* null = nullptr;
