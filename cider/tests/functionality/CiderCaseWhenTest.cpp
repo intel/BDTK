@@ -196,6 +196,27 @@ IF_TEST(CiderCaseWhenSequenceTestBase, ifTest);
 IF_TEST(CiderCaseWhenSequenceWithNullTestBase, ifTest);
 IF_TEST(CiderCaseWhenRandomWithNullTestBase, ifTest);
 
+#define IF_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                            \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    prepareArrowBatch();                                                                \
+    assertQueryArrow("SELECT IF(col_int = 1 ,10, 1) FROM test",                         \
+                     "SELECT CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test");      \
+    assertQueryArrow(                                                                   \
+        "SELECT IF(col_int > 20, col_bigint, col_double) FROM test",                    \
+        "SELECT CASE WHEN col_int > 20 THEN col_bigint ELSE col_double END FROM test"); \
+    GTEST_SKIP_("FIXME(haiwei): Case when with agg");                                   \
+    assertQueryArrow(                                                                   \
+        "SELECT SUM(IF(col_int > 20, col_double, 5)) FROM test",                        \
+        "SELECT SUM(CASE WHEN col_int > 20 THEN col_double ELSE 5 END) FROM test");     \
+    assertQueryArrow(                                                                   \
+        "SELECT SUM(IF(col_double > 20, 5, col_double)) FROM test",                     \
+        "SELECT SUM(CASE WHEN col_double > 20 THEN 5 ELSE col_double END) FROM test");  \
+  }
+
+IF_ARROW_TEST(CiderCaseWhenSequenceTestBase, ifArrowTest);
+IF_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, ifArrowTestArrow);
+IF_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, ifArrowTestArrow);
+
 #define CASE_WHEN_TEST(TEST_CLASS, UNIT_NAME)                                           \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     assertQuery("SELECT col_int, CASE WHEN col_int > 3 THEN 1 ELSE 0 END FROM test");   \
@@ -272,6 +293,90 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenSequenceTestBase, caseWhenAggTest);
 CASE_WHEN_AGG_TEST(CiderCaseWhenSequenceWithNullTestBase, caseWhenAggTest);
 CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
 
+#define CASE_WHEN_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                     \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    prepareArrowBatch();                                                                \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_int > 3 THEN 1 ELSE 0 END FROM test");           \
+    assertQueryArrow(                                                                   \
+        "SELECT col_double, CASE WHEN col_int > 5 THEN 4 ELSE 3"                        \
+        " END FROM test");                                                              \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");          \
+    assertQueryArrow("SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");    \
+    GTEST_SKIP_("FIXME(haiwei): [POAE7-2456] ,blocking by [POAE7-2418]");               \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_bigint < 9 THEN 2 ELSE 1"                        \
+        " END FROM test");                                                              \
+    assertQueryArrow(                                                                   \
+        "SELECT col_bigint, CASE WHEN col_double > 5 THEN 3 ELSE 2"                     \
+        " END FROM test");                                                              \
+    assertQueryArrow(                                                                   \
+        "SELECT col_bigint, CASE WHEN col_double > 50 THEN 3 ELSE 2"                    \
+        " END FROM test");                                                              \
+    GTEST_SKIP_("FIXME(haiwei): Case when with agg");                                   \
+    assertQueryArrow("SELECT SUM(CASE WHEN col_int >50 THEN 10 ELSE 1 END) FROM test"); \
+    assertQueryArrow(                                                                   \
+        "(SELECT SUM(CASE WHEN col_bigint < 30 THEN 10 WHEN col_bigint > 70"            \
+        " THEN 20 WHEN col_bigint = 50 THEN 30 ELSE 1 END) FROM test)");                \
+    GTEST_SKIP_("FIXME(haiwei): Multiple case when");                                   \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 ELSE 0" \
+        " END FROM test");                                                              \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 WHEN "  \
+        "col_int = 3 THEN 30 ELSE 0 END FROM test");                                    \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN "  \
+        "col_int = 3 THEN 30 END FROM test");                                           \
+  }
+
+#define CASE_WHEN_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                 \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    GTEST_SKIP_("FIXME(haiwei): Case when with agg");                                   \
+    prepareArrowBatch();                                                                \
+    assertQueryArrow("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test"); \
+    assertQueryArrow(                                                                   \
+        "(SELECT SUM(CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN"       \
+        " col_int = 3 THEN 30 ELSE 1 END) FROM test)");                                 \
+    assertQueryArrow(                                                                   \
+        "(SELECT SUM(CASE WHEN col_int = 3 THEN 11 ELSE 2 END),"                        \
+        " SUM(CASE WHEN col_double = 3 THEN 12 ELSE 3 END) FROM test)");                \
+    assertQueryArrow(                                                                   \
+        "(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END),"                          \
+        " SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");                  \
+    assertQueryArrow(                                                                   \
+        "SELECT sum(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "    \
+        "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                            \
+    assertQueryArrow(                                                                   \
+        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",     \
+        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)");    \
+    assertQueryArrow(                                                                   \
+        "(SELECT SUM(CASE WHEN col_int < 10 THEN 11 END),"                              \
+        " SUM(CASE WHEN col_double > 10 THEN 12 END) FROM test)");                      \
+    assertQueryArrow(                                                                   \
+        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "     \
+        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "   \
+        "END");                                                                         \
+    assertQueryArrow(                                                                   \
+        "SELECT count(1), SUM(CASE WHEN col_int = 7 THEN col_bigint END), SUM(CASE "    \
+        "WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE WHEN col_int = 7 THEN "    \
+        "col_double * 2 ELSE col_double / 2 END) FROM test");                           \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int,  SUM(CASE WHEN col_int = 5 THEN col_bigint + 3 END),"          \
+        " SUM(CASE WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END)"       \
+        " FROM test GROUP BY col_int");                                                 \
+  }
+
+CASE_WHEN_ARROW_TEST(CiderCaseWhenSequenceTestBase, caseWhenArrowTest);
+CASE_WHEN_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, caseWhenArrowTest);
+CASE_WHEN_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenArrowTest);
+CASE_WHEN_AGG_ARROW_TEST(CiderCaseWhenSequenceTestBase, caseWhenAggArrowTest);
+CASE_WHEN_AGG_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, caseWhenAggArrowTest);
+CASE_WHEN_AGG_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggArrowTest);
+
 #define STRING_TEST(TEST_CLASS, UNIT_NAME)                                               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
     assertQuery("SELECT COALESCE(col_str) FROM test",                                    \
@@ -313,8 +418,51 @@ STRING_TEST(CiderCaseWhenSequenceTestBase, stringTest);
 STRING_TEST(CiderCaseWhenSequenceWithNullTestBase, stringTest);
 STRING_TEST(CiderCaseWhenRandomWithNullTestBase, stringTest);
 
+#define STRING_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                         \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
+    GTEST_SKIP_("FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]");                \
+    assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
+                     "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
+                     "FROM test");                                                       \
+    assertQueryArrow(                                                                    \
+        "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
+        "ELSE 0 "                                                                        \
+        "END FROM test");                                                                \
+    assertQueryArrow(                                                                    \
+        "SELECT col_int, CASE WHEN col_str < 'uuu' THEN 10 WHEN col_int > 3 THEN 20 "    \
+        "ELSE 0 END FROM test");                                                         \
+    assertQueryArrow(                                                                    \
+        "SELECT col_str, CASE WHEN col_str like '%mm%' THEN 10 WHEN col_int > 3 THEN "   \
+        "20 "                                                                            \
+        "ELSE 0 "                                                                        \
+        "END FROM test");                                                                \
+    assertQueryArrow(                                                                    \
+        "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
+        "ELSE 3 "                                                                        \
+        "END",                                                                           \
+        "");                                                                             \
+    assertQueryArrow(                                                                    \
+        "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
+        "ELSE 3 "                                                                        \
+        "END",                                                                           \
+        "");                                                                             \
+    assertQueryArrow(                                                                    \
+        "SELECT sum(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
+        "GROUP BY CASE "                                                                 \
+        "WHEN col_str > 'ttt' THEN 4 ELSE 3 END",                                        \
+        "");                                                                             \
+  }
+
+STRING_ARROW_TEST(CiderCaseWhenSequenceTestBase, stringArrowTest);
+STRING_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, stringArrowTest);
+STRING_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, stringArrowTest);
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();

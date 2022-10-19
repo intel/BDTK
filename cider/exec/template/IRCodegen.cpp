@@ -167,7 +167,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (!expr) {
     return nullptr;
   }
-
   auto bin_oper = dynamic_cast<const Analyzer::BinOper*>(expr);
   if (bin_oper) {
     return codegenBinOper(bin_oper, co);
@@ -183,6 +182,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   auto constant = dynamic_cast<const Analyzer::Constant*>(expr);
   if (constant) {
     return codegenConstantExpr(constant, co);
+  }
+  auto case_expr = dynamic_cast<const Analyzer::CaseExpr*>(expr);
+  if (case_expr) {
+    return codegenCaseExpr(case_expr, co);
   }
 
   CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");

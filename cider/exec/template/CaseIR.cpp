@@ -124,3 +124,111 @@ llvm::Value* CodeGenerator::codegenCase(const Analyzer::CaseExpr* case_expr,
   then_phi->addIncoming(else_lv, else_bb);
   return then_phi;
 }
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
+    const Analyzer::CaseExpr* case_expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto case_ti = case_expr->get_type_info();
+  llvm::Type* case_llvm_type = nullptr;
+  bool is_real_str = false;
+  if (case_ti.is_integer() || case_ti.is_time() || case_ti.is_decimal()) {
+    case_llvm_type = get_int_type(get_bit_width(case_ti), cgen_state_->context_);
+  } else if (case_ti.is_fp()) {
+    case_llvm_type = case_ti.get_type() == kFLOAT
+                         ? llvm::Type::getFloatTy(cgen_state_->context_)
+                         : llvm::Type::getDoubleTy(cgen_state_->context_);
+  } else if (case_ti.is_string()) {
+    if (case_ti.get_compression() == kENCODING_DICT) {
+      case_llvm_type =
+          get_int_type(8 * case_ti.get_logical_size(), cgen_state_->context_);
+    } else {
+      is_real_str = true;
+      case_llvm_type = get_int_type(64, cgen_state_->context_);
+    }
+  } else if (case_ti.is_boolean()) {
+    case_llvm_type = get_int_type(8 * case_ti.get_logical_size(), cgen_state_->context_);
+  } else {
+    CIDER_THROW(CiderUnsupportedException,
+                fmt::format("case type is {}, not support", case_ti.get_type()));
+  }
+  CHECK(case_llvm_type);
+  const auto& else_ti = case_expr->get_else_expr()->get_type_info();
+  CHECK_EQ(else_ti.get_type(), case_ti.get_type());
+  std::unique_ptr<CodegenColValues> case_val =
+      codegenCaseExpr(case_expr, case_llvm_type, is_real_str, co);
+  if (is_real_str) {
+    // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
+    CIDER_THROW(CiderCompileException,
+                "String type case when is not currently supported.");
+  }
+  return case_val;
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
+    const Analyzer::CaseExpr* case_expr,
+    llvm::Type* case_llvm_type,
+    const bool is_real_str,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  // Here the linear control flow will diverge and expressions cached during the
+  // code branch code generation (currently just column decoding) are not going
+  // to be available once we're done generating the case. Take a snapshot of
+  // the cache with FetchCacheAnchor and restore it once we're done with CASE.
+  Executor::FetchCacheAnchor anchor(cgen_state_);
+  const auto& expr_pair_list = case_expr->get_expr_pair_list();
+  std::vector<llvm::Value*> then_lvs;
+  std::vector<llvm::BasicBlock*> then_bbs;
+  llvm::Value* null_value = nullptr;
+  const auto end_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "end_case", cgen_state_->current_func_);
+  for (const auto& expr_pair : expr_pair_list) {
+    Executor::FetchCacheAnchor branch_anchor(cgen_state_);
+    const auto if_expr_ptr = codegen(expr_pair.first.get(), co, true);
+    auto if_expr = dynamic_cast<FixedSizeColValues*>(if_expr_ptr.get());
+    if (if_expr->getNull() != nullptr) {
+      null_value = if_expr->getNull();
+    }
+    const auto when_lv = toBool(if_expr->getValue());
+    const auto cmp_bb = cgen_state_->ir_builder_.GetInsertBlock();
+    const auto then_bb = llvm::BasicBlock::Create(cgen_state_->context_,
+                                                  "then_case",
+                                                  cgen_state_->current_func_,
+                                                  /*insert_before=*/end_bb);
+    cgen_state_->ir_builder_.SetInsertPoint(then_bb);
+    const auto then_expr_ptr = codegen(expr_pair.second.get(), co, true);
+    auto then_expr = dynamic_cast<FixedSizeColValues*>(then_expr_ptr.get());
+    auto then_bb_lvs = then_expr->getValue();
+    if (is_real_str) {
+      // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
+      CIDER_THROW(CiderCompileException,
+                  "String type case when is not currently supported.");
+    } else {
+      then_lvs.push_back(then_bb_lvs);
+    }
+    then_bbs.push_back(cgen_state_->ir_builder_.GetInsertBlock());
+    cgen_state_->ir_builder_.CreateBr(end_bb);
+    const auto when_bb = llvm::BasicBlock::Create(
+        cgen_state_->context_, "when_case", cgen_state_->current_func_);
+    cgen_state_->ir_builder_.SetInsertPoint(cmp_bb);
+    cgen_state_->ir_builder_.CreateCondBr(when_lv, then_bb, when_bb);
+    cgen_state_->ir_builder_.SetInsertPoint(when_bb);
+  }
+  const auto else_expr = case_expr->get_else_expr();
+  CHECK(else_expr);
+  const auto else_expr_ptr = codegen(else_expr, co, true);
+  auto else_expr_v = dynamic_cast<FixedSizeColValues*>(else_expr_ptr.get());
+  auto else_lv = else_expr_v->getValue();
+  CHECK(else_lv);
+  auto else_bb = cgen_state_->ir_builder_.GetInsertBlock();
+  cgen_state_->ir_builder_.CreateBr(end_bb);
+  cgen_state_->ir_builder_.SetInsertPoint(end_bb);
+  auto then_phi =
+      cgen_state_->ir_builder_.CreatePHI(case_llvm_type, expr_pair_list.size() + 1);
+  CHECK_EQ(then_bbs.size(), then_lvs.size());
+  for (size_t i = 0; i < then_bbs.size(); ++i) {
+    then_phi->addIncoming(then_lvs[i], then_bbs[i]);
+  }
+  then_phi->addIncoming(else_lv, else_bb);
+  return std::make_unique<FixedSizeColValues>(then_phi, null_value);
+}
