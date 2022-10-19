@@ -63,7 +63,6 @@ void DuckDbArrowSchemaAdaptor::duckdbResultToArrowSchema(
   out_schema->release = ReleaseDuckDBArrowSchema;
 }
 
-
 void DuckDbArrowSchemaAdaptor::ReleaseDuckDBArrowSchema(ArrowSchema* schema) {
   if (!schema || !schema->release) {
     return;
