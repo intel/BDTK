@@ -58,16 +58,16 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
   auto newLeftSrc = PlanUtil::findInNodeAddrMap(newSrcMap, leftSrcBranchId, 0);
   auto newRightSrc = PlanUtil::findInNodeAddrMap(newSrcMap, rightSrcBranchId, 0);
   if (newLeftSrc.first && newRightSrc.first) {
-    auto ciderPlanNode = std::make_shared<CiderPlanNode>(
-        planSection.target.nodePtr->id(),
-        newLeftSrc.second,
-        newRightSrc.second,
-        planSection.target.nodePtr->outputType(),
-        *sPlan);
+    auto ciderPlanNode =
+        std::make_shared<CiderPlanNode>(planSection.target.nodePtr->id(),
+                                        newLeftSrc.second,
+                                        newRightSrc.second,
+                                        planSection.target.nodePtr->outputType(),
+                                        *sPlan);
     return ciderPlanNode;
   } else {
     VELOX_FAIL(
-          "Can't find source nodes in the src node list of multi source planSection.");
+        "Can't find source nodes in the source node list of multi source planSection.");
   }
 }
 
