@@ -137,12 +137,18 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
       buildSideEmpty_ = true;
     }
 
+    auto batches = buildData_.value();
+    auto rowVectorPtr =
+        RowVector::createEmpty(batches.front()->type(), operatorCtx_->pool());
+    for (auto batch : batches) {
+      rowVectorPtr->append(batch.get());
+    }
+
     auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     ciderCompileModule_ = CiderCompileModule::Make(allocator);
 
-    // TODO: add vector<RowVectorPtr> -> CiderBatch converter
-    auto buildBatch = dataConvertor_->convertToCider(buildData_->data()[0],
-                                                     buildData_->data()[0]->size(),
+    auto buildBatch = dataConvertor_->convertToCider(rowVectorPtr,
+                                                     rowVectorPtr->size(),
                                                      &convertorInternalCounter,
                                                      operatorCtx_->pool());
 
