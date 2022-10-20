@@ -70,8 +70,8 @@ class DuckDbArrowSchemaAdaptor {
 
  public:
   static void duckdbResultSchemaToArrowSchema(ArrowSchema* out_schema,
-                                        std::vector<::duckdb::LogicalType>& types,
-                                        std::vector<std::string>& names);
+                                              std::vector<::duckdb::LogicalType>& types,
+                                              std::vector<std::string>& names);
 };
 
 #endif  // CIDER_DUCKDBARROWADAPTOR_H
