@@ -57,6 +57,13 @@ class JITFunction {
 
   JITFunctionDescriptor descriptor_;
 };
+
+template <typename R, typename... Args>
+inline auto castFunctionPointer(void* ptr) {
+  using func_type = R (*)(Args...);
+  return reinterpret_cast<func_type>(ptr);
+}
+
 };  // namespace jitlib
 
 #endif

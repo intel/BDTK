@@ -32,7 +32,6 @@ class JITLibTests : public ::testing::Test {};
 TEST_F(JITLibTests, BasicTest) {
   LLVMJITModule module("Test");
 
-  using func_type = int32_t (*)(int32_t);
   LLVMJITFunction function = module.createJITFunction(JITFunctionDescriptor{
       .function_name = "test_func",
       .ret_type = JITFunctionParam{.type = INT32},
@@ -45,7 +44,8 @@ TEST_F(JITLibTests, BasicTest) {
   function.finish();
 
   module.finish();
-  func_type ptr = reinterpret_cast<func_type>(module.getFunctionPtr(function));
+  auto ptr = castFunctionPointer<int32_t, int32_t>(module.getFunctionPtr(function));
+
   EXPECT_EQ(ptr(12), 123);
 }
 
