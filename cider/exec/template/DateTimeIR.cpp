@@ -196,6 +196,46 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::DateaddExpr* dateadd_expr,
                                         llvm::Attribute::Speculatable});
 }
 
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateAdd(
+    const Analyzer::DateaddExpr* dateadd_expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto& dateadd_expr_ti = dateadd_expr->get_type_info();
+  CHECK(dateadd_expr_ti.get_type() == kTIMESTAMP || dateadd_expr_ti.get_type() == kDATE);
+  auto datetime = codegen(dateadd_expr->get_datetime_expr(), co, true);
+  auto datetime_fixsize = dynamic_cast<FixedSizeColValues*>(datetime.get());
+  auto datetime_value = datetime_fixsize->getValue();
+
+  CHECK(datetime_value->getType()->isIntegerTy(64));
+
+  auto number = codegen(dateadd_expr->get_number_expr(), co, true);
+  auto number_fixsize = dynamic_cast<FixedSizeColValues*>(number.get());
+  auto number_value = number_fixsize->getValue();
+
+  const auto& datetime_ti = dateadd_expr->get_datetime_expr()->get_type_info();
+  std::vector<llvm::Value*> dateadd_args{
+      cgen_state_->llInt(static_cast<int32_t>(dateadd_expr->get_field())),
+      number_value,
+      datetime_value};
+  std::string dateadd_fname{"DateAdd"};
+  if (is_subsecond_dateadd_field(dateadd_expr->get_field()) ||
+      dateadd_expr_ti.is_high_precision_timestamp()) {
+    dateadd_fname += "HighPrecision";
+    dateadd_args.push_back(
+        cgen_state_->llInt(static_cast<int32_t>(datetime_ti.get_dimension())));
+  }
+
+  llvm::Value* value =
+      cgen_state_->emitExternalCall(dateadd_fname,
+                                    get_int_type(64, cgen_state_->context_),
+                                    dateadd_args,
+                                    {llvm::Attribute::NoUnwind,
+                                     llvm::Attribute::ReadNone,
+                                     llvm::Attribute::Speculatable});
+
+  return std::make_unique<FixedSizeColValues>(value, datetime_fixsize->getNull());
+}
+
 llvm::Value* CodeGenerator::codegen(const Analyzer::DatediffExpr* datediff_expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
@@ -222,6 +262,50 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::DatediffExpr* datediff_expr,
   }
   return cgen_state_->emitExternalCall(
       datediff_fname, get_int_type(64, cgen_state_->context_), datediff_args);
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateDiff(
+    const Analyzer::DatediffExpr* datediff_expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+
+  auto start = codegen(datediff_expr->get_start_expr(), co, true);
+  auto start_fixsize = dynamic_cast<FixedSizeColValues*>(start.get());
+  auto start_value = start_fixsize->getValue();
+  CHECK(start_value->getType()->isIntegerTy(64));
+
+  auto end = codegen(datediff_expr->get_end_expr(), co, true);
+  auto end_fixsize = dynamic_cast<FixedSizeColValues*>(end.get());
+  auto end_value = end_fixsize->getValue();
+  CHECK(start_value->getType()->isIntegerTy(64));
+
+  const auto& start_ti = datediff_expr->get_start_expr()->get_type_info();
+  const auto& end_ti = datediff_expr->get_end_expr()->get_type_info();
+
+  std::vector<llvm::Value*> datediff_args{
+      cgen_state_->llInt(static_cast<int32_t>(datediff_expr->get_field())),
+      start_value,
+      end_value};
+  std::string datediff_fname{"DateDiff"};
+  if (start_ti.is_high_precision_timestamp() || end_ti.is_high_precision_timestamp()) {
+    datediff_fname += "HighPrecision";
+    datediff_args.push_back(
+        cgen_state_->llInt(static_cast<int32_t>(start_ti.get_dimension())));
+    datediff_args.push_back(
+        cgen_state_->llInt(static_cast<int32_t>(end_ti.get_dimension())));
+  }
+  llvm::Value* value = cgen_state_->emitExternalCall(
+      datediff_fname, get_int_type(64, cgen_state_->context_), datediff_args);
+
+  llvm::Value* null = nullptr;
+  if (start_fixsize->getNull() && end_fixsize->getNull()) {
+    null = cgen_state_->ir_builder_.CreateOr(start_fixsize->getNull(),
+                                             end_fixsize->getNull());
+  } else {
+    null = start_fixsize->getNull() ? start_fixsize->getNull() : end_fixsize->getNull();
+  }
+
+  return std::make_unique<FixedSizeColValues>(value, null);
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::DatetruncExpr* datetrunc_expr,
@@ -255,6 +339,41 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::DatetruncExpr* datetrunc_exp
     ret = nullcheck_codegen->finalize(ll_int(NULL_BIGINT, cgen_state_->context_), ret);
   }
   return ret;
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateTrunc(
+    const Analyzer::DatetruncExpr* datetrunc_expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+
+  auto from = codegen(datetrunc_expr->get_from_expr(), co, true);
+  auto from_fixsize = dynamic_cast<FixedSizeColValues*>(from.get());
+  auto from_value = from_fixsize->getValue();
+  CHECK(from_value->getType()->isIntegerTy(64));
+  const auto& datetrunc_expr_ti = datetrunc_expr->get_from_expr()->get_type_info();
+
+  DatetruncField const field = datetrunc_expr->get_field();
+  if (datetrunc_expr_ti.is_high_precision_timestamp()) {
+    llvm::Value* value =
+        codegenDateTruncHighPrecisionTimestamps(from_value, datetrunc_expr_ti, field);
+    return std::make_unique<FixedSizeColValues>(value, from_fixsize->getNull());
+  }
+  static_assert(dtSECOND + 1 == dtMILLISECOND, "Please keep these consecutive.");
+  static_assert(dtMILLISECOND + 1 == dtMICROSECOND, "Please keep these consecutive.");
+  static_assert(dtMICROSECOND + 1 == dtNANOSECOND, "Please keep these consecutive.");
+  if (dtSECOND <= field && field <= dtNANOSECOND) {
+    llvm::Value* value =
+        cgen_state_->ir_builder_.CreateCast(llvm::Instruction::CastOps::SExt,
+                                            from_value,
+                                            get_int_type(64, cgen_state_->context_));
+    return std::make_unique<FixedSizeColValues>(value, from_fixsize->getNull());
+  }
+
+  char const* const fname = datetrunc_fname_lookup.at(field);
+  auto value = cgen_state_->emitExternalCall(
+      fname, get_int_type(64, cgen_state_->context_), {from_value});
+
+  return std::make_unique<FixedSizeColValues>(value, from_fixsize->getNull());
 }
 
 llvm::Value* CodeGenerator::codegenExtractHighPrecisionTimestamps(

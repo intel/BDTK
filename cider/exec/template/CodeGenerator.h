@@ -223,9 +223,21 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::DateaddExpr*, const CompilationOptions&);
 
+  std::unique_ptr<CodegenColValues> codegenDateAdd(
+      const Analyzer::DateaddExpr* dateadd_expr,
+      const CompilationOptions& co);
+
   llvm::Value* codegen(const Analyzer::DatediffExpr*, const CompilationOptions&);
 
+  std::unique_ptr<CodegenColValues> codegenDateDiff(
+      const Analyzer::DatediffExpr* datediff_expr,
+      const CompilationOptions& co);
+
   llvm::Value* codegen(const Analyzer::DatetruncExpr*, const CompilationOptions&);
+
+  std::unique_ptr<CodegenColValues> codegenDateTrunc(
+      const Analyzer::DatetruncExpr* datetrunc_expr,
+      const CompilationOptions& co);
 
   llvm::Value* codegen(const Analyzer::CharLengthExpr*, const CompilationOptions&);
 

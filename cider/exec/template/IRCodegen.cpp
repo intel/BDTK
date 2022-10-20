@@ -184,6 +184,18 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (constant) {
     return codegenConstantExpr(constant, co);
   }
+  auto dateadd_expr = dynamic_cast<const Analyzer::DateaddExpr*>(expr);
+  if (dateadd_expr) {
+    return codegenDateAdd(dateadd_expr, co);
+  }
+  auto datediff_expr = dynamic_cast<const Analyzer::DatediffExpr*>(expr);
+  if (datediff_expr) {
+    return codegenDateDiff(datediff_expr, co);
+  }
+  auto datetrunc_expr = dynamic_cast<const Analyzer::DatetruncExpr*>(expr);
+  if (datetrunc_expr) {
+    return codegenDateTrunc(datetrunc_expr, co);
+  }
 
   CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");
 }
