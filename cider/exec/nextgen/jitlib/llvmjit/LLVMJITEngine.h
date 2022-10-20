@@ -19,11 +19,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef LLVM_JIT_ENGINE_H
-#define LLVM_JIT_ENGINE_H
+#ifndef JITLIB_LLVM_JIT_ENGINE_H
+#define JITLIB_LLVM_JIT_ENGINE_H
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/IR/LegacyPassManager.h>
 
 namespace jitlib {
 class LLVMJITModule;

@@ -19,10 +19,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JIT_CONTROL_FLOW_H
-#define JIT_CONTROL_FLOW_H
+#ifndef JITLIB_JIT_CONTROL_FLOW_H
+#define JITLIB_JIT_CONTROL_FLOW_H
 
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/jitlib/base/Values.h"
 
 namespace jitlib {

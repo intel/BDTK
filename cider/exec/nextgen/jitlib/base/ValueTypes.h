@@ -19,8 +19,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef VALUE_TYPES_H
-#define VALUE_TYPES_H
+#ifndef JITLIB_VALUE_TYPES_H
+#define JITLIB_VALUE_TYPES_H
 
 #include <cstdint>
 

@@ -23,9 +23,7 @@
 #define JITLIB_LLVM_JIT_CONTROL_FLOW_H
 
 #include "exec/nextgen/jitlib/base/ControlFlow.h"
-#include "exec/nextgen/jitlib/base/Values.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 
 namespace jitlib {
 template <TypeTag Type>

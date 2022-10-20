@@ -19,15 +19,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef LLVM_JIT_FUNCTION_H
-#define LLVM_JIT_FUNCTION_H
+#ifndef JITLIB_LLVM_JIT_FUNCTION_H
+#define JITLIB_LLVM_JIT_FUNCTION_H
 
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
-#include "exec/nextgen/jitlib/base/Values.h"
 
 namespace jitlib {
 class LLVMJITModule;
@@ -49,7 +48,7 @@ class LLVMJITFunction final : public JITFunction<LLVMJITFunction> {
                            llvm::Function& func);
 
   operator llvm::IRBuilder<>&() const { return *ir_builder_; }
-  
+
  protected:
   void finishImpl();
   llvm::LLVMContext& getLLVMContext();

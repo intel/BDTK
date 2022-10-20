@@ -19,16 +19,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef LLVM_JIT_UTILS_H
-#define LLVM_JIT_UTILS_H
+#ifndef JITLIB_LLVM_JIT_UTILS_H
+#define JITLIB_LLVM_JIT_UTILS_H
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Value.h>
-#include <cstdint>
 
 namespace jitlib {
 inline llvm::Type* getLLVMType(TypeTag tag, llvm::LLVMContext& ctx) {

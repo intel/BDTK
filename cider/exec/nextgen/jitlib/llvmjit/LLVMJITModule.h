@@ -19,12 +19,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef LLVM_JIT_MODULE_H
-#define LLVM_JIT_MODULE_H
-
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <boost/container/small_vector.hpp>
+#ifndef JITLIB_LLVM_JIT_MODULE_H
+#define JITLIB_LLVM_JIT_MODULE_H
 
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"

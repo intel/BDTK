@@ -22,10 +22,6 @@
 #ifndef JITLIB_LLVM_JIT_VALUE_H
 #define JITLIB_LLVM_JIT_VALUE_H
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/Value.h>
-
 #include "exec/nextgen/jitlib/base/Values.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"

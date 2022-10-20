@@ -22,7 +22,6 @@
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 
-#include <llvm/IR/CallingConv.h>
 #include <llvm/IR/Function.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"

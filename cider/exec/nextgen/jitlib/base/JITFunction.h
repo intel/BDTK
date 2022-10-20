@@ -19,8 +19,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JIT_Function_H
-#define JIT_Function_H
+#ifndef JITLIB_JIT_Function_H
+#define JITLIB_JIT_Function_H
 
 #include <boost/container/small_vector.hpp>
 

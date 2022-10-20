@@ -23,10 +23,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 
 #include <llvm/IR/Module.h>
-#include <llvm/Support/CodeGen.h>
-#include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/Target/TargetOptions.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 

@@ -19,8 +19,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_VALUE_H
-#define JITLIB_VALUE_H
+#ifndef JITLIB_VALUES_H
+#define JITLIB_VALUES_H
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 

@@ -19,8 +19,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JIT_MODULE_H
-#define JIT_MODULE_H
+#ifndef JITLIB_JIT_MODULE_H
+#define JITLIB_JIT_MODULE_H
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
