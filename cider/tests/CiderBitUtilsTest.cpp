@@ -126,16 +126,22 @@ TEST_F(CiderBitUtilsTest, CheckEqTest) {
   EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
   EXPECT_TRUE(CheckBitVectorEq(bv2, bv1, length));
 
+  // set at beginning
   setBitAt(bv1, 0);
   EXPECT_FALSE(CheckBitVectorEq(bv1, bv2, length));
   EXPECT_FALSE(CheckBitVectorEq(bv2, bv1, length));
-
   setBitAt(bv2, 0);
   EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
 
+  // set somewhere in the middle
+  setBitAt(bv2, 8);
+  EXPECT_FALSE(CheckBitVectorEq(bv1, bv2, length));
+  setBitAt(bv1, 8);
+  EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
+
+  // set last bit
   setBitAt(bv2, length - 1);
   EXPECT_FALSE(CheckBitVectorEq(bv1, bv2, length));
-
   setBitAt(bv1, length - 1);
   EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
 }

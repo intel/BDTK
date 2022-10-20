@@ -185,11 +185,10 @@ inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
 }
 
 inline bool CheckBitVectorEq(const uint8_t* vec1, const uint8_t* vec2, int end) {
-  size_t i = 0, bytes = 0;
+  size_t i = 0;
 
   // do byte-batched check with memcmp
-  for (; i + 64 <= end; i += 64, bytes++)
-    ;
+  size_t bytes = end / 8;
   if (memcmp(vec1, vec2, bytes)) {
     return false;
   }
