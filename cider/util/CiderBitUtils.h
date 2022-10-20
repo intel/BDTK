@@ -185,8 +185,6 @@ inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
 }
 
 inline bool CheckBitVectorEq(const uint8_t* vec1, const uint8_t* vec2, int end) {
-  size_t i = 0;
-
   // do byte-batched check with memcmp
   size_t bytes = end / 8;
   if (memcmp(vec1, vec2, bytes)) {
@@ -194,6 +192,7 @@ inline bool CheckBitVectorEq(const uint8_t* vec1, const uint8_t* vec2, int end) 
   }
 
   // compare remainders
+  size_t i = bytes * 8;
   for (; i < end; ++i) {
     if ((isBitSetAt(vec1, i) && !isBitSetAt(vec2, i)) ||
         (!isBitSetAt(vec1, i) && isBitSetAt(vec2, i))) {
