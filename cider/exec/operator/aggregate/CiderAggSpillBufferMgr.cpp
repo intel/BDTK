@@ -34,6 +34,11 @@
 
 #include "util/Logger.h"
 
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
+#endif
+
 CiderAggSpillBufferMgr::CiderAggSpillBufferMgr(
     BufferMode buffer_mode,
     bool need_dump,

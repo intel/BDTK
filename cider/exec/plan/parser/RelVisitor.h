@@ -59,7 +59,7 @@ class RelVisitor {
   RelVisitor(Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
              const std::unordered_map<int, std::string>& function_map,
              std::shared_ptr<VariableContext> variable_context_shared_ptr,
-             bool is_right_join_node);
+             bool is_join_right_node);
   virtual ~RelVisitor();
   // read
   virtual void visit(InputDescContext* input_desc_context);
@@ -76,7 +76,7 @@ class RelVisitor {
   Substrait2AnalyzerExprConverter* toAnalyzerExprConverter_ = nullptr;
   std::shared_ptr<VariableContext> variable_context_shared_ptr_;
   const std::unordered_map<int, std::string>& function_map_;
-  bool is_right_join_node_ = false;
+  bool is_join_right_node_ = false;
 };
 
 }  // namespace generator

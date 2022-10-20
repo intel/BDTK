@@ -47,8 +47,8 @@ bool VariableContext::getIsTargetExprsCollected() {
 }
 
 std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-VariableContext::getExprMapPtr(bool is_right_join_node) {
-  if (is_right_join_node) {
+VariableContext::getExprMapPtr(bool is_join_right_node) {
+  if (is_join_right_node) {
     return right_expr_map_ptr_;
   } else {
     return left_expr_map_ptr_;
@@ -77,8 +77,8 @@ void VariableContext::mergeLeftAndRightExprMaps() {
 void VariableContext::mergeOutExprMapsInside(
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         src_expr_map_ptr,
-    bool is_right_join_node) {
-  if (is_right_join_node) {
+    bool is_join_right_node) {
+  if (is_join_right_node) {
     right_expr_map_ptr_->clear();
     mergeTwoExprMaps(src_expr_map_ptr, right_expr_map_ptr_);
   } else {

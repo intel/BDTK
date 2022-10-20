@@ -60,6 +60,7 @@ endif()
 if(${CIDER_ENABLE_GOOGLETEST})
   # googletest
   add_subdirectory(thirdparty/googletest)
+  include_directories(thirdparty/googletest/googletest/include)
 else()
   include_directories(
     thirdparty/velox/third_party/googletest/googletest/include)
