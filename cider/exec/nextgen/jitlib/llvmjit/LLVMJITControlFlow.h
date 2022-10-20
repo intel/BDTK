@@ -31,10 +31,10 @@ namespace jitlib {
 template <TypeTag Type>
 class Ret<Type, LLVMJITFunction> {
  public:
-  explicit Ret(LLVMJITFunction& function) { function.getIRBuilder()->CreateRetVoid(); }
+  explicit Ret(llvm::IRBuilder<>& builder) { builder.CreateRetVoid(); }
 
-  explicit Ret(LLVMJITFunction& function, Value<Type, LLVMJITFunction>& ret_value) {
-    function.getIRBuilder()->CreateRet(ret_value.load());
+  explicit Ret(llvm::IRBuilder<>& builder, Value<Type, LLVMJITFunction>& ret_value) {
+    builder.CreateRet(ret_value.load());
   }
 };
 };  // namespace jitlib

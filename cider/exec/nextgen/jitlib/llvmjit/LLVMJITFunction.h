@@ -48,15 +48,16 @@ class LLVMJITFunction final : public JITFunction<LLVMJITFunction> {
                            LLVMJITModule& module,
                            llvm::Function& func);
 
+  operator llvm::IRBuilder<>&() const { return *ir_builder_; }
+  
  protected:
   void finishImpl();
-  llvm::IRBuilder<>* getIRBuilder() { return ir_builder_.get(); }
-  llvm::LLVMContext& getContext();
+  llvm::LLVMContext& getLLVMContext();
 
  private:
   LLVMJITModule& module_;
   llvm::Function& func_;
-  std::unique_ptr<llvm::IRBuilder<>> ir_builder_;
+  mutable std::unique_ptr<llvm::IRBuilder<>> ir_builder_;
 };
 };  // namespace jitlib
 

@@ -30,12 +30,12 @@ template <TypeTag, typename FunctionImpl>
 class Ret;
 
 template <TypeTag Type = VOID, typename FunctionImpl>
-inline void createRet(FunctionImpl& function) {
+inline void createRet(const FunctionImpl& function) {
   Ret<Type, FunctionImpl> ret(function);
 }
 
 template <TypeTag Type, typename FunctionImpl>
-inline void createRet(FunctionImpl& function, Value<Type, FunctionImpl>& value) {
+inline void createRet(const FunctionImpl& function, Value<Type, FunctionImpl>& value) {
   Ret<Type, FunctionImpl> ret(function, value);
 }
 };  // namespace jitlib

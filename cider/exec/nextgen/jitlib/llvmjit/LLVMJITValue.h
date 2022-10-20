@@ -50,24 +50,36 @@ class Value<Type, LLVMJITFunction> final
       : parent_function_(function), llvm_value_(value), is_variable_(is_variable) {}
 
  protected:
+  static llvm::IRBuilder<>& getFunctionBuilder(const LLVMJITFunction& function) {
+    return static_cast<llvm::IRBuilder<>&>(function);
+  }
+
   static Value createVariableImpl(LLVMJITFunction& function,
                                   const char* name,
                                   NativeType init) {
-    auto llvm_type = getLLVMType(Type, function.getContext());
+    auto llvm_type = getLLVMType(Type, function.getLLVMContext());
 
-    llvm::AllocaInst* variable_memory = function.getIRBuilder()->CreateAlloca(llvm_type);
+    llvm::IRBuilder<>& builder = getFunctionBuilder(function);
+    auto current_block = builder.GetInsertBlock();
+    auto& local_var_block = current_block->getParent()->getEntryBlock();
+    auto iter = local_var_block.end();
+    builder.SetInsertPoint(&local_var_block, --iter);
+
+    llvm::AllocaInst* variable_memory = builder.CreateAlloca(llvm_type);
     variable_memory->setName(name);
     variable_memory->setAlignment(TypeTraits<Type>::width);
 
-    llvm::Value* init_value = getLLVMConstant(init, Type, function.getContext());
-    function.getIRBuilder()->CreateStore(init_value, variable_memory, false);
+    llvm::Value* init_value = getLLVMConstant(init, Type, function.getLLVMContext());
+    builder.CreateStore(init_value, variable_memory, false);
+
+    builder.SetInsertPoint(current_block);
 
     return Value(function, variable_memory, true);
   }
 
   llvm::Value* load() {
     if (is_variable_) {
-      return parent_function_.getIRBuilder()->CreateLoad(llvm_value_, false);
+      return getFunctionBuilder(parent_function_).CreateLoad(llvm_value_, false);
     } else {
       return llvm_value_;
     }
@@ -75,7 +87,8 @@ class Value<Type, LLVMJITFunction> final
 
   llvm::Value* store(Value& rh) {
     if (is_variable_) {
-      return parent_function_.getIRBuilder()->CreateStore(rh.load(), llvm_value_, false);
+      return getFunctionBuilder(parent_function_)
+          .CreateStore(rh.load(), llvm_value_, false);
     } else {
       // TODO (bigPYJ1151): Add Exception
     }

@@ -39,8 +39,8 @@ LLVMJITFunction::LLVMJITFunction(const JITFunctionDescriptor& descriptor,
     , func_(func)
     , ir_builder_(nullptr) {
   auto local_variable_block =
-      llvm::BasicBlock::Create(getContext(), ".Local_Vars", &func_);
-  auto entry_block = llvm::BasicBlock::Create(getContext(), ".Entry", &func_);
+      llvm::BasicBlock::Create(getLLVMContext(), ".Local_Vars", &func_);
+  auto entry_block = llvm::BasicBlock::Create(getLLVMContext(), ".Entry", &func_);
 
   ir_builder_ = std::make_unique<llvm::IRBuilder<>>(local_variable_block);
   ir_builder_->CreateBr(entry_block);
@@ -48,7 +48,7 @@ LLVMJITFunction::LLVMJITFunction(const JITFunctionDescriptor& descriptor,
   ir_builder_->SetInsertPoint(entry_block);
 }
 
-llvm::LLVMContext& LLVMJITFunction::getContext() {
+llvm::LLVMContext& LLVMJITFunction::getLLVMContext() {
   return module_.getContext();
 }
 
