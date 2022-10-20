@@ -872,19 +872,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildCoalesceEx
   return Parser::CaseExpr::normalize(expr_list, else_expr);
 }
 
-std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildYearExpr(
-    const substrait::Expression_ScalarFunction& s_scalar_function,
-    const std::unordered_map<int, std::string> function_map,
-    std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-        expr_map_ptr) {
-  CHECK(s_scalar_function.arguments_size() == 1);
-  std::string time_unit = "YEAR";
-  auto from_expr =
-      toAnalyzerExpr(s_scalar_function.arguments(0).value(), function_map, expr_map_ptr);
-  from_expr->set_type_info(
-      SQLTypeInfo(SQLTypes::kDATE, from_expr->get_type_info().get_notnull()));
-  return ExtractExpr::generate(from_expr, time_unit);
-}
 
 bool isNotPrimitiveType(const SQLTypeInfo& type) {
   return type.is_time() || type.is_string();
@@ -904,9 +891,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   if (auto field = ExtractExpr::presto_function_to_extract_field(function);
       field != ExtractField::NONE || function == "extract") {
     return buildExtractExpr(s_scalar_function, function_map, field, expr_map_ptr);
-  }
-  if (!ExtractExpr::presto_function_to_extract_field(function)) {
-    return buildYearExpr(s_scalar_function, function_map, expr_map_ptr);
   }
   if (function == "is_not_null") {
     return buildNotNullExpr(s_scalar_function, function_map, expr_map_ptr);

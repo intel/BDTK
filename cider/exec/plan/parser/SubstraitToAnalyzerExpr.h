@@ -174,12 +174,6 @@ class Substrait2AnalyzerExprConverter {
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 
-  std::shared_ptr<Analyzer::Expr> buildYearExpr(
-      const substrait::Expression_ScalarFunction& s_scalar_function,
-      const std::unordered_map<int, std::string> function_map,
-      std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-          expr_map_ptr = nullptr);
-
   bool isColumnVar(const substrait::Expression_FieldReference& selection_expr);
 
   bool isTimeType(const substrait::Type& type);
