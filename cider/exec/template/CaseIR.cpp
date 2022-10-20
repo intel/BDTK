@@ -186,7 +186,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     Executor::FetchCacheAnchor branch_anchor(cgen_state_);
     const auto if_expr_ptr = codegen(expr_pair.first.get(), co, true);
     auto if_expr = dynamic_cast<FixedSizeColValues*>(if_expr_ptr.get());
-    if (if_expr->getNull() != nullptr) {
+    if (if_expr && if_expr->getNull() != nullptr) {
       null_value = if_expr->getNull();
     }
     const auto when_lv = toBool(if_expr->getValue());
