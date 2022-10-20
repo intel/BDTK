@@ -19,9 +19,9 @@
  * under the License.
  */
 
-#include "Utils.h"
 #include "CiderBatchChecker.h"
 #include "CiderBatchStringifier.h"
+#include "Utils.h"
 #include "cider/batch/ScalarBatch.h"
 #include "cider/batch/StructBatch.h"
 
@@ -74,22 +74,22 @@ bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batc
   auto actual_buffer = actual_batch->getNulls();
   auto expected_count = expected_batch->getNullCount();
   auto actual_count = actual_batch->getNullCount();
+  auto row_num = expected_batch->getLength();
 
-  if (expected_count != actual_count) {
+  // skip checking null_count if it is not yet computed (-1)
+  if (expected_count != -1 && actual_count != -1 && expected_count != actual_count) {
     std::cout << "expected_null_count != actual_null_count. "
               << "Expected: " << expected_count << ". Actual: " << actual_count
               << std::endl;
     return false;
   }
 
-  int buffer_size = (expected_count + 7) >> 3;
-
   if (!expected_buffer && !actual_buffer) {
     // both buffers are nullptr, no need to check
     return true;
   } else if (expected_buffer && actual_buffer) {
     // both buffers exist
-    return !memcmp(expected_buffer, actual_buffer, buffer_size);
+    return CiderBitUtils::CheckBitVectorEq(expected_buffer, actual_buffer, row_num);
   }
 
   // one buffer is nullptr while the other exists, cannot happen
@@ -107,10 +107,6 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
   // compare nulls
   bool null_buffer_eq = checkValidityBitmapEqual(expected_batch, actual_batch);
   if (!null_buffer_eq) {
-    /// NOTE: (YBRua) even if check fails, the result is not necessarily incorrect
-    /// because padding bit values in the last Byte are not initialized when allocating
-    /// null buffer, so they take random values and may cause memcmp to fail
-    /// e.g. 01011111 vs 00011111 when row_num == 5 (last 3 bits uninitialized)
     std::cout << "Null buffer compare failed." << std::endl;
     return false;
   }
