@@ -236,8 +236,9 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
   bool null_buffer_eq = checkValidityBitmapEqual(expected_batch, actual_batch);
   if (!null_buffer_eq) {
     /// NOTE: (YBRua) even if check fails, the result is not necessarily incorrect
-    /// because padding values in the same byte can be different and fails memcmp
-    /// e.g. 01011111 and 00011111 are both correct when row_num == 5
+    /// because padding bit values in the last Byte are not initialized when allocating
+    /// null buffer, so they take random values and may cause memcmp to fail
+    /// e.g. 01011111 vs 00011111 when row_num == 5 (last 3 bits uninitialized)
     std::cout << "Null buffer compare failed." << std::endl;
     return false;
   }
