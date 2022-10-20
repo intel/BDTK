@@ -76,6 +76,9 @@ LLVMJITFunction LLVMJITModule::createJITFunctionImpl(
 }
 
 void LLVMJITModule::finishImpl() {
+  // TODO (bigPYJ1151): Refactor Debug information.
+  llvm::outs() << *module_;
+
   LLVMJITEngineBuilder builder(*this);
   engine_ = builder.build();
 }
