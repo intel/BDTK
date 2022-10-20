@@ -25,7 +25,7 @@
 // for interface stability, we maintain a copy of relevant codes in duckdb
 // most of the following codes are copied from duckdb sources
 
-void DuckDbArrowSchemaAdaptor::duckdbResultToArrowSchema(
+void DuckDbArrowSchemaAdaptor::duckdbResultSchemaToArrowSchema(
     ArrowSchema* out_schema,
     std::vector<::duckdb::LogicalType>& types,
     std::vector<std::string>& names) {

@@ -418,7 +418,7 @@ CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
   // Construct ArrowSchema using methods from duckdb
   std::vector<::duckdb::LogicalType> types = chunk->GetTypes();
   auto arrow_schema = CiderBatchUtils::allocateArrowSchema();
-  DuckDbArrowSchemaAdaptor::duckdbResultToArrowSchema(arrow_schema, types, names);
+  DuckDbArrowSchemaAdaptor::duckdbResultSchemaToArrowSchema(arrow_schema, types, names);
 
   // Construct ArrowArray
   auto arrow_array = CiderBatchUtils::allocateArrowArray();
