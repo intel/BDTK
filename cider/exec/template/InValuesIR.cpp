@@ -26,6 +26,7 @@
 #include <future>
 #include <memory>
 
+// will deprecate
 llvm::Value* CodeGenerator::codegen(const Analyzer::InValues* expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
@@ -73,6 +74,53 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::InValues* expr,
     }
   }
   return result;
+}
+
+// For Cider Data Format
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValues(
+    const Analyzer::InValues* expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto in_arg = expr->get_arg();
+  if (is_unnest(in_arg)) {
+    CIDER_THROW(CiderCompileException, "IN not supported for unnested expressions");
+  }
+  const auto& expr_ti = expr->get_type_info();
+  CHECK(expr_ti.is_boolean());
+  auto lhs_lv = codegen(in_arg, co, true);
+  auto lhs_fixsize = dynamic_cast<FixedSizeColValues*>(lhs_lv.get());
+  auto lhs_value = lhs_fixsize->getValue();
+  auto lhs_null = lhs_fixsize->getNull();
+  llvm::Value* result{nullptr};
+  if (expr_ti.get_notnull()) {
+    result = llvm::ConstantInt::get(llvm::IntegerType::getInt1Ty(cgen_state_->context_),
+                                    false);
+  } else {
+    result = cgen_state_->llBool(false);
+  }
+  CHECK(result);
+  if (co.hoist_literals) {  // TODO(alex): remove this constraint
+    auto in_vals_bitmap = createInValuesBitmap(expr, co);
+    if (in_vals_bitmap) {
+      if (in_vals_bitmap->isEmpty()) {
+        return in_vals_bitmap->hasNull()
+                   ? std::make_unique<FixedSizeColValues>(
+                         cgen_state_->inlineIntNull(SQLTypeInfo(kBOOLEAN, false)),
+                         lhs_null)
+                   : std::make_unique<FixedSizeColValues>(result, lhs_null);
+      }
+      return cgen_state_->addInValuesBitmap(in_vals_bitmap)
+          ->codegen(lhs_value, lhs_null, executor());
+    }
+  }
+  for (auto in_val : expr->get_value_list()) {
+    auto crt = codegenCmpFun(
+        kEQ, kONE, lhs_value, lhs_null, in_arg->get_type_info(), in_val.get(), co);
+    auto crt_fixsize = dynamic_cast<FixedSizeColValues*>(crt.get());
+
+    result = cgen_state_->ir_builder_.CreateOr(result, toBool(crt_fixsize->getValue()));
+  }
+  return std::make_unique<FixedSizeColValues>(result, lhs_null);
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::InIntegerSet* in_integer_set,

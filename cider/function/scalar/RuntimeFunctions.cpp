@@ -394,6 +394,23 @@ extern "C" ALWAYS_INLINE int8_t bit_is_set(const int64_t bitset,
              : 0;
 }
 
+extern "C" ALWAYS_INLINE int8_t bit_is_set_cider(const int64_t bitset,
+                                                 const int64_t val,
+                                                 const int64_t min_val,
+                                                 const int64_t max_val) {
+  if (val < min_val || val > max_val) {
+    return 0;
+  }
+  if (!bitset) {
+    return 0;
+  }
+  const uint64_t bitmap_idx = val - min_val;
+  return (reinterpret_cast<const int8_t*>(bitset))[bitmap_idx >> 3] &
+                 (1 << (bitmap_idx & 7))
+             ? 1
+             : 0;
+}
+
 extern "C" ALWAYS_INLINE int64_t agg_sum(int64_t* agg, const int64_t val) {
   const auto old = *agg;
   *agg += val;

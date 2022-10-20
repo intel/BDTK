@@ -477,6 +477,46 @@ llvm::Value* CodeGenerator::codegenCmpDecimalConst(const SQLOps optype,
   return codegenCmp(optype, qualifier, {lhs_lv}, new_ti, new_rhs_lit.get(), co);
 }
 
+// For Cider Data Format
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
+    const SQLOps optype,
+    const SQLQualifier qualifier,
+    llvm::Value* lhs_lv,
+    llvm::Value* lhs_lv_null,
+    const SQLTypeInfo& lhs_ti,
+    const Analyzer::Expr* rhs,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  CHECK(IS_COMPARISON(optype));
+  const auto& rhs_ti = rhs->get_type_info();
+  auto rhs_lv = codegen(rhs, co, true);
+  auto rhs_lv_fixedsize = dynamic_cast<FixedSizeColValues*>(rhs_lv.get());
+  CHECK_EQ(kONE, qualifier);
+  CHECK((lhs_ti.get_type() == rhs_ti.get_type()) ||
+        (lhs_ti.is_string() && rhs_ti.is_string()));
+  if (lhs_ti.is_integer() || lhs_ti.is_decimal() || lhs_ti.is_time() ||
+      lhs_ti.is_timeinterval()) {
+    // TODO: (yma1) need handle string/boolean
+    if (lhs_ti.is_string() || (lhs_ti.is_boolean() && rhs_ti.is_boolean())) {
+      CIDER_THROW(CiderCompileException,
+                  "String/Boolean type are not currently supported in codegenCmpFun.");
+    }
+    return std::make_unique<FixedSizeColValues>(
+        cgen_state_->ir_builder_.CreateICmp(
+            llvm_icmp_pred(optype), lhs_lv, rhs_lv_fixedsize->getValue()),
+        lhs_lv_null);
+  }
+  if (lhs_ti.get_type() == kFLOAT || lhs_ti.get_type() == kDOUBLE) {
+    return std::make_unique<FixedSizeColValues>(
+        cgen_state_->ir_builder_.CreateFCmp(
+            llvm_fcmp_pred(optype), lhs_lv, rhs_lv_fixedsize->getValue()),
+        lhs_lv_null);
+  }
+  CHECK(false);
+  return nullptr;
+}
+
+// Will deprecate
 llvm::Value* CodeGenerator::codegenCmp(const SQLOps optype,
                                        const SQLQualifier qualifier,
                                        std::vector<llvm::Value*> lhs_lvs,

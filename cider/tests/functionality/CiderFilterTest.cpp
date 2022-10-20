@@ -497,8 +497,7 @@ TEST_F(CiderProjectAllTestArrow, filterProjectAllTest) {
 }
 
 TEST_F(CiderFilterSequenceTestArrow, ArrowInTest) {
-  // TODO(yizhong): Enable this after string is supported in arrow.
-  GTEST_SKIP_("in codegen is not ready.");
+  prepareArrowBatch();
   assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
                    "in_int32_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",

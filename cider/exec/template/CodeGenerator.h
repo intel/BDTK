@@ -169,6 +169,14 @@ class CodeGenerator {
                           const Analyzer::Expr*,
                           const CompilationOptions&);
 
+  std::unique_ptr<CodegenColValues> codegenCmpFun(const SQLOps,
+                                                  const SQLQualifier,
+                                                  llvm::Value*,
+                                                  llvm::Value*,
+                                                  const SQLTypeInfo&,
+                                                  const Analyzer::Expr*,
+                                                  const CompilationOptions&);
+
   // Deprecating
   llvm::Value* codegenIsNull(const Analyzer::UOper*, const CompilationOptions&);
 
@@ -213,6 +221,10 @@ class CodeGenerator {
                            const bool operand_is_const,
                            const CompilationOptions& co);
 
+  // Cider Data Format
+  std::unique_ptr<CodegenColValues> codegenInValues(const Analyzer::InValues* expr,
+                                                    const CompilationOptions& co);
+  // will deprecate
   llvm::Value* codegen(const Analyzer::InValues*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
