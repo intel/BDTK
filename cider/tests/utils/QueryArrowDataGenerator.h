@@ -46,6 +46,8 @@ enum GeneratePattern { Sequence, Random };
     break;                                                                    \
   }
 
+// TODO: generate BOOL VARCHAR DATA&TIME column
+
 #define N_MAX std::numeric_limits<T>::max()
 
 #define N_MIN std::numeric_limits<T>::min()
@@ -86,9 +88,9 @@ class QueryArrowDataGenerator {
       }
     }
 
-    auto schema_array = builder.build();
-    schema = std::get<0>(schema_array);
-    array = std::get<1>(schema_array);
+    auto schema_with_array = builder.build();
+    schema = std::get<0>(schema_with_array);
+    array = std::get<1>(schema_with_array);
   }
 
  private:
@@ -109,7 +111,7 @@ class QueryArrowDataGenerator {
     switch (pattern) {
       case GeneratePattern::Sequence:
         for (auto i = 0; i < row_num; ++i) {
-          null_data[i] = Random::oneIn(null_chance, rng) ? (col_data[i] = N_MIN, true)
+          null_data[i] = Random::oneIn(null_chance, rng) ? (col_data[i] = 0, true)
                                                          : (col_data[i] = i, false);
         }
         break;
@@ -119,7 +121,7 @@ class QueryArrowDataGenerator {
           // type template. Same for below.
           for (auto i = 0; i < col_data.size(); ++i) {
             null_data[i] = Random::oneIn(null_chance, rng)
-                               ? (col_data[i] = N_MIN, true)
+                               ? (col_data[i] = 0, true)
                                : (col_data[i] = static_cast<T>(
                                       Random::randInt64(value_min, value_max, rng)),
                                   false);
@@ -127,7 +129,7 @@ class QueryArrowDataGenerator {
         } else if (std::is_floating_point<T>::value) {
           for (auto i = 0; i < col_data.size(); ++i) {
             null_data[i] = Random::oneIn(null_chance, rng)
-                               ? (col_data[i] = N_MIN, true)
+                               ? (col_data[i] = 0, true)
                                : (col_data[i] = static_cast<T>(
                                       Random::randFloat(value_min, value_max, rng)),
                                   false);

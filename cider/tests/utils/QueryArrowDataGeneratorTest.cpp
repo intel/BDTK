@@ -44,8 +44,9 @@
             .build();                                                               \
     EXPECT_EQ(expected_array->length, 10);                                          \
     EXPECT_EQ(expected_array->n_children, 1);                                       \
+    /*TODO: EXPECT_TRUE(ArrowChecker::checkEq(expected_batch, actual_batch));*/     \
   }
-// EXPECT_TRUE(ArrowChecker::checkEq(expected_batch, actual_batch));
+
 #define TEST_GEN_SINGLE_COLUMN_RANDOM(S_TYPE)                                      \
   {                                                                                \
     ArrowArray* array = nullptr;                                                   \
@@ -61,7 +62,7 @@
     EXPECT_EQ(array->n_children, 1);                                               \
   }
 
-TEST(QueryDataGeneratorTest, genSingleColumn) {
+TEST(QueryArrowDataGeneratorTest, genSingleColumn) {
   TEST_GEN_SINGLE_COLUMN(int8_t, I8);
   TEST_GEN_SINGLE_COLUMN(int16_t, I16);
   TEST_GEN_SINGLE_COLUMN(int32_t, I32);
@@ -70,7 +71,7 @@ TEST(QueryDataGeneratorTest, genSingleColumn) {
   TEST_GEN_SINGLE_COLUMN(double, Fp64);
 }
 
-TEST(QueryDataGeneratorTest, genSingleColumnRandom) {
+TEST(QueryArrowDataGeneratorTest, genSingleColumnRandom) {
   ArrowArray* array = nullptr;
   ArrowSchema* schema = nullptr;
   QueryArrowDataGenerator::generateBatchByTypes(schema,
@@ -86,7 +87,7 @@ TEST(QueryDataGeneratorTest, genSingleColumnRandom) {
   EXPECT_NE(array->children[0], nullptr);
 }
 
-TEST(QueryDataGeneratorTest, randomData) {
+TEST(QueryArrowDataGeneratorTest, randomData) {
   TEST_GEN_SINGLE_COLUMN_RANDOM(I8);
   TEST_GEN_SINGLE_COLUMN_RANDOM(I16);
   TEST_GEN_SINGLE_COLUMN_RANDOM(I32);
@@ -95,7 +96,7 @@ TEST(QueryDataGeneratorTest, randomData) {
   TEST_GEN_SINGLE_COLUMN_RANDOM(Fp64);
 }
 
-TEST(QueryDataGeneratorTest, genMultiColumns) {
+TEST(QueryArrowDataGeneratorTest, genMultiColumns) {
   ArrowArray* actual_array = nullptr;
   ArrowSchema* actual_schema = nullptr;
   QueryArrowDataGenerator::generateBatchByTypes(
@@ -123,8 +124,33 @@ TEST(QueryDataGeneratorTest, genMultiColumns) {
           .addColumn<float>("", CREATE_SUBSTRAIT_TYPE(Fp32), VEC)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), VEC)
           .build();
-  // EXPECT_TRUE(ArrowChecker::checkEq(expected_batch, actual_batch));
+  // TODO: EXPECT_TRUE(ArrowChecker::checkEq(expected_batch, actual_batch));
 }
+
+TEST(QueryArrowDataGeneratorTest, genNullColumnTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                10,
+                                                {"col"},
+                                                {CREATE_SUBSTRAIT_TYPE(I32)},
+                                                {0},
+                                                GeneratePattern::Sequence);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0xFF);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFF);
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                10,
+                                                {"col"},
+                                                {CREATE_SUBSTRAIT_TYPE(I32)},
+                                                {1},
+                                                GeneratePattern::Sequence);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0x00);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFC);
+}
+
+// TODO: add STRING DATA TIMESTAMP tests
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

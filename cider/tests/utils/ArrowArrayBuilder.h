@@ -105,7 +105,7 @@ class ArrowArrayBuilder {
       void* null_buf = (void*)allocator_->allocate(null_size);
       std::memset(null_buf, 0xFF, null_size);
       for (auto i = 0; i < null_data.size(); i++) {
-        if (!null_data[i]) {
+        if (null_data[i]) {
           CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
         }
       }
