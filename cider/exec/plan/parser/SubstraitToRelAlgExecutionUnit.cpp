@@ -245,7 +245,7 @@ void SubstraitToRelAlgExecutionUnit::updateGeneratorContext(
     const substrait::Rel& rel_node,
     const std::unordered_map<int, std::string>& function_map) {
   // 1. visit whole plan and put each rel node into a Vector: std::vector<substrait::Rel,
-  // bool is_right_join_node>
+  // bool is_join_right_node>
   std::vector<std::pair<substrait::Rel, bool>> rel_vec;
   std::unordered_set<substrait::Rel::RelTypeCase> rel_type_set;
   getRelNodesInPostOder(rel_node, rel_vec, rel_type_set);
@@ -322,43 +322,27 @@ void SubstraitToRelAlgExecutionUnit::getRelNodesInPostOder(
   rel_type_set.insert(rel_type);
   switch (rel_type) {
     case substrait::Rel::RelTypeCase::kRead:
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.emplace_back(rel_node, is_join_right_node);
       break;
     case substrait::Rel::RelTypeCase::kFilter:
       getRelNodesInPostOder(
           rel_node.filter().input(), rel_vec, rel_type_set, is_join_right_node);
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.emplace_back(rel_node, is_join_right_node);
       break;
     case substrait::Rel::RelTypeCase::kProject:
       getRelNodesInPostOder(
           rel_node.project().input(), rel_vec, rel_type_set, is_join_right_node);
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.emplace_back(rel_node, is_join_right_node);
       break;
     case substrait::Rel::RelTypeCase::kAggregate:
       getRelNodesInPostOder(
           rel_node.aggregate().input(), rel_vec, rel_type_set, is_join_right_node);
-      if (is_join_right_node) {
-        rel_vec.push_back(std::pair(rel_node, true));
-      } else {
-        rel_vec.push_back(std::pair(rel_node, false));
-      }
+      rel_vec.emplace_back(rel_node, is_join_right_node);
       break;
     case substrait::Rel::RelTypeCase::kJoin:
       getRelNodesInPostOder(rel_node.join().left(), rel_vec, rel_type_set, false);
       getRelNodesInPostOder(rel_node.join().right(), rel_vec, rel_type_set, true);
-      rel_vec.push_back(std::pair(rel_node, is_join_right_node));
+      rel_vec.emplace_back(rel_node, is_join_right_node);
       break;
     default:
       CIDER_THROW(CiderCompileException,

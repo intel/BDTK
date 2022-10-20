@@ -31,12 +31,12 @@ namespace facebook::velox::plugin {
 // multi-threaded probe pipeline.
 class CiderJoinBridge : public exec::JoinBridge {
  public:
-  void setData(std::vector<RowVectorPtr> data);
+  void setData(std::vector<VectorPtr> data);
 
-  std::optional<std::vector<RowVectorPtr>> dataOrFuture(ContinueFuture* future);
+  std::optional<std::vector<VectorPtr>> dataOrFuture(ContinueFuture* future);
 
  private:
-  std::optional<std::vector<RowVectorPtr>> data_;
+  std::optional<std::vector<VectorPtr>> data_;
 };
 
 class CiderJoinBuild : public exec::Operator {
@@ -67,7 +67,7 @@ class CiderJoinBuild : public exec::Operator {
   // Drivers must be completed before making the hash table.
   ContinueFuture future_{ContinueFuture::makeEmpty()};
 
-  std::vector<RowVectorPtr> data_;
+  std::vector<VectorPtr> data_;
 };
 
 }  // namespace facebook::velox::plugin

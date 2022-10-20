@@ -68,10 +68,12 @@ ColumnInfoList CiderSchemaProvider::listColumns(int db_id, int table_id) const {
 
 TableInfoPtr CiderSchemaProvider::getTableInfo(int db_id, int table_id) const {
   UNREACHABLE();
+  return nullptr;
 }
 TableInfoPtr CiderSchemaProvider::getTableInfo(int db_id,
                                                const std::string& table_name) const {
   UNREACHABLE();
+  return nullptr;
 }
 
 ColumnInfoPtr CiderSchemaProvider::getColumnInfo(int db_id,
@@ -92,4 +94,5 @@ ColumnInfoPtr CiderSchemaProvider::getColumnInfo(int db_id,
                                                  int table_id,
                                                  const std::string& col_name) const {
   UNREACHABLE();
+  return nullptr;
 }

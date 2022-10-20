@@ -293,6 +293,7 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   logger::LogOptions log_options(argv[0]);
   log_options.parse_command_line(argc, argv);
   log_options.max_files_ = 0;  // stderr only by default
