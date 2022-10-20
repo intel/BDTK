@@ -117,6 +117,53 @@ std::string from_datetrunc_field(const DatetruncField& fieldno) {
 
 }  // namespace
 
+ExtractField ExtractExpr::presto_function_to_extract_field(
+    const std::string& function_name) {
+  ExtractField fieldno;
+  if (boost::iequals(function_name, "year")) {
+    fieldno = kYEAR;
+  } else if (boost::iequals(function_name, "quarter")) {
+    fieldno = kQUARTER;
+  } else if (boost::iequals(function_name, "month")) {
+    fieldno = kMONTH;
+  } else if (boost::iequals(function_name, "day")) {
+    fieldno = kDAY;
+  } else if (boost::iequals(function_name, "quarterday")) {
+    fieldno = kQUARTERDAY;
+  } else if (boost::iequals(function_name, "hour")) {
+    fieldno = kHOUR;
+  } else if (boost::iequals(function_name, "minute")) {
+    fieldno = kMINUTE;
+  } else if (boost::iequals(function_name, "second")) {
+    fieldno = kSECOND;
+  } else if (boost::iequals(function_name, "millisecond")) {
+    fieldno = kMILLISECOND;
+  } else if (boost::iequals(function_name, "microsecond")) {
+    fieldno = kMICROSECOND;
+  } else if (boost::iequals(function_name, "nanosecond")) {
+    fieldno = kNANOSECOND;
+  } else if (boost::iequals(function_name, "day_of_week")) {
+    fieldno = kDOW;
+  } else if (boost::iequals(function_name, "isodow")) {
+    fieldno = kISODOW;
+  } else if (boost::iequals(function_name, "day_of_year")) {
+    fieldno = kDOY;
+  } else if (boost::iequals(function_name, "epoch")) {
+    fieldno = kEPOCH;
+  } else if (boost::iequals(function_name, "week")) {
+    fieldno = kWEEK;
+  } else if (boost::iequals(function_name, "week_sunday")) {
+    fieldno = kWEEK_SUNDAY;
+  } else if (boost::iequals(function_name, "week_saturday")) {
+    fieldno = kWEEK_SATURDAY;
+  } else if (boost::iequals(function_name, "dateepoch")) {
+    fieldno = kDATEEPOCH;
+  } else {
+    return fieldno = NONE;
+  }
+  return fieldno;
+}
+
 ExtractField ExtractExpr::to_extract_field(const std::string& field) {
   ExtractField fieldno;
   if (boost::iequals(field, "year")) {

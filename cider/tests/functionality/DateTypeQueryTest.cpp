@@ -83,8 +83,16 @@ class DateRandomAndNullQueryOf2009Test : public CiderTestBase {
   }
 };
 
-TEST_F(DateTypeQueryTest, yearTest) {
+TEST_F(DateTypeQueryTest, FunctionTest) {
   assertQuery("SELECT extract(year from col_b) FROM test", "functions/date/year.json");
+  assertQuery("SELECT extract(quarter from col_b) FROM test",
+              "functions/date/quarter.json");
+  assertQuery("SELECT extract(month from col_b) FROM test", "functions/date/month.json");
+  assertQuery("SELECT extract(day from col_b) FROM test", "functions/date/day.json");
+  assertQuery("SELECT extract(dayofweek from col_b) FROM test",
+              "functions/date/day_of_week.json");
+  assertQuery("SELECT extract(doy from col_b) FROM test",
+              "functions/date/day_of_year.json");
 }
 
 TEST_F(DateTypeQueryTest, SimpleExtractDateTest) {
@@ -106,6 +114,7 @@ TEST_F(DateTypeQueryTest, SimpleExtractDateTest) {
 // using 2009 for test because ISO week calendar covers Gregorian calendar in 2009
 TEST_F(DateRandomAndNullQueryOf2009Test, SimpleExtractDateTest2) {
   assertQuery("SELECT extract(week from col_b) FROM test", "extract/week.json");
+  assertQuery("SELECT extract(week from col_b) FROM test", "functions/date/week.json");
 }
 
 TEST_F(DateRandomQueryTest, SimpleExtractDateTest2) {

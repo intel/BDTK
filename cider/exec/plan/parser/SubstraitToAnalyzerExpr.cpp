@@ -654,16 +654,26 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildInValuesEx
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExpr(
     const substrait::Expression_ScalarFunction& s_scalar_function,
     const std::unordered_map<int, std::string> function_map,
+    const ExtractField& extract_field,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  CHECK(s_scalar_function.arguments_size() == 2);
-  CHECK(s_scalar_function.arguments(0).has_enum_());
-  std::string time_unit = s_scalar_function.arguments(0).enum_().specified();
-  CHECK(time_unit != *&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  CHECK(s_scalar_function.arguments(1).has_value());
-  auto from_expr =
-      toAnalyzerExpr(s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
-  return ExtractExpr::generate(from_expr, time_unit);
+  if (extract_field == ExtractField::NONE) {
+    CHECK(s_scalar_function.arguments_size() == 2);
+    CHECK(s_scalar_function.arguments(1).has_value());
+    auto from_expr = toAnalyzerExpr(
+        s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
+    CHECK(s_scalar_function.arguments(0).has_enum_());
+    std::string time_unit = s_scalar_function.arguments(0).enum_().specified();
+    CHECK(time_unit != *&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return ExtractExpr::generate(from_expr, time_unit);
+  } else {
+    CHECK(s_scalar_function.arguments_size() == 1);
+    auto from_expr = toAnalyzerExpr(
+        s_scalar_function.arguments(0).value(), function_map, expr_map_ptr);
+    // from_expr->set_type_info(
+    //     SQLTypeInfo(SQLTypes::kDATE, from_expr->get_type_info().get_notnull()));
+    return ExtractExpr::generate(from_expr, extract_field);
+  }
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildNotNullExpr(
@@ -891,17 +901,18 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   if (function == "in") {
     return buildInValuesExpr(s_scalar_function, function_map, expr_map_ptr);
   }
-  if (function == "extract") {
-    return buildExtractExpr(s_scalar_function, function_map, expr_map_ptr);
+  if (auto field = ExtractExpr::presto_function_to_extract_field(function);
+      field != ExtractField::NONE || function == "extract") {
+    return buildExtractExpr(s_scalar_function, function_map, field, expr_map_ptr);
+  }
+  if (!ExtractExpr::presto_function_to_extract_field(function)) {
+    return buildYearExpr(s_scalar_function, function_map, expr_map_ptr);
   }
   if (function == "is_not_null") {
     return buildNotNullExpr(s_scalar_function, function_map, expr_map_ptr);
   }
   if (function == "coalesce") {
     return buildCoalesceExpr(s_scalar_function, function_map, expr_map_ptr);
-  }
-  if (function == "year") {
-    return buildYearExpr(s_scalar_function, function_map, expr_map_ptr);
   }
   if (isStringFunction(function)) {
     return buildStrExpr(s_scalar_function, function_map, expr_map_ptr);

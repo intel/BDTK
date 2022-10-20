@@ -152,6 +152,7 @@ class Substrait2AnalyzerExprConverter {
   std::shared_ptr<Analyzer::Expr> buildExtractExpr(
       const substrait::Expression_ScalarFunction& s_scalar_function,
       const std::unordered_map<int, std::string> function_map,
+      const ExtractField& extractField,
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 
