@@ -19,138 +19,11 @@
  * under the License.
  */
 
-#include "CiderBatchChecker.h"
 #include "Utils.h"
+#include "CiderBatchChecker.h"
+#include "CiderBatchStringifier.h"
 #include "cider/batch/ScalarBatch.h"
 #include "cider/batch/StructBatch.h"
-
-template <typename T>
-std::string CiderBatchStringifier::stringifyScalarBatchAt(const ScalarBatch<T>* batch,
-                                                          int row_index) {
-  if (!batch) {
-    CIDER_THROW(CiderRuntimeException,
-                "ScalarBatch is nullptr, maybe check your casting?");
-  }
-
-  auto data_buffer = batch->getRawData();
-  auto valid_bitmap = batch->getNulls();
-
-  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
-    return NULL_VALUE;
-  } else {
-    T value = data_buffer[row_index];
-    return std::to_string(static_cast<int64_t>(value));
-  }
-}
-
-template <>
-std::string CiderBatchStringifier::stringifyScalarBatchAt<float>(
-    const ScalarBatch<float>* batch,
-    int row_index) {
-  if (!batch) {
-    CIDER_THROW(CiderRuntimeException,
-                "ScalarBatch is nullptr, maybe check your casting?");
-  }
-
-  auto data_buffer = batch->getRawData();
-  auto valid_bitmap = batch->getNulls();
-
-  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
-    return NULL_VALUE;
-  } else {
-    std::stringstream fps;
-    fps.clear();
-    float value = data_buffer[row_index];
-    fps << std::setprecision(16) << value;
-    return fps.str();
-  }
-}
-
-template <>
-std::string CiderBatchStringifier::stringifyScalarBatchAt<double>(
-    const ScalarBatch<double>* batch,
-    int row_index) {
-  if (!batch) {
-    CIDER_THROW(CiderRuntimeException,
-                "ScalarBatch is nullptr, maybe check your casting?");
-  }
-
-  auto data_buffer = batch->getRawData();
-  auto valid_bitmap = batch->getNulls();
-
-  if (valid_bitmap && CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
-    return NULL_VALUE;
-  } else {
-    std::stringstream fps;
-    fps.clear();
-    double value = data_buffer[row_index];
-    fps << std::setprecision(16) << value;
-    return fps.str();
-  }
-}
-
-std::string CiderBatchStringifier::stringifyStructBatchAt(CiderBatch* batch,
-                                                          int row_index) {
-  if (!batch) {
-    CIDER_THROW(CiderRuntimeException, "StructBatch is nullptr.");
-  }
-
-  ConcatenatedRow row;
-  int col_num = batch->getChildrenNum();
-  auto valid_bitmap = batch->getNulls();
-
-  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
-    // this usually should not happen, values in struct batch are expected to be valid
-    // but just in case
-    return NULL_VALUE;
-  }
-
-  for (int col_index = 0; col_index < col_num; col_index++) {
-    auto child = batch->getChildAt(col_index);
-    std::string cell_str;
-
-    switch (child->getCiderType()) {
-      case SQLTypes::kBOOLEAN:
-        CIDER_THROW(CiderCompileException, "Boolean is currently not supported.");
-      case SQLTypes::kTINYINT:
-        cell_str =
-            stringifyScalarBatchAt<int8_t>(child->as<ScalarBatch<int8_t>>(), row_index);
-        break;
-      case SQLTypes::kSMALLINT:
-        cell_str =
-            stringifyScalarBatchAt<int16_t>(child->as<ScalarBatch<int16_t>>(), row_index);
-        break;
-      case SQLTypes::kINT:
-        cell_str =
-            stringifyScalarBatchAt<int32_t>(child->as<ScalarBatch<int32_t>>(), row_index);
-        break;
-      case SQLTypes::kBIGINT:
-        cell_str =
-            stringifyScalarBatchAt<int64_t>(child->as<ScalarBatch<int64_t>>(), row_index);
-        break;
-      case SQLTypes::kFLOAT:
-        cell_str =
-            stringifyScalarBatchAt<float>(child->as<ScalarBatch<float>>(), row_index);
-        break;
-      case SQLTypes::kDOUBLE:
-        cell_str =
-            stringifyScalarBatchAt<double>(child->as<ScalarBatch<double>>(), row_index);
-        break;
-      case SQLTypes::kSTRUCT:
-        cell_str =
-            stringifyStructBatchAt(dynamic_cast<StructBatch*>(child.get()), row_index);
-        break;
-      default:
-        CIDER_THROW(CiderCompileException, "Unsupported type for stringification.");
-    }
-
-    CHECK(cell_str.size());
-    row.addCol(cell_str);
-  }
-
-  row.finish();
-  return row.getString();
-}
 
 std::vector<ConcatenatedRow> CiderBatchChecker::arrowToConcatenatedRowVector(
     const std::vector<std::shared_ptr<CiderBatch>>& cider_batches) {
@@ -158,10 +31,9 @@ std::vector<ConcatenatedRow> CiderBatchChecker::arrowToConcatenatedRowVector(
   for (auto batch : cider_batches) {
     auto col_num = batch->getChildrenNum();
 
+    auto root_stringifier = std::make_unique<StructBatchStringifier>(batch.get());
     for (int row_index = 0; row_index < batch->getLength(); row_index++) {
-      auto batch_str =
-          CiderBatchStringifier::stringifyStructBatchAt(batch.get(), row_index);
-
+      auto batch_str = root_stringifier->stringifyValueAt(batch.get(), row_index);
       CHECK_NE(batch_str, NULL_VALUE);
 
       ConcatenatedRow row(col_num, batch_str);

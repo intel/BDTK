@@ -1,0 +1,137 @@
+#include "CiderBatchStringifier.h"
+#include "CiderBatchChecker.h"
+
+StructBatchStringifier::StructBatchStringifier(CiderBatch* batch) {
+  // fill child_stringifiers_ with stringifiers of corresponding types
+  auto col_num = batch->getChildrenNum();
+  for (auto col_index = 0; col_index < col_num; ++col_index) {
+    auto child = batch->getChildAt(col_index);
+    switch (child->getCiderType()) {
+      case SQLTypes::kBOOLEAN:
+        /// TODO: (YBRua) support boolean values
+        CIDER_THROW(CiderCompileException, "Boolean values are not supported.");
+      case SQLTypes::kTINYINT:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int8_t>>());
+        break;
+      case SQLTypes::kSMALLINT:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int16_t>>());
+        break;
+      case SQLTypes::kINT:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int32_t>>());
+        break;
+      case SQLTypes::kBIGINT:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int64_t>>());
+        break;
+      case SQLTypes::kFLOAT:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<float>>());
+        break;
+      case SQLTypes::kDOUBLE:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<double>>());
+        break;
+      case SQLTypes::kSTRUCT:
+        child_stringifiers_.emplace_back(
+            std::make_unique<StructBatchStringifier>(child.get()));
+        break;
+      default:
+        CIDER_THROW(CiderCompileException, "Unsupported type for stringification");
+    }
+  }
+}
+
+std::string StructBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_index) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException, "StructBatch is nullptr.");
+  }
+
+  auto valid_bitmap = batch->getNulls();
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    // this usually should not happen, values in struct batch are expected to be valid
+    // but just in case
+    return NULL_VALUE;
+  }
+
+  int col_num = batch->getChildrenNum();
+  CHECK_EQ(col_num, child_stringifiers_.size());
+
+  ConcatenatedRow row;
+  for (auto col_index = 0; col_index < col_num; ++col_index) {
+    auto child = batch->getChildAt(col_index);
+    auto& col_stringifier = child_stringifiers_[col_index];
+    auto value_str = col_stringifier->stringifyValueAt(child.get(), row_index);
+    row.addCol(value_str);
+  }
+  row.finish();
+  return row.getString();
+}
+
+template <typename T>
+std::string ScalarBatchStringifier<T>::stringifyValueAt(CiderBatch* batch,
+                                                        int row_index) {
+  auto scalar_batch = batch->as<ScalarBatch<T>>();
+  if (!scalar_batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = scalar_batch->getRawData();
+  auto valid_bitmap = scalar_batch->getNulls();
+
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    T value = data_buffer[row_index];
+    return std::to_string(static_cast<int64_t>(value));
+  }
+}
+
+template <>
+std::string ScalarBatchStringifier<float>::stringifyValueAt(CiderBatch* batch,
+                                                            int row_index) {
+  auto scalar_batch = batch->as<ScalarBatch<float>>();
+  if (!scalar_batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = scalar_batch->getRawData();
+  auto valid_bitmap = scalar_batch->getNulls();
+
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    std::stringstream fps;
+    fps.clear();
+    float value = data_buffer[row_index];
+    fps << std::setprecision(16) << value;
+    return fps.str();
+  }
+}
+
+template <>
+std::string ScalarBatchStringifier<double>::stringifyValueAt(CiderBatch* batch,
+                                                             int row_index) {
+  auto scalar_batch = batch->as<ScalarBatch<double>>();
+  if (!scalar_batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = scalar_batch->getRawData();
+  auto valid_bitmap = scalar_batch->getNulls();
+
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    std::stringstream fps;
+    fps.clear();
+    double value = data_buffer[row_index];
+    fps << std::setprecision(16) << value;
+    return fps.str();
+  }
+}

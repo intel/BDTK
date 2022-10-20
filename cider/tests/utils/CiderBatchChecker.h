@@ -19,6 +19,9 @@
  * under the License.
  */
 
+#ifndef CIDER_CIDERBATCHCHECKER_H
+#define CIDER_CIDERBATCHCHECKER_H
+
 #include <string.h>
 #include <iomanip>
 #include <numeric>
@@ -28,14 +31,6 @@
 #include "cider/CiderTableSchema.h"
 #include "cider/batch/ScalarBatch.h"
 #include "cider/batch/StructBatch.h"
-
-class CiderBatchStringifier {
- public:
-  static std::string stringifyStructBatchAt(CiderBatch* batch, int row_index);
-
-  template <typename T>
-  static std::string stringifyScalarBatchAt(const ScalarBatch<T>* batch, int row_index);
-};
 
 class ConcatenatedRow {
  public:
@@ -287,3 +282,5 @@ class CiderBatchChecker {
                                 std::vector<ConcatenatedRow> actual_row_vector,
                                 bool ignore_order);
 };
+
+#endif
