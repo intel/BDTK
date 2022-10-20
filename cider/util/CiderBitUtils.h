@@ -183,6 +183,27 @@ inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
 
   return ans;
 }
+
+inline bool CheckBitVectorEq(const uint8_t* vec1, const uint8_t* vec2, int end) {
+  size_t i = 0, bytes = 0;
+
+  // do byte-batched check with memcmp
+  for (; i + 64 <= end; i += 64, bytes++)
+    ;
+  if (memcmp(vec1, vec2, bytes)) {
+    return false;
+  }
+
+  // compare remainders
+  for (; i < end; ++i) {
+    if ((isBitSetAt(vec1, i) && !isBitSetAt(vec2, i)) ||
+        (!isBitSetAt(vec1, i) && isBitSetAt(vec2, i))) {
+      return false;
+    }
+  }
+
+  return true;
+}
 };  // namespace CiderBitUtils
 
 #endif

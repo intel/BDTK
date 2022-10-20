@@ -116,6 +116,30 @@ TEST_F(CiderBitUtilsTest, CountTest) {
   EXPECT_EQ(countSetBits(bit_vec, 1025), 3ul);
 }
 
+TEST_F(CiderBitUtilsTest, CheckEqTest) {
+  const int length = 100;
+  CiderBitVector<> bit_vec_1(allocator, length);
+  CiderBitVector<> bit_vec_2(allocator, length);
+  auto bv1 = bit_vec_1.as<uint8_t>();
+  auto bv2 = bit_vec_2.as<uint8_t>();
+
+  EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
+  EXPECT_TRUE(CheckBitVectorEq(bv2, bv1, length));
+
+  setBitAt(bv1, 0);
+  EXPECT_FALSE(CheckBitVectorEq(bv1, bv2, length));
+  EXPECT_FALSE(CheckBitVectorEq(bv2, bv1, length));
+
+  setBitAt(bv2, 0);
+  EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
+
+  setBitAt(bv2, length - 1);
+  EXPECT_FALSE(CheckBitVectorEq(bv1, bv2, length));
+
+  setBitAt(bv1, length - 1);
+  EXPECT_TRUE(CheckBitVectorEq(bv1, bv2, length));
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   namespace po = boost::program_options;
