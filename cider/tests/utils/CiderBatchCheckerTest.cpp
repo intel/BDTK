@@ -22,7 +22,284 @@
 #include <gtest/gtest.h>
 #include "CiderBatchBuilder.h"
 #include "CiderBatchChecker.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 #include "exec/plan/parser/TypeUtils.h"
+
+template <typename T>
+void fillSequenceChildScalarBatch(ScalarBatch<T>* child, int n_rows, int n_nulls) {
+  CHECK_LE(n_nulls, n_rows);
+  std::vector<T> data;
+  std::vector<bool> valids;
+
+  int n_not_nulls = n_rows - n_nulls;
+  for (int i = 0; i < n_rows; ++i) {
+    bool is_valid = (i < n_not_nulls);
+    T value = static_cast<T>(i);
+    data.push_back(is_valid ? i : 0);
+    valids.push_back(is_valid);
+  }
+
+  copyDataToChildScalarBatch(child, data, valids);
+}
+
+template <typename T>
+void copyDataToChildScalarBatch(ScalarBatch<T>* child,
+                                const std::vector<T>& data,
+                                const std::vector<bool>& valids) {
+  auto n_rows = data.size();
+  CHECK(child->resizeBatch(n_rows));
+
+  auto data_buffer = child->getMutableRawData();
+  auto null_buffer = child->getMutableNulls();
+  int null_count = 0;
+
+  for (int i = 0; i < n_rows; ++i) {
+    auto is_valid = valids[i];
+    data_buffer[i] = is_valid ? data[i] : 0;
+    if (is_valid) {
+      CiderBitUtils::setBitAt(null_buffer, i);
+    } else {
+      CiderBitUtils::clearBitAt(null_buffer, i);
+      ++null_count;
+    }
+  }
+  child->setNullCount(null_count);
+}
+
+std::shared_ptr<CiderBatch> generateSequenceArrowCiderBatch(
+    int n_rows = 10,
+    int n_nulls = 3,
+    const std::vector<SQLTypeInfo>& c = {}) {
+  // generate a CiderBatch containing data that are sequentially increasing
+  std::vector<SQLTypeInfo> children_types;
+  if (c.size()) {
+    children_types = c;
+  } else {
+    children_types = {SQLTypeInfo(kINT, false), SQLTypeInfo(kFLOAT, false)};
+  }
+  auto types = SQLTypeInfo(kSTRUCT, false, children_types);
+
+  auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(types);
+  auto batch = StructBatch::Create(schema, std::make_shared<CiderDefaultAllocator>());
+  CHECK(batch->resizeBatch(n_rows));
+
+  auto n_cols = batch->getChildrenNum();
+  for (auto col_index = 0; col_index < n_cols; ++col_index) {
+    auto child_type = children_types[col_index];
+    auto child = batch->getChildAt(col_index);
+
+    int child_n_nulls = child_type.get_notnull() ? 0 : n_nulls;
+    switch (child_type.get_type()) {
+      case kTINYINT:
+        fillSequenceChildScalarBatch<int8_t>(
+            child->asMutable<ScalarBatch<int8_t>>(), n_rows, child_n_nulls);
+        break;
+      case kSMALLINT:
+        fillSequenceChildScalarBatch<int16_t>(
+            child->asMutable<ScalarBatch<int16_t>>(), n_rows, child_n_nulls);
+        break;
+      case kINT:
+        fillSequenceChildScalarBatch<int32_t>(
+            child->asMutable<ScalarBatch<int32_t>>(), n_rows, child_n_nulls);
+        break;
+      case kBIGINT:
+        fillSequenceChildScalarBatch<int64_t>(
+            child->asMutable<ScalarBatch<int64_t>>(), n_rows, child_n_nulls);
+        break;
+      case kFLOAT:
+        fillSequenceChildScalarBatch<float>(
+            child->asMutable<ScalarBatch<float>>(), n_rows, child_n_nulls);
+        break;
+      case kDOUBLE:
+        fillSequenceChildScalarBatch<double>(
+            child->asMutable<ScalarBatch<double>>(), n_rows, child_n_nulls);
+        break;
+      default:
+        CIDER_THROW(CiderCompileException, "Unsupported data type.");
+    }
+  }
+
+  return std::make_shared<CiderBatch>(std::move(*batch));
+}
+
+std::vector<std::shared_ptr<CiderBatch>> generateFixedArrowCiderBatches() {
+  // generate a vector of CiderBatches containing preset data
+  // temporary method, to be replaced with CiderBatchBuilder
+
+  // raw data to be used
+  auto ints_1 = std::vector<int>{1, 3, 5, 7, 9, 2, 4, 6, 8, 10};
+  auto ints_2 = std::vector<int>{2, 4, 6, 8, 10, 1, 3, 5, 7, 9};
+  auto floats_1 = std::vector<float>{
+      1.024, 2.3333, 3.1415926, 4.096, 5.14, 6.666, 7.749, 8.192, 9.96, 10.00001};
+  auto floats_2 = std::vector<float>{
+      6.666, 7.749, 8.192, 9.96, 10.00001, 1.024, 2.3333, 3.1415926, 4.096, 5.14};
+  auto all_valid = std::vector<bool>(10, true);
+  auto partial_valid_1 =
+      std::vector<bool>{true, true, true, true, true, true, true, false, false, false};
+  auto partial_valid_2 =
+      std::vector<bool>{true, true, false, false, false, true, true, true, true, true};
+
+  // batch 1, 10 values, all valid
+  auto batch1_types =
+      SQLTypeInfo(kSTRUCT, false, {SQLTypeInfo(kINT, false), SQLTypeInfo(kFLOAT, false)});
+  auto batch1_schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(batch1_types);
+  auto batch1 =
+      StructBatch::Create(batch1_schema, std::make_shared<CiderDefaultAllocator>());
+  CHECK(batch1->resizeBatch(10));
+  copyDataToChildScalarBatch<int>(
+      batch1->getChildAt(0)->asMutable<ScalarBatch<int>>(), ints_1, all_valid);
+  copyDataToChildScalarBatch<float>(
+      batch1->getChildAt(1)->asMutable<ScalarBatch<float>>(), floats_1, all_valid);
+
+  // batch 2, 10 values, same order as batch 1, 7 valid
+  auto batch2_types =
+      SQLTypeInfo(kSTRUCT, false, {SQLTypeInfo(kINT, false), SQLTypeInfo(kFLOAT, false)});
+
+  auto batch2_schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(batch2_types);
+  auto batch2 =
+      StructBatch::Create(batch2_schema, std::make_shared<CiderDefaultAllocator>());
+  CHECK(batch2->resizeBatch(10));
+  copyDataToChildScalarBatch<int>(
+      batch2->getChildAt(0)->asMutable<ScalarBatch<int>>(), ints_1, partial_valid_1);
+  copyDataToChildScalarBatch<float>(
+      batch2->getChildAt(1)->asMutable<ScalarBatch<float>>(), floats_1, partial_valid_1);
+
+  // batch 3, 10 values, all valid, different order
+  auto batch3_types =
+      SQLTypeInfo(kSTRUCT, false, {SQLTypeInfo(kINT, false), SQLTypeInfo(kFLOAT, false)});
+
+  auto batch3_schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(batch3_types);
+  auto batch3 =
+      StructBatch::Create(batch3_schema, std::make_shared<CiderDefaultAllocator>());
+  CHECK(batch3->resizeBatch(10));
+  copyDataToChildScalarBatch<int>(
+      batch3->getChildAt(0)->asMutable<ScalarBatch<int>>(), ints_2, all_valid);
+  copyDataToChildScalarBatch<float>(
+      batch3->getChildAt(1)->asMutable<ScalarBatch<float>>(), floats_2, all_valid);
+
+  // batch 4, 10 values, 7 valid, different order
+  auto batch4_types =
+      SQLTypeInfo(kSTRUCT, false, {SQLTypeInfo(kINT, false), SQLTypeInfo(kFLOAT, false)});
+
+  auto batch4_schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(batch4_types);
+  auto batch4 =
+      StructBatch::Create(batch4_schema, std::make_shared<CiderDefaultAllocator>());
+  CHECK(batch4->resizeBatch(10));
+  copyDataToChildScalarBatch<int>(
+      batch4->getChildAt(0)->asMutable<ScalarBatch<int>>(), ints_2, partial_valid_2);
+  copyDataToChildScalarBatch<float>(
+      batch4->getChildAt(1)->asMutable<ScalarBatch<float>>(), floats_2, partial_valid_2);
+
+  return {std::make_shared<CiderBatch>(std::move(*batch1)),
+          std::make_shared<CiderBatch>(std::move(*batch2)),
+          std::make_shared<CiderBatch>(std::move(*batch3)),
+          std::make_shared<CiderBatch>(std::move(*batch4))};
+}
+
+TEST(CiderBatchCheckerArrowTest, colNumCheck) {
+  auto expected_1 = generateSequenceArrowCiderBatch();
+  auto actual_1 = generateSequenceArrowCiderBatch();
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected_1}, {actual_1}));
+
+  auto expected_2 = generateSequenceArrowCiderBatch();
+  auto actual_2 = generateSequenceArrowCiderBatch(10, 3, {SQLTypeInfo(kINT, false)});
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq({expected_2}, {actual_2}));
+
+  auto expected_3 = generateSequenceArrowCiderBatch(10, 3, {SQLTypeInfo(kINT, false)});
+  auto actual_3 = generateSequenceArrowCiderBatch();
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq({expected_3}, {actual_3}));
+
+  auto expected_4 = generateSequenceArrowCiderBatch(0, 0);
+  auto actual_4 = generateSequenceArrowCiderBatch(0, 0, {SQLTypeInfo(kINT, false)});
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected_4}, {actual_4}));
+}
+
+TEST(CiderBatchCheckerArrowTest, rowNumCheck) {
+  auto expected_1 = generateSequenceArrowCiderBatch();
+  auto actual_1 = generateSequenceArrowCiderBatch(20, 6);
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq({expected_1}, {actual_1}));
+}
+
+#define TEST_SINGLE_COLUMN_ARROW(C_TYPE, SQLTYPE)                                       \
+  {                                                                                     \
+    auto types##C_TYPE = {SQLTypeInfo(SQLTYPE, false)};                                 \
+    auto expected##C_TYPE = generateSequenceArrowCiderBatch(10, 3, types##C_TYPE);      \
+    auto actual##C_TYPE = generateSequenceArrowCiderBatch(10, 3, types##C_TYPE);        \
+                                                                                        \
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected##C_TYPE}, {actual##C_TYPE})); \
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq({actual##C_TYPE}, {expected##C_TYPE})); \
+  }
+
+TEST(CiderBatchCheckerArrowTest, singleColumn) {
+  TEST_SINGLE_COLUMN_ARROW(int8_t, kTINYINT);
+  TEST_SINGLE_COLUMN_ARROW(int16_t, kSMALLINT);
+  TEST_SINGLE_COLUMN_ARROW(int32_t, kINT);
+  TEST_SINGLE_COLUMN_ARROW(int64_t, kBIGINT);
+  TEST_SINGLE_COLUMN_ARROW(float, kFLOAT);
+  TEST_SINGLE_COLUMN_ARROW(double, kDOUBLE);
+}
+
+TEST(CiderBatchCheckerArrowTest, nullTest) {
+  auto children_types = {
+      SQLTypeInfo(kTINYINT, false),
+      SQLTypeInfo(kSMALLINT, false),
+      SQLTypeInfo(kINT, false),
+      SQLTypeInfo(kBIGINT, false),
+      SQLTypeInfo(kFLOAT, false),
+      SQLTypeInfo(kDOUBLE, false),
+  };
+
+  // no nulls
+  auto expected_1 = generateSequenceArrowCiderBatch(10, 0, children_types);
+  auto actual_1 = generateSequenceArrowCiderBatch(10, 0, children_types);
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected_1}, {actual_1}));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({actual_1}, {expected_1}));
+
+  // all nulls
+  auto expected_2 = generateSequenceArrowCiderBatch(10, 10, children_types);
+  auto actual_2 = generateSequenceArrowCiderBatch(10, 10, children_types);
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({expected_2}, {actual_2}));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq({actual_2}, {expected_2}));
+}
+
+TEST(CiderBatchCheckerArrowTest, ignoreOrder) {
+  auto batches = generateFixedArrowCiderBatches();
+
+  // different order, without nulls
+  auto batch_1 = batches[0];
+  auto batch_3 = batches[2];
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch_1, batch_3));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch_1, batch_3, true));
+
+  // different order, with nulls
+  auto batch_2 = batches[1];
+  auto batch_4 = batches[3];
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch_2, batch_4));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch_2, batch_4, true));
+}
+
+TEST(CiderBatchCheckerArrowTest, multiBatches) {
+  auto expecteds = generateFixedArrowCiderBatches();
+  auto actuals = generateFixedArrowCiderBatches();
+
+  // same order
+  auto expected_batches_1 =
+      std::vector<std::shared_ptr<CiderBatch>>{expecteds[0], expecteds[1]};
+  auto actual_batches_1 =
+      std::vector<std::shared_ptr<CiderBatch>>{actuals[0], actuals[1]};
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batches_1, actual_batches_1));
+
+  // different order
+  auto expected_batches_2 =
+      std::vector<std::shared_ptr<CiderBatch>>{expecteds[0], expecteds[1]};
+  auto actual_batches_2 =
+      std::vector<std::shared_ptr<CiderBatch>>{actuals[2], actuals[3]};
+  EXPECT_TRUE(
+      CiderBatchChecker::checkArrowEq(expected_batches_2, actual_batches_2, true));
+}
+
+// Old CiderBatch tests below
 
 #define TEST_SINGLE_COLUMN(C_TYPE, S_TYPE)                                               \
   {                                                                                      \

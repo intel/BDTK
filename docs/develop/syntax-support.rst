@@ -2,7 +2,7 @@
 Syntax support in Cider
 =================================
 
-1 Having syntax support
+Having syntax support
 -----------------------------------
 
 Generally, there are two cases in having. 
@@ -12,7 +12,7 @@ Case1:
 
 .. code-block:: sql
 
-        SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING col_a > 2
+        SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING col_a > 2;
 
 The other one is agg condition(See Case2 below) which should be handled after group by final agg.
 
@@ -20,7 +20,7 @@ Case2:
 
 .. code-block:: sql
 
-    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING SUM(col_a) > 2
+    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table GROUP BY col_a HAVING SUM(col_a) > 2;
 
 For Case1 in Cider, we will get substrait plan in which having clause is transfered to filter operator already.
 When it comes to Case3 that contains multiple conditions, we will receive a substrait plan with multiple
@@ -30,7 +30,7 @@ Case3:
 
 .. code-block:: sql
 
-        SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING col_a > 2
+        SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING col_a > 2;
 
 For Case2 in Cider, we expect to get two plans. One is table scan and partial agg, the other is final agg, filter and project.
 So when it comes to Case4, two different conditions from where and having won't appear in a same substrait plan and be merged
@@ -40,17 +40,19 @@ Case4:
 
 .. code-block:: sql
 
-    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING SUM(col_a) > 2
+    	SELECT col_a, SUM(col_a) AS sum_a FROM test_table WHERE col_a < 10 GROUP BY col_a HAVING SUM(col_a) > 2;
 
 In addition to those above, if we get an unexpected substrait plan like putting having agg condition together with partial
 agg plan, we will get wrong result batch without throwing exception.
 
 
-2 In syntax support
+In syntax support
 -----------------------------------
 
 The IN clause allows multi values definition in WHERE conditions. For example:
+
 .. code-block:: sql
+
         SELECT column_name(s)
         FROM table_name
         WHERE column_name IN (value1,value2,...);
@@ -58,22 +60,28 @@ The IN clause allows multi values definition in WHERE conditions. For example:
 Under this scenario, user translates IN expression to a substrait `ScalaFunction <https://github.com/substrait-io/substrait/blob/b8fb06a52397463bfe9cffc2c89fe71eba56b2ca/proto/substrait/algebra.proto#L387>`_ with `List <https://github.com/substrait-io/substrait/blob/b8fb06a52397463bfe9cffc2c89fe71eba56b2ca/proto/substrait/algebra.proto#L501>`_ as its second arg. Then Cider translates it into Analyzer::InValues for further codegen and computation.
 
 IN can also be used together with a subquery:
+
 .. code-block:: sql
+
         SELECT eno
         FROM employee
         WHERE dno IN
               (SELECT dno
               FROM dept
               WHERE floor = 3);
+
 In this case, plan parser in frontend framework will parse it either "IN (value1, value2, ...)" or a JoinNode
 when 'eno' col is known as a primary key or an unique index, like following:
+
 .. code-block:: sql
+
         SELECT eno
         FROM employee join dept
-        WHERE employee.dno = dept.dno and dept.floor = 3
+        WHERE employee.dno = dept.dno and dept.floor = 3;
+
 Thus this IN clause is handled through join op in Cider.
 
-3 AVG support in Cider
+AVG support in Cider
 -----------------------------------
 
 Similar as other aggregation functions, 'AVG' has 2 phases(Partial/Final) in distributing data analytic engines. But computation is different in different phase. In AVG partial, computation is split into sum() and count() on target column/expression and in AVG final, sum() is done on previous summation and count value, then do a divide between these 2 values.
@@ -84,11 +92,13 @@ It may have some conflictions when frontend framework offloads AVG function to C
 
 Similar special handle will be needed when output type of agg functions from frontend framework violates with cider internal. In cider, the returned data types defined as following:
 
-.. list-table::
+.. list-table
+
+::
+
    :widths: 10 30
    :align: left
    :header-rows: 1
-
    * - Aggregate Function
      - Output Type
    * - SUM
@@ -101,17 +111,18 @@ Similar special handle will be needed when output type of agg functions from fro
      - If g_bigint_count is true(default false), output type is BIGINT. Otherwise uses INT.
 
 
-4 String Function support in Cider
+String Function support in Cider
 -----------------------------------
 Currently, Cider do not distinguish empty string and null string.
 
 1) Like function
 ^^^^^^^^^^^^^^^^^^^^
+
 a. Acceptable wildcards: %, _, []
-b. Unacceptable wildcards: *, [^], [!]
+b. Unacceptable wildcards: `*`, [^], [!] 
 c. Escape clause is not supported yet.
 
-5 Conditional Expressions in Cider
+Conditional Expressions in Cider
 -----------------------------------
 1) COALESCE
 ^^^^^^^^^^^^^
@@ -129,7 +140,6 @@ The code COALESCE(expression1,...n) is executed in Cider as the following CASE e
         END
 
 Example: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -145,9 +155,11 @@ is equal to
 
 2) IF
 ^^^^^^
-The IF function is actually a language construct that is executed in Cider as the following CASE expression:
+The IF function is actually a language construct that is executed in Cider as the following CASE expression
 
-.. code-block:: 
+.. code-block
+
+:: 
 
         CASE
         WHEN condition THEN true_value
@@ -155,9 +167,10 @@ The IF function is actually a language construct that is executed in Cider as th
         END
 
 IF Functions: 
->>>>>>>>>>>>>>>
 
-1. .. code-block:: 
+1. .. code-block
+
+:: 
 
         if(condition, true_value)
 
@@ -169,7 +182,9 @@ is equal to
 
         CASE WHEN condition THEN true_value END
 
-2. .. code-block:: 
+2. .. code-block
+
+:: 
 
         if(condition, true_value, false_value)
 
@@ -181,7 +196,7 @@ is equal to
 
         CASE WHEN condition THEN true_value ELSE false_value END
 
-6 SELECT DISTINCT
+SELECT DISTINCT
 --------------------------------------
 
 Mainstream databases such as Spark and Presto will transform 'SELECT DISTINCT' sql to 'GROUP BY' sql when do optimization on logical plan.
@@ -233,7 +248,7 @@ When execute sql `select distinct nationkey from customer`, part of the json gen
 
 In above cases, the original 'SELECT DISTINCT' sql is converted to an Aggregation type, and the columns shoule be distinct will become 'GROUP BY' keys.
 
-7 GROUP BY related function
+GROUP BY related function
 --------------------------------------
 
 This part will explain extended usage of GROUP BY including GROUPING SETS() , CUBE() , ROLLUP() , GROUP BY ALL/DISTINCT, and together with those combined cases.
@@ -293,7 +308,6 @@ This is important not only for performance, data quality will also be a signific
 The ROLLUP operator generates all possible subtotals for a given set of columns.
 
 Example: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -329,7 +343,7 @@ is **equivalent** to:
 The CUBE operator generates all possible grouping sets (i.e. a power set) for a given set of columns.
 
 Example: 
->>>>>>>>>>>
+
 
 .. code-block:: sql
 
@@ -369,7 +383,6 @@ The ALL and DISTINCT quantifiers determine whether duplicate grouping sets each 
 This is particularly useful when multiple complex grouping sets are combined in the same query.
 
 Example1: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -400,7 +413,6 @@ is **equivalent** to:
         GROUPING SETS((col_a, col_b), (col_a), (col_b), ()); 
 
 Example2: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -439,7 +451,6 @@ The grouping operation returns a bit set converted to decimal, indicating which 
 It must be used in conjunction with GROUPING SETS, ROLLUP, CUBE or GROUP BY and its arguments must match exactly the columns referenced in the corresponding GROUPING SETS, ROLLUP, CUBE or GROUP BY clause.
 
 Example: 
->>>>>>>>>>>
 
 .. code-block:: sql
 
@@ -469,7 +480,8 @@ The GROUPING(col_a, col_b) results in _col3 and it represents a bit set converte
 Each column in GROUPING  operation will take one bit and it will be set to 0 if the corresponding column is included in the grouping and to 1 otherwise.
 
 8 ALL/ANY
-------
+---------
+
 In SQL, 'ALL' and 'ANY' are used to decorate compare operators(<, <=, =, !=, >, >=) between column values and a subquery result.
 
 'ALL' will return TRUE if the value matches **all** corresponding values in the subquery, while 'ANY' returns TRUE if it matches **any** single one.
@@ -487,13 +499,14 @@ Given test.col_i8 is
         3 
         (3 rows)
 
-then execute the following sql
-::
+
+then execute the following sql::
 
         SELECT col_i8 < ALL(VALUES 4,5,6) from test;
 
-will return
-::
+
+will return::
+
          _col0 
         -------
         false 
@@ -509,15 +522,15 @@ For above case, the logical plan generated by **Presto** is:
 
 2. use a **cross join** to generate the boolean results, whose left and right arguments are left rows and the min value in the first step.
 
-The logical plan tree:
-::
+The logical plan tree::
+
         - Output[_col0] => [expr_3:boolean]                                                                                                                                  >
                 _col0 := expr_3 (1:23)                                                                                                                                       >
             - RemoteStreamingExchange[GATHER] => [expr_3:boolean]                                                                                                            >
                 - Project[projectLocality = LOCAL] => [expr_3:boolean]                                                                                                       >
                         expr_3 := SWITCH(count_all, WHEN(BIGINT'0', BOOLEAN'true'), ((col_i8_0) < (min)) AND (SWITCH(BOOLEAN'true', WHEN((count_all) <> (count_non_null), nul>
                     - CrossJoin => [col_i8_0:integer, min:integer, count_all:bigint, count_non_null:bigint]                                                                  >
-                                Distribution: REPLICATED                                                                                                                         >
+                                Distribution: REPLICATED                                                                                                                     >
                         - ScanProject[table = TableHandle {connectorId='hive', connectorHandle='HiveTableHandle{schemaName=tpch, tableName=test, analyzePartitionValues=Optio>
                                 col_i8_0 := CAST(col_i8 AS integer) (1:49)                                                                                                   >
                                 LAYOUT: tpch.test{}                                                                                                                          >
@@ -556,11 +569,10 @@ The only two changes in plan are:
   
 
 For **=, !=**
-^^^^^^^^^^
+^^^^^^^^^^^^^
+
 For '**=**' in 'ALL' cases, there will be two aggregate functions **MIN** and **MAX**, and the project expression will become **(min) = (max)) AND ((expr) = (max))**. 
 
 While for '**!=**', there will be only a semi join between left rows(expr) and right rows to get boolean results, then a **NOT** operation will be implemented to get final results.
 
 For 'ANY' cases, the plans for '**=**' and '**!=**' are exactly the same as those of '**!=**' and '**=**' in 'ALL' cases.
-
-
