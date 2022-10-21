@@ -214,8 +214,8 @@ IF_TEST(CiderCaseWhenRandomWithNullTestBase, ifTest);
   }
 
 IF_ARROW_TEST(CiderCaseWhenSequenceTestBase, ifArrowTest);
-IF_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, ifArrowTestArrow);
-IF_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, ifArrowTestArrow);
+IF_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, ifArrowTest);
+IF_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, ifArrowTest);
 
 #define CASE_WHEN_TEST(TEST_CLASS, UNIT_NAME)                                           \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \

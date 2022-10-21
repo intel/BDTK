@@ -194,6 +194,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   auto datetrunc_expr = dynamic_cast<const Analyzer::DatetruncExpr*>(expr);
   if (datetrunc_expr) {
     return codegenDateTrunc(datetrunc_expr, co);
+  }
   auto case_expr = dynamic_cast<const Analyzer::CaseExpr*>(expr);
   if (case_expr) {
     return codegenCaseExpr(case_expr, co);
