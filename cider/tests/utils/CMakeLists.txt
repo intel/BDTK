@@ -19,6 +19,7 @@
 
 set(CIDER_TESTS_UTILS_SOURCE
     Utils.cpp
+    CiderBatchStringifier.cpp
     DuckDbQueryRunner.cpp
     CiderQueryRunner.cpp
     CiderTestBase.cpp
