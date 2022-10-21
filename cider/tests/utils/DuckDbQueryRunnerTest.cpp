@@ -184,7 +184,7 @@ TEST(DuckDBArrowQueryRunnerTest, multiBatchFetchTest) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(input_batch, multi_batch_res));
 }
 
-/// TODO: (YBRua) Some tests are to be added
+/// TODO: (YBRua) tests to be added
 /// 1. VarChar tests
 /// 2. date / time tests
 

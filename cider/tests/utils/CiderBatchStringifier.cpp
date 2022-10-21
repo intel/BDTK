@@ -30,7 +30,7 @@ StructBatchStringifier::StructBatchStringifier(CiderBatch* batch) {
     switch (child->getCiderType()) {
       case SQLTypes::kBOOLEAN:
         /// TODO: (YBRua) support boolean values
-        CIDER_THROW(CiderCompileException, "Boolean values are not supported.");
+        CIDER_THROW(CiderRuntimeException, "Boolean values are not supported.");
       case SQLTypes::kTINYINT:
         child_stringifiers_.emplace_back(
             std::make_unique<ScalarBatchStringifier<int8_t>>());
@@ -60,7 +60,7 @@ StructBatchStringifier::StructBatchStringifier(CiderBatch* batch) {
             std::make_unique<StructBatchStringifier>(child.get()));
         break;
       default:
-        CIDER_THROW(CiderCompileException, "Unsupported type for stringification");
+        CIDER_THROW(CiderRuntimeException, "Unsupported type for stringification");
     }
   }
 }
