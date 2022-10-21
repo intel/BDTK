@@ -50,7 +50,7 @@ bool CiderBatchChecker::colNumCheck(
     int expected_col_num) {
   for (auto i = 0; i < batches.size(); ++i) {
     if (batches[i]->getChildrenNum() != expected_col_num) {
-      std::cout << "Batch " << i << " is not having the same number of cols. "
+      std::cout << "Batch " << i << " is not having the same number of cols: "
                 << "Expected " << expected_col_num << "; Got "
                 << batches[i]->getChildrenNum() << std::endl;
       return false;
@@ -118,8 +118,8 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
     // however, the underlying data can be the same even if the types are different
     // so we skip memcmp and check results by ConcatenatedRow hashing
     std::cout << "One or more ScalarBatches are null_ptr in checkOneScalarBatchEqual. "
-              << "This can be caused by casting a ScalarBatch to a wrong type. "
-              << "Skipping memcmp check and using ConcatenatedRow check." << std::endl;
+              << "This can be caused by casting a ScalarBatch to a wrong type."
+              << std::endl;
     return false;
   }
   auto expected_data_buffer = expected_batch->getRawData();

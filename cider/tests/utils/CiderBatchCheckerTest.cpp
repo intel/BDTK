@@ -218,6 +218,7 @@ TEST(CiderBatchCheckerArrowTest, ignoreOrder) {
   auto nulls_2 =
       std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
 
+  // different order, without nulls
   auto expected_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
@@ -228,13 +229,12 @@ TEST(CiderBatchCheckerArrowTest, ignoreOrder) {
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_2)
           .build());
-
-  // different order, without nulls
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq(expected_1, actual_1));
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_1, actual_1, true));
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_1, expected_1));
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_1, expected_1, true));
 
+  // different order, with nulls
   auto expected_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
