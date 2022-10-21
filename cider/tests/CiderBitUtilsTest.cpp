@@ -102,18 +102,23 @@ TEST_F(CiderBitUtilsTest, CountTest) {
   auto bit_vec = bit_vec_1.as<uint8_t>();
 
   EXPECT_EQ(countSetBits(bit_vec, 1025), 0ul);
+  EXPECT_EQ(countUnsetBits(bit_vec, 1025), 1025ul);
 
   setBitAt(bit_vec, 0);
   EXPECT_EQ(countSetBits(bit_vec, 1025), 1ul);
+  EXPECT_EQ(countUnsetBits(bit_vec, 1025), 1024ul);
 
   setBitAt(bit_vec, 1024);
   EXPECT_EQ(countSetBits(bit_vec, 1025), 2ul);
+  EXPECT_EQ(countUnsetBits(bit_vec, 1025), 1023ul);
 
   setBitAt(bit_vec, 1025);
   EXPECT_EQ(countSetBits(bit_vec, 1025), 2ul);
+  EXPECT_EQ(countUnsetBits(bit_vec, 1025), 1023ul);
 
   setBitAt(bit_vec, 100);
   EXPECT_EQ(countSetBits(bit_vec, 1025), 3ul);
+  EXPECT_EQ(countUnsetBits(bit_vec, 1025), 1022ul);
 }
 
 TEST_F(CiderBitUtilsTest, CheckEqTest) {
