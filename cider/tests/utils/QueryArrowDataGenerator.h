@@ -88,9 +88,9 @@ class QueryArrowDataGenerator {
       }
     }
 
-    auto schema_with_array = builder.build();
-    schema = std::get<0>(schema_with_array);
-    array = std::get<1>(schema_with_array);
+    auto schema_and_array = builder.build();
+    schema = std::get<0>(schema_and_array);
+    array = std::get<1>(schema_and_array);
   }
 
  private:
