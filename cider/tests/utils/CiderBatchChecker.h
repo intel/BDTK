@@ -147,6 +147,20 @@ class CiderBatchChecker {
     return checkArrowEq(expected_batches, actual_batches, ignore_order);
   }
 
+  static bool checkArrowEq(std::shared_ptr<CiderBatch> expected_batch,
+                           const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
+                           const bool ignore_order = false) {
+    std::vector<std::shared_ptr<CiderBatch>> expected_batches{expected_batch};
+    return checkArrowEq(expected_batches, actual_batches, ignore_order);
+  }
+
+  static bool checkArrowEq(const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+                           std::shared_ptr<CiderBatch> actual_batch,
+                           const bool ignore_order = false) {
+    std::vector<std::shared_ptr<CiderBatch>> actual_batches{actual_batch};
+    return checkArrowEq(expected_batches, actual_batches, ignore_order);
+  }
+
   // To be deprecated. actual_batch will be arrow based batch, just check whether
   // row/column are equal, won't check actual data.
   static bool checkArrowEqTemp(

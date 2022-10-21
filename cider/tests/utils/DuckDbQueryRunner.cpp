@@ -134,6 +134,45 @@ template <>
   return timestamp;
 }
 
+template <typename T>
+::duckdb::Value duckValueAtScalarBatch(const ScalarBatch<T>* batch, int64_t offset) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr. Maybe check your casting?");
+  }
+
+  auto data_buffer = batch->getRawData();
+  return ::duckdb::Value(data_buffer[offset]);
+}
+
+#define GEN_DUCK_VALUE_FROM_ARROW_FUNC                                                  \
+  [&]() {                                                                               \
+    switch (child_type) {                                                               \
+      case SQLTypes::kBOOLEAN:                                                          \
+        CIDER_THROW(CiderUnsupportedException, "Booleans are not supported.");          \
+      case SQLTypes::kTINYINT:                                                          \
+        return duckValueAtScalarBatch<int8_t>(child->as<ScalarBatch<int8_t>>(),         \
+                                              row_idx);                                 \
+      case SQLTypes::kSMALLINT:                                                         \
+        return duckValueAtScalarBatch<int16_t>(child->as<ScalarBatch<int16_t>>(),       \
+                                               row_idx);                                \
+      case SQLTypes::kINT:                                                              \
+        return duckValueAtScalarBatch<int32_t>(child->as<ScalarBatch<int32_t>>(),       \
+                                               row_idx);                                \
+      case SQLTypes::kBIGINT:                                                           \
+        return duckValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(),       \
+                                               row_idx);                                \
+      case SQLTypes::kFLOAT:                                                            \
+        return duckValueAtScalarBatch<float>(child->as<ScalarBatch<float>>(), row_idx); \
+      case SQLTypes::kDOUBLE:                                                           \
+        return duckValueAtScalarBatch<double>(child->as<ScalarBatch<double>>(),         \
+                                              row_idx);                                 \
+      default:                                                                          \
+        CIDER_THROW(CiderUnsupportedException,                                          \
+                    "Unsupported type for converting to duckdb values.");               \
+    }                                                                                   \
+  }
+
 #define GEN_DUCK_VALUE_FUNC                                                  \
   [&]() {                                                                    \
     switch (s_type.kind_case()) {                                            \
@@ -240,6 +279,41 @@ void DuckDbQueryRunner::createTableAndInsertData(
       }
     }
     appender.EndRow();
+  }
+}
+
+void DuckDbQueryRunner::createTableAndInsertArrowData(
+    const std::string& table_name,
+    const std::string& create_ddl,
+    const std::vector<std::shared_ptr<CiderBatch>>& data) {
+  ::duckdb::Connection con(db_);
+  con.Query("DROP TABLE IF EXISTS " + table_name);
+
+  auto res = con.Query(create_ddl);
+  if (!res->success) {
+    LOG(ERROR) << res->error;
+  }
+
+  for (auto i = 0; i < data.size(); ++i) {
+    auto& current_batch = data[i];
+    int row_num = current_batch->getLength();
+    int col_num = current_batch->getChildrenNum();
+    for (int row_idx = 0; row_idx < row_num; ++row_idx) {
+      ::duckdb::Appender appender(con, table_name);
+      appender.BeginRow();
+      for (int col_idx = 0; col_idx < col_num; ++col_idx) {
+        auto child = current_batch->getChildAt(col_idx);
+        auto child_type = child->getCiderType();
+        auto valid_bitmap = child->getNulls();
+        if (!valid_bitmap || CiderBitUtils::isBitSetAt(valid_bitmap, row_idx)) {
+          auto value = GEN_DUCK_VALUE_FROM_ARROW_FUNC();
+          appender.Append(value);
+        } else {
+          appender.Append(nullptr);
+        }
+      }
+      appender.EndRow();
+    }
   }
 }
 
