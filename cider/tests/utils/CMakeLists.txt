@@ -19,6 +19,7 @@
 
 set(CIDER_TESTS_UTILS_SOURCE
     Utils.cpp
+    CiderBatchStringifier.cpp
     DuckDbQueryRunner.cpp
     CiderQueryRunner.cpp
     CiderTestBase.cpp
@@ -43,6 +44,11 @@ add_test(IsthmusTest ${EXECUTABLE_OUTPUT_PATH}/IsthmusTest ${TEST_ARGS})
 add_executable(DuckDbQueryRunnerTest DuckDbQueryRunnerTest.cpp)
 target_link_libraries(DuckDbQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(DuckDbQueryRunnerTest ${EXECUTABLE_OUTPUT_PATH}/DuckDbQueryRunnerTest
+         ${TEST_ARGS})
+
+add_executable(ArrowArrayBuilderTest ArrowArrayBuilderTest.cpp)
+target_link_libraries(ArrowArrayBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(ArrowArrayBuilderTest ${EXECUTABLE_OUTPUT_PATH}/ArrowArrayBuilderTest
          ${TEST_ARGS})
 
 add_executable(CiderBatchBuilderTest CiderBatchBuilderTest.cpp)

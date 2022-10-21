@@ -38,6 +38,10 @@ void ciderArrowSchemaReleaser(ArrowSchema* schema);
 
 void ciderArrowArrayReleaser(ArrowArray* array);
 
+void ciderEmptyArrowSchemaReleaser(ArrowSchema* schema);
+
+void ciderEmptyArrowArrayReleaser(ArrowArray* schema);
+
 void freeArrowArray(ArrowArray* ptr);
 
 void freeArrowSchema(ArrowSchema* ptr);

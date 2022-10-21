@@ -25,7 +25,7 @@
 
 namespace facebook::velox::plugin {
 
-void CiderJoinBridge::setData(std::vector<RowVectorPtr> data) {
+void CiderJoinBridge::setData(std::vector<VectorPtr> data) {
   std::vector<ContinuePromise> promises;
   {
     std::lock_guard<std::mutex> l(mutex_);
@@ -36,7 +36,7 @@ void CiderJoinBridge::setData(std::vector<RowVectorPtr> data) {
   notify(std::move(promises));
 }
 
-std::optional<std::vector<RowVectorPtr>> CiderJoinBridge::dataOrFuture(
+std::optional<std::vector<VectorPtr>> CiderJoinBridge::dataOrFuture(
     ContinueFuture* future) {
   std::lock_guard<std::mutex> l(mutex_);
   VELOX_CHECK(!cancelled_, "Getting data after the build side is aborted");

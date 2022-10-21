@@ -21,9 +21,7 @@
  */
 #ifndef QUERYENGINE_COUNTDISTINCT_H
 #define QUERYENGINE_COUNTDISTINCT_H
-// FIXME: workaround for compile issue of ConstructBatch.h
-// Will be safe to remove it after formally switch to Arrow
-#define CIDERBATCH_WITH_ARROW
+
 #include "HyperLogLog.h"
 #include "cider/CiderBatch.h"
 #include "exec/template/common/descriptors/CountDistinctDescriptor.h"

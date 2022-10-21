@@ -19,6 +19,9 @@
  * under the License.
  */
 
+#ifndef CIDER_CIDERBATCHCHECKER_H
+#define CIDER_CIDERBATCHCHECKER_H
+
 #include <string.h>
 #include <iomanip>
 #include <numeric>
@@ -26,6 +29,8 @@
 #include "cider/CiderBatch.h"
 #include "cider/CiderException.h"
 #include "cider/CiderTableSchema.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 
 class ConcatenatedRow {
  public:
@@ -60,6 +65,9 @@ class CiderBatchChecker {
   static std::vector<ConcatenatedRow> toConcatenatedRowVector(
       const std::vector<std::shared_ptr<CiderBatch>>& cider_batches);
 
+  static std::vector<ConcatenatedRow> arrowToConcatenatedRowVector(
+      const std::vector<std::shared_ptr<CiderBatch>>& cider_batches);
+
   static bool checkNotEq(const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
                          const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
                          const bool ignore_order = false) {
@@ -89,8 +97,8 @@ class CiderBatchChecker {
   // 2. Check column count in schema of each batches.
   // 3. Check row num of each batches for both expected and actual sides.
   // 4. Use memcmp to check if it's one to one batch which is more efficient.
-  // 5. If check failed or is multi batch check, transfer these two cider batch vectors to
-  // two ConcatenatedRow vectors.
+  // 5. If check failed or is multi batch check, transfer these two cider batch vectors
+  // to two ConcatenatedRow vectors.
   // 6. Compare these two vectors row by row.
   static bool checkEq(const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
                       const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
@@ -118,10 +126,49 @@ class CiderBatchChecker {
     return checkEq(expected_batches, actual_batches, ignore_order);
   }
 
+  // DO NOT deprecate this one. This is a new method.
+  // This method follows the logic of the old checkEq method
+  // 1. Col num check: two batches should have the same number of columns
+  // 2. Row num check: two batches should have the same total number of rows
+  // 3. memcmp check: use memcmp if both vectors contain only one batch
+  //    which is more efficient and works as a shortcut
+  // 4. Full check: if previous check fails, or cannot be applied,
+  //    convert inputs to vectors of ConcatenatedRow and check with hashing
+  static bool checkArrowEq(
+      const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+      const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
+      const bool ignore_order = false);
+
+  static bool checkArrowEq(std::shared_ptr<CiderBatch> expected_batch,
+                           std::shared_ptr<CiderBatch> actual_batch,
+                           const bool ignore_order = false) {
+    std::vector<std::shared_ptr<CiderBatch>> expected_batches{expected_batch};
+    std::vector<std::shared_ptr<CiderBatch>> actual_batches{actual_batch};
+    return checkArrowEq(expected_batches, actual_batches, ignore_order);
+  }
+
+  // To be deprecated. actual_batch will be arrow based batch, just check whether
+  // row/column are equal, won't check actual data.
+  static bool checkArrowEqTemp(
+      const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+      const std::vector<std::shared_ptr<CiderBatch>>& actual_batches);
+
+  static bool checkArrowEqTemp(
+      const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+      const std::shared_ptr<CiderBatch>& actual_batch) {
+    std::vector<std::shared_ptr<CiderBatch>> actual_batches{actual_batch};
+    return checkArrowEqTemp(expected_batches, actual_batches);
+  }
+
  private:
 #define CALL_CHECK_IMPL(C_TYPE)    \
   return checkBufferEqual<C_TYPE>( \
       expected_buffer, expected_offset, actual_buffer, actual_offset, row_num);
+
+  static int getTotalNumOfRows(const std::vector<std::shared_ptr<CiderBatch>>& batches);
+
+  static bool colNumCheck(const std::vector<std::shared_ptr<CiderBatch>>& batches,
+                          int expected_col_num);
 
   template <typename T>
   static bool checkBufferEqual(const int8_t* expected_buffer,
@@ -133,6 +180,16 @@ class CiderBatchChecker {
                    actual_buffer + sizeof(T) * actual_buffer_offset,
                    row_num * sizeof(T));
   }
+
+  static bool checkValidityBitmapEqual(const CiderBatch* expected_batch,
+                                       const CiderBatch* actual_batch);
+
+  template <typename T>
+  static bool checkOneScalarBatchEqual(const ScalarBatch<T>* expected_batch,
+                                       const ScalarBatch<T>* actual_batch);
+
+  static bool checkOneStructBatchEqual(CiderBatch* expected_batch,
+                                       CiderBatch* actual_batch);
 
   static bool checkByteArrayEqual(const int8_t* expected_buffer,
                                   const int64_t expected_buffer_offset,
@@ -225,3 +282,5 @@ class CiderBatchChecker {
                                 std::vector<ConcatenatedRow> actual_row_vector,
                                 bool ignore_order);
 };
+
+#endif

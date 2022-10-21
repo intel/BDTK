@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2022 Intel Corporation.
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -17,9 +18,31 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(SRCS
-    ${PROTO_SRCS} SubstraitType.cpp SubstraitSignature.cpp
-    SubstraitFunction.cpp SubstraitExtension.cpp SubstraitFunctionLookup.cpp)
+#
+# build-image.sh <OS> - prepares a Docker image with <OS>-base to the Dockerfile
 
-add_library(substrait_function_look_up STATIC ${SRCS})
-target_link_libraries(substrait_function_look_up substrait yaml-cpp cider_util)
+set -e
+
+function usage {
+echo "Usage:"
+echo "    build-image.sh <OS-VER>"
+echo "where <OS-VER>, for example, can be 'ubuntu-20.04', provided" \
+     "a Dockerfile named 'Dockerfile.ubuntu-20.04' exists in the" \
+     "current directory."
+}
+
+if [[ -z "$1" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ ! -f "Dockerfile.$1" ]]; then
+  echo "ERROR: wrong argument."
+  usage
+  exit 1
+fi
+
+docker build -t bdtk/$1 \
+  --build-arg http_proxy=$http_proxy \
+  --build-arg https_proxy=$https_proxy \
+  -f Dockerfile.$1 .

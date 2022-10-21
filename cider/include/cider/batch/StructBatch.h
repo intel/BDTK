@@ -22,8 +22,6 @@
 #ifndef CIDER_STRUCT_BATCH_H
 #define CIDER_STRUCT_BATCH_H
 
-#define CIDERBATCH_WITH_ARROW
-
 #include <vector>
 #include "CiderBatch.h"
 

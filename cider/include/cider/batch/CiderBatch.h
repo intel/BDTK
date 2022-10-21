@@ -64,6 +64,8 @@ class CiderBatch {
 
   std::unique_ptr<CiderBatch> getChildAt(size_t index);
 
+  void convertToArrowRepresentation();
+
   // Move ArrowSchema and ArrowArray out of the tree. The ownership will be moved to the
   // caller. Typical usage:
   /*

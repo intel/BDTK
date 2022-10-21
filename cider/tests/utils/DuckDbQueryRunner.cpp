@@ -22,6 +22,8 @@
 #include "DuckDbQueryRunner.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "util/Logger.h"
 
@@ -195,7 +197,7 @@ void DuckDbQueryRunner::createTableAndInsertData(
       for (int k = 0; k < col_num; ++k) {
         if (null_data.empty() || null_data[k].empty() ||  // this column is not nullable
             !null_data[k][j]) {  // ture is null, false is non-null
-          auto s_type = current_batch->schema()->getColumnTypeById(k);
+          auto& s_type = current_batch->schema()->getColumnTypeById(k);
           auto value = GEN_DUCK_VALUE_FUNC();
           appender.Append(value);
         } else {
@@ -229,7 +231,7 @@ void DuckDbQueryRunner::createTableAndInsertData(
     for (int k = 0; k < col_num; ++k) {
       if (null_data[k].empty() ||  // this column is not nullable
           !null_data[k][j]) {
-        auto s_type = current_batch->schema()->getColumnTypeById(k);
+        auto& s_type = current_batch->schema()->getColumnTypeById(k);
         auto value = GEN_DUCK_VALUE_FUNC();
         appender.Append(value);
       } else {
@@ -246,8 +248,13 @@ std::unique_ptr<::duckdb::MaterializedQueryResult> DuckDbQueryRunner::runSql(
   auto duck_result = con.Query(sql);
   CHECK(duck_result->success) << "DuckDB query failed: " << duck_result->error << "\n"
                               << sql;
-
+  // to be used when exporting ArrowSchema
+  config_timezone_ = ::duckdb::QueryResult::GetConfigTimezone(*duck_result);
   return duck_result;
+}
+
+std::string DuckDbQueryRunner::getConfigTimeZone() {
+  return config_timezone_;
 }
 
 namespace {
@@ -388,6 +395,52 @@ void addColumnDataToCiderBatch<CiderByteArray>(
   }
 }
 
+void DuckDbResultConvertor::updateChildrenNullCounts(CiderBatch& batch) {
+  for (int i = 0; i < batch.getChildrenNum(); ++i) {
+    auto child = batch.getChildAt(i);
+    auto validity_map = child->getNulls();
+    int null_count = 0;
+    if (validity_map) {
+      for (int j = 0; j < batch.getLength(); ++j) {
+        if (!CiderBitUtils::isBitSetAt(validity_map, j)) {
+          // 0 stands for a null value
+          ++null_count;
+        }
+      }
+    } else {
+      CHECK_EQ(child->getNullCount(), 0);
+    }
+    child->setNullCount(null_count);
+  }
+}
+
+CiderBatch DuckDbResultConvertor::fetchOneArrowFormattedBatch(
+    std::unique_ptr<duckdb::DataChunk>& chunk,
+    std::vector<std::string>& names,
+    std::string config_timezone) {
+  int col_num = chunk->ColumnCount();
+  int row_num = chunk->size();
+
+  // Construct ArrowSchema using methods from duckdb
+  std::vector<::duckdb::LogicalType> types = chunk->GetTypes();
+  auto arrow_schema = CiderBatchUtils::allocateArrowSchema();
+  ::duckdb::QueryResult::ToArrowSchema(arrow_schema, types, names, config_timezone);
+
+  // Construct ArrowArray
+  auto arrow_array = CiderBatchUtils::allocateArrowArray();
+  chunk->ToArrowArray(arrow_array);
+
+  // Build CiderBatch
+  auto batch = StructBatch::Create(
+      arrow_schema, std::make_shared<CiderDefaultAllocator>(), arrow_array);
+
+  // ToArrowArray() will not compute null_count, so we do it manually here
+  updateChildrenNullCounts(*batch);
+
+  chunk->Destroy();
+  return std::move(*batch);
+}
+
 CiderBatch DuckDbResultConvertor::fetchOneBatch(
     std::unique_ptr<duckdb::DataChunk>& chunk) {
   const int col_num = chunk->ColumnCount();
@@ -472,6 +525,26 @@ std::vector<std::shared_ptr<CiderBatch>> DuckDbResultConvertor::fetchDataToCider
       return batch_res;
     }
     batch_res.push_back(std::make_shared<CiderBatch>(fetchOneBatch(chunk)));
+  }
+  return batch_res;
+}
+
+std::vector<std::shared_ptr<CiderBatch>>
+DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
+    std::unique_ptr<::duckdb::MaterializedQueryResult>& result,
+    std::string config_timezone) {
+  auto names = result->names;
+  std::vector<std::shared_ptr<CiderBatch>> batch_res;
+  for (;;) {
+    auto chunk = result->Fetch();
+    if (!chunk || (chunk->size() == 0)) {
+      if (batch_res.empty()) {
+        batch_res.push_back(std::make_shared<CiderBatch>());
+      }
+      return batch_res;
+    }
+    batch_res.push_back(std::make_shared<CiderBatch>(
+        fetchOneArrowFormattedBatch(chunk, names, config_timezone)));
   }
   return batch_res;
 }

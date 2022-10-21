@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
@@ -68,6 +66,9 @@ ArrowSchema* allocateArrowSchema() {
                      .private_data = nullptr};
   return ptr;
 }
+
+void ciderEmptyArrowSchemaReleaser(ArrowSchema* schema) {}
+void ciderEmptyArrowArrayReleaser(ArrowArray* array) {}
 
 ArrowSchema* allocateArrowSchema(const ArrowSchema& schema) {
   ArrowSchema* ptr = new ArrowSchema(schema);
@@ -147,6 +148,11 @@ int64_t getBufferNum(const ArrowSchema* schema) {
         // Struct Type
         case 's':
           return 1;
+      }
+    case 't':
+      // strcmp will return 0 if type == "tdm"
+      if (!strcmp(type, "tdm")) {
+        return 2;
       }
     default:
       CIDER_THROW(CiderException,
@@ -256,6 +262,8 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
       return "g";
     case Type::kStruct:
       return "+s";
+    case Type::kDate:
+      return "tdm";
     default:
       CIDER_THROW(CiderRuntimeException,
                   std::string("Unsupported to convert type ") + type.GetTypeName() +
@@ -320,6 +328,11 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
         // Struct Type
         case 's':
           return StructBatch::Create(schema, allocator, array);
+      }
+    case 't':
+      // strcmp will return 0 if type == "tdm"
+      if (!strcmp(format, "tdm")) {
+        return ScalarBatch<int64_t>::Create(schema, allocator, array);
       }
     default:
       CIDER_THROW(CiderCompileException,

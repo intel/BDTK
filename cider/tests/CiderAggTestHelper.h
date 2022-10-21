@@ -19,8 +19,6 @@
  * under the License.
  */
 
-#define CIDERBATCH_WITH_ARROW
-
 #include "type/schema/ColumnInfo.h"
 #include "type/schema/TableInfo.h"
 
@@ -349,7 +347,8 @@ void runTest(const std::string& test_name,
           break;
         }
         case kDECIMAL:
-        case kBIGINT: {
+        case kBIGINT:
+        case kDATE: {
           auto child = out_batch->getChildAt(j);
           print_data(child->as<ScalarBatch<int64_t>>(), i);
           break;

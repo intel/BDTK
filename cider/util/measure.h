@@ -73,7 +73,7 @@ std::string timer_lap(Type clock_begin, Type& clock_last) {
 }
 
 struct InjectTimer {
-  InjectTimer(std::string const& description, int const& lineNum, std::string const& func)
+  InjectTimer(const char* description, int const& lineNum, const char* func)
       : description_(description), lineNum_(lineNum), func_(func) {
     if (g_enable_debug_timer) {
       start_ = timer_start();
@@ -90,9 +90,9 @@ struct InjectTimer {
     }
   }
 
-  std::string description_;
+  const char* description_;
   int lineNum_;
-  std::string func_;
+  const char* func_;
 
   std::chrono::steady_clock::time_point start_;
 };

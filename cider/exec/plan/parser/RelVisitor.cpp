@@ -31,11 +31,11 @@ namespace generator {
 RelVisitor::RelVisitor(Substrait2AnalyzerExprConverter* toAnalyzerExprConverter,
                        const std::unordered_map<int, std::string>& function_map,
                        std::shared_ptr<VariableContext> variable_context_shared_ptr,
-                       bool is_right_join_node)
+                       bool is_join_right_node)
     : toAnalyzerExprConverter_(toAnalyzerExprConverter)
-    , function_map_(function_map)
     , variable_context_shared_ptr_(variable_context_shared_ptr)
-    , is_right_join_node_(is_right_join_node) {}
+    , function_map_(function_map)
+    , is_join_right_node_(is_join_right_node) {}
 
 RelVisitor::~RelVisitor() {}
 

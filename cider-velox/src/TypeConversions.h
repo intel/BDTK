@@ -45,8 +45,8 @@ inline const char* getArrowFormat(::substrait::Type& typeName) {
     case ::substrait::Type::KindCase::kFp64:
       return "g";
     case ::substrait::Type::KindCase::kDecimal: {
-      auto precision = typeName.decimal().precision();
-      auto scale = typeName.decimal().scale();
+      int32_t precision = typeName.decimal().precision();
+      int32_t scale = typeName.decimal().scale();
       std::string type_str = std::string("d:") + std::to_string(precision);
       std::string scale_str = std::string(",") + std::to_string(scale);
       type_str += scale_str;
@@ -62,7 +62,7 @@ inline const char* getArrowFormat(::substrait::Type& typeName) {
   }
 }
 
-inline TypePtr getVeloxType(::substrait::Type& typeName) {
+inline TypePtr getVeloxType(const ::substrait::Type& typeName) {
   switch (typeName.kind_case()) {
     case ::substrait::Type::KindCase::kBool:
       return BOOLEAN();
