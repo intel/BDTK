@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Data Types &#8212; Cider 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Function support" href="function-support.html" />
+    <link rel="prev" title="Quick Start" href="quick-start.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="function-support.html" title="Function support"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="quick-start.html" title="Quick Start"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user.html" accesskey="U">User Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="data-types">
+<h1>Data Types<a class="headerlink" href="#data-types" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="scalar-types">
+<h2>Scalar Types<a class="headerlink" href="#scalar-types" title="Permalink to this headline">¶</a></h2>
+<p>Cider scalar datatypes, sizes and usage notes are described in the following table:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="9%" />
+<col width="15%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Type</th>
+<th class="head">Size(bytes)</th>
+<th class="head">Notes</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>BOOLEAN</td>
+<td>1</td>
+<td>boolean values true and false.</td>
+</tr>
+<tr class="row-odd"><td>TINYINT</td>
+<td>1</td>
+<td>Minimum value of -2^7 and  maximum value of 2^7 - 1.</td>
+</tr>
+<tr class="row-even"><td>SMALLINT</td>
+<td>2</td>
+<td>Minimum value of -2^15 and maximum value of 2^15 - 1.</td>
+</tr>
+<tr class="row-odd"><td>INTEGER</td>
+<td>4</td>
+<td>Minimum value of -2^31 and maximum value of 2^31 - 1.</td>
+</tr>
+<tr class="row-even"><td>BIGINT</td>
+<td>8</td>
+<td>Minimum value of -2^63 and maximum value of 2^63 - 1.</td>
+</tr>
+<tr class="row-odd"><td>FLOAT</td>
+<td>4</td>
+<td>single precision floating point value. Minimum value: -3.4e38, Maximum value: 3.4e38.</td>
+</tr>
+<tr class="row-even"><td>DOUBLE</td>
+<td>8</td>
+<td>double precision floating-point value. Minimum value: -1.79e308, Maximum value: 1.79e308.</td>
+</tr>
+<tr class="row-odd"><td>TIME</td>
+<td>8</td>
+<td>the value is in units of microseconds since the beginning of any day,
+supported formats: HH:mm:ss[.SSS][XXX].</td>
+</tr>
+<tr class="row-even"><td>DATE</td>
+<td>8</td>
+<td>the value is epoch from 1970-01-01 in seconds,supported formats:yyyy-mm-dd.
+if you want to convert to days elapsed, you need to divide 24*60*60.</td>
+</tr>
+<tr class="row-odd"><td>TIMESTAMP</td>
+<td>8</td>
+<td>Mixed Date and Time Value, supported formats: yyyy-MM-dd HH:mm:ss[.SSS][XXX]</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Data Types</a><ul>
+<li><a class="reference internal" href="#scalar-types">Scalar Types</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="quick-start.html"
+                        title="previous chapter">Quick Start</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="function-support.html"
+                        title="next chapter">Function support</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user/data-type.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="function-support.html" title="Function support"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="quick-start.html" title="Quick Start"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user.html" >User Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Intel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

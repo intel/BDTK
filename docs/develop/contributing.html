@@ -1,0 +1,136 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Contributing &#8212; Cider 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Logger" href="logger.html" />
+    <link rel="prev" title="CiderAllocator use guide" href="CiderAllocator-use-guide.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="logger.html" title="Logger"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CiderAllocator-use-guide.html" title="CiderAllocator use guide"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../develop.html" accesskey="U">Developer Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="code-style-check">
+<h2>Code Style Check<a class="headerlink" href="#code-style-check" title="Permalink to this headline">¶</a></h2>
+<p>Code style check will be triggered automatically after you submit a PR. So please ensure your PR does not break any of these workflows. It runs <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">format-check</span></code>, <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">header-check</span></code> as part of our continuous integration.
+Pull requests should pass <code class="docutils literal notranslate"><span class="pre">format-check</span></code> and <code class="docutils literal notranslate"><span class="pre">header-check</span></code> without errors before being accepted.</p>
+<p>More details can be found at <a class="reference external" href="https://github.com/intel/BDTK/blob/main/ci/scripts/run_cpplint.py">ci/scripts/run_cpplint.py</a></p>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p>Cider documentation uses sphinx to produce html structure.
+Github pages refer to “docs” directory on “gh-pages” branch.</p>
+<p><strong>Build and commit</strong></p>
+<p>We maintain gh-pages with github actions, which is implemented in .github/workflows/update-gh-pages.yml.</p>
+<p>We can simply edit rst files under “docs” directory, when the change merge to “main” branch,
+github action will automatically build gh-pages.</p>
+<p>If you want to add a new rst file, remember add its title to “index.rst”.</p>
+<p><strong>External links</strong></p>
+<p>Last, share some tools and documents, hope it can help:</p>
+<ul class="simple">
+<li>Sphinx quick start: <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/quickstart.html">sphinx-doc</a></li>
+<li>How to write rst(reStructuredText) files: <a class="reference external" href="https://www.devdungeon.com/content/restructuredtext-rst-tutorial-0">rst-tutorial</a></li>
+<li>Transfer markdown to rst: <a class="reference external" href="https://cloudconvert.com/md-to-rst">md-to-rst</a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Contributing</a><ul>
+<li><a class="reference internal" href="#code-style-check">Code Style Check</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CiderAllocator-use-guide.html"
+                        title="previous chapter">CiderAllocator use guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="logger.html"
+                        title="next chapter">Logger</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/develop/contributing.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="logger.html" title="Logger"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CiderAllocator-use-guide.html" title="CiderAllocator use guide"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../develop.html" >Developer Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Intel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

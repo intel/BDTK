@@ -1,0 +1,402 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Debugging/Testing &#8212; Cider 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Syntax support in Cider" href="syntax-support.html" />
+    <link rel="prev" title="Developer Guide" href="../develop.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="syntax-support.html" title="Syntax support in Cider"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../develop.html" title="Developer Guide"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../develop.html" accesskey="U">Developer Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="debugging-testing">
+<h1>Debugging/Testing<a class="headerlink" href="#debugging-testing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-to-build">
+<h2>How to build<a class="headerlink" href="#how-to-build" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="get-the-bdtk-source">
+<h3>Get the BDTK Source<a class="headerlink" href="#get-the-bdtk-source" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone --recursive https://github.com/intel/BDTK.git
+$ cd BDTK
+# if you are updating an existing checkout
+$ git submodule sync --recursive
+$ git submodule update --init --recursive
+</pre></div>
+</div>
+</div>
+<div class="section" id="setting-up-bdtk-develop-envirenmont-on-linux-docker">
+<h3>Setting up BDTK develop envirenmont on Linux Docker<a class="headerlink" href="#setting-up-bdtk-develop-envirenmont-on-linux-docker" title="Permalink to this headline">¶</a></h3>
+<p>We provide Dockerfile to help developers setup and install BDTK dependencies.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Build an image from a Dockerfile
+$ cd ${path_to_source_of_bdtk}/ci/docker
+$ docker build -t ${image_name} .
+
+# Start a docker container for development
+docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} /usr/sbin/init
+
+docker exec -it ${container_name} /bin/bash
+</pre></div>
+</div>
+</div>
+<div class="section" id="build-in-container">
+<h3>Build in container<a class="headerlink" href="#build-in-container" title="Permalink to this headline">¶</a></h3>
+<p>Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
+Run <code class="docutils literal notranslate"><span class="pre">make</span></code> in the root directory to compile the sources. For development, use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> to build a non-optimized debug version, or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">release</span></code> to build an optimized version. Use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-debug</span></code> or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-release</span></code> to run tests.</p>
+</div>
+</div>
+<div class="section" id="how-to-test">
+<h2>How to test<a class="headerlink" href="#how-to-test" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-to-run-all-unit-tests">
+<h3>How to run all unit tests<a class="headerlink" href="#how-to-run-all-unit-tests" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># WORKDIR: /workspace/bdtk</span>
+<span class="c1"># test both cider and cider-velox</span>
+<span class="n">make</span> <span class="n">test</span><span class="o">-</span><span class="n">debug</span><span class="o">/</span><span class="n">release</span>
+
+<span class="c1"># only test cider</span>
+<span class="n">make</span> <span class="n">test</span><span class="o">-</span><span class="n">cider</span> <span class="n">BUILD_TYPE</span><span class="o">=</span><span class="n">Debug</span><span class="o">/</span><span class="n">Release</span> <span class="o">/</span><span class="n">test</span><span class="o">-</span><span class="n">cider</span><span class="o">-</span><span class="n">velox</span>
+
+<span class="c1"># only test cider-velox</span>
+<span class="n">make</span> <span class="n">test</span><span class="o">-</span><span class="n">cider</span><span class="o">-</span><span class="n">velox</span> <span class="n">BUILD_TYPE</span><span class="o">=</span><span class="n">Debug</span><span class="o">/</span><span class="n">Release</span>
+
+<span class="c1"># Note: If you want to test both Debug and Release, just use &#39;&amp;&amp;&#39; to connect two commands.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-to-run-a-single-unit-test">
+<h3>How to run a single unit test<a class="headerlink" href="#how-to-run-a-single-unit-test" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># For Cider</span>
+<span class="c1"># Test Path: /workspace/bdtk/build-$BUILD_TYPE/cider/tests</span>
+<span class="o">./</span><span class="n">XXXtest</span>
+
+<span class="c1"># For CiderVelox</span>
+<span class="c1"># Test Path: /workspace/bdtk/build-$BUILD_TYPE/cider-velox/tests</span>
+
+<span class="c1"># Please check is there a function directory(auto generate when make test-$BUILD_TYPE) under cider-velox.</span>
+<span class="c1"># If not, please use follow commands to get one(under /workspace/bdtk/):</span>
+<span class="c1">#   mkdir /workspace/bdtk/build-${BUILD_TYPE}/cider-velox/function</span>
+<span class="c1">#   cp /workspace/bdtk/build-${BUILD_TYPE}/cider/function/*.bc /workspace/bdtk/build-{BUILD_TYPE}/cider-velox/function</span>
+<span class="c1">#   cd /workspace/bdtk/build-${BUILD_TYPE}cider-velox/test</span>
+<span class="o">./</span><span class="n">XXXtest</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-to-debug-a-single-unit-test">
+<h3>How to debug a single unit test<a class="headerlink" href="#how-to-debug-a-single-unit-test" title="Permalink to this headline">¶</a></h3>
+<p>configure GDB with the built test binaries, like following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+    {
+      &quot;name&quot;: &quot;${name_of_this_configuration}&quot;,
+      &quot;type&quot;: &quot;cppdbg&quot;,
+      &quot;request&quot;: &quot;launch&quot;,
+      &quot;program&quot;: &quot;${path_to_the_test_you_want_to_debug}&quot;,
+      &quot;args&quot;: [],
+      &quot;stopAtEntry&quot;: false,
+      &quot;cwd&quot;: &quot;${workspaceFolder}&quot;,
+      &quot;environment&quot;: [],
+      &quot;externalConsole&quot;: false,
+      &quot;MIMode&quot;: &quot;gdb&quot;,
+      &quot;setupCommands&quot;: [
+          {
+              &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,
+              &quot;text&quot;: &quot;-enable-pretty-printing&quot;,
+              &quot;ignoreFailures&quot;: true
+          }
+      ]
+    }
+    ]
+}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="how-to-run-simple-examples-with-prestodb-in-dev-environment">
+<h2>How to run simple examples with Prestodb in DEV environment<a class="headerlink" href="#how-to-run-simple-examples-with-prestodb-in-dev-environment" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="configure-hive-metastore">
+<h3>Configure Hive MetaStore<a class="headerlink" href="#configure-hive-metastore" title="Permalink to this headline">¶</a></h3>
+<p>Follow the steps from
+<a class="reference external" href="https://prestodb.io/docs/current/installation/deployment.html#configuring-presto">https://prestodb.io/docs/current/installation/deployment.html#configuring-presto</a>
+to install Hive metastore (requiring HDFS pre-installed)</p>
+<p>Download and extract the binary tarball of Hive. For example, download
+and untar <code class="docutils literal notranslate"><span class="pre">apache-hive-&lt;VERSION&gt;-bin.tar.gz</span></code></p>
+<p>You only need to launch Hive Metastore to serve Presto catalog
+information such as table schema and partition location. If it is the
+first time to launch the Hive Metastore, prepare corresponding
+configuration files and environment, also initialize a new Metastore:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export HIVE_HOME=`pwd`
+cp conf/hive-default.xml.template conf/hive-site.xml
+mkdir -p hcatalog/var/log/
+# only required for the first time
+bin/schematool -dbType derby -initSchema
+</pre></div>
+</div>
+<p>Start a Hive Metastore which will run in the background and listen on
+port 9083 (by default).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hcatalog</span><span class="o">/</span><span class="n">sbin</span><span class="o">/</span><span class="n">hcat_server</span><span class="o">.</span><span class="n">sh</span> <span class="n">start</span>
+<span class="c1"># Output:</span>
+<span class="c1"># Started metastore server init, testing if initialized correctly...</span>
+<span class="c1"># Metastore initialized successfully on port[9083].</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="prepare-cider-as-library">
+<h3>Prepare Cider as library<a class="headerlink" href="#prepare-cider-as-library" title="Permalink to this headline">¶</a></h3>
+<p>Resolve dependency, Copy <code class="docutils literal notranslate"><span class="pre">$CIDER_BUILD_DIR/function</span></code> to <code class="docutils literal notranslate"><span class="pre">$JAVA_HOME/</span></code> may need <code class="docutils literal notranslate"><span class="pre">function/*.bc</span></code> files</p>
+</div>
+<div class="section" id="configure-prestodb-server-and-run-some-example-queries">
+<h3>Configure Prestodb server and run some example queries<a class="headerlink" href="#configure-prestodb-server-and-run-some-example-queries" title="Permalink to this headline">¶</a></h3>
+<p>Follow steps from
+<a class="reference external" href="https://github.com/intel-bigdata/presto/tree/cider#running-presto-in-your-ide">https://github.com/intel-bigdata/presto/tree/cider#running-presto-in-your-ide</a></p>
+<p><strong>Running with IDE</strong></p>
+<p>After building Presto for the first time, you can load the project into
+your IDE and run the server. We recommend using <a class="reference external" href="http://www.jetbrains.com/idea/">IntelliJ
+IDEA</a>. Because Presto is a standard
+Maven project, you can import it into your IDE using the root
+<code class="docutils literal notranslate"><span class="pre">pom.xml</span></code> file. In IntelliJ, choose Open Project from the Quick Start
+box or choose Open from the File menu and select the root <code class="docutils literal notranslate"><span class="pre">pom.xml</span></code>
+file.</p>
+<p>After opening the project in IntelliJ, double check that the Java SDK is
+properly configured for the project: * Open the File menu and select
+Project Structure * In the SDKs section, ensure that a 1.8 JDK is
+selected (create one if none exist) * In the Project section, ensure
+the Project language level is set to 8.0 as Presto makes use of several
+Java 8 language features</p>
+<p>Presto comes with sample configuration that should work out-of-the-box
+for development. Use the following options to create a run
+configuration: * Main Class: com.facebook.presto.server.PrestoServer *
+VM Options:
+<code class="docutils literal notranslate"><span class="pre">-ea</span> <span class="pre">-XX:+UseG1GC</span> <span class="pre">-XX:G1HeapRegionSize=32M</span> <span class="pre">-XX:+UseGCOverheadLimit</span> <span class="pre">-XX:+ExplicitGCInvokesConcurrent</span> <span class="pre">-Xmx2G</span> <span class="pre">-Dconfig=etc/config.properties</span> <span class="pre">-Dlog.levels-file=etc/log.properties</span></code>
+* Working directory: <code class="docutils literal notranslate"><span class="pre">$MODULE_DIR$</span></code> * Use classpath of module:
+presto-main</p>
+<p>The working directory should be the <code class="docutils literal notranslate"><span class="pre">presto-main</span></code> subdirectory. In
+IntelliJ, using <code class="docutils literal notranslate"><span class="pre">$MODULE_DIR$</span></code> accomplishes this automatically.
+Additionally, the Hive plugin must be configured with location of your
+Hive metastore Thrift service. Add the following to the list of VM
+options, replacing <code class="docutils literal notranslate"><span class="pre">localhost:9083</span></code> with the correct host and port (or
+use the below value if you do not have a Hive metastore):
+<code class="docutils literal notranslate"><span class="pre">-Dhive.metastore.uri=thrift://localhost:9083</span></code></p>
+<p><strong>How to improve Prestodb initialization speed</strong></p>
+<p>Speed up presto init Presto server will load a lot plugin and it will
+resolve dependency from maven central repo and this is really slow. A
+solution is to modify this class and bypass resolve step.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">-</span><span class="n">b</span> <span class="n">offline</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jikunshang</span><span class="o">/</span><span class="n">resolver</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">resolver</span>
+<span class="n">mvn</span> <span class="n">clean</span> <span class="n">install</span> <span class="o">-</span><span class="n">DskipTests</span><span class="o">=</span><span class="n">true</span>
+<span class="c1"># change resolver version in pom file</span>
+<span class="c1"># presto/pom.xml L931    &lt;version&gt;1.4&lt;/version&gt; -&gt;   &lt;version&gt;1.7-SNAPSHOT&lt;/version&gt;</span>
+<span class="n">And</span> <span class="n">you</span> <span class="n">can</span> <span class="n">remove</span> <span class="n">unnecessary</span> <span class="n">catlog</span><span class="o">/</span><span class="n">connector</span> <span class="n">by</span> <span class="n">remove</span> <span class="n">source</span><span class="o">/</span><span class="n">presto</span><span class="o">-</span><span class="n">main</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">catalog</span><span class="o">/*.</span><span class="n">properties</span> <span class="ow">and</span> <span class="n">source</span><span class="o">/</span><span class="n">presto</span><span class="o">-</span><span class="n">main</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">catalog</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">properties</span>  <span class="n">plugin</span><span class="o">.</span><span class="n">bundles</span><span class="o">=</span>
+</pre></div>
+</div>
+<p><strong>Running filter/project queries with CLI</strong></p>
+<p>Start the CLI to connect to the server and run SQL queries:
+<code class="docutils literal notranslate"><span class="pre">presto-cli/target/presto-cli-*-executable.jar</span></code> Run a query to see the
+nodes in the cluster:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="o">*</span> <span class="n">FROM</span> <span class="n">system</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">nodes</span><span class="p">;</span>
+
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">create</span> <span class="n">table</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">a</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span> <span class="n">double</span><span class="p">,</span> <span class="n">c</span> <span class="nb">int</span><span class="p">)</span> <span class="n">WITH</span> <span class="p">(</span><span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;ORC&#39;</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">INSERT</span> <span class="n">INTO</span> <span class="n">test</span> <span class="n">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="nb">set</span> <span class="n">session</span> <span class="n">hive</span><span class="o">.</span><span class="n">pushdown_filter_enabled</span><span class="o">=</span><span class="n">true</span><span class="p">;</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">select</span> <span class="o">*</span> <span class="kn">from</span> <span class="nn">hive.default.test</span> <span class="n">where</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>Running join queries with CLI</strong></p>
+<p>Start the CLI to connect to the server and run SQL queries:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">presto</span><span class="o">-</span><span class="n">cli</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">presto</span><span class="o">-</span><span class="n">cli</span><span class="o">-*-</span><span class="n">executable</span><span class="o">.</span><span class="n">jar</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">create</span> <span class="n">table</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc1</span><span class="p">(</span><span class="n">a</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span> <span class="n">double</span><span class="p">,</span> <span class="n">c</span> <span class="nb">int</span><span class="p">)</span> <span class="n">WITH</span> <span class="p">(</span><span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;ORC&#39;</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">INSERT</span> <span class="n">INTO</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc1</span> <span class="n">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">SESSION</span> <span class="n">join_distribution_type</span> <span class="o">=</span> <span class="s1">&#39;PARTITIONED&#39;</span><span class="p">;</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">create</span> <span class="n">table</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc2</span> <span class="p">(</span><span class="n">a</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span> <span class="n">double</span><span class="p">,</span> <span class="n">c</span> <span class="nb">int</span><span class="p">)</span> <span class="n">WITH</span> <span class="p">(</span><span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;ORC&#39;</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">INSERT</span> <span class="n">INTO</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc2</span> <span class="n">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="n">presto</span><span class="o">&gt;</span> <span class="n">select</span> <span class="o">*</span> <span class="kn">from</span> <span class="nn">hive.default.test_orc1</span> <span class="n">l</span><span class="p">,</span> <span class="n">hive</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">test_orc2</span> <span class="n">r</span> <span class="n">where</span> <span class="n">l</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">a</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="how-to-run-simple-examples-with-prestodb-in-distributed-environment">
+<h2>How to run simple examples with Prestodb in distributed environment<a class="headerlink" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="build-presto-native-execution">
+<h3>Build presto native execution<a class="headerlink" href="#build-presto-native-execution" title="Permalink to this headline">¶</a></h3>
+<p>Copy ci/build-presto-package.sh to an empty folder and run it.
+Generate Prestodb.tar.gz archive</p>
+</div>
+<div class="section" id="unzip-the-prestodb-package-and-enter-the-unzip-package">
+<h3>Unzip the Prestodb package and enter the unzip package<a class="headerlink" href="#unzip-the-prestodb-package-and-enter-the-unzip-package" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tar</span> <span class="o">-</span><span class="n">zxvf</span> <span class="n">Prestodb</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">cd</span> <span class="n">Prestodb</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="set-the-ld-library-path-environment-variable-include-the-lib-folder">
+<h3>Set the LD_LIBRARY_PATH environment variable include the lib folder<a class="headerlink" href="#set-the-ld-library-path-environment-variable-include-the-lib-folder" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-presto-server-with-parameter-point-to-etc-folder">
+<h3>Run presto_server with parameter point to etc folder<a class="headerlink" href="#run-presto-server-with-parameter-point-to-etc-folder" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">presto_server</span> <span class="o">-</span><span class="n">etc_dir</span><span class="o">=./</span><span class="n">etc</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="maven-cant-parse-proxy-correctly">
+<h3>Maven can’t parse proxy correctly<a class="headerlink" href="#maven-cant-parse-proxy-correctly" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line">If it raises error related to proxy by Maven, please ensure your
+settings.xml file (usually ${user.home}/.m2/settings.xml) is secured
+with permissions appropriate for your operating system.</div>
+<div class="line">Reference: <a class="reference external" href="https://maven.apache.org/guides/mini/guide-proxies.html">https://maven.apache.org/guides/mini/guide-proxies.html</a></div>
+</div>
+</div>
+<div class="section" id="the-velox-build-failed-issue">
+<h3>The Velox build failed issue<a class="headerlink" href="#the-velox-build-failed-issue" title="Permalink to this headline">¶</a></h3>
+<p>If it raises error on the code in velox/velox/core/Context.h, please modified the corresponding code like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>enum class ContextScope { GLOBAL, SESSION, QUERY, SCOPESTACK };
+saying: expected identifier before ‘,’ token, please make a modification:
+enum class UseCase {
+DEV = 1,
+TEST = 2,
+PROD = 3,
+};
+
+#ifdef GLOBAL
+#undef GLOBAL
+#endif
+enum class ContextScope { GLOBAL, SESSION, QUERY, SCOPESTACK };
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Debugging/Testing</a><ul>
+<li><a class="reference internal" href="#how-to-build">How to build</a><ul>
+<li><a class="reference internal" href="#get-the-bdtk-source">Get the BDTK Source</a></li>
+<li><a class="reference internal" href="#setting-up-bdtk-develop-envirenmont-on-linux-docker">Setting up BDTK develop envirenmont on Linux Docker</a></li>
+<li><a class="reference internal" href="#build-in-container">Build in container</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-test">How to test</a><ul>
+<li><a class="reference internal" href="#how-to-run-all-unit-tests">How to run all unit tests</a></li>
+<li><a class="reference internal" href="#how-to-run-a-single-unit-test">How to run a single unit test</a></li>
+<li><a class="reference internal" href="#how-to-debug-a-single-unit-test">How to debug a single unit test</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-dev-environment">How to run simple examples with Prestodb in DEV environment</a><ul>
+<li><a class="reference internal" href="#configure-hive-metastore">Configure Hive MetaStore</a></li>
+<li><a class="reference internal" href="#prepare-cider-as-library">Prepare Cider as library</a></li>
+<li><a class="reference internal" href="#configure-prestodb-server-and-run-some-example-queries">Configure Prestodb server and run some example queries</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment">How to run simple examples with Prestodb in distributed environment</a><ul>
+<li><a class="reference internal" href="#build-presto-native-execution">Build presto native execution</a></li>
+<li><a class="reference internal" href="#unzip-the-prestodb-package-and-enter-the-unzip-package">Unzip the Prestodb package and enter the unzip package</a></li>
+<li><a class="reference internal" href="#set-the-ld-library-path-environment-variable-include-the-lib-folder">Set the LD_LIBRARY_PATH environment variable include the lib folder</a></li>
+<li><a class="reference internal" href="#run-presto-server-with-parameter-point-to-etc-folder">Run presto_server with parameter point to etc folder</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#maven-cant-parse-proxy-correctly">Maven can’t parse proxy correctly</a></li>
+<li><a class="reference internal" href="#the-velox-build-failed-issue">The Velox build failed issue</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../develop.html"
+                        title="previous chapter">Developer Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="syntax-support.html"
+                        title="next chapter">Syntax support in Cider</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/develop/debugging.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="syntax-support.html" title="Syntax support in Cider"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../develop.html" title="Developer Guide"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../develop.html" >Developer Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Intel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

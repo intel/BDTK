@@ -1,0 +1,622 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Syntax support in Cider &#8212; Cider 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Development Specification" href="development-specification.html" />
+    <link rel="prev" title="Debugging/Testing" href="debugging.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="development-specification.html" title="Development Specification"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="debugging.html" title="Debugging/Testing"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../develop.html" accesskey="U">Developer Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="syntax-support-in-cider">
+<h1>Syntax support in Cider<a class="headerlink" href="#syntax-support-in-cider" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="having-syntax-support">
+<h2>Having syntax support<a class="headerlink" href="#having-syntax-support" title="Permalink to this headline">¶</a></h2>
+<p>Generally, there are two cases in having.
+One is non-agg condition(See Case1 below) which will be regarded as filter operator and pushed down before group by partial agg.</p>
+<p>Case1:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">col_a</span><span class="p">,</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sum_a</span> <span class="k">FROM</span> <span class="n">test_table</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_a</span> <span class="k">HAVING</span> <span class="n">col_a</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The other one is agg condition(See Case2 below) which should be handled after group by final agg.</p>
+<p>Case2:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">col_a</span><span class="p">,</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sum_a</span> <span class="k">FROM</span> <span class="n">test_table</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_a</span> <span class="k">HAVING</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>For Case1 in Cider, we will get substrait plan in which having clause is transfered to filter operator already.
+When it comes to Case3 that contains multiple conditions, we will receive a substrait plan with multiple
+conditions. Then Cider will merge all those conditions and push them down before group by partial agg.</p>
+<p>Case3:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">col_a</span><span class="p">,</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sum_a</span> <span class="k">FROM</span> <span class="n">test_table</span> <span class="k">WHERE</span> <span class="n">col_a</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_a</span> <span class="k">HAVING</span> <span class="n">col_a</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>For Case2 in Cider, we expect to get two plans. One is table scan and partial agg, the other is final agg, filter and project.
+So when it comes to Case4, two different conditions from where and having won’t appear in a same substrait plan and be merged
+into single EU.</p>
+<p>Case4:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">col_a</span><span class="p">,</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sum_a</span> <span class="k">FROM</span> <span class="n">test_table</span> <span class="k">WHERE</span> <span class="n">col_a</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_a</span> <span class="k">HAVING</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>In addition to those above, if we get an unexpected substrait plan like putting having agg condition together with partial
+agg plan, we will get wrong result batch without throwing exception.</p>
+</div>
+<div class="section" id="in-syntax-support">
+<h2>In syntax support<a class="headerlink" href="#in-syntax-support" title="Permalink to this headline">¶</a></h2>
+<p>The IN clause allows multi values definition in WHERE conditions. For example:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">column_name</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="k">table_name</span>
+<span class="k">WHERE</span> <span class="k">column_name</span> <span class="k">IN</span> <span class="p">(</span><span class="n">value1</span><span class="p">,</span><span class="n">value2</span><span class="p">,...);</span>
+</pre></div>
+</div>
+<p>Under this scenario, user translates IN expression to a substrait <a class="reference external" href="https://github.com/substrait-io/substrait/blob/b8fb06a52397463bfe9cffc2c89fe71eba56b2ca/proto/substrait/algebra.proto#L387">ScalaFunction</a> with <a class="reference external" href="https://github.com/substrait-io/substrait/blob/b8fb06a52397463bfe9cffc2c89fe71eba56b2ca/proto/substrait/algebra.proto#L501">List</a> as its second arg. Then Cider translates it into Analyzer::InValues for further codegen and computation.</p>
+<p>IN can also be used together with a subquery:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">eno</span>
+<span class="k">FROM</span> <span class="n">employee</span>
+<span class="k">WHERE</span> <span class="n">dno</span> <span class="k">IN</span>
+      <span class="p">(</span><span class="k">SELECT</span> <span class="n">dno</span>
+      <span class="k">FROM</span> <span class="n">dept</span>
+      <span class="k">WHERE</span> <span class="n">floor</span> <span class="o">=</span> <span class="mi">3</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In this case, plan parser in frontend framework will parse it either “IN (value1, value2, …)” or a JoinNode
+when ‘eno’ col is known as a primary key or an unique index, like following:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">eno</span>
+<span class="k">FROM</span> <span class="n">employee</span> <span class="k">join</span> <span class="n">dept</span>
+<span class="k">WHERE</span> <span class="n">employee</span><span class="p">.</span><span class="n">dno</span> <span class="o">=</span> <span class="n">dept</span><span class="p">.</span><span class="n">dno</span> <span class="k">and</span> <span class="n">dept</span><span class="p">.</span><span class="n">floor</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Thus this IN clause is handled through join op in Cider.</p>
+</div>
+<div class="section" id="avg-support-in-cider">
+<h2>AVG support in Cider<a class="headerlink" href="#avg-support-in-cider" title="Permalink to this headline">¶</a></h2>
+<p>Similar as other aggregation functions, ‘AVG’ has 2 phases(Partial/Final) in distributing data analytic engines. But computation is different in different phase. In AVG partial, computation is split into sum() and count() on target column/expression and in AVG final, sum() is done on previous summation and count value, then do a divide between these 2 values.</p>
+<p>Since Cider is positioned as a compute library under such a distributed engine at task level, it doesn’t support AVG syntax directly in its internal.</p>
+<p>It may have some conflictions when frontend framework offloads AVG function to Cider, mainly caused by different signature of referred functions, such as output type, etc. Take Velox for example, it specifies <strong>sum(int)</strong> with output type <strong>double</strong> in avg aggregation, while it violates rules in cider which uses output type <strong>bigint</strong>. This will cause codegen check failure. So for this case, we made a workaround by following Cider rules in internal and convert result to <strong>double</strong> when retriving result into CiderBatch, thus can keep consistent schema with following op in velox plan, such as avg final computation.</p>
+<p>Similar special handle will be needed when output type of agg functions from frontend framework violates with cider internal. In cider, the returned data types defined as following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">widths</span><span class="p">:</span> <span class="mi">10</span> <span class="mi">30</span>
+<span class="p">:</span><span class="n">align</span><span class="p">:</span> <span class="n">left</span>
+<span class="p">:</span><span class="n">header</span><span class="o">-</span><span class="n">rows</span><span class="p">:</span> <span class="mi">1</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">Aggregate</span> <span class="n">Function</span>
+  <span class="o">-</span> <span class="n">Output</span> <span class="n">Type</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">SUM</span>
+  <span class="o">-</span> <span class="n">If</span> <span class="n">argument</span> <span class="ow">is</span> <span class="n">integer</span><span class="p">,</span> <span class="n">output</span> <span class="nb">type</span> <span class="n">will</span> <span class="n">be</span> <span class="n">BIGINT</span><span class="o">.</span> <span class="n">Otherwise</span> <span class="n">same</span> <span class="k">as</span> <span class="n">argument</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">MIN</span>
+  <span class="o">-</span> <span class="n">Same</span> <span class="k">as</span> <span class="n">argument</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">MAX</span>
+  <span class="o">-</span> <span class="n">Same</span> <span class="k">as</span> <span class="n">argument</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">COUNT</span>
+  <span class="o">-</span> <span class="n">If</span> <span class="n">g_bigint_count</span> <span class="ow">is</span> <span class="n">true</span><span class="p">(</span><span class="n">default</span> <span class="n">false</span><span class="p">),</span> <span class="n">output</span> <span class="nb">type</span> <span class="ow">is</span> <span class="n">BIGINT</span><span class="o">.</span> <span class="n">Otherwise</span> <span class="n">uses</span> <span class="n">INT</span><span class="o">.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="string-function-support-in-cider">
+<h2>String Function support in Cider<a class="headerlink" href="#string-function-support-in-cider" title="Permalink to this headline">¶</a></h2>
+<p>Currently, Cider do not distinguish empty string and null string.</p>
+<div class="section" id="like-function">
+<h3>1) Like function<a class="headerlink" href="#like-function" title="Permalink to this headline">¶</a></h3>
+<ol class="loweralpha simple">
+<li>Acceptable wildcards: %, _, []</li>
+<li>Unacceptable wildcards: <cite>*</cite>, [^], [!]</li>
+<li>Escape clause is not supported yet.</li>
+</ol>
+</div>
+</div>
+<div class="section" id="conditional-expressions-in-cider">
+<h2>Conditional Expressions in Cider<a class="headerlink" href="#conditional-expressions-in-cider" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="coalesce">
+<h3>1) COALESCE<a class="headerlink" href="#coalesce" title="Permalink to this headline">¶</a></h3>
+<p>The COALESCE expression is a syntactic shortcut for the CASE expression</p>
+<p>The code COALESCE(expression1,…n) is executed in Cider as the following CASE expression:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CASE</span>
+<span class="k">WHEN</span> <span class="p">(</span><span class="n">expression1</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">)</span> <span class="k">THEN</span> <span class="n">expression1</span>
+<span class="k">WHEN</span> <span class="p">(</span><span class="n">expression2</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">)</span> <span class="k">THEN</span> <span class="n">expression2</span>
+<span class="p">...</span>
+<span class="k">ELSE</span> <span class="n">expressionN</span>
+<span class="k">END</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="n">COALESCE</span><span class="p">(</span><span class="n">col_1</span><span class="p">,</span> <span class="n">col_2</span><span class="p">,</span> <span class="mi">777</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">test</span>
+</pre></div>
+</div>
+<p>is equal to</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">CASE</span> <span class="k">WHEN</span> <span class="n">col_1</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span> <span class="k">THEN</span> <span class="n">col_1</span> <span class="k">WHEN</span> <span class="n">col_2</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span> <span class="k">THEN</span> <span class="n">col_2</span> <span class="k">ELSE</span> <span class="mi">777</span> <span class="k">END</span> <span class="k">from</span> <span class="n">test</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="if">
+<h3>2) IF<a class="headerlink" href="#if" title="Permalink to this headline">¶</a></h3>
+<p>The IF function is actually a language construct that is executed in Cider as the following CASE expression</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CASE</span>
+<span class="n">WHEN</span> <span class="n">condition</span> <span class="n">THEN</span> <span class="n">true_value</span>
+<span class="p">[</span> <span class="n">ELSE</span> <span class="n">false_value</span> <span class="p">]</span>
+<span class="n">END</span>
+</pre></div>
+</div>
+<p>IF Functions:</p>
+<ol class="arabic simple">
+<li></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">true_value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Evaluates and returns true_value if condition is true, otherwise null is returned and true_value is not evaluated.</p>
+<p>is equal to</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CASE</span> <span class="k">WHEN</span> <span class="n">condition</span> <span class="k">THEN</span> <span class="n">true_value</span> <span class="k">END</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">true_value</span><span class="p">,</span> <span class="n">false_value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Evaluates and returns true_value if condition is true, otherwise evaluates and returns false_value.</p>
+<p>is equal to</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CASE</span> <span class="k">WHEN</span> <span class="n">condition</span> <span class="k">THEN</span> <span class="n">true_value</span> <span class="k">ELSE</span> <span class="n">false_value</span> <span class="k">END</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="select-distinct">
+<h2>SELECT DISTINCT<a class="headerlink" href="#select-distinct" title="Permalink to this headline">¶</a></h2>
+<p>Mainstream databases such as Spark and Presto will transform ‘SELECT DISTINCT’ sql to ‘GROUP BY’ sql when do optimization on logical plan.</p>
+<p>Spark:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="cm">/**</span>
+<span class="cm">* Replaces logical [[Distinct]] operator with an [[Aggregate]] operator.</span>
+<span class="cm">* {{{</span>
+<span class="cm">*   SELECT DISTINCT f1, f2 FROM t  ==&gt;  SELECT f1, f2 FROM t GROUP BY f1, f2</span>
+<span class="cm">* }}}</span>
+<span class="cm">*/</span>
+<span class="n">object</span> <span class="n">ReplaceDistinctWithAggregate</span> <span class="kd">extends</span> <span class="n">Rule</span><span class="o">[</span><span class="n">LogicalPlan</span><span class="o">]</span> <span class="o">{</span>
+        <span class="n">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="o">:</span> <span class="n">LogicalPlan</span><span class="o">):</span> <span class="n">LogicalPlan</span> <span class="o">=</span> <span class="n">plan</span><span class="o">.</span><span class="na">transformWithPruning</span><span class="o">(</span>
+                <span class="n">_</span><span class="o">.</span><span class="na">containsPattern</span><span class="o">(</span><span class="n">DISTINCT_LIKE</span><span class="o">),</span> <span class="n">ruleId</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">case</span> <span class="n">Distinct</span><span class="o">(</span><span class="n">child</span><span class="o">)</span> <span class="o">=&gt;</span> <span class="n">Aggregate</span><span class="o">(</span><span class="n">child</span><span class="o">.</span><span class="na">output</span><span class="o">,</span> <span class="n">child</span><span class="o">.</span><span class="na">output</span><span class="o">,</span> <span class="n">child</span><span class="o">)</span>
+        <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>Presto:</p>
+<p>When execute sql <cite>select distinct nationkey from customer</cite>, part of the json generated by Presto is:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="s2">&quot;2&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;root&quot;</span><span class="p">:{</span>
+                <span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="s2">&quot;.AggregationNode&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;groupingSets&quot;</span><span class="p">:{</span>
+                <span class="nt">&quot;groupingKeys&quot;</span><span class="p">:[</span>
+                        <span class="p">{</span>
+                        <span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="s2">&quot;variable&quot;</span><span class="p">,</span>
+                        <span class="nt">&quot;sourceLocation&quot;</span><span class="p">:{</span>
+                                <span class="nt">&quot;line&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="nt">&quot;column&quot;</span><span class="p">:</span><span class="mi">17</span>
+                        <span class="p">},</span>
+                        <span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="s2">&quot;nationkey&quot;</span><span class="p">,</span>
+                        <span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;bigint&quot;</span>
+                        <span class="p">}</span>
+                <span class="p">],</span>
+                <span class="nt">&quot;groupingSetCount&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                <span class="nt">&quot;globalGroupingSets&quot;</span><span class="p">:[</span>
+                <span class="p">]</span>
+        <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>In above cases, the original ‘SELECT DISTINCT’ sql is converted to an Aggregation type, and the columns shoule be distinct will become ‘GROUP BY’ keys.</p>
+</div>
+<div class="section" id="group-by-related-function">
+<h2>GROUP BY related function<a class="headerlink" href="#group-by-related-function" title="Permalink to this headline">¶</a></h2>
+<p>This part will explain extended usage of GROUP BY including GROUPING SETS() , CUBE() , ROLLUP() , GROUP BY ALL/DISTINCT, and together with those combined cases.</p>
+<p>Let’s define a simple test table the schema of which is</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">tbl</span><span class="p">(</span><span class="n">col_a</span> <span class="nb">BIGINT</span><span class="p">,</span> <span class="n">col_b</span> <span class="nb">BIGINT</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="grouping-sets">
+<h3>1) GROUPING SETS<a class="headerlink" href="#grouping-sets" title="Permalink to this headline">¶</a></h3>
+<p>Grouping sets allow users to specify multiple lists of columns to group on. The columns not part of a given sublist of grouping columns are set to <strong>NULL</strong>.</p>
+<p>Example:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">GROUPING</span> <span class="k">SETS</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">col_a</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">col_b</span><span class="p">),</span>
+        <span class="p">())</span>
+</pre></div>
+</div>
+<p>Plan:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Output[_col0]
+- Project[projectLocality = LOCAL]
+- Aggregate(FINAL)[col_a$gid, col_b$gid, groupid][$hashvalue]
+- Aggregate(PARTIAL)[col_a$gid, col_b$gid, groupid][$hashvalue_8]
+- Project[projectLocality = LOCAL]
+- GroupId[[col_a, col_b], [col_a], [col_b], []]
+- TableScan
+</pre></div>
+</div>
+<p>is <strong>logically equivalent</strong> to:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">tbl</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">tbl</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_a</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">tbl</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">col_b</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">tbl</span>
+</pre></div>
+</div>
+<p>However, the only difference of them is using UNION ALL will trigger tableScan four times while only once for GROUPING SETS.</p>
+<p>This is important not only for performance, data quality will also be a significant problem when the source table varies from time to time.</p>
+</div>
+<div class="section" id="group-by-rollup">
+<h3>2) GROUP BY ROLLUP<a class="headerlink" href="#group-by-rollup" title="Permalink to this headline">¶</a></h3>
+<p>The ROLLUP operator generates all possible subtotals for a given set of columns.</p>
+<p>Example:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">ROLLUP</span> <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Plan:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Output[_col0]
+- Project[projectLocality = LOCAL]
+- Aggregate(FINAL)[col_a$gid, col_b$gid, groupid][$hashvalue]
+- Aggregate(PARTIAL)[col_a$gid, col_b$gid, groupid][$hashvalue_8]
+- Project[projectLocality = LOCAL]
+- GroupId[[], [col_a], [col_a, col_b]]
+- TableScan
+</pre></div>
+</div>
+<p>is <strong>equivalent</strong> to:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">GROUPING</span> <span class="k">SETS</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">col_a</span><span class="p">),</span>
+        <span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="group-by-cube">
+<h3>3) GROUP BY CUBE<a class="headerlink" href="#group-by-cube" title="Permalink to this headline">¶</a></h3>
+<p>The CUBE operator generates all possible grouping sets (i.e. a power set) for a given set of columns.</p>
+<p>Example:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">CUBE</span> <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Plan:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Output[_col0]
+- Project[projectLocality = LOCAL]
+- Aggregate(FINAL)[col_a$gid, col_b$gid, groupid][$hashvalue]
+- Aggregate(PARTIAL)[col_a$gid, col_b$gid, groupid][$hashvalue_8]
+- Project[projectLocality = LOCAL]
+- GroupId[[], [col_a], [col_b], [col_a, col_b]]
+- TableScan
+</pre></div>
+</div>
+<p>is <strong>equivalent</strong> to:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">GROUPING</span> <span class="k">SETS</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">col_a</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">col_b</span><span class="p">),</span>
+        <span class="p">());</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="group-by-all-distinct">
+<h3>4) GROUP BY ALL/DISTINCT<a class="headerlink" href="#group-by-all-distinct" title="Permalink to this headline">¶</a></h3>
+<p>We don’t need to handle ALL/DISTINCT in Cider, since it will be transfered to GROUPING SETS when generating Presto plans.
+The ALL and DISTINCT quantifiers determine whether duplicate grouping sets each produce distinct output rows.
+This is particularly useful when multiple complex grouping sets are combined in the same query.</p>
+<p>Example1:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">ALL</span> <span class="k">ROLLUP</span> <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span> <span class="k">CUBE</span> <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Plan:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Output[_col0]
+- Project[projectLocality = LOCAL]
+- Aggregate(FINAL)[col_a$gid, col_b$gid, groupid][$hashvalue]
+- Aggregate(PARTIAL)[col_a$gid, col_b$gid, groupid][$hashvalue_8]
+- Project[projectLocality = LOCAL]
+- GroupId[[], [col_a], [col_a, col_b], [col_a], [col_a], [col_a, col_b], [col_b], [col_b, col_a], [col_b, col_a], [col_a, col_b], [col_a, col_b], [col_a, col_b]]
+- TableScan
+</pre></div>
+</div>
+<p>is <strong>equivalent</strong> to:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span>
+<span class="k">GROUPING</span> <span class="k">SETS</span> <span class="p">((</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span> <span class="p">(</span><span class="n">col_a</span><span class="p">),</span> <span class="p">()),</span>
+<span class="k">GROUPING</span> <span class="k">SETS</span><span class="p">((</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span> <span class="p">(</span><span class="n">col_a</span><span class="p">),</span> <span class="p">(</span><span class="n">col_b</span><span class="p">),</span> <span class="p">());</span>
+</pre></div>
+</div>
+<p>Example2:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">DISTINCT</span> <span class="k">ROLLUP</span> <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span> <span class="k">CUBE</span> <span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Plan:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Output[_col0]
+- Project[projectLocality = LOCAL]
+- Aggregate(FINAL)[col_a$gid, col_b$gid, groupid][$hashvalue]
+- Aggregate(PARTIAL)[col_a$gid, col_b$gid, groupid][$hashvalue_8]
+- Project[projectLocality = LOCAL]
+- GroupId[[], [col_a], [col_a, col_b], [col_b]]
+- TableScan
+</pre></div>
+</div>
+<p>is <strong>equivalent</strong> to:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span>
+<span class="k">GROUPING</span> <span class="k">SETS</span> <span class="p">((</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">),</span> <span class="p">(</span><span class="n">col_a</span><span class="p">),</span> <span class="p">(</span><span class="n">col_b</span><span class="p">),</span> <span class="p">());</span>
+</pre></div>
+</div>
+<p>Using ALL will leave all duplicate grouping sets while DISTINCT will dedup them.</p>
+</div>
+<div class="section" id="grouping-operation">
+<h3>5) GROUPING() operation<a class="headerlink" href="#grouping-operation" title="Permalink to this headline">¶</a></h3>
+<p>We can find the usage of SELECT GROUPING(col_a, col_b …) FROM table GROUP BY ROLLUP (col_a, col_b …)  in TPC-DS Query27.
+The grouping operation returns a bit set converted to decimal, indicating which columns are present in a grouping.
+It must be used in conjunction with GROUPING SETS, ROLLUP, CUBE or GROUP BY and its arguments must match exactly the columns referenced in the corresponding GROUPING SETS, ROLLUP, CUBE or GROUP BY clause.</p>
+<p>Example:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span> <span class="k">SUM</span><span class="p">(</span><span class="n">col_a</span><span class="p">),</span> <span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">,</span> <span class="k">GROUPING</span><span class="p">(</span><span class="n">col_a</span><span class="p">,</span> <span class="n">col_b</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">tbl</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="k">GROUPING</span> <span class="k">SETS</span><span class="p">((</span><span class="n">col_a</span><span class="p">),</span> <span class="p">(</span><span class="n">col_b</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>Result:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_col0</span> <span class="o">|</span> <span class="n">col_a</span> <span class="o">|</span> <span class="n">col_b</span> <span class="o">|</span> <span class="n">_col3</span>
+<span class="o">-------+-------+-------+-------</span>
+<span class="mi">2</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">3</span> <span class="o">|</span>     <span class="mi">2</span>
+<span class="mi">4</span> <span class="o">|</span>     <span class="mi">2</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">1</span>
+<span class="mi">3</span> <span class="o">|</span>     <span class="mi">3</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">1</span>
+<span class="mi">1</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">1</span> <span class="o">|</span>     <span class="mi">2</span>
+<span class="mi">1</span> <span class="o">|</span>     <span class="mi">1</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">1</span>
+<span class="mi">2</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">2</span> <span class="o">|</span>     <span class="mi">2</span>
+<span class="mi">3</span> <span class="o">|</span> <span class="n">NULL</span>  <span class="o">|</span>     <span class="mi">4</span> <span class="o">|</span>     <span class="mi">2</span>
+<span class="p">(</span><span class="mi">7</span> <span class="n">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The example shows when GROUP BY col_a, the bit set should be 01, so the value of _col3 is 1.
+When GROUP BY col_b, the bit set should be 10, thus the value of _col3 is 2.</p>
+<p>The GROUPING(col_a, col_b) results in _col3 and it represents a bit set converted to BIGINT.
+Each column in GROUPING  operation will take one bit and it will be set to 0 if the corresponding column is included in the grouping and to 1 otherwise.</p>
+</div>
+</div>
+<div class="section" id="all-any">
+<h2>8 ALL/ANY<a class="headerlink" href="#all-any" title="Permalink to this headline">¶</a></h2>
+<p>In SQL, ‘ALL’ and ‘ANY’ are used to decorate compare operators(&lt;, &lt;=, =, !=, &gt;, &gt;=) between column values and a subquery result.</p>
+<p>‘ALL’ will return TRUE if the value matches <strong>all</strong> corresponding values in the subquery, while ‘ANY’ returns TRUE if it matches <strong>any</strong> single one.</p>
+<div class="section" id="example">
+<h3>Example:<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<p>Given test.col_i8 is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">col_i8</span>
+<span class="o">--------</span>
+<span class="mi">5</span>
+<span class="mi">3</span>
+<span class="mi">3</span>
+<span class="p">(</span><span class="mi">3</span> <span class="n">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>then execute the following sql:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="n">col_i8</span> <span class="o">&lt;</span> <span class="n">ALL</span><span class="p">(</span><span class="n">VALUES</span> <span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">test</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>will return:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">_col0</span>
+<span class="o">-------</span>
+<span class="n">false</span>
+<span class="n">true</span>
+<span class="n">true</span>
+<span class="p">(</span><span class="mi">3</span> <span class="n">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>because 5 is not less than 4 while 3 is less than all the right values.</p>
+<p>For above case, the logical plan generated by <strong>Presto</strong> is:</p>
+<ol class="arabic simple">
+<li>use the aggregate function <strong>MIN</strong> to get the min value of right rows.</li>
+<li>use a <strong>cross join</strong> to generate the boolean results, whose left and right arguments are left rows and the min value in the first step.</li>
+</ol>
+<p>The logical plan tree:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">Output</span><span class="p">[</span><span class="n">_col0</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="n">expr_3</span><span class="p">:</span><span class="n">boolean</span><span class="p">]</span>                                                                                                                                  <span class="o">&gt;</span>
+        <span class="n">_col0</span> <span class="p">:</span><span class="o">=</span> <span class="n">expr_3</span> <span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">23</span><span class="p">)</span>                                                                                                                                       <span class="o">&gt;</span>
+    <span class="o">-</span> <span class="n">RemoteStreamingExchange</span><span class="p">[</span><span class="n">GATHER</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="n">expr_3</span><span class="p">:</span><span class="n">boolean</span><span class="p">]</span>                                                                                                            <span class="o">&gt;</span>
+        <span class="o">-</span> <span class="n">Project</span><span class="p">[</span><span class="n">projectLocality</span> <span class="o">=</span> <span class="n">LOCAL</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="n">expr_3</span><span class="p">:</span><span class="n">boolean</span><span class="p">]</span>                                                                                                       <span class="o">&gt;</span>
+                <span class="n">expr_3</span> <span class="p">:</span><span class="o">=</span> <span class="n">SWITCH</span><span class="p">(</span><span class="n">count_all</span><span class="p">,</span> <span class="n">WHEN</span><span class="p">(</span><span class="n">BIGINT</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">BOOLEAN</span><span class="s1">&#39;true&#39;</span><span class="p">),</span> <span class="p">((</span><span class="n">col_i8_0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">min</span><span class="p">))</span> <span class="n">AND</span> <span class="p">(</span><span class="n">SWITCH</span><span class="p">(</span><span class="n">BOOLEAN</span><span class="s1">&#39;true&#39;</span><span class="p">,</span> <span class="n">WHEN</span><span class="p">((</span><span class="n">count_all</span><span class="p">)</span> <span class="o">&lt;&gt;</span> <span class="p">(</span><span class="n">count_non_null</span><span class="p">),</span> <span class="n">nul</span><span class="o">&gt;</span>
+            <span class="o">-</span> <span class="n">CrossJoin</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="n">col_i8_0</span><span class="p">:</span><span class="n">integer</span><span class="p">,</span> <span class="nb">min</span><span class="p">:</span><span class="n">integer</span><span class="p">,</span> <span class="n">count_all</span><span class="p">:</span><span class="n">bigint</span><span class="p">,</span> <span class="n">count_non_null</span><span class="p">:</span><span class="n">bigint</span><span class="p">]</span>                                                                  <span class="o">&gt;</span>
+                        <span class="n">Distribution</span><span class="p">:</span> <span class="n">REPLICATED</span>                                                                                                                     <span class="o">&gt;</span>
+                <span class="o">-</span> <span class="n">ScanProject</span><span class="p">[</span><span class="n">table</span> <span class="o">=</span> <span class="n">TableHandle</span> <span class="p">{</span><span class="n">connectorId</span><span class="o">=</span><span class="s1">&#39;hive&#39;</span><span class="p">,</span> <span class="n">connectorHandle</span><span class="o">=</span><span class="s1">&#39;HiveTableHandle{schemaName=tpch, tableName=test, analyzePartitionValues=Optio&gt;</span>
+                        <span class="n">col_i8_0</span> <span class="p">:</span><span class="o">=</span> <span class="n">CAST</span><span class="p">(</span><span class="n">col_i8</span> <span class="n">AS</span> <span class="n">integer</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">49</span><span class="p">)</span>                                                                                                   <span class="o">&gt;</span>
+                        <span class="n">LAYOUT</span><span class="p">:</span> <span class="n">tpch</span><span class="o">.</span><span class="n">test</span><span class="p">{}</span>                                                                                                                          <span class="o">&gt;</span>
+                        <span class="n">col_i8</span> <span class="p">:</span><span class="o">=</span> <span class="n">col_i8</span><span class="p">:</span><span class="n">tinyint</span><span class="p">:</span><span class="mi">0</span><span class="p">:</span><span class="n">REGULAR</span> <span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">48</span><span class="p">)</span>                                                                                                    <span class="o">&gt;</span>
+                <span class="o">-</span> <span class="n">LocalExchange</span><span class="p">[</span><span class="n">SINGLE</span><span class="p">]</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="nb">min</span><span class="p">:</span><span class="n">integer</span><span class="p">,</span> <span class="n">count_all</span><span class="p">:</span><span class="n">bigint</span><span class="p">,</span> <span class="n">count_non_null</span><span class="p">:</span><span class="n">bigint</span><span class="p">]</span>                                                                 <span class="o">&gt;</span>
+                    <span class="o">-</span> <span class="n">RemoteStreamingExchange</span><span class="p">[</span><span class="n">REPLICATE</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="nb">min</span><span class="p">:</span><span class="n">integer</span><span class="p">,</span> <span class="n">count_all</span><span class="p">:</span><span class="n">bigint</span><span class="p">,</span> <span class="n">count_non_null</span><span class="p">:</span><span class="n">bigint</span><span class="p">]</span>                                                   <span class="o">&gt;</span>
+                        <span class="o">-</span> <span class="n">Aggregate</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="nb">min</span><span class="p">:</span><span class="n">integer</span><span class="p">,</span> <span class="n">count_all</span><span class="p">:</span><span class="n">bigint</span><span class="p">,</span> <span class="n">count_non_null</span><span class="p">:</span><span class="n">bigint</span><span class="p">]</span>                                                                        <span class="o">&gt;</span>
+                                <span class="nb">min</span> <span class="p">:</span><span class="o">=</span> <span class="s2">&quot;presto.default.min&quot;</span><span class="p">((</span><span class="n">field</span><span class="p">))</span> <span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">17</span><span class="p">)</span>                                                                                          <span class="o">&gt;</span>
+                                <span class="n">count_all</span> <span class="p">:</span><span class="o">=</span> <span class="s2">&quot;presto.default.count&quot;</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">17</span><span class="p">)</span>                                                                                        <span class="o">&gt;</span>
+                                <span class="n">count_non_null</span> <span class="p">:</span><span class="o">=</span> <span class="s2">&quot;presto.default.count&quot;</span><span class="p">((</span><span class="n">field</span><span class="p">))</span> <span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">17</span><span class="p">)</span>                                                                             <span class="o">&gt;</span>
+                            <span class="o">-</span> <span class="n">Values</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="n">field</span><span class="p">:</span><span class="n">integer</span><span class="p">]</span>                                                                                                              <span class="o">&gt;</span>
+                                    <span class="p">(</span><span class="n">INTEGER</span><span class="s1">&#39;4&#39;</span><span class="p">)</span>                                                                                                                     <span class="o">&gt;</span>
+                                    <span class="p">(</span><span class="n">INTEGER</span><span class="s1">&#39;5&#39;</span><span class="p">)</span>                                                                                                                     <span class="o">&gt;</span>
+                                    <span class="p">(</span><span class="n">INTEGER</span><span class="s1">&#39;6&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="for">
+<h3>For <strong>&lt;, &lt;=, &gt;, &gt;=</strong><a class="headerlink" href="#for" title="Permalink to this headline">¶</a></h3>
+<p>The only two changes in plan are:</p>
+<ol class="arabic simple">
+<li>the aggregate function to get the max or min value.</li>
+<li>the compare operator in the project step.</li>
+</ol>
+<table border="1" class="docutils">
+<colgroup>
+<col width="34%" />
+<col width="34%" />
+<col width="31%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">ALL/ANY</th>
+<th class="head">operator</th>
+<th class="head">function</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>ALL</td>
+<td>&lt;/&lt;=</td>
+<td>MIN</td>
+</tr>
+<tr class="row-odd"><td>ALL</td>
+<td>&gt;/&gt;=</td>
+<td>MAX</td>
+</tr>
+<tr class="row-even"><td>ANY</td>
+<td>&lt;/&lt;=</td>
+<td>MAX</td>
+</tr>
+<tr class="row-odd"><td>ANY</td>
+<td>&gt;/&gt;=</td>
+<td>MIN</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id1">
+<h3>For <strong>=, !=</strong><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>For ‘<strong>=</strong>’ in ‘ALL’ cases, there will be two aggregate functions <strong>MIN</strong> and <strong>MAX</strong>, and the project expression will become <strong>(min) = (max)) AND ((expr) = (max))</strong>.</p>
+<p>While for ‘<strong>!=</strong>’, there will be only a semi join between left rows(expr) and right rows to get boolean results, then a <strong>NOT</strong> operation will be implemented to get final results.</p>
+<p>For ‘ANY’ cases, the plans for ‘<strong>=</strong>’ and ‘<strong>!=</strong>’ are exactly the same as those of ‘<strong>!=</strong>’ and ‘<strong>=</strong>’ in ‘ALL’ cases.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Syntax support in Cider</a><ul>
+<li><a class="reference internal" href="#having-syntax-support">Having syntax support</a></li>
+<li><a class="reference internal" href="#in-syntax-support">In syntax support</a></li>
+<li><a class="reference internal" href="#avg-support-in-cider">AVG support in Cider</a></li>
+<li><a class="reference internal" href="#string-function-support-in-cider">String Function support in Cider</a><ul>
+<li><a class="reference internal" href="#like-function">1) Like function</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#conditional-expressions-in-cider">Conditional Expressions in Cider</a><ul>
+<li><a class="reference internal" href="#coalesce">1) COALESCE</a></li>
+<li><a class="reference internal" href="#if">2) IF</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#select-distinct">SELECT DISTINCT</a></li>
+<li><a class="reference internal" href="#group-by-related-function">GROUP BY related function</a><ul>
+<li><a class="reference internal" href="#grouping-sets">1) GROUPING SETS</a></li>
+<li><a class="reference internal" href="#group-by-rollup">2) GROUP BY ROLLUP</a></li>
+<li><a class="reference internal" href="#group-by-cube">3) GROUP BY CUBE</a></li>
+<li><a class="reference internal" href="#group-by-all-distinct">4) GROUP BY ALL/DISTINCT</a></li>
+<li><a class="reference internal" href="#grouping-operation">5) GROUPING() operation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#all-any">8 ALL/ANY</a><ul>
+<li><a class="reference internal" href="#example">Example:</a></li>
+<li><a class="reference internal" href="#for">For <strong>&lt;, &lt;=, &gt;, &gt;=</strong></a></li>
+<li><a class="reference internal" href="#id1">For <strong>=, !=</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="debugging.html"
+                        title="previous chapter">Debugging/Testing</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="development-specification.html"
+                        title="next chapter">Development Specification</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/develop/syntax-support.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="development-specification.html" title="Development Specification"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="debugging.html" title="Debugging/Testing"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../develop.html" >Developer Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Intel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

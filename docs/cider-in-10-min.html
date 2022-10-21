@@ -16,7 +16,7 @@
     <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Cider Developer Guide" href="develop-guide.html" />
+    <link rel="next" title="User Guide" href="user.html" />
     <link rel="prev" title="Welcome to Cider’s documentation!" href="index.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -26,7 +26,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="develop-guide.html" title="Cider Developer Guide"
+          <a href="user.html" title="User Guide"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Welcome to Cider’s documentation!"
@@ -44,7 +44,25 @@
 <h1>Cider in 10 minutes<a class="headerlink" href="#cider-in-10-minutes" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>This is a quick introduction into Cider, …</p>
+<p>Big Data Analytic Toolkit is a set of acceleration libraries aimed to optimize big data analytic frameworks.</p>
+<p>By using this library, frontend SQL engines like Prestodb/Spark query performance will be significant improved.</p>
+<p>The following diagram shows the design architecture.</p>
+<img alt="_images/BDTK-arch.PNG" src="_images/BDTK-arch.PNG" />
+<p>Major components of the project include:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><a class="reference external" href="https://github.com/intel/BDTK/tree/main/cider">Cider</a>:</p>
+<p>a modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs  <a class="reference external" href="https://github.com/substrait-io/substrait">Substrait</a> as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on <a class="reference external" href="https://github.com/heavyai/heavydb">HeavyDB</a>
+).</p>
+</li>
+<li><p class="first"><a class="reference external" href="https://github.com/intel/BDTK/tree/main/cider-velox">Velox Plugin</a>:</p>
+<p>a Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto <a class="reference external" href="https://github.com/facebookincubator/velox/commits/main">Velox</a>. It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.</p>
+</li>
+<li><p class="first"><a class="reference external" href="https://github.com/Intel-bigdata/IntelCodecLibrary">Intel Codec Library</a>:</p>
+<p>Intel Codec Library for BigData provides compression and decompression library for Apache Hadoop/Spark to make use of the acceleration hardware for compression/decompression.</p>
+</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="apis">
 <h2>APIs<a class="headerlink" href="#apis" title="Permalink to this headline">¶</a></h2>
@@ -95,18 +113,6 @@
 </div>
 </div>
 </div>
-<div class="section" id="useful-documents">
-<h2>Useful Documents<a class="headerlink" href="#useful-documents" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://pythonhosted.org/an_example_pypi_project/sphinx.html">How to write rst</a></p>
-</div>
-<div class="section" id="indices-and-tables">
-<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
-</ul>
-</div>
 </div>
 
 
@@ -124,8 +130,6 @@
 <li><a class="reference internal" href="#code-blocks">Code Blocks</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#useful-documents">Useful Documents</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 </li>
 </ul>
@@ -134,8 +138,8 @@
   <p class="topless"><a href="index.html"
                         title="previous chapter">Welcome to Cider’s documentation!</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="develop-guide.html"
-                        title="next chapter">Cider Developer Guide</a></p>
+  <p class="topless"><a href="user.html"
+                        title="next chapter">User Guide</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -166,7 +170,7 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="develop-guide.html" title="Cider Developer Guide"
+          <a href="user.html" title="User Guide"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Welcome to Cider’s documentation!"

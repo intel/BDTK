@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Cider Sharing &#8212; Cider 1.0 documentation</title>
+    <title>User Guide &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -16,7 +16,8 @@
     <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Logger" href="develop/logger.html" /> 
+    <link rel="next" title="Quick Start" href="user/quick-start.html" />
+    <link rel="prev" title="Cider in 10 minutes" href="cider-in-10-min.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -25,7 +26,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="develop/logger.html" title="Logger"
+          <a href="user/quick-start.html" title="Quick Start"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cider-in-10-min.html" title="Cider in 10 minutes"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
@@ -36,31 +40,30 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="cider-sharing">
-<h1>Cider Sharing<a class="headerlink" href="#cider-sharing" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="live-demo">
-<h2>Live Demo<a class="headerlink" href="#live-demo" title="Permalink to this headline">¶</a></h2>
-<p>maybe a video…</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="o">:</span>
-    <span class="n">sys</span><span class="p">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
-</pre></div>
-</div>
-<div class="section" id="design-doc">
-<h3>Design Doc<a class="headerlink" href="#design-doc" title="Permalink to this headline">¶</a></h3>
-<p>document…</p>
-</div>
-<div class="section" id="performance-report">
-<h3>Performance Report<a class="headerlink" href="#performance-report" title="Permalink to this headline">¶</a></h3>
-<p>charts or images…</p>
-</div>
-</div>
-<div class="section" id="external-link">
-<h2>External Link<a class="headerlink" href="#external-link" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://facebookincubator.github.io/velox/">Velox Documentation</a></p>
-</div>
-<div class="section" id="paper-conference-talk">
-<h2>Paper/ conference/ talk<a class="headerlink" href="#paper-conference-talk" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="http://sites.computer.org/debull/A14mar/p31.pdf#:~:text=Impala%20uses%20runtime%20code%20generation%20to%20produce%20query-speci%EF%AC%81c,function%E2%80%99s%20execution%20can%20result%20in%20large%20query%20speedups.">Runtime Code Generation in Cloudera Impala</a></p>
+  <div class="section" id="user-guide">
+<h1>User Guide<a class="headerlink" href="#user-guide" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/quick-start.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quick-start.html#a-demo-to-use">A Demo To Use</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/data-type.html">Data Types</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/data-type.html#scalar-types">Scalar Types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/function-support.html">Function support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#aggregate-functions">Aggregate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#logical-ops-and-comparsion-functions">Logical Ops and Comparsion Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#conversion-functions">Conversion Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#time-functions">Time Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#conditional-expression-functions">Conditional Expression Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#mathematical-functions">Mathematical Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#string-functions">String Functions</a></li>
+</ul>
+</li>
+</ul>
 </div>
 </div>
 
@@ -70,27 +73,16 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Cider Sharing</a><ul>
-<li><a class="reference internal" href="#live-demo">Live Demo</a><ul>
-<li><a class="reference internal" href="#design-doc">Design Doc</a></li>
-<li><a class="reference internal" href="#performance-report">Performance Report</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#external-link">External Link</a></li>
-<li><a class="reference internal" href="#paper-conference-talk">Paper/ conference/ talk</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
-  <p class="topless"><a href="develop/logger.html"
-                        title="previous chapter">Logger</a></p>
+  <p class="topless"><a href="cider-in-10-min.html"
+                        title="previous chapter">Cider in 10 minutes</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="user/quick-start.html"
+                        title="next chapter">Quick Start</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/cider-sharing.rst.txt"
+      <li><a href="_sources/user.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -117,7 +109,10 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="develop/logger.html" title="Logger"
+          <a href="user/quick-start.html" title="Quick Start"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cider-in-10-min.html" title="Cider in 10 minutes"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
