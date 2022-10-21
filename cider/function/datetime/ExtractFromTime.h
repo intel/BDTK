@@ -96,7 +96,7 @@ enum ExtractField {
   kWEEK_SUNDAY,
   kWEEK_SATURDAY,
   kDATEEPOCH,
-  NONE
+  kNONE
 };
 
 int64_t ExtractFromTime(ExtractField field, const int64_t timeval);

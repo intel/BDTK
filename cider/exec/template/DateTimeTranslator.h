@@ -96,7 +96,7 @@ class ExtractExpr : protected DateTimeTranslator {
                                                   const std::string&);
   static std::shared_ptr<Analyzer::Expr> generate(const std::shared_ptr<Analyzer::Expr>,
                                                   const ExtractField&);
-  static ExtractField presto_function_to_extract_field(const std::string& function_name);
+  static ExtractField try_map_presto_extract_function(const std::string& function_name);
 
   const std::shared_ptr<Analyzer::Expr> generate() const {
     return generate(from_expr_, field_);

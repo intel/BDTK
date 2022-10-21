@@ -115,53 +115,37 @@ std::string from_datetrunc_field(const DatetruncField& fieldno) {
   return "";
 }
 
+static const std::map<std::string, ExtractField> presto_extract_function_lookup = {
+    {"year", kYEAR},
+    {"quarter", kQUARTER},
+    {"month", kMONTH},
+    {"day", kDAY},
+    {"quarterday", kQUARTERDAY},
+    {"hour", kHOUR},
+    {"minute", kMINUTE},
+    {"second", kSECOND},
+    {"millisecond", kMILLISECOND},
+    {"microsecond", kMICROSECOND},
+    {"nanosecond", kNANOSECOND},
+    {"day_of_week", kDOW},
+    {"isodow", kISODOW},
+    {"day_of_year", kDOY},
+    {"epoch", kEPOCH},
+    {"week", kWEEK},
+    {"week_sunday", kWEEK_SUNDAY},
+    {"week_saturday", kWEEK_SATURDAY},
+    {"dateepoch", kDATEEPOCH}};
+
 }  // namespace
 
-ExtractField ExtractExpr::presto_function_to_extract_field(
+ExtractField ExtractExpr::try_map_presto_extract_function(
     const std::string& function_name) {
-  ExtractField fieldno;
-  if (boost::iequals(function_name, "year")) {
-    fieldno = kYEAR;
-  } else if (boost::iequals(function_name, "quarter")) {
-    fieldno = kQUARTER;
-  } else if (boost::iequals(function_name, "month")) {
-    fieldno = kMONTH;
-  } else if (boost::iequals(function_name, "day")) {
-    fieldno = kDAY;
-  } else if (boost::iequals(function_name, "quarterday")) {
-    fieldno = kQUARTERDAY;
-  } else if (boost::iequals(function_name, "hour")) {
-    fieldno = kHOUR;
-  } else if (boost::iequals(function_name, "minute")) {
-    fieldno = kMINUTE;
-  } else if (boost::iequals(function_name, "second")) {
-    fieldno = kSECOND;
-  } else if (boost::iequals(function_name, "millisecond")) {
-    fieldno = kMILLISECOND;
-  } else if (boost::iequals(function_name, "microsecond")) {
-    fieldno = kMICROSECOND;
-  } else if (boost::iequals(function_name, "nanosecond")) {
-    fieldno = kNANOSECOND;
-  } else if (boost::iequals(function_name, "day_of_week")) {
-    fieldno = kDOW;
-  } else if (boost::iequals(function_name, "isodow")) {
-    fieldno = kISODOW;
-  } else if (boost::iequals(function_name, "day_of_year")) {
-    fieldno = kDOY;
-  } else if (boost::iequals(function_name, "epoch")) {
-    fieldno = kEPOCH;
-  } else if (boost::iequals(function_name, "week")) {
-    fieldno = kWEEK;
-  } else if (boost::iequals(function_name, "week_sunday")) {
-    fieldno = kWEEK_SUNDAY;
-  } else if (boost::iequals(function_name, "week_saturday")) {
-    fieldno = kWEEK_SATURDAY;
-  } else if (boost::iequals(function_name, "dateepoch")) {
-    fieldno = kDATEEPOCH;
-  } else {
-    return fieldno = NONE;
+  const std::string lower_function_name = boost::algorithm::to_lower_copy(function_name);
+  auto field = presto_extract_function_lookup.find(lower_function_name);
+  if (field != presto_extract_function_lookup.end()) {
+    return field->second;
   }
-  return fieldno;
+  return kNONE;
 }
 
 ExtractField ExtractExpr::to_extract_field(const std::string& field) {
