@@ -27,14 +27,13 @@
 
 namespace facebook::velox::plugin::plantransformer {
 CiderPlanTransformerFactory::CiderPlanTransformerFactory() {
-  ciderTransformerFactory_ =
-      PlanTransformerFactory()
-          .registerPattern(std::make_shared<CompoundPattern>(),
-                           std::make_shared<CiderPlanRewriter>())
-          // .registerPattern(std::make_shared<LeftDeepJoinPattern>(),
-          //                  std::make_shared<CiderPlanRewriter>())
-          .registerPattern(std::make_shared<FilterPattern>(),
-                           std::make_shared<CiderPlanRewriter>());
+  ciderTransformerFactory_ = PlanTransformerFactory()
+                                 .registerPattern(std::make_shared<CompoundPattern>(),
+                                                  std::make_shared<CiderPlanRewriter>())
+                                 .registerPattern(std::make_shared<LeftDeepJoinPattern>(),
+                                                  std::make_shared<CiderPlanRewriter>())
+                                 .registerPattern(std::make_shared<FilterPattern>(),
+                                                  std::make_shared<CiderPlanRewriter>());
 }
 
 std::shared_ptr<PlanTransformer> CiderPlanTransformerFactory::getTransformer(
