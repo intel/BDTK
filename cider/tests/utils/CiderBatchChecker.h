@@ -154,9 +154,10 @@ class CiderBatchChecker {
     return checkArrowEq(expected_batches, actual_batches, ignore_order);
   }
 
-  static bool checkArrowEq(const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
-                           std::shared_ptr<CiderBatch> actual_batch,
-                           const bool ignore_order = false) {
+  static bool checkArrowEq(
+      const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+      std::shared_ptr<CiderBatch> actual_batch,
+      const bool ignore_order = false) {
     std::vector<std::shared_ptr<CiderBatch>> actual_batches{actual_batch};
     return checkArrowEq(expected_batches, actual_batches, ignore_order);
   }

@@ -29,8 +29,8 @@
 
 #include "substrait/type.pb.h"
 
-#include "cider/CiderTableSchema.h"
 #include "cider/CiderBatch.h"
+#include "cider/CiderTableSchema.h"
 
 struct CommandResult {
   std::string output;
