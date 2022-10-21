@@ -39,7 +39,8 @@ class ArrowArrayBuilder {
     schema_->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
     // TODO: release stuff
 
-    array_->buffers = nullptr;
+    array_->buffers = (const void**)allocator_->allocate(sizeof(void*));
+    array_->buffers[0] = nullptr;
     array_->n_buffers = 0;
     array_->length = 0;
     array_->offset = 0;
