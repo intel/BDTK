@@ -70,19 +70,21 @@ int CiderBatchChecker::getTotalNumOfRows(
 
 bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batch,
                                                  const CiderBatch* actual_batch) {
-  auto expected_buffer = expected_batch->getNulls();
-  auto actual_buffer = actual_batch->getNulls();
-  auto expected_count = expected_batch->getNullCount();
-  auto actual_count = actual_batch->getNullCount();
+  auto expected_null_cnt = expected_batch->getNullCount();
+  auto actual_null_cnt = actual_batch->getNullCount();
   auto row_num = expected_batch->getLength();
 
   // skip checking null_count if it is not yet computed (-1)
-  if (expected_count != -1 && actual_count != -1 && expected_count != actual_count) {
+  if (expected_null_cnt != -1 && actual_null_cnt != -1 &&
+      expected_null_cnt != actual_null_cnt) {
     std::cout << "expected_null_count != actual_null_count. "
-              << "Expected: " << expected_count << ". Actual: " << actual_count
+              << "Expected: " << expected_null_cnt << ". Actual: " << actual_null_cnt
               << std::endl;
     return false;
   }
+
+  auto expected_buffer = expected_batch->getNulls();
+  auto actual_buffer = actual_batch->getNulls();
 
   if (!expected_buffer && !actual_buffer) {
     // both buffers are nullptr, no need to check
@@ -90,10 +92,22 @@ bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batc
   } else if (expected_buffer && actual_buffer) {
     // both buffers exist
     return CiderBitUtils::CheckBitVectorEq(expected_buffer, actual_buffer, row_num);
+  } else {
+    // one is nullptr but the other is not, null_count of the other batch must be 0
+    if (expected_buffer) {
+      // actual values are all valid, expected null count should be 0
+      auto test_null_cnt = expected_null_cnt == -1
+                               ? CiderBitUtils::countUnsetBits(expected_buffer, row_num)
+                               : expected_null_cnt;
+      return test_null_cnt == 0;
+    } else {
+      // expected values are all valid, actual null count should be 0
+      auto test_null_cnt = actual_null_cnt == -1
+                               ? CiderBitUtils::countUnsetBits(actual_buffer, row_num)
+                               : actual_null_cnt;
+      return test_null_cnt == 0;
+    }
   }
-
-  // one buffer is nullptr while the other exists, cannot happen
-  return false;
 }
 
 template <typename T>
