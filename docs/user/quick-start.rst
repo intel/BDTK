@@ -2,7 +2,7 @@
 Cider User Guide
 =====================
 
-Installation
+Environment Preparation
 -----------------------------------
 
 | **Prerequisite:**
@@ -40,7 +40,10 @@ We provide Dockerfile to help developers setup and install BDTK dependencies.
 details are as follows:*
 
 
-3. Integrate BDTK with Presto
+Run with Prestodb
+-----------------------------------
+Integrate BDTK with Presto
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
    
 *Note: The following steps should be done in the docker container*
 
@@ -55,7 +58,7 @@ Now the you can check your executable presto server file in ${WORKER_DIR}/_build
 
 
 Run a end-to-end Hello World demo on local file system
-----------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 *Note: The following steps should be done in the docker container*
 | **Prerequisite:**
 | Java 8
@@ -159,7 +162,7 @@ Try Some queries with BDTK!
 
 
 Run a DEMO using HDFS
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^
 *Note: The following steps should be done in the docker container*
 | **Prerequisite:**
 | A real Hadoop cluster with a running Hive metastore service. 

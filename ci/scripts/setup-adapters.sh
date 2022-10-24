@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2022 Intel Corporation.
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script is modified based on velox/scripts/set-updapters.sh from Meta (https://github.com/facebookincubator/velox)
 SCRIPTDIR=$(cd $(dirname $0); pwd)
 source $SCRIPTDIR/../../thirdparty/velox/scripts/setup-helper-functions.sh
 # Propagate errors and improve debugging.
@@ -66,6 +68,7 @@ function install_libhdfs3 {
 }
 
 function install_protobuf {
+  rm -rf protobuf-all-21.4.tar.gz
   wget https://github.com/protocolbuffers/protobuf/releases/download/v21.4/protobuf-all-21.4.tar.gz
   tar -xzf protobuf-all-21.4.tar.gz --no-same-owner
   cd protobuf-21.4
@@ -83,8 +86,14 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
    # /etc/os-release is a standard way to query various distribution
    # information and is available everywhere
    LINUX_DISTRIBUTION=$(. /etc/os-release && echo ${ID})
+   VERSION_ID=$(. /etc/os-release && echo ${VERSION_ID})
    if [[ "$LINUX_DISTRIBUTION" == "ubuntu" ]]; then
-      apt install -y --no-install-recommends libxml2-dev libgsasl7-dev uuid-dev
+      # support for Ubuntu 20.04
+      if [[ "$VERSION_ID" == "20.04" ]]; then
+        apt install -y --no-install-recommends libxml2-dev libgsasl7-dev uuid-dev
+      else
+        apt install -y --no-install-recommends libxml2-dev libgsasl-dev uuid-dev
+      fi
    else # Assume Fedora/CentOS
       yum -y install libxml2-devel libgsasl-devel libuuid-devel
    fi
