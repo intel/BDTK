@@ -35,6 +35,8 @@ class CiderTestBase : public testing::Test {
  public:
   void SetUp() override {
     if (array && schema) {
+      input_ = {std::make_shared<CiderBatch>(
+          *(new CiderBatch(schema, array, std::make_shared<CiderDefaultAllocator>())))};
       duckDbQueryRunner_.createTableAndInsertArrowData(table_name_, create_ddl_, input_);
     } else {
       duckDbQueryRunner_.createTableAndInsertData(table_name_, create_ddl_, input_);
@@ -51,6 +53,8 @@ class CiderTestBase : public testing::Test {
                    const bool ignoreOrder = false);
 
   void assertQueryArrow(const std::string& sql, const std::string& json_file = "");
+  void assertQueryArrowIgnoreOrder(const std::string& sql,
+                                   const std::string& json_file = "");
   // a method for test count distinct with multi batch case
   void assertQueryForCountDistinct(
       const std::string& sql,
