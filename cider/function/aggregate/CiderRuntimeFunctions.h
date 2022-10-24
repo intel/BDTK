@@ -108,14 +108,13 @@ ALWAYS_INLINE void cider_agg_id(T& agg_val, const T& val) {
   agg_val = val;
 }
 
-extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(
-    int8_t* str_data_buffer,
-    int8_t* str_offset_buffer,
-    const uint64_t index,
-    int8_t* str_ptr,
-    const int32_t str_len,
-    uint8_t* agg_null_buffer,
-    bool is_null) {
+extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(int8_t* str_data_buffer,
+                                                                int8_t* str_offset_buffer,
+                                                                const uint64_t index,
+                                                                int8_t* str_ptr,
+                                                                const int32_t str_len,
+                                                                uint8_t* agg_null_buffer,
+                                                                bool is_null) {
   if (is_null) {
     CiderBitUtils::clearBitAt(agg_null_buffer, index);
   } else {

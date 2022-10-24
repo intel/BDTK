@@ -249,11 +249,11 @@ IN_STRING_TEST_UNIT(CiderNullableStringTest, inNullableStringTest)
 
 TEST_F(CiderStringTest, ArrowBasicStringTest) {
   prepareArrowBatch();
-//  assertQueryArrow("SELECT col_1 FROM test ");
-//  assertQueryArrow("SELECT col_2 FROM test ");
-//  assertQueryArrow("SELECT col_1, col_2 FROM test ");
+  //  assertQueryArrow("SELECT col_1 FROM test ");
+  //  assertQueryArrow("SELECT col_2 FROM test ");
+  //  assertQueryArrow("SELECT col_1, col_2 FROM test ");
 
-    assertQueryArrow("SELECT col_1 FROM test where col_2 = 'aaaa'");
+  assertQueryArrow("SELECT col_1 FROM test where col_2 = 'aaaa'");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

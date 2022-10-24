@@ -150,7 +150,8 @@ void TargetExprCodegen::codegen(
   const auto arg_expr = agg_arg(target_expr);
 
   const bool varlen_projection = is_varlen_projection(target_expr, target_info.sql_type);
-  const auto agg_fn_names = agg_fn_base_names(target_info, varlen_projection, co.use_cider_data_format);
+  const auto agg_fn_names =
+      agg_fn_base_names(target_info, varlen_projection, co.use_cider_data_format);
   const auto window_func = dynamic_cast<const Analyzer::WindowFunction*>(target_expr);
   WindowProjectNodeContext::resetWindowFunctionContext(executor);
   auto target_lvs =
@@ -224,8 +225,10 @@ void TargetExprCodegen::codegenAggregate(
 
   auto& context = executor->getContext();
 
-  const auto agg_fn_names = agg_fn_base_names(
-      target_info, is_varlen_projection(target_expr, target_info.sql_type), co.use_cider_data_format);
+  const auto agg_fn_names =
+      agg_fn_base_names(target_info,
+                        is_varlen_projection(target_expr, target_info.sql_type),
+                        co.use_cider_data_format);
   auto arg_expr = agg_arg(target_expr);
 
   for (const auto& agg_base_name : agg_fn_names) {
@@ -299,7 +302,7 @@ void TargetExprCodegen::codegenAggregate(
         llvm::Value* project_arraies_i8 =
             LL_BUILDER.CreateIntToPtr(LL_BUILDER.CreateLoad(project_arraies_ptr, false),
                                       llvm::Type::getInt8PtrTy(context));
-        if(target_info.sql_type.is_string()) {
+        if (target_info.sql_type.is_string()) {
           // muset be a ProjectIDStringCodeGenerator
           generator->codegen(agg_input_data, project_arraies_i8, row_num);
         } else {
@@ -619,8 +622,10 @@ void TargetExprCodegenBuilder::operator()(const Analyzer::Expr* target_expr,
   target_exprs_to_codegen.emplace_back(
       target_expr, target_info, slot_index_counter, target_index_counter++, is_group_by);
 
-  const auto agg_fn_names = agg_fn_base_names(
-      target_info, is_varlen_projection(target_expr, target_info.sql_type), co.use_cider_data_format);
+  const auto agg_fn_names =
+      agg_fn_base_names(target_info,
+                        is_varlen_projection(target_expr, target_info.sql_type),
+                        co.use_cider_data_format);
   slot_index_counter += agg_fn_names.size();
 }
 

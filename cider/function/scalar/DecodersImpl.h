@@ -157,8 +157,9 @@ extern "C" ALWAYS_INLINE const uint8_t* cider_ColDecoder_extractArrowBuffersAt(
   return reinterpret_cast<const uint8_t*>(ptr->buffers[index]);
 }
 
-extern "C" ALWAYS_INLINE void reallocate_string_buffer_if_need(const int8_t* input_desc_ptr,
-                                                const int64_t pos) {
+extern "C" ALWAYS_INLINE void reallocate_string_buffer_if_need(
+    const int8_t* input_desc_ptr,
+    const int64_t pos) {
   // assumption: this arrow array is already initialized outside(it has 3 buffers, length
   // is set)
   const ArrowArray* ptr = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
