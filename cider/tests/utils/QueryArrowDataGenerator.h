@@ -26,11 +26,11 @@
 #include <random>
 #include <string>
 #include "ArrowArrayBuilder.h"
+#include "QueryDataGenerator.h"
 #include "Utils.h"
 #include "cider/CiderBatch.h"
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
-#include "QueryDataGenerator.h"
 
 // TODO(yizhong): Enable this after QueryDataGenerator is deleted.
 // enum GeneratePatternArrow { SequenceArrow, RandomArrow };
