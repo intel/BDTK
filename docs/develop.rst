@@ -10,3 +10,4 @@ Developer Guide
     develop/CiderAllocator-use-guide
     develop/contributing
     develop/logger
+    develop/utils

@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <boost/program_options/parsers.hpp>
 #include <cstddef>
 #include <iostream>
 
@@ -98,27 +99,37 @@ int main(int argc, char** argv) {
   bool dump_plan = false;
   uint32_t dump_ir_level = 1;
   bool gen_cfg = false;  // need dump_ir_level == 2
-  po::options_description options("Allowed Options");
-  options.add_options()("sql", po::value<std::string>(&sql)->default_value(sql), "sql");
-  options.add_options()("create-ddl",
-                        po::value<std::string>(&create_ddl)->default_value(create_ddl),
+  po::options_description options("Program Usage");
+  options.add_options()("help", "this is a tool to dump some intermediates");
+
+  options.add_options()("sql,s", po::value<std::string>(&sql)->required(), "sql");
+  options.add_options()("create-ddl,c",
+                        po::value<std::string>(&create_ddl)->required(),
                         "table create ddl");
-  options.add_options()("dump-plan",
-                        po::value<bool>(&dump_plan)->default_value(dump_plan),
-                        "dump substait plan");
-  options.add_options()("dump-ir-level",
-                        po::value<uint32_t>(&dump_ir_level)->default_value(dump_ir_level),
+
+  options.add_options()("dump-plan,p", po::value<bool>(&dump_plan), "dump substait plan");
+  options.add_options()("dump-ir-level,i",
+                        po::value<uint32_t>(&dump_ir_level),
                         "dump ir level. 1: func, 2: module");
-  options.add_options()("gen-cfg",
-                        po::value<bool>(&gen_cfg)->default_value(gen_cfg),
-                        "generate module cfg");
+  options.add_options()("gen-cfg,g", po::value<bool>(&gen_cfg), "generate module cfg");
 
   // parse option
   po::variables_map vm;
-  po::store(
-      po::command_line_parser(argc, argv).options(options).allow_unregistered().run(),
-      vm);
-  po::notify(vm);
+  try {
+    po::store(po::parse_command_line(argc, argv, options), vm);
+    if (vm.count("help")) {
+      std::cout << options << std::endl;
+      return 0;
+    }
+
+    po::notify(vm);
+  } catch (std::exception& e) {
+    std::cerr << "Error: " << e.what() << "\n";
+    return -1;
+  } catch (...) {
+    std::cerr << options << std::endl;
+    return -1;
+  }
 
   // output substrait plan
   std::string json = RunIsthmus::processSql(sql, create_ddl);
