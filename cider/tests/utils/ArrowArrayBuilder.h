@@ -129,6 +129,77 @@ class ArrowArrayBuilder {
     return *this;
   }
 
+  template <typename T, std::enable_if_t<std::is_same<T, bool>::value, bool> = true>
+  ArrowArrayBuilder& addBoolColumn(const std::string& col_name,
+                                   const std::vector<T>& col_data,
+                                   const std::vector<bool>& null_data = {}) {
+    if (!is_row_num_set_ ||  // have not set row num, use this col_data's row num
+        row_num_ == 0) {     // previous columns are all empty
+      is_row_num_set_ = true;
+      row_num_ = col_data.size();
+    }
+    ArrowArray* current_array = new ArrowArray();
+    ArrowSchema* current_schema = new ArrowSchema();
+
+    current_schema->name = col_name.c_str();
+    current_schema->format = "b";
+    current_schema->n_children = 0;
+    current_schema->children = nullptr;
+    current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+
+    if (col_data.empty()) {
+      // append an empty buffer.
+      array_list_.push_back(nullptr);
+      schema_list_.push_back(current_schema);
+      return *this;
+    } else {
+      // check row num
+      if (row_num_ != col_data.size()) {
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
+      }
+      CHECK_EQ(row_num_, col_data.size());
+      // check null data num
+      if (!null_data.empty()) {
+        CHECK_EQ(row_num_, null_data.size());
+      }
+
+      current_array->length = row_num_;
+      current_array->n_children = 0;
+      current_array->offset = 0;
+      current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
+
+      size_t bitmap_size = (row_num_ + 7) >> 3;
+      void* null_buf = (void*)allocator_->allocate(bitmap_size);
+      std::memset(null_buf, 0xFF, bitmap_size);
+      for (auto i = 0; i < null_data.size(); i++) {
+        if (null_data[i]) {
+          CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
+        }
+      }
+      // TODO: null_count
+
+      current_array->buffers[0] = null_buf;
+
+      void* data_buf = (void*)allocator_->allocate(bitmap_size);
+      std::memset(data_buf, 0xFF, bitmap_size);
+      for (auto i = 0; i < col_data.size(); i++) {
+        if (!col_data[i]) {
+          CiderBitUtils::clearBitAt((uint8_t*)data_buf, i);
+        }
+      }
+      current_array->buffers[1] = data_buf;
+
+      current_array->n_buffers = 2;
+      current_array->private_data = nullptr;
+      current_array->dictionary = nullptr;
+      current_array->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
+
+      array_list_.push_back(current_array);
+      schema_list_.push_back(current_schema);
+    }
+    return *this;
+  }
+
   // TODO: bool string varchar date
 
   std::tuple<ArrowSchema*&, ArrowArray*&> build() {
