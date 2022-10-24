@@ -25,22 +25,14 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
+#include <any>
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
 namespace jitlib {
 class LLVMJITModule;
 
-class LLVMJITFunction final : public JITFunction<LLVMJITFunction> {
- public:
-  template <TypeTag Type, typename FunctionImpl>
-  friend class Value;
-
-  template <TypeTag Type, typename FunctionImpl>
-  friend class Ret;
-
-  friend class JITFunction<LLVMJITFunction>;
-
+class LLVMJITFunction final : public JITFunction {
  public:
   explicit LLVMJITFunction(const JITFunctionDescriptor& descriptor,
                            LLVMJITModule& module,
@@ -48,11 +40,24 @@ class LLVMJITFunction final : public JITFunction<LLVMJITFunction> {
 
   operator llvm::IRBuilder<>&() const { return *ir_builder_; }
 
+  JITValuePointer createVariable(const std::string& name, JITTypeTag type_tag) override;
+
+  JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
+
+  void createReturn() override;
+
+  void createReturn(JITValue& value) override;
+
+  JITValuePointer emitJITFunction(JITFunction& function, const JITFunctionEmitDescriptor& descriptor) override;
+
+  void finish() override;
+
  protected:
-  void finishImpl();
   llvm::LLVMContext& getLLVMContext();
 
  private:
+  void* getFunctionPointer() override;
+
   LLVMJITModule& module_;
   llvm::Function& func_;
   mutable std::unique_ptr<llvm::IRBuilder<>> ir_builder_;

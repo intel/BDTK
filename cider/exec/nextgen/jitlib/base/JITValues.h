@@ -22,35 +22,41 @@
 #ifndef JITLIB_BASE_VALUES_H
 #define JITLIB_BASE_VALUES_H
 
+#include <memory>
+
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
 namespace jitlib {
+class JITValue;
 
-// TODO (bigPYJ1151): Move Type out from template list.
-template <TypeTag, typename FunctionImpl>
-class Value;
+using JITValuePointer = std::shared_ptr<JITValue>;
 
-template <typename ValueImpl, TypeTag Type, typename FunctionImpl>
-class BasicValue {
+class JITValue {
  public:
-  using NativeType = typename TypeTraits<Type>::NativeType;
+  JITValue(JITTypeTag type_tag,
+           const std::string& name = "value",
+           JITBackendTag backend = LLVMJIT)
+      : value_name_(name), type_tag_(type_tag), backend_tag_(backend) {}
 
-  static ValueImpl createVariable(FunctionImpl& function,
-                                  const char* name,
-                                  NativeType init) {
-    return ValueImpl::createVariableImpl(function, name, init);
-  }
+  JITValue(const JITValue&) = delete;
+  JITValue(JITValue&&) = delete;
+  JITValue& operator=(JITValue&& rh) = delete;
+
+  JITValue& operator=(JITValue& rh) { return assign(rh); }
+
+  std::string getValueName() const { return value_name_; }
+
+  JITTypeTag getValueTypeTag() const { return type_tag_; }
+
+  JITBackendTag getValueBackendTag() const { return backend_tag_; }
+
+  virtual JITValue& assign(JITValue& value) = 0;
+
+ protected:
+  std::string value_name_;
+  JITTypeTag type_tag_;
+  JITBackendTag backend_tag_;
 };
-
-template <TypeTag Type,
-          typename FunctionImpl,
-          typename NativeType = typename TypeTraits<Type>::NativeType>
-inline Value<Type, FunctionImpl> createVariable(FunctionImpl& function,
-                                                const char* name,
-                                                NativeType init) {
-  return Value<Type, FunctionImpl>::createVariable(function, name, init);
-}
-
 };  // namespace jitlib
 
-#endif // JITLIB_BASE_VALUES_H
+#endif  // JITLIB_BASE_VALUES_H

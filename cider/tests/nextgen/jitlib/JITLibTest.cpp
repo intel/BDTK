@@ -32,27 +32,44 @@ class JITLibTests : public ::testing::Test {};
 TEST_F(JITLibTests, BasicTest) {
   LLVMJITModule module("Test");
 
-  LLVMJITFunction function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
+  JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func1",
       .ret_type = JITFunctionParam{.type = INT32},
       .params_type = {JITFunctionParam{.name = "x", .type = INT32}},
   });
   {
-    Value x = createVariable<INT32>(function, "x1", 123);
-    createRet(function, x);
+    JITValuePointer x = function1->createVariable("x1", INT32);
+    JITValuePointer init_val = function1->createConstant(INT32, 123);
+    *x = *init_val;
+    function1->createReturn(*x);
   }
-  function.finish();
+  function1->finish();
 
+  JITFunctionPointer function2 = module.createJITFunction(
+      JITFunctionDescriptor{.function_name = "test_func2",
+                            .ret_type = JITFunctionParam{.type = INT32},
+                            .params_type = {}});
+  {
+    JITValuePointer x = function2->createVariable("x1", INT32);
+    JITValuePointer init_val = function1->createConstant(INT32, 321);
+    *x = *function2->emitJITFunction(
+        *function1,
+        JITFunctionEmitDescriptor{.ret_type = INT32, .params_vector = {init_val.get()}});
+    function2->createReturn(*x);
+  }
+  function2->finish();
   module.finish();
-  auto ptr = castFunctionPointer<int32_t, int32_t>(module.getFunctionPtr(function));
 
-  EXPECT_EQ(ptr(12), 123);
+  auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
+  EXPECT_EQ(ptr1(12), 123);
+  auto ptr2 = function2->getFunctionPointer<int32_t>();
+  EXPECT_EQ(ptr2(), 123);
 }
 
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  
+
   int err{0};
   try {
     err = RUN_ALL_TESTS();

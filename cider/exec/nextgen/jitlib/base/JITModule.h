@@ -25,22 +25,12 @@
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
 namespace jitlib {
-template <typename JITModuleImpl, typename JITFunctionImpl>
 class JITModule {
  public:
-  JITFunctionImpl createJITFunction(const JITFunctionDescriptor& descriptor) {
-    return getImpl()->createJITFunctionImpl(descriptor);
-  }
+  virtual JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) = 0;
 
-  void finish() { getImpl()->finishImpl(); }
-
-  void* getFunctionPtr(JITFunctionImpl& function) {
-    return getImpl()->getFunctionPtrImpl(function);
-  }
-
- private:
-  JITModuleImpl* getImpl() { return static_cast<JITModuleImpl*>(this); }
+  virtual void finish() = 0;
 };
 };  // namespace jitlib
 
-#endif // JITLIB_BASE_JITMODULE_H
+#endif  // JITLIB_BASE_JITMODULE_H

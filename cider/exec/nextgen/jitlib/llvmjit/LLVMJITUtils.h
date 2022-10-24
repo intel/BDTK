@@ -28,7 +28,7 @@
 #include <llvm/IR/DerivedTypes.h>
 
 namespace jitlib {
-inline llvm::Type* getLLVMType(TypeTag tag, llvm::LLVMContext& ctx) {
+inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
   switch (tag) {
     case VOID:
       return llvm::Type::getVoidTy(ctx);
@@ -45,7 +45,7 @@ inline llvm::Type* getLLVMType(TypeTag tag, llvm::LLVMContext& ctx) {
   }
 }
 
-inline llvm::Value* getLLVMConstant(uint64_t value, TypeTag tag, llvm::LLVMContext& ctx) {
+inline llvm::Value* getLLVMConstant(uint64_t value, JITTypeTag tag, llvm::LLVMContext& ctx) {
   llvm::Type* type = getLLVMType(tag, ctx);
   switch (tag) {
     case INT8:

@@ -22,48 +22,75 @@
 #ifndef JITLIB_BASE_JITFUNCTION_H
 #define JITLIB_BASE_JITFUNCTION_H
 
+#include <any>
 #include <boost/container/small_vector.hpp>
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
 namespace jitlib {
+class JITValue;
+
+using JITValuePointer = std::shared_ptr<JITValue>;
+
 enum JITFunctionParamAttr : uint64_t {};
 
 struct JITFunctionParam {
-  const char* name{""};
-  TypeTag type;
+  std::string name{""};
+  JITTypeTag type;
   uint64_t attribute;
 };
 
 struct JITFunctionDescriptor {
   static constexpr size_t DefaultParamsNum = 8;
-
-  const char* function_name;
+  std::string function_name;
   JITFunctionParam ret_type;
   boost::container::small_vector<JITFunctionParam, DefaultParamsNum> params_type;
 };
 
-template <typename JITFunctionImpl>
-class JITFunction {
- public:
-  const JITFunctionDescriptor* getFunctionDescriptor() const { return &descriptor_; }
-
-  void finish() { getImpl()->finishImpl(); }
-
- protected:
-  JITFunction(const JITFunctionDescriptor& descriptor) : descriptor_(descriptor) {}
-
-  JITFunctionImpl* getImpl() { return static_cast<JITFunctionImpl*>(this); }
-
-  JITFunctionDescriptor descriptor_;
+struct JITFunctionEmitDescriptor {
+  static constexpr size_t DefaultParamsNum = 8;
+  JITTypeTag ret_type;
+  boost::container::small_vector<JITValue*, DefaultParamsNum> params_vector;
 };
 
-template <typename R, typename... Args>
-inline auto castFunctionPointer(void* ptr) {
-  using func_type = R (*)(Args...);
-  return reinterpret_cast<func_type>(ptr);
-}
+class JITFunction {
+ public:
+  JITFunction(const JITFunctionDescriptor& descriptor) : descriptor_(descriptor) {}
 
+  const JITFunctionDescriptor* getFunctionDescriptor() const { return &descriptor_; }
+
+  template <typename R, typename... Args>
+  auto getFunctionPointer() {
+    if constexpr (sizeof...(Args)) {
+      using func_type = R (*)(Args...);
+      return reinterpret_cast<func_type>(getFunctionPointer());
+    } else {
+      using func_type = R (*)();
+      return reinterpret_cast<func_type>(getFunctionPointer());
+    }
+  }
+
+  virtual JITValuePointer createVariable(const std::string& name,
+                                         JITTypeTag type_tag) = 0;
+
+  virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
+
+  virtual void createReturn() = 0;
+
+  virtual void createReturn(JITValue& value) = 0;
+
+  virtual JITValuePointer emitJITFunction(JITFunction& function, const JITFunctionEmitDescriptor& descriptor) = 0;
+
+  virtual void finish() = 0;
+
+ protected:
+  JITFunctionDescriptor descriptor_;
+
+ private:
+  virtual void* getFunctionPointer() = 0;
+};
+
+using JITFunctionPointer = std::shared_ptr<JITFunction>;
 };  // namespace jitlib
 
-#endif // JITLIB_BASE_JITFUNCTION_H
+#endif  // JITLIB_BASE_JITFUNCTION_H

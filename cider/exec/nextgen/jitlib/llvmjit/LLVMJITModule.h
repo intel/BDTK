@@ -26,29 +26,27 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 namespace jitlib {
-class LLVMJITModule final : public JITModule<LLVMJITModule, LLVMJITFunction> {
+class LLVMJITModule final : public JITModule {
  public:
   friend LLVMJITEngineBuilder;
   friend LLVMJITFunction;
-  template <typename JITModuleImpl, typename JITFunctionImpl>
-  friend class JITModule;
 
  public:
   explicit LLVMJITModule(const std::string& name);
 
+  JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
+
+  void finish() override;
+
  protected:
-  LLVMJITFunction createJITFunctionImpl(const JITFunctionDescriptor& descriptor);
+  llvm::LLVMContext& getLLVMContext() { return *context_; }
   void* getFunctionPtrImpl(LLVMJITFunction& function);
 
-  void finishImpl();
-
  private:
-  llvm::LLVMContext& getContext() { return *context_; }
-
   std::unique_ptr<llvm::LLVMContext> context_;
   std::unique_ptr<llvm::Module> module_;
   std::unique_ptr<LLVMJITEngine> engine_;
 };
 };  // namespace jitlib
 
-#endif // JITLIB_LLVMJIT_LLVMJITMODULE_H
+#endif  // JITLIB_LLVMJIT_LLVMJITMODULE_H

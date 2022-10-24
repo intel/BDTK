@@ -19,24 +19,11 @@
  * under the License.
  */
 
-#ifndef JITLIB_BASE_CONTROLFLOW_H
-#define JITLIB_BASE_CONTROLFLOW_H
+#ifndef JITLIB_BASE_JITCONTROLFLOW_H
+#define JITLIB_BASE_JITCONTROLFLOW_H
 
-#include "exec/nextgen/jitlib/base/Values.h"
+#include "exec/nextgen/jitlib/base/JITValues.h"
 
-namespace jitlib {
-template <TypeTag, typename FunctionImpl>
-class Ret;
+namespace jitlib {};  // namespace jitlib
 
-template <TypeTag Type = VOID, typename FunctionImpl>
-inline void createRet(const FunctionImpl& function) {
-  Ret<Type, FunctionImpl> ret(function);
-}
-
-template <TypeTag Type, typename FunctionImpl>
-inline void createRet(const FunctionImpl& function, Value<Type, FunctionImpl>& value) {
-  Ret<Type, FunctionImpl> ret(function, value);
-}
-};  // namespace jitlib
-
-#endif // JITLIB_BASE_CONTROLFLOW_H
+#endif  // JITLIB_BASE_JITCONTROLFLOW_H

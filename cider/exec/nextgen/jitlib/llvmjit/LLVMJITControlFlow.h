@@ -22,19 +22,6 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 #define JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 
-#include "exec/nextgen/jitlib/base/ControlFlow.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
+namespace jitlib {};  // namespace jitlib
 
-namespace jitlib {
-template <TypeTag Type>
-class Ret<Type, LLVMJITFunction> {
- public:
-  explicit Ret(llvm::IRBuilder<>& builder) { builder.CreateRetVoid(); }
-
-  explicit Ret(llvm::IRBuilder<>& builder, Value<Type, LLVMJITFunction>& ret_value) {
-    builder.CreateRet(ret_value.load());
-  }
-};
-};  // namespace jitlib
-
-#endif // JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
+#endif  // JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
