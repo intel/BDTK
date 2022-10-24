@@ -18,10 +18,12 @@
 # specific language governing permissions and limitations
 # under the License.
 cd "$(dirname "$0")"
-git clone --recursive https://github.com/Intel-bigdata/presto.git
+git clone https://github.com/Intel-bigdata/presto.git
 pushd presto
 git checkout -b BDTK origin/BDTK
+git submodule update --init --recursive
 pushd presto-native-execution
+rm -rf velox
 git clone --recursive https://github.com/intel/BDTK.git
 pushd BDTK  
 make release
@@ -29,6 +31,7 @@ if [ $? -ne 0 ]; then
     echo "compile BDTK failed"
     exit
 fi
+cp -r thirdparty/velox/ ..
 popd
 
 mkdir -p ./presto_cpp/main/lib
@@ -65,39 +68,38 @@ mkdir -p ${package_name}/lib
 mkdir -p ${package_name}/function
 mkdir -p ${package_name}/bin
 mkdir -p ${package_name}/archive
-cp  ./presto/presto-native-execution/_build/release/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
+cp ./presto/presto-native-execution/_build/release/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
 
-cp  ./presto/presto-native-execution/_build/release/presto_cpp/main/presto_server ./${package_name}/bin
-cp  ./presto/presto-native-execution/presto_cpp/main/lib/libcider.so  ./${package_name}/lib
-cp	/usr/local/lib/libantlr4-runtime.so.4.9.3	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libre2.so.5	./${package_name}/lib
-cp	/lib/libprotobuf.so.32	./${package_name}/lib
-cp	/usr/local/lib/libLLVM-9.so	./${package_name}/lib
-cp	/usr/local/lib/libtbb.so.12	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libdouble-conversion.so.3	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libglog.so.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libgflags.so.2.2	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libsodium.so.23	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libssl.so.1.1	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libcrypto.so.1.1	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_context.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libevent-2.1.so.7	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libsnappy.so.1	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_regex.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_locale.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_log.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_program_options.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libedit.so.2	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libunwind.so.8	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libicui18n.so.66	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libicuuc.so.66	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libbsd.so.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libicudata.so.66	./${package_name}/lib
+cp ./presto/presto-native-execution/_build/release/presto_cpp/main/presto_server ./${package_name}/bin
+cp ./presto/presto-native-execution/presto_cpp/main/lib/libcider.so ./${package_name}/lib
+cp /usr/local/lib/libantlr4-runtime.so.4.9.3 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libre2.so.5 ./${package_name}/lib
+cp /lib/libprotobuf.so.32 ./${package_name}/lib
+cp /usr/local/lib/libLLVM-9.so ./${package_name}/lib
+cp /usr/local/lib/libtbb.so.12 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libdouble-conversion.so.3 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libglog.so.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libgflags.so.2.2 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libsodium.so.23 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libssl.so.1.1 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libcrypto.so.1.1 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_context.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libevent-2.1.so.7 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libsnappy.so.1 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_regex.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_locale.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_log.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_program_options.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libboost_thread.so.1.71.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libedit.so.2 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libunwind.so.8 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libicui18n.so.66 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libicuuc.so.66 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libbsd.so.0 ./${package_name}/lib
+cp /lib/x86_64-linux-gnu/libicudata.so.66 ./${package_name}/lib
 
 tar -czvf ${package_name}.tar.gz ${package_name}
 
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
 # ./bin/presto_server -etc_dir=./etc
-

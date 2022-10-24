@@ -43,6 +43,8 @@ if [[ ! -f "Dockerfile.$1" ]]; then
 fi
 
 docker build -t bdtk/$1 \
-  --build-arg http_proxy=$http_proxy \
-  --build-arg https_proxy=$https_proxy \
+  --build-arg HttpProxyHost=$proxy_host \
+  --build-arg HttpsProxyHost=$proxy_host \
+  --build-arg HttpProxyPort=$proxy_port \
+  --build-arg HttpsProxyPort=$proxy_port \
   -f Dockerfile.$1 .

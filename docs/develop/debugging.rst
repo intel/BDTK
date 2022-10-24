@@ -239,7 +239,7 @@ How to run simple examples with Prestodb in distributed environment
 Build presto native execution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Copy ci/build-presto-package.sh to an empty folder and run it. 
+Copy ci/scripts/build-presto-package.sh to an empty folder and run it. 
 Generate Prestodb.tar.gz archive
 
 Unzip the Prestodb package and enter the unzip package
