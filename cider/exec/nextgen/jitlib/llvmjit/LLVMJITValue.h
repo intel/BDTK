@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_LLVM_JIT_VALUE_H
-#define JITLIB_LLVM_JIT_VALUE_H
+
+#ifndef JITLIB_LLVMJIT_LLVMJITVALUE_H
+#define JITLIB_LLVMJIT_LLVMJITVALUE_H
 
 #include "exec/nextgen/jitlib/base/Values.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
@@ -97,4 +97,4 @@ class Value<Type, LLVMJITFunction> final
 };
 };  // namespace jitlib
 
-#endif
+#endif // JITLIB_LLVMJIT_LLVMJITVALUE_H

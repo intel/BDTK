@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_LLVM_JIT_CONTROL_FLOW_H
-#define JITLIB_LLVM_JIT_CONTROL_FLOW_H
+
+#ifndef JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
+#define JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 
 #include "exec/nextgen/jitlib/base/ControlFlow.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
@@ -36,4 +36,5 @@ class Ret<Type, LLVMJITFunction> {
   }
 };
 };  // namespace jitlib
-#endif
+
+#endif // JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_VALUE_TYPES_H
-#define JITLIB_VALUE_TYPES_H
+ 
+#ifndef JITLIB_BASE_VALUETYPES_H
+#define JITLIB_BASE_VALUETYPES_H
 
 #include <cstdint>
 
@@ -87,4 +87,4 @@ struct TypeTraits<INT64> {
 
 };  // namespace jitlib
 
-#endif
+#endif // JITLIB_BASE_VALUETYPES_H

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_JIT_MODULE_H
-#define JITLIB_JIT_MODULE_H
+
+#ifndef JITLIB_BASE_JITMODULE_H
+#define JITLIB_BASE_JITMODULE_H
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
@@ -43,4 +43,4 @@ class JITModule {
 };
 };  // namespace jitlib
 
-#endif
+#endif // JITLIB_BASE_JITMODULE_H

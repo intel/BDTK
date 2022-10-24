@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_LLVM_JIT_UTILS_H
-#define JITLIB_LLVM_JIT_UTILS_H
+
+#ifndef JITLIB_LLVMJIT_LLVMJITUTILS_H
+#define JITLIB_LLVMJIT_LLVMJITUTILS_H
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
@@ -60,4 +60,4 @@ inline llvm::Value* getLLVMConstant(uint64_t value, TypeTag tag, llvm::LLVMConte
 
 };  // namespace jitlib
 
-#endif
+#endif // JITLIB_LLVMJIT_LLVMJITUTILS_H

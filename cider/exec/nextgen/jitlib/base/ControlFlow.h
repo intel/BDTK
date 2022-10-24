@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,11 +15,12 @@
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
+ * specific language governing permissions and limitation
  * under the License.
  */
-#ifndef JITLIB_JIT_CONTROL_FLOW_H
-#define JITLIB_JIT_CONTROL_FLOW_H
+
+#ifndef JITLIB_BASE_CONTROLFLOW_H
+#define JITLIB_BASE_CONTROLFLOW_H
 
 #include "exec/nextgen/jitlib/base/Values.h"
 
@@ -39,4 +39,4 @@ inline void createRet(const FunctionImpl& function, Value<Type, FunctionImpl>& v
 }
 };  // namespace jitlib
 
-#endif
+#endif // JITLIB_BASE_CONTROLFLOW_H

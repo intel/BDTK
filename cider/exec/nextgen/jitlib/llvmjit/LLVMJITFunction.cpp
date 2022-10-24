@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,6 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+#ifndef JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+#define JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 #include <llvm/IR/Function.h>
@@ -61,3 +64,5 @@ void LLVMJITFunction::finishImpl() {
   }
 }
 };  // namespace jitlib
+
+#endif // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
