@@ -94,18 +94,18 @@ bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batc
     return CiderBitUtils::CheckBitVectorEq(expected_buffer, actual_buffer, row_num);
   } else {
     // one is nullptr but the other is not, null_count of the other batch must be 0
-    if (expected_buffer) {
+    if (!actual_null_cnt) {
       // actual values are all valid, expected null count should be 0
-      auto test_null_cnt = expected_null_cnt == -1
-                               ? CiderBitUtils::countUnsetBits(expected_buffer, row_num)
-                               : expected_null_cnt;
-      return test_null_cnt == 0;
+      expected_null_cnt = expected_null_cnt == -1
+                              ? CiderBitUtils::countUnsetBits(expected_buffer, row_num)
+                              : expected_null_cnt;
+      return expected_null_cnt == 0;
     } else {
       // expected values are all valid, actual null count should be 0
-      auto test_null_cnt = actual_null_cnt == -1
-                               ? CiderBitUtils::countUnsetBits(actual_buffer, row_num)
-                               : actual_null_cnt;
-      return test_null_cnt == 0;
+      actual_null_cnt = actual_null_cnt == -1
+                            ? CiderBitUtils::countUnsetBits(actual_buffer, row_num)
+                            : actual_null_cnt;
+      return actual_null_cnt == 0;
     }
   }
 }
@@ -197,7 +197,7 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
         is_equal = checkOneStructBatchEqual(expected_child.get(), actual_child.get());
         break;
       default:
-        CIDER_THROW(CiderRuntimeException, "Unsupported type for checking.");
+        CIDER_THROW(CiderUnsupportedException, "Unsupported type for checking.");
     }
     if (!is_equal) {
       std::cout << "checkOneStructBatch failed at child: " << i << std::endl;

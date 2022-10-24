@@ -271,7 +271,7 @@ class CiderBatchChecker {
         return checkByteArrayEqual(
             expected_buffer, expected_offset, actual_buffer, actual_offset, row_num);
       default:
-        CIDER_THROW(CiderRuntimeException,
+        CIDER_THROW(CiderUnsupportedException,
                     "Unsupported substrait type " + std::to_string(col_type.kind_case()));
     }
   }
