@@ -600,15 +600,25 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
 
   bool is_non_groupby_agg = query_mem_desc_t == QueryDescriptionType::NonGroupedAggregate;
   if (is_non_groupby_agg) {
-    // FIXME: one_batch_result_ is moved, can't call processNextBatch again.
-    // just ignore max_row here.
-    auto non_groupby_agg_result =
-        std::make_unique<CiderBatch>(std::move(one_batch_result_));
-    auto out_batch = setSchemaAndUpdateAggResIfNeed(std::move(non_groupby_agg_result));
-    // reset need to be done after data consumed, like bitmap for count(distinct)
-    resetAggVal();
-    return std::make_pair(kNoMoreOutput,
-                          std::move(std::make_unique<CiderBatch>(std::move(out_batch))));
+    if (ciderCompilationOption_.use_cider_data_format) {
+      std::unique_ptr<CiderBatch> non_groupby_agg_result = prepareOneBatchOutput(1);
+      // todo, copy one_batch_result_ to non_groupby_agg_result
+      auto out_batch = setSchemaAndUpdateAggResIfNeed(std::move(non_groupby_agg_result));
+      // reset need to be done after data consumed, like bitmap for count(distinct)
+      resetAggVal();
+      return std::make_pair(kNoMoreOutput,
+                            std::move(std::make_unique<CiderBatch>(std::move(out_batch))));
+    } else {
+      // FIXME: one_batch_result_ is moved, can't call processNextBatch again.
+      // just ignore max_row here.
+      auto non_groupby_agg_result =
+          std::make_unique<CiderBatch>(std::move(one_batch_result_));
+      auto out_batch = setSchemaAndUpdateAggResIfNeed(std::move(non_groupby_agg_result));
+      // reset need to be done after data consumed, like bitmap for count(distinct)
+      resetAggVal();
+      return std::make_pair(kNoMoreOutput,
+                            std::move(std::make_unique<CiderBatch>(std::move(out_batch))));
+    }
   }
 
   // for group_by_agg

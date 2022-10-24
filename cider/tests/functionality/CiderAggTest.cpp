@@ -105,6 +105,54 @@ TEST_F(CiderAggTest, sumTest) {
   // TODO: SUM(decimal) with half null
 }
 
+TEST_F(CiderAggTest, aggArrowTest) {
+  // SUM(int)
+  prepareArrowBatch();
+  // SUM(tinyint)
+  assertQueryArrow("SELECT SUM(col_i8) FROM test");
+  // SUM(smallint)
+  assertQueryArrow("SELECT SUM(col_i16) FROM test");
+  // SUM(int)
+  assertQueryArrow("SELECT SUM(col_i32) FROM test");
+  // SUM(bigint)
+  assertQueryArrow("SELECT SUM(col_i64) FROM test");
+  // SUM(float)
+  assertQueryArrow("SELECT SUM(col_fp32) FROM test");
+  // SUM(double)
+  assertQueryArrow("SELECT SUM(col_fp64) FROM test");
+  // TODO: SUM(decimal)
+  // SUM(tinyint) with half null
+  assertQueryArrow("SELECT SUM(half_null_i8) FROM test");
+  // SUM(smallint) with half null
+  assertQueryArrow("SELECT SUM(half_null_i16) FROM test");
+  // SUM(int) with half null
+  assertQueryArrow("SELECT SUM(half_null_i32) FROM test");
+  // SUM(bigint) with half null
+  assertQueryArrow("SELECT SUM(half_null_i64) FROM test");
+  // SUM(float) with half null
+  assertQueryArrow("SELECT SUM(half_null_fp32) FROM test");
+  // SUM(double) with half null
+  assertQueryArrow("SELECT SUM(half_null_fp64) FROM test");
+  // TODO: SUM(decimal) with half null
+  // In cider, COUNT(*) has same syntax as COUNT(1)
+  // COUNT(*)
+  assertQuery("SELECT COUNT(*) FROM test");
+  // COUNT(1)
+  assertQuery("SELECT COUNT(1) FROM test");
+  // COUNT AGG
+  assertQuery("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
+  assertQuery("SELECT COUNT(1), MAX(col_i8) FROM test");
+  assertQuery("SELECT COUNT(col_i8), MAX(col_i8) FROM test");
+  // COUNT(DISTINCT tinyint)
+  assertQuery("SELECT COUNT(DISTINCT col_i8) FROM test");
+  // COUNT(DISTINCT smallint)
+  assertQuery("SELECT COUNT(DISTINCT col_i16) FROM test");
+  // COUNT(DISTINCT int)
+  assertQuery("SELECT COUNT(DISTINCT col_i32) FROM test");
+  // COUNT(DISTINCT bigint)
+  assertQuery("SELECT COUNT(DISTINCT col_i64) FROM test");
+}
+
 TEST_F(CiderAggTest, countTest) {
   // In cider, COUNT(*) has same syntax as COUNT(1)
   // COUNT(*)
@@ -816,6 +864,10 @@ TEST_F(CiderCountDistinctConstantTest, countDistinctConstantTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
 
   int err{0};
   try {
