@@ -87,4 +87,13 @@ class MultipleValueColValues : public NullableColValues {
   std::vector<llvm::Value*> values_;
 };
 
+class TwoValueColValues : public MultipleValueColValues {
+ public:
+  TwoValueColValues(llvm::Value* value1, llvm::Value* value2, llvm::Value* null = nullptr):
+      MultipleValueColValues({value1, value2}, null){}
+  std::unique_ptr<CodegenColValues> copy() const override {
+    return std::make_unique<TwoValueColValues>(*this);
+  }
+};
+
 #endif

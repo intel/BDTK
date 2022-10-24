@@ -1437,14 +1437,13 @@ extern "C" ALWAYS_INLINE void clear_bit_vector(uint8_t* bit_vector, uint64_t ind
 extern "C" ALWAYS_INLINE int8_t* extract_str_ptr_arrow(int8_t* data_buffer,
                                                        int8_t* offset_buffer,
                                                        uint64_t pos) {
-  return reinterpret_cast<int8_t*>(data_buffer +
-                                   reinterpret_cast<int32_t*>(offset_buffer)[pos]);
+  return (data_buffer + reinterpret_cast<int32_t*>(offset_buffer)[pos]);
 }
 
 extern "C" ALWAYS_INLINE int32_t extract_str_len_arrow(int8_t* offset_buffer,
                                                        uint64_t pos) {
-  return reinterpret_cast<int32_t*>(offset_buffer)[pos + 1] -
-         reinterpret_cast<int32_t*>(offset_buffer)[pos];
+  int32_t* offset = reinterpret_cast<int32_t*>(offset_buffer);
+  return offset[pos+1] - offset[pos];
 }
 
 #include "function/aggregate/CiderRuntimeFunctions.h"

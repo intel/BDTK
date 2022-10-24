@@ -215,29 +215,41 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
 }
 
 void ProjectIDStringCodeGenerator::codegen(CodegenColValues* input,
-                                           llvm::Value* output_buffer,
+                                           llvm::Value* project_arraies_i8,
                                            llvm::Value* index,
                                            llvm::Value* output_null_buffer) const {
   AUTOMATIC_IR_METADATA(cgen_state_);
-  CHECK(output_buffer);
+  CHECK(project_arraies_i8);
   CHECK(index);
   MultipleValueColValues* args = dynamic_cast<MultipleValueColValues*>(input);
   if (nullptr == args) {
     CIDER_THROW(CiderCompileException,
                 "ProjectIDStringCodeGenerator only support MultipleValueCol data now.");
   }
+
+  cgen_state_->emitCall("reallocate_string_buffer_if_need", {project_arraies_i8, index});
+
+  llvm::Value* str_data_buffer =
+      cgen_state_->emitCall("cider_ColDecoder_extractArrowBuffersAt",
+                            {project_arraies_i8, cgen_state_->llInt((uint64_t)2)});
+  llvm::Value* str_offset_buffer =
+      cgen_state_->emitCall("cider_ColDecoder_extractArrowBuffersAt",
+                            {project_arraies_i8, cgen_state_->llInt((uint64_t)1)});
+  llvm::Value* null_buffer =
+      cgen_state_->emitCall("cider_ColDecoder_extractArrowBuffersAt",
+                            {project_arraies_i8, cgen_state_->llInt((uint64_t)0)});
+
   auto value_str_ptr = args->getValueAt(0), value_str_len = args->getValueAt(1),
        is_null = args->getNull();
-  output_buffer = castToIntPtrTyIn(output_buffer, 8);
   index = cgen_state_->castToTypeIn(index, 64);
 
   std::vector<llvm::Value*> fun_args = {
-      output_buffer, index, value_str_ptr, value_str_len};
+      str_data_buffer, str_offset_buffer, index, value_str_ptr, value_str_len};
   if (target_info_.skip_null_val) {
-    CHECK(output_null_buffer);
+    CHECK(null_buffer);
     CHECK(is_null);
-    output_null_buffer = castToIntPtrTyIn(output_null_buffer, 8);
-    fun_args.push_back(output_null_buffer);
+    null_buffer = castToIntPtrTyIn(null_buffer, 8);
+    fun_args.push_back(null_buffer);
     fun_args.push_back(is_null);
   }
   cgen_state_->emitCall(base_fname_, fun_args);

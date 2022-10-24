@@ -255,8 +255,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarCharColVar(
     values.pop_back();
     cgen_state_->ir_builder_.Insert(null);
   }
-  std::vector<llvm::Value*> vec(values.begin(), values.end());
-  return std::make_unique<MultipleValueColValues>(vec, null);
+  return std::make_unique<TwoValueColValues>(values[0], values[1], null);
 }
 
 std::vector<llvm::Value*> CodeGenerator::codegenColVar(const Analyzer::ColumnVar* col_var,
