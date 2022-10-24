@@ -34,7 +34,11 @@
 class CiderTestBase : public testing::Test {
  public:
   void SetUp() override {
-    duckDbQueryRunner_.createTableAndInsertData(table_name_, create_ddl_, input_);
+    if (array && schema) {
+      duckDbQueryRunner_.createTableAndInsertArrowData(table_name_, create_ddl_, input_);
+    } else {
+      duckDbQueryRunner_.createTableAndInsertData(table_name_, create_ddl_, input_);
+    }
     ciderQueryRunner_.prepare(create_ddl_);
   }
   // each assert call will reset DuckDbQueryRunner and CiderQueryRunner
@@ -65,6 +69,8 @@ class CiderTestBase : public testing::Test {
   std::string table_name_;
   std::string create_ddl_;
   std::vector<std::shared_ptr<CiderBatch>> input_;
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
   DuckDbQueryRunner duckDbQueryRunner_;
   CiderQueryRunner ciderQueryRunner_;
 };

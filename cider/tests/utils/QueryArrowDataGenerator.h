@@ -30,8 +30,10 @@
 #include "cider/CiderBatch.h"
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
+#include "QueryDataGenerator.h"
 
-enum GeneratePattern { Sequence, Random };
+// TODO(yizhong): Enable this after QueryDataGenerator is deleted.
+// enum GeneratePatternArrow { SequenceArrow, RandomArrow };
 
 #define GENERATE_AND_ADD_COLUMN(C_TYPE)                                       \
   {                                                                           \
