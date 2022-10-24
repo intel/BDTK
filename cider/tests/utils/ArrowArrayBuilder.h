@@ -110,8 +110,7 @@ class ArrowArrayBuilder {
           CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
         }
       }
-      // TODO: null_count is not yet computed
-      current_array->null_count = -1;
+      // TODO: null_count
 
       current_array->buffers[0] = null_buf;
       current_array->buffers[1] =
@@ -137,9 +136,7 @@ class ArrowArrayBuilder {
       CIDER_THROW(CiderCompileException, "Invalid build!");
     }
     array_->length = row_num_;
-    // TODO: null_count, at the top level it is currently set to 0
-    // because we expect all values in a struct array to be valid
-    array_->null_count = 0;
+    // TODO: null_count
     size_t column_num = array_list_.size();
     array_->n_children = column_num;
     array_->children =
