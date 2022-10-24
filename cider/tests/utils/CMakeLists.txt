@@ -19,6 +19,8 @@
 
 set(CIDER_TESTS_UTILS_SOURCE
     Utils.cpp
+    CiderBatchStringifier.cpp
+    DuckDbArrowAdaptor.cpp
     DuckDbQueryRunner.cpp
     CiderQueryRunner.cpp
     CiderTestBase.cpp
@@ -63,6 +65,11 @@ add_executable(QueryDataGeneratorTest QueryDataGeneratorTest.cpp)
 target_link_libraries(QueryDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(QueryDataGeneratorTest
          ${EXECUTABLE_OUTPUT_PATH}/QueryDataGeneratorTest ${TEST_ARGS})
+
+add_executable(QueryArrowDataGeneratorTest QueryArrowDataGeneratorTest.cpp)
+target_link_libraries(QueryArrowDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(QueryArrowDataGeneratorTest
+         ${EXECUTABLE_OUTPUT_PATH}/QueryArrowDataGeneratorTest ${TEST_ARGS})
 
 add_executable(CiderQueryRunnerTest CiderQueryRunnerTest.cpp)
 target_link_libraries(CiderQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
