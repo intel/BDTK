@@ -270,7 +270,7 @@ TEST(ArrowArrayBuilderTest, nullTest) {
           .addColumn<double>("col4", CREATE_SUBSTRAIT_TYPE(Fp64), vec4, vec_null)
           .build();
 
-  EXPECT_EQ(0xF5, *(uint8_t*)(array->children[0]->buffers[0]));
+  EXPECT_EQ(0xEA, *(uint8_t*)(array->children[0]->buffers[0]));
 }
 
 TEST(ArrowArrayBuilderTest, CiderBatchConstructorTest) {
@@ -300,7 +300,7 @@ TEST(ArrowArrayBuilderTest, CiderBatchConstructorTest) {
   EXPECT_EQ(SQLTypes::kINT, batch->getChildAt(0)->getCiderType());
 
   EXPECT_EQ(true, batch->isRootOwner());
-  EXPECT_EQ(0xF5, *(uint8_t*)(batch->getChildAt(0)->getNulls()));
+  EXPECT_EQ(0xEA, *(uint8_t*)(batch->getChildAt(0)->getNulls()));
   EXPECT_EQ(5, batch->getLength());
   EXPECT_EQ(false, batch->isMoved());
   batch->move();

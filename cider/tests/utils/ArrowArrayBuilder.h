@@ -39,7 +39,8 @@ class ArrowArrayBuilder {
     schema_->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
     // TODO: release stuff
 
-    array_->buffers = nullptr;
+    array_->buffers = (const void**)allocator_->allocate(sizeof(void*));
+    array_->buffers[0] = nullptr;
     array_->n_buffers = 0;
     array_->length = 0;
     array_->offset = 0;
@@ -105,7 +106,7 @@ class ArrowArrayBuilder {
       void* null_buf = (void*)allocator_->allocate(null_size);
       std::memset(null_buf, 0xFF, null_size);
       for (auto i = 0; i < null_data.size(); i++) {
-        if (!null_data[i]) {
+        if (null_data[i]) {
           CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
         }
       }

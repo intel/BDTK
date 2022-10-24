@@ -115,7 +115,38 @@ std::string from_datetrunc_field(const DatetruncField& fieldno) {
   return "";
 }
 
+static const std::map<std::string, ExtractField> presto_extract_function_lookup = {
+    {"year", kYEAR},
+    {"quarter", kQUARTER},
+    {"month", kMONTH},
+    {"day", kDAY},
+    {"quarterday", kQUARTERDAY},
+    {"hour", kHOUR},
+    {"minute", kMINUTE},
+    {"second", kSECOND},
+    {"millisecond", kMILLISECOND},
+    {"microsecond", kMICROSECOND},
+    {"nanosecond", kNANOSECOND},
+    {"day_of_week", kDOW},
+    {"isodow", kISODOW},
+    {"day_of_year", kDOY},
+    {"epoch", kEPOCH},
+    {"week", kWEEK},
+    {"week_sunday", kWEEK_SUNDAY},
+    {"week_saturday", kWEEK_SATURDAY},
+    {"dateepoch", kDATEEPOCH}};
+
 }  // namespace
+
+ExtractField ExtractExpr::try_map_presto_extract_function(
+    const std::string& function_name) {
+  const std::string lower_function_name = boost::algorithm::to_lower_copy(function_name);
+  auto field = presto_extract_function_lookup.find(lower_function_name);
+  if (field != presto_extract_function_lookup.end()) {
+    return field->second;
+  }
+  return kNONE;
+}
 
 ExtractField ExtractExpr::to_extract_field(const std::string& field) {
   ExtractField fieldno;

@@ -1,5 +1,5 @@
 =====================
-Cider User Guide
+Quick Start
 =====================
 
 Installation
