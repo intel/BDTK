@@ -54,11 +54,11 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
   int32_t srcBranchId = planSection.source.branchId;
   int32_t leftSrcBranchId = PlanBranches::getLeftSrcBranchId(srcBranchId);
   int32_t rightSrcBranchId = PlanBranches::getRightSrcBranchId(srcBranchId);
-  auto newSrcMap = PlanUtil::toNodeAddrMap(srcList);
-  auto newLeftSrc = PlanUtil::findInNodeAddrMap(newSrcMap, leftSrcBranchId, 0);
-  auto newRightSrc = PlanUtil::findInNodeAddrMap(newSrcMap, rightSrcBranchId, 0);
+  NodeAddrMapPtr newSrcMap = PlanUtil::toNodeAddrMap(srcList);
+  std::pair<bool, VeloxPlanNodePtr> newLeftSrc = PlanUtil::findInNodeAddrMap(newSrcMap, leftSrcBranchId, 0);
+  std::pair<bool, VeloxPlanNodePtr> newRightSrc = PlanUtil::findInNodeAddrMap(newSrcMap, rightSrcBranchId, 0);
   if (newLeftSrc.first && newRightSrc.first) {
-    auto ciderPlanNode =
+    std::shared_ptr<CiderPlanNode> ciderPlanNode =
         std::make_shared<CiderPlanNode>(planSection.target.nodePtr->id(),
                                         newLeftSrc.second,
                                         newRightSrc.second,
