@@ -41,7 +41,7 @@ void freeArrowSchema(ArrowSchema* ptr) {
 ArrowArray* allocateArrowArray() {
   ArrowArray* ptr = new ArrowArray;
   *ptr = ArrowArray{.length = 0,
-                    .null_count = 0,
+                    .null_count = -1,  // -1 represents not yet computed
                     .offset = 0,
                     .n_buffers = 0,
                     .n_children = 0,
