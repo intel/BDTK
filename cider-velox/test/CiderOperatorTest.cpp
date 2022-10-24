@@ -331,12 +331,7 @@ TEST_F(CiderOperatorTest, avg_on_col_cider) {
       "SELECT l_orderkey, l_linenumber, avg(l_quantity) as avg_price FROM tmp WHERE "
       "l_shipdate < 24.0 GROUP BY l_orderkey, l_linenumber";
 
-  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
-  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are null,
-  // while we get -Infinity/Infinity.
-  GTEST_SKIP();
   assertQuery(veloxPlan, duckdbSql);
-  // For the case, one column has both null value and not null value.
   assertQuery(resultPtr, duckdbSql);
 }
 
@@ -392,10 +387,6 @@ TEST_F(CiderOperatorTest, avg_on_col_null) {
       "SELECT c0, c1, avg(c4) as avg_price FROM tmp WHERE "
       "c2 < 24.0 GROUP BY c0, c1";
 
-  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
-  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are null,
-  // while we get -Infinity/Infinity.
-  GTEST_SKIP();
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
@@ -422,10 +413,6 @@ TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   auto duckdbSql = "SELECT avg(c4) as avg_price FROM tmp WHERE c2 < 24.0 ";
 
-  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
-  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are null,
-  // while we get -Infinity/Infinity.
-  GTEST_SKIP();
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
@@ -470,13 +457,11 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
                        .planNode();
 
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-  auto duckdbSql = "SELECT null";
-  assertQuery(veloxPlan, duckdbSql);
-  // TODO : (ZhangJie) Enable this after Yizhong fix the null parsing in  cider
-  // (https://jira.devtools.intel.com/browse/POAE7-2342). Now, expected results are
-  // null, while we get [-9223372036854776000,0].
-  GTEST_SKIP();
+  auto duckdbSql = "SELECT row(null, 0)";
   assertQuery(resultPtr, duckdbSql);
+  // TODO(yizhong): something wrong with generating veloxPlan
+  GTEST_SKIP();
+  assertQuery(veloxPlan, duckdbSql);
 }
 
 TEST_F(CiderOperatorTest, partial_avg_notAllNull) {

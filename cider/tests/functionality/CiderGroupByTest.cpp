@@ -131,6 +131,49 @@ class CiderGroupByPrimitiveTypeMixTest : public CiderTestBase {
   }
 };
 
+class CiderGroupByAvgMixTest : public CiderTestBase {
+ public:
+  CiderGroupByAvgMixTest() {
+    table_name_ = "table_test";
+    create_ddl_ =
+        "CREATE TABLE table_test(float_not_null_a FLOAT, float_half_null_b FLOAT, "
+        "float_all_null_c FLOAT, double_not_null_d DOUBLE, double_half_null_e DOUBLE, "
+        "double_all_null_f DOUBLE, tinyint_not_null_g TINYINT, tinyint_half_null_h "
+        "TINYINT, tinyint_all_null_i TINYINT, integer_not_null_j INTEGER, "
+        "integer_half_null_k INTEGER, integer_all_null_l INTEGER);";
+    input_ = {std::make_shared<CiderBatch>(
+        QueryDataGenerator::generateBatchByTypes(3,
+                                                 {"float_not_null_a",
+                                                  "float_half_null_b",
+                                                  "float_all_null_c",
+                                                  "double_not_null_d",
+                                                  "double_half_null_e",
+                                                  "double_all_null_f",
+                                                  "tinyint_not_null_g",
+                                                  "tinyint_half_null_h",
+                                                  "tinyint_all_null_i",
+                                                  "integer_not_null_j",
+                                                  "integer_half_null_k",
+                                                  "integer_all_null_l"},
+                                                 {CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                  CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                  CREATE_SUBSTRAIT_TYPE(I8),
+                                                  CREATE_SUBSTRAIT_TYPE(I8),
+                                                  CREATE_SUBSTRAIT_TYPE(I8),
+                                                  CREATE_SUBSTRAIT_TYPE(I32),
+                                                  CREATE_SUBSTRAIT_TYPE(I32),
+                                                  CREATE_SUBSTRAIT_TYPE(I32)},
+                                                 {0, 2, 1, 0, 2, 1, 0, 2, 1, 0, 2, 1},
+                                                 GeneratePattern::Random,
+                                                 0,
+                                                 100))};
+  }
+};
+
 #define NO_CONDITION_GROUP_BY_TEST_UNIT(TEST_CLASS, UNIT_NAME)                           \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
     /*one group by key with one agg*/                                                    \
@@ -355,6 +398,13 @@ class CiderGroupByPrimitiveTypeMixTest : public CiderTestBase {
   }
 
 TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByColTest) {
+  assertQuery(
+      "SELECT SUM(tinyint_half_null_f), SUM(smallint_not_null_g), "
+      "SUM(smallint_half_null_h), SUM(bigint_not_null_k) FROM table_test GROUP BY "
+      "tinyint_half_null_f, smallint_not_null_g, smallint_half_null_h, bigint_not_null_k",
+      "",
+      true);
+
   // FLOAT not null col group by
   assertQuery(
       "SELECT float_not_null_a, COUNT(*) FROM table_test GROUP BY float_not_null_a",
@@ -458,6 +508,77 @@ TEST_F(CiderGroupByPrimitiveTypeMixTest, noConditionGroupByMultiColTest) {
       "SELECT integer_not_null_i, bigint_not_null_k, boolean_not_null_m, COUNT(*), "
       "sum(integer_not_null_i), sum(bigint_not_null_k) FROM table_test GROUP BY "
       "integer_not_null_i, bigint_not_null_k, boolean_not_null_m",
+      "",
+      true);
+}
+
+TEST_F(CiderGroupByAvgMixTest, avgTest) {
+  // AVG(double)
+  assertQuery("SELECT AVG(double_not_null_d) FROM table_test GROUP BY double_not_null_d",
+              "",
+              true);
+  assertQuery(
+      "SELECT AVG(double_half_null_e) FROM table_test GROUP BY double_half_null_e",
+      "",
+      true);
+  assertQuery("SELECT AVG(double_all_null_f) FROM table_test GROUP BY double_all_null_f",
+              "",
+              true);
+
+  // AVG(tinyint)
+  assertQuery(
+      "SELECT AVG(tinyint_not_null_g) FROM table_test GROUP BY tinyint_not_null_g",
+      "",
+      true);
+  assertQuery(
+      "SELECT AVG(tinyint_half_null_h) FROM table_test GROUP BY tinyint_half_null_h",
+      "",
+      true);
+  assertQuery(
+      "SELECT AVG(tinyint_all_null_i) FROM table_test GROUP BY tinyint_all_null_i",
+      "",
+      true);
+
+  // AVG(integer)
+  assertQuery(
+      "SELECT AVG(integer_not_null_j) FROM table_test GROUP BY integer_not_null_j",
+      "",
+      true);
+  assertQuery(
+      "SELECT AVG(integer_half_null_k) FROM table_test GROUP BY integer_half_null_k",
+      "",
+      true);
+  assertQuery(
+      "SELECT AVG(integer_all_null_l) FROM table_test GROUP BY integer_all_null_l",
+      "",
+      true);
+
+  // AVG(float)
+  assertQuery(
+      "SELECT AVG(float_all_null_c) FROM table_test GROUP BY float_all_null_c", "", true);
+  // TODO(yizhong): Failed due to unexpected output schema from substrait-java.
+  GTEST_SKIP();
+  assertQuery(
+      "SELECT AVG(float_not_null_a) FROM table_test GROUP BY float_not_null_a", "", true);
+  assertQuery("SELECT AVG(float_half_null_b) FROM table_test GROUP BY float_half_null_b",
+              "",
+              true);
+
+  // TODO(yizhong): Support GroupBy & AVG multiple columns
+  assertQuery(
+      "SELECT AVG(float_not_null_a), AVG(float_half_null_b) FROM table_test GROUP BY "
+      "float_not_null_a, float_half_null_b",
+      "",
+      true);
+  assertQuery(
+      "SELECT AVG(float_not_null_a), AVG(float_half_null_b), AVG(float_all_null_c), "
+      "AVG(double_not_null_d), AVG(double_half_null_e), AVG(double_all_null_f), "
+      "AVG(tinyint_not_null_g), AVG(tinyint_half_null_h), AVG(tinyint_all_null_i), "
+      "AVG(integer_not_null_j), AVG(integer_half_null_k), AVG(integer_all_null_l) FROM "
+      "table_test GROUP BY float_not_null_a, float_half_null_b, float_all_null_c, "
+      "double_not_null_d, double_half_null_e, double_all_null_f, tinyint_not_null_g, "
+      "tinyint_half_null_h, tinyint_all_null_i, integer_not_null_j, integer_half_null_k, "
+      "integer_all_null_l, ",
       "",
       true);
 }
