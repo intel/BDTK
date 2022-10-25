@@ -265,4 +265,4 @@ You can directly run presto native worker with them to skip compiling step.
    $ # --v=1 --logtostderr=1 are flags to print log, you can modify it as your wish
    $ ./bin/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
