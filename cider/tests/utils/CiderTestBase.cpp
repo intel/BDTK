@@ -69,7 +69,7 @@ void CiderTestBase::assertQueryArrowIgnoreOrder(const std::string& sql,
   auto cider_res_batch = std::make_shared<CiderBatch>(
       ciderQueryRunner_.runQueryOneBatch(cider_input, input_[0], true));
 
-  EXPECT_TRUE(CiderBatchChecker::checkEq(duck_res_batch, cider_res_batch, true));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(duck_res_batch, cider_res_batch, true));
 }
 
 void CiderTestBase::assertQuery(const std::string& sql,

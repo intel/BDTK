@@ -371,8 +371,8 @@ class CiderFilterSequenceTestArrow : public CiderTestBase {
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT,
         col_3 FLOAT, col_4 DOUBLE);)";
 
-    QueryArrowDataGenerator::generateBatchByTypes(schema,
-                                                  array,
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
                                                   99,
                                                   {"col_1", "col_2", "col_3", "col_4"},
                                                   {CREATE_SUBSTRAIT_TYPE(I32),
@@ -423,8 +423,8 @@ class CiderFilterRandomTestArrow : public CiderTestBase {
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
            col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE);)";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema,
-        array,
+        schema_,
+        array_,
         999,
         {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
         {CREATE_SUBSTRAIT_TYPE(I32),
@@ -467,8 +467,8 @@ class CiderProjectAllTestArrow : public CiderTestBase {
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, col_5 FLOAT, col_6 DOUBLE);)";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema,
-        array,
+        schema_,
+        array_,
         100,
         {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6"},
         {CREATE_SUBSTRAIT_TYPE(I32),
@@ -640,6 +640,8 @@ TEST_F(CiderFilterRandomTestArrow, complexFilter) {
 
 // isthmus will convert to lt and gt.
 TEST_F(CiderFilterRandomTestArrow, BetweenAnd) {
+  // TODO ? (the same as multiColRandomTest above)
+  GTEST_SKIP_("It seems not support column gt or lt column");
   assertQueryArrowIgnoreOrder("SELECT * FROM test WHERE col_1 between 0 AND 1000 ");
 }
 

@@ -34,9 +34,9 @@
 class CiderTestBase : public testing::Test {
  public:
   void SetUp() override {
-    if (array && schema) {
+    if (array_ && schema_) {
       input_ = {std::make_shared<CiderBatch>(
-          *(new CiderBatch(schema, array, std::make_shared<CiderDefaultAllocator>())))};
+          *(new CiderBatch(schema_, array_, std::make_shared<CiderDefaultAllocator>())))};
       duckDbQueryRunner_.createTableAndInsertArrowData(table_name_, create_ddl_, input_);
     } else {
       duckDbQueryRunner_.createTableAndInsertData(table_name_, create_ddl_, input_);
@@ -73,8 +73,8 @@ class CiderTestBase : public testing::Test {
   std::string table_name_;
   std::string create_ddl_;
   std::vector<std::shared_ptr<CiderBatch>> input_;
-  ArrowArray* array = nullptr;
-  ArrowSchema* schema = nullptr;
+  ArrowArray* array_ = nullptr;
+  ArrowSchema* schema_ = nullptr;
   DuckDbQueryRunner duckDbQueryRunner_;
   CiderQueryRunner ciderQueryRunner_;
 };

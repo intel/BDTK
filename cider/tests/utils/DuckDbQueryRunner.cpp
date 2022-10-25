@@ -533,20 +533,10 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
     if (!chunk || (chunk->size() == 0)) {
       if (batch_res.empty()) {
         auto arrow_array = CiderBatchUtils::allocateArrowArray();
-        auto arrow_schema = CiderBatchUtils::allocateArrowSchema();
-
-        arrow_array->length = 0;
-        arrow_array->n_children = 0;
-        arrow_array->buffers = nullptr;
-        arrow_array->n_buffers = 0;
-        arrow_array->private_data = nullptr;
-        arrow_array->children = (ArrowArray**)std::malloc(0);
         arrow_array->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
 
+        auto arrow_schema = CiderBatchUtils::allocateArrowSchema();
         arrow_schema->format = "+s";
-        arrow_schema->dictionary = nullptr;
-        arrow_schema->n_children = 0;
-        arrow_schema->children = (ArrowSchema**)std::malloc(0);
         arrow_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
 
         batch_res.push_back(std::make_shared<CiderBatch>(*(new CiderBatch(
