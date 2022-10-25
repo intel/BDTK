@@ -20,7 +20,6 @@
  */
 
 #include "CiderPlanTransformerFactory.h"
-#include <memory>
 
 #include "CiderPlanPatterns.h"
 #include "CiderPlanRewriter.h"

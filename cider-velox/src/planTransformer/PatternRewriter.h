@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include <memory>
 #include "../ciderTransformer/CiderPlanPatterns.h"
 #include "PlanBranches.h"
 #include "PlanPattern.h"
