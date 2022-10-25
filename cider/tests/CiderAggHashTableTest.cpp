@@ -778,7 +778,7 @@ TEST_F(CiderNewDataFormatTest, ScalarTypeFilterTest) {
 void testScalarProject(MockTable* table,
                        const std::string& col_name,
                        size_t expect_ans_row_num) {
-  // select col, -col from table;
+  // select col from table;
   CHECK(table);
 
   auto td = table->getMetadataForTable();
@@ -791,22 +791,17 @@ void testScalarProject(MockTable* table,
   auto col_expr =
       makeExpr<Analyzer::ColumnVar>(col->type, td->table_id, col->column_id, 0);
 
-  // auto col_var_expr = makeExpr<Analyzer::Var>(
-  //     col->type, td->table_id, col->column_id, 0, false, Analyzer::Var::kOUTPUT, 1);
-  auto minus_expr =
-      makeExpr<Analyzer::UOper>(col_expr->get_type_info().get_type(), kUMINUS, col_expr);
-
-  auto ra_exe_unit_ptr = std::shared_ptr<RelAlgExecutionUnit>(
-      new RelAlgExecutionUnit{input_descs,
-                              input_col_descs,
-                              {},
-                              {},
-                              {},
-                              {nullptr},
-                              {col_expr.get(), minus_expr.get()},
-                              nullptr,
-                              SortInfo{},
-                              0});
+  auto ra_exe_unit_ptr =
+      std::shared_ptr<RelAlgExecutionUnit>(new RelAlgExecutionUnit{input_descs,
+                                                                   input_col_descs,
+                                                                   {},
+                                                                   {},
+                                                                   {},
+                                                                   {nullptr},
+                                                                   {col_expr.get()},
+                                                                   nullptr,
+                                                                   SortInfo{},
+                                                                   0});
 
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
       2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
@@ -825,8 +820,11 @@ void testScalarProject(MockTable* table,
 }
 
 TEST_F(CiderNewDataFormatTest, ScalarTypeProjectTest) {
-  testScalarProject(MockTableForTest, "tinyint_notnull", 5);
-  testScalarProject(MockTableForTest, "tinyint_null", 5);
+  testScalarProject(MockTableForTest, "bool_true_null", 5);
+  testScalarProject(MockTableForTest, "bool_true_notnull", 5);
+
+  testScalarProject(MockTableForTest, "bool_false_null", 5);
+  testScalarProject(MockTableForTest, "bool_false_notnull", 5);
 
   testScalarProject(MockTableForTest, "smallint_notnull", 5);
   testScalarProject(MockTableForTest, "smallint_null", 5);

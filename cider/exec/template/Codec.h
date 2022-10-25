@@ -74,9 +74,19 @@ class FixedWidthInt : public Decoder {
   const size_t byte_width_;
 };
 
-class FixedWidthBool : public FixedWidthInt {
-  
-} 
+class FixedWidthBool : public Decoder {
+ public:
+  FixedWidthBool(llvm::IRBuilder<>* ir_builder, bool nullable = false);
+  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                   llvm::Value* pos,
+                                   llvm::Module* module) const override {
+    return nullptr;
+  }
+
+  std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
+                                                llvm::Value* byte_stream,
+                                                llvm::Value* pos) const override;
+};
 
 class FixedWidthUnsigned : public Decoder {
  public:
