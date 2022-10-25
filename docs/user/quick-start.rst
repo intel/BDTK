@@ -1,5 +1,5 @@
 =====================
-Cider User Guide
+BDTK User Guide
 =====================
 
 Environment Preparation
@@ -36,7 +36,7 @@ We provide Dockerfile to help developers setup and install BDTK dependencies.
 
    docker exec -it ${container_name} /bin/bash
 
-*Note: files used for building image are from cider and presto,
+*Note: files used for building image are from bdtk and presto,
 details are as follows:*
 
 
@@ -52,7 +52,7 @@ Integrate BDTK with Presto
    $ cd ${path-to-presto}/presto-native-execution
    # Integrate BDTK with Presto
    $ export WORKER_DIR=${path-to-presto}/presto-native-execution
-   $ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-cider.sh release
+   $ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-bdtk.sh release
 
 Now the you can check your executable presto server file in ${WORKER_DIR}/_build/release/presto_cpp/main/presto_server
 
@@ -234,3 +234,31 @@ c. launch the BDTK worker
    $ {path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
 When you see "Announcement succeeded: 202" printed to the console, the BDTK worker has successfully connected to the coordinator. 
+
+
+Run with released package
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+From the release note of BDTK: https://github.com/intel/BDTK/releases , you can download the package of presto_server binary file and libraries. 
+You can directly run BDTK worker with them to skip compiling step.
+
+1. Unzip the package
+   
+::
+
+   $ wget https://github.com/intel/BDTK/releases/download/${latest_tag}/bdtk_${latest_version}.tar.gz
+   $ cd Prestodb
+
+2. Prepare configuration files
+   You need to prepare the basic configuration files as mentioned above. 
+
+3. Launch BDTK worker with binary file
+
+:: 
+
+   $ # add libraries to include path
+   $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
+   $ # launch the server
+   $ # --v=1 --logtostderr=1 are flags to print log, you can modify it as your wish
+   $ ./bin/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
+
+
