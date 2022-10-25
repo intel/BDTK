@@ -181,3 +181,71 @@ std::string RunIsthmus::createTpcHTables() {
   }
   return s;
 }
+
+std::shared_ptr<CiderBatch> createSimpleBooleanTestData(const std::vector<bool>& data,
+                                                        const std::vector<bool>& valids) {
+  /// TODO: (YBRua) deprecate this.
+  CHECK(!data.size() || data.size() == 10) << "Only supports size of 10." << std::endl;
+  CHECK(!valids.size() || valids.size() == 10)
+      << "Only supports size of 10." << std::endl;
+
+  auto types = SQLTypeInfo(
+      kSTRUCT, false, {SQLTypeInfo(kBOOLEAN, false), SQLTypeInfo(kBOOLEAN, false)});
+  auto arrow_schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(types);
+  auto arrow_batch =
+      StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>());
+
+  std::vector<bool> data_vec;
+  if (!data.size()) {
+    data_vec = std::vector<bool>{
+        true, false, true, false, true, false, true, false, true, false};
+  } else {
+    data_vec = data;
+  }
+  std::vector<bool> valid_vec;
+  if (!valids.size()) {
+    valid_vec = std::vector<bool>{
+        true, true, true, true, true, false, false, false, false, false};
+  } else {
+    valid_vec = valids;
+  }
+
+  CHECK(arrow_batch->resizeBatch(10));
+
+  {
+    auto child = arrow_batch->getChildAt(0);
+    CHECK(child->resizeBatch(10));
+    auto data_buffer = child->asMutable<ScalarBatch<bool>>()->getMutableRawData();
+    auto valid_buffer = child->getMutableNulls();
+
+    for (int i = 0; i < 10; ++i) {
+      // all valid in first col
+      CiderBitUtils::setBitAt(valid_buffer, i);
+      if (data_vec[i]) {
+        CiderBitUtils::setBitAt(data_buffer, i);
+      } else {
+        CiderBitUtils::clearBitAt(data_buffer, i);
+      }
+    }
+  }
+  {
+    auto child = arrow_batch->getChildAt(1);
+    CHECK(child->resizeBatch(10));
+    auto data_buffer = child->asMutable<ScalarBatch<bool>>()->getMutableRawData();
+    auto valid_buffer = child->getMutableNulls();
+    for (int i = 0; i < 10; ++i) {
+      if (valid_vec[i]) {
+        CiderBitUtils::setBitAt(valid_buffer, i);
+      } else {
+        CiderBitUtils::clearBitAt(valid_buffer, i);
+      }
+      if (data_vec[i]) {
+        CiderBitUtils::setBitAt(data_buffer, i);
+      } else {
+        CiderBitUtils::clearBitAt(data_buffer, i);
+      }
+    }
+  }
+
+  return arrow_batch;
+}

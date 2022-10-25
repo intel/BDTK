@@ -102,79 +102,21 @@ TEST(CiderBatchCheckerArrowTest, singleColumn) {
   TEST_SINGLE_COLUMN_ARROW(double, Fp64);
 }
 
-std::shared_ptr<CiderBatch> createBooleanTestData(const std::vector<bool>& data = {}) {
-  /// TODO: (YBRua) deprecate this.
-  CHECK(!data.size() || data.size() == 10) << "Only supports size of 10." << std::endl;
-  auto types = SQLTypeInfo(
-      kSTRUCT, false, {SQLTypeInfo(kBOOLEAN, false), SQLTypeInfo(kBOOLEAN, false)});
-  auto arrow_schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(types);
-  auto arrow_batch =
-      StructBatch::Create(arrow_schema, std::make_shared<CiderDefaultAllocator>());
-
-  std::vector<bool> data_vec;
-  if (!data.size()) {
-    data_vec = std::vector<bool>{
-        true, false, true, false, true, false, true, false, true, false};
-  } else {
-    data_vec = data;
-  }
-
-  CHECK(arrow_batch->resizeBatch(10));
-
-  {
-    auto child = arrow_batch->getChildAt(0);
-    CHECK(child->resizeBatch(10));
-    auto data_buffer = child->asMutable<ScalarBatch<bool>>()->getMutableRawData();
-    auto valid_buffer = child->getMutableNulls();
-
-    auto valid_vec = std::vector<bool>(10, true);
-    for (int i = 0; i < 10; ++i) {
-      if (valid_vec[i]) {
-        CiderBitUtils::setBitAt(valid_buffer, i);
-      } else {
-        CiderBitUtils::clearBitAt(valid_buffer, i);
-      }
-      if (data_vec[i]) {
-        CiderBitUtils::setBitAt(data_buffer, i);
-      } else {
-        CiderBitUtils::clearBitAt(data_buffer, i);
-      }
-    }
-  }
-  {
-    auto child = arrow_batch->getChildAt(1);
-    CHECK(child->resizeBatch(10));
-    auto data_buffer = child->asMutable<ScalarBatch<bool>>()->getMutableRawData();
-    auto valid_buffer = child->getMutableNulls();
-
-    auto valid_vec = std::vector<bool>{
-        true, true, true, true, true, false, false, false, false, false};
-    for (int i = 0; i < 10; ++i) {
-      if (valid_vec[i]) {
-        CiderBitUtils::setBitAt(valid_buffer, i);
-      } else {
-        CiderBitUtils::clearBitAt(valid_buffer, i);
-      }
-      if (data_vec[i]) {
-        CiderBitUtils::setBitAt(data_buffer, i);
-      } else {
-        CiderBitUtils::clearBitAt(data_buffer, i);
-      }
-    }
-  }
-
-  return arrow_batch;
-}
-
 TEST(CiderBatchCheckerArrowTest, booleanTest) {
   /// TODO: (YBRua) switch to ArrowArrayBuilder after relevent PR is merged
-  auto batch = createBooleanTestData();
-  auto eq_batch = createBooleanTestData();
-  auto neq_batch = createBooleanTestData(std::vector<bool>(10, true));
+  auto batch = createSimpleBooleanTestData();
+  auto eq_batch = createSimpleBooleanTestData();
+  auto neq_batch = createSimpleBooleanTestData(std::vector<bool>(10, true));
+
+  auto ignore_order_batch = createSimpleBooleanTestData(
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false},
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false});
 
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, eq_batch));
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, neq_batch));
-  /// TODO: (YBRua) tests for ignore order
+
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, ignore_order_batch));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, ignore_order_batch, true));
 }
 
 TEST(CiderBatchCheckerArrowTest, rowValue) {

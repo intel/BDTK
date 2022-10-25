@@ -32,6 +32,10 @@
 #include "cider/CiderBatch.h"
 #include "cider/CiderTableSchema.h"
 
+/// TODO: (YBRua) remove these after removal of createBooleanTestData
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
+
 struct CommandResult {
   std::string output;
   int exitstatus;
@@ -153,4 +157,9 @@ class ArrowToCiderBatch {
         schema, array, std::make_shared<CiderDefaultAllocator>());
   }
 };
+
+std::shared_ptr<CiderBatch> createSimpleBooleanTestData(
+    const std::vector<bool>& data = {},
+    const std::vector<bool>& null = {});
+
 #endif  // CIDER_UTILS_H
