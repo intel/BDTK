@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Quick Start &#8212; Cider 1.0 documentation</title>
+    <title>Cider User Guide &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -41,23 +41,211 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="quick-start">
-<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>what we should prepare…</p>
-<div class="section" id="manual-install">
-<h3>Manual Install<a class="headerlink" href="#manual-install" title="Permalink to this headline">¶</a></h3>
-<p>how to install…</p>
+  <div class="section" id="cider-user-guide">
+<h1>Cider User Guide<a class="headerlink" href="#cider-user-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="environment-preparation">
+<h2>Environment Preparation<a class="headerlink" href="#environment-preparation" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line"><strong>Prerequisite:</strong></div>
+<div class="line">Install docker and set proxy according to the guidance in:</div>
+<div class="line"><a class="reference external" href="https://docs.docker.com/config/daemon/systemd/">https://docs.docker.com/config/daemon/systemd/</a></div>
+<div class="line"><a class="reference external" href="https://docs.docker.com/network/proxy/">https://docs.docker.com/network/proxy/</a></div>
 </div>
-<div class="section" id="further-pip-conda-apt-yum-source">
-<h3>(Further) pip/conda/apt/yum source<a class="headerlink" href="#further-pip-conda-apt-yum-source" title="Permalink to this headline">¶</a></h3>
-<p>some details…</p>
+<ol class="arabic simple">
+<li>Get the Source</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Clone the Presto source
+$ git clone https://github.com/Intel-bigdata/presto.git
+# Checkout to BDTK branch
+$ git checkout -b BDTK origin/BDTK
+</pre></div>
 </div>
+<ol class="arabic simple" start="2">
+<li>Setting up BDTK develop envirenmont on Linux Docker</li>
+</ol>
+<p>We provide Dockerfile to help developers setup and install BDTK dependencies.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Build an image from a Dockerfile
+$ cd ${path_to_source_of_bdtk}/ci/docker
+$ docker build -t ${image_name} .
+
+# Start a docker container for development
+docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
+# Tips: you can run with more CPU cores to accelerate building time
+# docker run -d ... ${image_name} --cpus=&quot;30&quot; /usr/sbin/init
+
+docker exec -it ${container_name} /bin/bash
+</pre></div>
 </div>
-<div class="section" id="a-demo-to-use">
-<h2>A Demo To Use<a class="headerlink" href="#a-demo-to-use" title="Permalink to this headline">¶</a></h2>
-<p>some thing about the demo…</p>
+<p><em>Note: files used for building image are from cider and presto,
+details are as follows:</em></p>
+</div>
+<div class="section" id="run-with-prestodb">
+<h2>Run with Prestodb<a class="headerlink" href="#run-with-prestodb" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="integrate-bdtk-with-presto">
+<h3>Integrate BDTK with Presto<a class="headerlink" href="#integrate-bdtk-with-presto" title="Permalink to this headline">¶</a></h3>
+<p><em>Note: The following steps should be done in the docker container</em></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd ${path-to-presto}/presto-native-execution
+# Integrate BDTK with Presto
+$ export WORKER_DIR=${path-to-presto}/presto-native-execution
+$ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-cider.sh release
+</pre></div>
+</div>
+<p>Now the you can check your executable presto server file in ${WORKER_DIR}/_build/release/presto_cpp/main/presto_server</p>
+</div>
+<div class="section" id="run-a-end-to-end-hello-world-demo-on-local-file-system">
+<h3>Run a end-to-end Hello World demo on local file system<a class="headerlink" href="#run-a-end-to-end-hello-world-demo-on-local-file-system" title="Permalink to this headline">¶</a></h3>
+<p><em>Note: The following steps should be done in the docker container</em>
+| <strong>Prerequisite:</strong>
+| Java 8
+| Maven 3.5.x and later version</p>
+<ol class="arabic simple">
+<li>Compile Prestodb</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd ${path-to-presto}
+$ mvn clean install -DskipTests
+</pre></div>
+</div>
+<p>2. Set up in IntelliJ
+Download and install IntellliJ You can also use any other IDE however the instructions in this document will only concern IntelliJ.</p>
+<ol class="loweralpha simple">
+<li>Open IntelliJ and use ‘Open Existing’ to open the presto project: Click File &gt; New &gt; Module From Existing Sources .. &gt; , Then go to presto_cpp/java/presto-native-tests/pom.xml.</li>
+<li>Now lets create the configuration for HiveExternalWorkerQueryRunner. We will need three env variables for this purpose, so copy the following below and replace the text in bold with your specific text.<ol class="lowerroman">
+<li>Env Variables: PRESTO_SERVER=&lt;YOUR_PATH_TO_PRESTO_SERVER&gt;;DATA_DIR=/Users/&lt;YOUR_USER_NAME&gt;/Desktop;WORKER_COUNT=0</li>
+<li>VM Options: -ea -Xmx2G -XX:+ExitOnOutOfMemoryError -Duser.timezone=America/Bahia_Banderas -Dhive.security=legacy</li>
+<li>Main class: com.facebook.presto.hive.HiveExternalWorkerQueryRunner</li>
+</ol>
+</li>
+</ol>
+<dl class="docutils">
+<dt>NOTE:</dt>
+<dd>HiveExternalWorkerQueryRunner will basically launch a testing presto service using local file system.
+WORKER_COUNT is the number of workers to be launched along with the coordinator. In this case we put 0 as we want to externally launch our own CPP worker.
+Note discovery URI. Something like <a class="reference external" href="http://127.0.0.1:54557">http://127.0.0.1:54557</a>. Use the last discovery URI in the InteliJ logs</dd>
+</dl>
+<p>Upon running this you should see the Presto service log printing in the console.</p>
+<p>3. Update BDTK worker configuration
+The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere your like.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir ${path-to-presto}/presto-native-execution/etc
+$ cd etc
+$ vim config.properties
+</pre></div>
+</div>
+<p>Add the basic configuration for a presto worker. Use discovery URI from the logs above and update the config.properties.
+The config.properties file should be like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">task</span><span class="o">.</span><span class="n">concurrent</span><span class="o">-</span><span class="n">lifespans</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">task</span><span class="o">=</span><span class="mi">32</span>
+<span class="n">http</span><span class="o">-</span><span class="n">server</span><span class="o">.</span><span class="n">http</span><span class="o">.</span><span class="n">port</span><span class="o">=</span><span class="mi">7071</span>
+<span class="n">task</span><span class="o">.</span><span class="n">max</span><span class="o">-</span><span class="n">drivers</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">task</span><span class="o">=</span><span class="mi">96</span>
+<span class="n">discovery</span><span class="o">.</span><span class="n">uri</span><span class="o">=</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">54557</span>
+<span class="n">system</span><span class="o">-</span><span class="n">memory</span><span class="o">-</span><span class="n">gb</span><span class="o">=</span><span class="mi">64</span>
+<span class="n">presto</span><span class="o">.</span><span class="n">version</span><span class="o">=</span><span class="n">testversion</span>
+</pre></div>
+</div>
+<p>And then you need modify the node.properties</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vim node.properties
+</pre></div>
+</div>
+<p>The node.properties should be like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="o">=</span><span class="mi">3</span><span class="n">ae8d81c</span><span class="o">-</span><span class="mi">97</span><span class="n">b8</span><span class="o">-</span><span class="mi">42</span><span class="n">c4</span><span class="o">-</span><span class="mf">9e49</span><span class="o">-</span><span class="mi">3524</span><span class="n">cfbe5d8b</span>
+<span class="n">node</span><span class="o">.</span><span class="n">ip</span><span class="o">=</span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span>
+<span class="n">node</span><span class="o">.</span><span class="n">environment</span><span class="o">=</span><span class="n">testing</span>
+<span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">=</span><span class="n">test</span><span class="o">-</span><span class="n">location</span>
+</pre></div>
+</div>
+<p>Then you need to modify the configuration for a catalog.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir catalog
+$ vim hive.properties
+</pre></div>
+</div>
+<p>Note: You don’t have to configure a real hive catalog.
+In the HiveExternalWorkerQueryRunner it’ll create a pseudo hive metastore for you.</p>
+<p>The hive.properties should be like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">connector</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="n">hive</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li>Launch BDTK worker</li>
+</ol>
+<p>Go to YOUR_PATH_TO_PRESTO_SERVER:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cd ${path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/
+# launch the worker
+./presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
+</pre></div>
+</div>
+<p>When you see “Announcement succeeded: 202” printed to the console, the BDTK worker has successfully connected to the coordinator.</p>
+<p>5. Test the queries
+You can sent out queries using your existing presto-cli our go to the presto-cli module you just compiled.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd ${path-to-presto}/presto-cli/target
+$ ./presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar --catalog hive --schema tpch
+</pre></div>
+</div>
+<p>By doing this you can launch an interactive SQL command.
+Try Some queries with BDTK!</p>
+</div>
+<div class="section" id="run-a-demo-using-hdfs">
+<h3>Run a DEMO using HDFS<a class="headerlink" href="#run-a-demo-using-hdfs" title="Permalink to this headline">¶</a></h3>
+<p><em>Note: The following steps should be done in the docker container</em>
+| <strong>Prerequisite:</strong>
+| A real Hadoop cluster with a running Hive metastore service.</p>
+<ol class="arabic simple">
+<li>Install Kerberos
+You can skip this step if you’ve Kerberos installed on your env.
+a. Download Kerberos from its website(<a class="reference external" href="http://web.mit.edu/kerberos/dist/">http://web.mit.edu/kerberos/dist/</a>)</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ wget http://web.mit.edu/kerberos/dist/krb5/1.19/krb5-${krb5-version}.tar.gz
+$ tar zxvf krb5-${krb5-version}.tar
+$ cd krb5-${krb5-version}/src/include/krb5/krb5.hin krb5-${krb5-version}/src/include/krb5/krb5.h
+</pre></div>
+</div>
+<p>1. Install the libraries for HDFS/S3</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Set temp env variable for adaptors installation
+$ export KERBEROS_INCLUDE_DIRS=${path-to-krb}/src/include
+$ cd ${path-to-presto}/presto-native-execution/velox-plugin/ci/scripts
+# Run the script to set up for adpators
+$ ./setup-adapters.sh
+</pre></div>
+</div>
+<p>2. Add specific flag when compiling presto_cpp</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Make sure you have finished the BDTK integration before continuing
+$ cd ${path-to-presto}/presto-native-execution
+$ make PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON debug
+</pre></div>
+</div>
+<p>3. Launch a distributed Presto serivce
+a. Launch your coordinator as normal presto-java server.
+You can find out how to launch a presto-java coorinator from here(<a class="reference external" href="https://prestodb.io/docs/current/installation/deployment.html">https://prestodb.io/docs/current/installation/deployment.html</a>)
+b. Edit the configuration of BDTK presto_server under your etc directory:
+Modify ${path-to-presto-server-etc}/config.properties</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>task.concurrent-lifespans-per-task=32
+http-server.http.port=9876
+task.max-drivers-per-task=96
+discovery.uri=${discovery-uri}
+system-memory-gb=64
+presto.version=${your-presto-version}
+</pre></div>
+</div>
+<p><em>NOTE: make sure the presto version is the same as your coordinator</em>
+Modify ${path-to-presto-server-etc}/config.properties</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>node.id=${your-presto-node-id}
+node.ip=${your-presto-node-ip}
+node.environment=${your-presto-env}
+node.location=test-location
+</pre></div>
+</div>
+<p>Modify ${path-to-presto-server-etc}/catalog/hive.properties</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>connector.name=hive-hadoop2
+hive.metastore.uri=thrift://${your-hive-metastore-serivce}
+hive.hdfs.host=${your-hdfs-host}
+hive.hdfs.port=${your-hdfs-port}
+</pre></div>
+</div>
+<ol class="loweralpha simple" start="3">
+<li>launch the BDTK worker</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ {path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
+</pre></div>
+</div>
+<p>When you see “Announcement succeeded: 202” printed to the console, the BDTK worker has successfully connected to the coordinator.</p>
+</div>
 </div>
 </div>
 
@@ -69,13 +257,14 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Quick Start</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a><ul>
-<li><a class="reference internal" href="#manual-install">Manual Install</a></li>
-<li><a class="reference internal" href="#further-pip-conda-apt-yum-source">(Further) pip/conda/apt/yum source</a></li>
+<li><a class="reference internal" href="#">Cider User Guide</a><ul>
+<li><a class="reference internal" href="#environment-preparation">Environment Preparation</a></li>
+<li><a class="reference internal" href="#run-with-prestodb">Run with Prestodb</a><ul>
+<li><a class="reference internal" href="#integrate-bdtk-with-presto">Integrate BDTK with Presto</a></li>
+<li><a class="reference internal" href="#run-a-end-to-end-hello-world-demo-on-local-file-system">Run a end-to-end Hello World demo on local file system</a></li>
+<li><a class="reference internal" href="#run-a-demo-using-hdfs">Run a DEMO using HDFS</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#a-demo-to-use">A Demo To Use</a></li>
 </ul>
 </li>
 </ul>
