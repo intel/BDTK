@@ -405,9 +405,9 @@ HASH_JOIN_WITH_FILTER_TEST_UNIT(CiderOneToManyRandomJoinTest,
                                 SUM(r_a))
 
 TEST_F(CiderOneToOneSeqJoinTest, selectTestSingleColumnBoolType) {
-  GTEST_SKIP_("This kind of case is not One-To-One Hash Join, open it when supported.");
   assertJoinQueryRowEqualAndReset(
-      "SELECT r_a from table_probe JOIN table_hash ON l_e = r_e");
+      "SELECT * from table_probe JOIN table_hash ON l_b = r_b WHERE l_c <  10 ");
+
 }
 
 TEST_F(CiderOneToOneSeqJoinTest, selectFilterBoolType) {
