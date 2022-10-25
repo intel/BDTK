@@ -31,7 +31,7 @@ if [ $? -ne 0 ]; then
 fi
 popd
 
-cp ./BDTK/thirdparty/velox .
+cp -r ./BDTK/thirdparty/velox .
 mkdir -p ./presto_cpp/main/lib
 
 cp ./BDTK/build-Release/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
