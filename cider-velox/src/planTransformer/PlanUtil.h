@@ -41,8 +41,6 @@ class PlanUtil {
                                                   VeloxPlanNodeAddrList& source);
   static VeloxPlanNodeAddrList getPlanNodeListForPlanSection(
       VeloxNodeAddrPlanSection& planSection);
-
- private:
   static NodeAddrMapPtr toNodeAddrMap(VeloxPlanNodeAddrList& nodeAddrList);
   static std::pair<bool, VeloxPlanNodePtr> findInNodeAddrMap(NodeAddrMapPtr map,
                                                              int32_t branchId,
