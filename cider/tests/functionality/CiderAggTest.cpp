@@ -24,6 +24,7 @@
 #include "tests/utils/CiderTestBase.h"
 
 #define NULL_VALUE_I32 std::numeric_limits<int32_t>::min()
+#define NULL_VALUE_FLOAT std::numeric_limits<float>::min()
 #define NULL_VALUE_DOUBLE std::numeric_limits<double>::min()
 
 class CiderAggTest : public CiderTestBase {
@@ -559,9 +560,9 @@ TEST_F(CiderAggTest, sumCastTest) {
   assertQuery("SELECT SUM(cast(col_fp64 as float)) FROM test");
 }
 
-class CiderPartialAVGTest : public CiderTestBase {
+class CiderPartialAVGIntegerTest : public CiderTestBase {
  public:
-  CiderPartialAVGTest() {
+  CiderPartialAVGIntegerTest() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_i32 INT, col_i16 SMALLINT, col_i32_with_null INT, col_i32_all_null INT);)";
@@ -595,7 +596,7 @@ class CiderPartialAVGTest : public CiderTestBase {
   }
 };
 
-TEST_F(CiderPartialAVGTest, singlePartialAVG) {
+TEST_F(CiderPartialAVGIntegerTest, singlePartialAVG) {
   std::vector<double> expect_sum;
   expect_sum.push_back(330.0);
   std::vector<int64_t> expect_count;
@@ -640,7 +641,7 @@ TEST_F(CiderPartialAVGTest, singlePartialAVG) {
   assertQuery("avg_partial.json", expect_batch);
 }
 
-TEST_F(CiderPartialAVGTest, withNullPartialAVG) {
+TEST_F(CiderPartialAVGIntegerTest, withNullPartialAVG) {
   std::vector<double> expect_sum;
   expect_sum.push_back(100.0);
   std::vector<int64_t> expect_count;
@@ -685,7 +686,7 @@ TEST_F(CiderPartialAVGTest, withNullPartialAVG) {
   assertQuery("avg_with_null_partial.json", expect_batch);
 }
 
-TEST_F(CiderPartialAVGTest, allNullPartialAVG) {
+TEST_F(CiderPartialAVGIntegerTest, allNullPartialAVG) {
   std::vector<double> expect_sum;
   expect_sum.push_back(NULL_VALUE_DOUBLE);
   std::vector<int64_t> expect_count;
@@ -730,7 +731,7 @@ TEST_F(CiderPartialAVGTest, allNullPartialAVG) {
   assertQuery("avg_all_null_partial.json", expect_batch);
 }
 
-TEST_F(CiderPartialAVGTest, mixedPartialAVG) {
+TEST_F(CiderPartialAVGIntegerTest, mixedPartialAVG) {
   std::vector<double> expect_sum;
   expect_sum.push_back(330.0);
   std::vector<int64_t> expect_count;
@@ -789,7 +790,108 @@ TEST_F(CiderPartialAVGTest, mixedPartialAVG) {
   auto schema = std::make_shared<CiderTableSchema>(col_names, col_types);
   expect_batch->set_schema(schema);
   // select avg(col_i32), sum(col_32), avg(col_i8) from test
-  assertQuery("multi_avg_partial.json", expect_batch);
+  assertQuery("multi_integer_avg_partial.json", expect_batch);
+}
+
+class CiderPartialAVGFpTest : public CiderTestBase {
+ public:
+  CiderPartialAVGFpTest() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_fp64 DOUBLE,col_fp32 FLOAT, col_fp32_with_null FLOAT, col_fp32_all_null FLOAT);)";
+    std::vector<double> vec_fp64;
+    vec_fp64.push_back(11.11);
+    vec_fp64.push_back(22.22);
+    vec_fp64.push_back(33.33);
+    std::vector<float> vec_fp32;
+    vec_fp32.push_back(1.5);
+    vec_fp32.push_back(4.6);
+    vec_fp32.push_back(7.4);
+    std::vector<float> col_fp32_with_null;
+    col_fp32_with_null.push_back(NULL_VALUE_FLOAT);
+    col_fp32_with_null.push_back(4.6);
+    col_fp32_with_null.push_back(7.4);
+    std::vector<float> col_fp32_all_null;
+    col_fp32_all_null.push_back(NULL_VALUE_FLOAT);
+    col_fp32_all_null.push_back(NULL_VALUE_FLOAT);
+    col_fp32_all_null.push_back(NULL_VALUE_FLOAT);
+    auto batch = std::make_shared<CiderBatch>(
+        CiderBatchBuilder()
+            .setRowNum(3)
+            .addColumn<double>("col_fp64", CREATE_SUBSTRAIT_TYPE(Fp64), vec_fp64)
+            .addColumn<float>("col_fp32", CREATE_SUBSTRAIT_TYPE(Fp32), vec_fp32)
+            .addColumn<float>(
+                "col_fp32_with_null", CREATE_SUBSTRAIT_TYPE(Fp32), col_fp32_with_null)
+            .addColumn<float>(
+                "col_fp32_all_null", CREATE_SUBSTRAIT_TYPE(Fp32), col_fp32_all_null)
+            .build());
+    input_.push_back(batch);
+  }
+};
+
+TEST_F(CiderPartialAVGFpTest, mixedPartialAVG) {
+  std::vector<double> expect_sum1;
+  expect_sum1.push_back((double)66.66);
+  std::vector<double> expect_sum2;
+  expect_sum2.push_back((double)13.5);
+  std::vector<double> expect_sum3;
+  expect_sum3.push_back((double)12.0);
+  std::vector<double> expect_sum4;
+  expect_sum4.push_back(NULL_VALUE_DOUBLE);
+  std::vector<int64_t> expect_count1;
+  expect_count1.push_back(3);
+  std::vector<int64_t> expect_count2;
+  expect_count2.push_back(3);
+  std::vector<int64_t> expect_count3;
+  expect_count3.push_back(2);
+  std::vector<int64_t> expect_count4;
+  expect_count4.push_back(0);
+  auto expect_batch = std::make_shared<CiderBatch>(
+      CiderBatchBuilder()
+          .setRowNum(1)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum1)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count1)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum2)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count2)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum3)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count3)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum4)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count4)
+          .build());
+  std::string type_json = R"(
+    {
+        "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+        }
+    }
+    )";
+  ::substrait::Type col_type;
+  google::protobuf::util::JsonStringToMessage(type_json, &col_type);
+  std::vector<::substrait::Type> col_types;
+  col_types.push_back(col_type);
+  col_types.push_back(col_type);
+  col_types.push_back(col_type);
+  col_types.push_back(col_type);
+  std::vector<std::string> col_names{"a0", "a1", "a2", "a3"};
+  auto schema = std::make_shared<CiderTableSchema>(col_names, col_types);
+  expect_batch->set_schema(schema);
+  // select avg(col_fp64), avg(col_fp32), avg(col_fp32_with_null), avg(col_fp32_all_null)
+  assertQuery("multi_fp_avg_partial.json", expect_batch);
 }
 
 class CiderCountDistinctConstantTest : public CiderTestBase {

@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -32,7 +33,9 @@ namespace facebook::velox::plugin {
 
 class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
  public:
-  explicit CiderPlanNodeTranslator(uint32_t maxDrivers = 1) : maxDrivers_{maxDrivers} {}
+  explicit CiderPlanNodeTranslator(
+      uint32_t maxDrivers = std::numeric_limits<uint32_t>::max())
+      : maxDrivers_{maxDrivers} {}
 
   std::unique_ptr<exec::Operator> toOperator(
       exec::DriverCtx* ctx,

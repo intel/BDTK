@@ -234,7 +234,12 @@ const uint8_t* CiderBatch::getNulls() const {
   CHECK(!isMoved());
   ArrowArray* array = getArrowArray();
 
-  return reinterpret_cast<const uint8_t*>(array->buffers[0]);
+  if (!array->buffers) {
+    // usually should not happen, but just in case
+    CIDER_THROW(CiderRuntimeException, "Arrow Array has no buffer.");
+  }
+
+  return reinterpret_cast<const uint8_t*>(array->buffers[getNullVectorIndex()]);
 }
 
 void CiderBatch::releaseArrowEntries() {
