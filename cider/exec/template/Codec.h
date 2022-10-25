@@ -74,6 +74,10 @@ class FixedWidthInt : public Decoder {
   const size_t byte_width_;
 };
 
+class FixedWidthBool : public FixedWidthInt {
+  
+} 
+
 class FixedWidthUnsigned : public Decoder {
  public:
   FixedWidthUnsigned(const size_t byte_width,

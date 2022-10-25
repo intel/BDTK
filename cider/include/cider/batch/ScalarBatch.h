@@ -22,7 +22,8 @@
 #ifndef CIDER_SCALAR_BATCH_H
 #define CIDER_SCALAR_BATCH_H
 
-#include <cstdint>
+#include <type_traits>
+
 #include "CiderBatch.h"
 
 template <typename T>
@@ -65,7 +66,11 @@ class ScalarBatch final : public CiderBatch {
 
     auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
 
-    array_holder->allocBuffer(1, sizeof(T) * size);
+    if constexpr (std::is_same_v<T, bool>) {
+      array_holder->allocBuffer(1, (size + 7) >> 3);
+    } else {
+      array_holder->allocBuffer(1, sizeof(T) * size);
+    }
     setLength(size);
 
     return true;
