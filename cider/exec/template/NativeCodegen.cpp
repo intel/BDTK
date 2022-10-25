@@ -83,8 +83,10 @@ float g_fraction_code_cache_to_evict = 0.2;
 std::unique_ptr<llvm::Module> udf_cpu_module;
 std::unique_ptr<llvm::Module> rt_udf_cpu_module;
 
-namespace {
+constexpr uint32_t EXPLAIN_FUNC = 1;
+constexpr uint32_t EXPLAIN_MODULE = 2;
 
+namespace {
 void throw_parseIR_error(const llvm::SMDiagnostic& parse_error, std::string src = "") {
   std::string excname = "LLVM IR ParseError: ";
   llvm::raw_string_ostream ss(excname);
@@ -249,7 +251,8 @@ void optimize_ir(llvm::Function* query_func,
   pass_manager.add(llvm::createJumpThreadingPass());  // Thread jumps.
   pass_manager.add(llvm::createCFGSimplificationPass());
 
-  // remove load/stores in PHIs if instructions can be accessed directly post thread jumps
+  // remove load/stores in PHIs if instructions can be accessed directly post thread
+  // jumps
   pass_manager.add(llvm::createNewGVNPass());
 
   pass_manager.add(llvm::createDeadStoreEliminationPass());
@@ -1524,15 +1527,6 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
                                                        eo.output_columnar_hint,
                                                        co);
 
-  if (query_mem_desc->getQueryDescriptionType() ==
-          QueryDescriptionType::GroupByBaselineHash &&
-      !has_cardinality_estimation && !eo.just_explain) {
-    const auto col_range_info = group_by_and_aggregate.getColRangeInfo();
-    CIDER_THROW(CiderCompileException,
-                fmt::format("Cardinality Estimation Required : {}",
-                            col_range_info.max - col_range_info.min));
-  }
-
   const bool output_columnar = query_mem_desc->didOutputColumnar();
 
   // Read the module template and target either CPU
@@ -1708,8 +1702,7 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
 
   // Serialize the important LLVM IR functions to text for SQL EXPLAIN.
   std::string llvm_ir;
-  //  if (eo.just_explain) {
-  if (true) {  // we always want IR
+  if (eo.just_explain) {
     if (co.explain_type == ExecutorExplainType::Optimized) {
 #ifdef WITH_JIT_DEBUG
       CIDER_THROW(
@@ -1722,20 +1715,25 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
       optimize_ir(query_func, cgen_state_->module_, pass_manager, live_funcs, co);
 #endif  // WITH_JIT_DEBUG
     }
-    llvm_ir =
-        serialize_llvm_object(multifrag_query_func) + serialize_llvm_object(query_func) +
-        serialize_llvm_object(cgen_state_->row_func_) +
-        (cgen_state_->filter_func_ ? serialize_llvm_object(cgen_state_->filter_func_)
-                                   : "");
+    if (eo.just_explain == EXPLAIN_FUNC) {
+      llvm_ir =
+          serialize_llvm_object(multifrag_query_func) +
+          serialize_llvm_object(query_func) +
+          serialize_llvm_object(cgen_state_->row_func_) +
+          (cgen_state_->filter_func_ ? serialize_llvm_object(cgen_state_->filter_func_)
+                                     : "");
 
 #ifndef NDEBUG
-    llvm_ir += serialize_llvm_metadata_footnotes(query_func, cgen_state_.get());
+      llvm_ir += serialize_llvm_metadata_footnotes(query_func, cgen_state_.get());
 #endif
+    } else if (eo.just_explain == EXPLAIN_MODULE) {
+      llvm_ir = serialize_llvm_object(cgen_state_->module_);
+    }
   }
 
   LOG(IR) << "\n\n" << query_mem_desc->toString() << "\n";
-  LOG(DEBUG1) << "IR for the CPU: \n";
 #ifndef NDEBUG
+  LOG(DEBUG1) << "IR for the CPU: \n";
   LOG(DEBUG1) << serialize_llvm_object(query_func)
               << serialize_llvm_object(cgen_state_->row_func_)
               << (cgen_state_->filter_func_
@@ -1743,6 +1741,7 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
                       : "")
               << "\nEnd of IR";
 #else
+  LOG(IR) << "IR for the CPU: \n";
   LOG(IR) << serialize_llvm_object(cgen_state_->module_) << "\nEnd of IR";
 #endif
 
