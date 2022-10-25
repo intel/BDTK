@@ -22,4 +22,4 @@ set(TEST_ARGS "--gtest_output=xml:../")
 
 add_executable(JITLibTest JITLibTest.cpp)
 target_link_libraries(JITLibTest ${DEP_LIBS})
-add_test(JITLibTest JITLibTest ${TEST_ARGS})
+add_test(JITLibTest ${EXECUTABLE_OUTPUT_PATH}/JITLibTest ${TEST_ARGS})
