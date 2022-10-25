@@ -224,7 +224,7 @@ class CodeGenerator {
   // Cider Data Format
   std::unique_ptr<CodegenColValues> codegenInValues(const Analyzer::InValues* expr,
                                                     const CompilationOptions& co);
-  // will deprecate
+  // TODO: (yma11) will deprecate
   llvm::Value* codegen(const Analyzer::InValues*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
