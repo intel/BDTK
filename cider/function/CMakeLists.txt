@@ -65,7 +65,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
   COMMAND
     ${llvm_clangpp_cmd} ARGS -std=c++17 ${RT_OPT_FLAGS} -c -emit-llvm
-    ${CLANG_SDK_INC} ${CLANG_CRT_INC} ${MAPD_DEFINITIONS} -I /usr/local/include/c++/v1/ -I
+    ${CLANG_SDK_INC} ${CLANG_CRT_INC} ${MAPD_DEFINITIONS} -I
     ${CMAKE_CURRENT_SOURCE_DIR}/../ -I ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
