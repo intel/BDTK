@@ -161,11 +161,11 @@ bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
   for (int i = 0; i < bytes; ++i) {
     // apply bitwise AND
     uint8_t expected_masked = expected_validity_buffer
-                               ? expected_data_buffer[i] & expected_validity_buffer[i]
-                               : expected_data_buffer[i];
+                                  ? expected_data_buffer[i] & expected_validity_buffer[i]
+                                  : expected_data_buffer[i];
     uint8_t actual_masked = actual_validity_buffer
-                             ? actual_data_buffer[i] & actual_validity_buffer[i]
-                             : actual_data_buffer[i];
+                                ? actual_data_buffer[i] & actual_validity_buffer[i]
+                                : actual_data_buffer[i];
 
     // for the last byte, clear trailing padding values to prevent false positives caused
     // by differences in padding
