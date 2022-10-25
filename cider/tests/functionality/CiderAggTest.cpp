@@ -133,7 +133,6 @@ TEST_F(CiderAggTest, aggArrowTest) {
   assertQueryArrow("SELECT SUM(half_null_fp32) FROM test");
   // SUM(double) with half null
   assertQueryArrow("SELECT SUM(half_null_fp64) FROM test");
-  // TODO: SUM(decimal) with half null
   // In cider, COUNT(*) has same syntax as COUNT(1)
   // COUNT(*)
   assertQuery("SELECT COUNT(*) FROM test");

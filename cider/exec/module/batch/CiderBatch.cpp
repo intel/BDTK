@@ -258,26 +258,26 @@ void CiderBatch::releaseArrowEntries() {
 
 // to be deprecated, just for test not nullable data.
 void CiderBatch::convertToArrowRepresentation() {
+  auto column_num = schema_->getColumnCount();
   CHECK(!arrow_array_ && !arrow_schema_);
   arrow_array_ = CiderBatchUtils::allocateArrowArray();
   arrow_schema_ = CiderBatchUtils::allocateArrowSchema();
 
   arrow_array_->length = row_num();
-  arrow_array_->n_children = column_num();
+  arrow_array_->n_children = column_num;
   arrow_array_->buffers = nullptr;  // ?
   arrow_array_->n_buffers = 0;      // ?
   arrow_array_->private_data = nullptr;
-  arrow_array_->children = (ArrowArray**)std::malloc(sizeof(ArrowArray) * column_num());
+  arrow_array_->children = (ArrowArray**)std::malloc(sizeof(ArrowArray) * column_num);
   arrow_array_->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
 
   arrow_schema_->format = "+s";
   arrow_schema_->dictionary = nullptr;
-  arrow_schema_->n_children = column_num();
-  arrow_schema_->children =
-      (ArrowSchema**)std::malloc(sizeof(ArrowSchema*) * column_num());
+  arrow_schema_->n_children = column_num;
+  arrow_schema_->children = (ArrowSchema**)std::malloc(sizeof(ArrowSchema*) * column_num);
   arrow_schema_->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
 
-  for (int i = 0; i < column_num(); i++) {
+  for (int i = 0; i < column_num; i++) {
     arrow_array_->children[i] = new ArrowArray();
     arrow_array_->children[i]->length = row_num();
     arrow_array_->children[i]->n_children = 0;
