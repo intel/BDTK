@@ -31,8 +31,8 @@ class CiderFilterSequenceTestBase : public CiderTestBase {
   CiderFilterSequenceTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT,
-        col_3 FLOAT, col_4 DOUBLE);)";
+        "CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 BIGINT NOT NULL, col_3 FLOAT "
+        "NOT NULL, col_4 DOUBLE NOT NULL)";
     input_ = {std::make_shared<CiderBatch>(
         QueryDataGenerator::generateBatchByTypes(99,
                                                  {"col_1", "col_2", "col_3", "col_4"},
@@ -368,9 +368,8 @@ class CiderFilterSequenceTestArrow : public CiderTestBase {
   CiderFilterSequenceTestArrow() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT,
-        col_3 FLOAT, col_4 DOUBLE);)";
-
+        "CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 BIGINT NOT NULL, col_3 FLOAT "
+        "NOT NULL, col_4 DOUBLE NOT NULL)";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   99,

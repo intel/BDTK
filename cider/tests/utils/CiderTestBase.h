@@ -36,7 +36,7 @@ class CiderTestBase : public testing::Test {
   void SetUp() override {
     if (array_ && schema_) {
       input_ = {std::make_shared<CiderBatch>(
-          *(new CiderBatch(schema_, array_, std::make_shared<CiderDefaultAllocator>())))};
+          schema_, array_, std::make_shared<CiderDefaultAllocator>())};
       duckDbQueryRunner_.createTableAndInsertArrowData(table_name_, create_ddl_, input_);
     } else {
       duckDbQueryRunner_.createTableAndInsertData(table_name_, create_ddl_, input_);
