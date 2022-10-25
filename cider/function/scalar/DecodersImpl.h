@@ -170,7 +170,7 @@ extern "C" ALWAYS_INLINE void reallocate_string_buffer_if_need(
   if (capacity == 0) {
     holder->allocBuffer(2, 4096);
   } else if (offset_buffer[pos] >
-             capacity * 0.8) {  // do reallocate when reach 90% of capacity
+             capacity * 0.9) {  // do reallocate when reach 90% of capacity
     holder->allocBuffer(2, capacity * 2);
   }
 }

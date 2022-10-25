@@ -253,7 +253,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarCharColVar(
   if (values.size() == 3) {
     null = values[2];
     values.pop_back();
-    cgen_state_->ir_builder_.Insert(null);
   }
   return std::make_unique<TwoValueColValues>(values[0], values[1], null);
 }

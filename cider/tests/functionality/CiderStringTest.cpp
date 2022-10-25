@@ -26,7 +26,7 @@ class CiderStringTest : public CiderTestBase {
  public:
   CiderStringTest() {
     table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER, col_2 VARCHAR(10));)";
+    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
     input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
         10,
         {"col_1", "col_2"},
@@ -247,13 +247,26 @@ LIKE_STRING_TEST_UNIT(CiderNullableStringTest, likeNullableStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderNullableStringTest, escapeNullableStringTest)
 IN_STRING_TEST_UNIT(CiderNullableStringTest, inNullableStringTest)
 
-TEST_F(CiderStringTest, ArrowBasicStringTest) {
-  prepareArrowBatch();
-  //  assertQueryArrow("SELECT col_1 FROM test ");
-  //  assertQueryArrow("SELECT col_2 FROM test ");
-  //  assertQueryArrow("SELECT col_1, col_2 FROM test ");
+class CiderStringTestArrow : public CiderTestBase {
+ public:
+  CiderStringTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
 
-  assertQueryArrow("SELECT col_1 FROM test where col_2 = 'aaaa'");
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        10,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)}))};
+  }
+};
+
+TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
+  prepareArrowBatch();
+  assertQueryArrow("SELECT col_1 FROM test ");
+  assertQueryArrow("SELECT col_2 FROM test ");
+  assertQueryArrow("SELECT col_1, col_2 FROM test ");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 = '0000000000'");
 }
 
 class CiderConstantStringTest : public CiderTestBase {
