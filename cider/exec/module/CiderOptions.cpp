@@ -37,7 +37,7 @@ DEFINE_bool(needs_error_check, false, "needs error check");
 // Execution Options
 DEFINE_bool(output_columnar_hint, false, "output columnar hint");
 DEFINE_bool(allow_multifrag, true, "allow multifrag");
-DEFINE_bool(just_explain, true, "just explain");
+DEFINE_uint32(just_explain, 0, "just explain. 1: func, 2: module");
 DEFINE_bool(allow_loop_joins, false, "allow loop joins");
 DEFINE_bool(jit_debug, true, "jit debug");
 DEFINE_bool(with_watchdog, false, "with watchdog");

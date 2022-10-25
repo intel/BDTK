@@ -147,6 +147,21 @@ class CiderBatchChecker {
     return checkArrowEq(expected_batches, actual_batches, ignore_order);
   }
 
+  static bool checkArrowEq(std::shared_ptr<CiderBatch> expected_batch,
+                           const std::vector<std::shared_ptr<CiderBatch>>& actual_batches,
+                           const bool ignore_order = false) {
+    std::vector<std::shared_ptr<CiderBatch>> expected_batches{expected_batch};
+    return checkArrowEq(expected_batches, actual_batches, ignore_order);
+  }
+
+  static bool checkArrowEq(
+      const std::vector<std::shared_ptr<CiderBatch>>& expected_batches,
+      std::shared_ptr<CiderBatch> actual_batch,
+      const bool ignore_order = false) {
+    std::vector<std::shared_ptr<CiderBatch>> actual_batches{actual_batch};
+    return checkArrowEq(expected_batches, actual_batches, ignore_order);
+  }
+
   // To be deprecated. actual_batch will be arrow based batch, just check whether
   // row/column are equal, won't check actual data.
   static bool checkArrowEqTemp(
@@ -256,7 +271,7 @@ class CiderBatchChecker {
         return checkByteArrayEqual(
             expected_buffer, expected_offset, actual_buffer, actual_offset, row_num);
       default:
-        CIDER_THROW(CiderRuntimeException,
+        CIDER_THROW(CiderUnsupportedException,
                     "Unsupported substrait type " + std::to_string(col_type.kind_case()));
     }
   }
