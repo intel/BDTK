@@ -144,6 +144,47 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
   return true;
 }
 
+template <>
+bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
+    const ScalarBatch<bool>* expected_batch,
+    const ScalarBatch<bool>* actual_batch) {
+  auto expected_data_buffer = expected_batch->getRawData();
+  auto expected_validity_buffer = expected_batch->getNulls();
+  auto actual_data_buffer = actual_batch->getRawData();
+  auto actual_validity_buffer = actual_batch->getNulls();
+
+  // both validity buffer and data buffer are bitmaps
+  // we compare both of them in one step with a bitwise AND
+  auto row_num = actual_batch->getLength();
+  auto bytes = ((row_num + 7) >> 3);
+
+  for (int i = 0; i < bytes; ++i) {
+    // apply bitwise AND
+    auto expected_masked = expected_validity_buffer
+                               ? expected_data_buffer[i] & expected_validity_buffer[i]
+                               : expected_data_buffer[i];
+    auto actual_masked = actual_validity_buffer
+                             ? actual_data_buffer[i] & actual_validity_buffer[i]
+                             : actual_data_buffer[i];
+
+    // for the last byte, clear trailing padding values to prevent false positives caused
+    // by differences in padding
+    if (i == bytes - 1) {
+      auto n_paddings = 8 * bytes - row_num;
+      // least-significant bit ordering
+      expected_masked = (expected_masked << n_paddings) >> n_paddings;
+      actual_masked = (actual_masked << n_paddings) >> n_paddings;
+    }
+
+    if (expected_masked ^ actual_masked) {
+      // we expect all bits here are equal, check with bitwise XOR
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
                                                  CiderBatch* actual_batch) {
   // compare nulls
@@ -163,6 +204,10 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
     auto expected_child = expected_batch->getChildAt(i);
     auto actual_child = actual_batch->getChildAt(i);
     switch (expected_child->getCiderType()) {
+      case SQLTypes::kBOOLEAN:
+        is_equal = checkOneScalarBatchEqual<bool>(expected_child->as<ScalarBatch<bool>>(),
+                                                  actual_child->as<ScalarBatch<bool>>());
+        break;
       case SQLTypes::kTINYINT:
         is_equal =
             checkOneScalarBatchEqual<int8_t>(expected_child->as<ScalarBatch<int8_t>>(),
