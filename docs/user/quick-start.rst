@@ -2,6 +2,10 @@
 BDTK User Guide
 =====================
 
+BDTK mainly act as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox
+among the Prestissimo project. 
+In this context and in the following guide, the term **presto_cpp** or **presto native worker** stands for Presto + Velox integrated with BDTK. 
+
 Environment Preparation
 -----------------------------------
 
@@ -91,7 +95,7 @@ NOTE:
    
 Upon running this you should see the Presto service log printing in the console. 
 
-3. Update BDTK worker configuration
+3. Update presto native worker configuration
 The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere your like. 
 ::
 
@@ -138,7 +142,7 @@ The hive.properties should be like:
 
    connector.name=hive
 
-4. Launch BDTK worker
+4. Launch presto native worker
    
 Go to YOUR_PATH_TO_PRESTO_SERVER: 
 ::
@@ -147,7 +151,7 @@ Go to YOUR_PATH_TO_PRESTO_SERVER:
    # launch the worker
    ./presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the BDTK worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
 
 5. Test the queries
 You can sent out queries using your existing presto-cli our go to the presto-cli module you just compiled.
@@ -157,7 +161,7 @@ You can sent out queries using your existing presto-cli our go to the presto-cli
    $ ./presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar --catalog hive --schema tpch
 
 By doing this you can launch an interactive SQL command.
-Try Some queries with BDTK!
+Try Some queries with Prestissimo + BDTK!
 
 
 
@@ -196,7 +200,7 @@ Run a DEMO using HDFS
 3. Launch a distributed Presto serivce
 a. Launch your coordinator as normal presto-java server. 
 You can find out how to launch a presto-java coorinator from here(https://prestodb.io/docs/current/installation/deployment.html)
-b. Edit the configuration of BDTK presto_server under your etc directory:
+b. Edit the configuration of presto native worker under your etc directory:
 Modify ${path-to-presto-server-etc}/config.properties
 
 ::
@@ -227,19 +231,19 @@ Modify ${path-to-presto-server-etc}/catalog/hive.properties
    hive.hdfs.host=${your-hdfs-host}
    hive.hdfs.port=${your-hdfs-port}
 
-c. launch the BDTK worker
+c. launch the presto native worker
 
 :: 
 
    $ {path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the BDTK worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
 
 
 Run with released package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 From the release note of BDTK: https://github.com/intel/BDTK/releases , you can download the package of presto_server binary file and libraries. 
-You can directly run BDTK worker with them to skip compiling step.
+You can directly run presto native worker with them to skip compiling step.
 
 1. Unzip the package
    
@@ -251,7 +255,7 @@ You can directly run BDTK worker with them to skip compiling step.
 2. Prepare configuration files
    You need to prepare the basic configuration files as mentioned above. 
 
-3. Launch BDTK worker with binary file
+3. Launch presto native worker with binary file
 
 :: 
 
