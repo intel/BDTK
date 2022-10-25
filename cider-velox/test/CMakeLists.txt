@@ -175,5 +175,4 @@ add_executable(CiderOperatorHashJoinTest CiderOperatorHashJoinTest.cpp)
 target_link_libraries(CiderOperatorHashJoinTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderOperatorHashJoinTest CiderOperatorHashJoinTest ${TEST_ARGS})
 
-
 add_subdirectory(expression)

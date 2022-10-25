@@ -20,6 +20,7 @@
  */
 
 #include "VeloxPlanFragmentToSubstraitPlan.h"
+#include <google/protobuf/util/json_util.h>
 
 namespace facebook::velox::substrait {
 
@@ -78,14 +79,15 @@ core::PlanNodePtr VeloxPlanFragmentToSubstraitPlan::constructVeloxPlan(
 
 void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
     const std::vector<core::PlanNodePtr>& planNodeList) {
-  for (const auto& planNode : planNodeList) {
-    if (auto projNode = std::dynamic_pointer_cast<const ProjectNode>(planNode)) {
+  for (auto riter = planNodeList.rbegin(); riter != planNodeList.rend(); riter++) {
+    if (auto projNode = std::dynamic_pointer_cast<const ProjectNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<core::ProjectNode>(
-            projNode->id(), projNode->names(), projNode->projections(), input);
+        return std::make_shared<core::ProjectNode>(projNode->id(),
+                                                   projNode->names(),
+                                                   projNode->projections(),
+                                                   planBuilder_->planNode());
       });
-    } else if (auto aggNode =
-                   std::dynamic_pointer_cast<const AggregationNode>(planNode)) {
+    } else if (auto aggNode = std::dynamic_pointer_cast<const AggregationNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
         return std::make_shared<AggregationNode>(aggNode->id(),
                                                  aggNode->step(),
@@ -95,19 +97,19 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
                                                  aggNode->aggregates(),
                                                  aggNode->aggregateMasks(),
                                                  aggNode->ignoreNullKeys(),
-                                                 input);
+                                                 planBuilder_->planNode());
       });
-    } else if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(planNode)) {
+    } else if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
         return std::make_shared<FilterNode>(
-            filterNode->id(), filterNode->filter(), input);
+            filterNode->id(), filterNode->filter(), planBuilder_->planNode());
       });
-    } else if (auto valuesNode = std::dynamic_pointer_cast<const ValuesNode>(planNode)) {
+    } else if (auto valuesNode = std::dynamic_pointer_cast<const ValuesNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
         return std::make_shared<ValuesNode>(valuesNode->id(), valuesNode->values());
       });
     } else if (auto joinNode =
-                   std::dynamic_pointer_cast<const AbstractJoinNode>(planNode)) {
+                   std::dynamic_pointer_cast<const AbstractJoinNode>(*riter)) {
       const auto& joinLeftSource = joinNode->sources()[0];
       const auto& joinRightSource = joinNode->sources()[1];
 
@@ -116,7 +118,7 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
       auto rigthValuesNode = std::make_shared<ValuesNode>(
           joinRightSource->id(), makeVectors(joinRightSource->outputType()));
 
-      if (std::dynamic_pointer_cast<const HashJoinNode>(planNode)) {
+      if (std::dynamic_pointer_cast<const HashJoinNode>(*riter)) {
         planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
           return std::make_shared<HashJoinNode>(joinNode->id(),
                                                 joinNode->joinType(),
@@ -141,7 +143,7 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
       }
 
     } else {
-      VELOX_UNSUPPORTED("Unsupported node '{}'", planNode->name());
+      VELOX_UNSUPPORTED("Unsupported node '{}'", riter->get()->name());
     }
   }
 }
