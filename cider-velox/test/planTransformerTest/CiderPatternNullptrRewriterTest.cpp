@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <folly/init/Init.h>
 #include "CiderPlanTransformerIncludes.h"
 
 namespace facebook::velox::plugin::plantransformer::test {
@@ -34,33 +35,49 @@ class CiderPatternNullptrRewriterTest : public PlanTransformerTestBase {
                              std::make_shared<NullptrRewriter>());
     setTransformerFactory(transformerFactory);
   }
+
+ protected:
+  RowTypePtr rowType_{ROW({"c0", "c1"}, {BIGINT(), INTEGER()})};
+  RowTypePtr rowTypeLeft_{ROW({"c2", "c3"}, {BIGINT(), INTEGER()})};
 };
 
 TEST_F(CiderPatternNullptrRewriterTest, filterProjectAgg) {
   VeloxPlanBuilder transformPlanBuilder;
-  VeloxPlanNodePtr planPtr = transformPlanBuilder.filter().proj().partialAgg().planNode();
+  VeloxPlanNodePtr planPtr = PlanBuilder()
+                                 .values(generateTestBatch(rowType_, false))
+                                 .filter("c0 > 2 ")
+                                 .project({"c0", "c1", "c0 + 2"})
+                                 .partialAggregation({}, {"SUM(c1)"})
+                                 .planNode();
   VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
-  EXPECT_TRUE(compareWithExpected(resultPtr, nullptr));
+  EXPECT_TRUE(
+      compareWithExpected(resultPtr, planPtr->sources()[0]->sources()[0]->sources()[0]));
 }
 
 TEST_F(CiderPatternNullptrRewriterTest, SingleJoinMultiCompoundNodes) {
-  VeloxPlanBuilder planRightBranchBuilder;
-  VeloxPlanNodePtr planRightPtr = planRightBranchBuilder.filter().planNode();
-  VeloxPlanBuilder planLeftBranchBuilder;
-  VeloxPlanNodePtr planLeftPtr =
-      planLeftBranchBuilder.filter().hashjoin(planRightPtr).planNode();
+  VeloxPlanNodePtr planRightPtr = getSingleFilterNode(rowType_, "c0 > 1");
 
-  VeloxPlanBuilder expectedLeftBranchBuilder;
-  VeloxPlanNodePtr expectedLeftPtr = expectedLeftBranchBuilder.filter().planNode();
-  VeloxPlanNodeVec joinSrcVec{expectedLeftPtr, planRightPtr};
-  VeloxPlanBuilder expectedJoinBuilder;
-  VeloxPlanNodePtr expectedJoinPtr =
-      expectedJoinBuilder
-          .addNode(
-              [&joinSrcVec](std::string id, std::shared_ptr<const core::PlanNode> input) {
-                return std::make_shared<TestCiderPlanNode>(id, joinSrcVec);
-              })
+  VeloxPlanNodePtr planLeftPtr =
+      PlanBuilder()
+          .values(generateTestBatch(rowTypeLeft_, false))
+          .filter("c2 > 3")
+          .hashJoin({"c2"}, {"c0"}, planRightPtr, "", {"c2", "c3", "c1"})
           .planNode();
-  EXPECT_THROW(getTransformer(planLeftPtr)->transform(), std::runtime_error);
+
+  VeloxPlanNodePtr expectedLeftPtr = getSingleFilterNode(rowTypeLeft_, "c2 > 3");
+
+  VeloxPlanNodeVec joinSrcVec{expectedLeftPtr, planRightPtr};
+
+  VeloxPlanNodePtr expectedJoinPtr = getCiderExpectedPtr(rowTypeLeft_, joinSrcVec);
+
+  EXPECT_THROW(getTransformer(planLeftPtr)->transform(),
+               facebook::velox::VeloxRuntimeError);
 }
+
 }  // namespace facebook::velox::plugin::plantransformer::test
+
+int main(int argc, char** argv) {
+  testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv, false);
+  return RUN_ALL_TESTS();
+}

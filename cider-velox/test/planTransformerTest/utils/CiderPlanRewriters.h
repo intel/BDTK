@@ -34,33 +34,25 @@ class TestCiderPlanNode : public PlanNode {
                     std::vector<std::shared_ptr<const PlanNode>> source)
       : PlanNode(id), sources_(source) {}
 
-  const std::vector<std::shared_ptr<const PlanNode>>& sources() const override {
-    return sources_;
-  }
+  const std::vector<std::shared_ptr<const PlanNode>>& sources() const override;
+
+  std::string_view name() const override;
+
+  const RowTypePtr& outputType() const override;
 
  private:
   const std::vector<std::shared_ptr<const PlanNode>> sources_;
+  void addDetails(std::stringstream& stream) const override;
 };
 
 class CiderPatternTestNodeRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
       VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const override {
-    VeloxPlanNodePtr testNodePtr =
-        std::make_shared<TestCiderPlanNode>("CiderTest", source.nodePtr);
-    return std::pair<bool, VeloxPlanNodePtr>(true, testNodePtr);
-  };
+      VeloxPlanNodeAddr& source) const override;
 
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
       VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const override {
-    VeloxPlanNodeVec srcPtrList;
-    for (VeloxPlanNodeAddr addr : srcList) {
-      srcPtrList.emplace_back(addr.nodePtr);
-    }
-    auto resultPtr = std::make_shared<TestCiderPlanNode>("CiderJoin", srcPtrList);
-    return std::pair<bool, VeloxPlanNodePtr>(true, resultPtr);
-  };
+      VeloxPlanNodeAddrList& srcList) const override;
 };
 
 }  // namespace facebook::velox::plugin::plantransformer::test

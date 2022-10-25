@@ -19,31 +19,18 @@
  * under the License.
  */
 
-#include <folly/init/Init.h>
-#include "PlanTranformerIncludes.h"
-#include "utils/InvalidPlanPatterns.h"
+#pragma once
+
+#include "../../CiderPlanBuilder.h"
+#include "planTransformer/PlanNodeAddr.h"
+
+using namespace facebook::velox::exec::test;
+using namespace facebook::velox::plugin::test;
 
 namespace facebook::velox::plugin::plantransformer::test {
-using namespace facebook::velox::core;
-class InvalidPlanPatternTest : public PlanTransformerTestBase {
+
+class VeloxPlanSequenceBuilder : public CiderPlanBuilder {
  public:
-  InvalidPlanPatternTest() {
-    auto transformerFactory = PlanTransformerFactory().registerPattern(
-        std::make_shared<InvalidPlanPattern>(), std::make_shared<KeepOrginalRewriter>());
-    setTransformerFactory(transformerFactory);
-  }
+  const VeloxPlanNodePtr& planNode();
 };
-
-TEST_F(InvalidPlanPatternTest, invalidPattern) {
-  VeloxPlanBuilder transformPlanBuilder;
-  VeloxPlanNodePtr planPtr = transformPlanBuilder.filter().proj().partialAgg().planNode();
-  EXPECT_THROW(getTransformer(planPtr)->transform(), std::runtime_error);
-}
-
 }  // namespace facebook::velox::plugin::plantransformer::test
-
-int main(int argc, char** argv) {
-  testing::InitGoogleTest(&argc, argv);
-  folly::init(&argc, &argv, false);
-  return RUN_ALL_TESTS();
-}
