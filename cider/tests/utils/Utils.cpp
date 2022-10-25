@@ -185,9 +185,8 @@ std::string RunIsthmus::createTpcHTables() {
 std::shared_ptr<CiderBatch> createSimpleBooleanTestData(const std::vector<bool>& data,
                                                         const std::vector<bool>& valids) {
   /// TODO: (YBRua) deprecate this.
-  CHECK(!data.size() || data.size() == 10) << "Only supports size of 10." << std::endl;
-  CHECK(!valids.size() || valids.size() == 10)
-      << "Only supports size of 10." << std::endl;
+  CHECK(!data.size() || data.size() == 10);
+  CHECK(!valids.size() || valids.size() == 10);
 
   auto types = SQLTypeInfo(
       kSTRUCT, false, {SQLTypeInfo(kBOOLEAN, false), SQLTypeInfo(kBOOLEAN, false)});
