@@ -300,7 +300,8 @@ void CiderBatch::convertToArrowRepresentation() {
     arrow_schema_->children[i]->children = nullptr;
     arrow_schema_->children[i]->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
 
-    // (Kunshang)To be removed. temp code to pass ut. CiderStringTest::CiderStringTestArrow
+    // (Kunshang)To be removed. temp code to pass ut.
+    // CiderStringTest::CiderStringTestArrow
     if (schema_->getColumnTypeById(i).has_varchar()) {
       arrow_array_->children[i]->n_buffers = 3;
       arrow_array_->children[i]->buffers = (const void**)std::malloc(sizeof(void*) * 3);

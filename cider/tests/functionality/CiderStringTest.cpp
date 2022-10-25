@@ -26,7 +26,8 @@ class CiderStringTest : public CiderTestBase {
  public:
   CiderStringTest() {
     table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
     input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
         10,
         {"col_1", "col_2"},
