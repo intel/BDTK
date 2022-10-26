@@ -313,55 +313,47 @@ class CiderCompileModule::Impl {
     return ciderCompilationResult;
   }
 
-  void getArrowMinMax(const int8_t* buf,
-                      const int64_t row_num,
-                      const ::substrait::Type& type,
-                      int64_t* min,
-                      int64_t* max,
-                      const int8_t* null_buff = nullptr) {
+  void getArrowMinMaxAndResetNull(void* buf,
+                                  const int64_t row_num,
+                                  const ::substrait::Type& type,
+                                  int64_t* min,
+                                  int64_t* max,
+                                  const int8_t* null_buff) {
+    int64_t* buffer;
     if (type.has_i64()) {
-      int64_t* buffer = reinterpret_cast<int64_t*>(const_cast<int8_t*>(buf));
-      bool init_flag = false;
-      for (int i = 0; i < row_num; i++) {
-        if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
-          if (!init_flag) {
-            *min = buffer[i];
-            *max = buffer[i];
-            init_flag = true;
-          }
-          if (buffer[i] < *min)
-            *min = buffer[i];
-          if (buffer[i] > *max)
-            *max = buffer[i];
-        }
-      }
-      for (int i = 0; i < row_num; i++) {
-        if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
-          buffer[i] = *min - 1;
-        }
-        // *min = *min - 1;
-      }
+      int64_t* buffer = reinterpret_cast<int64_t*>(buf);
+      getColRangeAndResetNull<int64_t>(buffer, row_num, min, max, null_buff);
     } else if (type.has_i32()) {
-      int32_t* buffer = reinterpret_cast<int32_t*>(const_cast<int8_t*>(buf));
-      bool init_flag = false;
-      for (int i = 0; i < row_num; i++) {
-        if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
-          if (!init_flag) {
-            *min = buffer[i];
-            *max = buffer[i];
-            init_flag = true;
-          }
-          if (buffer[i] < *min)
-            *min = buffer[i];
-          if (buffer[i] > *max)
-            *max = buffer[i];
+      int32_t* buffer = reinterpret_cast<int32_t*>(buf);
+      getColRangeAndResetNull<int32_t>(buffer, row_num, min, max, null_buff);
+    } else {
+      return;
+    }
+  }
+
+  template <class T>
+  void getColRangeAndResetNull(T* buffer,
+                               const int64_t row_num,
+                               int64_t* min,
+                               int64_t* max,
+                               const int8_t* null_buff) {
+    bool init_flag = false;
+    for (int i = 0; i < row_num; i++) {
+      if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+        if (!init_flag) {
+          *min = buffer[i];
+          *max = buffer[i];
+          init_flag = true;
         }
+        if (buffer[i] < *min)
+          *min = buffer[i];
+        if (buffer[i] > *max)
+          *max = buffer[i];
       }
-      for (int i = 0; i < row_num; i++) {
-        if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
-          buffer[i] = *min - 1;
-        }
-        // *min = *min - 1;
+    }
+    for (int i = 0; i < row_num; i++) {
+      if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+        buffer[i] = *min - 1;
       }
     }
   }
@@ -425,8 +417,8 @@ class CiderCompileModule::Impl {
           if (use_cider_data_format) {
             if (auto child_batch = build_table_.getChildAt(j);
                 build_table_.getLength() > 0 && child_batch) {
-              getArrowMinMax(
-                  reinterpret_cast<const int8_t*>(child_batch->getDataBuffersPtr()),
+              getArrowMinMaxAndResetNull(
+                  child_batch->getDataBuffersPtr(),
                   build_table_.getLength(),
                   table_schema.getColumnTypeById(j),
                   &min,
