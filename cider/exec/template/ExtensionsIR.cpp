@@ -350,6 +350,74 @@ llvm::Value* CodeGenerator::codegenFunctionOper(
   return ext_call_nullcheck;
 }
 
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenFunctionOp(
+    const Analyzer::FunctionOper* function_oper,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  ExtensionFunction ext_func_sig = [=]() {
+    try {
+      return bind_function(function_oper);
+    } catch (CiderCompileException& e) {
+      LOG(WARNING) << "codegenFunctionOper[CPU]: " << e.what();
+      throw;
+    }
+  }();
+
+  const auto& ret_ti = function_oper->get_type_info();
+  // NOTE: string/array related FunctionOp not supported
+  CHECK(ret_ti.is_integer() || ret_ti.is_fp() || ret_ti.is_boolean());
+  auto ret_ty = ext_arg_type_to_llvm_type(ext_func_sig.getRet(), cgen_state_->context_);
+  const auto current_bb = cgen_state_->ir_builder_.GetInsertBlock();
+  std::vector<llvm::Value*> orig_arg_lv_values;
+    std::vector<llvm::Value*> orig_arg_lv_nulls;
+  std::vector<size_t> orig_arg_lvs_index;
+  std::unordered_map<llvm::Value*, llvm::Value*> const_arr_size;
+
+  for (size_t i = 0; i < function_oper->getArity(); ++i) {
+    orig_arg_lvs_index.push_back(orig_arg_lv_values.size());
+    const auto arg = function_oper->getArg(i);
+    const auto arg_cast = dynamic_cast<const Analyzer::UOper*>(arg);
+    const auto arg0 =
+        (arg_cast && arg_cast->get_optype() == kCAST) ? arg_cast->get_operand() : arg;
+    const auto array_expr_arg = dynamic_cast<const Analyzer::ArrayExpr*>(arg0);
+    auto is_local_alloc =
+        ret_ti.is_buffer() || (array_expr_arg && array_expr_arg->isLocalAlloc());
+    const auto& arg_ti = arg->get_type_info();
+    auto arg_lv = codegen(arg, co, true);
+    auto arg_lv_fixedsize = dynamic_cast<FixedSizeColValues*>(arg_lv.get());
+    // TODO: (yma11) add support for bytes/array arguments
+    CHECK(arg_lv_fixedsize);
+    orig_arg_lv_values.emplace_back(arg_lv_fixedsize->getValue());
+    orig_arg_lv_nulls.emplace_back(arg_lv_fixedsize->getNull());
+  }
+  llvm::Value* null{nullptr};
+  bool is_nullable = ext_func_call_requires_nullcheck(function_oper);
+  // null is true when at least one argument is null.
+  if (is_nullable) {
+    null = codegenFunctionOperNullArgForArrow(function_oper, orig_arg_lv_nulls);
+  } else {
+    null = llvm::ConstantInt::get(llvm::IntegerType::getInt1Ty(cgen_state_->context_),
+                                  false);
+  }
+  // Arguments must be converted to the types the extension function can handle.
+  auto args = codegenFunctionOperCastArgsForArrow(
+      function_oper, &ext_func_sig, orig_arg_lv_values, orig_arg_lvs_index, const_arr_size, co);
+  auto ext_call = cgen_state_->emitExternalCall(
+      ext_func_sig.getName(), ret_ty, args, {}, ret_ti.is_buffer());
+  // Cast the return of the extension function to match the FunctionOper
+  if (!(ret_ti.is_buffer())) {
+    const auto extension_ret_ti = get_sql_type_from_llvm_type(ret_ty);
+    if (is_nullable &&
+        extension_ret_ti.get_type() != function_oper->get_type_info().get_type()) {
+      // TODO: (yma11) need to switch to new codegenCast for arrow
+      ext_call = codegenCast(
+          ext_call, extension_ret_ti, function_oper->get_type_info(), false, co);
+    }
+  }
+  cgen_state_->ext_call_cache_.push_back({function_oper, ext_call});
+  return std::make_unique<FixedSizeColValues>(ext_call, null);
+}
+
 // Start the control flow needed for a call site check of NULL arguments.
 std::tuple<CodeGenerator::ArgNullcheckBBs, llvm::Value*>
 CodeGenerator::beginArgsNullcheck(const Analyzer::FunctionOper* function_oper,
@@ -533,6 +601,30 @@ llvm::Value* CodeGenerator::codegenFunctionOperWithCustomTypeHandling(
   return codegenFunctionOper(function_oper, co);
 }
 
+// Generates code which returns true if at least one of the arguments is NULL.
+llvm::Value* CodeGenerator::codegenFunctionOperNullArgForArrow(
+    const Analyzer::FunctionOper* function_oper,
+    const std::vector<llvm::Value*>& orig_arg_lv_nulls) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  llvm::Value* one_arg_null =
+      llvm::ConstantInt::get(llvm::IntegerType::getInt1Ty(cgen_state_->context_), false);
+  size_t physical_coord_cols = 0;
+  for (size_t i = 0, j = 0; i < function_oper->getArity();
+       ++i, j += std::max(size_t(1), physical_coord_cols)) {
+    const auto arg = function_oper->getArg(i);
+    const auto& arg_ti = arg->get_type_info();
+    physical_coord_cols = arg_ti.get_physical_coord_cols();
+    if (arg_ti.get_notnull()) {
+      continue;
+    }
+    // TODO:(yma11) add string support
+    CHECK(arg_ti.is_number() or arg_ti.is_boolean());
+    one_arg_null =
+        cgen_state_->ir_builder_.CreateOr(one_arg_null, orig_arg_lv_nulls[j]);
+  }
+  return one_arg_null;
+}
+
 // Generates code which returns true iff at least one of the arguments is NULL.
 llvm::Value* CodeGenerator::codegenFunctionOperNullArg(
     const Analyzer::FunctionOper* function_oper,
@@ -622,6 +714,56 @@ void CodeGenerator::codegenBufferArgs(const std::string& ext_func_name,
     cgen_state_->ir_builder_.CreateStore(buffer_null_extended, buffer_is_null_ptr);
   }
   output_args.push_back(alloc_mem);
+}
+
+// Generate CAST operations for arguments in `orig_arg_lvs` to the types required by
+// `ext_func_sig`.
+std::vector<llvm::Value*> CodeGenerator::codegenFunctionOperCastArgsForArrow(
+    const Analyzer::FunctionOper* function_oper,
+    const ExtensionFunction* ext_func_sig,
+    const std::vector<llvm::Value*>& orig_arg_lv_values,
+    const std::vector<size_t>& orig_arg_lvs_index,
+    const std::unordered_map<llvm::Value*, llvm::Value*>& const_arr_size,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  CHECK(ext_func_sig);
+  const auto& ext_func_args = ext_func_sig->getArgs();
+  CHECK_LE(function_oper->getArity(), ext_func_args.size());
+  const auto func_ti = function_oper->get_type_info();
+  std::vector<llvm::Value*> args;
+  // NOTE: following variables are defined also for complicated cases like bytes/array
+  // related functions, we keep it for future use
+  // TODO: (yma11) add support for bytes/array functionsl
+  /*
+    i: argument in RA for the function operand
+    j: extra offset in ext_func_args
+    k: origin_arg_lvs counter, equal to orig_arg_lvs_index[i]
+    ij: ext_func_args counter, equal to i + j
+    dj: offset when UDF implementation first argument corresponds to return value
+   */
+  for (size_t i = 0, j = 0, dj = (func_ti.is_buffer() ? 1 : 0);
+       i < function_oper->getArity();
+       ++i) {
+    size_t k = orig_arg_lvs_index[i];
+    size_t ij = i + j;
+    const auto arg = function_oper->getArg(i);
+    const auto ext_func_arg = ext_func_args[ij];
+    const auto& arg_ti = arg->get_type_info();
+    llvm::Value* arg_lv{nullptr};
+    CHECK(is_ext_arg_type_scalar(ext_func_arg));
+    const auto arg_target_ti = ext_arg_type_to_type_info(ext_func_arg);
+    if (arg_ti.get_type() != arg_target_ti.get_type()) {
+      // TODO: (yma11) need to switch to new codegenCast for arrow
+      arg_lv = codegenCast(
+          orig_arg_lv_values[k], arg_ti, arg_target_ti, false, co);
+    } else {
+      arg_lv = orig_arg_lv_values[k];
+    }
+    CHECK_EQ(arg_lv->getType(),
+             ext_arg_type_to_llvm_type(ext_func_arg, cgen_state_->context_));
+    args.push_back(arg_lv);
+  }
+  return args;
 }
 
 // Generate CAST operations for arguments in `orig_arg_lvs` to the types required by

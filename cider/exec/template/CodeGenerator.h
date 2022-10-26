@@ -270,8 +270,12 @@ class CodeGenerator {
   std::vector<llvm::Value*> codegenArrayExpr(const Analyzer::ArrayExpr*,
                                              const CompilationOptions&);
 
+  // TODO:(yma11) will deprecate
   llvm::Value* codegenFunctionOper(const Analyzer::FunctionOper*,
                                    const CompilationOptions&);
+
+  std::unique_ptr<CodegenColValues> codegenFunctionOp(const Analyzer::FunctionOper*,
+                                                      const CompilationOptions& co);
 
   llvm::Value* codegenFunctionOperWithCustomTypeHandling(
       const Analyzer::FunctionOperWithCustomTypeHandling*,
@@ -522,6 +526,10 @@ class CodeGenerator {
       const Analyzer::FunctionOper* function_oper,
       const std::vector<llvm::Value*>& orig_arg_lvs);
 
+  std::tuple<ArgNullcheckBBs, llvm::Value*> beginArgsNullcheckForArrow(
+      const Analyzer::FunctionOper* function_oper,
+      const std::vector<llvm::Value*>& orig_arg_lvs);
+
   llvm::Value* endArgsNullcheck(const ArgNullcheckBBs&,
                                 llvm::Value*,
                                 llvm::Value*,
@@ -529,6 +537,9 @@ class CodeGenerator {
 
   llvm::Value* codegenFunctionOperNullArg(const Analyzer::FunctionOper*,
                                           const std::vector<llvm::Value*>&);
+
+  llvm::Value* codegenFunctionOperNullArgForArrow(const Analyzer::FunctionOper*,
+                                                  const std::vector<llvm::Value*>&);
 
   std::pair<llvm::Value*, llvm::Value*> codegenArrayBuff(llvm::Value* chunk,
                                                          llvm::Value* row_pos,
@@ -541,6 +552,14 @@ class CodeGenerator {
                          llvm::Value* buffer_size,
                          llvm::Value* buffer_is_null,
                          std::vector<llvm::Value*>& output_args);
+
+  std::vector<llvm::Value*> codegenFunctionOperCastArgsForArrow(
+      const Analyzer::FunctionOper*,
+      const ExtensionFunction*,
+      const std::vector<llvm::Value*>&,
+      const std::vector<size_t>&,
+      const std::unordered_map<llvm::Value*, llvm::Value*>&,
+      const CompilationOptions&);
 
   std::vector<llvm::Value*> codegenFunctionOperCastArgs(
       const Analyzer::FunctionOper*,
