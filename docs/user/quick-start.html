@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Cider User Guide &#8212; Cider 1.0 documentation</title>
+    <title>BDTK User Guide &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -41,8 +41,10 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="cider-user-guide">
-<h1>Cider User Guide<a class="headerlink" href="#cider-user-guide" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="bdtk-user-guide">
+<h1>BDTK User Guide<a class="headerlink" href="#bdtk-user-guide" title="Permalink to this headline">¶</a></h1>
+<p>BDTK mainly acts as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox among the Prestissimo project.
+In this context and in the following guide, the term <strong>presto_cpp</strong> or <strong>presto native worker</strong> stands for Presto + Velox integrated with BDTK.</p>
 <div class="section" id="environment-preparation">
 <h2>Environment Preparation<a class="headerlink" href="#environment-preparation" title="Permalink to this headline">¶</a></h2>
 <div class="line-block">
@@ -76,7 +78,7 @@ docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/wor
 docker exec -it ${container_name} /bin/bash
 </pre></div>
 </div>
-<p><em>Note: files used for building image are from cider and presto,
+<p><em>Note: files used for building image are from bdtk and presto,
 details are as follows:</em></p>
 </div>
 <div class="section" id="run-with-prestodb">
@@ -87,7 +89,7 @@ details are as follows:</em></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd ${path-to-presto}/presto-native-execution
 # Integrate BDTK with Presto
 $ export WORKER_DIR=${path-to-presto}/presto-native-execution
-$ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-cider.sh release
+$ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-bdtk.sh release
 </pre></div>
 </div>
 <p>Now the you can check your executable presto server file in ${WORKER_DIR}/_build/release/presto_cpp/main/presto_server</p>
@@ -123,7 +125,7 @@ WORKER_COUNT is the number of workers to be launched along with the coordinator.
 Note discovery URI. Something like <a class="reference external" href="http://127.0.0.1:54557">http://127.0.0.1:54557</a>. Use the last discovery URI in the InteliJ logs</dd>
 </dl>
 <p>Upon running this you should see the Presto service log printing in the console.</p>
-<p>3. Update BDTK worker configuration
+<p>3. Update presto native worker configuration
 The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere your like.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir ${path-to-presto}/presto-native-execution/etc
 $ cd etc
@@ -163,7 +165,7 @@ In the HiveExternalWorkerQueryRunner it’ll create a pseudo hive metastore for 
 </pre></div>
 </div>
 <ol class="arabic simple" start="4">
-<li>Launch BDTK worker</li>
+<li>Launch presto native worker</li>
 </ol>
 <p>Go to YOUR_PATH_TO_PRESTO_SERVER:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cd ${path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/
@@ -171,7 +173,7 @@ In the HiveExternalWorkerQueryRunner it’ll create a pseudo hive metastore for 
 ./presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 </pre></div>
 </div>
-<p>When you see “Announcement succeeded: 202” printed to the console, the BDTK worker has successfully connected to the coordinator.</p>
+<p>When you see “Announcement succeeded: 202” printed to the console, the presto native worker has successfully connected to the coordinator.</p>
 <p>5. Test the queries
 You can sent out queries using your existing presto-cli our go to the presto-cli module you just compiled.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd ${path-to-presto}/presto-cli/target
@@ -179,7 +181,7 @@ $ ./presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar --catalog hive --schema
 </pre></div>
 </div>
 <p>By doing this you can launch an interactive SQL command.
-Try Some queries with BDTK!</p>
+Try Some queries with Prestissimo + BDTK!</p>
 </div>
 <div class="section" id="run-a-demo-using-hdfs">
 <h3>Run a DEMO using HDFS<a class="headerlink" href="#run-a-demo-using-hdfs" title="Permalink to this headline">¶</a></h3>
@@ -193,7 +195,7 @@ a. Download Kerberos from its website(<a class="reference external" href="http:/
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ wget http://web.mit.edu/kerberos/dist/krb5/1.19/krb5-${krb5-version}.tar.gz
 $ tar zxvf krb5-${krb5-version}.tar
-$ cd krb5-${krb5-version}/src/include/krb5/krb5.hin krb5-${krb5-version}/src/include/krb5/krb5.h
+$ cp ./krb5-${krb5-version}/src/include/krb5/krb5.hin ./krb5-${krb5-version}/src/include/krb5/krb5.h
 </pre></div>
 </div>
 <p>1. Install the libraries for HDFS/S3</p>
@@ -213,7 +215,7 @@ $ make PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON debug
 <p>3. Launch a distributed Presto serivce
 a. Launch your coordinator as normal presto-java server.
 You can find out how to launch a presto-java coorinator from here(<a class="reference external" href="https://prestodb.io/docs/current/installation/deployment.html">https://prestodb.io/docs/current/installation/deployment.html</a>)
-b. Edit the configuration of BDTK presto_server under your etc directory:
+b. Edit the configuration of presto native worker under your etc directory:
 Modify ${path-to-presto-server-etc}/config.properties</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>task.concurrent-lifespans-per-task=32
 http-server.http.port=9876
@@ -239,12 +241,37 @@ hive.hdfs.port=${your-hdfs-port}
 </pre></div>
 </div>
 <ol class="loweralpha simple" start="3">
-<li>launch the BDTK worker</li>
+<li>launch the presto native worker</li>
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ {path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 </pre></div>
 </div>
-<p>When you see “Announcement succeeded: 202” printed to the console, the BDTK worker has successfully connected to the coordinator.</p>
+<p>When you see “Announcement succeeded: 202” printed to the console, the presto native worker has successfully connected to the coordinator.</p>
+</div>
+<div class="section" id="run-with-released-package">
+<h3>Run with released package<a class="headerlink" href="#run-with-released-package" title="Permalink to this headline">¶</a></h3>
+<p>From the release note of BDTK: <a class="reference external" href="https://github.com/intel/BDTK/releases">https://github.com/intel/BDTK/releases</a> , you can download the package of presto_server binary file and libraries.
+You can directly run presto native worker with them to skip compiling step.</p>
+<ol class="arabic simple">
+<li>Unzip the package</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ wget https://github.com/intel/BDTK/releases/download/${latest_tag}/bdtk_${latest_version}.tar.gz
+$ cd Prestodb
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li>Prepare configuration files
+You need to prepare the basic configuration files as mentioned above.</li>
+<li>Launch presto native worker with binary file</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ # add libraries to include path
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
+$ # launch the server
+$ # --v=1 --logtostderr=1 are flags to print log, you can modify it as your wish
+$ ./bin/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
+</pre></div>
+</div>
+<p>When you see “Announcement succeeded: 202” printed to the console, the presto native worker has successfully connected to the coordinator.</p>
 </div>
 </div>
 </div>
@@ -257,12 +284,13 @@ hive.hdfs.port=${your-hdfs-port}
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Cider User Guide</a><ul>
+<li><a class="reference internal" href="#">BDTK User Guide</a><ul>
 <li><a class="reference internal" href="#environment-preparation">Environment Preparation</a></li>
 <li><a class="reference internal" href="#run-with-prestodb">Run with Prestodb</a><ul>
 <li><a class="reference internal" href="#integrate-bdtk-with-presto">Integrate BDTK with Presto</a></li>
 <li><a class="reference internal" href="#run-a-end-to-end-hello-world-demo-on-local-file-system">Run a end-to-end Hello World demo on local file system</a></li>
 <li><a class="reference internal" href="#run-a-demo-using-hdfs">Run a DEMO using HDFS</a></li>
+<li><a class="reference internal" href="#run-with-released-package">Run with released package</a></li>
 </ul>
 </li>
 </ul>
