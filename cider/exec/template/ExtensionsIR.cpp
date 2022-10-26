@@ -369,7 +369,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFunctionOp(
   auto ret_ty = ext_arg_type_to_llvm_type(ext_func_sig.getRet(), cgen_state_->context_);
   const auto current_bb = cgen_state_->ir_builder_.GetInsertBlock();
   std::vector<llvm::Value*> orig_arg_lv_values;
-    std::vector<llvm::Value*> orig_arg_lv_nulls;
+  std::vector<llvm::Value*> orig_arg_lv_nulls;
   std::vector<size_t> orig_arg_lvs_index;
   std::unordered_map<llvm::Value*, llvm::Value*> const_arr_size;
 
@@ -400,8 +400,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFunctionOp(
                                   false);
   }
   // Arguments must be converted to the types the extension function can handle.
-  auto args = codegenFunctionOperCastArgsForArrow(
-      function_oper, &ext_func_sig, orig_arg_lv_values, orig_arg_lvs_index, const_arr_size, co);
+  auto args = codegenFunctionOperCastArgsForArrow(function_oper,
+                                                  &ext_func_sig,
+                                                  orig_arg_lv_values,
+                                                  orig_arg_lvs_index,
+                                                  const_arr_size,
+                                                  co);
   auto ext_call = cgen_state_->emitExternalCall(
       ext_func_sig.getName(), ret_ty, args, {}, ret_ti.is_buffer());
   // Cast the return of the extension function to match the FunctionOper
@@ -619,8 +623,7 @@ llvm::Value* CodeGenerator::codegenFunctionOperNullArgForArrow(
     }
     // TODO:(yma11) add string support
     CHECK(arg_ti.is_number() or arg_ti.is_boolean());
-    one_arg_null =
-        cgen_state_->ir_builder_.CreateOr(one_arg_null, orig_arg_lv_nulls[j]);
+    one_arg_null = cgen_state_->ir_builder_.CreateOr(one_arg_null, orig_arg_lv_nulls[j]);
   }
   return one_arg_null;
 }
@@ -754,8 +757,7 @@ std::vector<llvm::Value*> CodeGenerator::codegenFunctionOperCastArgsForArrow(
     const auto arg_target_ti = ext_arg_type_to_type_info(ext_func_arg);
     if (arg_ti.get_type() != arg_target_ti.get_type()) {
       // TODO: (yma11) need to switch to new codegenCast for arrow
-      arg_lv = codegenCast(
-          orig_arg_lv_values[k], arg_ti, arg_target_ti, false, co);
+      arg_lv = codegenCast(orig_arg_lv_values[k], arg_ti, arg_target_ti, false, co);
     } else {
       arg_lv = orig_arg_lv_values[k];
     }
