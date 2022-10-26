@@ -34,9 +34,9 @@ class Decoder {
   Decoder(llvm::IRBuilder<>* ir_builder, bool nullable)
       : ir_builder_(ir_builder), nullable_(nullable) {}
 
-  virtual llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
-                                           llvm::Value* pos,
-                                           llvm::Module* module) const = 0;
+  [[deprecated]] virtual llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                                          llvm::Value* pos,
+                                                          llvm::Module* module) const = 0;
 
   // Returns {value, null} for fixed-size data
   virtual std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
@@ -77,9 +77,10 @@ class FixedWidthInt : public Decoder {
 class FixedWidthBool : public Decoder {
  public:
   FixedWidthBool(llvm::IRBuilder<>* ir_builder, bool nullable = false);
-  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
-                                   llvm::Value* pos,
-                                   llvm::Module* module) const override {
+
+  [[deprecated]] llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                                  llvm::Value* pos,
+                                                  llvm::Module* module) const override {
     return nullptr;
   }
 
@@ -93,9 +94,9 @@ class FixedWidthUnsigned : public Decoder {
   FixedWidthUnsigned(const size_t byte_width,
                      llvm::IRBuilder<>* ir_builder,
                      bool nullable = false);
-  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
-                                   llvm::Value* pos,
-                                   llvm::Module* module) const override;
+  [[deprecated]] llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                                  llvm::Value* pos,
+                                                  llvm::Module* module) const override;
 
   std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
                                                 llvm::Value* byte_stream,
@@ -111,9 +112,9 @@ class DiffFixedWidthInt : public Decoder {
                     const int64_t baseline,
                     llvm::IRBuilder<>* ir_builder,
                     bool nullable = false);
-  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
-                                   llvm::Value* pos,
-                                   llvm::Module* module) const override;
+  [[deprecated]] llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                                  llvm::Value* pos,
+                                                  llvm::Module* module) const override;
 
   std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
                                                 llvm::Value* byte_stream,
@@ -129,9 +130,9 @@ class FixedWidthReal : public Decoder {
   FixedWidthReal(const bool is_double,
                  llvm::IRBuilder<>* ir_builder,
                  bool nullable = false);
-  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
-                                   llvm::Value* pos,
-                                   llvm::Module* module) const override;
+  [[deprecated]] llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                                  llvm::Value* pos,
+                                                  llvm::Module* module) const override;
 
   std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
                                                 llvm::Value* byte_stream,
@@ -146,9 +147,9 @@ class FixedWidthSmallDate : public Decoder {
   FixedWidthSmallDate(const size_t byte_width,
                       llvm::IRBuilder<>* ir_builder,
                       bool nullable = false);
-  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
-                                   llvm::Value* pos,
-                                   llvm::Module* module) const override;
+  [[deprecated]] llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                                  llvm::Value* pos,
+                                                  llvm::Module* module) const override;
 
   std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
                                                 llvm::Value* byte_stream,

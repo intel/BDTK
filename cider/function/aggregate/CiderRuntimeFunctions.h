@@ -170,8 +170,7 @@ extern "C" ALWAYS_INLINE void cider_agg_id_proj_bool_nullable(uint8_t* output_bu
   if (is_null) {
     CiderBitUtils::clearBitAt(null_buffer, index);
   } else {
-    value ? CiderBitUtils::setBitAt(output_buffer, index)
-          : CiderBitUtils::clearBitAt(output_buffer, index);
+    cider_agg_id_proj_bool(output_buffer, index, value);
   }
 }
 
