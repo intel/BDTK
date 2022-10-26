@@ -292,40 +292,6 @@ void DuckDbQueryRunner::createTableAndInsertData(
     appender.EndRow();
   }
 }
-void DuckDbQueryRunner::createTableAndInsertArrowData(
-    const std::string& table_name,
-    const std::string& create_ddl,
-    const std::vector<std::shared_ptr<CiderBatch>>& data) {
-  ::duckdb::Connection con(db_);
-  con.Query("DROP TABLE IF EXISTS " + table_name);
-
-  auto res = con.Query(create_ddl);
-  if (!res->success) {
-    LOG(ERROR) << res->error;
-  }
-
-  for (auto i = 0; i < data.size(); ++i) {
-    auto& current_batch = data[i];
-    int row_num = current_batch->getLength();
-    int col_num = current_batch->getChildrenNum();
-    for (int row_idx = 0; row_idx < row_num; ++row_idx) {
-      ::duckdb::Appender appender(con, table_name);
-      appender.BeginRow();
-      for (int col_idx = 0; col_idx < col_num; ++col_idx) {
-        auto child = current_batch->getChildAt(col_idx);
-        auto child_type = child->getCiderType();
-        auto valid_bitmap = child->getNulls();
-        if (!valid_bitmap || CiderBitUtils::isBitSetAt(valid_bitmap, row_idx)) {
-          auto value = GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC();
-          appender.Append(value);
-        } else {
-          appender.Append(nullptr);
-        }
-      }
-      appender.EndRow();
-    }
-  }
-}
 
 void DuckDbQueryRunner::createTableAndInsertArrowData(
     const std::string& table_name,

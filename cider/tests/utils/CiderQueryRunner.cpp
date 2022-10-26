@@ -177,9 +177,10 @@ CiderBatch CiderQueryRunner::runJoinQueryOneBatch(const std::string& file_or_sql
   return std::move(*output_batch);
 }
 
-CiderBatch CiderQueryRunner:: runJoinQueryOneBatchForArrowFormat(const std::string& file_or_sql,
-                                                  const CiderBatch& left_batch,
-                                                  CiderBatch& right_batch) {
+CiderBatch CiderQueryRunner::runJoinQueryOneBatchForArrowFormat(
+    const std::string& file_or_sql,
+    const CiderBatch& left_batch,
+    CiderBatch& right_batch) {
   // Step 1: construct substrait plan
   auto plan = genSubstraitPlan(file_or_sql);
   // Step 2: feed build table and compile and gen runtime module
@@ -188,7 +189,8 @@ CiderBatch CiderQueryRunner:: runJoinQueryOneBatchForArrowFormat(const std::stri
   compile_option.use_cider_data_format = true;
   auto compile_res = ciderCompileModule_->compile(plan, compile_option, exe_option);
 
-  auto cider_runtime_module = std::make_shared<CiderRuntimeModule>(compile_res, compile_option, exe_option);
+  auto cider_runtime_module =
+      std::make_shared<CiderRuntimeModule>(compile_res, compile_option, exe_option);
 
   auto output_schema = compile_res->getOutputCiderTableSchema();
 

@@ -318,11 +318,11 @@ class CiderBatch {
     return table_ptr_.empty() ? nullptr : const_cast<const int8_t**>(table_ptr_.data());
   }
 
- const void* arrow_column(int32_t col_id) const;
+  const void* arrow_column(int32_t col_id) const;
 
- void* getDataBuffersPtr() const;
+  void* getDataBuffersPtr() const;
 
- const void* getNullBuffersPtr() const;
+  const void* getNullBuffersPtr() const;
 
   int64_t row_num() const { return row_num_; }
 

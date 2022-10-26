@@ -632,12 +632,12 @@ llvm::Value* BaselineJoinHashTable::codegenKey(const CompilationOptions& co) {
           "FROM clause.");
     }
     std::vector<llvm::Value*> col_lvs_tmp;
-    if  (co.use_cider_data_format) {
+    if (co.use_cider_data_format) {
       auto col_lvs_cider = code_generator.codegen(outer_col, co, true);
-      auto col_lvs_cider_fixed_size = dynamic_cast<FixedSizeColValues*>(col_lvs_cider.get());
+      auto col_lvs_cider_fixed_size =
+          dynamic_cast<FixedSizeColValues*>(col_lvs_cider.get());
       col_lvs_tmp.push_back(col_lvs_cider_fixed_size->getValue());
-    }
-    else {
+    } else {
       col_lvs_tmp = code_generator.codegen(outer_col, true, co);
     }
     // const auto col_lvs = code_generator.codegen(outer_col, true, co);

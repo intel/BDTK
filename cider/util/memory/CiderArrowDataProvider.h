@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
+ * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -45,7 +46,7 @@ class CiderArrowDataProvider : public DataProvider {
       const size_t num_elems) override {
     Data_Namespace::AbstractBuffer* buffer =
         // new CiderBuffer(ciderBatch_.column(key[CHUNK_KEY_COLUMN_IDX]));
-        new CiderBuffer((int8_t *)ciderBatch_.arrow_column(key[CHUNK_KEY_COLUMN_IDX]));
+        new CiderBuffer((int8_t*)ciderBatch_.arrow_column(key[CHUNK_KEY_COLUMN_IDX]));
     Data_Namespace::AbstractBuffer* index_buf = nullptr;
     return std::make_shared<Chunk_NS::Chunk>(
         Chunk_NS::Chunk(buffer, index_buf, col_info));

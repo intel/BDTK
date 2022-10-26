@@ -571,13 +571,13 @@ std::vector<llvm::Value*> PerfectJoinHashTable::getHashJoinArgs(
   CodeGenerator code_generator(executor_);
   std::vector<llvm::Value*> key_lvs_tmp;
   llvm::Value* null_value = nullptr;
-  if(co.use_cider_data_format) {
+  if (co.use_cider_data_format) {
     auto key_lvs_cider = code_generator.codegen(key_col, co, true);
-    auto key_lvs_cider_fixed_size = dynamic_cast<FixedSizeColValues*>(key_lvs_cider.get());
+    auto key_lvs_cider_fixed_size =
+        dynamic_cast<FixedSizeColValues*>(key_lvs_cider.get());
     key_lvs_tmp.push_back(key_lvs_cider_fixed_size->getValue());
     null_value = key_lvs_cider_fixed_size->getNull();
-  }
-  else {
+  } else {
     key_lvs_tmp = code_generator.codegen(key_col, true, co);
   }
   const auto key_lvs = key_lvs_tmp;
@@ -593,13 +593,14 @@ std::vector<llvm::Value*> PerfectJoinHashTable::getHashJoinArgs(
       executor_->cgen_state_->llInt(col_range_.getIntMax())};
   auto key_col_logical_ti = get_logical_type_info(key_col->get_type_info());
   if (!key_col_logical_ti.get_notnull() || isBitwiseEq()) {
-    if(co.use_cider_data_format) {
-        hash_join_idx_args.push_back(null_value ? null_value : llvm::ConstantInt::getFalse(executor_->cgen_state_->context_));
-      }
-    else{
-    hash_join_idx_args.push_back(executor_->cgen_state_->llInt(
-        inline_fixed_encoding_null_val(key_col_logical_ti)));
-      }
+    if (co.use_cider_data_format) {
+      hash_join_idx_args.push_back(
+          null_value ? null_value
+                     : llvm::ConstantInt::getFalse(executor_->cgen_state_->context_));
+    } else {
+      hash_join_idx_args.push_back(executor_->cgen_state_->llInt(
+          inline_fixed_encoding_null_val(key_col_logical_ti)));
+    }
   }
   auto special_date_bucketization_case = key_col_ti.get_type() == kDATE;
   if (isBitwiseEq()) {
@@ -760,12 +761,12 @@ llvm::Value* PerfectJoinHashTable::codegenSlot(const CompilationOptions& co,
         "FROM clause.");
   }
   std::vector<llvm::Value*> key_lvs_tmp;
-  if(co.use_cider_data_format) {
+  if (co.use_cider_data_format) {
     auto key_lvs_col_values = code_generator.codegen(key_col, co, true);
-    auto key_lvs_col_values_fixed_size = dynamic_cast<FixedSizeColValues*>(key_lvs_col_values.get());
+    auto key_lvs_col_values_fixed_size =
+        dynamic_cast<FixedSizeColValues*>(key_lvs_col_values.get());
     key_lvs_tmp.push_back(key_lvs_col_values_fixed_size->getValue());
-  }
-  else {
+  } else {
     key_lvs_tmp = code_generator.codegen(key_col, true, co);
   }
   const auto key_lvs = key_lvs_tmp;
@@ -784,7 +785,7 @@ llvm::Value* PerfectJoinHashTable::codegenSlot(const CompilationOptions& co,
   }
 
   if (!isBitwiseEq() && !key_col_ti.get_notnull()) {
-    if(co.use_cider_data_format) {
+    if (co.use_cider_data_format) {
       fname += "_nullable_cider";
     } else {
       fname += "_nullable";

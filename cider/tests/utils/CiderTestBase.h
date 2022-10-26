@@ -27,10 +27,10 @@
 #include <string>
 #include "CiderQueryRunner.h"
 #include "DuckDbQueryRunner.h"
+#include "QueryArrowDataGenerator.h"
 #include "QueryDataGenerator.h"
 #include "cider/CiderBatch.h"
 #include "cider/CiderException.h"
-#include "QueryArrowDataGenerator.h"
 // User can extend this class and add default setup function
 class CiderTestBase : public testing::Test {
  public:
@@ -98,9 +98,9 @@ class CiderJoinTestBase : public CiderTestBase {
                                const std::string& json_file = "",
                                const bool ignore_order = true);
 
-    void assertJoinQueryRowEqualForArrowFormat(const std::string& sql,
-                                       const std::string& json_file = "",
-                                       const bool ignore_order = true);
+  void assertJoinQueryRowEqualForArrowFormat(const std::string& sql,
+                                             const std::string& json_file = "",
+                                             const bool ignore_order = true);
 
   virtual void resetHashTable() {}
 
@@ -118,14 +118,12 @@ class CiderJoinTestBase : public CiderTestBase {
     resetHashTable();
   }
 
-  
   void assertJoinQueryRowEqualForArrowFormatAndReset(const std::string& sql,
-                                       const std::string& json_file = "",
-                                       const bool ignore_order = true) {
+                                                     const std::string& json_file = "",
+                                                     const bool ignore_order = true) {
     assertJoinQueryRowEqualForArrowFormat(sql, json_file, ignore_order);
     resetHashTable();
   }
-
 
  protected:
   std::string build_table_name_;

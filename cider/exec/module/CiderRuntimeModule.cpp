@@ -261,7 +261,8 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     }
     const void** build_table_children_arraies = build_table_.getChildrenArrayPtr();
     for (int64_t i = 0; i < build_table_.getChildrenNum(); ++i) {
-      col_buffers[i + in_batch.getChildrenNum()] = reinterpret_cast<const int8_t*>(build_table_children_arraies[i]);
+      col_buffers[i + in_batch.getChildrenNum()] =
+          reinterpret_cast<const int8_t*>(build_table_children_arraies[i]);
     }
   } else {
     for (int64_t i = 0; i < in_batch.column_num(); ++i) {
@@ -287,10 +288,9 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   scan_limit_ = use_cider_data_format ? in_batch.getLength() : in_batch.row_num();
   // for join scenario, max our row may be cross product
   if (query_has_join(ciderCompilationResult_->impl_->rel_alg_exe_unit_)) {
-    if(use_cider_data_format) {
+    if (use_cider_data_format) {
       scan_limit_ *= build_table_.getLength();
-    } 
-    else {
+    } else {
       scan_limit_ *= build_table_.row_num();
     }
   }
@@ -333,7 +333,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
                                                     : in_batch.row_num());
   if (build_table_.row_num()) {
     flatened_num_rows.push_back(use_cider_data_format ? build_table_.getLength()
-                                                    : build_table_.row_num());
+                                                      : build_table_.row_num());
   }
   int64_t* num_rows_ptr = flatened_num_rows.data();
   std::vector<uint64_t> flatened_frag_offsets;

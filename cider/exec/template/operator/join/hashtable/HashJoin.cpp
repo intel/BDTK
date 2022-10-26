@@ -170,7 +170,7 @@ HashJoinMatchingSet HashJoin::codegenMatchingSet(
     fname += "_bitwise";
   }
   if (!is_bw_eq && col_is_nullable) {
-    if(is_cider_format) {
+    if (is_cider_format) {
       fname += "_nullable_cider";
     } else {
       fname += "_nullable";

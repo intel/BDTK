@@ -365,15 +365,15 @@ hash_join_idx_nullable(int64_t hash_buff,
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
 hash_join_idx_nullable_cider(int64_t hash_buff,
-                       const int64_t key,
-                       const int64_t min_key,
-                       const int64_t max_key,
-                       const bool is_null) {
-  if(is_null) {
+                             const int64_t key,
+                             const int64_t min_key,
+                             const int64_t max_key,
+                             const bool is_null) {
+  if (is_null) {
     return -1;
-  } else{
+  } else {
     return hash_join_idx(hash_buff, key, min_key, max_key);
-  }                      
+  }
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t

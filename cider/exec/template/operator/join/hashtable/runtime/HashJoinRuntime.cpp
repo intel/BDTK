@@ -186,7 +186,7 @@ auto fill_hash_join_buff_impl(int32_t* buff,
     }
     // CHECK_GE(elem, type_info.min_val)
     //     << "Element " << elem << " less than min val " << type_info.min_val;
-    if(elem <  type_info.min_val) {
+    if (elem < type_info.min_val) {
       VLOG(1) << "Element " << elem << " less than min val " << type_info.min_val;
       continue;
     }
@@ -489,7 +489,7 @@ void count_matches_impl(int32_t* count_buff,
     }
     // CHECK_GE(elem, type_info.min_val)
     //     << "Element " << elem << " less than min val " << type_info.min_val;
-    if(elem <  type_info.min_val) {
+    if (elem < type_info.min_val) {
       VLOG(1) << "Element " << elem << " less than min val " << type_info.min_val;
       continue;
     }
@@ -642,7 +642,7 @@ void fill_row_ids_impl(int32_t* buff,
     }
     // CHECK_GE(elem, type_info.min_val)
     //     << "Element " << elem << " less than min val " << type_info.min_val;
-    if(elem < type_info.min_val) {
+    if (elem < type_info.min_val) {
       VLOG(1) << "Element " << elem << " less than min val " << type_info.min_val;
       continue;
     }

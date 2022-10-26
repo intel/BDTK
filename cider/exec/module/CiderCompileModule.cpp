@@ -21,13 +21,13 @@
 
 #include "cider/CiderCompileModule.h"
 #include "CiderCompilationResultImpl.h"
+#include "cider/batch/ScalarBatch.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/template/Execute.h"
 #include "type/schema/CiderSchemaProvider.h"
 #include "util/measure.h"
-#include "util/memory/CiderBatchDataProvider.h"
 #include "util/memory/CiderArrowDataProvider.h"
-#include "cider/batch/ScalarBatch.h"
+#include "util/memory/CiderBatchDataProvider.h"
 
 namespace {
 
@@ -114,7 +114,8 @@ class CiderCompileModule::Impl {
         std::make_shared<RelAlgExecutionUnit>(translator_->createRelAlgExecutionUnit());
 
     // if this is a join query and don't feed a valid build table, throw exception
-    if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0 && build_table_.getChildrenNum() == 0) {
+    if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0 &&
+        build_table_.getChildrenNum() == 0) {
       CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
     }
 
@@ -133,12 +134,10 @@ class CiderCompileModule::Impl {
     CompilationResult compilation_result;
     std::unique_ptr<QueryMemoryDescriptor> query_mem_desc;
     DataProvider* ciderDataProvider;
-    if(co.use_cider_data_format){
-      ciderDataProvider =
-        new CiderArrowDataProvider(build_table_);
-    }else{
-      ciderDataProvider =
-        new CiderBatchDataProvider(build_table_);
+    if (co.use_cider_data_format) {
+      ciderDataProvider = new CiderArrowDataProvider(build_table_);
+    } else {
+      ciderDataProvider = new CiderBatchDataProvider(build_table_);
     }
     std::tie(compilation_result, query_mem_desc) =
         executor_->compileWorkUnit(table_infos,
@@ -315,20 +314,20 @@ class CiderCompileModule::Impl {
   }
 
   void getArrowMinMax(const int8_t* buf,
-                 const int64_t row_num,
-                 const ::substrait::Type& type,
-                 int64_t* min,
-                 int64_t* max,
-                 const int8_t* null_buff = nullptr) {
+                      const int64_t row_num,
+                      const ::substrait::Type& type,
+                      int64_t* min,
+                      int64_t* max,
+                      const int8_t* null_buff = nullptr) {
     if (type.has_i64()) {
       int64_t* buffer = reinterpret_cast<int64_t*>(const_cast<int8_t*>(buf));
       bool init_flag = false;
       for (int i = 0; i < row_num; i++) {
-        if(null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)){
-          if(!init_flag){
-              *min = buffer[i];
-              *max = buffer[i];
-              init_flag = true;
+        if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+          if (!init_flag) {
+            *min = buffer[i];
+            *max = buffer[i];
+            init_flag = true;
           }
           if (buffer[i] < *min)
             *min = buffer[i];
@@ -337,8 +336,8 @@ class CiderCompileModule::Impl {
         }
       }
       for (int i = 0; i < row_num; i++) {
-        if(null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)){
-            buffer[i] = *min - 1;
+        if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+          buffer[i] = *min - 1;
         }
         // *min = *min - 1;
       }
@@ -346,21 +345,21 @@ class CiderCompileModule::Impl {
       int32_t* buffer = reinterpret_cast<int32_t*>(const_cast<int8_t*>(buf));
       bool init_flag = false;
       for (int i = 0; i < row_num; i++) {
-        if(null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)){
-          if(!init_flag){
-              *min = buffer[i];
-              *max = buffer[i];
-              init_flag = true;
+        if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+          if (!init_flag) {
+            *min = buffer[i];
+            *max = buffer[i];
+            init_flag = true;
           }
-        if (buffer[i] < *min)
-          *min = buffer[i];
-        if (buffer[i] > *max)
-          *max = buffer[i];
+          if (buffer[i] < *min)
+            *min = buffer[i];
+          if (buffer[i] > *max)
+            *max = buffer[i];
         }
       }
       for (int i = 0; i < row_num; i++) {
-        if(null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)){
-            buffer[i] = *min - 1;
+        if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+          buffer[i] = *min - 1;
         }
         // *min = *min - 1;
       }
@@ -423,17 +422,18 @@ class CiderCompileModule::Impl {
         int64_t max = -1;
         // join table and integer type, find the real min/max value
         if (i >= 1 && isSubtraitIntegerType(table_schema.getColumnTypeById(j))) {
-          if(use_cider_data_format) {
-            if (auto child_batch = build_table_.getChildAt(j); build_table_.getLength() > 0 && child_batch) {
-              getArrowMinMax(reinterpret_cast<const int8_t*>(child_batch->getDataBuffersPtr()),
-                        build_table_.getLength(),
-                        table_schema.getColumnTypeById(j),
-                        &min,
-                        &max,
-                        reinterpret_cast<const int8_t*>(child_batch->getNullBuffersPtr()));
+          if (use_cider_data_format) {
+            if (auto child_batch = build_table_.getChildAt(j);
+                build_table_.getLength() > 0 && child_batch) {
+              getArrowMinMax(
+                  reinterpret_cast<const int8_t*>(child_batch->getDataBuffersPtr()),
+                  build_table_.getLength(),
+                  table_schema.getColumnTypeById(j),
+                  &min,
+                  &max,
+                  reinterpret_cast<const int8_t*>(child_batch->getNullBuffersPtr()));
             }
-          }
-          else {
+          } else {
             if (build_table_.row_num() > 0 && build_table_.column(j)) {
               getMinMax(build_table_.column(j),
                         build_table_.row_num(),
@@ -507,7 +507,8 @@ class CiderCompileModule::Impl {
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
 
   std::vector<InputTableInfo> buildInputTableInfo(
-      const std::vector<CiderTableSchema>& tableSchemas, bool use_cider_data_format) {
+      const std::vector<CiderTableSchema>& tableSchemas,
+      bool use_cider_data_format) {
     std::vector<InputTableInfo> query_infos;
     const int db_id = 100;
     // Note that we only consider single join here, so use faked table id 100

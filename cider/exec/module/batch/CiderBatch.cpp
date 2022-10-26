@@ -354,7 +354,7 @@ const void** CiderBatch::getChildrenArrayPtr() const {
 
 const void* CiderBatch::arrow_column(int32_t col_id) const {
   CHECK(!isMoved());
-  const void* buf =  arrow_array_->children[col_id]->buffers[1];
+  const void* buf = arrow_array_->children[col_id]->buffers[1];
   return buf;
 }
 
