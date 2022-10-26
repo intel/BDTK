@@ -115,8 +115,6 @@ std::unique_ptr<CodegenColValues> InValuesBitmap::codegen(llvm::Value* needle,
     constants.push_back(bitset_handle_literal.get());
   }
   const auto needle_i64 = executor->cgen_state_->castToTypeIn(needle, 64);
-  const auto null_bool_val =
-      static_cast<int8_t>(inline_int_null_val(SQLTypeInfo(kBOOLEAN, false)));
   if (bitsets_.empty()) {
     return std::make_unique<FixedSizeColValues>(
         executor->cgen_state_->emitCall("bit_is_set_cider",

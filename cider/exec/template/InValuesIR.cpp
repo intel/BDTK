@@ -89,6 +89,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValues(
   CHECK(expr_ti.is_boolean());
   auto lhs_lv = codegen(in_arg, co, true);
   auto lhs_fixsize = dynamic_cast<FixedSizeColValues*>(lhs_lv.get());
+  CHECK(lhs_fixsize);
   auto lhs_value = lhs_fixsize->getValue();
   auto lhs_null = lhs_fixsize->getNull();
   llvm::Value* result{nullptr};
@@ -111,6 +112,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValues(
       }
       return cgen_state_->addInValuesBitmap(in_vals_bitmap)
           ->codegen(lhs_value, lhs_null, executor());
+    } else {
+      LOG(INFO) << "Bitmap not created, switch to using OR.";
     }
   }
   for (auto in_val : expr->get_value_list()) {

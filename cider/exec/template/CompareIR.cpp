@@ -494,13 +494,13 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   CHECK_EQ(kONE, qualifier);
   CHECK((lhs_ti.get_type() == rhs_ti.get_type()) ||
         (lhs_ti.is_string() && rhs_ti.is_string()));
+  // TODO: (yma1) need handle string/boolean
+  if (lhs_ti.is_string() || (lhs_ti.is_boolean() && rhs_ti.is_boolean())) {
+    CIDER_THROW(CiderCompileException,
+                "String/Boolean type are not currently supported in codegenCmpFun.");
+  }
   if (lhs_ti.is_integer() || lhs_ti.is_decimal() || lhs_ti.is_time() ||
       lhs_ti.is_timeinterval()) {
-    // TODO: (yma1) need handle string/boolean
-    if (lhs_ti.is_string() || (lhs_ti.is_boolean() && rhs_ti.is_boolean())) {
-      CIDER_THROW(CiderCompileException,
-                  "String/Boolean type are not currently supported in codegenCmpFun.");
-    }
     return std::make_unique<FixedSizeColValues>(
         cgen_state_->ir_builder_.CreateICmp(
             llvm_icmp_pred(optype), lhs_lv, rhs_lv_fixedsize->getValue()),
@@ -516,7 +516,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   return nullptr;
 }
 
-// Will deprecate
+// TODO:(yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenCmp(const SQLOps optype,
                                        const SQLQualifier qualifier,
                                        std::vector<llvm::Value*> lhs_lvs,
