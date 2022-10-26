@@ -26,12 +26,14 @@
 #include <random>
 #include <string>
 #include "ArrowArrayBuilder.h"
+#include "QueryDataGenerator.h"
 #include "Utils.h"
 #include "cider/CiderBatch.h"
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
 
-enum GeneratePattern { Sequence, Random };
+// TODO(yizhong): Enable this after QueryDataGenerator is deleted.
+// enum GeneratePatternArrow { SequenceArrow, RandomArrow };
 
 #define GENERATE_AND_ADD_COLUMN(C_TYPE)                                       \
   {                                                                           \
@@ -46,7 +48,26 @@ enum GeneratePattern { Sequence, Random };
     break;                                                                    \
   }
 
-// TODO: generate BOOL VARCHAR DATA&TIME column
+// set value_min and value_max both to 0 or 1 to generate all true or all false vector.
+// Otherwise, the vector would contain both
+#define GENERATE_AND_ADD_BOOL_COLUMN(C_TYPE)                                       \
+  {                                                                                \
+    std::vector<C_TYPE> col_data;                                                  \
+    std::vector<bool> null_data;                                                   \
+    std::tie(col_data, null_data) =                                                \
+        (value_min == value_max && value_min == 1) ||                              \
+                (value_min == value_max && value_min == 0)                         \
+            ? generateAndFillBoolVector<C_TYPE>(row_num,                           \
+                                                GeneratePattern::Random,           \
+                                                null_chance[i],                    \
+                                                value_min,                         \
+                                                value_min)                         \
+            : generateAndFillBoolVector<C_TYPE>(row_num, pattern, null_chance[i]); \
+    builder = builder.addBoolColumn<C_TYPE>(names[i], col_data, null_data);        \
+    break;                                                                         \
+  }
+
+// TODO: generate VARCHAR DATA&TIME column
 
 #define N_MAX std::numeric_limits<T>::max()
 
@@ -71,6 +92,8 @@ class QueryArrowDataGenerator {
     for (auto i = 0; i < types.size(); ++i) {
       ::substrait::Type type = types[i];
       switch (type.kind_case()) {
+        case ::substrait::Type::KindCase::kBool:
+          GENERATE_AND_ADD_BOOL_COLUMN(bool)
         case ::substrait::Type::KindCase::kI8:
           GENERATE_AND_ADD_COLUMN(int8_t)
         case ::substrait::Type::KindCase::kI16:
@@ -138,6 +161,37 @@ class QueryArrowDataGenerator {
           std::string str = "Unexpected type:";
           str.append(typeid(T).name()).append(", could not generate data.");
           CIDER_THROW(CiderCompileException, str);
+        }
+        break;
+    }
+    return std::make_tuple(col_data, null_data);
+  }
+
+  template <typename T, std::enable_if_t<std::is_same<T, bool>::value, bool> = true>
+  static std::tuple<std::vector<bool>, std::vector<bool>> generateAndFillBoolVector(
+      const size_t row_num,
+      const GeneratePattern pattern,
+      const int32_t null_chance,
+      const int64_t value_min = 0,
+      const int64_t value_max = 1) {
+    std::vector<T> col_data(row_num);
+    std::vector<bool> null_data(row_num);
+    std::mt19937 rng(std::random_device{}());  // NOLINT
+    switch (pattern) {
+      case GeneratePattern::Sequence:
+        for (auto i = 0; i < row_num; ++i) {
+          // for Sequence pattern, the boolean values will be cross-generated
+          null_data[i] = Random::oneIn(null_chance, rng) ? (col_data[i] = 0, true)
+                                                         : (col_data[i] = i % 2, false);
+        }
+        break;
+      case GeneratePattern::Random:
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng)
+                             ? (col_data[i] = 0, true)
+                             : (col_data[i] = static_cast<T>(
+                                    Random::randInt64(value_min, value_max, rng)),
+                                false);
         }
         break;
     }
