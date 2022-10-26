@@ -569,18 +569,18 @@ std::vector<llvm::Value*> PerfectJoinHashTable::getHashJoinArgs(
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(executor_->cgen_state_.get());
   CodeGenerator code_generator(executor_);
-  std::vector<llvm::Value*> key_lvs_tmp;
+  std::vector<llvm::Value*> key_lvs;
   llvm::Value* null_value = nullptr;
   if (co.use_cider_data_format) {
     auto key_lvs_cider = code_generator.codegen(key_col, co, true);
     auto key_lvs_cider_fixed_size =
         dynamic_cast<FixedSizeColValues*>(key_lvs_cider.get());
-    key_lvs_tmp.push_back(key_lvs_cider_fixed_size->getValue());
+    CHECK(key_lvs_cider_fixed_size);
+    key_lvs.push_back(key_lvs_cider_fixed_size->getValue());
     null_value = key_lvs_cider_fixed_size->getNull();
   } else {
-    key_lvs_tmp = code_generator.codegen(key_col, true, co);
+    key_lvs = code_generator.codegen(key_col, true, co);
   }
-  const auto key_lvs = key_lvs_tmp;
   CHECK_EQ(size_t(1), key_lvs.size());
   auto const& key_col_ti = key_col->get_type_info();
   auto hash_entry_info =
@@ -760,17 +760,16 @@ llvm::Value* PerfectJoinHashTable::codegenSlot(const CompilationOptions& co,
         "rewriting table order in "
         "FROM clause.");
   }
-  std::vector<llvm::Value*> key_lvs_tmp;
+  std::vector<llvm::Value*> key_lvs;
   if (co.use_cider_data_format) {
     auto key_lvs_col_values = code_generator.codegen(key_col, co, true);
     auto key_lvs_col_values_fixed_size =
         dynamic_cast<FixedSizeColValues*>(key_lvs_col_values.get());
-    key_lvs_tmp.push_back(key_lvs_col_values_fixed_size->getValue());
+    CHECK(key_lvs_col_values_fixed_size);
+    key_lvs.push_back(key_lvs_col_values_fixed_size->getValue());
   } else {
-    key_lvs_tmp = code_generator.codegen(key_col, true, co);
+    key_lvs = code_generator.codegen(key_col, true, co);
   }
-  const auto key_lvs = key_lvs_tmp;
-  // const auto key_lvs = code_generator.codegen(key_col, true, co);
   CHECK_EQ(size_t(1), key_lvs.size());
   auto hash_ptr = codegenHashTableLoad(index);
   CHECK(hash_ptr);

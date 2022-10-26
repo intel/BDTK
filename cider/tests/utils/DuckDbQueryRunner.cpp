@@ -133,16 +133,6 @@ template <>
       ::duckdb::Value::TIMESTAMP(::duckdb::Timestamp::FromEpochMicroSeconds(micros));
   return timestamp;
 }
-template <typename T>
-::duckdb::Value duckValueAtScalarBatch(const ScalarBatch<T>* batch, int64_t offset) {
-  if (!batch) {
-    CIDER_THROW(CiderRuntimeException,
-                "ScalarBatch is nullptr. Maybe check your casting?");
-  }
-
-  auto data_buffer = batch->getRawData();
-  return ::duckdb::Value(data_buffer[offset]);
-}
 
 template <typename T>
 ::duckdb::Value duckDbValueAtScalarBatch(const ScalarBatch<T>* batch, int64_t offset) {
