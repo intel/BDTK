@@ -322,21 +322,21 @@ class CiderCompileModule::Impl {
     int64_t* buffer;
     if (type.has_i64()) {
       int64_t* buffer = reinterpret_cast<int64_t*>(buf);
-      getColRangeAndResetNull<int64_t>(buffer, row_num, min, max, null_buff);
+      initColRangeAndResetNull<int64_t>(buffer, row_num, min, max, null_buff);
     } else if (type.has_i32()) {
       int32_t* buffer = reinterpret_cast<int32_t*>(buf);
-      getColRangeAndResetNull<int32_t>(buffer, row_num, min, max, null_buff);
+      initColRangeAndResetNull<int32_t>(buffer, row_num, min, max, null_buff);
     } else {
       return;
     }
   }
 
   template <class T>
-  void getColRangeAndResetNull(T* buffer,
-                               const int64_t row_num,
-                               int64_t* min,
-                               int64_t* max,
-                               const int8_t* null_buff) {
+  void initColRangeAndResetNull(T* buffer,
+                                const int64_t row_num,
+                                int64_t* min,
+                                int64_t* max,
+                                const int8_t* null_buff) {
     bool init_flag = false;
     for (int i = 0; i < row_num; i++) {
       if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
