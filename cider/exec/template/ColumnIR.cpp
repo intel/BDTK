@@ -126,7 +126,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
   // TBD: Window function support.
   // TBD: Lazy fetch support.
   // TODO: Reuse columns fetched in JOIN stage.
-  if (col_var->get_rte_idx() > 0) {
+  if (col_var->get_rte_idx() > 1 && !cgen_state_->outer_join_match_found_per_level_.empty() && foundOuterJoinMatch(col_var->get_rte_idx())) {
+
+    // to(spevenhe) add out codegen like: return codegenOuterJoinNullPlaceholder(col_var, fetch_column, co);
     CIDER_THROW(CiderCompileException,
                 "Range table index of ColumnExpr should LE than 0.");
   }

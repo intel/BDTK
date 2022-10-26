@@ -248,7 +248,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
 
   const int8_t** multifrag_col_buffers[2]{nullptr};
   int total_col_num = use_cider_data_format
-                          ? in_batch.getChildrenNum()
+                          ? in_batch.getChildrenNum() + build_table_.getChildrenNum()
                           : in_batch.column_num() + build_table_.column_num();
 
   const int8_t** col_buffers = reinterpret_cast<const int8_t**>(
@@ -258,6 +258,10 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     const void** children_arraies = in_batch.getChildrenArrayPtr();
     for (int64_t i = 0; i < in_batch.getChildrenNum(); ++i) {
       col_buffers[i] = reinterpret_cast<const int8_t*>(children_arraies[i]);
+    }
+    const void** build_table_children_arraies = build_table_.getChildrenArrayPtr();
+    for (int64_t i = 0; i < build_table_.getChildrenNum(); ++i) {
+      col_buffers[i + in_batch.getChildrenNum()] = reinterpret_cast<const int8_t*>(build_table_children_arraies[i]);
     }
   } else {
     for (int64_t i = 0; i < in_batch.column_num(); ++i) {
@@ -283,7 +287,12 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   scan_limit_ = use_cider_data_format ? in_batch.getLength() : in_batch.row_num();
   // for join scenario, max our row may be cross product
   if (query_has_join(ciderCompilationResult_->impl_->rel_alg_exe_unit_)) {
-    scan_limit_ *= build_table_.row_num();
+    if(use_cider_data_format) {
+      scan_limit_ *= build_table_.getLength();
+    } 
+    else {
+      scan_limit_ *= build_table_.row_num();
+    }
   }
 
   // if you call processNextBatch() multi times before fetchResults(),
@@ -323,7 +332,8 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   flatened_num_rows.push_back(use_cider_data_format ? in_batch.getLength()
                                                     : in_batch.row_num());
   if (build_table_.row_num()) {
-    flatened_num_rows.push_back(build_table_.row_num());
+    flatened_num_rows.push_back(use_cider_data_format ? build_table_.getLength()
+                                                    : build_table_.row_num());
   }
   int64_t* num_rows_ptr = flatened_num_rows.data();
   std::vector<uint64_t> flatened_frag_offsets;

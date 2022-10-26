@@ -23,8 +23,10 @@
 
 #include "cider/CiderBatch.h"
 #include "cider/batch/CiderBatchUtils.h"
-#include "exec/module/batch/ArrowABI.h"
 
+#ifndef CIDER_DUCKDBQUERYRUNNER_H
+#include "exec/module/batch/ArrowABI.h"
+#endif
 class ArrowArrayBuilder {
  public:
   ArrowArrayBuilder()

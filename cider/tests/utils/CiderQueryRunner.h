@@ -54,6 +54,10 @@ class CiderQueryRunner {
                                   const CiderBatch& left_batch,
                                   CiderBatch& right_batch);
 
+  CiderBatch runJoinQueryOneBatchForArrowFormat(const std::string& file_or_sql,
+                                    const CiderBatch& left_batch,
+                                    CiderBatch& right_batch);
+
   std::vector<CiderBatch> runQueryForCountDistinct(
       const std::string& file_or_sql,
       const std::vector<std::shared_ptr<CiderBatch>> input_batches);

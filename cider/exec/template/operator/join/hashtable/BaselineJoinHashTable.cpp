@@ -631,7 +631,17 @@ llvm::Value* BaselineJoinHashTable::codegenKey(const CompilationOptions& co) {
           "consider rewriting table order in "
           "FROM clause.");
     }
-    const auto col_lvs = code_generator.codegen(outer_col, true, co);
+    std::vector<llvm::Value*> col_lvs_tmp;
+    if  (co.use_cider_data_format) {
+      auto col_lvs_cider = code_generator.codegen(outer_col, co, true);
+      auto col_lvs_cider_fixed_size = dynamic_cast<FixedSizeColValues*>(col_lvs_cider.get());
+      col_lvs_tmp.push_back(col_lvs_cider_fixed_size->getValue());
+    }
+    else {
+      col_lvs_tmp = code_generator.codegen(outer_col, true, co);
+    }
+    // const auto col_lvs = code_generator.codegen(outer_col, true, co);
+    const auto col_lvs = col_lvs_tmp;
     CHECK_EQ(size_t(1), col_lvs.size());
     const auto col_lv = LL_BUILDER.CreateSExt(
         col_lvs.front(), get_int_type(key_component_width * 8, LL_CONTEXT));
