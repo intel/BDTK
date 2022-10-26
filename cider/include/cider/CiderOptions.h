@@ -40,7 +40,7 @@ DECLARE_bool(needs_error_check);
 
 DECLARE_bool(output_columnar_hint);
 DECLARE_bool(allow_multifrag);
-DECLARE_bool(just_explain);
+DECLARE_uint32(just_explain);
 DECLARE_bool(allow_loop_joins);
 DECLARE_bool(jit_debug);
 DECLARE_bool(with_watchdog);
@@ -88,7 +88,7 @@ struct CiderCompilationOption {
 struct CiderExecutionOption {
   bool output_columnar_hint;
   bool allow_multifrag;
-  bool just_explain;  // return the generated IR for the first step
+  uint32_t just_explain;  // return the generated IR for the first step
   bool allow_loop_joins;
   bool with_watchdog;  // Per work unit, not global.
   bool jit_debug;

@@ -94,6 +94,20 @@ TEST(ArrowArrayBuilderTest, RowNum) {
       CiderCompileException);
 }
 
+TEST(ArrowArrayBuilderTest, BoolColumnBatch) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+
+  std::vector<bool> vec{true, false, true, false, true, true, false, false};
+  std::tie(schema, array) =
+      ArrowArrayBuilder().setRowNum(8).addBoolColumn<bool>("bool_list", vec).build();
+
+  EXPECT_EQ(8, array->length);
+  EXPECT_EQ(1, array->n_children);
+  EXPECT_EQ(0x35, *(uint8_t*)(array->children[0]->buffers[1]));
+  EXPECT_EQ("b", schema->children[0]->format);
+}
+
 TEST(ArrowArrayBuilderTest, OneColumnBatch) {
   ArrowArray* array = nullptr;
   ArrowSchema* schema = nullptr;

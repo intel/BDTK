@@ -62,7 +62,7 @@ enum class ExecutorType { Native, Extern, TableFunctions };
 struct ExecutionOptions {
   bool output_columnar_hint;
   bool allow_multifrag;
-  bool just_explain;  // return the generated IR for the first step
+  uint32_t just_explain;  // return the generated IR for the first step
   bool allow_loop_joins;
   bool with_watchdog;  // Per work unit, not global.
   bool jit_debug;
@@ -82,7 +82,7 @@ struct ExecutionOptions {
   static ExecutionOptions defaults() {
     return ExecutionOptions{false,
                             true,
-                            false,
+                            0,
                             false,
                             true,
                             false,
