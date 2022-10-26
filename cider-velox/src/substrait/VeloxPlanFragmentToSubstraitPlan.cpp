@@ -109,6 +109,7 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
       });
     } else if (auto joinNode =
                    std::dynamic_pointer_cast<const AbstractJoinNode>(*riter)) {
+      //TODO: current does not support for pattern like "filter-project->join->filter"
       const auto& joinLeftSource = joinNode->sources()[0];
       const auto& joinRightSource = joinNode->sources()[1];
 
