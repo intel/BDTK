@@ -217,7 +217,7 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
 
-  // Deprecating
+  // To be deperacated.
   std::vector<llvm::Value*> codegen(const Analyzer::CaseExpr*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::ExtractExpr*, const CompilationOptions&);
