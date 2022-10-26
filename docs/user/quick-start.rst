@@ -2,8 +2,7 @@
 BDTK User Guide
 =====================
 
-BDTK mainly act as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox
-among the Prestissimo project. 
+BDTK mainly acts as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Veloxamong the Prestissimo project. 
 In this context and in the following guide, the term **presto_cpp** or **presto native worker** stands for Presto + Velox integrated with BDTK. 
 
 Environment Preparation
