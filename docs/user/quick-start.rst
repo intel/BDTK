@@ -178,7 +178,7 @@ Run a DEMO using HDFS
 
    $ wget http://web.mit.edu/kerberos/dist/krb5/1.19/krb5-${krb5-version}.tar.gz
    $ tar zxvf krb5-${krb5-version}.tar
-   $ cd krb5-${krb5-version}/src/include/krb5/krb5.hin krb5-${krb5-version}/src/include/krb5/krb5.h
+   $ cp ./krb5-${krb5-version}/src/include/krb5/krb5.hin ./krb5-${krb5-version}/src/include/krb5/krb5.h
    
 1. Install the libraries for HDFS/S3
 ::
