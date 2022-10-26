@@ -29,6 +29,7 @@
 
 #include "substrait/type.pb.h"
 
+#include "cider/CiderBatch.h"
 #include "cider/CiderTableSchema.h"
 
 struct CommandResult {
@@ -137,6 +138,19 @@ class SchemaUtils {
     CHECK(schema->getFlattenColumnTypes().size() > 0 &&
           column < schema->getFlattenColumnTypes().size());
     return schema->getFlattenColumnTypes()[column];
+  }
+};
+
+class ArrowToCiderBatch {
+ public:
+  static std::shared_ptr<CiderBatch> createCiderBatchFromArrowBuilder(
+      std::tuple<ArrowSchema*&, ArrowArray*&> array_with_schema) {
+    ArrowSchema* schema = nullptr;
+    ArrowArray* array = nullptr;
+    std::tie(schema, array) = array_with_schema;
+
+    return std::make_shared<CiderBatch>(
+        schema, array, std::make_shared<CiderDefaultAllocator>());
   }
 };
 #endif  // CIDER_UTILS_H

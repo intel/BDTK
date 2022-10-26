@@ -150,6 +150,32 @@ TEST(QueryArrowDataGeneratorTest, genNullColumnTest) {
   EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFC);
 }
 
+TEST(QueryArrowDataGeneratorTest, genBoolColumnTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                8,
+                                                {"col"},
+                                                {CREATE_SUBSTRAIT_TYPE(Bool)},
+                                                {0},
+                                                GeneratePattern::Random,
+                                                0,
+                                                0);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[1]), 0x00);
+
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                8,
+                                                {"col"},
+                                                {CREATE_SUBSTRAIT_TYPE(Bool)},
+                                                {0},
+                                                GeneratePattern::Random,
+                                                1,
+                                                1);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[1]), 0xFF);
+}
+
 // TODO: add STRING DATA TIMESTAMP tests
 
 int main(int argc, char** argv) {

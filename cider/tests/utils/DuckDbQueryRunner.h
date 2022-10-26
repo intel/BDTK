@@ -49,6 +49,19 @@ class DuckDbQueryRunner {
                                 const std::string& create_ddl,
                                 const std::shared_ptr<CiderBatch>& data);
 
+  // create a table with create_ddl (SQL DDL), and insert arrow-formatted cider batch data
+  void createTableAndInsertArrowData(
+      const std::string& table_name,
+      const std::string& create_ddl,
+      const std::vector<std::shared_ptr<CiderBatch>>& data);
+
+  void createTableAndInsertArrowData(const std::string& table_name,
+                                     const std::string& create_ddl,
+                                     std::shared_ptr<CiderBatch> data) {
+    auto batches = std::vector<std::shared_ptr<CiderBatch>>{data};
+    createTableAndInsertArrowData(table_name, create_ddl, batches);
+  }
+
   std::unique_ptr<::duckdb::MaterializedQueryResult> runSql(const std::string& sql);
 
  private:
