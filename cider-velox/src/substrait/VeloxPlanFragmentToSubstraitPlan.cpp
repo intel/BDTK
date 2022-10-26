@@ -20,7 +20,6 @@
  */
 
 #include "VeloxPlanFragmentToSubstraitPlan.h"
-#include <google/protobuf/util/json_util.h>
 
 namespace facebook::velox::substrait {
 
