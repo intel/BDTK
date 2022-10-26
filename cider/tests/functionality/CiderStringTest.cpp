@@ -264,10 +264,32 @@ class CiderStringTestArrow : public CiderTestBase {
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
   prepareArrowBatch();
-  assertQueryArrowTemp("SELECT col_1 FROM test ");
-  assertQueryArrowTemp("SELECT col_2 FROM test ");
-  assertQueryArrowTemp("SELECT col_1, col_2 FROM test ");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 = '0000000000'");
+  assertQueryArrow("SELECT col_1 FROM test ");
+  assertQueryArrow("SELECT col_2 FROM test ");
+  assertQueryArrow("SELECT col_1, col_2 FROM test ");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 = '0000000000'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
+}
+
+TEST_F(CiderStringTestArrow, ArrowBasicStringLikeTest) {
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '22%22'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '_33%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '44_%'");
+
+  assertQueryArrow(
+      "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");
+  assertQueryArrow(
+      "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'",
+                   "like_wo_cast.json");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
+  assertQueryArrow(
+      "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE '%111%'");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

@@ -278,6 +278,66 @@ llvm::Value* CodeGenerator::codegen(const Analyzer::StringOper* expr,
   }
 }
 
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenLikeExpr(
+    const Analyzer::LikeExpr* expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  if (is_unnest(extract_cast_arg(expr->get_arg()))) {
+    CIDER_THROW(CiderCompileException, "LIKE not supported for unnested expressions");
+  }
+  char escape_char{'\\'};
+  if (expr->get_escape_expr()) {
+    auto escape_char_expr =
+        dynamic_cast<const Analyzer::Constant*>(expr->get_escape_expr());
+    CHECK(escape_char_expr);
+    CHECK(escape_char_expr->get_type_info().is_string());
+    CHECK_EQ(size_t(1), escape_char_expr->get_constval().stringval->size());
+    escape_char = (*escape_char_expr->get_constval().stringval)[0];
+  }
+  auto pattern = dynamic_cast<const Analyzer::Constant*>(expr->get_like_expr());
+  CHECK(pattern);
+  //  auto fast_dict_like_lv = codegenDictLike(expr->get_own_arg(),
+  //                                           pattern,
+  //                                           expr->get_is_ilike(),
+  //                                           expr->get_is_simple(),
+  //                                           escape_char,
+  //                                           co);
+  //  if (fast_dict_like_lv) {
+  //    return fast_dict_like_lv;
+  //  }
+  const auto& ti = expr->get_arg()->get_type_info();
+  CHECK(ti.is_string());
+  if (g_enable_watchdog && ti.get_compression() != kENCODING_NONE) {
+    CIDER_THROW(CiderWatchdogException,
+                "Cannot do LIKE / ILIKE on this dictionary encoded column, its "
+                "cardinality is too high");
+  }
+  auto str_lv = codegen(expr->get_arg(), co, true);
+  MultipleValueColValues* str = dynamic_cast<MultipleValueColValues*>(str_lv.get());
+
+  auto like_expr_arg_lvs = codegen(expr->get_like_expr(), co, true);
+  MultipleValueColValues* like =
+      dynamic_cast<MultipleValueColValues*>(like_expr_arg_lvs.get());
+
+  const bool is_nullable{!expr->get_arg()->get_type_info().get_notnull()};
+  llvm::Value* null = nullptr;
+
+  std::vector<llvm::Value*> str_like_args{
+      str->getValueAt(0), str->getValueAt(1), like->getValueAt(0), like->getValueAt(1)};
+  std::string fn_name{expr->get_is_ilike() ? "string_ilike" : "string_like"};
+  if (expr->get_is_simple()) {
+    fn_name += "_simple";
+  } else {
+    str_like_args.push_back(cgen_state_->llInt(int8_t(escape_char)));
+  }
+  if (is_nullable) {
+    null = str->getNull();
+  }
+  auto ret = std::make_unique<FixedSizeColValues>(
+      cgen_state_->emitCall(fn_name, str_like_args), null);
+  return ret;
+}
+
 llvm::Value* CodeGenerator::codegen(const Analyzer::LikeExpr* expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);

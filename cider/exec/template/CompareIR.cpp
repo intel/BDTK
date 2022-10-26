@@ -393,7 +393,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarcharCmpFun(
   auto rhs_fixsize = dynamic_cast<TwoValueColValues*>(rhs);
   CHECK(rhs_fixsize);
 
-  llvm::Value* value = cgen_state_->emitCall("string_eq",
+  std::string func_name = string_cmp_func(bin_oper->get_optype());
+
+  llvm::Value* value = cgen_state_->emitCall(func_name,
                                              {lhs_fixsize->getValueAt(0),
                                               lhs_fixsize->getValueAt(1),
                                               rhs_fixsize->getValueAt(0),

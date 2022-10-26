@@ -659,6 +659,9 @@ class CodeGenerator {
   std::unique_ptr<CodegenColValues> codegenInputColumn(const Analyzer::ColumnVar* col_var,
                                                        const bool fetch_column);
 
+  std::unique_ptr<CodegenColValues> codegenLikeExpr(const Analyzer::LikeExpr*,
+                                                    const CompilationOptions& co);
+
  protected:
   Executor* executor() const {
     if (!executor_) {
