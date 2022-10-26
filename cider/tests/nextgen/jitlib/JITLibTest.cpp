@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 #include "exec/nextgen/jitlib/JITLib.h"
 
 #include <gtest/gtest.h>
