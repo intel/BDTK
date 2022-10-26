@@ -113,8 +113,9 @@ class CiderCompileModule::Impl {
         std::make_shared<RelAlgExecutionUnit>(translator_->createRelAlgExecutionUnit());
 
     // if this is a join query and don't feed a valid build table, throw exception
-    if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0 &&
-        build_table_.isMoved() && build_table_.getChildrenNum() == 0) {
+    if (!ra_exe_unit_->join_quals.empty() &&
+        (build_table_.row_num() == 0 ||
+         (!build_table_.isMoved() && build_table_.getChildrenNum() == 0))) {
       CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
     }
 
@@ -325,8 +326,6 @@ class CiderCompileModule::Impl {
     } else if (type.has_i32()) {
       int32_t* buffer = reinterpret_cast<int32_t*>(buf);
       initColRangeAndResetNull<int32_t>(buffer, row_num, min, max, null_buff);
-    } else {
-      return;
     }
   }
 
