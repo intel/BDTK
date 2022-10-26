@@ -245,11 +245,12 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   // reset fetched_rows, ignore data not fetched.
   bool use_cider_data_format = ciderCompilationOption_.use_cider_data_format;
   fetched_rows_ = 0;
-
+  bool is_join = query_has_join(ciderCompilationResult_->impl_->rel_alg_exe_unit_);
   const int8_t** multifrag_col_buffers[2]{nullptr};
-  int total_col_num = use_cider_data_format
-                          ? in_batch.getChildrenNum() + build_table_.getChildrenNum()
-                          : in_batch.column_num() + build_table_.column_num();
+  int total_col_num =
+      use_cider_data_format
+          ? in_batch.getChildrenNum() + (is_join ? build_table_.getChildrenNum() : 0)
+          : in_batch.column_num() + build_table_.column_num();
 
   const int8_t** col_buffers = reinterpret_cast<const int8_t**>(
       allocator_->allocate(sizeof(int8_t**) * (total_col_num)));
@@ -259,11 +260,14 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     for (int64_t i = 0; i < in_batch.getChildrenNum(); ++i) {
       col_buffers[i] = reinterpret_cast<const int8_t*>(children_arraies[i]);
     }
-    const void** build_table_children_arraies = build_table_.getChildrenArrayPtr();
-    for (int64_t i = 0; i < build_table_.getChildrenNum(); ++i) {
-      col_buffers[i + in_batch.getChildrenNum()] =
-          reinterpret_cast<const int8_t*>(build_table_children_arraies[i]);
+    if (is_join) {
+      const void** build_table_children_arraies = build_table_.getChildrenArrayPtr();
+      for (int64_t i = 0; i < build_table_.getChildrenNum(); ++i) {
+        col_buffers[i + in_batch.getChildrenNum()] =
+            reinterpret_cast<const int8_t*>(build_table_children_arraies[i]);
+      }
     }
+
   } else {
     for (int64_t i = 0; i < in_batch.column_num(); ++i) {
       col_buffers[i] = in_batch.column(i);
@@ -287,7 +291,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
                             QueryDescriptionType::NonGroupedAggregate;
   scan_limit_ = use_cider_data_format ? in_batch.getLength() : in_batch.row_num();
   // for join scenario, max our row may be cross product
-  if (query_has_join(ciderCompilationResult_->impl_->rel_alg_exe_unit_)) {
+  if (is_join) {
     if (use_cider_data_format) {
       scan_limit_ *= build_table_.getLength();
     } else {
@@ -331,7 +335,7 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
   std::vector<int64_t> flatened_num_rows;
   flatened_num_rows.push_back(use_cider_data_format ? in_batch.getLength()
                                                     : in_batch.row_num());
-  if (build_table_.row_num()) {
+  if (is_join) {
     flatened_num_rows.push_back(use_cider_data_format ? build_table_.getLength()
                                                       : build_table_.row_num());
   }

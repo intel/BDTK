@@ -383,7 +383,7 @@ class CiderArrowOneToManyRandomNullJoinTest : public CiderArrowFormatJoinTestBas
 // TODO: (spevenhe) to be deprecated, now some features like left join and is null is not
 // supported yet
 // TODO: (spevenhe) add some corner case which will lead to build baseline join table
-// TODO: (spevenhe) add tests when OR and AND merged
+// TODO: (spevenhe) add tests when OR and AND fully supported
 // TODO: (spevenhe) add col_int = col_bigint, col_float < 50 etc when CAST support
 // TODO: (spevenhe) join on string
 // TODO: (spevenhe) join on date

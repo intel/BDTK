@@ -640,7 +640,6 @@ llvm::Value* BaselineJoinHashTable::codegenKey(const CompilationOptions& co) {
     } else {
       col_lvs_tmp = code_generator.codegen(outer_col, true, co);
     }
-    // const auto col_lvs = code_generator.codegen(outer_col, true, co);
     const auto col_lvs = col_lvs_tmp;
     CHECK_EQ(size_t(1), col_lvs.size());
     const auto col_lv = LL_BUILDER.CreateSExt(

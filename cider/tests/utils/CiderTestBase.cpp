@@ -152,7 +152,6 @@ void CiderJoinTestBase::assertJoinQueryRowEqualForArrowFormat(
     const std::string& json_file,
     const bool ignore_order) {
   VLOG(4) << sql;
-  std::cout << sql << std::endl;
   auto duck_res = duckDbQueryRunner_.runSql(sql);
   auto duck_res_batches =
       DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(duck_res);

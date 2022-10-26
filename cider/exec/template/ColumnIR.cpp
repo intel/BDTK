@@ -130,7 +130,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
       !cgen_state_->outer_join_match_found_per_level_.empty() &&
       foundOuterJoinMatch(col_var->get_rte_idx())) {
     // to(spevenhe) add out codegen like: return codegenOuterJoinNullPlaceholder(col_var,
-    // fetch_column, co);
+    // fetch_column, co) to support left join; add after vector<CodegenColValues>
+    // supported
     CIDER_THROW(CiderCompileException,
                 "Range table index of ColumnExpr should LE than 0.");
   }

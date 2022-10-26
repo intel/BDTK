@@ -31,7 +31,6 @@
 #include "util/measure.h"
 
 #include <google/protobuf/util/json_util.h>
-#include "cider/batch/ScalarBatch.h"
 
 #define COMPILE_AND_GEN_RUNTIME_MODULE()                                             \
   compile_option.needs_error_check = true;                                           \

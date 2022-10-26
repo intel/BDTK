@@ -121,10 +121,12 @@ CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
 }
 
 size_t CiderBatch::getBufferNum() const {
+  CHECK(!isMoved());
   return arrow_array_->n_buffers;
 }
 
 size_t CiderBatch::getChildrenNum() const {
+  CHECK(!isMoved());
   return arrow_schema_->n_children;
 }
 
@@ -365,7 +367,7 @@ void* CiderBatch::getDataBuffersPtr() const {
 
 const void* CiderBatch::getNullBuffersPtr() const {
   CHECK(!isMoved());
-  return getBuffersPtr()[0];
+  return arrow_array_->buffers[0];
 }
 
 void CiderBatch::setNullCount(int64_t null_num) {

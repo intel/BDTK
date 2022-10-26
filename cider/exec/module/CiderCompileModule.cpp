@@ -21,7 +21,6 @@
 
 #include "cider/CiderCompileModule.h"
 #include "CiderCompilationResultImpl.h"
-#include "cider/batch/ScalarBatch.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/template/Execute.h"
 #include "type/schema/CiderSchemaProvider.h"
@@ -115,7 +114,7 @@ class CiderCompileModule::Impl {
 
     // if this is a join query and don't feed a valid build table, throw exception
     if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0 &&
-        build_table_.getChildrenNum() == 0) {
+        build_table_.isMoved() && build_table_.getChildrenNum() == 0) {
       CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
     }
 
@@ -351,6 +350,7 @@ class CiderCompileModule::Impl {
           *max = buffer[i];
       }
     }
+    // reset null value outside the col_range to avoid build in hashtable in next
     for (int i = 0; i < row_num; i++) {
       if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
         buffer[i] = *min - 1;
@@ -509,7 +509,7 @@ class CiderCompileModule::Impl {
     // row num to build table row num
     int row_num = 20;
     if (use_cider_data_format) {
-      if (build_table_.getLength() > 0) {
+      if (!build_table_.isMoved() && build_table_.getLength() > 0) {
         row_num = build_table_.getLength();
       }
     } else {
