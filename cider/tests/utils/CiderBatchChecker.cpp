@@ -50,7 +50,7 @@ bool CiderBatchChecker::colNumCheck(
     int expected_col_num) {
   for (auto i = 0; i < batches.size(); ++i) {
     if (batches[i]->getChildrenNum() != expected_col_num) {
-      std::cout << "Batch " << i << " is not having the same number of cols. "
+      std::cout << "Batch " << i << " is not having the same number of cols: "
                 << "Expected " << expected_col_num << "; Got "
                 << batches[i]->getChildrenNum() << std::endl;
       return false;
@@ -70,19 +70,21 @@ int CiderBatchChecker::getTotalNumOfRows(
 
 bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batch,
                                                  const CiderBatch* actual_batch) {
-  auto expected_buffer = expected_batch->getNulls();
-  auto actual_buffer = actual_batch->getNulls();
-  auto expected_count = expected_batch->getNullCount();
-  auto actual_count = actual_batch->getNullCount();
+  auto expected_null_cnt = expected_batch->getNullCount();
+  auto actual_null_cnt = actual_batch->getNullCount();
   auto row_num = expected_batch->getLength();
 
   // skip checking null_count if it is not yet computed (-1)
-  if (expected_count != -1 && actual_count != -1 && expected_count != actual_count) {
+  if (expected_null_cnt != -1 && actual_null_cnt != -1 &&
+      expected_null_cnt != actual_null_cnt) {
     std::cout << "expected_null_count != actual_null_count. "
-              << "Expected: " << expected_count << ". Actual: " << actual_count
+              << "Expected: " << expected_null_cnt << ". Actual: " << actual_null_cnt
               << std::endl;
     return false;
   }
+
+  auto expected_buffer = expected_batch->getNulls();
+  auto actual_buffer = actual_batch->getNulls();
 
   if (!expected_buffer && !actual_buffer) {
     // both buffers are nullptr, no need to check
@@ -90,15 +92,36 @@ bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batc
   } else if (expected_buffer && actual_buffer) {
     // both buffers exist
     return CiderBitUtils::CheckBitVectorEq(expected_buffer, actual_buffer, row_num);
+  } else {
+    // one is nullptr but the other is not, null_count of the other batch must be 0
+    if (!actual_null_cnt) {
+      // actual values are all valid, expected null count should be 0
+      expected_null_cnt = expected_null_cnt == -1
+                              ? CiderBitUtils::countUnsetBits(expected_buffer, row_num)
+                              : expected_null_cnt;
+      return expected_null_cnt == 0;
+    } else {
+      // expected values are all valid, actual null count should be 0
+      actual_null_cnt = actual_null_cnt == -1
+                            ? CiderBitUtils::countUnsetBits(actual_buffer, row_num)
+                            : actual_null_cnt;
+      return actual_null_cnt == 0;
+    }
   }
-
-  // one buffer is nullptr while the other exists, cannot happen
-  return false;
 }
 
 template <typename T>
 bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_batch,
                                                  const ScalarBatch<T>* actual_batch) {
+  if (!expected_batch || !actual_batch) {
+    // casting a ScalarBatch to types different from its original type will yield nullptr
+    // however, the underlying data can be the same even if the types are different
+    // so we skip memcmp and check results by ConcatenatedRow hashing
+    std::cout << "One or more ScalarBatches are null_ptr in checkOneScalarBatchEqual. "
+              << "This can be caused by casting a ScalarBatch to a wrong type."
+              << std::endl;
+    return false;
+  }
   auto expected_data_buffer = expected_batch->getRawData();
   auto actual_data_buffer = actual_batch->getRawData();
 
@@ -107,7 +130,7 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
   // compare nulls
   bool null_buffer_eq = checkValidityBitmapEqual(expected_batch, actual_batch);
   if (!null_buffer_eq) {
-    std::cout << "Null buffer compare failed." << std::endl;
+    std::cout << "Null buffer memcmp failed." << std::endl;
     return false;
   }
 
@@ -115,7 +138,7 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
   bool data_buffer_eq = true;
   data_buffer_eq = !memcmp(expected_data_buffer, actual_data_buffer, row_num * sizeof(T));
   if (!data_buffer_eq) {
-    std::cout << "Data buffer compare failed." << std::endl;
+    std::cout << "Data buffer memcmp failed." << std::endl;
     return false;
   }
   return true;
@@ -128,7 +151,7 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
       checkValidityBitmapEqual(const_cast<const CiderBatch*>(expected_batch),
                                const_cast<const CiderBatch*>(actual_batch));
   if (!null_buffer_eq) {
-    std::cout << "Null buffer compare failed." << std::endl;
+    std::cout << "Null buffer memcmp failed." << std::endl;
     return false;
   }
 
@@ -174,7 +197,7 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
         is_equal = checkOneStructBatchEqual(expected_child.get(), actual_child.get());
         break;
       default:
-        CIDER_THROW(CiderCompileException, "Unsupported type for checking.");
+        CIDER_THROW(CiderUnsupportedException, "Unsupported type for checking.");
     }
     if (!is_equal) {
       std::cout << "checkOneStructBatch failed at child: " << i << std::endl;

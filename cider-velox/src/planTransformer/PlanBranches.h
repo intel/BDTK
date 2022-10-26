@@ -40,9 +40,9 @@ class PlanBranches {
   std::vector<int32_t> getSrcToRootBranchIds() { return srcToRootBranchIds_; }
   // branch Id start from 1.
   VeloxPlanBranch getBranch(int32_t branchId);
-  int32_t getParentBranchId(int32_t branchId);
-  int32_t getLeftSrcBranchId(int32_t branchId);
-  int32_t getRightSrcBranchId(int32_t branchId);
+  static int32_t getParentBranchId(int32_t branchId);
+  static int32_t getLeftSrcBranchId(int32_t branchId);
+  static int32_t getRightSrcBranchId(int32_t branchId);
   VeloxPlanNodeAddr getPlanNodeAddr(int32_t branchId, int32_t nodeId);
   VeloxPlanNodeAddr getBranchSrcNodeAddr(int32_t branchId);
   VeloxPlanNodeAddr moveToTarget(VeloxPlanNodeAddr& curNodeAddr);
