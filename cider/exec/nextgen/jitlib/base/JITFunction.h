@@ -60,7 +60,7 @@ class JITFunction {
 
   template <typename R, typename... Args>
   auto getFunctionPointer() {
-    if constexpr (sizeof...(Args)) {
+    if constexpr (sizeof...(Args) > 0) {
       using func_type = R (*)(Args...);
       return reinterpret_cast<func_type>(getFunctionPointer());
     } else {
@@ -78,7 +78,7 @@ class JITFunction {
 
   virtual void createReturn(JITValue& value) = 0;
 
-  virtual JITValuePointer emitJITFunction(
+  virtual JITValuePointer emitJITFunctionCall(
       JITFunction& function,
       const JITFunctionEmitDescriptor& descriptor) = 0;
 

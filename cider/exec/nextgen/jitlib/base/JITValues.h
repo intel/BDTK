@@ -34,7 +34,7 @@ class JITValue {
  public:
   JITValue(JITTypeTag type_tag,
            const std::string& name = "value",
-           JITBackendTag backend = LLVMJIT)
+           JITBackendTag backend = JITBackendTag::LLVMJIT)
       : value_name_(name), type_tag_(type_tag), backend_tag_(backend) {}
 
   JITValue(const JITValue&) = delete;

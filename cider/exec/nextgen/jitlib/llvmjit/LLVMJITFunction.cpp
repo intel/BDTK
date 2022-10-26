@@ -81,7 +81,7 @@ JITValuePointer LLVMJITFunction::createVariable(const std::string& name,
   ir_builder_->SetInsertPoint(current_block);
 
   return std::make_shared<LLVMJITValue>(
-      type_tag, *this, variable_memory, name, LLVMJIT, true);
+      type_tag, *this, variable_memory, name, JITBackendTag::LLVMJIT, true);
 }
 
 void LLVMJITFunction::createReturn() {
@@ -89,10 +89,8 @@ void LLVMJITFunction::createReturn() {
 }
 
 void LLVMJITFunction::createReturn(JITValue& value) {
-  if (LLVMJIT == value.getValueBackendTag()) {
-    LLVMJITValue& llvmjit_value = static_cast<LLVMJITValue&>(value);
-    ir_builder_->CreateRet(llvmjit_value.load());
-  }
+  LLVMJITValue& llvmjit_value = static_cast<LLVMJITValue&>(value);
+  ir_builder_->CreateRet(llvmjit_value.load());
 }
 
 template <JITTypeTag type_tag,
@@ -120,30 +118,28 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
     default:
       LOG(ERROR) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: " << type_tag;
   }
-  return std::make_shared<LLVMJITValue>(type_tag, *this, llvm_value, "", LLVMJIT, false);
+  return std::make_shared<LLVMJITValue>(
+      type_tag, *this, llvm_value, "", JITBackendTag::LLVMJIT, false);
 }
 
-JITValuePointer LLVMJITFunction::emitJITFunction(
+JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     JITFunction& function,
     const JITFunctionEmitDescriptor& descriptor) {
   if (LLVMJITFunction& llvmjit_function = dynamic_cast<LLVMJITFunction&>(function);
       &llvmjit_function.module_ == &module_) {
     llvm::SmallVector<llvm::Value*, JITFunctionEmitDescriptor::DefaultParamsNum> args;
+    args.reserve(descriptor.params_vector.size());
+
     for (auto jit_value : descriptor.params_vector) {
-      if (jit_value->getValueBackendTag() == LLVMJIT) {
-        LLVMJITValue* llvmjit_value = static_cast<LLVMJITValue*>(jit_value);
-        args.push_back(llvmjit_value->llvm_value_);
-      } else {
-        LOG(ERROR) << "Invalid argument in LLVMJITFunction::emitJITFunction.";
-        return nullptr;
-      }
+      LLVMJITValue* llvmjit_value = static_cast<LLVMJITValue*>(jit_value);
+      args.push_back(llvmjit_value->llvm_value_);
     }
 
     llvm::Value* ans = ir_builder_->CreateCall(&llvmjit_function.func_, args);
     return std::make_shared<LLVMJITValue>(
-        descriptor.ret_type, *this, ans, "ret", LLVMJIT, false);
+        descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
   } else {
-    LOG(ERROR) << "Invalid target function in LLVMJITFunction::emitJITFunction.";
+    LOG(ERROR) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return nullptr;
   }
 }

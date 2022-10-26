@@ -26,7 +26,7 @@
 #include "util/Logger.h"
 
 namespace jitlib {
-enum JITBackendTag { LLVMJIT };
+enum class JITBackendTag { LLVMJIT };
 enum JITTypeTag { INVALID, VOID, INT8, INT16, INT32, INT64 };
 
 template <JITTypeTag>

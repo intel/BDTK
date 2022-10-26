@@ -47,8 +47,9 @@ class LLVMJITFunction final : public JITFunction {
 
   void createReturn(JITValue& value) override;
 
-  JITValuePointer emitJITFunction(JITFunction& function,
-                                  const JITFunctionEmitDescriptor& descriptor) override;
+  JITValuePointer emitJITFunctionCall(
+      JITFunction& function,
+      const JITFunctionEmitDescriptor& descriptor) override;
 
   void finish() override;
 

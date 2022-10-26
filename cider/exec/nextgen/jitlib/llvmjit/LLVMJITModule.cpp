@@ -40,6 +40,8 @@ static llvm::FunctionType* getFunctionSignature(const JITFunctionDescriptor& des
   llvm::Type* ret_type = getLLVMType(descriptor.ret_type.type, context);
 
   llvm::SmallVector<llvm::Type*, JITFunctionDescriptor::DefaultParamsNum> arguments;
+  arguments.reserve(descriptor.params_type.size());
+
   for (const JITFunctionParam& param_descriptor : descriptor.params_type) {
     llvm::Type* arg_type = getLLVMType(param_descriptor.type, context);
     if (arg_type) {

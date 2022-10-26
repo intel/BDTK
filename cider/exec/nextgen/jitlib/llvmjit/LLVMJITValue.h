@@ -35,7 +35,7 @@ class LLVMJITValue final : public JITValue {
                         LLVMJITFunction& function,
                         llvm::Value* value,
                         const std::string& name = "value",
-                        JITBackendTag backend = LLVMJIT,
+                        JITBackendTag backend = JITBackendTag::LLVMJIT,
                         bool is_variable = false)
       : JITValue(type_tag, name, backend)
       , parent_function_(function)
@@ -43,9 +43,7 @@ class LLVMJITValue final : public JITValue {
       , is_variable_(is_variable) {}
 
   JITValue& assign(JITValue& value) override {
-    if (LLVMJIT == value.getValueBackendTag()) {
-      store(static_cast<LLVMJITValue&>(value));
-    }
+    store(static_cast<LLVMJITValue&>(value));
     return *this;
   }
 

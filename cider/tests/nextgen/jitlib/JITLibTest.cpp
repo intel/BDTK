@@ -51,7 +51,7 @@ TEST_F(JITLibTests, BasicTest) {
   {
     JITValuePointer x = function2->createVariable("x1", INT32);
     JITValuePointer init_val = function1->createConstant(INT32, 321);
-    *x = *function2->emitJITFunction(
+    *x = *function2->emitJITFunctionCall(
         *function1,
         JITFunctionEmitDescriptor{.ret_type = INT32, .params_vector = {init_val.get()}});
     function2->createReturn(*x);
