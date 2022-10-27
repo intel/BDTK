@@ -34,6 +34,8 @@ CiderPlanTransformerFactory::CiderPlanTransformerFactory() {
           // .registerPattern(std::make_shared<LeftDeepJoinPattern>(),
           //                  std::make_shared<CiderPlanRewriter>())
           .registerPattern(std::make_shared<FilterPattern>(),
+                           std::make_shared<CiderPlanRewriter>())
+          .registerPattern(std::make_shared<PartialAggPattern>(),
                            std::make_shared<CiderPlanRewriter>());
 }
 
