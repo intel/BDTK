@@ -348,6 +348,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
     null = lhs_nullable ? lhs_nullable->getNull() : rhs_nullable->getNull();
   }
   if (lhs_ti.is_string()) {
+    CHECK(rhs_ti.is_string());
     return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
   }
 
@@ -384,8 +385,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarcharCmpFun(
     CodegenColValues* rhs,
     llvm::Value* null) {
   AUTOMATIC_IR_METADATA(cgen_state_);
-  auto lhs_fixsize = dynamic_cast<MultipleValueColValues*>(lhs);
-  auto rhs_fixsize = dynamic_cast<MultipleValueColValues*>(rhs);
+  auto lhs_fixsize = dynamic_cast<TwoValueColValues*>(lhs);
+  CHECK(lhs_fixsize);
+  auto rhs_fixsize = dynamic_cast<TwoValueColValues*>(rhs);
+  CHECK(rhs_fixsize);
 
   llvm::Value* value = cgen_state_->emitCall("string_eq",
                                              {lhs_fixsize->getValueAt(0),

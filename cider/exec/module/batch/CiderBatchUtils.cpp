@@ -187,6 +187,8 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
         case 's':
           return kSTRUCT;
       }
+    case 'u':
+      return kVARCHAR;
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported data type to CiderBatch: ") + format);

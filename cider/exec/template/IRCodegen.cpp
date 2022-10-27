@@ -235,9 +235,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
 
   switch (ti.get_type()) {
     case kVARCHAR:
-      constant_value.erase(constant_value.begin());
-      return std::make_unique<MultipleValueColValues>(
-          constant_value,
+      CHECK(constant_value.size() == 3);
+      return std::make_unique<TwoValueColValues>(
+          constant_value[1],
+          constant_value[2],
           constant_expr->get_is_null()
               ? llvm::ConstantInt::getTrue(cgen_state_->context_)
               : llvm::ConstantInt::getFalse(cgen_state_->context_));

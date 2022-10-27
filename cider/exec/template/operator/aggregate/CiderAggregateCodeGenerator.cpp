@@ -221,7 +221,7 @@ void ProjectIDStringCodeGenerator::codegen(CodegenColValues* input,
   AUTOMATIC_IR_METADATA(cgen_state_);
   CHECK(project_arraies_i8);
   CHECK(index);
-  MultipleValueColValues* args = dynamic_cast<MultipleValueColValues*>(input);
+  TwoValueColValues* args = dynamic_cast<TwoValueColValues*>(input);
   if (nullptr == args) {
     CIDER_THROW(CiderCompileException,
                 "ProjectIDStringCodeGenerator only support MultipleValueCol data now.");

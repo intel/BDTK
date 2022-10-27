@@ -264,10 +264,10 @@ class CiderStringTestArrow : public CiderTestBase {
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
   prepareArrowBatch();
-  assertQueryArrow("SELECT col_1 FROM test ");
-  assertQueryArrow("SELECT col_2 FROM test ");
-  assertQueryArrow("SELECT col_1, col_2 FROM test ");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 = '0000000000'");
+  assertQueryArrowTemp("SELECT col_1 FROM test ");
+  assertQueryArrowTemp("SELECT col_2 FROM test ");
+  assertQueryArrowTemp("SELECT col_1, col_2 FROM test ");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 = '0000000000'");
 }
 
 class CiderConstantStringTest : public CiderTestBase {
