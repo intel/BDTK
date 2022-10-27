@@ -153,42 +153,45 @@ bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
   auto actual_data_buf = actual_batch->getRawData();
   auto actual_valid_buf = actual_batch->getNulls();
 
-  // both validity buffer and data buffer are bitmaps
-  // we compare both of them in one step with a bitwise AND
+  /// NOTE: (YBRua) When data is null, the corresponding bit can take any value of 0 or 1
+  /// causing the compare to fail even if the two batches are actually equal
+  /// so we use validity as a mask to filter out random null data and compare masked bytes
+  /// e.g. consider a byte with 4 nulls and 4 valid values
+  ///  the data in first 4 null bits is unspecified and can be anything
+  ///  expected: valid: [00001111] data: [01010101] -> masked: [00000101]
+  ///  actual  : valid: [00001111] data: [00000101] -> masked: [00000101]
+
   auto row_num = actual_batch->getLength();
   auto bytes = ((row_num + 7) >> 3);
 
   for (int i = 0; i < bytes - 1; ++i) {
-    // apply bitwise AND
+    // apply bitwise AND masking
     uint8_t expected_masked = expected_valid_buf
                                   ? expected_data_buf[i] & expected_valid_buf[i]
                                   : expected_data_buf[i];
     uint8_t actual_masked =
         actual_valid_buf ? actual_data_buf[i] & actual_valid_buf[i] : actual_data_buf[i];
 
-    if (expected_masked ^ actual_masked) {
-      // we expect all bits here are equal, check with bitwise XOR
+    if (expected_masked != actual_masked) {
+      // we expect all bits here are equal, i.e. the uint8 value should be equal
       return false;
     }
   }
 
-  // the last byte require some extra processing, so we do it outside for-loop
+  // the last byte require some extra processing
+  // because the trailing padding values are uninitialized and can be different
   uint8_t expected_masked =
       expected_valid_buf ? expected_data_buf[bytes - 1] & expected_valid_buf[bytes - 1]
                          : expected_data_buf[bytes - 1];
   uint8_t actual_masked = actual_valid_buf
                               ? actual_data_buf[bytes - 1] & actual_valid_buf[bytes - 1]
                               : actual_data_buf[bytes - 1];
-
-  // for the last byte, clear trailing padding values to prevent false positives caused
-  // by differences in padding
+  // clear padding values. least-significant bit ordering, clear most significant bits
   auto n_paddings = 8 * bytes - row_num;
-  // least-significant bit ordering; clear most significant bits
   expected_masked = expected_masked & (0xFF >> n_paddings);
   actual_masked = actual_masked & (0xFF >> n_paddings);
 
-  if (expected_masked ^ actual_masked) {
-    // we expect all bits here are equal, check with bitwise XOR
+  if (expected_masked != actual_masked) {
     return false;
   }
 
