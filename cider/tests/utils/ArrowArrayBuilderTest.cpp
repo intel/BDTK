@@ -140,29 +140,9 @@ TEST(ArrowArrayBuilderTest, UTF8Test) {
 
   EXPECT_EQ("u", std::string(schema->children[0]->format));
 
-  int32_t str1_start = *(int32_t*)(array->children[0]->buffers[1]);
-  int32_t str1_length = *((int32_t*)(array->children[0]->buffers[1]) + 1) -
-                        *(int32_t*)(array->children[0]->buffers[1]);
-  char* str1 = (char*)malloc(sizeof(char) * (str1_length + 1));
-  strncpy(str1, (char*)(array->children[0]->buffers[2] + str1_start), str1_length);
-  str1[str1_length] = '\0';
-  EXPECT_EQ("joe", std::string(str1));
-
-  int32_t str2_start = *(int32_t*)((array->children[0]->buffers[1]) + 1);
-  int32_t str2_length = *((int32_t*)(array->children[0]->buffers[1]) + 2) -
-                        *(int32_t*)((array->children[0]->buffers[1]) + 1);
-  char* str2 = (char*)malloc(sizeof(char) * (str2_length + 1));
-  strncpy(str2, (char*)(array->children[0]->buffers[2] + str2_start), str2_length);
-  str2[str2_length] = '\0';
-  EXPECT_EQ("mark", std::string(str2));
-
-  int32_t str3_start = *(int32_t*)((array->children[0]->buffers[1]) + 2);
-  int32_t str3_length = *((int32_t*)(array->children[0]->buffers[1]) + 3) -
-                        *(int32_t*)((array->children[0]->buffers[1]) + 2);
-  char* str3 = (char*)malloc(sizeof(char) * (str3_length + 1));
-  strncpy(str3, (char*)(array->children[0]->buffers[2] + str3_start), str3_length);
-  str3[str3_length] = '\0';
-  EXPECT_EQ("daive", std::string(str3));
+  EXPECT_EQ("joe", CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 0));
+  EXPECT_EQ("mark", CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 1));
+  EXPECT_EQ("davie", CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 2));
 }
 
 TEST(ArrowArrayBuilderTest, MultiColumnsBatch) {

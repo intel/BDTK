@@ -223,6 +223,13 @@ class QueryArrowDataGenerator {
     std::mt19937 rng(std::random_device{}());  // NOLINT
     switch (pattern) {
       case GeneratePattern::Sequence:
+        offset_data.push_back(0);
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
+          col_data += (sequence_string(max_len, i));
+          offset_data.push_back(offset_data[i] + max_len);
+        }
+        break;
       case GeneratePattern::Random:
         offset_data.push_back(0);
         for (auto i = 0; i < row_num; ++i) {
@@ -244,6 +251,20 @@ class QueryArrowDataGenerator {
           "abcdefghijklmnopqrstuvwxyz";
       const size_t max_index = (sizeof(charset) - 1);
       return charset[rand() % max_index];
+    };
+    std::string str(length, 0);
+    std::generate_n(str.begin(), length, randchar);
+    return str;
+  }
+
+  static std::string sequence_string(size_t length, size_t index) {
+    auto randchar = [index]() -> char {
+      const char charset[] =
+          "0123456789"
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          "abcdefghijklmnopqrstuvwxyz";
+      const size_t mod = (sizeof(charset) - 1);
+      return charset[index % mod];
     };
     std::string str(length, 0);
     std::generate_n(str.begin(), length, randchar);

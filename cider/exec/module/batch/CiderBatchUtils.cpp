@@ -339,4 +339,15 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
                   std::string("Unsupported data type to create CiderBatch: ") + format);
   }
 }
+
+std::string extractUttf8ArrowArrayAt(const ArrowArray* array, size_t index) {
+  const char* str = (const char*)(array->buffers[2]);
+  int32_t* offsets = (int32_t*)(array->buffers[1]);
+
+  char* res = (char*)malloc(sizeof(char) * (offsets[index + 1] - offsets[index] + 1));
+  strncpy(res, str + offsets[index], offsets[index + 1] - offsets[index]);
+  res[offsets[index + 1] - offsets[index]] = '\0';
+
+  return std::string(res);
+}
 }  // namespace CiderBatchUtils

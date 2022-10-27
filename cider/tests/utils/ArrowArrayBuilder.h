@@ -292,14 +292,14 @@ class ArrowArrayBuilder {
     return {schema_, array_};
   }
 
-#define PRINT_BY_TYPE(C_TYPE)                \
-  {                                          \
-    ss << "column type: " << #C_TYPE << " "; \
-    C_TYPE* buf = (C_TYPE*)loc;              \
-    for (int j = 0; j < length; j++) {       \
-      ss << buf[j] << "\t";                  \
-    }                                        \
-    break;                                   \
+#define PRINT_BY_TYPE(C_TYPE)                   \
+  {                                             \
+    ss << "column type: " << #C_TYPE << " ";    \
+    C_TYPE* buf = (C_TYPE*)(array->buffers[1]); \
+    for (int j = 0; j < length; j++) {          \
+      ss << buf[j] << "\t";                     \
+    }                                           \
+    break;                                      \
   }
 
   static std::string toString(const ArrowSchema* schema, const ArrowArray* array) {
@@ -308,10 +308,7 @@ class ArrowArrayBuilder {
 
     for (auto i = 0; i < array->n_children; i++) {
       if (array->children[i] != nullptr) {
-        printByType(ss,
-                    schema->children[i]->format,
-                    array->children[i]->buffers[1],
-                    array->length);
+        printByType(ss, schema->children[i]->format, array->children[i], array->length);
       } else {
       }
       ss << '\n';
@@ -334,7 +331,7 @@ class ArrowArrayBuilder {
 
   static void printByType(std::stringstream& ss,
                           const char* type,
-                          const void* loc,
+                          const ArrowArray* array,
                           int64_t length) {
     switch (type[0]) {
       case 'b':
@@ -350,6 +347,13 @@ class ArrowArrayBuilder {
         PRINT_BY_TYPE(float);
       case 'g':
         PRINT_BY_TYPE(double);
+      case 'u':
+        ss << "column type: String ";
+        for (int i = 0; i < length; i++) {
+          ss << CiderBatchUtils::extractUttf8ArrowArrayAt(array, i) << " ";
+        }
+        ss << std::endl;
+        break;
       default:
         CIDER_THROW(CiderCompileException, "Not supported type to print value!");
     }

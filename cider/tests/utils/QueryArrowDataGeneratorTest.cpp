@@ -191,26 +191,43 @@ TEST(QueryArrowDataGeneratorTest, genStringColumnTest) {
                                                 0,
                                                 6);
   EXPECT_EQ(std::string(schema->children[0]->format), "u");
-  const char* str = (const char*)(array->children[0]->buffers[2]);
+  const char* random_str = (const char*)(array->children[0]->buffers[2]);
   int32_t* offsets = (int32_t*)(array->children[0]->buffers[1]);
 
-  std::cout << "str:" << std::string(str) << std::endl;
+  std::cout << "random_str:" << std::string(random_str) << std::endl;
+  std::cout << "str1: "
+            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 0)
+            << std::endl;
+  std::cout << "str2: "
+            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 1)
+            << std::endl;
+  std::cout << "str3: "
+            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 2)
+            << std::endl;
 
-  char* str1 = (char*)malloc(sizeof(char) * (offsets[1] - offsets[0] + 1));
-  strncpy(str1, str + offsets[0], offsets[1] - offsets[0]);
-  str1[offsets[1] - offsets[0]] = '\0';
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                3,
+                                                {"col_str"},
+                                                {CREATE_SUBSTRAIT_TYPE(String)},
+                                                {0},
+                                                GeneratePattern::Sequence,
+                                                0,
+                                                5);
 
-  char* str2 = (char*)malloc(sizeof(char) * (offsets[2] - offsets[1] + 1));
-  strncpy(str2, str + offsets[1], offsets[2] - offsets[1]);
-  str2[offsets[2] - offsets[1]] = '\0';
+  const char* sequence_str = (const char*)(array->children[0]->buffers[2]);
+  offsets = (int32_t*)(array->children[0]->buffers[1]);
 
-  char* str3 = (char*)malloc(sizeof(char) * (offsets[3] - offsets[2] + 1));
-  strncpy(str3, str + offsets[2], offsets[3] - offsets[2]);
-  str3[offsets[3] - offsets[2]] = '\0';
-
-  std::cout << "str1: " << std::string(str1) << std::endl;
-  std::cout << "str2: " << std::string(str2) << std::endl;
-  std::cout << "str3: " << std::string(str3) << std::endl;
+  std::cout << "sequence_str:" << std::string(sequence_str) << std::endl;
+  std::cout << "str1: "
+            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 0)
+            << std::endl;
+  std::cout << "str2: "
+            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 1)
+            << std::endl;
+  std::cout << "str3: "
+            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 2)
+            << std::endl;
 }
 
 int main(int argc, char** argv) {
