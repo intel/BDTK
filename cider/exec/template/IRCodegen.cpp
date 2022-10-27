@@ -200,6 +200,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (function_oper_expr) {
     return codegenFunctionOp(function_oper_expr, co);
   }
+  auto in_values = dynamic_cast<const Analyzer::InValues*>(expr);
+  if (in_values) {
+    return codegenInValues(in_values, co);
+  }
   CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");
 }
 

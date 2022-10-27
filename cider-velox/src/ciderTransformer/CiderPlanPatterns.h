@@ -123,8 +123,33 @@ class FilterStateMachine : public StateMachine {
   bool accept(VeloxPlanNodeAddr nodeAddr) override;
 };
 
+class PartialAggStateMachine : public StateMachine {
+ public:
+  class Initial : public State {
+   public:
+    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+  };
+  class NotAccept : public State {
+   public:
+    bool isFinal() override { return true; };
+  };
+  class PartialAgg : public State {
+   public:
+    bool isFinal() override { return true; };
+  };
+  PartialAggStateMachine() { setCurState(std::make_shared<Initial>()); }
+  void setInitState() override { setCurState(std::make_shared<Initial>()); };
+  bool accept(VeloxPlanNodeAddr nodeAddr) override;
+};
+
 class FilterPattern : public SequencePlanPattern {
  public:
   FilterPattern() { setStateMachine(std::make_shared<FilterStateMachine>()); }
 };
+
+class PartialAggPattern : public SequencePlanPattern {
+ public:
+  PartialAggPattern() { setStateMachine(std::make_shared<PartialAggStateMachine>()); }
+};
+
 }  // namespace facebook::velox::plugin::plantransformer

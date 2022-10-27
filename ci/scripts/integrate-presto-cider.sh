@@ -21,7 +21,7 @@ set -e
 
 VELOX_PLUGIN_MODE=Debug
 PRESTO_CPP_MODE=debug
-if [ "$1" = "release" ] || [ "$1" = "Release"] 
+if [ "$1" = "release" ] || [ "$1" = "Release" ] 
 then 
     echo "Integration under Release mode"
     VELOX_PLUGIN_MODE=Release
@@ -40,28 +40,21 @@ pushd ${WORKER_DIR}
 cp -r ${WORKER_DIR}/velox-plugin/thirdparty/velox/ .
 
 sed -i 's/\"planTransformer\/PlanTransformer\.h\"/\"..\/planTransformer\/PlanTransformer\.h\"/' ${WORKER_DIR}/velox-plugin/cider-velox/src/ciderTransformer/CiderPlanTransformerFactory.h
-popd
 
 rm -rf ${WORKER_DIR}/presto_cpp/main/lib
 mkdir -p ${WORKER_DIR}/presto_cpp/main/lib
 
 
-pushd ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}
-make -j ${CPU_COUNT:-`nproc`}
-popd
-
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider-velox/src/libvelox_plugin.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider-velox/src/ciderTransformer/libcider_plan_transformer.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider-velox/src/planTransformer/libvelox_plan_transformer.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider-velox/src/substrait/libvelox_substrait_convertor.a ${WORKER_DIR}/presto_cpp/main/lib
-cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider/exec/module/libcider.so ${WORKER_DIR}/presto_cpp/main/lib
+cp -a ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider/exec/module/libcider.so* ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider/exec/template/libQueryEngine.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/velox-plugin/build-${VELOX_PLUGIN_MODE}/cider/function/libcider_function.a ${WORKER_DIR}/presto_cpp/main/lib
 
-rm -rf ${WORKER_DIR}/_build/${PRESTO_CPP_MODE}/presto_cpp/main/presto_server
 
-cd ${WORKER_DIR}
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON ${PRESTO_CPP_MODE}
 
 rm -rf ${WORKER_DIR}/_build/${PRESTO_CPP_MODE}/presto_cpp/function

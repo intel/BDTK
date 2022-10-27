@@ -95,6 +95,29 @@ std::vector<llvm::Instruction*> FixedWidthInt::codegenDecode(llvm::Module* modul
   }
 }
 
+FixedWidthBool::FixedWidthBool(llvm::IRBuilder<>* ir_builder, bool nullable)
+    : Decoder(ir_builder, nullable) {}
+
+std::vector<llvm::Instruction*> FixedWidthBool::codegenDecode(llvm::Module* module,
+                                                              llvm::Value* byte_stream,
+                                                              llvm::Value* pos) const {
+  auto col_buffer = extractBufferAt(module, byte_stream, 1);
+  auto nulls = extractNullVector(module, byte_stream);
+
+  auto f = module->getFunction("check_bit_vector_set");
+  CHECK(f);
+  llvm::Value* args[] = {col_buffer, pos};
+
+  if (nulls) {
+    auto get_is_null = module->getFunction("check_bit_vector_clear");
+    CHECK(get_is_null);
+    return {llvm::CallInst::Create(f, args),
+            llvm::CallInst::Create(get_is_null, {nulls, pos})};
+  } else {
+    return {llvm::CallInst::Create(f, args), nullptr};
+  }
+}
+
 FixedWidthUnsigned::FixedWidthUnsigned(const size_t byte_width,
                                        llvm::IRBuilder<>* ir_builder,
                                        bool nullable)

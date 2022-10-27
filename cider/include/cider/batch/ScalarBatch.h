@@ -22,7 +22,8 @@
 #ifndef CIDER_SCALAR_BATCH_H
 #define CIDER_SCALAR_BATCH_H
 
-#include <cstdint>
+#include <type_traits>
+
 #include "CiderBatch.h"
 
 template <typename T>
@@ -35,6 +36,8 @@ class ScalarBatch final : public CiderBatch {
                  : std::make_unique<ScalarBatch<T>>(schema, allocator);
   }
 
+  using NativeType = std::conditional_t<std::is_same_v<bool, T>, uint8_t, T>;
+
   explicit ScalarBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
       : CiderBatch(schema, allocator) {
     checkArrowEntries();
@@ -46,14 +49,14 @@ class ScalarBatch final : public CiderBatch {
     checkArrowEntries();
   }
 
-  T* getMutableRawData() {
+  NativeType* getMutableRawData() {
     CHECK(!isMoved());
-    return reinterpret_cast<T*>(const_cast<void*>(getBuffersPtr()[1]));
+    return reinterpret_cast<NativeType*>(const_cast<void*>(getBuffersPtr()[1]));
   }
 
-  const T* getRawData() const {
+  const NativeType* getRawData() const {
     CHECK(!isMoved());
-    return reinterpret_cast<const T*>(getBuffersPtr()[1]);
+    return reinterpret_cast<const NativeType*>(getBuffersPtr()[1]);
   }
 
  protected:
@@ -65,7 +68,11 @@ class ScalarBatch final : public CiderBatch {
 
     auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
 
-    array_holder->allocBuffer(1, sizeof(T) * size);
+    if constexpr (std::is_same_v<T, bool>) {
+      array_holder->allocBuffer(1, (size + 7) >> 3);
+    } else {
+      array_holder->allocBuffer(1, sizeof(T) * size);
+    }
     setLength(size);
 
     return true;
