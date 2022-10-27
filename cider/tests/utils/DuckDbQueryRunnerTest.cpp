@@ -107,8 +107,21 @@ TEST(DuckDBArrowQueryRunnerTest, simpleDoubleArrowTest) {
 
 TEST(DuckDBArrowQueryRunnerTest, simpleBooleanArrowTest) {
   DuckDbQueryRunner runner;
-  auto input_batch = createSimpleBooleanTestData();
-  auto expected_batch = createSimpleBooleanTestData();
+
+  auto batch_vec =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+  auto batch_null =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
 
   std::string table_name = "table_test";
   std::string create_ddl = "CREATE TABLE table_test(col_a BOOLEAN, col_b BOOLEAN)";

@@ -104,13 +104,37 @@ TEST(CiderBatchCheckerArrowTest, singleColumn) {
 
 TEST(CiderBatchCheckerArrowTest, booleanTest) {
   /// TODO: (YBRua) switch to ArrowArrayBuilder after relevent PR is merged
-  auto batch = createSimpleBooleanTestData();
-  auto eq_batch = createSimpleBooleanTestData();
-  auto neq_batch = createSimpleBooleanTestData(std::vector<bool>(10, true));
+  auto batch_vec =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+  auto batch_null =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  // ignore order
+  auto batch_vec_2 =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  auto batch_null_2 =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
 
-  auto ignore_order_batch = createSimpleBooleanTestData(
-      std::vector<bool>{true, true, true, true, true, false, false, false, false, false},
-      std::vector<bool>{true, false, true, false, true, false, true, false, true, false});
+  auto batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto eq_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto neq_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", std::vector<bool>(10, true), batch_null)
+          .addBoolColumn<bool>("", std::vector<bool>(10, true))
+          .build());
+
+  auto ignore_order_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec_2, batch_null_2)
+          .addBoolColumn("", batch_vec_2)
+          .build());
 
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, eq_batch));
   EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, neq_batch));

@@ -148,38 +148,48 @@ template <>
 bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
     const ScalarBatch<bool>* expected_batch,
     const ScalarBatch<bool>* actual_batch) {
-  auto expected_data_buffer = expected_batch->getRawData();
-  auto expected_validity_buffer = expected_batch->getNulls();
-  auto actual_data_buffer = actual_batch->getRawData();
-  auto actual_validity_buffer = actual_batch->getNulls();
+  auto expected_data_buf = expected_batch->getRawData();
+  auto expected_valid_buf = expected_batch->getNulls();
+  auto actual_data_buf = actual_batch->getRawData();
+  auto actual_valid_buf = actual_batch->getNulls();
 
   // both validity buffer and data buffer are bitmaps
   // we compare both of them in one step with a bitwise AND
   auto row_num = actual_batch->getLength();
   auto bytes = ((row_num + 7) >> 3);
 
-  for (int i = 0; i < bytes; ++i) {
+  for (int i = 0; i < bytes - 1; ++i) {
     // apply bitwise AND
-    uint8_t expected_masked = expected_validity_buffer
-                                  ? expected_data_buffer[i] & expected_validity_buffer[i]
-                                  : expected_data_buffer[i];
-    uint8_t actual_masked = actual_validity_buffer
-                                ? actual_data_buffer[i] & actual_validity_buffer[i]
-                                : actual_data_buffer[i];
-
-    // for the last byte, clear trailing padding values to prevent false positives caused
-    // by differences in padding
-    if (i == bytes - 1) {
-      auto n_paddings = 8 * bytes - row_num;
-      // least-significant bit ordering; clear most significant bits
-      expected_masked = expected_masked & (0xFF >> n_paddings);
-      actual_masked = actual_masked & (0xFF >> n_paddings);
-    }
+    uint8_t expected_masked = expected_valid_buf
+                                  ? expected_data_buf[i] & expected_valid_buf[i]
+                                  : expected_data_buf[i];
+    uint8_t actual_masked =
+        actual_valid_buf ? actual_data_buf[i] & actual_valid_buf[i] : actual_data_buf[i];
 
     if (expected_masked ^ actual_masked) {
       // we expect all bits here are equal, check with bitwise XOR
       return false;
     }
+  }
+
+  // the last byte require some extra processing, so we do it outside for-loop
+  uint8_t expected_masked =
+      expected_valid_buf ? expected_data_buf[bytes - 1] & expected_valid_buf[bytes - 1]
+                         : expected_data_buf[bytes - 1];
+  uint8_t actual_masked = actual_valid_buf
+                              ? actual_data_buf[bytes - 1] & actual_valid_buf[bytes - 1]
+                              : actual_data_buf[bytes - 1];
+
+  // for the last byte, clear trailing padding values to prevent false positives caused
+  // by differences in padding
+  auto n_paddings = 8 * bytes - row_num;
+  // least-significant bit ordering; clear most significant bits
+  expected_masked = expected_masked & (0xFF >> n_paddings);
+  actual_masked = actual_masked & (0xFF >> n_paddings);
+
+  if (expected_masked ^ actual_masked) {
+    // we expect all bits here are equal, check with bitwise XOR
+    return false;
   }
 
   return true;
