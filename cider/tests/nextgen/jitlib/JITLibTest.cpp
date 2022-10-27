@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "tests/TestHelpers.h"
 
 using namespace jitlib;
@@ -37,19 +38,17 @@ TEST_F(JITLibTests, BasicTest) {
       .params_type = {JITFunctionParam{.name = "x", .type = INT32}},
   });
   {
-    JITValuePointer x = function1->createVariable("x1", INT32);
-    JITValuePointer init_val = function1->createConstant(INT32, 1);
-    *x = init_val;
-    auto sum = x + 1;
-    auto sum1 = 1 + sum;
-    auto sum2 = init_val + sum1;
-    function1->createReturn(sum2);
+    JITValuePointer x1 = function1->createVariable("x1", INT32);
+    JITValuePointer x = function1->getArgument(0);
+    *x1 = x;
+    auto sum = x1 + 1;
+    function1->createReturn(sum);
   }
   function1->finish();
   module.finish();
 
   auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
-  EXPECT_EQ(ptr1(12), 4);
+  EXPECT_EQ(ptr1(12), 13);
 }
 
 int main(int argc, char** argv) {

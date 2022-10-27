@@ -89,8 +89,11 @@ void LLVMJITFunction::createReturn() {
 }
 
 void LLVMJITFunction::createReturn(JITValue& value) {
-  LLVMJITValue& llvmjit_value = static_cast<LLVMJITValue&>(value);
-  ir_builder_->CreateRet(llvmjit_value.load());
+  if (LLVMJITValue* llvmjit_value = dynamic_cast<LLVMJITValue*>(&value); llvmjit_value) {
+    ir_builder_->CreateRet(llvmjit_value->load());
+  } else {
+    UNREACHABLE();
+  }
 }
 
 template <JITTypeTag type_tag,
@@ -143,6 +146,29 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     return nullptr;
   }
 }
+
+JITValuePointer LLVMJITFunction::getArgument(size_t index) {
+  if (index > descriptor_.params_type.size()) {
+    LOG(ERROR) << "Index out of range in LLVMJITFunction::getArgument.";
+  }
+
+  auto& param_type = descriptor_.params_type[index];
+  llvm::Value* llvm_value = func_.arg_begin() + index;
+  switch (param_type.type) {
+    case POINTER:
+    case INVALID:
+    case TUPLE:
+    case STRUCT:
+      UNREACHABLE();
+    default:
+      return std::make_unique<LLVMJITValue>(param_type.type,
+                                            *this,
+                                            llvm_value,
+                                            param_type.name,
+                                            JITBackendTag::LLVMJIT,
+                                            false);
+  }
+}
 };  // namespace jitlib
 
-#endif // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+#endif  // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
