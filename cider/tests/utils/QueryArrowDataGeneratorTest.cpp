@@ -137,8 +137,9 @@ TEST(QueryArrowDataGeneratorTest, genNullColumnTest) {
                                                 {CREATE_SUBSTRAIT_TYPE(I32)},
                                                 {0},
                                                 GeneratePattern::Sequence);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0xFF);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFF);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0b11111111);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0b11111111);
+  EXPECT_EQ(array->children[0]->null_count, 0);
   QueryArrowDataGenerator::generateBatchByTypes(schema,
                                                 array,
                                                 10,
@@ -147,7 +148,8 @@ TEST(QueryArrowDataGeneratorTest, genNullColumnTest) {
                                                 {1},
                                                 GeneratePattern::Sequence);
   EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0x00);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFC);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0b11111100);
+  EXPECT_EQ(array->children[0]->null_count, 10);
 }
 
 TEST(QueryArrowDataGeneratorTest, genBoolColumnTest) {
@@ -173,10 +175,43 @@ TEST(QueryArrowDataGeneratorTest, genBoolColumnTest) {
                                                 GeneratePattern::Random,
                                                 1,
                                                 1);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[1]), 0xFF);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[1]), 0b11111111);
 }
 
-// TODO: add STRING DATA TIMESTAMP tests
+TEST(QueryArrowDataGeneratorTest, genStringColumnTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                3,
+                                                {"col_str"},
+                                                {CREATE_SUBSTRAIT_TYPE(String)},
+                                                {0},
+                                                GeneratePattern::Random,
+                                                0,
+                                                6);
+  EXPECT_EQ(std::string(schema->children[0]->format), "u");
+  const char* str = (const char*)(array->children[0]->buffers[2]);
+  int32_t* offsets = (int32_t*)(array->children[0]->buffers[1]);
+
+  std::cout << "str:" << std::string(str) << std::endl;
+
+  char* str1 = (char*)malloc(sizeof(char) * (offsets[1] - offsets[0] + 1));
+  strncpy(str1, str + offsets[0], offsets[1] - offsets[0]);
+  str1[offsets[1] - offsets[0]] = '\0';
+
+  char* str2 = (char*)malloc(sizeof(char) * (offsets[2] - offsets[1] + 1));
+  strncpy(str2, str + offsets[1], offsets[2] - offsets[1]);
+  str2[offsets[2] - offsets[1]] = '\0';
+
+  char* str3 = (char*)malloc(sizeof(char) * (offsets[3] - offsets[2] + 1));
+  strncpy(str3, str + offsets[2], offsets[3] - offsets[2]);
+  str3[offsets[3] - offsets[2]] = '\0';
+
+  std::cout << "str1: " << std::string(str1) << std::endl;
+  std::cout << "str2: " << std::string(str2) << std::endl;
+  std::cout << "str3: " << std::string(str3) << std::endl;
+}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

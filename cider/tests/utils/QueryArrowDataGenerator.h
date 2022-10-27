@@ -67,7 +67,16 @@
     break;                                                                         \
   }
 
-// TODO: generate VARCHAR DATA&TIME column
+#define GENERATE_AND_ADD_UTF8_COLUMN()                                           \
+  {                                                                              \
+    std::vector<bool> null_data;                                                 \
+    std::vector<int32_t> offset_data;                                            \
+    std::string col_data;                                                        \
+    std::tie(null_data, offset_data, col_data) = generateAndFillStringVector(    \
+        row_num, pattern, null_chance[i], value_min, value_max);                 \
+    builder = builder.addUTF8Column(names[i], col_data, offset_data, null_data); \
+    break;                                                                       \
+  }
 
 #define N_MAX std::numeric_limits<T>::max()
 
@@ -106,6 +115,8 @@ class QueryArrowDataGenerator {
           GENERATE_AND_ADD_COLUMN(float)
         case ::substrait::Type::KindCase::kFp64:
           GENERATE_AND_ADD_COLUMN(double)
+        case ::substrait::Type::KindCase::kString:
+          GENERATE_AND_ADD_UTF8_COLUMN()
         default:
           CIDER_THROW(CiderCompileException, "Type not supported.");
       }
@@ -196,6 +207,47 @@ class QueryArrowDataGenerator {
         break;
     }
     return std::make_tuple(col_data, null_data);
+  }
+
+  static std::tuple<std::vector<bool>, std::vector<int32_t>, std::string>
+  generateAndFillStringVector(const size_t row_num,
+                              const GeneratePattern pattern,
+                              const int32_t null_chance,
+                              const int64_t min_len = 0,
+                              const int64_t max_len = -1) {
+    CHECK_GE(min_len, 0);
+    CHECK_GE(max_len, min_len);
+    std::string col_data = "";
+    std::vector<bool> null_data(row_num);
+    std::vector<int32_t> offset_data;
+    std::mt19937 rng(std::random_device{}());  // NOLINT
+    switch (pattern) {
+      case GeneratePattern::Sequence:
+      case GeneratePattern::Random:
+        offset_data.push_back(0);
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
+          size_t str_len = rand() % (max_len + 1) + min_len;
+          col_data += (random_string(str_len));
+          offset_data.push_back(offset_data[i] + str_len);
+        }
+        break;
+    }
+    return std::make_tuple(null_data, offset_data, col_data);
+  }
+
+  static std::string random_string(size_t length) {
+    auto randchar = []() -> char {
+      const char charset[] =
+          "0123456789"
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          "abcdefghijklmnopqrstuvwxyz";
+      const size_t max_index = (sizeof(charset) - 1);
+      return charset[rand() % max_index];
+    };
+    std::string str(length, 0);
+    std::generate_n(str.begin(), length, randchar);
+    return str;
   }
 };
 

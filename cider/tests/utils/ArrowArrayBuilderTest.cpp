@@ -104,8 +104,15 @@ TEST(ArrowArrayBuilderTest, BoolColumnBatch) {
 
   EXPECT_EQ(8, array->length);
   EXPECT_EQ(1, array->n_children);
-  EXPECT_EQ(0x35, *(uint8_t*)(array->children[0]->buffers[1]));
+  EXPECT_EQ(0b00110101, *(uint8_t*)(array->children[0]->buffers[1]));
   EXPECT_EQ("b", schema->children[0]->format);
+
+  std::vector<bool> vec1{
+      true, false, true, false, true, true, false, false, false, false, true, true};
+  std::tie(schema, array) =
+      ArrowArrayBuilder().setRowNum(12).addBoolColumn<bool>("bool_list", vec1).build();
+  EXPECT_EQ(0b00110101, *(uint8_t*)(array->children[0]->buffers[1]));
+  EXPECT_EQ(0b11111100, *(uint8_t*)(array->children[0]->buffers[1] + 1));
 }
 
 TEST(ArrowArrayBuilderTest, OneColumnBatch) {
@@ -122,54 +129,41 @@ TEST(ArrowArrayBuilderTest, OneColumnBatch) {
   EXPECT_EQ(1, array->n_children);
 }
 
-// TEST(ArrowArrayBuilderTest, CiderByteArrayBatch) {
-//   std::vector<CiderByteArray> vec;
-//   vec.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("aaaaa")));
-//   vec.push_back(CiderByteArray(5, reinterpret_cast<const uint8_t*>("bbbbb")));
-//   vec.push_back(CiderByteArray(10, reinterpret_cast<const uint8_t*>("aaaaabbbbb")));
+TEST(ArrowArrayBuilderTest, UTF8Test) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
 
-//   auto batch =
-//       ArrowArrayBuilder()
-//           .setRowNum(3)
-//           .addColumn<CiderByteArray>("col_str", CREATE_SUBSTRAIT_TYPE(Varchar), vec)
-//           .build();
-//   EXPECT_EQ(3, batch.row_num());
-//   auto ptr = reinterpret_cast<const CiderByteArray*>(batch.column(0));
-//   CHECK_EQ(5, ptr[0].len);
-//   CHECK_EQ(5, ptr[1].len);
-//   CHECK_EQ(10, ptr[2].len);
+  std::tie(schema, array) = ArrowArrayBuilder()
+                                .setRowNum(3)
+                                .addUTF8Column("str", "joemarkdavie", {0, 3, 7, 12})
+                                .build();
 
-//   CHECK_EQ(0, std::memcmp("aaaaa", ptr[0].ptr, ptr[0].len));
-//   CHECK_EQ(0, std::memcmp("bbbbb", ptr[1].ptr, ptr[1].len));
-//   CHECK_EQ(0, std::memcmp("aaaaabbbbb", ptr[2].ptr, ptr[2].len));
-//   CHECK_NE(0, std::memcmp("bbbbbaaaaa", ptr[2].ptr, ptr[2].len));
-// }
+  EXPECT_EQ("u", std::string(schema->children[0]->format));
 
-// TEST(ArrowArrayBuilderTest, StringBatch) {
-//   auto batch1 = ArrowArrayBuilder()
-//                     .setRowNum(5)
-//                     .addColumn<std::string>("str", CREATE_SUBSTRAIT_TYPE(String), {})
-//                     .build();
-//   EXPECT_EQ(5, batch1.row_num());
-//   EXPECT_EQ(1, batch1.column_num());
+  int32_t str1_start = *(int32_t*)(array->children[0]->buffers[1]);
+  int32_t str1_length = *((int32_t*)(array->children[0]->buffers[1]) + 1) -
+                        *(int32_t*)(array->children[0]->buffers[1]);
+  char* str1 = (char*)malloc(sizeof(char) * (str1_length + 1));
+  strncpy(str1, (char*)(array->children[0]->buffers[2] + str1_start), str1_length);
+  str1[str1_length] = '\0';
+  EXPECT_EQ("joe", std::string(str1));
 
-//   auto batch2 = ArrowArrayBuilder()
-//                     .setRowNum(5)
-//                     .addColumn<std::string>("VarChar", CREATE_SUBSTRAIT_TYPE(Varchar),
-//                     {}) .build();
-//   EXPECT_EQ(5, batch2.row_num());
-//   EXPECT_EQ(1, batch2.column_num());
+  int32_t str2_start = *(int32_t*)((array->children[0]->buffers[1]) + 1);
+  int32_t str2_length = *((int32_t*)(array->children[0]->buffers[1]) + 2) -
+                        *(int32_t*)((array->children[0]->buffers[1]) + 1);
+  char* str2 = (char*)malloc(sizeof(char) * (str2_length + 1));
+  strncpy(str2, (char*)(array->children[0]->buffers[2] + str2_start), str2_length);
+  str2[str2_length] = '\0';
+  EXPECT_EQ("mark", std::string(str2));
 
-//   // test even we pass some input data, the data buffer should be nullptr.
-//   auto batch3 =
-//       ArrowArrayBuilder()
-//           .setRowNum(5)
-//           .addColumn<std::string>(
-//               "VarChar", CREATE_SUBSTRAIT_TYPE(Varchar), {"a", "b", "c", "d", "e"})
-//           .build();
-//   EXPECT_EQ(5, batch3.row_num());
-//   EXPECT_EQ(1, batch3.column_num());
-// }
+  int32_t str3_start = *(int32_t*)((array->children[0]->buffers[1]) + 2);
+  int32_t str3_length = *((int32_t*)(array->children[0]->buffers[1]) + 3) -
+                        *(int32_t*)((array->children[0]->buffers[1]) + 2);
+  char* str3 = (char*)malloc(sizeof(char) * (str3_length + 1));
+  strncpy(str3, (char*)(array->children[0]->buffers[2] + str3_start), str3_length);
+  str3[str3_length] = '\0';
+  EXPECT_EQ("daive", std::string(str3));
+}
 
 TEST(ArrowArrayBuilderTest, MultiColumnsBatch) {
   std::vector<int> vec1{1, 2, 3, 4, 5};
@@ -212,28 +206,31 @@ TEST(ArrowArrayBuilderTest, MultiTypesBatch) {
   EXPECT_EQ("g", std::string(schema->children[3]->format));
 }
 
-// TEST(ArrowArrayBuilderTest, ToValueStringTest) {
-//   std::vector<int> vec1{1, 2, 3, 4, 5};
-//   std::vector<int64_t> vec2{1, 2, 3, 4, 5};
-//   std::vector<float> vec3{1.1, 2.2, 3.3, 4.4, 5.5};
-//   std::vector<double> vec4{1.1, 2.2, 3.3, 4.4, 5.5};
+TEST(ArrowArrayBuilderTest, ToStringTest) {
+  std::vector<int> vec1{1, 2, 3, 4, 5};
+  std::vector<int64_t> vec2{1, 2, 3, 4, 5};
+  std::vector<float> vec3{1.1, 2.2, 3.3, 4.4, 5.5};
+  std::vector<double> vec4{1.1, 2.2, 3.3, 4.4, 5.5};
 
-//   auto batch = ArrowArrayBuilder()
-//                    .setRowNum(5)
-//                    .addColumn<int>("col1", CREATE_SUBSTRAIT_TYPE(I32), vec1)
-//                    .addColumn<int64_t>("col2", CREATE_SUBSTRAIT_TYPE(I64), vec2)
-//                    .addColumn<float>("col3", CREATE_SUBSTRAIT_TYPE(Fp32), vec3)
-//                    .addColumn<double>("col4", CREATE_SUBSTRAIT_TYPE(Fp64), vec4)
-//                    .build();
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addColumn<int>("col1", CREATE_SUBSTRAIT_TYPE(I32), vec1)
+          .addColumn<int64_t>("col2", CREATE_SUBSTRAIT_TYPE(I64), vec2)
+          .addColumn<float>("col3", CREATE_SUBSTRAIT_TYPE(Fp32), vec3)
+          .addColumn<double>("col4", CREATE_SUBSTRAIT_TYPE(Fp64), vec4)
+          .build();
 
-//   std::string res =
-//       "row num: 5, column num: 4.\n"
-//       "column type: int32_t 1\t2\t3\t4\t5\t\n"
-//       "column type: int64_t 1\t2\t3\t4\t5\t\n"
-//       "column type: float 1.1\t2.2\t3.3\t4.4\t5.5\t\n"
-//       "column type: double 1.1\t2.2\t3.3\t4.4\t5.5\t\n";
-//   EXPECT_EQ(res, batch.toValueString());
-// }
+  std::string res =
+      "row num: 5, column num: 4.\n"
+      "column type: int32_t 1\t2\t3\t4\t5\t\n"
+      "column type: int64_t 1\t2\t3\t4\t5\t\n"
+      "column type: float 1.1\t2.2\t3.3\t4.4\t5.5\t\n"
+      "column type: double 1.1\t2.2\t3.3\t4.4\t5.5\t\n";
+  EXPECT_EQ(res, ArrowArrayBuilder::toString(schema, array));
+}
 
 // TEST(ArrowArrayBuilderTest, DateTypebatch) {
 //   std::vector<CiderDateType> vec1;
@@ -284,7 +281,8 @@ TEST(ArrowArrayBuilderTest, nullTest) {
           .addColumn<double>("col4", CREATE_SUBSTRAIT_TYPE(Fp64), vec4, vec_null)
           .build();
 
-  EXPECT_EQ(0xEA, *(uint8_t*)(array->children[0]->buffers[0]));
+  EXPECT_EQ(0b11101010, *(uint8_t*)(array->children[0]->buffers[0]));
+  EXPECT_EQ(3, array->children[0]->null_count);
 }
 
 TEST(ArrowArrayBuilderTest, CiderBatchConstructorTest) {
@@ -314,7 +312,7 @@ TEST(ArrowArrayBuilderTest, CiderBatchConstructorTest) {
   EXPECT_EQ(SQLTypes::kINT, batch->getChildAt(0)->getCiderType());
 
   EXPECT_EQ(true, batch->isRootOwner());
-  EXPECT_EQ(0xEA, *(uint8_t*)(batch->getChildAt(0)->getNulls()));
+  EXPECT_EQ(0b11101010, *(uint8_t*)(batch->getChildAt(0)->getNulls()));
   EXPECT_EQ(5, batch->getLength());
   EXPECT_EQ(false, batch->isMoved());
   batch->move();
