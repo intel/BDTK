@@ -32,10 +32,6 @@
 #include "cider/CiderBatch.h"
 #include "cider/CiderTableSchema.h"
 
-/// TODO: (YBRua) remove these after removal of createBooleanTestData
-#include "cider/batch/ScalarBatch.h"
-#include "cider/batch/StructBatch.h"
-
 struct CommandResult {
   std::string output;
   int exitstatus;
