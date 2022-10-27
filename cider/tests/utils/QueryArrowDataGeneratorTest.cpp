@@ -195,14 +195,11 @@ TEST(QueryArrowDataGeneratorTest, genStringColumnTest) {
   int32_t* offsets = (int32_t*)(array->children[0]->buffers[1]);
 
   std::cout << "random_str:" << std::string(random_str) << std::endl;
-  std::cout << "str1: "
-            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 0)
+  std::cout << "str1: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 0)
             << std::endl;
-  std::cout << "str2: "
-            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 1)
+  std::cout << "str2: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 1)
             << std::endl;
-  std::cout << "str3: "
-            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 2)
+  std::cout << "str3: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 2)
             << std::endl;
 
   QueryArrowDataGenerator::generateBatchByTypes(schema,
@@ -219,14 +216,11 @@ TEST(QueryArrowDataGeneratorTest, genStringColumnTest) {
   offsets = (int32_t*)(array->children[0]->buffers[1]);
 
   std::cout << "sequence_str:" << std::string(sequence_str) << std::endl;
-  std::cout << "str1: "
-            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 0)
+  std::cout << "str1: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 0)
             << std::endl;
-  std::cout << "str2: "
-            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 1)
+  std::cout << "str2: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 1)
             << std::endl;
-  std::cout << "str3: "
-            << CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 2)
+  std::cout << "str3: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 2)
             << std::endl;
 }
 

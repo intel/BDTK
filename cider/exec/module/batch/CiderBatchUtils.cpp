@@ -340,7 +340,7 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
   }
 }
 
-std::string extractUttf8ArrowArrayAt(const ArrowArray* array, size_t index) {
+std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index) {
   const char* str = (const char*)(array->buffers[2]);
   int32_t* offsets = (int32_t*)(array->buffers[1]);
 

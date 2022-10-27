@@ -68,7 +68,7 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type);
 
 ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table);
 
-std::string extractUttf8ArrowArrayAt(const ArrowArray* array, size_t index);
+std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index);
 
 };  // namespace CiderBatchUtils
 

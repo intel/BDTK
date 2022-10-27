@@ -350,7 +350,7 @@ class ArrowArrayBuilder {
       case 'u':
         ss << "column type: String ";
         for (int i = 0; i < length; i++) {
-          ss << CiderBatchUtils::extractUttf8ArrowArrayAt(array, i) << " ";
+          ss << CiderBatchUtils::extractUtf8ArrowArrayAt(array, i) << " ";
         }
         ss << std::endl;
         break;

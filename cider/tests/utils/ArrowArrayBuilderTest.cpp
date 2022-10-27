@@ -140,9 +140,9 @@ TEST(ArrowArrayBuilderTest, UTF8Test) {
 
   EXPECT_EQ("u", std::string(schema->children[0]->format));
 
-  EXPECT_EQ("joe", CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 0));
-  EXPECT_EQ("mark", CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 1));
-  EXPECT_EQ("davie", CiderBatchUtils::extractUttf8ArrowArrayAt(array->children[0], 2));
+  EXPECT_EQ("joe", CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 0));
+  EXPECT_EQ("mark", CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 1));
+  EXPECT_EQ("davie", CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 2));
 }
 
 TEST(ArrowArrayBuilderTest, MultiColumnsBatch) {
