@@ -242,6 +242,10 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::DateaddExpr*, const CompilationOptions&);
 
+  std::unique_ptr<CodegenColValues> codegenExtract(
+      const Analyzer::ExtractExpr* extract_expr,
+      const CompilationOptions& co);
+
   std::unique_ptr<CodegenColValues> codegenDateAdd(
       const Analyzer::DateaddExpr* dateadd_expr,
       const CompilationOptions& co);
@@ -411,6 +415,10 @@ class CodeGenerator {
                                             const SQLTypeInfo& operand_dimen,
                                             const SQLTypeInfo& target_dimen,
                                             const bool nullable);
+
+  llvm::Value* codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
+                                             const SQLTypeInfo& operand_ti,
+                                             const SQLTypeInfo& target_ti);
 
   llvm::Value* codegenCastFromString(llvm::Value* operand_lv,
                                      const SQLTypeInfo& operand_ti,

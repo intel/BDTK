@@ -179,12 +179,13 @@ inline size_t get_bit_width(const SQLTypeInfo& ti) {
       return 32;
     case kDOUBLE:
       return 64;
+    case kDATE:
+      return 32;
     case kTIME:
     case kTIMESTAMP:
-    case kDATE:
     case kINTERVAL_DAY_TIME:
     case kINTERVAL_YEAR_MONTH:
-      return sizeof(time_t) * 8;
+      return 64;
     case kTEXT:
     case kVARCHAR:
     case kCHAR:

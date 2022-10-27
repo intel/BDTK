@@ -61,9 +61,10 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
           return std::make_shared<FixedWidthReal>(false, ir_builder, nullable);
         case kDOUBLE:
           return std::make_shared<FixedWidthReal>(true, ir_builder, nullable);
+        case kDATE:
+          return std::make_shared<FixedWidthInt>(4, ir_builder, nullable);
         case kTIME:
         case kTIMESTAMP:
-        case kDATE:
           return std::make_shared<FixedWidthInt>(8, ir_builder, nullable);
         default:
           CHECK(false);

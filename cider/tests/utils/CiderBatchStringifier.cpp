@@ -61,6 +61,17 @@ StructBatchStringifier::StructBatchStringifier(CiderBatch* batch) {
         break;
       case SQLTypes::kVARCHAR:
         child_stringifiers_.emplace_back(std::make_unique<VarcharBatchStringifier>());
+      case SQLTypes::kDATE:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int32_t>>());
+        break;
+      case SQLTypes::kTIMESTAMP:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int64_t>>());
+        break;
+      case SQLTypes::kTIME:
+        child_stringifiers_.emplace_back(
+            std::make_unique<ScalarBatchStringifier<int64_t>>());
         break;
       case SQLTypes::kSTRUCT:
         child_stringifiers_.emplace_back(

@@ -115,8 +115,7 @@ template <>
 }
 
 ::duckdb::Value duckDateValueAt(const int8_t* buf, int64_t offset) {
-  int64_t epochSeconds = *(int64_t*)(buf + sizeof(int64_t) * offset);
-  int32_t epochDays = epochSeconds / kSecondsInOneDay;
+  int32_t epochDays = *(int32_t*)(buf + sizeof(int64_t) * offset);
   auto date = ::duckdb::Value::DATE(::duckdb::Date::EpochDaysToDate(epochDays));
   return date;
 }

@@ -62,7 +62,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
 
   auto operand_lv = codegen(operand, co, true);
 
-  // TODO: Refactor codegenCast.
+  // TODO(kaidi): Refactor codegenCast.
   auto operand_ti = operand->get_type_info();
   operand_ti.set_notnull(true);
   ti.set_notnull(true);
@@ -215,6 +215,38 @@ llvm::Value* CodeGenerator::codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                                       cgen_state_->inlineIntNull(operand_ti)})
              : cgen_state_->ir_builder_.CreateSDiv(
                    ts_lv, cgen_state_->llInt(static_cast<int64_t>(scale)));
+}
+
+llvm::Value* CodeGenerator::codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
+                                                          const SQLTypeInfo& operand_ti,
+                                                          const SQLTypeInfo& target_ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto operand_width = get_bit_width(operand_ti);
+  const auto target_width = get_bit_width(target_ti);
+  int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
+      abs(operand_ti.get_dimension() - target_ti.get_dimension()));
+  int64_t cast_scaled = dim_scaled * kSecondsInOneDay;
+  llvm::Value* target_lv = nullptr;
+  if (target_width == operand_width) {
+    target_lv = operand_lv;
+  } else if (target_width > operand_width) {
+    llvm::Value* cast_lv = cgen_state_->ir_builder_.CreateCast(
+        llvm::Instruction::CastOps::SExt,
+        operand_lv,
+        get_int_type(target_width, cgen_state_->context_));
+
+    target_lv = cgen_state_->ir_builder_.CreateMul(
+        cast_lv, llvm::ConstantInt::get(cast_lv->getType(), cast_scaled));
+  } else {
+    llvm::Value* trunc_lv = cgen_state_->ir_builder_.CreateSDiv(
+        operand_lv, llvm::ConstantInt::get(operand_lv->getType(), cast_scaled));
+
+    target_lv = cgen_state_->ir_builder_.CreateCast(
+        llvm::Instruction::CastOps::Trunc,
+        trunc_lv,
+        get_int_type(target_width, cgen_state_->context_));
+  }
+  return target_lv;
 }
 
 llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,
