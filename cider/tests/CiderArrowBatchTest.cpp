@@ -91,6 +91,69 @@ void runScalarBatchTest(ScalarBatch<T>* batch,
   }
 }
 
+template <SQLTypes SQLT>
+void runScalarBatchTest(ScalarBatch<bool>* batch,
+                        const vector<bool>& data,
+                        const vector<bool>& not_null = {}) {
+  assert(data.size() == not_null.size() || not_null.empty());
+  CHECK(batch);
+
+  EXPECT_EQ(batch->getCiderType(), SQLT);
+
+  EXPECT_TRUE(batch->resizeBatch(data.size()));
+  EXPECT_EQ(batch->getLength(), data.size());
+  EXPECT_EQ(batch->getNullCount(), 0);
+  {
+    auto raw_data = batch->getMutableRawData();
+    EXPECT_NE(raw_data, nullptr);
+    for (size_t i = 0; i < data.size(); ++i) {
+      if (data[i]) {
+        CiderBitUtils::setBitAt(raw_data, i);
+      } else {
+        CiderBitUtils::clearBitAt(raw_data, i);
+      }
+    }
+  }
+
+  int64_t null_count = 0;
+  if (!not_null.empty()) {
+    auto not_null_data = batch->getMutableNulls();
+    EXPECT_EQ(batch->getNullCount(), 0);
+    EXPECT_NE(not_null_data, nullptr);
+    for (size_t i = 0; i < not_null.size(); ++i) {
+      if (!not_null[i]) {
+        CiderBitUtils::clearBitAt(not_null_data, i);
+        ++null_count;
+      }
+    }
+    batch->setNullCount(null_count);
+  }
+
+  EXPECT_TRUE(batch->resizeBatch(2 * data.size()));
+  EXPECT_EQ(batch->getLength(), 2 * data.size());
+  EXPECT_EQ(batch->getNullCount(),
+            not_null.empty() ? 0 : null_count + (int64_t)data.size());
+
+  {
+    auto raw_data = batch->getRawData();
+    EXPECT_NE(raw_data, nullptr);
+    for (size_t i = 0; i < data.size(); ++i) {
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(raw_data, i), data[i]);
+    }
+  }
+
+  if (!not_null.empty()) {
+    auto not_null_data = batch->getNulls();
+    EXPECT_NE(not_null_data, nullptr);
+    for (size_t i = 0; i < not_null.size(); ++i) {
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(not_null_data, i), not_null[i]);
+    }
+    for (size_t i = 0; i < not_null.size(); ++i) {
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(not_null_data, i + not_null.size()), false);
+    }
+  }
+}
+
 template <typename T, SQLTypes SQLT>
 void scalarBatchTest(const vector<T>& data, const vector<bool>& not_null = {}) {
   SQLTypeInfo type_info(SQLT, not_null.empty());
@@ -99,7 +162,11 @@ void scalarBatchTest(const vector<T>& data, const vector<bool>& not_null = {}) {
   auto batch = ScalarBatch<T>::Create(schema, ciderAllocator);
   EXPECT_TRUE(batch->isRootOwner());
 
-  runScalarBatchTest<T, SQLT>(batch.get(), data, not_null);
+  if constexpr (std::is_same_v<T, bool>) {
+    runScalarBatchTest<SQLT>(batch.get(), data, not_null);
+  } else {
+    runScalarBatchTest<T, SQLT>(batch.get(), data, not_null);
+  }
 }
 
 TEST_F(CiderArrowBatchTest, ScalarBatchTest) {
@@ -206,8 +273,8 @@ TEST_F(CiderArrowBatchTest, StructBatchTest) {
     {
       auto child = batch->getChildAt(0);
       EXPECT_FALSE(child->isRootOwner());
-      runScalarBatchTest<bool, kBOOLEAN>(child->asMutable<ScalarBatch<bool>>(),
-                                         {true, true, false, false, false, true});
+      runScalarBatchTest<kBOOLEAN>(child->asMutable<ScalarBatch<bool>>(),
+                                   {true, true, false, false, false, true});
     }
     {
       auto child = batch->getChildAt(1);
