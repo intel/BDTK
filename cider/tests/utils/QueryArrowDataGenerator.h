@@ -234,7 +234,7 @@ class QueryArrowDataGenerator {
         offset_data.push_back(0);
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
-          size_t str_len = rand() % (max_len + 1) + min_len;
+          size_t str_len = rand() % (max_len + 1) + min_len;  // NOLINT
           col_data += (random_string(str_len));
           offset_data.push_back(offset_data[i] + str_len);
         }
@@ -250,7 +250,7 @@ class QueryArrowDataGenerator {
           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
           "abcdefghijklmnopqrstuvwxyz";
       const size_t max_index = (sizeof(charset) - 1);
-      return charset[rand() % max_index];
+      return charset[rand() % max_index];  // NOLINT
     };
     std::string str(length, 0);
     std::generate_n(str.begin(), length, randchar);
