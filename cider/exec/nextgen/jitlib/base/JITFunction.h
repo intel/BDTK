@@ -25,12 +25,9 @@
 #include <boost/container/small_vector.hpp>
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace jitlib {
-class JITValue;
-
-using JITValuePointer = std::shared_ptr<JITValue>;
-
 enum JITFunctionParamAttr : uint64_t {};
 
 struct JITFunctionParam {
@@ -70,7 +67,7 @@ class JITFunction {
   }
 
   virtual JITValuePointer createVariable(const std::string& name,
-                                         JITTypeTag type_tag) = 0;
+                                          JITTypeTag type_tag) = 0;
 
   virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
 

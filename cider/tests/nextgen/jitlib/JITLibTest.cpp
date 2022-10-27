@@ -38,31 +38,18 @@ TEST_F(JITLibTests, BasicTest) {
   });
   {
     JITValuePointer x = function1->createVariable("x1", INT32);
-    JITValuePointer init_val = function1->createConstant(INT32, 123);
-    *x = *init_val;
-    function1->createReturn(*x);
+    JITValuePointer init_val = function1->createConstant(INT32, 1);
+    *x = init_val;
+    auto sum = x + 1;
+    auto sum1 = 1 + sum;
+    auto sum2 = init_val + sum1;
+    function1->createReturn(sum2);
   }
   function1->finish();
-
-  JITFunctionPointer function2 = module.createJITFunction(
-      JITFunctionDescriptor{.function_name = "test_func2",
-                            .ret_type = JITFunctionParam{.type = INT32},
-                            .params_type = {}});
-  {
-    JITValuePointer x = function2->createVariable("x1", INT32);
-    JITValuePointer init_val = function1->createConstant(INT32, 321);
-    *x = *function2->emitJITFunctionCall(
-        *function1,
-        JITFunctionEmitDescriptor{.ret_type = INT32, .params_vector = {init_val.get()}});
-    function2->createReturn(*x);
-  }
-  function2->finish();
   module.finish();
 
   auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
-  EXPECT_EQ(ptr1(12), 123);
-  auto ptr2 = function2->getFunctionPointer<int32_t>();
-  EXPECT_EQ(ptr2(), 123);
+  EXPECT_EQ(ptr1(12), 4);
 }
 
 int main(int argc, char** argv) {

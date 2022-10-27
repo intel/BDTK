@@ -80,7 +80,7 @@ JITValuePointer LLVMJITFunction::createVariable(const std::string& name,
 
   ir_builder_->SetInsertPoint(current_block);
 
-  return std::make_shared<LLVMJITValue>(
+  return std::make_unique<LLVMJITValue>(
       type_tag, *this, variable_memory, name, JITBackendTag::LLVMJIT, true);
 }
 
@@ -118,7 +118,7 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
     default:
       LOG(ERROR) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: " << type_tag;
   }
-  return std::make_shared<LLVMJITValue>(
+  return std::make_unique<LLVMJITValue>(
       type_tag, *this, llvm_value, "", JITBackendTag::LLVMJIT, false);
 }
 
@@ -136,7 +136,7 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     }
 
     llvm::Value* ans = ir_builder_->CreateCall(&llvmjit_function.func_, args);
-    return std::make_shared<LLVMJITValue>(
+    return std::make_unique<LLVMJITValue>(
         descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
   } else {
     LOG(ERROR) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
@@ -145,4 +145,4 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
 }
 };  // namespace jitlib
 
-#endif  // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+#endif // JITLIB_LLVMJIT_LLVMJITFUNCTION_H

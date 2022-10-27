@@ -27,7 +27,20 @@
 
 namespace jitlib {
 enum class JITBackendTag { LLVMJIT };
-enum JITTypeTag { INVALID, VOID, INT8, INT16, INT32, INT64 };
+enum JITTypeTag {
+  INVALID,
+  VOID,
+  BOOL,
+  INT8,
+  INT16,
+  INT32,
+  INT64,
+  FLOAT,
+  DOUBLE,
+  POINTER,
+  TUPLE,  // Logical struct
+  STRUCT  // Physical struct
+};
 
 template <JITTypeTag>
 struct JITTypeTraits {
@@ -45,6 +58,16 @@ struct JITTypeTraits<VOID> {
   static constexpr bool isFixedWidth = false;
   static constexpr JITTypeTag tag = VOID;
   static constexpr const char* name = "VOID";
+};
+
+template <>
+struct JITTypeTraits<BOOL> {
+  using NativeType = bool;
+  static constexpr bool isFixedWidth = true;
+  static constexpr uint64_t width = sizeof(NativeType);
+  static constexpr uint64_t bits = sizeof(NativeType) * 8;
+  static constexpr JITTypeTag tag = BOOL;
+  static constexpr const char* name = "BOOL";
 };
 
 template <>
@@ -87,8 +110,56 @@ struct JITTypeTraits<INT64> {
   static constexpr const char* name = "INT64";
 };
 
+template <>
+struct JITTypeTraits<FLOAT> {
+  using NativeType = float;
+  static constexpr bool isFixedWidth = true;
+  static constexpr uint64_t width = sizeof(NativeType);
+  static constexpr uint64_t bits = sizeof(NativeType) * 8;
+  static constexpr JITTypeTag tag = FLOAT;
+  static constexpr const char* name = "FLOAT";
+};
+
+template <>
+struct JITTypeTraits<DOUBLE> {
+  using NativeType = double;
+  static constexpr bool isFixedWidth = true;
+  static constexpr uint64_t width = sizeof(NativeType);
+  static constexpr uint64_t bits = sizeof(NativeType) * 8;
+  static constexpr JITTypeTag tag = DOUBLE;
+  static constexpr const char* name = "DOUBLE";
+};
+
+template <>
+struct JITTypeTraits<POINTER> {
+  using NativeType = void*;
+  static constexpr bool isFixedWidth = true;
+  static constexpr uint64_t width = sizeof(NativeType);
+  static constexpr uint64_t bits = sizeof(NativeType) * 8;
+  static constexpr JITTypeTag tag = POINTER;
+  static constexpr const char* name = "POINTER";
+};
+
+template <>
+struct JITTypeTraits<TUPLE> {
+  using NativeType = void;
+  static constexpr bool isFixedWidth = false;
+  static constexpr JITTypeTag tag = TUPLE;
+  static constexpr const char* name = "TUPLE";
+};
+
+template <>
+struct JITTypeTraits<STRUCT> {
+  using NativeType = void;
+  static constexpr bool isFixedWidth = false;
+  static constexpr JITTypeTag tag = STRUCT;
+  static constexpr const char* name = "STRUCT";
+};
+
 inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
   switch (type_tag) {
+    case BOOL:
+      return JITTypeTraits<BOOL>::width;
     case INT8:
       return JITTypeTraits<INT8>::width;
     case INT16:
@@ -97,8 +168,42 @@ inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
       return JITTypeTraits<INT32>::width;
     case INT64:
       return JITTypeTraits<INT64>::width;
+    case FLOAT:
+      return JITTypeTraits<FLOAT>::width;
+    case DOUBLE:
+      return JITTypeTraits<DOUBLE>::width;
+    case POINTER:
+      return JITTypeTraits<POINTER>::width;
     default:
       LOG(ERROR) << "Invalid JITType in getJITTypeSize: " << type_tag;
+  }
+  return 0;
+}
+
+inline const char* getJITTypeName(JITTypeTag type_tag) {
+  switch (type_tag) {
+    case BOOL:
+      return JITTypeTraits<BOOL>::name;
+    case INT8:
+      return JITTypeTraits<INT8>::name;
+    case INT16:
+      return JITTypeTraits<INT16>::name;
+    case INT32:
+      return JITTypeTraits<INT32>::name;
+    case INT64:
+      return JITTypeTraits<INT64>::name;
+    case FLOAT:
+      return JITTypeTraits<FLOAT>::name;
+    case DOUBLE:
+      return JITTypeTraits<DOUBLE>::name;
+    case POINTER:
+      return JITTypeTraits<POINTER>::name;
+    case TUPLE:
+      return JITTypeTraits<TUPLE>::name;
+    case STRUCT:
+      return JITTypeTraits<STRUCT>::name;
+    default:
+      LOG(ERROR) << "Invalid JITType in getJITTypeName: " << type_tag;
   }
   return 0;
 }

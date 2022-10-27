@@ -21,7 +21,7 @@
 #ifndef JITLIB_BASE_JITCONTROLFLOW_H
 #define JITLIB_BASE_JITCONTROLFLOW_H
 
-#include "exec/nextgen/jitlib/base/JITValues.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace jitlib {};  // namespace jitlib
 
