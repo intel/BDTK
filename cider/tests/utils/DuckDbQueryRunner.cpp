@@ -115,7 +115,8 @@ template <>
 }
 
 ::duckdb::Value duckDateValueAt(const int8_t* buf, int64_t offset) {
-  int32_t epochDays = *(int32_t*)(buf + sizeof(int64_t) * offset);
+  int64_t epochSeconds = *(int64_t*)(buf + sizeof(int64_t) * offset);
+  int32_t epochDays = epochSeconds / kSecondsInOneDay;
   auto date = ::duckdb::Value::DATE(::duckdb::Date::EpochDaysToDate(epochDays));
   return date;
 }
@@ -191,6 +192,15 @@ template <>
                                                 row_idx);                               \
       case SQLTypes::kVARCHAR:                                                          \
         return duckDbValueAtVarcharBatch(child->as<VarcharBatch>(), row_idx);           \
+      case SQLTypes::kDATE:                                                             \
+        return duckDbValueAtScalarBatch<int32_t>(child->as<ScalarBatch<int32_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kTIME:                                                             \
+        return duckDbValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kTIMESTAMP:                                                        \
+        return duckDbValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(),     \
+                                                 row_idx);                              \
       default:                                                                          \
         CIDER_THROW(CiderUnsupportedException,                                          \
                     "Unsupported type for converting to duckdb values.");               \

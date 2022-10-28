@@ -39,7 +39,6 @@ add_executable(CiderAllocatorTest CiderAllocatorTest.cpp)
 add_executable(CiderArrowBatchTest CiderArrowBatchTest.cpp)
 add_executable(CiderExceptionTest CiderExceptionTest.cpp)
 add_executable(CiderLogTest CiderLogTest.cpp)
-add_executable(CiderDateFunctionTest CiderDateFunctionTest.cpp)
 add_executable(Sql2IR Sql2IR.cpp)
 
 set(EXECUTE_TEST_LIBS
@@ -67,7 +66,6 @@ target_link_libraries(ExpressionEvalTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderAllocatorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderArrowBatchTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
-target_link_libraries(CiderDateFunctionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(Sql2IR ${EXECUTE_TEST_LIBS})
 
@@ -87,7 +85,6 @@ add_test(ExpressionEvalTest ExpressionEvalTest ${TEST_ARGS})
 add_test(CiderAllocatorTest CiderAllocatorTest ${TEST_ARGS})
 add_test(CiderArrowBatchTest CiderArrowBatchTest ${TEST_ARGS})
 add_test(CiderExceptionTest CiderExceptionTest ${TEST_ARGS})
-add_test(CiderDateFunctionTest CiderDateFunctionTest ${TEST_ARGS})
 add_test(CiderLogTest CiderLogTest ${TEST_ARGS})
 
 find_package(fmt REQUIRED)

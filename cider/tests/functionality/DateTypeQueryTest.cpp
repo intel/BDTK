@@ -28,7 +28,7 @@ class DateTypeQueryTest : public CiderTestBase {
  public:
   DateTypeQueryTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a BIGINT, col_b DATE);";
+    create_ddl_ = "CREATE TABLE test(col_a BIGINT NOT NULL, col_b DATE NOT NULL);";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
@@ -42,7 +42,7 @@ class DateRandomQueryTest : public CiderTestBase {
  public:
   DateRandomQueryTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a DATE, col_b DATE);";
+    create_ddl_ = "CREATE TABLE test(col_a DATE NOT NULL, col_b DATE NOT NULL);";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
@@ -319,14 +319,14 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
                    "extract/microsecond_of_timestamp.json");
   assertQueryArrow("SELECT EXTRACT(second FROM col_time) FROM test",
                    "extract/second_of_time.json");
-
-  GTEST_SKIP();
-  // TODO(kaidi): cast constant support with arrow format.
   assertQueryArrow("SELECT CAST(col_date AS TIMESTAMP) FROM test",
                    "cast_date_as_timestamp.json");
   // equals to date trunc
   assertQueryArrow("SELECT CAST(col_timestamp AS DATE) FROM test",
                    "cast_timestamp_as_date.json");
+
+  GTEST_SKIP();
+  // TODO(kaidi): cast constant support with arrow format.
   assertQueryArrow(
       "SELECT col_timestamp FROM test WHERE col_timestamp > DATE '1970-01-01'",
       "cast_literal_timestamp.json");

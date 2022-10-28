@@ -250,19 +250,16 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenExtract(
     const Analyzer::ExtractExpr* extract_expr,
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
-
   auto fromtime = codegen(extract_expr->get_from_expr(), co, true);
   const int32_t extract_field{extract_expr->get_field()};
   const auto& extract_expr_ti = extract_expr->get_from_expr()->get_type_info();
 
   auto fromtime_nullable = dynamic_cast<FixedSizeColValues*>(fromtime.get());
   auto fromtime_lv = fromtime_nullable->getValue();
-
   if (extract_expr_ti.get_type() == kDATE) {
     fromtime_lv = codegenCastBetweenTimeAndDate(
         fromtime_lv, SQLTypeInfo(SQLTypes::kDATE), SQLTypeInfo(SQLTypes::kTIMESTAMP));
   }
-
   if (extract_expr_ti.is_high_precision_timestamp()) {
     fromtime_lv = codegenExtractHighPrecisionTimestamps(
         fromtime_lv, extract_expr_ti, extract_expr->get_field());

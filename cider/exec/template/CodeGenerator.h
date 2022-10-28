@@ -238,8 +238,10 @@ class CodeGenerator {
   // To be deperacated.
   std::vector<llvm::Value*> codegen(const Analyzer::CaseExpr*, const CompilationOptions&);
 
+  // to be deprecated
   llvm::Value* codegen(const Analyzer::ExtractExpr*, const CompilationOptions&);
 
+  // to be deprecated
   llvm::Value* codegen(const Analyzer::DateaddExpr*, const CompilationOptions&);
 
   std::unique_ptr<CodegenColValues> codegenExtract(
@@ -406,11 +408,12 @@ class CodeGenerator {
                               llvm::Value*,
                               llvm::Value*,
                               const CompilationOptions&);
-
+  // to be deprecated
   llvm::Value* codegenCastTimestampToDate(llvm::Value* ts_lv,
                                           const int dimen,
                                           const bool nullable);
 
+  // to be deprecated
   llvm::Value* codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                                             const SQLTypeInfo& operand_dimen,
                                             const SQLTypeInfo& target_dimen,
@@ -419,6 +422,10 @@ class CodeGenerator {
   llvm::Value* codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
                                              const SQLTypeInfo& operand_ti,
                                              const SQLTypeInfo& target_ti);
+
+  llvm::Value* codegenCastBetweenTimes(llvm::Value* operand_lv,
+                                       const SQLTypeInfo& operand_ti,
+                                       const SQLTypeInfo& target_ti);
 
   llvm::Value* codegenCastFromString(llvm::Value* operand_lv,
                                      const SQLTypeInfo& operand_ti,

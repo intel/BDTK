@@ -240,6 +240,7 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
       if (format[1] == 's' && format[2] == 'u') {
         return kTIMESTAMP;
       }
+      break;
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported data type to CiderBatch: ") + format);
