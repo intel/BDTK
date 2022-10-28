@@ -204,3 +204,10 @@ std::string CiderInt128Utils::Decimal128ToString(CiderInt128 input,
 
   return is_negative ? "-" + result : result;
 }
+
+double CiderInt128Utils::Decimal128ToDouble(CiderInt128 input,
+                                            uint8_t width,
+                                            uint8_t scale) {
+  auto val_str = Decimal128ToString(input, width, scale);
+  return std::stod(val_str);
+}

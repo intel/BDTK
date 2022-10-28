@@ -119,6 +119,16 @@ TEST(CiderInt128Test, ToStringTest) {
   EXPECT_EQ(dstr, "0.00000187694187358912");
 }
 
+TEST(CiderInt128Test, ToDoubleTest) {
+  auto decimal = CiderInt128(483248120643921598);
+  auto fp64_val = CiderInt128Utils::Decimal128ToDouble(decimal, 38, 5);
+  EXPECT_EQ(fp64_val, 4832481206439.21598);
+  fp64_val = CiderInt128Utils::Decimal128ToDouble(decimal, 38, 10);
+  EXPECT_EQ(fp64_val, 48324812.0643921598);
+  fp64_val = CiderInt128Utils::Decimal128ToDouble(decimal, 38, 20);
+  EXPECT_EQ(fp64_val, 0.00483248120643921598);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 

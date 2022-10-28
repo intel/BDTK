@@ -76,6 +76,7 @@ class CiderInt128Utils {
 
   static std::string Int128ToString(CiderInt128 input);
   static std::string Decimal128ToString(CiderInt128 input, uint8_t width, uint8_t scale);
+  static double Decimal128ToDouble(CiderInt128 input, uint8_t width, uint8_t scale);
 };
 
 #endif
