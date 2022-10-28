@@ -360,16 +360,6 @@ const void* CiderBatch::arrow_column(int32_t col_id) const {
   return buf;
 }
 
-void* CiderBatch::getDataBuffersPtr() const {
-  CHECK(!isMoved());
-  return const_cast<void*>(arrow_array_->buffers[1]);
-}
-
-const void* CiderBatch::getNullBuffersPtr() const {
-  CHECK(!isMoved());
-  return arrow_array_->buffers[0];
-}
-
 void CiderBatch::setNullCount(int64_t null_num) {
   CHECK(!isMoved());
   arrow_array_->null_count = null_num;
