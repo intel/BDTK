@@ -16,18 +16,21 @@
   specific language governing permissions and limitations
   under the License.
 -->
+# Intel Big Data Analytic Toolkit
+Big Data Analytic Toolkit is a set of acceleration libraries aimed to optimize big data analytic frameworks. There're several major use cases:
+-	Data engineers who want some Intel architecture based optimizations
+-	End-users of big data analytic frameworks who're looking for performance acceleration
+-	Database developers who're seeking for reusable building blocks
+-	Data Scientist who looks for heterogenous execution
+
+By using this library, frontend SQL engines like Prestodb/Spark query performance will be significant improved. 
+
+Users can reuse implemented operators/functions to build a full-featured SQL engine. Currently this library offers an highly optimized compiler to JITed function for execution.
+ 
+Building blocks utilizing compression codec (based on IAA, QAT) can be used directly to Hadoop/Spark for compression acceleration.
 
 # Introduction
-
-Big Data Analytic Toolkit is a set of acceleration libraries aimed to optimize big data analytic frameworks.
-
-By using this library, frontend SQL engines like Prestodb/Spark query performance will be significant improved.
-
-The following diagram shows the design architecture.
-
-![BDTK-INTRODUCTION](docs/images/BDTK-arch.PNG)
-
-Major components of the project include:
+The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler on top of Arrow data format, ICL - a compression codec leveraging state-of-art Intel IAA accelerator,  QATCodec - compression codec wrapper based on Intel QAT accelerator. 
 
  - [Cider](https://github.com/intel/BDTK/tree/main/cider):
 
@@ -35,17 +38,20 @@ Major components of the project include:
 
  - [Velox Plugin](https://github.com/intel/BDTK/tree/main/cider-velox):
 
-   a Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox/commits/main). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
+   a Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
 
  - [Intel Codec Library](https://github.com/Intel-bigdata/IntelCodecLibrary):
 
    Intel Codec Library for BigData provides compression and decompression library for Apache Hadoop/Spark to make use of the acceleration hardware for compression/decompression.
 
-# Cider & Velox Plugin
+![BDTK-INTRODUCTION](docs/images/BDTK-arch.PNG)
 
-## Getting Started
+# Supported features
+Current supported features are available on [Project Page](https://intel.github.io/BDTK/user/function-support.html). Newly supported feature in release 0.9 is available at [release page](https://github.com/intel/BDTK/releases/tag/v0.9.0). 
 
-### Get the BDTK Source
+# Getting Started
+
+## Get the BDTK Source
 ```
 git clone --recursive https://github.com/intel/BDTK.git
 cd BDTK
@@ -54,7 +60,7 @@ git submodule sync --recursive
 git submodule update --init --recursive
 ```
 
-### Setting up BDTK develop envirenmont on Linux Docker
+## Setting up BDTK develop envirenmont on Linux Docker
 
 We provide Dockerfile to help developers setup and install BDTK dependencies.
 
@@ -67,19 +73,25 @@ $ docker build -t ${image_name} .
 ```shell
 $ docker run -d --name ${container_name} --privileged=true -v ${path_to_source_of_bdtk}:/workspace/bdtk ${image_name} /usr/sbin/init
 ```
-### How to build
+## How to build
 Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
 
 Run `make` in the root directory to compile the sources. For development, use
 `make debug` to build a non-optimized debug version, or `make release` to build
 an optimized version.  Use `make test-debug` or `make test-release` to run tests.
 
-## Major API Example
-
-Examples of major APIs [can be found here](cider/examples)
-
 ## How to Enable in Presto
-To use it with Prestodb, Intel version [Prestodb](https://github.com/intel-bigdata/presto/) is required together with Intel version [Velox](https://github.com/intel-bigdata/velox).
+To use it with Prestodb, Intel version [Prestodb](https://github.com/intel-bigdata/presto/) is required together with Intel version [Velox](https://github.com/intel-bigdata/velox). Detailed steps are available at [installation guide](https://intel.github.io/BDTK/develop/debugging.html#how-to-run-simple-examples-with-prestodb-in-dev-environment).
+
+# Roadmap
+In the coming release, following working items were prioritized.
+-	Better test coverage for entire library
+-	Better robustness and enable more implemented features in Prestodb as pilot SQL engine, by improving offloading framework
+-	Better extensibility at multi-levels (incl. relational algebra operator, expression function, data format), by adopting state-of-art compiler design (multi-levels) 
+-	Complete Arrow format migration
+-	Next-gen codegen framework
+-	Support large volume data processing
+-	Advanced features development
 
 # Code Of Conduct
 Big Data Analytic Toolkit's Code of Conduct [can be found here.](CODE_OF_CONDUCT.md)
