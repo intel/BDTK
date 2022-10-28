@@ -26,7 +26,8 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderTestBase.cpp
     CiderBatchChecker.cpp
     CiderBenchmarkRunner.cpp
-    CiderRunner.cpp)
+    CiderRunner.cpp
+    CiderInt128.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
 target_link_libraries(test_utils cider_plan_parser)
