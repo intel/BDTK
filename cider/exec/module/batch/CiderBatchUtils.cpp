@@ -343,7 +343,7 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
         return ScalarBatch<int64_t>::Create(schema, allocator, array);
       }
     case 'u':
-      return ScalarBatch<CiderVarchar>::Create(schema, allocator, array);
+      return VarcharBatch::Create(schema, allocator, array);
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported data type to create CiderBatch: ") + format);

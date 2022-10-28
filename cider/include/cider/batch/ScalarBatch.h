@@ -26,8 +26,6 @@
 
 #include "CiderBatch.h"
 
-struct CiderVarchar {};
-
 template <typename T>
 class ScalarBatch final : public CiderBatch {
  public:
@@ -87,24 +85,22 @@ class ScalarBatch final : public CiderBatch {
   }
 };
 
-template <>
-class ScalarBatch<CiderVarchar> final : public CiderBatch {
+class VarcharBatch final : public CiderBatch {
  public:
-  static std::unique_ptr<ScalarBatch<CiderVarchar>> Create(
-      ArrowSchema* schema,
-      std::shared_ptr<CiderAllocator> allocator,
-      ArrowArray* array = nullptr) {
-    return array ? std::make_unique<ScalarBatch<CiderVarchar>>(schema, array, allocator)
-                 : std::make_unique<ScalarBatch<CiderVarchar>>(schema, allocator);
+  static std::unique_ptr<VarcharBatch> Create(ArrowSchema* schema,
+                                              std::shared_ptr<CiderAllocator> allocator,
+                                              ArrowArray* array = nullptr) {
+    return array ? std::make_unique<VarcharBatch>(schema, array, allocator)
+                 : std::make_unique<VarcharBatch>(schema, allocator);
   }
 
-  explicit ScalarBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+  explicit VarcharBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
       : CiderBatch(schema, allocator) {
     checkArrowEntries();
   }
-  explicit ScalarBatch(ArrowSchema* schema,
-                       ArrowArray* array,
-                       std::shared_ptr<CiderAllocator> allocator)
+  explicit VarcharBatch(ArrowSchema* schema,
+                        ArrowArray* array,
+                        std::shared_ptr<CiderAllocator> allocator)
       : CiderBatch(schema, array, allocator) {
     checkArrowEntries();
   }
