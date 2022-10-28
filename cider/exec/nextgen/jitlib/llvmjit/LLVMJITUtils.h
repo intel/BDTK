@@ -31,6 +31,8 @@ inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
   switch (tag) {
     case VOID:
       return llvm::Type::getVoidTy(ctx);
+    case BOOL:
+      return llvm::Type::getInt1Ty(ctx);
     case INT8:
       return llvm::Type::getInt8Ty(ctx);
     case INT16:
@@ -39,16 +41,21 @@ inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
       return llvm::Type::getInt32Ty(ctx);
     case INT64:
       return llvm::Type::getInt64Ty(ctx);
+    case FLOAT:
+      return llvm::Type::getFloatTy(ctx);
+    case DOUBLE:
+      return llvm::Type::getDoubleTy(ctx);
     default:
       return nullptr;
   }
 }
 
-inline llvm::Value* getLLVMConstant(uint64_t value,
-                                    JITTypeTag tag,
-                                    llvm::LLVMContext& ctx) {
+inline llvm::Value* getLLVMConstantInt(uint64_t value,
+                                       JITTypeTag tag,
+                                       llvm::LLVMContext& ctx) {
   llvm::Type* type = getLLVMType(tag, ctx);
   switch (tag) {
+    case BOOL:
     case INT8:
     case INT16:
     case INT32:
@@ -59,6 +66,18 @@ inline llvm::Value* getLLVMConstant(uint64_t value,
   }
 }
 
+inline llvm::Value* getLLVMConstantFP(double value,
+                                      JITTypeTag tag,
+                                      llvm::LLVMContext& ctx) {
+  llvm::Type* type = getLLVMType(tag, ctx);
+  switch (tag) {
+    case FLOAT:
+    case DOUBLE:
+      return llvm::ConstantFP::get(type, value);
+    default:
+      return nullptr;
+  }
+}
 };  // namespace jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITUTILS_H

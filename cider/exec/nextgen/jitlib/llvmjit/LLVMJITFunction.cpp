@@ -100,12 +100,19 @@ template <JITTypeTag type_tag,
           typename NativeType = typename JITTypeTraits<type_tag>::NativeType>
 llvm::Value* createConstantImpl(llvm::LLVMContext& context, std::any value) {
   NativeType actual_value = std::any_cast<NativeType>(value);
-  return getLLVMConstant(actual_value, type_tag, context);
+  if constexpr (std::is_floating_point_v<NativeType>) {
+    return getLLVMConstantFP(actual_value, type_tag, context);
+  } else {
+    return getLLVMConstantInt(actual_value, type_tag, context);
+  }
 }
 
 JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any value) {
   llvm::Value* llvm_value = nullptr;
   switch (type_tag) {
+    case BOOL:
+      llvm_value = createConstantImpl<BOOL>(getLLVMContext(), value);
+      break;
     case INT8:
       llvm_value = createConstantImpl<INT8>(getLLVMContext(), value);
       break;
@@ -117,6 +124,12 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
       break;
     case INT64:
       llvm_value = createConstantImpl<INT64>(getLLVMContext(), value);
+      break;
+    case FLOAT:
+      llvm_value = createConstantImpl<FLOAT>(getLLVMContext(), value);
+      break;
+    case DOUBLE:
+      llvm_value = createConstantImpl<DOUBLE>(getLLVMContext(), value);
       break;
     default:
       LOG(ERROR) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: " << type_tag;

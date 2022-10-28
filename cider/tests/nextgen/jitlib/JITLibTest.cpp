@@ -18,37 +18,63 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/jitlib/JITLib.h"
 
 #include <gtest/gtest.h>
+#include <functional>
 
-#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/JITLib.h"
 #include "tests/TestHelpers.h"
 
 using namespace jitlib;
 
 class JITLibTests : public ::testing::Test {};
 
-TEST_F(JITLibTests, BasicTest) {
-  LLVMJITModule module("Test");
-
-  JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func1",
-      .ret_type = JITFunctionParam{.type = INT32},
-      .params_type = {JITFunctionParam{.name = "x", .type = INT32}},
+template <JITTypeTag Type, typename NativeType>
+void executeSingleParamTest(NativeType input,
+                            NativeType output,
+                            const std::function<void(JITFunction*)>& builder) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = Type},
+      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
   });
-  {
-    JITValuePointer x1 = function1->createVariable("x1", INT32);
-    JITValuePointer x = function1->getArgument(0);
-    *x1 = x;
-    auto sum = x1 + 1;
-    function1->createReturn(sum);
-  }
-  function1->finish();
+  builder(function.get());
+  function->finish();
   module.finish();
 
-  auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
-  EXPECT_EQ(ptr1(12), 13);
+  auto func_ptr = function->getFunctionPointer<NativeType, NativeType>();
+  EXPECT_EQ(func_ptr(input), output);
+}
+
+template <JITTypeTag Type, typename T>
+void executeBinaryOp(T left,
+                     T right,
+                     T output,
+                     const std::function<JITValuePointer(JITValue&, JITValue&)>& op) {
+  using NativeType = typename JITTypeTraits<Type>::NativeType;
+  executeSingleParamTest<Type>(
+      static_cast<NativeType>(left),
+      static_cast<NativeType>(output),
+      [&, right = static_cast<NativeType>(right)](JITFunction* func) {
+        auto left = func->createVariable("left", Type);
+        *left = func->getArgument(0);
+
+        auto right_const = func->createConstant(Type, right);
+        auto ans = op(left, right_const);
+
+        func->createReturn(ans);
+      });
+}
+
+TEST_F(JITLibTests, ArithmeticOPTest) {
+  // Sum
+  executeBinaryOp<INT8>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<INT16>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<INT32>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<INT64>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<FLOAT>(10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + b + 0.5; });
+  executeBinaryOp<DOUBLE>(10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + b + 0.5; });
 }
 
 int main(int argc, char** argv) {
