@@ -46,8 +46,12 @@ CiderArrowArrayBufferHolder::CiderArrowArrayBufferHolder(
 
 CiderArrowArrayBufferHolder::~CiderArrowArrayBufferHolder() {
   for (size_t i = 0; i < buffers_.size(); ++i) {
-    relaseBuffer(i);
+    releaseBuffer(i);
   }
+}
+
+size_t CiderArrowArrayBufferHolder::getBufferSizeAt(size_t index) {
+  return buffers_bytes_[index];
 }
 
 void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
@@ -61,7 +65,7 @@ void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
   }
 }
 
-void CiderArrowArrayBufferHolder::relaseBuffer(size_t index) {
+void CiderArrowArrayBufferHolder::releaseBuffer(size_t index) {
   if (buffers_[index]) {
     allocator_->deallocate(reinterpret_cast<int8_t*>(buffers_[index]),
                            buffers_bytes_[index]);

@@ -25,6 +25,7 @@
 #include <cmath>
 #include <cstdint>
 
+#include "cider/CiderTypes.h"
 #include "exec/template/TypePunning.h"
 #include "type/data/funcannotations.h"
 #include "util/CiderBitUtils.h"
@@ -106,6 +107,31 @@ template <typename T>
 ALWAYS_INLINE void cider_agg_id(T& agg_val, const T& val) {
   agg_val = val;
 }
+
+extern "C" ALWAYS_INLINE void cider_agg_id_proj_string(int8_t* str_data_buffer,
+                                                       int8_t* str_offset_buffer,
+                                                       const uint64_t index,
+                                                       int8_t* str_ptr,
+                                                       const int32_t str_len) {
+  int32_t current_offset = reinterpret_cast<int32_t*>(str_offset_buffer)[index];
+  reinterpret_cast<int32_t*>(str_offset_buffer)[index + 1] = current_offset + str_len;
+  memcpy(str_data_buffer + current_offset, str_ptr, str_len);
+}
+
+extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(int8_t* str_data_buffer,
+                                                                int8_t* str_offset_buffer,
+                                                                const uint64_t index,
+                                                                int8_t* str_ptr,
+                                                                const int32_t str_len,
+                                                                uint8_t* agg_null_buffer,
+                                                                bool is_null) {
+  if (is_null) {
+    CiderBitUtils::clearBitAt(agg_null_buffer, index);
+  } else {
+    cider_agg_id_proj_string(str_data_buffer, str_offset_buffer, index, str_ptr, str_len);
+  }
+}
+
 DEF_CIDER_SIMPLE_AGG_FUNCS(id, cider_agg_id)
 /********************************************************************************/
 

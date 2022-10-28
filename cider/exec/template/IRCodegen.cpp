@@ -240,6 +240,13 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
 
   switch (ti.get_type()) {
     case kVARCHAR:
+      CHECK(constant_value.size() == 3);
+      return std::make_unique<TwoValueColValues>(
+          constant_value[1],
+          constant_value[2],
+          constant_expr->get_is_null()
+              ? llvm::ConstantInt::getTrue(cgen_state_->context_)
+              : llvm::ConstantInt::getFalse(cgen_state_->context_));
     case kARRAY:
       UNREACHABLE();
     default:

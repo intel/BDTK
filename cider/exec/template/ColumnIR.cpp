@@ -169,7 +169,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
         break;
       }
     case kVARCHAR:
-      CIDER_THROW(CiderCompileException, "String type ColumnVar is not supported now.");
+      col_values = codegenVarCharColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
+      break;
     case kARRAY:
       CIDER_THROW(CiderCompileException, "Array type ColumnVar is not supported now.");
     default:
@@ -232,6 +233,28 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
   }
 
   return std::make_unique<FixedSizeColValues>(dec_val_cast, null);
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarCharColVar(
+    const Analyzer::ColumnVar* col_var,
+    llvm::Value* col_byte_stream,
+    llvm::Value* pos_arg,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const size_t size = 8;
+  VarcharDecoder decoder(
+      size, &cgen_state_->ir_builder_, !col_var->get_type_info().get_notnull());
+  std::vector<llvm::Instruction*> values =
+      decoder.codegenDecode(cgen_state_->module_, col_byte_stream, pos_arg);
+  for (auto v : values) {
+    cgen_state_->ir_builder_.Insert(v);
+  }
+  llvm::Instruction* null = nullptr;
+  if (values.size() == 3) {
+    null = values[2];
+    values.pop_back();
+  }
+  return std::make_unique<TwoValueColValues>(values[0], values[1], null);
 }
 
 std::vector<llvm::Value*> CodeGenerator::codegenColVar(const Analyzer::ColumnVar* col_var,

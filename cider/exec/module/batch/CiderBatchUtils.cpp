@@ -154,6 +154,8 @@ int64_t getBufferNum(const ArrowSchema* schema) {
       if (!strcmp(type, "tdm")) {
         return 2;
       }
+    case 'u':
+      return 3;
     default:
       CIDER_THROW(CiderException,
                   std::string("Unsupported data type to CiderBatch: ") + type);
@@ -185,6 +187,8 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
         case 's':
           return kSTRUCT;
       }
+    case 'u':
+      return kVARCHAR;
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported data type to CiderBatch: ") + format);
@@ -209,6 +213,8 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
       return "g";
     case kSTRUCT:
       return "+s";
+    case kVARCHAR:
+      return "u";
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported to convert type ") + toString(type) +
@@ -264,6 +270,8 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
       return "+s";
     case Type::kDate:
       return "tdm";
+    case Type::kVarchar:
+      return "u";
     default:
       CIDER_THROW(CiderRuntimeException,
                   std::string("Unsupported to convert type ") + type.GetTypeName() +
@@ -334,6 +342,8 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
       if (!strcmp(format, "tdm")) {
         return ScalarBatch<int64_t>::Create(schema, allocator, array);
       }
+    case 'u':
+      return VarcharBatch::Create(schema, allocator, array);
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported data type to create CiderBatch: ") + format);

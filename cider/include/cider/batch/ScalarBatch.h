@@ -85,4 +85,88 @@ class ScalarBatch final : public CiderBatch {
   }
 };
 
+class VarcharBatch final : public CiderBatch {
+ public:
+  static std::unique_ptr<VarcharBatch> Create(ArrowSchema* schema,
+                                              std::shared_ptr<CiderAllocator> allocator,
+                                              ArrowArray* array = nullptr) {
+    return array ? std::make_unique<VarcharBatch>(schema, array, allocator)
+                 : std::make_unique<VarcharBatch>(schema, allocator);
+  }
+
+  explicit VarcharBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, allocator) {
+    checkArrowEntries();
+  }
+  explicit VarcharBatch(ArrowSchema* schema,
+                        ArrowArray* array,
+                        std::shared_ptr<CiderAllocator> allocator)
+      : CiderBatch(schema, array, allocator) {
+    checkArrowEntries();
+  }
+
+  uint8_t* getMutableRawData() {
+    CHECK(!isMoved());
+    return reinterpret_cast<uint8_t*>(
+        const_cast<void*>(getBuffersPtr()[getDataBufferIndex()]));
+  }
+
+  const uint8_t* getRawData() const {
+    CHECK(!isMoved());
+    return reinterpret_cast<const uint8_t*>(getBuffersPtr()[getDataBufferIndex()]);
+  }
+
+  int32_t* getMutableRawOffset() {
+    CHECK(!isMoved());
+    return reinterpret_cast<int32_t*>(
+        const_cast<void*>(getBuffersPtr()[getOffsetBufferIndex()]));
+  }
+
+  const int32_t* getRawOffset() const {
+    CHECK(!isMoved());
+    return reinterpret_cast<const int32_t*>(getBuffersPtr()[getOffsetBufferIndex()]);
+  }
+
+  bool resizeDataBuffer(int64_t size) {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+    array_holder->allocBuffer(2, size);
+    return true;
+  }
+
+ protected:
+  inline const size_t getOffsetBufferIndex() const { return 1; }
+  inline const size_t getDataBufferIndex() const { return 2; }
+
+  bool resizeData(int64_t size) override {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+    size_t origin_offset_len = array_holder->getBufferSizeAt(1);
+    array_holder->allocBuffer(1, sizeof(int32_t) * (size + 1));  // offset buffer
+    std::memset((void*)(getMutableRawOffset() + origin_offset_len / sizeof(int32_t)),
+                0,
+                sizeof(int32_t) * (size + 1) - origin_offset_len);
+    size_t bytes = array_holder->getBufferSizeAt(2);
+    array_holder->allocBuffer(2, bytes);  // data buffer, it should never shrink.
+
+    setLength(size);
+
+    return true;
+  }
+
+ private:
+  void checkArrowEntries() const {
+    CHECK_EQ(getChildrenNum(), 0);
+    CHECK_EQ(getBufferNum(), 3);
+  }
+};
+
 #endif
