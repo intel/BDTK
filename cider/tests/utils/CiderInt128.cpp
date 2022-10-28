@@ -35,6 +35,10 @@ CiderInt128::CiderInt128(int64_t value) {
   this->low = temp.low;
 }
 
+bool CiderInt128::operator==(const CiderInt128& rhs) const {
+  return CiderInt128Utils::Equal(*this, rhs);
+}
+
 uint8_t CiderInt128Utils::HighestSetBitPositive(const CiderInt128& value) {
   uint8_t result = 0;
 
@@ -80,7 +84,7 @@ CiderInt128 CiderInt128Utils::LeftShift(const CiderInt128& input, uint8_t n) {
 
   auto result = CiderInt128(0, 0);
   result.low = input.low << n;
-  result.high = input.high << n + input.low >> (64 - n);
+  result.high = (input.high << n) + (input.low >> (64 - n));
 
   return result;
 }
@@ -89,14 +93,14 @@ CiderInt128 CiderInt128Utils::DivModPositive(const CiderInt128& numerator,
                                              uint64_t denominator,
                                              uint64_t& remainder) {
   CHECK_GE(numerator.high, 0);
-  auto result = CiderInt128(0, 0);
+  auto result = CiderInt128(0);
   remainder = 0;
 
   auto highest_set_bit = HighestSetBitPositive(numerator);
   for (auto x = highest_set_bit; x > 0; --x) {
     // left-shift result and remainder
     result = LeftShift(result);
-    remainder << 1;
+    remainder = remainder << 1;
 
     if (IsBitSetAt(numerator, x - 1)) {
       // if current bit is set, add current bit to remainder
@@ -112,6 +116,8 @@ CiderInt128 CiderInt128Utils::DivModPositive(const CiderInt128& numerator,
       }
     }
   }
+
+  return result;
 }
 
 CiderInt128 CiderInt128Utils::Negate(const CiderInt128& input) {
@@ -124,6 +130,13 @@ CiderInt128 CiderInt128Utils::Negate(const CiderInt128& input) {
   result.high = -1 - input.high + (input.low == 0);
 
   return result;
+}
+
+bool CiderInt128Utils::Equal(const CiderInt128& lhs, const CiderInt128& rhs) {
+  bool high_eq = lhs.high == rhs.high;
+  bool low_eq = lhs.low == rhs.low;
+
+  return high_eq && low_eq;
 }
 
 std::string CiderInt128Utils::Int128ToString(CiderInt128 input) {

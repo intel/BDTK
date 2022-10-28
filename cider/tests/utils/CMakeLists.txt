@@ -53,6 +53,11 @@ target_link_libraries(ArrowArrayBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(ArrowArrayBuilderTest ${EXECUTABLE_OUTPUT_PATH}/ArrowArrayBuilderTest
          ${TEST_ARGS})
 
+add_executable(CiderInt128Test CiderInt128Test.cpp)
+target_link_libraries(CiderInt128Test ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderInt128Test ${EXECUTABLE_OUTPUT_PATH}/CiderInt128Test
+         ${TEST_ARGS})
+
 add_executable(CiderBatchBuilderTest CiderBatchBuilderTest.cpp)
 target_link_libraries(CiderBatchBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(CiderBatchBuilderTest ${EXECUTABLE_OUTPUT_PATH}/CiderBatchBuilderTest

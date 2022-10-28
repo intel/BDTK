@@ -25,9 +25,9 @@
 #ifndef CIDER_CIDERDECIMAL128_H
 #define CIDER_CIDERDECIMAL128_H
 
+#include <cstdint>
 #include <limits>
 #include <string>
-#include <cstdint>
 
 #include "cider/CiderBatch.h"
 
@@ -46,6 +46,8 @@ struct CiderInt128 {
 
   explicit CiderInt128(int64_t hi, uint64_t lo);
   explicit CiderInt128(int64_t value);
+
+  bool operator==(const CiderInt128& rhs) const;
 };
 
 class CiderInt128Utils {
@@ -72,11 +74,11 @@ class CiderInt128Utils {
   static CiderInt128 LeftShift(const CiderInt128& input, uint8_t n = 1);
   // negation
   static CiderInt128 Negate(const CiderInt128& input);
+  // equal
+  static bool Equal(const CiderInt128& lhs, const CiderInt128& rhs);
 
   static std::string Int128ToString(CiderInt128 input);
-  static std::string Decimal128ToString(CiderInt128 input,
-                                        uint8_t width,
-                                        uint8_t scale);
+  static std::string Decimal128ToString(CiderInt128 input, uint8_t width, uint8_t scale);
 };
 
 #endif
