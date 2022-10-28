@@ -20,6 +20,7 @@
  * under the License.
  */
 
+#include <memory>
 #include "CodeGenerator.h"
 #include "Codec.h"
 #include "Execute.h"
@@ -33,7 +34,8 @@ namespace {
 // Return the right decoder for a given column expression. Doesn't handle
 // variable length data. The decoder encapsulates the code generation logic.
 std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
-                                         llvm::IRBuilder<>* ir_builder) {
+                                         llvm::IRBuilder<>* ir_builder,
+                                         bool is_arrow_format = false) {
   const auto enc_type = col_var->get_compression();
   const auto& ti = col_var->get_type_info();
   switch (enc_type) {
@@ -42,7 +44,11 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
       const bool nullable = !ti.get_notnull();
       switch (int_type) {
         case kBOOLEAN:
-          return std::make_shared<FixedWidthInt>(1, ir_builder, nullable);
+          if (is_arrow_format) {
+            return std::make_shared<FixedWidthBool>(ir_builder, nullable);
+          } else {
+            return std::make_shared<FixedWidthInt>(1, ir_builder, nullable);
+          }
         case kTINYINT:
           return std::make_shared<FixedWidthInt>(1, ir_builder, nullable);
         case kSMALLINT:
@@ -184,7 +190,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
 
-  const auto decoder = get_col_decoder(col_var, &cgen_state_->ir_builder_);
+  const auto decoder = get_col_decoder(col_var, &cgen_state_->ir_builder_, true);
   auto dec_val = decoder->codegenDecode(
       cgen_state_->module_, col_byte_stream, pos_arg);  // {value, null}
   llvm::Instruction *value = dec_val[0], *null = dec_val[1];
