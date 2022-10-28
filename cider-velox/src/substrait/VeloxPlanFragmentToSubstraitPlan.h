@@ -52,10 +52,13 @@ class VeloxPlanFragmentToSubstraitPlan {
   /// plan fragment.
   void reconstructVeloxPlan(const std::vector<core::PlanNodePtr>& planNodeList);
 
-  /// Appends a ValuesNode as the input of planFragment source node if the
+  /// Given a sourceNode of plan section, test whether we should append a ValuesNode
+  /// for it in case of the source node is neither a ValuesNode nor a AbstraitJoinNode.
+  bool shouldAppendValuesNode(const PlanNodePtr& sourceNode) const;
+
+  /// Make a ValuesNode as the input of planFragment source node if the
   /// source node is not a valuesNode.
-  std::shared_ptr<const ValuesNode> addValuesNodeAsSource(
-      const core::PlanNodePtr& sourceNode);
+  std::shared_ptr<const ValuesNode> makeValuesNode(const core::PlanNodePtr& sourceNode);
 
   VeloxToSubstraitPlanConvertor v2SPlanConvertor_;
   std::shared_ptr<exec::test::PlanBuilder> planBuilder_;

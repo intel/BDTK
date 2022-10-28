@@ -155,6 +155,25 @@ DEF_CIDER_SIMPLE_AGG_FUNCS(id, cider_agg_id)
     }                                                                       \
   }
 
+extern "C" ALWAYS_INLINE void cider_agg_id_proj_bool(uint8_t* output_buffer,
+                                                     const uint64_t index,
+                                                     int8_t value) {
+  value ? CiderBitUtils::setBitAt(output_buffer, index)
+        : CiderBitUtils::clearBitAt(output_buffer, index);
+}
+
+extern "C" ALWAYS_INLINE void cider_agg_id_proj_bool_nullable(uint8_t* output_buffer,
+                                                              const uint64_t index,
+                                                              int8_t value,
+                                                              uint8_t* null_buffer,
+                                                              bool is_null) {
+  if (is_null) {
+    CiderBitUtils::clearBitAt(null_buffer, index);
+  } else {
+    cider_agg_id_proj_bool(output_buffer, index, value);
+  }
+}
+
 DEF_CIDER_ID_PROJ_INT(8)
 DEF_CIDER_ID_PROJ_INT(16)
 DEF_CIDER_ID_PROJ_INT(32)

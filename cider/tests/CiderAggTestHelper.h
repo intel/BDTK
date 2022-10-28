@@ -89,7 +89,19 @@ class MockTable {
   void copyDataToScalarBatch(CiderBatch* child, const int8_t* data) const {
     CHECK(child->resizeBatch(element_num_, true));
     auto ptr = child->asMutable<T>()->getMutableRawData();
-    std::memcpy(ptr, data, sizeof(std::remove_pointer_t<decltype(ptr)>) * element_num_);
+    using NativeType = std::remove_pointer_t<decltype(ptr)>;
+    if constexpr (std::is_same_v<NativeType, bool>) {
+      uint8_t* uint8_ptr = reinterpret_cast<uint8_t*>(ptr);
+      for (size_t i = 0; i < element_num_; ++i) {
+        if (data[i]) {
+          CiderBitUtils::setBitAt(uint8_ptr, i);
+        } else {
+          CiderBitUtils::clearBitAt(uint8_ptr, i);
+        }
+      }
+    } else {
+      std::memcpy(ptr, data, sizeof(NativeType) * element_num_);
+    }
   }
 
   std::unique_ptr<CiderBatch> generateStructBatch(
@@ -303,11 +315,17 @@ void runTest(const std::string& test_name,
   auto print_data = [&ss](auto child, size_t i) {
     auto ptr = child->getRawData();
     auto nulls = child->getNulls();
-
     if (nulls && !CiderBitUtils::isBitSetAt(nulls, i)) {
       ss << 'n';
     } else {
-      if (std::is_integral_v<std::remove_pointer_t<decltype(ptr)>>) {
+      if constexpr (std::is_same_v<std::remove_pointer_t<decltype(ptr)>, const bool>) {
+        const uint8_t* uint8_ptr = reinterpret_cast<const uint8_t*>(ptr);
+        if (CiderBitUtils::isBitSetAt(uint8_ptr, i)) {
+          ss << 't';
+        } else {
+          ss << 'f';
+        }
+      } else if constexpr (std::is_integral_v<std::remove_pointer_t<decltype(ptr)>>) {
         ss << (int64_t)ptr[i];
       } else {
         ss << ptr[i];
