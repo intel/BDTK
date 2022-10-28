@@ -21,8 +21,8 @@ set(NEXTGEN_DEPS cider_util)
 
 # AddressSanitizer needs to set overcommit_memory as allowed.
 option(ENABLE_ASN "Enable AddressSanitizer for Nextgen Project." OFF)
-if (ENABLE_ASN) 
-list(APPEND NEXTGEN_DEPS -fsanitize=address)
+if(ENABLE_ASN)
+  list(APPEND NEXTGEN_DEPS -fsanitize=address)
 endif()
 
 add_subdirectory(jitlib)

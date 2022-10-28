@@ -42,8 +42,8 @@ class LLVMJITValue final : public JITValue {
       , parent_function_(parent_function)
       , llvm_value_(value)
       , is_variable_(is_variable) {}
-  
-public:
+
+ public:
   JITValue& assign(JITValue& value) override;
 
   JITValuePointer notOp() override;
