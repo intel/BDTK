@@ -70,11 +70,59 @@ void executeBinaryOp(T left,
 TEST_F(JITLibTests, ArithmeticOPTest) {
   // Sum
   executeBinaryOp<INT8>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
-  executeBinaryOp<INT16>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
-  executeBinaryOp<INT32>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<INT16>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + 1 + b; });
+  executeBinaryOp<INT32>(10, 20, 31, [](JITValue& a, JITValue& b) { return 1 + a + b; });
   executeBinaryOp<INT64>(10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
-  executeBinaryOp<FLOAT>(10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + b + 0.5; });
-  executeBinaryOp<DOUBLE>(10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + b + 0.5; });
+  executeBinaryOp<FLOAT>(
+      10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + b + 0.5; });
+  executeBinaryOp<DOUBLE>(
+      10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + 0.5 + b; });
+
+  // Sub
+  executeBinaryOp<INT8>(20, 10, 9, [](JITValue& a, JITValue& b) { return a - b - 1; });
+  executeBinaryOp<INT16>(20, 10, 9, [](JITValue& a, JITValue& b) { return a - 1 - b; });
+  executeBinaryOp<INT32>(20, 10, 9, [](JITValue& a, JITValue& b) { return a - b - 1; });
+  executeBinaryOp<INT64>(20, 10, 9, [](JITValue& a, JITValue& b) { return a - 1 - b; });
+  executeBinaryOp<FLOAT>(
+      20.0, 10.0, 9.5, [](JITValue& a, JITValue& b) { return a - b - 0.5; });
+  executeBinaryOp<DOUBLE>(
+      20.0, 10.0, 9.5, [](JITValue& a, JITValue& b) { return a - 0.5 - b; });
+
+  // Multi
+  executeBinaryOp<INT8>(2, 2, 12, [](JITValue& a, JITValue& b) { return a * b * 3; });
+  executeBinaryOp<INT16>(2, 2, 12, [](JITValue& a, JITValue& b) { return a * 3 * b; });
+  executeBinaryOp<INT32>(2, 2, 12, [](JITValue& a, JITValue& b) { return 3 * a * b; });
+  executeBinaryOp<INT64>(2, 2, 12, [](JITValue& a, JITValue& b) { return a * b * 3; });
+  executeBinaryOp<FLOAT>(
+      20.0, 10.0, 100.0, [](JITValue& a, JITValue& b) { return a * b * 0.5; });
+  executeBinaryOp<DOUBLE>(
+      20.0, 10.0, 100.0, [](JITValue& a, JITValue& b) { return a * 0.5 * b; });
+
+  // Div
+  executeBinaryOp<INT8>(100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<INT16>(100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<INT32>(100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<INT64>(100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<FLOAT>(
+      20.0, 10.0, 4.0, [](JITValue& a, JITValue& b) { return a / b / 0.5; });
+  executeBinaryOp<DOUBLE>(
+      20.0, 10.0, 4.0, [](JITValue& a, JITValue& b) { return a / b / 0.5; });
+
+  // Mod
+  executeBinaryOp<INT8>(109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<INT16>(109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<INT32>(109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<INT64>(109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<FLOAT>(
+      25.5, 10.0, 0.5, [](JITValue& a, JITValue& b) { return a % b % 1.0; });
+  executeBinaryOp<DOUBLE>(
+      25.5, 10.0, 0.5, [](JITValue& a, JITValue& b) { return a % b % 1.0; });
+}
+
+TEST_F(JITLibTests, LogicalOpTest) {
+  // Not
+  executeBinaryOp<BOOL>(true, false, false, [](JITValue& a, JITValue& b) { return !a; });
+  executeBinaryOp<BOOL>(false, true, true, [](JITValue& a, JITValue& b) { return !a; });
 }
 
 int main(int argc, char** argv) {

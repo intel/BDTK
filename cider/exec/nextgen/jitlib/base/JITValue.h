@@ -83,15 +83,15 @@ class JITValue {
   // // Logical Operators
   // virtual JITValuePointer andOp(JITValue& rh) = 0;
   // virtual JITValuePointer orOp(JITValue& rh) = 0;
-  // virtual JITValuePointer notOp() = 0;
+  virtual JITValuePointer notOp() = 0;
 
   // // Arithmetic Operations
   // TBD: Overflow-check related Arithmetic Operations.
   virtual JITValuePointer add(JITValue& rh) = 0;
-  // virtual JITValuePointer sub(JITValue& rh) = 0;
-  // virtual JITValuePointer mul(JITValue& rh) = 0;
-  // virtual JITValuePointer div(JITValue& rh) = 0;
-  // virtual JITValuePointer mod(JITValue& rh) = 0;
+  virtual JITValuePointer sub(JITValue& rh) = 0;
+  virtual JITValuePointer mul(JITValue& rh) = 0;
+  virtual JITValuePointer div(JITValue& rh) = 0;
+  virtual JITValuePointer mod(JITValue& rh) = 0;
 
   // // Compare Operators
   // virtual JITValuePointer eq(JITValue& rh) = 0;

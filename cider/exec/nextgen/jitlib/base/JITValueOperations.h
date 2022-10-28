@@ -57,6 +57,94 @@ JITValuePointer operator+(T lh, JITValue& rh) {
   return rh + lh;
 }
 
+JITValuePointer operator-(JITValue& lh, JITValue& rh) {
+  return lh.sub(rh);
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator-(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh - *rh_pointer;
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator-(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer - rh;
+}
+
+JITValuePointer operator*(JITValue& lh, JITValue& rh) {
+  return lh.mul(rh);
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator*(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh * *rh_pointer;
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator*(T lh, JITValue& rh) {
+  return rh * lh;
+}
+
+JITValuePointer operator/(JITValue& lh, JITValue& rh) {
+  return lh.div(rh);
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator/(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh / *rh_pointer;
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator/(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer / rh;
+}
+
+JITValuePointer operator%(JITValue& lh, JITValue& rh) {
+  return lh.mod(rh);
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator%(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh % *rh_pointer;
+}
+
+template <typename T, typename = std::enable_if_t<is_jitvalue_convertable_v<T>>>
+JITValuePointer operator%(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer % rh;
+}
+
+JITValuePointer operator!(JITValue& value) {
+  return value.notOp();
+}
+
 };  // namespace jitlib
 
 #endif  // JITLIB_BASE_JITVALUEOPERATIONS_H

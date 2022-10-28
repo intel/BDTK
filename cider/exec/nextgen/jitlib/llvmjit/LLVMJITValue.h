@@ -42,10 +42,17 @@ class LLVMJITValue final : public JITValue {
       , parent_function_(parent_function)
       , llvm_value_(value)
       , is_variable_(is_variable) {}
-
+  
+public:
   JITValue& assign(JITValue& value) override;
 
+  JITValuePointer notOp() override;
+
   JITValuePointer add(JITValue& rh) override;
+  JITValuePointer sub(JITValue& rh) override;
+  JITValuePointer mul(JITValue& rh) override;
+  JITValuePointer div(JITValue& rh) override;
+  JITValuePointer mod(JITValue& rh) override;
 
  private:
   static llvm::IRBuilder<>& getFunctionBuilder(const LLVMJITFunction& function) {
