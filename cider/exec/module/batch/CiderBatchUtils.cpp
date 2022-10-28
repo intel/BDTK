@@ -22,6 +22,8 @@
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
+#include "tests/utils/CiderInt128.h"
+
 #include "include/cider/CiderException.h"
 #include "include/cider/batch/CiderBatch.h"
 #include "include/cider/batch/CiderBatchUtils.h"
@@ -220,6 +222,8 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
       return kFLOAT;
     case 'g':
       return kDOUBLE;
+    case 'd':
+      return kDECIMAL;
     case '+':
       // Complex Types
       switch (format[1]) {
@@ -371,6 +375,8 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
       return ScalarBatch<float>::Create(schema, allocator, array);
     case 'g':
       return ScalarBatch<double>::Create(schema, allocator, array);
+    case 'd':
+      return ScalarBatch<CiderInt128>::Create(schema, allocator, array);
     case '+':
       // Complex Types
       switch (format[1]) {

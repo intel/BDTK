@@ -210,6 +210,37 @@ TEST(DuckDBArrowQueryRunnerTest, multiBatchFetchTest) {
 /// 1. VarChar tests
 /// 2. date / time tests
 
+TEST(DuckDBArrowQueryRunnerTest, HugeIntTest) {
+  DuckDbQueryRunner runner;
+  std::vector<int> expected_data{0, 1, 2, 3, 4};
+  std::vector<bool> null_vecs_1{false, false, false, false, false};
+
+  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addColumn<int>("col_a", CREATE_SUBSTRAIT_TYPE(I32), expected_data)
+          .build());
+
+  /* Create table, run query and check results */
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a INTEGER)";
+
+  runner.createTableAndInsertArrowData(table_name, create_ddl, input_batch);
+  auto res = runner.runSql("select SUM(col_a) from table_test;");
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 1);
+
+  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+
+  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(1)
+          .addColumn<int64_t>("res", CREATE_SUBSTRAIT_TYPE(I64), std::vector<int64_t>{10})
+          .build());
+
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batches, expected_batch));
+}
+
 // old DuckDBQueryRunnerTests below
 
 TEST(DuckDBQueryRunnerTest, basicTest) {

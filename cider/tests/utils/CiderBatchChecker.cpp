@@ -251,6 +251,10 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
             checkOneScalarBatchEqual<double>(expected_child->as<ScalarBatch<double>>(),
                                              actual_child->as<ScalarBatch<double>>());
         break;
+      case SQLTypes::kDECIMAL:
+        // duckdb decimals use 16 bytes, but cider decimals use 8 bytes
+        // therefore buffer compare will never pass, no need to check it
+        return false;
       case SQLTypes::kSTRUCT:
         is_equal = checkOneStructBatchEqual(expected_child.get(), actual_child.get());
         break;

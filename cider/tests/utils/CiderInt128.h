@@ -31,12 +31,13 @@
 
 #include "cider/CiderBatch.h"
 
-// 128-bit integer consisting of a int64 (high) and a uint64 (low)
+// 128-bit integer consisting of a uint64 (low) and a int64 (high)
 // value = 2^64 * high + low
 // can also be used for representing fix-point decimals
 struct CiderInt128 {
-  int64_t high;
+  // duckdb hugeint_t layout, low followed by high
   uint64_t low;
+  int64_t high;
 
   CiderInt128() = default;
   CiderInt128(const CiderInt128& rhs) = default;
