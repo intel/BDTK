@@ -108,9 +108,9 @@ class ArrowArrayBuilder {
       for (auto i = 0; i < null_data.size(); i++) {
         if (null_data[i]) {
           CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
+          current_array->null_count++;
         }
       }
-      // TODO: null_count
 
       current_array->buffers[0] = null_buf;
       current_array->buffers[1] =
@@ -174,9 +174,9 @@ class ArrowArrayBuilder {
       for (auto i = 0; i < null_data.size(); i++) {
         if (null_data[i]) {
           CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
+          current_array->null_count++;
         }
       }
-      // TODO: null_count
 
       current_array->buffers[0] = null_buf;
 
@@ -200,7 +200,77 @@ class ArrowArrayBuilder {
     return *this;
   }
 
-  // TODO: bool string varchar date
+  ArrowArrayBuilder& addUTF8Column(const std::string& col_name,
+                                   const std::string col_data,
+                                   const std::vector<int32_t> offset_data,
+                                   const std::vector<bool>& null_data = {}) {
+    if (!is_row_num_set_ ||  // have not set row num, use this col_data's row num
+        row_num_ == 0) {     // previous columns are all empty
+      is_row_num_set_ = true;
+      row_num_ = offset_data.size() - 1;
+    }
+    ArrowArray* current_array = new ArrowArray();
+    ArrowSchema* current_schema = new ArrowSchema();
+
+    current_schema->name = col_name.c_str();
+    current_schema->format = "u";
+    current_schema->n_children = 0;
+    current_schema->children = nullptr;
+    current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+
+    if (col_data.empty()) {
+      // append an empty buffer.
+      array_list_.push_back(nullptr);
+      schema_list_.push_back(current_schema);
+      return *this;
+    } else {
+      size_t row_num = offset_data.size() - 1;
+      // check row num
+      if (row_num_ != row_num) {
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
+      }
+      CHECK_EQ(row_num_, row_num);
+      // check null data num
+      if (!null_data.empty()) {
+        CHECK_EQ(row_num_, null_data.size());
+      }
+
+      current_array->length = row_num_;
+      current_array->n_children = 0;
+      current_array->offset = 0;
+      current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 3);
+
+      size_t bitmap_size = (row_num_ + 7) >> 3;
+      void* null_buf = (void*)allocator_->allocate(bitmap_size);
+      std::memset(null_buf, 0xFF, bitmap_size);
+      for (auto i = 0; i < null_data.size(); i++) {
+        if (null_data[i]) {
+          CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
+          current_array->null_count++;
+        }
+      }
+      current_array->buffers[0] = null_buf;
+
+      int32_t* offset_buf =
+          (int32_t*)allocator_->allocate(sizeof(int32_t) * (row_num + 1));
+      std::memcpy(offset_buf, offset_data.data(), sizeof(int32_t) * (row_num + 1));
+      current_array->buffers[1] = offset_buf;
+
+      current_array->buffers[2] = allocator_->allocate(sizeof(char) * col_data.size());
+      memcpy(const_cast<void*>(current_array->buffers[2]),
+             col_data.c_str(),
+             col_data.size());
+
+      current_array->n_buffers = 3;
+      current_array->private_data = nullptr;
+      current_array->dictionary = nullptr;
+      current_array->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
+
+      array_list_.push_back(current_array);
+      schema_list_.push_back(current_schema);
+    }
+    return *this;
+  }
 
   std::tuple<ArrowSchema*&, ArrowArray*&> build() {
     if (!is_row_num_set_) {
@@ -222,6 +292,30 @@ class ArrowArrayBuilder {
     return {schema_, array_};
   }
 
+#define PRINT_BY_TYPE(C_TYPE)                   \
+  {                                             \
+    ss << "column type: " << #C_TYPE << " ";    \
+    C_TYPE* buf = (C_TYPE*)(array->buffers[1]); \
+    for (int j = 0; j < length; j++) {          \
+      ss << buf[j] << "\t";                     \
+    }                                           \
+    break;                                      \
+  }
+
+  static std::string toString(const ArrowSchema* schema, const ArrowArray* array) {
+    std::stringstream ss;
+    ss << "row num: " << array->length << ", column num: " << array->n_children << ".\n";
+
+    for (auto i = 0; i < array->n_children; i++) {
+      if (array->children[i] != nullptr) {
+        printByType(ss, schema->children[i]->format, array->children[i], array->length);
+      } else {
+      }
+      ss << '\n';
+    }
+    return ss.str();
+  }
+
  private:
   std::string table_name_ = "";
   size_t row_num_;
@@ -234,6 +328,36 @@ class ArrowArrayBuilder {
   ArrowArray* array_;
 
   std::shared_ptr<CiderAllocator> allocator_;
+
+  static void printByType(std::stringstream& ss,
+                          const char* type,
+                          const ArrowArray* array,
+                          int64_t length) {
+    switch (type[0]) {
+      case 'b':
+      case 'c':
+        PRINT_BY_TYPE(int8_t);
+      case 's':
+        PRINT_BY_TYPE(int16_t);
+      case 'i':
+        PRINT_BY_TYPE(int32_t);
+      case 'l':
+        PRINT_BY_TYPE(int64_t);
+      case 'f':
+        PRINT_BY_TYPE(float);
+      case 'g':
+        PRINT_BY_TYPE(double);
+      case 'u':
+        ss << "column type: String ";
+        for (int i = 0; i < length; i++) {
+          ss << CiderBatchUtils::extractUtf8ArrowArrayAt(array, i) << " ";
+        }
+        ss << std::endl;
+        break;
+      default:
+        CIDER_THROW(CiderCompileException, "Not supported type to print value!");
+    }
+  }
 };
 
 #endif  // CIDER_ARROWARRAYBUILDER_H
