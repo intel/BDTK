@@ -376,7 +376,7 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
     case 'g':
       return ScalarBatch<double>::Create(schema, allocator, array);
     case 'd':
-      return ScalarBatch<CiderInt128>::Create(schema, allocator, array);
+      return ScalarBatch<__int128_t>::Create(schema, allocator, array);
     case '+':
       // Complex Types
       switch (format[1]) {

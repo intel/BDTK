@@ -95,13 +95,13 @@ std::string StructBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_
   return row.getString();
 }
 
-uint8_t DecimalBatchStringifier::getScale(const ScalarBatch<CiderInt128>* batch) {
+uint8_t DecimalBatchStringifier::getScale(const ScalarBatch<__int128_t>* batch) {
   auto type_str = std::string(batch->getArrowFormatString());
   uint8_t scale = std::stoi(type_str.substr(type_str.find(',') + 1));
   return scale;
 }
 
-uint8_t DecimalBatchStringifier::getWidth(const ScalarBatch<CiderInt128>* batch) {
+uint8_t DecimalBatchStringifier::getWidth(const ScalarBatch<__int128_t>* batch) {
   auto type_str = std::string(batch->getArrowFormatString());
   auto start = type_str.find(':') + 1;
   auto end = type_str.find(',');
@@ -110,7 +110,7 @@ uint8_t DecimalBatchStringifier::getWidth(const ScalarBatch<CiderInt128>* batch)
 }
 
 std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_index) {
-  auto scalar_batch = batch->as<ScalarBatch<CiderInt128>>();
+  auto scalar_batch = batch->as<ScalarBatch<__int128_t>>();
   if (!scalar_batch) {
     CIDER_THROW(CiderRuntimeException,
                 "ScalarBatch is nullptr, maybe check your casting?");
@@ -124,7 +124,7 @@ std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
   } else {
-    CiderInt128 value = data_buffer[row_index];
+    __int128_t value = data_buffer[row_index];
 
     if (!scale) {
       // integral type

@@ -19,9 +19,6 @@
  * under the License.
  */
 
-// code adapted from DuckDb Hugeint types
-// https://github.com/duckdb/duckdb/blob/master/src/common/types/hugeint.cpp
-
 #ifndef CIDER_CIDERDECIMAL128_H
 #define CIDER_CIDERDECIMAL128_H
 
@@ -31,53 +28,11 @@
 
 #include "cider/CiderBatch.h"
 
-// 128-bit integer consisting of a uint64 (low) and a int64 (high)
-// value = 2^64 * high + low
-// can also be used for representing fix-point decimals
-struct CiderInt128 {
-  // duckdb hugeint_t layout, low followed by high
-  uint64_t low;
-  int64_t high;
-
-  CiderInt128() = default;
-  CiderInt128(const CiderInt128& rhs) = default;
-  CiderInt128(CiderInt128&& rhs) = default;
-  CiderInt128& operator=(const CiderInt128& rhs) = default;
-  CiderInt128& operator=(CiderInt128&& rhs) = default;
-
-  explicit CiderInt128(int64_t hi, uint64_t lo);
-  explicit CiderInt128(int64_t value);
-
-  bool operator==(const CiderInt128& rhs) const;
-};
-
 class CiderInt128Utils {
- private:
-  // Finds the highest bit that is set to 1 in a positive CiderInt128 instance
-  // returns 1-indexed bit position, and returns 0 if all bits are 0
-  static uint8_t HighestSetBitPositive(const CiderInt128& value);
-
-  // Checks if a bit is set at position pos
-  static bool IsBitSetAt(const CiderInt128& value, uint8_t pos);
-
  public:
-  static CiderInt128 Int64ToCiderInt128(int64_t value);
-  // computes int128-uint64 division
-  // the numerator int128 must be positive
-  // returns quotient, outputs remainder via remainder out reference parameter
-  static CiderInt128 DivModPositive(const CiderInt128& numerator,
-                                    uint64_t denominator,
-                                    uint64_t& remainder);
-  // left shift
-  static CiderInt128 LeftShift(const CiderInt128& input, uint8_t n = 1);
-  // negation
-  static CiderInt128 Negate(const CiderInt128& input);
-  // equal
-  static bool Equal(const CiderInt128& lhs, const CiderInt128& rhs);
-
-  static std::string Int128ToString(CiderInt128 input);
-  static std::string Decimal128ToString(CiderInt128 input, uint8_t width, uint8_t scale);
-  static double Decimal128ToDouble(CiderInt128 input, uint8_t width, uint8_t scale);
+  static std::string Int128ToString(__int128_t input);
+  static std::string Decimal128ToString(__int128_t input, uint8_t width, uint8_t scale);
+  static double Decimal128ToDouble(__int128_t input, uint8_t width, uint8_t scale);
 };
 
 #endif
