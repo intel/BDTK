@@ -22,14 +22,52 @@
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
-
 #include "include/cider/CiderException.h"
 #include "include/cider/batch/CiderBatch.h"
 #include "include/cider/batch/CiderBatchUtils.h"
 #include "include/cider/batch/ScalarBatch.h"
 #include "include/cider/batch/StructBatch.h"
+#include "tests/utils/ArrowArrayBuilder.h"
 
 namespace CiderBatchUtils {
+
+#define GENERATE_AND_ADD_BOOL_COLUMN(C_TYPE)                                \
+  {                                                                         \
+    std::vector<C_TYPE> col_data;                                           \
+    std::vector<bool> null_data;                                            \
+    col_data.reserve(table_row_num);                                        \
+    null_data.reserve(table_row_num);                                       \
+    C_TYPE* buf = (C_TYPE*)table_ptr[i];                                    \
+    C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                           \
+    for (auto j = 0; j < table_row_num; ++j) {                              \
+      C_TYPE value = buf[j];                                                \
+      bool is_null = null_buf[j];                                           \
+      col_data.push_back(value);                                            \
+      null_data.push_back(is_null);                                         \
+    }                                                                       \
+    builder = builder.addBoolColumn<C_TYPE>(names[i], col_data, null_data); \
+    break;                                                                  \
+  }
+
+#define GENERATE_AND_ADD_COLUMN(C_TYPE)                                       \
+  {                                                                           \
+    std::vector<C_TYPE> col_data;                                             \
+    std::vector<bool> null_data;                                              \
+    col_data.reserve(table_row_num);                                          \
+    null_data.reserve(table_row_num);                                         \
+    null_data.push_back(false);                                               \
+    C_TYPE* buf = (C_TYPE*)table_ptr[i];                                      \
+    C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                             \
+    for (auto j = 0; j < table_row_num; ++j) {                                \
+      C_TYPE value = buf[j];                                                  \
+      bool is_null = null_buf[j];                                             \
+      col_data.push_back(value);                                              \
+      null_data.push_back(is_null);                                           \
+    }                                                                         \
+    builder = builder.addColumn<C_TYPE>(names[i], type, col_data, null_data); \
+    break;                                                                    \
+  }
+
 void freeArrowArray(ArrowArray* ptr) {
   delete ptr;
 }
@@ -141,6 +179,7 @@ int64_t getBufferNum(const ArrowSchema* schema) {
     case 'l':
     case 'f':
     case 'g':
+    case 'd':
       return 2;
     case '+':
       // Complex Types
@@ -173,6 +212,7 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
     case 'i':
       return kINT;
     case 'l':
+    case 'd':
       return kBIGINT;
     case 'f':
       return kFLOAT;
@@ -351,4 +391,44 @@ std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index) {
 
   return std::string(res);
 }
+
+CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
+  std::shared_ptr<CiderTableSchema> table_schema = output_batch.schema();
+  auto column_num = table_schema->getColumnCount();
+  auto arrow_colum_num = output_batch.column_num();
+  CHECK_EQ(column_num * 2, arrow_colum_num);
+  auto table_row_num = output_batch.row_num();
+  ArrowArrayBuilder builder;
+  builder = builder.setRowNum(table_row_num);
+  const auto& types = table_schema->getColumnTypes();
+  const auto& names = table_schema->getColumnNames();
+  const int8_t** table_ptr = output_batch.table();
+  for (auto i = 0; i < types.size(); ++i) {
+    const ::substrait::Type& type = types[i];
+    switch (type.kind_case()) {
+      case ::substrait::Type::KindCase::kBool:
+        GENERATE_AND_ADD_BOOL_COLUMN(bool)
+      case ::substrait::Type::KindCase::kI8:
+        GENERATE_AND_ADD_COLUMN(int8_t)
+      case ::substrait::Type::KindCase::kI16:
+        GENERATE_AND_ADD_COLUMN(int16_t)
+      case ::substrait::Type::KindCase::kI32:
+        GENERATE_AND_ADD_COLUMN(int32_t)
+      case ::substrait::Type::KindCase::kI64:
+        GENERATE_AND_ADD_COLUMN(int64_t)
+      case ::substrait::Type::KindCase::kFp32:
+        GENERATE_AND_ADD_COLUMN(float)
+      case ::substrait::Type::KindCase::kFp64:
+        GENERATE_AND_ADD_COLUMN(double)
+      default:
+        CIDER_THROW(CiderCompileException, "Type arrow convert not supported.");
+    }
+  }
+  auto schema_and_array = builder.build();
+  CiderBatch result(std::get<0>(schema_and_array),
+                    std::get<1>(schema_and_array),
+                    std::make_shared<CiderDefaultAllocator>());
+  return std::move(result);
+}
+
 }  // namespace CiderBatchUtils

@@ -609,10 +609,14 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
     // reset need to be done after data consumed, like bitmap for count(distinct)
     resetAggVal();
     if (ciderCompilationOption_.use_cider_data_format) {
-      out_batch.convertToArrowRepresentation();
+      auto arrow_out_batch = CiderBatchUtils::convertToArrowRepresentation(out_batch);
+      return std::make_pair(
+          kNoMoreOutput,
+          std::move(std::make_unique<CiderBatch>(std::move(arrow_out_batch))));
+    } else {
+      return std::make_pair(
+          kNoMoreOutput, std::move(std::make_unique<CiderBatch>(std::move(out_batch))));
     }
-    return std::make_pair(kNoMoreOutput,
-                          std::move(std::make_unique<CiderBatch>(std::move(out_batch))));
   }
 
   // for group_by_agg

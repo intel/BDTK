@@ -74,38 +74,40 @@ class CiderArrowAggTest : public CiderTestBase {
   CiderArrowAggTest() {
     table_name_ = "test";
     create_ddl_ =
-        "CREATE TABLE test(col_i8 TINYINT, col_i16 SMALLINT, col_i32 INT, col_i64 "
-        "BIGINT, col_fp32 FLOAT, col_fp64 DOUBLE, half_null_i8 "
+        "CREATE TABLE test(col_i8 TINYINT NOT NULL, col_i16 SMALLINT NOT NULL, col_i32 "
+        "INT NOT NULL, col_i64 "
+        "BIGINT NOT NULL, col_fp32 FLOAT NOT NULL, col_fp64 DOUBLE NOT NULL, "
+        "half_null_i8 "
         "TINYINT, half_null_i16 SMALLINT, half_null_i32 INT, half_null_i64 BIGINT, "
         "half_null_fp32 FLOAT, half_null_fp64 DOUBLE);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   10,
-                                                 {"col_i8",
-                                                  "col_i16",
-                                                  "col_i32",
-                                                  "col_i64",
-                                                  "col_fp32",
-                                                  "col_fp64",
-                                                  "half_null_i8",
-                                                  "half_null_i16",
-                                                  "half_null_i32",
-                                                  "half_null_i64",
-                                                  "half_null_fp32",
-                                                  "half_null_fp64"},
-                                                 {CREATE_SUBSTRAIT_TYPE(I8),
-                                                  CREATE_SUBSTRAIT_TYPE(I16),
-                                                  CREATE_SUBSTRAIT_TYPE(I32),
-                                                  CREATE_SUBSTRAIT_TYPE(I64),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp64),
-                                                  CREATE_SUBSTRAIT_TYPE(I8),
-                                                  CREATE_SUBSTRAIT_TYPE(I16),
-                                                  CREATE_SUBSTRAIT_TYPE(I32),
-                                                  CREATE_SUBSTRAIT_TYPE(I64),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp64)},
-                                                 {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2});
+                                                  {"col_i8",
+                                                   "col_i16",
+                                                   "col_i32",
+                                                   "col_i64",
+                                                   "col_fp32",
+                                                   "col_fp64",
+                                                   "half_null_i8",
+                                                   "half_null_i16",
+                                                   "half_null_i32",
+                                                   "half_null_i64",
+                                                   "half_null_fp32",
+                                                   "half_null_fp64"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I16),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I16),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
+                                                  {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2});
   }
 };
 
@@ -115,7 +117,6 @@ class CiderArrowAggTest : public CiderTestBase {
  =========================================================================
 */
 TEST_F(CiderAggTest, sumTest) {
-  GTEST_SKIP();
   // SUM(tinyint)
   assertQuery("SELECT SUM(col_i8) FROM test");
   // SUM(smallint)
@@ -153,7 +154,6 @@ TEST_F(CiderAggTest, sumTest) {
 TEST_F(CiderArrowAggTest, aggArrowTest) {
   // SUM(tinyint)
   assertQueryArrow("SELECT SUM(col_i8) FROM test");
-  GTEST_SKIP();
   // SUM(smallint)
   assertQueryArrow("SELECT SUM(col_i16) FROM test");
   // SUM(int)
@@ -179,25 +179,25 @@ TEST_F(CiderArrowAggTest, aggArrowTest) {
   assertQueryArrow("SELECT SUM(half_null_fp64) FROM test");
   // In cider, COUNT(*) has same syntax as COUNT(1)
   // COUNT(*)
-  assertQuery("SELECT COUNT(*) FROM test");
+  assertQueryArrow("SELECT COUNT(*) FROM test");
   // COUNT(1)
-  assertQuery("SELECT COUNT(1) FROM test");
+  assertQueryArrow("SELECT COUNT(1) FROM test");
+  GTEST_SKIP();
   // COUNT AGG
-  assertQuery("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
-  assertQuery("SELECT COUNT(1), MAX(col_i8) FROM test");
-  assertQuery("SELECT COUNT(col_i8), MAX(col_i8) FROM test");
+  assertQueryArrow("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
+  assertQueryArrow("SELECT COUNT(1), MAX(col_i8) FROM test");
+  assertQueryArrow("SELECT COUNT(col_i8), MAX(col_i8) FROM test");
   // COUNT(DISTINCT tinyint)
-  assertQuery("SELECT COUNT(DISTINCT col_i8) FROM test");
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i8) FROM test");
   // COUNT(DISTINCT smallint)
-  assertQuery("SELECT COUNT(DISTINCT col_i16) FROM test");
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i16) FROM test");
   // COUNT(DISTINCT int)
-  assertQuery("SELECT COUNT(DISTINCT col_i32) FROM test");
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i32) FROM test");
   // COUNT(DISTINCT bigint)
-  assertQuery("SELECT COUNT(DISTINCT col_i64) FROM test");
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i64) FROM test");
 }
 
 TEST_F(CiderAggTest, countTest) {
-  GTEST_SKIP();
   // In cider, COUNT(*) has same syntax as COUNT(1)
   // COUNT(*)
   assertQuery("SELECT COUNT(*) FROM test");
@@ -330,7 +330,6 @@ TEST_F(CiderAggTest, countTest) {
 }
 
 TEST_F(CiderAggTest, countDistinctTest) {
-  GTEST_SKIP();
   // COUNT(DISTINCT tinyint)
   assertQuery("SELECT COUNT(DISTINCT col_i8) FROM test");
   // COUNT(DISTINCT smallint)
@@ -400,7 +399,6 @@ TEST_F(CiderAggTest, countDistinctTest) {
 }
 
 TEST_F(CiderAggTest, minOnColumnTest) {
-  GTEST_SKIP();
   // agg min with different data type.
   assertQuery("SELECT MIN(col_i8), MIN(col_i64), MIN(col_fp32), MIN(col_fp64) FROM test");
 
@@ -439,7 +437,6 @@ TEST_F(CiderAggTest, minOnColumnTest) {
 }
 
 TEST_F(CiderAggTest, maxOnColumnTest) {
-  GTEST_SKIP();
   // agg max with different data type.
   assertQuery("SELECT MAX(col_i8), MAX(col_i64), MAX(col_fp32), MAX(col_fp64) FROM test");
 
@@ -478,7 +475,6 @@ TEST_F(CiderAggTest, maxOnColumnTest) {
 }
 
 TEST_F(CiderAggTest, aggWithConditionTest) {
-  GTEST_SKIP();
   // multi agg funcs on col with condition.
   assertQuery(
       "SELECT SUM(col_i8), MAX(col_i64), SUM(col_fp32), MIN(col_fp64), COUNT(DISTINCT "
@@ -500,7 +496,6 @@ TEST_F(CiderAggTest, aggWithConditionTest) {
  =========================================================================
 */
 TEST_F(CiderAggTest, sumOnExpressionTest) {
-  GTEST_SKIP();
   assertQuery("SELECT SUM(col_i32 + col_i8), SUM(col_i8 + col_i32) FROM test");
   assertQuery("SELECT SUM(col_i32 - col_i8) FROM test");
   assertQuery("SELECT SUM(col_i32 * col_i8) FROM test");
@@ -543,7 +538,6 @@ TEST_F(CiderAggTest, sumOnExpressionTest) {
 }
 
 TEST_F(CiderAggTest, minOnExpressionTest) {
-  GTEST_SKIP();
   assertQuery("SELECT MIN(col_i32 + col_i8), MIN(col_i8 + col_i32) FROM test");
   assertQuery("SELECT MIN(col_i32 - col_i8) FROM test");
   assertQuery("SELECT MIN(col_i32 * col_i8) FROM test");
@@ -562,7 +556,6 @@ TEST_F(CiderAggTest, minOnExpressionTest) {
 }
 
 TEST_F(CiderAggTest, maxOnExpressionTest) {
-  GTEST_SKIP();
   assertQuery("SELECT MAX(col_i32 + col_i8), MAX(col_i8 + col_i32) FROM test");
   assertQuery("SELECT MAX(col_i32 - col_i8) FROM test");
   assertQuery("SELECT MAX(col_i32 * col_i8) FROM test");
@@ -586,13 +579,11 @@ TEST_F(CiderAggTest, maxOnExpressionTest) {
 
 // TODO: move this case to another file. it should belong to function development scope.
 TEST_F(CiderAggTest, castTest) {
-  GTEST_SKIP();
   assertQuery("SELECT CAST(col_i32 as tinyint) FROM test");
   assertQuery("SELECT CAST(col_i32 as smallint) FROM test");
 }
 
 TEST_F(CiderAggTest, sumCastTest) {
-  GTEST_SKIP();
   // cast int column
   assertQuery("SELECT SUM(cast(col_i32 as tinyint)) FROM test");
   assertQuery("SELECT SUM(cast(col_i32 as smallint)) FROM test");
@@ -650,7 +641,6 @@ class CiderPartialAVGIntegerTest : public CiderTestBase {
 };
 
 TEST_F(CiderPartialAVGIntegerTest, singlePartialAVG) {
-  GTEST_SKIP();
   std::vector<double> expect_sum;
   expect_sum.push_back(330.0);
   std::vector<int64_t> expect_count;
@@ -696,7 +686,6 @@ TEST_F(CiderPartialAVGIntegerTest, singlePartialAVG) {
 }
 
 TEST_F(CiderPartialAVGIntegerTest, withNullPartialAVG) {
-  GTEST_SKIP();
   std::vector<double> expect_sum;
   expect_sum.push_back(100.0);
   std::vector<int64_t> expect_count;
@@ -742,7 +731,6 @@ TEST_F(CiderPartialAVGIntegerTest, withNullPartialAVG) {
 }
 
 TEST_F(CiderPartialAVGIntegerTest, allNullPartialAVG) {
-  GTEST_SKIP();
   std::vector<double> expect_sum;
   expect_sum.push_back(NULL_VALUE_DOUBLE);
   std::vector<int64_t> expect_count;
@@ -788,7 +776,6 @@ TEST_F(CiderPartialAVGIntegerTest, allNullPartialAVG) {
 }
 
 TEST_F(CiderPartialAVGIntegerTest, mixedPartialAVG) {
-  GTEST_SKIP();
   std::vector<double> expect_sum;
   expect_sum.push_back(330.0);
   std::vector<int64_t> expect_count;
@@ -887,7 +874,6 @@ class CiderPartialAVGFpTest : public CiderTestBase {
 };
 
 TEST_F(CiderPartialAVGFpTest, mixedPartialAVG) {
-  GTEST_SKIP();
   std::vector<double> expect_sum1;
   expect_sum1.push_back((double)66.66);
   std::vector<double> expect_sum2;
@@ -991,7 +977,6 @@ class CiderCountDistinctConstantTest : public CiderTestBase {
 };
 
 TEST_F(CiderCountDistinctConstantTest, countDistinctConstantTest) {
-  GTEST_SKIP();
   std::vector<int64_t> expect_col_a_1;
   expect_col_a_1.push_back(2);
   std::vector<int64_t> expect_col_b_1;
