@@ -89,7 +89,7 @@ class CiderArrowCaseWhenSequenceTestBase : public CiderTestBase {
   CiderArrowCaseWhenSequenceTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT);)";
+        R"(CREATE TABLE test(col_int INTEGER NOT NULL, col_bigint BIGINT NOT NULL, col_double DOUBLE NOT NULL, col_float FLOAT NOT NULL);)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
