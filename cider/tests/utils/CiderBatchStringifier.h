@@ -48,6 +48,9 @@ class ScalarBatchStringifier : public CiderBatchStringifier {
   std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
 };
 
+// DuckDb uses little-endian int128 to store HUGEINT and DECIMAL types
+// exported arrow array also contains int128 values
+// so we use gcc's __int128_t to directly decode the values in arrow array
 class DecimalBatchStringifier : public CiderBatchStringifier {
  private:
   uint8_t getScale(const ScalarBatch<__int128_t>* batch);
