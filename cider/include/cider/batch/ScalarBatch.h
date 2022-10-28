@@ -127,6 +127,17 @@ class VarcharBatch final : public CiderBatch {
     return reinterpret_cast<const int32_t*>(getBuffersPtr()[getOffsetBufferIndex()]);
   }
 
+  bool resizeDataBuffer(int64_t size) {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+    array_holder->allocBuffer(2, size);
+    return true;
+  }
+
  protected:
   inline const size_t getOffsetBufferIndex() const { return 1; }
   inline const size_t getDataBufferIndex() const { return 2; }
@@ -138,10 +149,13 @@ class VarcharBatch final : public CiderBatch {
     }
 
     auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
-
+    size_t origin_offset_len = array_holder->getBufferSizeAt(1);
     array_holder->allocBuffer(1, sizeof(int32_t) * (size + 1));  // offset buffer
-    std::memset((void*)getMutableRawOffset(), 0, sizeof(int32_t) * (size + 1));
-    array_holder->allocBuffer(2, 0);  // data buffer;
+    std::memset((void*)(getMutableRawOffset() + origin_offset_len / sizeof(int32_t)),
+                0,
+                sizeof(int32_t) * (size + 1) - origin_offset_len);
+    size_t bytes = array_holder->getBufferSizeAt(2);
+    array_holder->allocBuffer(2, bytes);  // data buffer, it should never shrink.
 
     setLength(size);
 

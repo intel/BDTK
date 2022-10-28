@@ -246,6 +246,107 @@ TEST_F(CiderArrowBatchTest, ScalarBatchTest) {
                                    {true, true, false, true, true});
 }
 
+void runVarcharBatchTest(VarcharBatch* batch,
+                         const vector<string>& data,
+                         const vector<int>& offset,
+                         const vector<bool>& not_null = {}) {
+  assert(data.size() == not_null.size() || not_null.empty());
+  CHECK(batch);
+
+  EXPECT_EQ(batch->getCiderType(), kVARCHAR);
+
+  EXPECT_TRUE(batch->resizeBatch(data.size()));
+  size_t total_len = [&]() {
+    size_t len = 0;
+    for (auto s : data) {
+      len += s.length();
+    }
+    return len;
+  }();
+  EXPECT_EQ(total_len, offset[offset.size() - 1]);
+  EXPECT_TRUE(batch->resizeDataBuffer(total_len));
+  EXPECT_EQ(batch->getLength(), data.size());
+  EXPECT_EQ(batch->getNullCount(), 0);
+
+  {
+    auto raw_data = batch->getMutableRawData();
+    auto raw_offset = batch->getMutableRawOffset();
+    EXPECT_NE(raw_data, nullptr);
+    EXPECT_NE(raw_offset, nullptr);
+
+    for (size_t i = 0; i < data.size(); ++i) {
+      std::memcpy(raw_data + raw_offset[i], data[i].c_str(), data[i].length());
+      raw_offset[i + 1] = raw_offset[i] + data[i].length();
+    }
+  }
+
+  int64_t null_count = 0;
+  if (!not_null.empty()) {
+    auto not_null_data = batch->getMutableNulls();
+    EXPECT_EQ(batch->getNullCount(), 0);
+    EXPECT_NE(not_null_data, nullptr);
+    for (size_t i = 0; i < not_null.size(); ++i) {
+      if (!not_null[i]) {
+        CiderBitUtils::clearBitAt(not_null_data, i);
+        ++null_count;
+      }
+    }
+    batch->setNullCount(null_count);
+  }
+
+  EXPECT_TRUE(batch->resizeBatch(2 * data.size()));
+  EXPECT_EQ(batch->getLength(), 2 * data.size());
+  EXPECT_EQ(batch->getNullCount(),
+            not_null.empty() ? 0 : null_count + (int64_t)data.size());
+
+  {
+    auto raw_data = batch->getRawData();
+    auto raw_offset = batch->getMutableRawOffset();
+    EXPECT_NE(raw_data, nullptr);
+    EXPECT_NE(raw_offset, nullptr);
+    for (size_t i = 0; i < data.size(); ++i) {
+      EXPECT_EQ(0,
+                std::memcmp(raw_data + raw_offset[i], data[i].c_str(), data[i].length()));
+    }
+  }
+
+  if (!not_null.empty()) {
+    auto not_null_data = batch->getNulls();
+    EXPECT_NE(not_null_data, nullptr);
+    for (size_t i = 0; i < not_null.size(); ++i) {
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(not_null_data, i), not_null[i]);
+    }
+    for (size_t i = 0; i < not_null.size(); ++i) {
+      EXPECT_EQ(CiderBitUtils::isBitSetAt(not_null_data, i + not_null.size()), false);
+    }
+  }
+}
+
+TEST_F(CiderArrowBatchTest, VarcharBatchNoNullTest) {
+  SQLTypeInfo type_info(kVARCHAR, true);
+  ArrowSchema* schema = convertCiderTypeInfoToArrowSchema(type_info);
+
+  auto batch = VarcharBatch::Create(schema, ciderAllocator);
+  EXPECT_TRUE(batch->isRootOwner());
+
+  std::vector<string> data{"a", "b", "c", "d"};
+  std::vector<int> offset{0, 1, 2, 3, 4};
+  runVarcharBatchTest(batch.get(), data, offset);
+}
+
+TEST_F(CiderArrowBatchTest, VarcharBatchNullTest) {
+  SQLTypeInfo type_info(kVARCHAR, true);
+  ArrowSchema* schema = convertCiderTypeInfoToArrowSchema(type_info);
+
+  auto batch = VarcharBatch::Create(schema, ciderAllocator);
+  EXPECT_TRUE(batch->isRootOwner());
+
+  std::vector<string> data{"a", "b", "c", "d"};
+  std::vector<int> offset{0, 1, 2, 3, 4};
+  std::vector<bool> null{true, false, true, false};
+  runVarcharBatchTest(batch.get(), data, offset, null);
+}
+
 TEST_F(CiderArrowBatchTest, StructBatchTest) {
   {
     SQLTypeInfo type(
