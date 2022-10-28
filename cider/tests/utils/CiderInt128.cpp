@@ -192,5 +192,15 @@ std::string CiderInt128Utils::Decimal128ToString(CiderInt128 input,
     }
   }
 
+  while (scale_counter < scale) {
+    // pad zeros
+    result = "0" + result;
+    scale_counter++;
+  }
+  // in cases where scale > length, append 0. to beginning
+  if (scale_counter == scale) {
+    result = "0." + result;
+  }
+
   return is_negative ? "-" + result : result;
 }

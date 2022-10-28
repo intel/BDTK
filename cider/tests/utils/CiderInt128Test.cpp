@@ -103,6 +103,22 @@ TEST(CiderInt128Test, DivModTest) {
   EXPECT_EQ(remainder, 10);
 }
 
+TEST(CiderInt128Test, ToStringTest) {
+  auto ival = CiderInt128(33252311246);
+  auto istr = CiderInt128Utils::Int128ToString(ival);
+  auto dstr = CiderInt128Utils::Decimal128ToString(ival, 38, 0);
+  EXPECT_EQ(istr, "33252311246");
+  EXPECT_EQ(dstr, "33252311246");
+
+  auto dval = CiderInt128(187694187358912);
+  dstr = CiderInt128Utils::Decimal128ToString(dval, 38, 5);
+  EXPECT_EQ(dstr, "1876941873.58912");
+  dstr = CiderInt128Utils::Decimal128ToString(dval, 38, 10);
+  EXPECT_EQ(dstr, "18769.4187358912");
+  dstr = CiderInt128Utils::Decimal128ToString(dval, 38, 20);
+  EXPECT_EQ(dstr, "0.00000187694187358912");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 

@@ -61,9 +61,6 @@ class CiderInt128Utils {
 
  public:
   static CiderInt128 Int64ToCiderInt128(int64_t value);
-  static std::string ToString(const CiderInt128& value,
-                              uint8_t width = 38,
-                              uint8_t scale = 0);
   // computes int128-uint64 division
   // the numerator int128 must be positive
   // returns quotient, outputs remainder via remainder out reference parameter
