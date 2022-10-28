@@ -347,12 +347,15 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   } else if (lhs_nullable || rhs_nullable) {
     null = lhs_nullable ? lhs_nullable->getNull() : rhs_nullable->getNull();
   }
-  if (lhs_ti.is_string()) {
-    CHECK(rhs_ti.is_string());
-    return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
-  }
 
-  return codegenFixedSizeColCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+  switch (lhs_ti.get_type()) {
+    case kVARCHAR:
+    case kTEXT:
+    case kCHAR:
+      return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+    default:
+      return codegenFixedSizeColCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+  }
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColCmpFun(
