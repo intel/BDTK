@@ -59,8 +59,11 @@ class CiderBatch {
   size_t getBufferNum() const;
   size_t getChildrenNum() const;
   SQLTypes getCiderType() const;
+  const char* getArrowFormatString() const;
 
-  bool isRootOwner() const { return ownership_; }
+  bool isRootOwner() const {
+    return ownership_;
+  }
 
   bool isMoved() const;
 
@@ -123,13 +126,21 @@ class CiderBatch {
   }
   bool resizeNulls(int64_t size, bool default_not_null);
 
-  virtual size_t getNullVectorIndex() const { return 0; }
+  virtual size_t getNullVectorIndex() const {
+    return 0;
+  }
 
-  bool permitBufferAllocate() const { return reallocate_; }
+  bool permitBufferAllocate() const {
+    return reallocate_;
+  }
 
-  ArrowSchema* getArrowSchema() const { return arrow_schema_; }
+  ArrowSchema* getArrowSchema() const {
+    return arrow_schema_;
+  }
 
-  ArrowArray* getArrowArray() const { return arrow_array_; }
+  ArrowArray* getArrowArray() const {
+    return arrow_array_;
+  }
 
   SchemaReleaser getSchemaReleaser() const;
   ArrayReleaser getArrayReleaser() const;
@@ -318,27 +329,41 @@ class CiderBatch {
     }
   }
 
-  const int8_t* column(int32_t col_id) const { return table_ptr_[col_id]; }
+  const int8_t* column(int32_t col_id) const {
+    return table_ptr_[col_id];
+  }
 
   const int8_t** table() const {
     return table_ptr_.empty() ? nullptr : const_cast<const int8_t**>(table_ptr_.data());
   }
 
-  int64_t row_num() const { return row_num_; }
+  int64_t row_num() const {
+    return row_num_;
+  }
 
-  size_t column_type_size(int32_t col_id) const { return column_type_size_[col_id]; }
+  size_t column_type_size(int32_t col_id) const {
+    return column_type_size_[col_id];
+  }
 
-  void set_row_num(int64_t row_num) { row_num_ = row_num; }
+  void set_row_num(int64_t row_num) {
+    row_num_ = row_num;
+  }
 
-  int64_t row_capacity() const { return row_capacity_; }
+  int64_t row_capacity() const {
+    return row_capacity_;
+  }
 
-  int64_t column_num() const { return table_ptr_.size(); }
+  int64_t column_num() const {
+    return table_ptr_.size();
+  }
 
   void set_null_vecs(std::vector<std::vector<bool>>& null_vecs) {
     null_vecs_ = null_vecs;
   }
 
-  std::vector<std::vector<bool>> get_null_vecs() const { return null_vecs_; }
+  std::vector<std::vector<bool>> get_null_vecs() const {
+    return null_vecs_;
+  }
 
   std::string toString() const {
     std::stringstream ss;
@@ -441,9 +466,13 @@ class CiderBatch {
     }
   }
 
-  const std::shared_ptr<CiderTableSchema> schema() const { return schema_; }
+  const std::shared_ptr<CiderTableSchema> schema() const {
+    return schema_;
+  }
 
-  void set_schema(const std::shared_ptr<CiderTableSchema> schema) { schema_ = schema; }
+  void set_schema(const std::shared_ptr<CiderTableSchema> schema) {
+    schema_ = schema;
+  }
 
  private:
   int64_t row_num_ = 0;

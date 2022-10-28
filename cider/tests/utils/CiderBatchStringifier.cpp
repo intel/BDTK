@@ -56,6 +56,9 @@ StructBatchStringifier::StructBatchStringifier(CiderBatch* batch) {
         child_stringifiers_.emplace_back(
             std::make_unique<ScalarBatchStringifier<double>>());
         break;
+      case SQLTypes::kDECIMAL:
+        child_stringifiers_.emplace_back(std::make_unique<DecimalBatchStringifier>());
+        break;
       case SQLTypes::kSTRUCT:
         child_stringifiers_.emplace_back(
             std::make_unique<StructBatchStringifier>(child.get()));
@@ -90,6 +93,51 @@ std::string StructBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_
   }
   row.finish();
   return row.getString();
+}
+
+uint8_t DecimalBatchStringifier::getScale(const ScalarBatch<CiderInt128>* batch) {
+  auto type_str = std::string(batch->getArrowFormatString());
+  uint8_t scale = std::stoi(type_str.substr(type_str.find(',') + 1));
+  return scale;
+}
+
+uint8_t DecimalBatchStringifier::getWidth(const ScalarBatch<CiderInt128>* batch) {
+  auto type_str = std::string(batch->getArrowFormatString());
+  auto start = type_str.find(':') + 1;
+  auto end = type_str.find(',');
+  uint8_t width = std::stoi(type_str.substr(start, end - start));
+  return width;
+}
+
+std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_index) {
+  auto scalar_batch = batch->as<ScalarBatch<CiderInt128>>();
+  if (!scalar_batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto scale = getScale(scalar_batch);
+  auto width = getWidth(scalar_batch);
+  auto data_buffer = scalar_batch->getRawData();
+  auto valid_bitmap = scalar_batch->getNulls();
+
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    CiderInt128 value = data_buffer[row_index];
+
+    if (!scale) {
+      // integral type
+      return CiderInt128Utils::Int128ToString(value);
+    } else {
+      // fixed-point decimal
+      std::stringstream fps;
+      fps.clear();
+      double value_fp64 = CiderInt128Utils::Decimal128ToDouble(value, width, scale);
+      fps << std::setprecision(16) << value_fp64;
+      return fps.str();
+    }
+  }
 }
 
 template <typename T>

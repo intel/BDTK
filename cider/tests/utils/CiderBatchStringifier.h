@@ -23,6 +23,9 @@
 #define CIDER_CIDERBATCHSTRINGIFIER_H
 
 #include "cider/CiderBatch.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
+#include "tests/utils/CiderInt128.h"
 
 class CiderBatchStringifier {
  public:
@@ -41,6 +44,15 @@ class StructBatchStringifier : public CiderBatchStringifier {
 
 template <typename T>
 class ScalarBatchStringifier : public CiderBatchStringifier {
+ public:
+  std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
+};
+
+class DecimalBatchStringifier : public CiderBatchStringifier {
+ private:
+  uint8_t getScale(const ScalarBatch<CiderInt128>* batch);
+  uint8_t getWidth(const ScalarBatch<CiderInt128>* batch);
+
  public:
   std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
 };
