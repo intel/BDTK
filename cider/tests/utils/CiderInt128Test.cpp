@@ -24,11 +24,15 @@
 
 TEST(CiderInt128Test, ToStringTest) {
   // integer test
-  auto ival = __int128_t(33252311246);
+  auto op1 = __int128_t(191929293939);
+  auto op2 = __int128_t(191929293939);
+  // since there's no way to directly declare an int128_t value
+  // we manually create one by multiplying int64 values
+  auto ival = op1 * op2;
   auto istr = CiderInt128Utils::Int128ToString(ival);
   auto dstr = CiderInt128Utils::Decimal128ToString(ival, 38, 0);
-  EXPECT_EQ(istr, "33252311246");
-  EXPECT_EQ(dstr, "33252311246");
+  EXPECT_EQ(istr, "36836853871923062135721");
+  EXPECT_EQ(dstr, "36836853871923062135721");
 
   // decimal test
   auto dval = __int128_t(187694187358912);
