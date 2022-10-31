@@ -157,6 +157,16 @@ template <>
   return ::duckdb::Value(CiderBitUtils::isBitSetAt(data_buffer, offset));
 }
 
+::duckdb::Value duckDbValueAtVarcharBatch(const VarcharBatch* batch, int64_t offset) {
+  auto data_buffer = batch->getRawData();
+  auto offset_buffer = batch->getRawOffset();
+  auto len = offset_buffer[offset + 1] - offset_buffer[offset];
+  char copy[len + 1];
+  memcpy(&copy, &data_buffer[offset_buffer[offset]], len);
+  copy[len] = '\0';
+  return ::duckdb::Value(std::string(copy));
+}
+
 #define GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC                                               \
   [&]() {                                                                               \
     switch (child_type) {                                                               \
@@ -180,6 +190,8 @@ template <>
       case SQLTypes::kDOUBLE:                                                           \
         return duckDbValueAtScalarBatch<double>(child->as<ScalarBatch<double>>(),       \
                                                 row_idx);                               \
+      case SQLTypes::kVARCHAR:                                                          \
+        return duckDbValueAtVarcharBatch(child->as<VarcharBatch>(), row_idx);           \
       default:                                                                          \
         CIDER_THROW(CiderUnsupportedException,                                          \
                     "Unsupported type for converting to duckdb values.");               \

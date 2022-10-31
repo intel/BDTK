@@ -314,6 +314,8 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
     case Type::kDate:
       return "tdm";
     case Type::kVarchar:
+    case Type::kFixedChar:
+    case Type::kString:
       return "u";
     default:
       CIDER_THROW(CiderRuntimeException,

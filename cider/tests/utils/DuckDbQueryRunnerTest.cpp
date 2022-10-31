@@ -40,7 +40,7 @@
     std::vector<bool> null_vecs_1{false, false, false, false, false};             \
     std::vector<bool> null_vecs_2{false, true, false, true, false};               \
                                                                                   \
-    auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(       \
+    auto input_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(       \
         ArrowArrayBuilder()                                                       \
             .setRowNum(5)                                                         \
             .addColumn<C_TYPE>("col_1",                                           \
@@ -53,7 +53,7 @@
                                null_vecs_2)                                       \
             .build());                                                            \
                                                                                   \
-    auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(    \
+    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(    \
         ArrowArrayBuilder()                                                       \
             .setRowNum(5)                                                         \
             .addColumn<C_TYPE>("col_1",                                           \
@@ -112,12 +112,12 @@ TEST(DuckDBArrowQueryRunnerTest, simpleBooleanArrowTest) {
       std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
   auto batch_null =
       std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
-  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto input_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addBoolColumn<bool>("", batch_vec, batch_null)
           .addBoolColumn<bool>("", batch_vec)
           .build());
-  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addBoolColumn<bool>("", batch_vec, batch_null)
           .addBoolColumn<bool>("", batch_vec)
@@ -139,7 +139,7 @@ TEST(DuckDBArrowQueryRunnerTest, multiTableTest) {
   DuckDbQueryRunner runner;
 
   std::vector<int> col1{0, 1, 2, 3, 4};
-  auto table_data1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto table_data1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("col_a", CREATE_SUBSTRAIT_TYPE(I32), col1)
@@ -155,7 +155,7 @@ TEST(DuckDBArrowQueryRunnerTest, multiTableTest) {
   std::string create_ddl2 = "CREATE TABLE table_test2(col_a INTEGER, col_b INTEGER)";
 
   std::vector<int> col2{1, 2, 3, 4, 5};
-  auto table_data2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto table_data2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("col_a", CREATE_SUBSTRAIT_TYPE(I32), col2)
@@ -174,7 +174,7 @@ TEST(DuckDBArrowQueryRunnerTest, multiTableTest) {
 
   auto actual_batch = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
 
-  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), {1, 2, 3, 4})
           .build());
@@ -192,7 +192,7 @@ TEST(DuckDBArrowQueryRunnerTest, multiBatchFetchTest) {
     col_1[i] = i + 1;
     col_2[i] = i - 1;
   }
-  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto input_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int32_t>("col_a", CREATE_SUBSTRAIT_TYPE(I32), col_1)
           .addColumn<int64_t>("col_b", CREATE_SUBSTRAIT_TYPE(I64), col_2)
@@ -278,6 +278,31 @@ TEST(DuckDBArrowQueryRunnerTest, FixedPointDecimalTest) {
 
 /// TODO: (YBRua) tests to be added
 /// 1. VarChar tests
+TEST(DuckDBArrowQueryRunnerTest, VarCharTest) {
+  DuckDbQueryRunner runner;
+
+  auto vec = std::vector<std::string>{"aaaaa", "bbbbb", "aaaaabbbbb", "ccccc", "ddddd"};
+  auto nulls = std::vector<bool>{false, false, true, false, false};
+  auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+  auto batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addUTF8Column("col_str", data, offsets)
+          .addUTF8Column("col_str_null", data, offsets, nulls)
+          .build());
+
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a VARCHAR, col_b VARCHAR)";
+
+  runner.createTableAndInsertArrowData(table_name, create_ddl, batch);
+
+  auto res = runner.runSql("select * from table_test;");
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 2);
+
+  auto actual_batch = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, actual_batch));
+}
 
 // old DuckDBQueryRunnerTests below
 
