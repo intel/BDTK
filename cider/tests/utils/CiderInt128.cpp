@@ -70,14 +70,18 @@ std::string CiderInt128Utils::Decimal128ToString(__int128_t input,
     }
   }
 
-  while (scale_counter < scale) {
-    // pad zeros
-    result = "0" + result;
-    scale_counter++;
-  }
-  // in cases where scale > length, append 0. to beginning
-  if (scale_counter == scale) {
+  if (scale_counter < scale) {
+    // in cases where scale > length, append 0's
+    while (scale_counter < scale) {
+      // pad zeros
+      result = "0" + result;
+      scale_counter++;
+    }
+    // append 0. to the very beginning
     result = "0." + result;
+  } else if (scale_counter == scale) {
+    // scale == length, append 0
+    result = "0" + result;
   }
 
   return is_negative ? "-" + result : result;
