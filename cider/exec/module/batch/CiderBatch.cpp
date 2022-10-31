@@ -125,14 +125,17 @@ CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
 }
 
 size_t CiderBatch::getBufferNum() const {
+  CHECK(arrow_array_);
   return arrow_array_->n_buffers;
 }
 
 size_t CiderBatch::getChildrenNum() const {
+  CHECK(arrow_schema_);
   return arrow_schema_->n_children;
 }
 
 SQLTypes CiderBatch::getCiderType() const {
+  CHECK(arrow_schema_);
   return CiderBatchUtils::convertArrowTypeToCiderType(arrow_schema_->format);
 }
 
