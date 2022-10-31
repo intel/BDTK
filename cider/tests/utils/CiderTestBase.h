@@ -65,6 +65,7 @@ class CiderTestBase : public testing::Test {
   void assertQueryIgnoreOrder(const std::string& sql, const std::string& json_file = "");
   // execute a wrong query to check if will throw exception
   bool executeIncorrectQuery(const std::string& wrong_sql);
+  bool executeIncorrectQueryArrow(const std::string& wrong_sql);
   void setupDdl(std::string& table_name, std::string& create_ddl) {
     table_name_ = table_name;
     create_ddl_ = create_ddl;
