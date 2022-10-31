@@ -239,9 +239,45 @@ TEST(DuckDBArrowQueryRunnerTest, HugeIntTest) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batches, expected_batch));
 }
 
+TEST(DuckDBArrowQueryRunnerTest, FixedPointDecimalTest) {
+  DuckDbQueryRunner runner;
+  std::vector<int> expected_data{0, 1, 2, 3, 4};
+  std::vector<bool> null_vecs{false, false, false, true, true};
+
+  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addColumn<int>("col_a", CREATE_SUBSTRAIT_TYPE(I32), expected_data)
+          .addColumn<int>("col_b", CREATE_SUBSTRAIT_TYPE(I32), expected_data, null_vecs)
+          .build());
+
+  /* Create table, run query and check results */
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a INTEGER, col_b INTEGER)";
+
+  runner.createTableAndInsertArrowData(table_name, create_ddl, input_batch);
+
+  // INTEGER +/- floating point will yield DECIMALs
+  auto res = runner.runSql("select col_a + 0.123, (col_b + 0.4) / 2 from table_test;");
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 2);
+
+  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+
+  auto res_a = std::vector<double>{0.123, 1.123, 2.123, 3.123, 4.123};
+  auto res_b = std::vector<double>{0.2, 0.7, 1.2, 1.7, 2.2};
+  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addColumn<double>("r1", CREATE_SUBSTRAIT_TYPE(Fp64), res_a)
+          .addColumn<double>("r2", CREATE_SUBSTRAIT_TYPE(Fp64), res_b, null_vecs)
+          .build());
+
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batches));
+}
+
 /// TODO: (YBRua) tests to be added
 /// 1. VarChar tests
-/// 2. date / time tests
 
 // old DuckDBQueryRunnerTests below
 
