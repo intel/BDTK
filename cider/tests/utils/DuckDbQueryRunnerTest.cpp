@@ -27,6 +27,7 @@
 #include "CiderBatchBuilder.h"
 #include "CiderBatchChecker.h"
 #include "DuckDbQueryRunner.h"
+#include "QueryArrowDataGenerator.h"
 #include "cider/batch/ScalarBatch.h"
 #include "cider/batch/StructBatch.h"
 #include "util/Logger.h"
@@ -283,6 +284,7 @@ TEST(DuckDBArrowQueryRunnerTest, VarCharTest) {
 
   auto vec = std::vector<std::string>{"aaaaa", "bbbbb", "aaaaabbbbb", "ccccc", "ddddd"};
   auto nulls = std::vector<bool>{false, false, true, false, false};
+
   auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
   auto batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
@@ -293,6 +295,38 @@ TEST(DuckDBArrowQueryRunnerTest, VarCharTest) {
 
   std::string table_name = "table_test";
   std::string create_ddl = "CREATE TABLE table_test(col_a VARCHAR, col_b VARCHAR)";
+
+  runner.createTableAndInsertArrowData(table_name, create_ddl, batch);
+
+  auto res = runner.runSql("select * from table_test;");
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 2);
+
+  auto actual_batch = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, actual_batch));
+}
+
+TEST(DuckDBArrowQueryRunnerTest, VarCharStringCompatTest) {
+  DuckDbQueryRunner runner;
+
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+
+  QueryArrowDataGenerator::generateBatchByTypes(
+      schema,
+      array,
+      10,
+      {"col_vc", "col_str"},
+      {CREATE_SUBSTRAIT_TYPE(Varchar), CREATE_SUBSTRAIT_TYPE(String)},
+      {2, 2},
+      GeneratePattern::Random,
+      0,
+      10);
+  
+  auto batch = std::make_shared<CiderBatch>(schema, array, std::make_shared<CiderDefaultAllocator>());
+
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a VARCHAR, col_b STRING)";
 
   runner.createTableAndInsertArrowData(table_name, create_ddl, batch);
 
