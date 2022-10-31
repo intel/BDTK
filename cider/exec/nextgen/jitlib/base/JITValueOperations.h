@@ -22,13 +22,14 @@
 #define JITLIB_BASE_JITVALUEOPERATIONS_H
 
 #include <type_traits>
+
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 namespace jitlib {
 template <typename T>
 struct is_jitvalue_convertable {
-  using NT = typename std::remove_reference<T>::type;
+  using NativeType = typename std::remove_reference<T>::type;
   static constexpr bool v = std::is_arithmetic_v<T> || std::is_same_v<T, bool>;
 };
 template <typename T>

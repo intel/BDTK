@@ -30,7 +30,7 @@ namespace jitlib {
 
 JITValue& LLVMJITValue::assign(JITValue& value) {
   if (!is_variable_) {
-    LOG(ERROR) << "JITValue " << getValueName()
+    LOG(FATAL) << "JITValue " << getValueName()
                << "is not a variable in LLVMJITValue::assign.";
   }
   store(static_cast<LLVMJITValue&>(value));
@@ -44,7 +44,7 @@ JITValuePointer LLVMJITValue::notOp() {
       ans = getFunctionBuilder(parent_function_).CreateNot(load());
       break;
     default:
-      LOG(ERROR) << "Invalid JITValue type for not operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -69,7 +69,7 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFRem(load(), llvm_rh.load());
       break;
     default:
-      LOG(ERROR) << "Invalid JITValue type for mod operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for mod operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -94,7 +94,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFDiv(load(), llvm_rh.load());
       break;
     default:
-      LOG(ERROR) << "Invalid JITValue type for mul operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for mul operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -119,7 +119,7 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFMul(load(), llvm_rh.load());
       break;
     default:
-      LOG(ERROR) << "Invalid JITValue type for mul operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for mul operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -144,7 +144,7 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFSub(load(), llvm_rh.load());
       break;
     default:
-      LOG(ERROR) << "Invalid JITValue type for sub operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for sub operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -169,7 +169,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFAdd(load(), llvm_rh.load());
       break;
     default:
-      LOG(ERROR) << "Invalid JITValue type for add operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for add operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -179,7 +179,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
 
 void LLVMJITValue::checkOprandsType(JITTypeTag lh, JITTypeTag rh, const char* op) {
   if (lh != rh) {
-    LOG(ERROR) << "Oprands type doesn't match in LLVMJITValue operator " << op
+    LOG(FATAL) << "Oprands type doesn't match in LLVMJITValue operator " << op
                << " lh=" << getJITTypeName(lh) << ", rh=" << getJITTypeName(rh) << ".";
   }
 }

@@ -175,7 +175,7 @@ inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
     case POINTER:
       return JITTypeTraits<POINTER>::width;
     default:
-      LOG(ERROR) << "Invalid JITType in getJITTypeSize: " << type_tag;
+      LOG(FATAL) << "Invalid JITType in getJITTypeSize: " << type_tag;
   }
   return 0;
 }
@@ -203,7 +203,7 @@ inline const char* getJITTypeName(JITTypeTag type_tag) {
     case STRUCT:
       return JITTypeTraits<STRUCT>::name;
     default:
-      LOG(ERROR) << "Invalid JITType in getJITTypeName: " << type_tag;
+      LOG(FATAL) << "Invalid JITType in getJITTypeName: " << type_tag;
   }
   return 0;
 }

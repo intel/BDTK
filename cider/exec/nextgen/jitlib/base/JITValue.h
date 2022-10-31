@@ -62,7 +62,7 @@ class JITValue {
 
   virtual ~JITValue() = default;
 
-  std::string getValueName() const { return value_name_; }
+  const std::string& getValueName() const { return value_name_; }
 
   JITTypeTag getValueTypeTag() const { return type_tag_; }
 

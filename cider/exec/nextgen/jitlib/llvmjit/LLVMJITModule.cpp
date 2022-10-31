@@ -49,6 +49,7 @@ static llvm::FunctionType* getFunctionSignature(const JITFunctionDescriptor& des
     } else {
       LOG(ERROR) << "Invalid argument type in getFunctionSignature: "
                  << param_descriptor.type;
+      return nullptr;
     }
   }
 

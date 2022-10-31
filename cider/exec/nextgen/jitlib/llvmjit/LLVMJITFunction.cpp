@@ -132,7 +132,7 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
       llvm_value = createConstantImpl<DOUBLE>(getLLVMContext(), value);
       break;
     default:
-      LOG(ERROR) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: " << type_tag;
+      LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: " << type_tag;
   }
   return std::make_unique<LLVMJITValue>(
       type_tag, *this, llvm_value, "", JITBackendTag::LLVMJIT, false);
@@ -155,14 +155,14 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     return std::make_unique<LLVMJITValue>(
         descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
   } else {
-    LOG(ERROR) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
+    LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return nullptr;
   }
 }
 
 JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   if (index > descriptor_.params_type.size()) {
-    LOG(ERROR) << "Index out of range in LLVMJITFunction::getArgument.";
+    LOG(FATAL) << "Index out of range in LLVMJITFunction::getArgument.";
   }
 
   auto& param_type = descriptor_.params_type[index];
