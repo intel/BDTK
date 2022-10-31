@@ -198,6 +198,49 @@ bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
   return true;
 }
 
+bool CiderBatchChecker::checkOneVarcharBatchEqual(const VarcharBatch* expected_batch,
+                                                  const VarcharBatch* actual_batch) {
+  if (!expected_batch || !actual_batch) {
+    std::cout << "One or more ScalarBatches are null_ptr in checkOneScalarBatchEqual. "
+              << "This can be caused by casting a ScalarBatch to a wrong type."
+              << std::endl;
+    return false;
+  }
+
+  // compare nulls
+  bool null_buffer_eq = checkValidityBitmapEqual(expected_batch, actual_batch);
+  if (!null_buffer_eq) {
+    std::cout << "Null buffer memcmp failed." << std::endl;
+    return false;
+  }
+
+  int row_num = actual_batch->getLength();
+
+  // compare offset
+  auto expected_offsets = expected_batch->getRawOffset();
+  auto actual_offsets = actual_batch->getRawOffset();
+  bool offset_buffer_eq =
+      !memcmp(expected_offsets, actual_offsets, row_num * sizeof(int32_t));
+  if (!offset_buffer_eq) {
+    std::cout << "Offset buffer memcmp failed." << std::endl;
+    return false;
+  }
+
+  // compare data
+  bool data_buffer_eq = true;
+  auto actual_data_buffer = actual_batch->getRawData();
+  auto expected_data_buffer = expected_batch->getRawData();
+  auto n_chars =
+      actual_offsets[row_num];  // last value of offset buffer indicates total length
+  data_buffer_eq = !memcmp(expected_data_buffer, actual_data_buffer, n_chars);
+  if (!data_buffer_eq) {
+    std::cout << "Data buffer memcmp failed." << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
 bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
                                                  CiderBatch* actual_batch) {
   // compare nulls
@@ -255,6 +298,10 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
         // duckdb decimals use 16 bytes, but cider decimals use 8 bytes
         // therefore buffer compare will never pass, no need to check it
         return false;
+      case SQLTypes::kVARCHAR:
+        is_equal = checkOneVarcharBatchEqual(expected_child->as<VarcharBatch>(),
+                                             actual_child->as<VarcharBatch>());
+        break;
       case SQLTypes::kSTRUCT:
         is_equal = checkOneStructBatchEqual(expected_child.get(), actual_child.get());
         break;
