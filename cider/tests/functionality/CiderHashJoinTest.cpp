@@ -450,8 +450,27 @@ TEST_F(CiderInnerJoinUsingTest, usingSyntaxTest) {
   assertJoinQuery("SELECT * from table_probe JOIN table_hash USING (col_a)");
 }
 
+TEST_F(CiderOneToOneRandomJoinTest, PostJoinFilterTest) {
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a < 10;",
+      "post_join_filter1.json");
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a < 10;",
+      "post_join_filter1.json");
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a + r_a < 10;",
+      "post_join_filter2.json");
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a + r_a < 10;",
+      "post_join_filter2.json");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
 
   int err{0};
   try {
