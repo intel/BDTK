@@ -322,8 +322,9 @@ TEST(DuckDBArrowQueryRunnerTest, VarCharStringCompatTest) {
       GeneratePattern::Random,
       0,
       10);
-  
-  auto batch = std::make_shared<CiderBatch>(schema, array, std::make_shared<CiderDefaultAllocator>());
+
+  auto batch = std::make_shared<CiderBatch>(
+      schema, array, std::make_shared<CiderDefaultAllocator>());
 
   std::string table_name = "table_test";
   std::string create_ddl = "CREATE TABLE table_test(col_a VARCHAR, col_b STRING)";
