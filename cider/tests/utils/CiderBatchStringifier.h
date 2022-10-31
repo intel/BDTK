@@ -60,4 +60,9 @@ class DecimalBatchStringifier : public CiderBatchStringifier {
   std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
 };
 
+class VarcharBatchStringifier : public CiderBatchStringifier {
+ public:
+  std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
+};
+
 #endif

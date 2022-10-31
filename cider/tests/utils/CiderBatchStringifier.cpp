@@ -59,6 +59,9 @@ StructBatchStringifier::StructBatchStringifier(CiderBatch* batch) {
       case SQLTypes::kDECIMAL:
         child_stringifiers_.emplace_back(std::make_unique<DecimalBatchStringifier>());
         break;
+      case SQLTypes::kVARCHAR:
+        child_stringifiers_.emplace_back(std::make_unique<VarcharBatchStringifier>());
+        break;
       case SQLTypes::kSTRUCT:
         child_stringifiers_.emplace_back(
             std::make_unique<StructBatchStringifier>(child.get()));
@@ -225,5 +228,32 @@ std::string ScalarBatchStringifier<bool>::stringifyValueAt(CiderBatch* batch,
   } else {
     return std::to_string(
         static_cast<int64_t>(CiderBitUtils::isBitSetAt(data_buffer, row_index)));
+  }
+}
+
+std::string VarcharBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_index) {
+  auto varchar_batch = batch->as<VarcharBatch>();
+  if (!varchar_batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr, maybe check your casting?");
+  }
+
+  auto data_buffer = varchar_batch->getRawData();
+  auto offset_buffer = varchar_batch->getRawOffset();
+  auto valid_bitmap = varchar_batch->getNulls();
+
+  if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
+    return NULL_VALUE;
+  } else {
+    auto start = offset_buffer[row_index];
+    auto end = offset_buffer[row_index + 1];
+    auto len = offset_buffer[row_index + 1] - offset_buffer[row_index];
+    char str_buffer[len + 1];
+
+    // copy char values and append \0
+    memcpy(&str_buffer, &data_buffer[start], len);
+    str_buffer[len] = '\0';
+
+    return std::string(str_buffer);
   }
 }
