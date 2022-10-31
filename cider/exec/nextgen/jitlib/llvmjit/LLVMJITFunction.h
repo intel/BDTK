@@ -45,6 +45,10 @@ class LLVMJITFunction final : public JITFunction {
 
   JITValuePointer getArgument(size_t index) override;
 
+  IfBuilderPointer getIfBuilder() override;
+
+  ForBuilderPointer getForBuilder() override;
+
   void createReturn() override;
 
   void createReturn(JITValue& value) override;

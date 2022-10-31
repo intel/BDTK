@@ -143,6 +143,167 @@ TEST_F(JITLibTests, LogicalOpTest) {
       false, true, true, [](JITValue& a, JITValue& b) { return !a; });
 }
 
+TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = INT32},
+      .params_type = {JITFunctionParam{.name = "x", .type = INT32},
+                      JITFunctionParam{.name = "condition", .type = BOOL}}});
+  {
+    JITValuePointer ret = function->createVariable("ret", INT32);
+    ret = function->getArgument(0);
+    auto if_builder = function->getIfBuilder();
+    if_builder->build(
+        [&]() {
+          auto condition = function->getArgument(1);
+          return condition;
+        },
+        [&]() { ret = ret + 1; });
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  EXPECT_EQ(func_ptr(123, false), 123);
+  EXPECT_EQ(func_ptr(123, true), 124);
+}
+
+TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = INT32},
+      .params_type = {JITFunctionParam{.name = "x", .type = INT32},
+                      JITFunctionParam{.name = "condition", .type = BOOL}}});
+  {
+    JITValuePointer ret = function->createVariable("ret", INT32);
+    ret = function->getArgument(0);
+    auto if_builder = function->getIfBuilder();
+    if_builder->build(
+        [&]() {
+          auto condition = function->getArgument(1);
+          return condition;
+        },
+        [&]() { ret = ret + 1; },
+        [&]() { ret = ret + 10; });
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  EXPECT_EQ(func_ptr(123, false), 133);
+  EXPECT_EQ(func_ptr(123, true), 124);
+}
+
+TEST_F(JITLibTests, NestedIFControlFlowTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = INT32},
+      .params_type = {JITFunctionParam{.name = "x", .type = INT32},
+                      JITFunctionParam{.name = "condition", .type = BOOL}}});
+  {
+    JITValuePointer ret = function->createVariable("ret", INT32);
+    ret = function->getArgument(0);
+    auto if_builder = function->getIfBuilder();
+    if_builder->build(
+        [&]() {
+          auto condition = function->getArgument(1);
+          return condition;
+        },
+        [&]() {
+          auto if_builder = function->getIfBuilder();
+          if_builder->build(
+              [&]() {
+                auto condition = function->getArgument(1);
+                return condition;
+              },
+              [&]() { ret = ret + 10; },
+              [&]() { ret = ret + 1; });
+        },
+        [&]() {
+          auto if_builder = function->getIfBuilder();
+          if_builder->build(
+              [&]() {
+                auto condition = function->getArgument(1);
+                return condition;
+              },
+              [&]() { ret = ret + 10; },
+              [&]() { ret = ret + 1; });
+        });
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  EXPECT_EQ(func_ptr(123, true), 133);
+  EXPECT_EQ(func_ptr(123, false), 124);
+}
+
+TEST_F(JITLibTests, BasicForControlFlowTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func", .ret_type = JITFunctionParam{.type = INT32}});
+  {
+    JITValuePointer ret = function->createVariable("ret", INT32);
+    ret = function->createConstant(INT32, 0);
+
+    auto loop_builder = function->getForBuilder();
+    JITValuePointer index = function->createVariable("index", INT32);
+    *index = function->createConstant(INT32, 9);
+
+    loop_builder->build([&]() { return index + 0; },
+                        [&]() { ret = ret + index; },
+                        [&]() { index = index - 1; });
+
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t>();
+  EXPECT_EQ(func_ptr(), 45);
+}
+
+TEST_F(JITLibTests, NestedForControlFlowTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func", .ret_type = JITFunctionParam{.type = INT32}});
+  {
+    JITValuePointer ret = function->createVariable("ret", INT32);
+    ret = function->createConstant(INT32, 0);
+
+    int levels = 5;
+    std::function<void()> nested_loop_builder = [&]() {
+      if (0 == levels) {
+        ret = ret + 1;
+        return;
+      }
+      --levels;
+
+      auto loop_builder = function->getForBuilder();
+      JITValuePointer index = function->createVariable("index", INT32);
+      *index = function->createConstant(INT32, 10);
+
+      loop_builder->build([&]() { return index + 0; },
+                          [&]() { nested_loop_builder(); },
+                          [&]() { index = index - 1; });
+    };
+    nested_loop_builder();
+
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t>();
+  EXPECT_EQ(func_ptr(), 100000);
+}
+
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);

@@ -21,8 +21,32 @@
 #ifndef JITLIB_BASE_JITCONTROLFLOW_H
 #define JITLIB_BASE_JITCONTROLFLOW_H
 
+#include <functional>
+
 #include "exec/nextgen/jitlib/base/JITValue.h"
 
-namespace cider::jitlib {};  // namespace cider::jitlib
+namespace cider::jitlib {  // namespace cider::jitlib
+class IfBuilder {
+ public:
+  virtual ~IfBuilder() = default;
+
+  virtual void build(
+      const std::function<JITValuePointer()>& condition,
+      const std::function<void()>& if_true_block,
+      const std::function<void()>& else_block = []() {}) = 0;
+};
+
+class ForBuilder {
+ public:
+  virtual ~ForBuilder() = default;
+
+  virtual void build(const std::function<JITValuePointer()>& condition,
+                     const std::function<void()>& main_block,
+                     const std::function<void()>& update_block) = 0;
+};
+
+using IfBuilderPointer = std::unique_ptr<IfBuilder>;
+using ForBuilderPointer = std::unique_ptr<ForBuilder>;
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITCONTROLFLOW_H

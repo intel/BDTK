@@ -27,6 +27,7 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/raw_os_ostream.h>
 
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 #include "util/Logger.h"
@@ -182,6 +183,14 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                             JITBackendTag::LLVMJIT,
                                             false);
   }
+}
+
+IfBuilderPointer LLVMJITFunction::getIfBuilder() {
+  return std::make_unique<LLVMIfBuilder>(func_, *ir_builder_);
+}
+
+ForBuilderPointer LLVMJITFunction::getForBuilder() {
+  return std::make_unique<LLVMForBuilder>(func_, *ir_builder_);
 }
 };  // namespace cider::jitlib
 

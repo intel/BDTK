@@ -27,9 +27,13 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 
 namespace cider::jitlib {
+class LLVMIfBuilder;
+class LLVMForBuilder;
 
 class LLVMJITValue final : public JITValue {
   friend LLVMJITFunction;
+  friend LLVMIfBuilder;
+  friend LLVMForBuilder;
 
  public:
   explicit LLVMJITValue(JITTypeTag type_tag,

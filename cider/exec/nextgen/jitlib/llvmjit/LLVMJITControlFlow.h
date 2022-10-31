@@ -21,6 +21,38 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 #define JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 
-namespace cider::jitlib {};  // namespace cider::jitlib
+#include <llvm/IR/IRBuilder.h>
+
+#include "exec/nextgen/jitlib/base/JITControlFlow.h"
+
+namespace cider::jitlib {
+class LLVMIfBuilder final : public IfBuilder {
+ public:
+  LLVMIfBuilder(llvm::Function& function, llvm::IRBuilder<>& builder)
+      : func_(function), builder_(builder) {}
+
+  void build(const std::function<JITValuePointer()>& condition,
+             const std::function<void()>& if_true_block,
+             const std::function<void()>& else_block) override;
+
+ private:
+  llvm::Function& func_;
+  llvm::IRBuilder<>& builder_;
+};
+
+class LLVMForBuilder final : public ForBuilder {
+ public:
+  LLVMForBuilder(llvm::Function& function, llvm::IRBuilder<>& builder)
+      : func_(function), builder_(builder) {}
+
+  void build(const std::function<JITValuePointer()>& condition,
+             const std::function<void()>& main_block,
+             const std::function<void()>& update_block) override;
+
+ private:
+  llvm::Function& func_;
+  llvm::IRBuilder<>& builder_;
+};
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
