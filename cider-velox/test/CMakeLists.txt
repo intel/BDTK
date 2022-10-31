@@ -151,10 +151,6 @@ add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)
 target_link_libraries(AggWithRandomDataTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(AggWithRandomDataTest AggWithRandomDataTest ${TEST_ARGS})
 
-add_executable(CiderOperatorJoinTest CiderOperatorJoinTest.cpp)
-target_link_libraries(CiderOperatorJoinTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderOperatorJoinTest CiderOperatorJoinTest ${TEST_ARGS})
-
 add_executable(CiderDataTypeTest CiderDataTypeTest.cpp)
 target_link_libraries(CiderDataTypeTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderDataTypeTest CiderDataTypeTest ${TEST_ARGS})
@@ -174,5 +170,9 @@ add_test(CiderScalarFunctionTest CiderScalarFunctionTest ${TEST_ARGS})
 add_executable(CiderOperatorAggOpTest CiderOperatorAggOpTest.cpp)
 target_link_libraries(CiderOperatorAggOpTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderOperatorAggOpTest CiderOperatorAggOpTest ${TEST_ARGS})
+
+add_executable(CiderOperatorHashJoinTest CiderOperatorHashJoinTest.cpp)
+target_link_libraries(CiderOperatorHashJoinTest ${VELOX_PLUGIN_TEST_LIBS})
+add_test(CiderOperatorHashJoinTest CiderOperatorHashJoinTest ${TEST_ARGS})
 
 add_subdirectory(expression)

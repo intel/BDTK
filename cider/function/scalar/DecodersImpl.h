@@ -26,6 +26,7 @@
 
 #include <cstdint>
 #include "exec/module/batch/ArrowABI.h"
+#include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "type/data/funcannotations.h"
 
 extern "C" ALWAYS_INLINE int64_t SUFFIX(fixed_width_int_decode)(const int8_t* byte_stream,
@@ -156,4 +157,21 @@ extern "C" ALWAYS_INLINE const uint8_t* cider_ColDecoder_extractArrowBuffersAt(
   return reinterpret_cast<const uint8_t*>(ptr->buffers[index]);
 }
 
+extern "C" ALWAYS_INLINE void reallocate_string_buffer_if_need(
+    const int8_t* input_desc_ptr,
+    const int64_t pos) {
+  // assumption: this arrow array is already initialized outside(it has 3 buffers, length
+  // is set)
+  const ArrowArray* ptr = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(ptr->private_data);
+  int32_t* offset_buffer = (int32_t*)ptr->buffers[1];
+  size_t capacity = holder->getBufferSizeAt(2);
+  if (capacity == 0) {
+    holder->allocBuffer(2, 4096);
+  } else if (offset_buffer[pos] >
+             capacity * 0.9) {  // do reallocate when reach 90% of capacity
+    holder->allocBuffer(2, capacity * 2);
+  }
+}
 #endif  // CIDER_FUNCTION_DECODERSIMPL_H

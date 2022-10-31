@@ -72,4 +72,28 @@ class FixedSizeColValues : public NullableColValues {
   DEF_CODEGEN_COL_VALUES_MEMBER(Value, value_)
 };
 
+class MultipleValueColValues : public NullableColValues {
+ public:
+  MultipleValueColValues(std::vector<llvm::Value*> values, llvm::Value* null = nullptr)
+      : NullableColValues(null), values_(values) {}
+  std::unique_ptr<CodegenColValues> copy() const override {
+    return std::make_unique<MultipleValueColValues>(*this);
+  }
+  std::vector<llvm::Value*> getValues() { return values_; }
+  const std::vector<llvm::Value*> getValues() const { return values_; }
+  llvm::Value* getValueAt(int index) { return values_[index]; }
+
+ private:
+  std::vector<llvm::Value*> values_;
+};
+
+class TwoValueColValues : public MultipleValueColValues {
+ public:
+  TwoValueColValues(llvm::Value* value1, llvm::Value* value2, llvm::Value* null = nullptr)
+      : MultipleValueColValues({value1, value2}, null) {}
+  std::unique_ptr<CodegenColValues> copy() const override {
+    return std::make_unique<TwoValueColValues>(*this);
+  }
+};
+
 #endif

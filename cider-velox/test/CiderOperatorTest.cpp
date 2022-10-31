@@ -277,43 +277,6 @@ TEST_F(CiderOperatorTest, aggOnExpr_withoutCond) {
   assertQuery(resultPtr, duckDbSql);
 }
 
-// Filter and Project using Cider.
-TEST_F(CiderOperatorTest, avg_on_col_final) {
-  auto veloxPlan =
-      PlanBuilder()
-          .values(vectors)
-          .filter("l_shipdate < 24.0")
-          .partialAggregation(
-              {"l_orderkey", "l_linenumber"}, {"avg(l_quantity) as avg_price"}, {})
-          .finalAggregation()
-          .project({"avg_price"})
-          .planNode();
-  const ::substrait::Plan substraitPlan = ::substrait::Plan();
-  auto expectedPlan =
-      PlanBuilder()
-          .values(vectors)
-          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
-                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
-          })
-          .partialAggregation(
-              {"l_orderkey", "l_linenumber"}, {"avg(l_quantity) as avg_price"}, {})
-          .finalAggregation()
-          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
-                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
-          })
-          .planNode();
-
-  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-  auto duckdbSql =
-      "SELECT avg(l_quantity) as avg_price FROM tmp WHERE l_shipdate < 24.0 GROUP BY "
-      "l_orderkey, l_linenumber";
-  assertQuery(resultPtr, duckdbSql);
-
-  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
-}
-
 TEST_F(CiderOperatorTest, avg_on_col_cider) {
   auto veloxPlan =
       PlanBuilder()
@@ -480,6 +443,53 @@ TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
   auto duckdbSql = "SELECT row(4, 4)";
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
+}
+
+TEST_F(CiderOperatorTest, partialAggPattern) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+  createDuckDbTable({data});
+  auto veloxPlan =
+      PlanBuilder().values({data}).partialAggregation({}, {"sum(c0)"}, {}).planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT sum(c0) from tmp ";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
+TEST_F(CiderOperatorTest, FilterPattern) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+  createDuckDbTable({data});
+  auto veloxPlan = PlanBuilder().values({data}).filter("c0 > 5").planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT * FROM tmp WHERE c0 > 5";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
 }
 
 int main(int argc, char** argv) {

@@ -39,6 +39,9 @@ target_link_libraries(
   ${TBB_LIBS}
   yaml-cpp)
 
+set_target_properties(cider PROPERTIES VERSION "${BDTK_FULL_SO_VERSION}"
+                                       SOVERSION "${BDTK_SO_VERSION}")
+
 install(
   TARGETS cider
   DESTINATION "lib"

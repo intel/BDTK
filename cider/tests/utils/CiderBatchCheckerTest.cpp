@@ -102,6 +102,47 @@ TEST(CiderBatchCheckerArrowTest, singleColumn) {
   TEST_SINGLE_COLUMN_ARROW(double, Fp64);
 }
 
+TEST(CiderBatchCheckerArrowTest, booleanTest) {
+  /// TODO: (YBRua) switch to ArrowArrayBuilder after relevent PR is merged
+  auto batch_vec =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+  auto batch_null =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  // ignore order
+  auto batch_vec_2 =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  auto batch_null_2 =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+
+  auto batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto eq_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto neq_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", std::vector<bool>(10, true), batch_null)
+          .addBoolColumn<bool>("", std::vector<bool>(10, true))
+          .build());
+
+  auto ignore_order_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec_2, batch_null_2)
+          .addBoolColumn("", batch_vec_2)
+          .build());
+
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, eq_batch));
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, neq_batch));
+
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, ignore_order_batch));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, ignore_order_batch, true));
+}
+
 TEST(CiderBatchCheckerArrowTest, rowValue) {
   std::vector<int> vec1{1, 2, 3, 4, 5};
   auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(

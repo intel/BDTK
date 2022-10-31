@@ -42,6 +42,10 @@ class InValuesBitmap {
 
   llvm::Value* codegen(llvm::Value* needle, Executor* executor) const;
 
+  std::unique_ptr<CodegenColValues> codegen(llvm::Value* needle,
+                                            llvm::Value* null,
+                                            Executor* executor) const;
+
   bool isEmpty() const;
 
   bool hasNull() const;

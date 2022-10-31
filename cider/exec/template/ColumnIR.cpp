@@ -20,6 +20,7 @@
  * under the License.
  */
 
+#include <memory>
 #include "CodeGenerator.h"
 #include "Codec.h"
 #include "Execute.h"
@@ -33,7 +34,8 @@ namespace {
 // Return the right decoder for a given column expression. Doesn't handle
 // variable length data. The decoder encapsulates the code generation logic.
 std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
-                                         llvm::IRBuilder<>* ir_builder) {
+                                         llvm::IRBuilder<>* ir_builder,
+                                         bool is_arrow_format = false) {
   const auto enc_type = col_var->get_compression();
   const auto& ti = col_var->get_type_info();
   switch (enc_type) {
@@ -42,7 +44,11 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
       const bool nullable = !ti.get_notnull();
       switch (int_type) {
         case kBOOLEAN:
-          return std::make_shared<FixedWidthInt>(1, ir_builder, nullable);
+          if (is_arrow_format) {
+            return std::make_shared<FixedWidthBool>(ir_builder, nullable);
+          } else {
+            return std::make_shared<FixedWidthInt>(1, ir_builder, nullable);
+          }
         case kTINYINT:
           return std::make_shared<FixedWidthInt>(1, ir_builder, nullable);
         case kSMALLINT:
@@ -163,7 +169,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
         break;
       }
     case kVARCHAR:
-      CIDER_THROW(CiderCompileException, "String type ColumnVar is not supported now.");
+      col_values = codegenVarCharColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
+      break;
     case kARRAY:
       CIDER_THROW(CiderCompileException, "Array type ColumnVar is not supported now.");
     default:
@@ -184,7 +191,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
 
-  const auto decoder = get_col_decoder(col_var, &cgen_state_->ir_builder_);
+  const auto decoder = get_col_decoder(col_var, &cgen_state_->ir_builder_, true);
   auto dec_val = decoder->codegenDecode(
       cgen_state_->module_, col_byte_stream, pos_arg);  // {value, null}
   llvm::Instruction *value = dec_val[0], *null = dec_val[1];
@@ -226,6 +233,28 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
   }
 
   return std::make_unique<FixedSizeColValues>(dec_val_cast, null);
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarCharColVar(
+    const Analyzer::ColumnVar* col_var,
+    llvm::Value* col_byte_stream,
+    llvm::Value* pos_arg,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const size_t size = 8;
+  VarcharDecoder decoder(
+      size, &cgen_state_->ir_builder_, !col_var->get_type_info().get_notnull());
+  std::vector<llvm::Instruction*> values =
+      decoder.codegenDecode(cgen_state_->module_, col_byte_stream, pos_arg);
+  for (auto v : values) {
+    cgen_state_->ir_builder_.Insert(v);
+  }
+  llvm::Instruction* null = nullptr;
+  if (values.size() == 3) {
+    null = values[2];
+    values.pop_back();
+  }
+  return std::make_unique<TwoValueColValues>(values[0], values[1], null);
 }
 
 std::vector<llvm::Value*> CodeGenerator::codegenColVar(const Analyzer::ColumnVar* col_var,

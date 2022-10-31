@@ -144,6 +144,60 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
   return true;
 }
 
+template <>
+bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
+    const ScalarBatch<bool>* expected_batch,
+    const ScalarBatch<bool>* actual_batch) {
+  auto expected_data_buf = expected_batch->getRawData();
+  auto expected_valid_buf = expected_batch->getNulls();
+  auto actual_data_buf = actual_batch->getRawData();
+  auto actual_valid_buf = actual_batch->getNulls();
+
+  /// NOTE: (YBRua) When data is null, the corresponding bit can take any value of 0 or 1
+  /// causing the compare to fail even if the two batches are actually equal
+  /// so we use validity as a mask to filter out random null data and compare masked bytes
+  /// e.g. consider a byte with 4 nulls and 4 valid values
+  ///  the data in first 4 null bits is unspecified and can be anything
+  ///  expected: valid: [00001111] data: [01010101] -> masked: [00000101]
+  ///  actual  : valid: [00001111] data: [00000101] -> masked: [00000101]
+
+  auto row_num = actual_batch->getLength();
+  auto bytes = ((row_num + 7) >> 3);
+
+  for (int i = 0; i < bytes - 1; ++i) {
+    // apply bitwise AND masking
+    uint8_t expected_masked = expected_valid_buf
+                                  ? expected_data_buf[i] & expected_valid_buf[i]
+                                  : expected_data_buf[i];
+    uint8_t actual_masked =
+        actual_valid_buf ? actual_data_buf[i] & actual_valid_buf[i] : actual_data_buf[i];
+
+    if (expected_masked != actual_masked) {
+      // we expect all bits here are equal, i.e. the uint8 value should be equal
+      return false;
+    }
+  }
+
+  // the last byte require some extra processing
+  // because the trailing padding values are uninitialized and can be different
+  uint8_t expected_masked =
+      expected_valid_buf ? expected_data_buf[bytes - 1] & expected_valid_buf[bytes - 1]
+                         : expected_data_buf[bytes - 1];
+  uint8_t actual_masked = actual_valid_buf
+                              ? actual_data_buf[bytes - 1] & actual_valid_buf[bytes - 1]
+                              : actual_data_buf[bytes - 1];
+  // clear padding values. least-significant bit ordering, clear most significant bits
+  auto n_paddings = 8 * bytes - row_num;
+  expected_masked = expected_masked & (0xFF >> n_paddings);
+  actual_masked = actual_masked & (0xFF >> n_paddings);
+
+  if (expected_masked != actual_masked) {
+    return false;
+  }
+
+  return true;
+}
+
 bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
                                                  CiderBatch* actual_batch) {
   // compare nulls
@@ -163,6 +217,10 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
     auto expected_child = expected_batch->getChildAt(i);
     auto actual_child = actual_batch->getChildAt(i);
     switch (expected_child->getCiderType()) {
+      case SQLTypes::kBOOLEAN:
+        is_equal = checkOneScalarBatchEqual<bool>(expected_child->as<ScalarBatch<bool>>(),
+                                                  actual_child->as<ScalarBatch<bool>>());
+        break;
       case SQLTypes::kTINYINT:
         is_equal =
             checkOneScalarBatchEqual<int8_t>(expected_child->as<ScalarBatch<int8_t>>(),

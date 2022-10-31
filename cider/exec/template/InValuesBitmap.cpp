@@ -99,6 +99,45 @@ InValuesBitmap::~InValuesBitmap() {
   free(bitsets_.front());
 }
 
+std::unique_ptr<CodegenColValues> InValuesBitmap::codegen(llvm::Value* needle,
+                                                          llvm::Value* null,
+                                                          Executor* executor) const {
+  AUTOMATIC_IR_METADATA(executor->cgen_state_.get());
+  std::vector<std::shared_ptr<const Analyzer::Constant>> constants_owned;
+  std::vector<const Analyzer::Constant*> constants;
+  for (const auto bitset : bitsets_) {
+    const int64_t bitset_handle = reinterpret_cast<int64_t>(bitset);
+    const auto bitset_handle_literal = std::dynamic_pointer_cast<Analyzer::Constant>(
+        Parser::IntLiteral::analyzeValue(bitset_handle));
+    CHECK(bitset_handle_literal);
+    CHECK_EQ(kENCODING_NONE, bitset_handle_literal->get_type_info().get_compression());
+    constants_owned.push_back(bitset_handle_literal);
+    constants.push_back(bitset_handle_literal.get());
+  }
+  const auto needle_i64 = executor->cgen_state_->castToTypeIn(needle, 64);
+  if (bitsets_.empty()) {
+    return std::make_unique<FixedSizeColValues>(
+        executor->cgen_state_->emitCall("bit_is_set_cider",
+                                        {executor->cgen_state_->llInt(int64_t(0)),
+                                         needle_i64,
+                                         executor->cgen_state_->llInt(int64_t(0)),
+                                         executor->cgen_state_->llInt(int64_t(0))}),
+        null);
+  }
+  CodeGenerator code_generator(executor);
+  const auto bitset_handle_lvs =
+      code_generator.codegenHoistedConstants(constants, kENCODING_NONE, 0);
+  CHECK_EQ(size_t(1), bitset_handle_lvs.size());
+  return std::make_unique<FixedSizeColValues>(
+      executor->cgen_state_->emitCall(
+          "bit_is_set_cider",
+          {executor->cgen_state_->castToTypeIn(bitset_handle_lvs.front(), 64),
+           needle_i64,
+           executor->cgen_state_->llInt(min_val_),
+           executor->cgen_state_->llInt(max_val_)}),
+      null);
+}
+
 llvm::Value* InValuesBitmap::codegen(llvm::Value* needle, Executor* executor) const {
   AUTOMATIC_IR_METADATA(executor->cgen_state_.get());
   std::vector<std::shared_ptr<const Analyzer::Constant>> constants_owned;
