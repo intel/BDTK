@@ -45,8 +45,6 @@ cp ./BDTK/build-Release/cider/function/libcider_function.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/thirdparty/velox/third_party/yaml-cpp/libyaml-cpp.a ./presto_cpp/main/lib
 
 sed -i 's/\"planTransformer\/PlanTransformer\.h\"/\"..\/planTransformer\/PlanTransformer\.h\"/' ./BDTK/cider-velox/src/ciderTransformer/CiderPlanTransformerFactory.h
-sed -i 's/\"velox-plugin\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/\"BDTK\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/' ./presto_cpp/main/TaskResource.cpp
-sed -i 's/\"velox-plugin\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/\"BDTK\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/' ./presto_cpp/main/PrestoServer.cpp
 
 make PRESTO_ENABLE_PARQUET=ON -j ${CPU_COUNT:-`nproc`} release
 if [ $? -ne 0 ]; then
