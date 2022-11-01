@@ -71,7 +71,7 @@ $ cd ${path_to_source_of_bdtk}/ci/docker
 $ docker build -t ${image_name} .
 
 # Start a docker container for development
-docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
+docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
 # Tips: you can run with more CPU cores to accelerate building time
 # docker run -d ... ${image_name} --cpus=&quot;30&quot; /usr/sbin/init
 
@@ -89,7 +89,7 @@ details are as follows:</em></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd ${path-to-presto}/presto-native-execution
 # Integrate BDTK with Presto
 $ export WORKER_DIR=${path-to-presto}/presto-native-execution
-$ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-bdtk.sh release
+$ bash ${WORKER_DIR}/BDTK/ci/scripts/integrate-presto-bdtk.sh release
 </pre></div>
 </div>
 <p>Now the you can check your executable presto server file in ${WORKER_DIR}/_build/release/presto_cpp/main/presto_server</p>
@@ -201,7 +201,7 @@ $ cp ./krb5-${krb5-version}/src/include/krb5/krb5.hin ./krb5-${krb5-version}/src
 <p>1. Install the libraries for HDFS/S3</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Set temp env variable for adaptors installation
 $ export KERBEROS_INCLUDE_DIRS=${path-to-krb}/src/include
-$ cd ${path-to-presto}/presto-native-execution/velox-plugin/ci/scripts
+$ cd ${path-to-presto}/presto-native-execution/BDTK/ci/scripts
 # Run the script to set up for adpators
 $ ./setup-adapters.sh
 </pre></div>
