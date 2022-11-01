@@ -31,21 +31,20 @@ if [ $? -ne 0 ]; then
 fi
 popd
 
+cp -r ./BDTK/thirdparty/velox .
 mkdir -p ./presto_cpp/main/lib
 
 cp ./BDTK/build-Release/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/cider-velox/src/ciderTransformer/libcider_plan_transformer.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/cider-velox/src/planTransformer/libvelox_plan_transformer.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/cider-velox/src/substrait/libvelox_substrait_convertor.a ./presto_cpp/main/lib
-cp ./BDTK/build-Release/cider/exec/module/libcider.so ./presto_cpp/main/lib
+cp -a ./BDTK/build-Release/cider/exec/module/libcider.so* ./presto_cpp/main/lib
 cp ./BDTK/build-Release/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/cider/function/libcider_function.a ./presto_cpp/main/lib
 cp ./BDTK/build-Release/thirdparty/velox/third_party/yaml-cpp/libyaml-cpp.a ./presto_cpp/main/lib
 
 sed -i 's/\"planTransformer\/PlanTransformer\.h\"/\"..\/planTransformer\/PlanTransformer\.h\"/' ./BDTK/cider-velox/src/ciderTransformer/CiderPlanTransformerFactory.h
-sed -i 's/\"velox-plugin\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/\"BDTK\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/' ./presto_cpp/main/TaskResource.cpp
-sed -i 's/\"velox-plugin\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/\"BDTK\/cider-velox\/src\/CiderVeloxPluginCtx.h\"/' ./presto_cpp/main/PrestoServer.cpp
 
 make PRESTO_ENABLE_PARQUET=ON -j ${CPU_COUNT:-`nproc`} release
 if [ $? -ne 0 ]; then

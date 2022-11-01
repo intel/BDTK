@@ -1,6 +1,9 @@
 =====================
-Cider User Guide
+BDTK User Guide
 =====================
+
+BDTK mainly acts as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox among the Prestissimo project. 
+In this context and in the following guide, the term **presto_cpp** or **presto native worker** stands for Presto + Velox integrated with BDTK. 
 
 Environment Preparation
 -----------------------------------
@@ -30,13 +33,13 @@ We provide Dockerfile to help developers setup and install BDTK dependencies.
    $ docker build -t ${image_name} .
 
    # Start a docker container for development
-   docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
+   docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
    # Tips: you can run with more CPU cores to accelerate building time
    # docker run -d ... ${image_name} --cpus="30" /usr/sbin/init
 
    docker exec -it ${container_name} /bin/bash
 
-*Note: files used for building image are from cider and presto,
+*Note: files used for building image are from bdtk and presto,
 details are as follows:*
 
 
@@ -52,7 +55,7 @@ Integrate BDTK with Presto
    $ cd ${path-to-presto}/presto-native-execution
    # Integrate BDTK with Presto
    $ export WORKER_DIR=${path-to-presto}/presto-native-execution
-   $ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-cider.sh release
+   $ bash ${WORKER_DIR}/BDTK/ci/scripts/integrate-presto-bdtk.sh release
 
 Now the you can check your executable presto server file in ${WORKER_DIR}/_build/release/presto_cpp/main/presto_server
 
@@ -91,7 +94,7 @@ NOTE:
    
 Upon running this you should see the Presto service log printing in the console. 
 
-3. Update BDTK worker configuration
+3. Update presto native worker configuration
 The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere your like. 
 ::
 
@@ -138,7 +141,7 @@ The hive.properties should be like:
 
    connector.name=hive
 
-4. Launch BDTK worker
+4. Launch presto native worker
    
 Go to YOUR_PATH_TO_PRESTO_SERVER: 
 ::
@@ -147,7 +150,7 @@ Go to YOUR_PATH_TO_PRESTO_SERVER:
    # launch the worker
    ./presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the BDTK worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
 
 5. Test the queries
 You can sent out queries using your existing presto-cli our go to the presto-cli module you just compiled.
@@ -157,7 +160,7 @@ You can sent out queries using your existing presto-cli our go to the presto-cli
    $ ./presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar --catalog hive --schema tpch
 
 By doing this you can launch an interactive SQL command.
-Try Some queries with BDTK!
+Try Some queries with Prestissimo + BDTK!
 
 
 
@@ -175,14 +178,14 @@ Run a DEMO using HDFS
 
    $ wget http://web.mit.edu/kerberos/dist/krb5/1.19/krb5-${krb5-version}.tar.gz
    $ tar zxvf krb5-${krb5-version}.tar
-   $ cd krb5-${krb5-version}/src/include/krb5/krb5.hin krb5-${krb5-version}/src/include/krb5/krb5.h
+   $ cp ./krb5-${krb5-version}/src/include/krb5/krb5.hin ./krb5-${krb5-version}/src/include/krb5/krb5.h
    
 1. Install the libraries for HDFS/S3
 ::
 
    # Set temp env variable for adaptors installation
    $ export KERBEROS_INCLUDE_DIRS=${path-to-krb}/src/include
-   $ cd ${path-to-presto}/presto-native-execution/velox-plugin/ci/scripts
+   $ cd ${path-to-presto}/presto-native-execution/BDTK/ci/scripts
    # Run the script to set up for adpators
    $ ./setup-adapters.sh
 
@@ -196,7 +199,7 @@ Run a DEMO using HDFS
 3. Launch a distributed Presto serivce
 a. Launch your coordinator as normal presto-java server. 
 You can find out how to launch a presto-java coorinator from here(https://prestodb.io/docs/current/installation/deployment.html)
-b. Edit the configuration of BDTK presto_server under your etc directory:
+b. Edit the configuration of presto native worker under your etc directory:
 Modify ${path-to-presto-server-etc}/config.properties
 
 ::
@@ -227,10 +230,38 @@ Modify ${path-to-presto-server-etc}/catalog/hive.properties
    hive.hdfs.host=${your-hdfs-host}
    hive.hdfs.port=${your-hdfs-port}
 
-c. launch the BDTK worker
+c. launch the presto native worker
 
 :: 
 
    $ {path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the BDTK worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
+
+
+Run with released package
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+From the release note of BDTK: https://github.com/intel/BDTK/releases , you can download the package of presto_server binary file and libraries. 
+You can directly run presto native worker with them to skip compiling step.
+
+1. Unzip the package
+   
+::
+
+   $ wget https://github.com/intel/BDTK/releases/download/${latest_tag}/bdtk_${latest_version}.tar.gz
+   $ cd Prestodb
+
+2. Prepare configuration files
+   You need to prepare the basic configuration files as mentioned above. 
+
+3. Launch presto native worker with binary file
+
+:: 
+
+   $ # add libraries to include path
+   $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
+   $ # launch the server
+   $ # --v=1 --logtostderr=1 are flags to print log, you can modify it as your wish
+   $ ./bin/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
+
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 

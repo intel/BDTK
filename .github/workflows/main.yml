@@ -56,9 +56,9 @@ jobs:
         working-directory: ${{github.workspace}}
         run: |
           rm -rf /workspace/github-workspace/presto/presto-native-execution/_build/
-          rm -rf /workspace/github-workspace/presto/presto-native-execution/velox-plugin/
-          mkdir /workspace/github-workspace/presto/presto-native-execution/velox-plugin/
-          cp -r . /workspace/github-workspace/presto/presto-native-execution/velox-plugin/
+          rm -rf /workspace/github-workspace/presto/presto-native-execution/BDTK/
+          mkdir /workspace/github-workspace/presto/presto-native-execution/BDTK/
+          cp -r . /workspace/github-workspace/presto/presto-native-execution/BDTK/
           /workspace/presto-cider-scripts/build-cider-release.sh
 
       - name: Run End-to-end Tests

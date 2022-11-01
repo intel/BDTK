@@ -153,4 +153,9 @@ class ArrowToCiderBatch {
         schema, array, std::make_shared<CiderDefaultAllocator>());
   }
 };
+
+std::shared_ptr<CiderBatch> createSimpleBooleanTestData(
+    const std::vector<bool>& data = {},
+    const std::vector<bool>& null = {});
+
 #endif  // CIDER_UTILS_H

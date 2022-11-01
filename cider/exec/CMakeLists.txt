@@ -19,3 +19,4 @@
 add_subdirectory(module)
 add_subdirectory(plan)
 add_subdirectory(template)
+add_subdirectory(nextgen)

@@ -30,9 +30,13 @@
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "util/CiderBitUtils.h"
 
+#define CIDER_BATCH_ARROW_IMPL
+#define CIDER_BATCH_CIDER_IMPL
+
 /// \class CiderBatch
 /// \brief This class will be data/table format interface/protocol
 class CiderBatch {
+#ifdef CIDER_BATCH_ARROW_IMPL
  public:
   // Both constructors will take over the ownership of ArrowSchema & ArrowArray and
   // buffers they hold, so ArrowSchema and ArrowArray should allocated from
@@ -89,7 +93,7 @@ class CiderBatch {
   }
 
   // TODO: Change to pure virtual function.
-  // CiderBatch dosen't contain null vector by default until getMutableNulls is called.
+  // CiderBatch doesn't contain null vector by default until getMutableNulls is called.
   bool resizeBatch(int64_t size, bool default_not_null = false);
 
   // This function has a side effect that the null vector will be allocated if there is no
@@ -141,7 +145,9 @@ class CiderBatch {
   bool ownership_{false};  // Whether need to release the tree of schema_ and array_.
   bool reallocate_{
       false};  // Whether permitted to (re-)allocate memory to buffers of array_.
+#endif
 
+#ifdef CIDER_BATCH_CIDER_IMPL
  public:
   /// \brief Constructs CiderBatch that will use row memory layout with self memory
   /// manager. It will allocate row_num * row_size memory internally and the allocated
@@ -487,6 +493,7 @@ class CiderBatch {
     align_ = other->align_;
     null_vecs_ = other->null_vecs_;
   }
+#endif
 };
 
 #endif  // CIDER_CIDERBATCH_H
