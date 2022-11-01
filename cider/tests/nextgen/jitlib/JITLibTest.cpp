@@ -306,6 +306,31 @@ TEST_F(JITLibTests, CompareOpTest) {
       100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a <= 100.0; });
 }
 
+TEST_F(JITLibTests, ExternalModuleTest) {
+  LLVMJITModule module("Test Module", true);
+
+  JITFunctionPointer function1 = module.createJITFunction(
+      JITFunctionDescriptor{.function_name = "test_externalModule",
+                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+                            .params_type = {}});
+  {
+    JITValuePointer x = function1->createVariable("x1", JITTypeTag::INT32);
+    JITValuePointer a = function1->createConstant(JITTypeTag::INT32, 123);
+    JITValuePointer b = function1->createConstant(JITTypeTag::INT32, 876);
+    *x = *function1->emitRuntimeFunctionCall(
+        "external_call_test_sum",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {a.get(), b.get()}});
+    function1->createReturn(*x);
+  }
+
+  function1->finish();
+  module.finish();
+
+  auto ptr = function1->getFunctionPointer<int32_t>();
+  EXPECT_EQ(ptr(), 999);
+}
+
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);

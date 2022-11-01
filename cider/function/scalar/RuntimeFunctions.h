@@ -31,6 +31,8 @@
 #include <limits>
 #include <type_traits>
 
+extern "C" int32_t external_call_test_sum(int32_t a, int32_t b);
+
 extern "C" int64_t agg_sum(int64_t* agg, const int64_t val);
 
 extern "C" void agg_max(int64_t* agg, const int64_t val);

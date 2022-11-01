@@ -81,6 +81,10 @@ class JITFunction {
       JITFunction& function,
       const JITFunctionEmitDescriptor& descriptor) = 0;
 
+  virtual JITValuePointer emitRuntimeFunctionCall(
+      const std::string& fname,
+      const JITFunctionEmitDescriptor& descriptor) = 0;
+
   virtual void finish() = 0;
 
  protected:

@@ -33,6 +33,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <thread>
@@ -196,6 +197,10 @@ DEF_SAFE_INF_DIV_NULLABLE(double, double, safe_inf_div)
 #undef DEF_ARITH_NULLABLE_LHS
 #undef DEF_ARITH_NULLABLE
 #undef DEF_SAFE_INF_DIV_NULLABLE
+
+extern "C" ALWAYS_INLINE int32_t external_call_test_sum(int32_t a, int32_t b) {
+  return a + b;
+}
 
 extern "C" ALWAYS_INLINE int64_t scale_decimal_up(const int64_t operand,
                                                   const uint64_t scale,

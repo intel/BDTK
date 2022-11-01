@@ -53,6 +53,10 @@ class LLVMJITFunction final : public JITFunction {
       JITFunction& function,
       const JITFunctionEmitDescriptor& descriptor) override;
 
+  JITValuePointer emitRuntimeFunctionCall(
+      const std::string& fname,
+      const JITFunctionEmitDescriptor& descriptor) override;
+
   void finish() override;
 
  protected:
@@ -60,6 +64,8 @@ class LLVMJITFunction final : public JITFunction {
 
  private:
   void* getFunctionPointer() override;
+
+  void cloneFunctionRecursive(llvm::Function* fn);
 
   LLVMJITModule& module_;
   llvm::Function& func_;

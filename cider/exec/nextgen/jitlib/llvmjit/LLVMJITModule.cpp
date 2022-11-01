@@ -20,18 +20,47 @@
  */
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 
-#include <llvm/IR/Function.h>
+#include <llvm/Bitcode/BitcodeReader.h>
+#include <llvm/IR/Module.h>
+#include <llvm/Transforms/Utils/Cloning.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
+#include "util/filesystem/cider_path.h"
 
 namespace cider::jitlib {
 
-LLVMJITModule::LLVMJITModule(const std::string& name)
-    : context_(std::make_unique<llvm::LLVMContext>())
-    , module_(std::make_unique<llvm::Module>(name, *context_))
-    , engine_(nullptr) {
-  CHECK(context_);
+static llvm::MemoryBuffer* getRuntimeBuffer() {
+  static std::once_flag has_set_buffer;
+  static std::unique_ptr<llvm::MemoryBuffer> runtime_function_buffer;
+
+  std::call_once(has_set_buffer, [&]() {
+    auto root_path = cider::get_root_abs_path();
+    auto template_path = root_path + "/function/RuntimeFunctions.bc";
+    CHECK(boost::filesystem::exists(template_path));
+
+    auto buffer_or_error = llvm::MemoryBuffer::getFile(template_path);
+    CHECK(!buffer_or_error.getError()) << "bc_filename=" << template_path;
+    runtime_function_buffer = std::move(buffer_or_error.get());
+  });
+
+  return runtime_function_buffer.get();
+}
+
+LLVMJITModule::LLVMJITModule(const std::string& name, bool should_copy_runtime_module)
+    : context_(std::make_unique<llvm::LLVMContext>()), engine_(nullptr) {
+  if (should_copy_runtime_module) {
+    auto expected_res =
+        llvm::parseBitcodeFile(getRuntimeBuffer()->getMemBufferRef(), *context_);
+    if (!expected_res) {
+      LOG(FATAL) << "LLVM IR ParseError: Something wrong when parsing bitcode.";
+    } else {
+      runtime_module_ = std::move(expected_res.get());
+    }
+    copyRuntimeModule();
+  } else {
+    module_ = std::make_unique<llvm::Module>(name, *context_);
+  }
   CHECK(module_);
 }
 
@@ -90,5 +119,15 @@ void* LLVMJITModule::getFunctionPtrImpl(LLVMJITFunction& function) {
     return engine_->engine->getPointerToNamedFunction(descriptor->function_name);
   }
   return nullptr;
+}
+
+void LLVMJITModule::copyRuntimeModule() {
+  module_ = llvm::CloneModule(*runtime_module_, vmap_, [](const llvm::GlobalValue* gv) {
+    auto func = llvm::dyn_cast<llvm::Function>(gv);
+    if (!func) {
+      return true;
+    };
+    return false;
+  });
 }
 };  // namespace cider::jitlib
