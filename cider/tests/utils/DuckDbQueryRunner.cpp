@@ -574,8 +574,8 @@ CiderBatch DuckDbResultConvertor::fetchOneBatch(
       case ::duckdb::LogicalTypeId::FLOAT:
         addColumnDataToCiderBatch<float>(chunk, i, row_num, col_buf);
         break;
-      case ::duckdb::LogicalTypeId::DECIMAL:
       case ::duckdb::LogicalTypeId::DOUBLE:
+      case ::duckdb::LogicalTypeId::DECIMAL:
         addColumnDataToCiderBatch<double>(chunk, i, row_num, col_buf);
         break;
       case ::duckdb::LogicalTypeId::DATE:

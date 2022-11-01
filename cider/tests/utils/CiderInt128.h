@@ -31,8 +31,10 @@
 class CiderInt128Utils {
  public:
   static std::string Int128ToString(__int128_t input);
-  static std::string Decimal128ToString(__int128_t input, uint8_t width, uint8_t scale);
-  static double Decimal128ToDouble(__int128_t input, uint8_t width, uint8_t scale);
+  static std::string Decimal128ToString(__int128_t input,
+                                        uint8_t precision,
+                                        uint8_t scale);
+  static double Decimal128ToDouble(__int128_t input, uint8_t precision, uint8_t scale);
 };
 
 #endif

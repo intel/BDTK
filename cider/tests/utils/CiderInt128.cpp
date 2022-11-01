@@ -20,8 +20,10 @@
  */
 
 #include "CiderInt128.h"
+#include "cider/CiderException.h"
 
 std::string CiderInt128Utils::Int128ToString(__int128_t input) {
+  uint8_t precision_counter = 0;
   uint64_t remainder = 0;
   std::string result;
   bool is_negative = input < 0;
@@ -35,6 +37,11 @@ std::string CiderInt128Utils::Int128ToString(__int128_t input) {
     remainder = input % 10;
     input /= 10;
     result = std::string(1, '0' + remainder) + result;
+    precision_counter++;
+    if (precision_counter > 38) {
+      // int128 has a maximum precision of 38 digits
+      CIDER_THROW(CiderRuntimeException, "decimal value overflow");
+    }
   }
 
   if (!result.size()) {
@@ -45,13 +52,14 @@ std::string CiderInt128Utils::Int128ToString(__int128_t input) {
 }
 
 std::string CiderInt128Utils::Decimal128ToString(__int128_t input,
-                                                 uint8_t width,
+                                                 uint8_t precision,
                                                  uint8_t scale) {
   if (!scale) {
     // treat as an integer
     return Int128ToString(input);
   }
 
+  uint8_t precision_counter = 0;
   uint8_t scale_counter = 0;
   uint64_t remainder = 0;
   std::string result;
@@ -61,12 +69,18 @@ std::string CiderInt128Utils::Decimal128ToString(__int128_t input,
   }
 
   while (input) {
-    scale_counter++;
     remainder = input % 10;
     input /= 10;
     result = std::string(1, '0' + remainder) + result;
+
+    scale_counter++;
     if (scale_counter == scale) {
       result = "." + result;
+    }
+
+    precision_counter++;
+    if (precision_counter > precision) {
+      CIDER_THROW(CiderRuntimeException, "decimal value overflow");
     }
   }
 
@@ -88,8 +102,8 @@ std::string CiderInt128Utils::Decimal128ToString(__int128_t input,
 }
 
 double CiderInt128Utils::Decimal128ToDouble(__int128_t input,
-                                            uint8_t width,
+                                            uint8_t precision,
                                             uint8_t scale) {
-  auto val_str = Decimal128ToString(input, width, scale);
+  auto val_str = Decimal128ToString(input, precision, scale);
   return std::stod(val_str);
 }

@@ -101,12 +101,12 @@ uint8_t DecimalBatchStringifier::getScale(const ScalarBatch<__int128_t>* batch) 
   return scale;
 }
 
-uint8_t DecimalBatchStringifier::getWidth(const ScalarBatch<__int128_t>* batch) {
+uint8_t DecimalBatchStringifier::getPrecision(const ScalarBatch<__int128_t>* batch) {
   auto type_str = std::string(batch->getArrowFormatString());
   auto start = type_str.find(':') + 1;
   auto end = type_str.find(',');
-  uint8_t width = std::stoi(type_str.substr(start, end - start));
-  return width;
+  uint8_t precision = std::stoi(type_str.substr(start, end - start));
+  return precision;
 }
 
 std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_index) {
@@ -117,7 +117,7 @@ std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row
   }
 
   auto scale = getScale(scalar_batch);
-  auto width = getWidth(scalar_batch);
+  auto precision = getPrecision(scalar_batch);
   auto data_buffer = scalar_batch->getRawData();
   auto valid_bitmap = scalar_batch->getNulls();
 
@@ -127,13 +127,15 @@ std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row
     __int128_t value = data_buffer[row_index];
 
     if (!scale) {
-      // integral type
+      // integral types can be directly stringified
       return CiderInt128Utils::Int128ToString(value);
     } else {
-      // fixed-point decimal
+      // fixed-point decimals are casted to double first
+      // and then stringified with 16 significant digits
+      // to stay in line with floats and doubles
       std::stringstream fps;
       fps.clear();
-      double value_fp64 = CiderInt128Utils::Decimal128ToDouble(value, width, scale);
+      double value_fp64 = CiderInt128Utils::Decimal128ToDouble(value, precision, scale);
       fps << std::setprecision(16) << value_fp64;
       return fps.str();
     }

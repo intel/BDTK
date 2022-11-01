@@ -54,7 +54,7 @@ class ScalarBatchStringifier : public CiderBatchStringifier {
 class DecimalBatchStringifier : public CiderBatchStringifier {
  private:
   uint8_t getScale(const ScalarBatch<__int128_t>* batch);
-  uint8_t getWidth(const ScalarBatch<__int128_t>* batch);
+  uint8_t getPrecision(const ScalarBatch<__int128_t>* batch);
 
  public:
   std::string stringifyValueAt(CiderBatch* batch, int row_index) override;

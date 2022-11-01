@@ -216,7 +216,6 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
     case 'i':
       return kINT;
     case 'l':
-    case 'd':
       return kBIGINT;
     case 'f':
       return kFLOAT;
@@ -369,7 +368,6 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
     case 'i':
       return ScalarBatch<int32_t>::Create(schema, allocator, array);
     case 'l':
-    case 'd':
       return ScalarBatch<int64_t>::Create(schema, allocator, array);
     case 'f':
       return ScalarBatch<float>::Create(schema, allocator, array);
