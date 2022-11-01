@@ -212,7 +212,7 @@ TEST(DuckDBArrowQueryRunnerTest, HugeIntTest) {
   std::vector<int> expected_data{0, 1, 2, 3, 4};
   std::vector<bool> null_vecs{false, false, false, true, true};
 
-  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto input_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("col_a", CREATE_SUBSTRAIT_TYPE(I32), expected_data)
@@ -230,7 +230,7 @@ TEST(DuckDBArrowQueryRunnerTest, HugeIntTest) {
 
   auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
 
-  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(1)
           .addColumn<int64_t>("r1", CREATE_SUBSTRAIT_TYPE(I64), std::vector<int64_t>{10})
@@ -245,7 +245,7 @@ TEST(DuckDBArrowQueryRunnerTest, FixedPointDecimalTest) {
   std::vector<int> expected_data{0, 1, 2, 3, 4};
   std::vector<bool> null_vecs{false, false, false, true, true};
 
-  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto input_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("col_a", CREATE_SUBSTRAIT_TYPE(I32), expected_data)
@@ -267,7 +267,7 @@ TEST(DuckDBArrowQueryRunnerTest, FixedPointDecimalTest) {
 
   auto res_a = std::vector<double>{0.123, 1.123, 2.123, 3.123, 4.123};
   auto res_b = std::vector<double>{0.2, 0.7, 1.2, 1.7, 2.2};
-  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<double>("r1", CREATE_SUBSTRAIT_TYPE(Fp64), res_a)
@@ -277,8 +277,6 @@ TEST(DuckDBArrowQueryRunnerTest, FixedPointDecimalTest) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batches));
 }
 
-/// TODO: (YBRua) tests to be added
-/// 1. VarChar tests
 TEST(DuckDBArrowQueryRunnerTest, VarCharTest) {
   DuckDbQueryRunner runner;
 
