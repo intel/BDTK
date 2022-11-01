@@ -21,10 +21,12 @@
 
 #include "cider/CiderCompileModule.h"
 #include "CiderCompilationResultImpl.h"
+#include "cider/batch/ScalarBatch.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/template/Execute.h"
 #include "type/schema/CiderSchemaProvider.h"
 #include "util/measure.h"
+#include "util/memory/CiderArrowDataProvider.h"
 #include "util/memory/CiderBatchDataProvider.h"
 
 namespace {
@@ -112,15 +114,19 @@ class CiderCompileModule::Impl {
         std::make_shared<RelAlgExecutionUnit>(translator_->createRelAlgExecutionUnit());
 
     // if this is a join query and don't feed a valid build table, throw exception
-    if (!ra_exe_unit_->join_quals.empty() && build_table_.row_num() == 0) {
-      CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
+    if (!ra_exe_unit_->join_quals.empty()) {
+      if (co.use_cider_data_format &&
+          (build_table_.isMoved() || build_table_.getChildrenNum() == 0)) {
+        CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
+      } else if (!co.use_cider_data_format && build_table_.row_num() == 0) {
+        CIDER_THROW(CiderCompileException, "Join query must feed a valid build table!");
+      }
     }
-
     if (co.use_default_col_range) {
-      setDefaultColRangeCache();
+      setDefaultColRangeCache(co.use_cider_data_format);
     }
     auto table_schemas = translator_->getInputCiderTableSchema();
-    auto table_infos = buildInputTableInfo(table_schemas);
+    auto table_infos = buildInputTableInfo(table_schemas, co.use_cider_data_format);
     executor_->setSchemaProvider(std::make_shared<CiderSchemaProvider>(table_schemas));
     const bool allow_lazy_fetch = co.allow_lazy_fetch;
     std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner = nullptr;
@@ -130,8 +136,12 @@ class CiderCompileModule::Impl {
     ColumnCacheMap column_cache;
     CompilationResult compilation_result;
     std::unique_ptr<QueryMemoryDescriptor> query_mem_desc;
-    CiderBatchDataProvider* ciderBatchDataProvider =
-        new CiderBatchDataProvider(build_table_);
+    DataProvider* ciderDataProvider;
+    if (co.use_cider_data_format) {
+      ciderDataProvider = new CiderArrowDataProvider(build_table_);
+    } else {
+      ciderDataProvider = new CiderBatchDataProvider(build_table_);
+    }
     std::tie(compilation_result, query_mem_desc) =
         executor_->compileWorkUnit(table_infos,
                                    *ra_exe_unit_,
@@ -142,7 +152,7 @@ class CiderCompileModule::Impl {
                                    max_groups_buffer_entry_guess,
                                    crt_min_byte_width,
                                    has_cardinality_estimation,
-                                   ciderBatchDataProvider,
+                                   ciderDataProvider,
                                    column_cache);
     auto ciderCompilationResult = std::make_shared<CiderCompilationResult>();
     ciderCompilationResult->impl_->compilation_result_ = compilation_result;
@@ -156,7 +166,7 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->build_table_ = std::move(build_table_);
     ciderCompilationResult->impl_->ciderStringDictionaryProxy_ =
         ciderStringDictionaryProxy_;
-    delete ciderBatchDataProvider;
+    delete ciderDataProvider;
     return ciderCompilationResult;
   }
 
@@ -179,11 +189,11 @@ class CiderCompileModule::Impl {
         translator_->createRelAlgExecutionUnit(exprs, schema, func_infos, expr_type);
     // Builds input table schema based on substrait schema
     auto table_schema = {buildInputCiderTableSchema(schema)};
-    auto table_infos = buildInputTableInfo(table_schema);
+    auto table_infos = buildInputTableInfo(table_schema, cco.use_cider_data_format);
     executor_->setSchemaProvider(std::make_shared<CiderSchemaProvider>(table_schema));
     auto co = CiderCompilationOptionToCo(cco);
     if (co.use_default_col_range) {
-      setDefaultColRangeCache();
+      setDefaultColRangeCache(co.use_cider_data_format);
     }
     auto eo = CiderExecutionOptionToEo(ceo);
     const bool allow_lazy_fetch = co.allow_lazy_fetch;
@@ -228,7 +238,7 @@ class CiderCompileModule::Impl {
     ra_exe_unit_ = std::make_shared<RelAlgExecutionUnit>(ra_exe_unit);
 
     if (co.use_default_col_range) {
-      setDefaultColRangeCache();
+      setDefaultColRangeCache(co.use_cider_data_format);
     }
 
     const bool allow_lazy_fetch = co.allow_lazy_fetch;
@@ -272,7 +282,7 @@ class CiderCompileModule::Impl {
     ra_exe_unit_ = std::make_shared<RelAlgExecutionUnit>(ra_exe_unit);
 
     if (co.use_default_col_range) {
-      setDefaultColRangeCache();
+      setDefaultColRangeCache(co.use_cider_data_format);
     }
 
     const bool allow_lazy_fetch = co.allow_lazy_fetch;
@@ -304,6 +314,51 @@ class CiderCompileModule::Impl {
     ciderCompilationResult->impl_->outputSchema_ = schema;
     ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     return ciderCompilationResult;
+  }
+
+  void getArrowMinMaxAndResetNull(std::unique_ptr<CiderBatch> child_batch,
+                                  const int64_t row_num,
+                                  const ::substrait::Type& type,
+                                  int64_t* min,
+                                  int64_t* max,
+                                  const int8_t* null_buff) {
+    if (type.has_i64()) {
+      int64_t* buffer =
+          child_batch->asMutable<ScalarBatch<int64_t>>()->getMutableRawData();
+      initColRangeAndResetNull<int64_t>(buffer, row_num, min, max, null_buff);
+    } else if (type.has_i32()) {
+      int32_t* buffer =
+          child_batch->asMutable<ScalarBatch<int32_t>>()->getMutableRawData();
+      initColRangeAndResetNull<int32_t>(buffer, row_num, min, max, null_buff);
+    }
+  }
+
+  template <class T>
+  void initColRangeAndResetNull(T* buffer,
+                                const int64_t row_num,
+                                int64_t* min,
+                                int64_t* max,
+                                const int8_t* null_buff) {
+    bool init_flag = false;
+    for (int i = 0; i < row_num; i++) {
+      if (null_buff && CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+        if (!init_flag) {
+          *min = buffer[i];
+          *max = buffer[i];
+          init_flag = true;
+        }
+        if (buffer[i] < *min)
+          *min = buffer[i];
+        if (buffer[i] > *max)
+          *max = buffer[i];
+      }
+    }
+    // reset null value outside the col_range to avoid build in hashtable in next
+    for (int i = 0; i < row_num; i++) {
+      if (null_buff && !CiderBitUtils::isBitSetAt((uint8_t*)null_buff, i)) {
+        buffer[i] = *min - 1;
+      }
+    }
   }
 
   void getMinMax(const int8_t* buf,
@@ -341,7 +396,7 @@ class CiderCompileModule::Impl {
   // This method will generate a fake ColRange unless join case, which will generate
   // actual build table col range since we have full input data via feedBuildTable API,
   // this could help codegen.
-  void setDefaultColRangeCache() {
+  void setDefaultColRangeCache(bool use_cider_data_format) {
     if (!translator_) {
       // don't have a valid translator_
       // TODO(jikunshang/BigPYJ1151): remove this, seems only used via
@@ -362,12 +417,25 @@ class CiderCompileModule::Impl {
         int64_t max = -1;
         // join table and integer type, find the real min/max value
         if (i >= 1 && isSubtraitIntegerType(table_schema.getColumnTypeById(j))) {
-          if (build_table_.row_num() > 0 && build_table_.column(j)) {
-            getMinMax(build_table_.column(j),
-                      build_table_.row_num(),
-                      table_schema.getColumnTypeById(j),
-                      &min,
-                      &max);
+          if (use_cider_data_format) {
+            if (auto child_batch = build_table_.getChildAt(j);
+                build_table_.getLength() > 0 && child_batch) {
+              getArrowMinMaxAndResetNull(
+                  std::move(child_batch),
+                  build_table_.getLength(),
+                  table_schema.getColumnTypeById(j),
+                  &min,
+                  &max,
+                  reinterpret_cast<const int8_t*>(child_batch->getNulls()));
+            }
+          } else {
+            if (build_table_.row_num() > 0 && build_table_.column(j)) {
+              getMinMax(build_table_.column(j),
+                        build_table_.row_num(),
+                        table_schema.getColumnTypeById(j),
+                        &min,
+                        &max);
+            }
           }
         }
         auto expression_range = buildExpressionRange(
@@ -434,7 +502,8 @@ class CiderCompileModule::Impl {
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
 
   std::vector<InputTableInfo> buildInputTableInfo(
-      const std::vector<CiderTableSchema>& tableSchemas) {
+      const std::vector<CiderTableSchema>& tableSchemas,
+      bool use_cider_data_format) {
     std::vector<InputTableInfo> query_infos;
     const int db_id = 100;
     // Note that we only consider single join here, so use faked table id 100
@@ -442,8 +511,14 @@ class CiderCompileModule::Impl {
     // seems only this row num will be used for building join hash table only, so we set
     // row num to build table row num
     int row_num = 20;
-    if (build_table_.row_num() > 0) {
-      row_num = build_table_.row_num();
+    if (use_cider_data_format) {
+      if (!build_table_.isMoved() && build_table_.getLength() > 0) {
+        row_num = build_table_.getLength();
+      }
+    } else {
+      if (build_table_.row_num() > 0) {
+        row_num = build_table_.row_num();
+      }
     }
     for (int i = 0; i < tableSchemas.size(); i++) {
       Fragmenter_Namespace::FragmentInfo fi_0;

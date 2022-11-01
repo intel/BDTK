@@ -52,6 +52,11 @@ if(SUPPRESS_NULL_LOGGER_DEPRECATION_WARNINGS)
   list(APPEND MAPD_DEFINITIONS "-DSUPPRESS_NULL_LOGGER_DEPRECATION_WARNINGS")
 endif()
 
+execute_process(
+  COMMAND bash -c "realpath -m $(which gcc)/../.."
+  OUTPUT_VARIABLE GCC_TOOLCHAIN
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 add_custom_command(
   DEPENDS
     scalar/RuntimeFunctions.h
@@ -65,8 +70,9 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
   COMMAND
     ${llvm_clangpp_cmd} ARGS -std=c++17 ${RT_OPT_FLAGS} -c -emit-llvm
-    ${CLANG_SDK_INC} ${CLANG_CRT_INC} ${MAPD_DEFINITIONS} -I
-    ${CMAKE_CURRENT_SOURCE_DIR}/../ -I ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    --gcc-toolchain=${GCC_TOOLCHAIN} ${CLANG_SDK_INC} ${CLANG_CRT_INC}
+    ${MAPD_DEFINITIONS} -I ${CMAKE_CURRENT_SOURCE_DIR}/../ -I
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
 add_library(cider_function ${function_source_files})

@@ -97,7 +97,8 @@ class HashJoin {
       const bool is_bw_eq,
       const int64_t sub_buff_size,
       Executor* executor,
-      const bool is_bucketized = false);
+      const bool is_bucketized = false,
+      const bool is_cider_format = false);
 
   static llvm::Value* codegenHashTableLoad(const size_t table_idx, Executor* executor);
 

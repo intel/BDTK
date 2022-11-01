@@ -162,6 +162,12 @@ class CodeGenerator {
       CodegenColValues* rhs,
       llvm::Value* null);
 
+  std::unique_ptr<CodegenColValues> codegenVarcharCmpFun(
+      const Analyzer::BinOper* bin_oper,
+      CodegenColValues* lhs,
+      CodegenColValues* rhs,
+      llvm::Value* null);
+
   llvm::Value* codegenCmp(const SQLOps,
                           const SQLQualifier,
                           std::vector<llvm::Value*>,
@@ -229,6 +235,7 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
 
+  // To be deperacated.
   std::vector<llvm::Value*> codegen(const Analyzer::CaseExpr*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::ExtractExpr*, const CompilationOptions&);
@@ -303,6 +310,16 @@ class CodeGenerator {
   std::unique_ptr<CodegenColValues> codegenConstantExpr(const Analyzer::Constant*,
                                                         const CompilationOptions&);
 
+  // Cider Data Format
+  std::unique_ptr<CodegenColValues> codegenCaseExpr(const Analyzer::CaseExpr*,
+                                                    const CompilationOptions&);
+
+  // Cider Data Format
+  std::unique_ptr<CodegenColValues> codegenCaseExpr(const Analyzer::CaseExpr*,
+                                                    llvm::Type* case_llvm_type,
+                                                    const bool is_real_str,
+                                                    const CompilationOptions&);
+
   // Deprecating
   llvm::Value* codegen(const Analyzer::UOper*, const CompilationOptions&);
 
@@ -333,6 +350,12 @@ class CodeGenerator {
       llvm::Value* pos_arg,
       const CompilationOptions& co);
 
+  std::unique_ptr<CodegenColValues> codegenVarCharColVar(
+      const Analyzer::ColumnVar* col_var,
+      llvm::Value* col_byte_stream,
+      llvm::Value* pos_arg,
+      const CompilationOptions& co);
+
   llvm::Value* codegenFixedLengthColVar(const Analyzer::ColumnVar* col_var,
                                         llvm::Value* col_byte_stream,
                                         llvm::Value* pos_arg);
@@ -347,6 +370,10 @@ class CodeGenerator {
                                      llvm::Value* pos_arg);
 
   std::vector<llvm::Value*> codegenVariableLengthStringColVar(
+      llvm::Value* col_byte_stream,
+      llvm::Value* pos_arg);
+
+  std::vector<llvm::Value*> codegenVariableLengthStringColVarArrow(
       llvm::Value* col_byte_stream,
       llvm::Value* pos_arg);
 
@@ -440,6 +467,7 @@ class CodeGenerator {
                           const SQLTypeInfo&,
                           const CompilationOptions&);
 
+  // Deprecating
   llvm::Value* codegenCase(const Analyzer::CaseExpr*,
                            llvm::Type* case_llvm_type,
                            const bool is_real_str,
@@ -578,6 +606,7 @@ class CodeGenerator {
 
   Executor* executor_;
 
+  // Cider Data Format
   std::unique_ptr<CodegenColValues> codegenColumnExpr(const Analyzer::ColumnVar* col_var,
                                                       const bool fetch_column,
                                                       const CompilationOptions& co);

@@ -148,6 +148,10 @@ class TypeUtils {
         return getIsNullable(type.time().nullability());
       case substrait::Type::kTimestamp:
         return getIsNullable(type.timestamp().nullability());
+      case substrait::Type::kVarchar:
+        return getIsNullable(type.varchar().nullability());
+      case substrait::Type::kFixedChar:
+        return getIsNullable(type.fixed_char().nullability());
       default:
         return true;
     }

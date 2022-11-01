@@ -145,33 +145,45 @@ template <typename T>
   return ::duckdb::Value(data_buffer[offset]);
 }
 
-#define GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC                                           \
-  [&]() {                                                                           \
-    switch (child_type) {                                                           \
-      case SQLTypes::kBOOLEAN:                                                      \
-        CIDER_THROW(CiderUnsupportedException, "Booleans are not supported.");      \
-      case SQLTypes::kTINYINT:                                                      \
-        return duckDbValueAtScalarBatch<int8_t>(child->as<ScalarBatch<int8_t>>(),   \
-                                                row_idx);                           \
-      case SQLTypes::kSMALLINT:                                                     \
-        return duckDbValueAtScalarBatch<int16_t>(child->as<ScalarBatch<int16_t>>(), \
-                                                 row_idx);                          \
-      case SQLTypes::kINT:                                                          \
-        return duckDbValueAtScalarBatch<int32_t>(child->as<ScalarBatch<int32_t>>(), \
-                                                 row_idx);                          \
-      case SQLTypes::kBIGINT:                                                       \
-        return duckDbValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(), \
-                                                 row_idx);                          \
-      case SQLTypes::kFLOAT:                                                        \
-        return duckDbValueAtScalarBatch<float>(child->as<ScalarBatch<float>>(),     \
-                                               row_idx);                            \
-      case SQLTypes::kDOUBLE:                                                       \
-        return duckDbValueAtScalarBatch<double>(child->as<ScalarBatch<double>>(),   \
-                                                row_idx);                           \
-      default:                                                                      \
-        CIDER_THROW(CiderUnsupportedException,                                      \
-                    "Unsupported type for converting to duckdb values.");           \
-    }                                                                               \
+template <>
+::duckdb::Value duckDbValueAtScalarBatch<bool>(const ScalarBatch<bool>* batch,
+                                               int64_t offset) {
+  if (!batch) {
+    CIDER_THROW(CiderRuntimeException,
+                "ScalarBatch is nullptr. Maybe check your casting?");
+  }
+
+  auto data_buffer = batch->getRawData();
+  return ::duckdb::Value(CiderBitUtils::isBitSetAt(data_buffer, offset));
+}
+
+#define GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC                                               \
+  [&]() {                                                                               \
+    switch (child_type) {                                                               \
+      case SQLTypes::kBOOLEAN:                                                          \
+        return duckDbValueAtScalarBatch<bool>(child->as<ScalarBatch<bool>>(), row_idx); \
+      case SQLTypes::kTINYINT:                                                          \
+        return duckDbValueAtScalarBatch<int8_t>(child->as<ScalarBatch<int8_t>>(),       \
+                                                row_idx);                               \
+      case SQLTypes::kSMALLINT:                                                         \
+        return duckDbValueAtScalarBatch<int16_t>(child->as<ScalarBatch<int16_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kINT:                                                              \
+        return duckDbValueAtScalarBatch<int32_t>(child->as<ScalarBatch<int32_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kBIGINT:                                                           \
+        return duckDbValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kFLOAT:                                                            \
+        return duckDbValueAtScalarBatch<float>(child->as<ScalarBatch<float>>(),         \
+                                               row_idx);                                \
+      case SQLTypes::kDOUBLE:                                                           \
+        return duckDbValueAtScalarBatch<double>(child->as<ScalarBatch<double>>(),       \
+                                                row_idx);                               \
+      default:                                                                          \
+        CIDER_THROW(CiderUnsupportedException,                                          \
+                    "Unsupported type for converting to duckdb values.");               \
+    }                                                                                   \
   }
 
 #define GEN_DUCK_VALUE_FUNC                                                  \

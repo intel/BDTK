@@ -106,11 +106,33 @@ TEST(DuckDBArrowQueryRunnerTest, simpleDoubleArrowTest) {
 }
 
 TEST(DuckDBArrowQueryRunnerTest, simpleBooleanArrowTest) {
-  /// TODO: (YBRua) Currently the underlying data format of boolean is different
-  /// ArrowArray exported by duckdb uses bit-packed booleans (1 Byte -> 8 bool bits)
-  /// but current ScalarBatch<bool> uses 1 Byte for each boolean value (1 Byte -> 1 bool)
-  /// so ScalarBatch<bool> will interpret the ArrowArray provided by duckdb incorrectly
-  GTEST_SKIP();
+  DuckDbQueryRunner runner;
+
+  auto batch_vec =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+  auto batch_null =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  auto input_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+
+  std::string table_name = "table_test";
+  std::string create_ddl = "CREATE TABLE table_test(col_a BOOLEAN, col_b BOOLEAN)";
+  runner.createTableAndInsertArrowData(table_name, create_ddl, input_batch);
+
+  auto res = runner.runSql("select * from table_test;");
+  CHECK(!res->HasError());
+  CHECK_EQ(res->ColumnCount(), 2);
+
+  auto actual_batches = DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(res);
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batches));
 }
 
 TEST(DuckDBArrowQueryRunnerTest, multiTableTest) {

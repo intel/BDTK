@@ -167,7 +167,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (!expr) {
     return nullptr;
   }
-
   auto bin_oper = dynamic_cast<const Analyzer::BinOper*>(expr);
   if (bin_oper) {
     return codegenBinOper(bin_oper, co);
@@ -195,6 +194,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   auto datetrunc_expr = dynamic_cast<const Analyzer::DatetruncExpr*>(expr);
   if (datetrunc_expr) {
     return codegenDateTrunc(datetrunc_expr, co);
+  }
+  auto case_expr = dynamic_cast<const Analyzer::CaseExpr*>(expr);
+  if (case_expr) {
+    return codegenCaseExpr(case_expr, co);
   }
 
   auto in_values = dynamic_cast<const Analyzer::InValues*>(expr);
@@ -240,6 +243,13 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
 
   switch (ti.get_type()) {
     case kVARCHAR:
+      CHECK(constant_value.size() == 3);
+      return std::make_unique<TwoValueColValues>(
+          constant_value[1],
+          constant_value[2],
+          constant_expr->get_is_null()
+              ? llvm::ConstantInt::getTrue(cgen_state_->context_)
+              : llvm::ConstantInt::getFalse(cgen_state_->context_));
     case kARRAY:
       UNREACHABLE();
     default:

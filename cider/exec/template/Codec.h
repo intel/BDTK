@@ -161,4 +161,22 @@ class FixedWidthSmallDate : public Decoder {
   static constexpr int64_t ret_null_val_ = NULL_BIGINT;
 };
 
+class VarcharDecoder : public Decoder {
+ public:
+  VarcharDecoder(const size_t byte_width,
+                 llvm::IRBuilder<>* ir_builder,
+                 bool nullable = false);
+
+  llvm::Instruction* codegenDecode(llvm::Value* byte_stream,
+                                   llvm::Value* pos,
+                                   llvm::Module* module) const override;
+
+  std::vector<llvm::Instruction*> codegenDecode(llvm::Module* module,
+                                                llvm::Value* byte_stream,
+                                                llvm::Value* pos) const override;
+
+ private:
+  const size_t byte_width_;
+};
+
 #endif  // QUERYENGINE_CODEC_H
