@@ -325,8 +325,6 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
   assertQueryArrow("SELECT CAST(col_timestamp AS DATE) FROM test",
                    "cast_timestamp_as_date.json");
 
-  GTEST_SKIP();
-  // TODO(kaidi): cast constant support with arrow format.
   assertQueryArrow(
       "SELECT col_timestamp FROM test WHERE col_timestamp > DATE '1970-01-01'",
       "cast_literal_timestamp.json");

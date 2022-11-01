@@ -479,7 +479,7 @@ When GROUP BY col_b, the bit set should be 10, thus the value of _col3 is 2.
 The GROUPING(col_a, col_b) results in _col3 and it represents a bit set converted to BIGINT.
 Each column in GROUPING  operation will take one bit and it will be set to 0 if the corresponding column is included in the grouping and to 1 otherwise.
 
-8 ALL/ANY
+ALL/ANY
 ---------
 
 In SQL, 'ALL' and 'ANY' are used to decorate compare operators(<, <=, =, !=, >, >=) between column values and a subquery result.

@@ -206,6 +206,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateAdd(
   auto datetime = codegen(dateadd_expr->get_datetime_expr(), co, true);
   const auto& datetime_ti = dateadd_expr->get_datetime_expr()->get_type_info();
   auto datetime_nullable = dynamic_cast<FixedSizeColValues*>(datetime.get());
+  CHECK(datetime_nullable);
   auto datetime_lv = datetime_nullable->getValue();
 
   // Implicitly cast to time type for unified time func calculation.

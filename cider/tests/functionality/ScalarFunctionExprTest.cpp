@@ -67,14 +67,6 @@ GEN_BETWEEN_AND_NULL_CLASS(Date, DATE)
 #define SQL_BETWEEN_AND_DATE \
   "SELECT c0 FROM tmp WHERE c0 between date '1970-02-01' and date '1970-03-01'"
 
-TEST_F(BetweenAndDateNullTest, DateNullTest) {
-  assertQuery(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
-}
-
-TEST_F(BetweenAndDateTest, DateNotNullTest) {
-  assertQuery(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
-}
-
 TEST_F(BetweenAndI8Test, NotNullTest) {
   assertQuery(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
 }
@@ -149,7 +141,7 @@ GEN_BETWEEN_AND_ARROW_CLASS(I32, INTEGER)
 GEN_BETWEEN_AND_ARROW_CLASS(I64, BIGINT)
 GEN_BETWEEN_AND_ARROW_CLASS(Fp32, FLOAT)
 GEN_BETWEEN_AND_ARROW_CLASS(Fp64, DOUBLE)
-// GEN_BETWEEN_AND_ARROW_CLASS(Date, DATE)
+GEN_BETWEEN_AND_ARROW_CLASS(Date, DATE)
 
 #define GEN_BETWEEN_AND_ARROW_NULL_CLASS(S_TYPE, SQL_TYPE)                     \
   class BetweenAndArrow##S_TYPE##NullTest : public CiderTestBase {             \
@@ -168,7 +160,7 @@ GEN_BETWEEN_AND_ARROW_NULL_CLASS(I32, INTEGER)
 GEN_BETWEEN_AND_ARROW_NULL_CLASS(I64, BIGINT)
 GEN_BETWEEN_AND_ARROW_NULL_CLASS(Fp32, FLOAT)
 GEN_BETWEEN_AND_ARROW_NULL_CLASS(Fp64, DOUBLE)
-// GEN_BETWEEN_AND_ARROW_NULL_CLASS(Date, DATE)
+GEN_BETWEEN_AND_ARROW_NULL_CLASS(Date, DATE)
 
 TEST_F(BetweenAndArrowI8Test, NotNullTest) {
   assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
@@ -218,14 +210,13 @@ TEST_F(BetweenAndArrowFp64NullTest, NullTest) {
   assertQueryArrow(SQL_BETWEEN_AND_FP, "between_and_fp64_velox.json");
 }
 
-// TODO: (yma11) Enable date test after type supported
-// TEST_F(BetweenAndArrowDateNullTest, DateNullTest) {
-//   assertQueryArrow(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
-// }
+TEST_F(BetweenAndArrowDateNullTest, DateNullTest) {
+  assertQueryArrow(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
+}
 
-// TEST_F(BetweenAndArrowDateTest, DateNotNullTest) {
-//   assertQueryArrow(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
-// }
+TEST_F(BetweenAndArrowDateTest, DateNotNullTest) {
+  assertQueryArrow(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
+}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
