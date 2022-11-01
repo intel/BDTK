@@ -305,11 +305,8 @@ SQLTypeInfo StringOper::get_return_type(
     // Constant literal first argument
     return args[0]->get_type_info();
   } else if (args[0]->get_type_info().is_none_encoded_string()) {
-    // None-encoded text column argument
-    // Note that whether or not this is allowed is decided separately
-    // in check_operand_types
-    // If here, we have a dict-encoded column arg
-    return SQLTypeInfo(kTEXT, kENCODING_DICT, 0, kNULLT);
+    // cider will always return a TEXT column
+    return SQLTypeInfo(kTEXT, args[0]->get_type_info().get_notnull());
   } else {
     return SQLTypeInfo(args[0]->get_type_info());  // nullable by default
   }

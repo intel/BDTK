@@ -96,6 +96,38 @@ apply_string_ops_and_encode(const char* str_ptr,
   return string_dict_proxy->getOrAddTransient(result_str);
 }
 
+extern "C" RUNTIME_EXPORT int64_t
+apply_string_ops_and_encode_cider(const char* str_ptr,
+                                  const int32_t str_len,
+                                  const int64_t string_ops_handle,
+                                  const int64_t string_hasher_handle) {
+  std::string raw_str(str_ptr, str_len);
+  auto string_ops =
+      reinterpret_cast<const StringOps_Namespace::StringOps*>(string_ops_handle);
+  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  const auto result_str = string_ops->operator()(raw_str);
+
+  // add this temp result to cache
+  int64_t id = string_hasher->lookupIdByValue(
+      CiderByteArray(result_str.length(), (const uint8_t*)result_str.c_str()));
+  return id;
+}
+
+extern "C" RUNTIME_EXPORT char* cider_hasher_decode_str_ptr(
+    const int64_t id,
+    const int64_t string_hasher_handle) {
+  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  CiderByteArray res = string_hasher->lookupValueById(id);
+  return (char*)res.ptr;
+}
+
+extern "C" RUNTIME_EXPORT int32_t
+cider_hasher_decode_str_len(const int64_t id, const int64_t string_hasher_handle) {
+  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  CiderByteArray res = string_hasher->lookupValueById(id);
+  return res.len;
+}
+
 extern "C" RUNTIME_EXPORT int32_t lower_encoded(int32_t string_id,
                                                 int64_t string_dict_proxy_address) {
   StringDictionaryProxy* string_dict_proxy =
@@ -270,25 +302,56 @@ llvm::Value* CodeGenerator::codegenPerRowStringOper(const Analyzer::StringOper* 
                                        string_oper_lvs);
 }
 
-std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(const Analyzer::StringOper* expr,
-                                                      const CompilationOptions& co){
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
+    const Analyzer::StringOper* expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+
   CHECK_GE(expr->getArity(), 1UL);
   CHECK(expr->hasNoneEncodedTextArg());
-
-  AUTOMATIC_IR_METADATA(cgen_state_);
-  CHECK_GE(expr->getArity(), 1UL);
 
   const auto& expr_ti = expr->get_type_info();
   const auto primary_arg = remove_cast(expr->getArg(0));
   CHECK(primary_arg->get_type_info().is_none_encoded_string());
 
-  auto primary_str = codegen(primary_arg, co, true);
+  auto primary_str = codegen(primary_arg, co, true);  // Twovalue
+  auto str_values = dynamic_cast<TwoValueColValues*>(primary_str.get());
+  CHECK(str_values);
 
   const auto string_op_infos = getStringOpInfos(expr);
   CHECK(string_op_infos.size());
   const auto string_ops = getStringOps(string_op_infos);
+  const int64_t string_ops_handle = reinterpret_cast<int64_t>(string_ops);
+  auto string_ops_handle_lv = cgen_state_->llInt(string_ops_handle);
+  const auto& return_ti = expr->get_type_info();
+  if (!return_ti.is_string()) {
+    CIDER_THROW(
+        CiderCompileException,
+        "For string op, non-string type return values is not supported currently.");
+  }
 
-  return nullptr;
+  const int64_t cider_string_hasher_handle =
+      reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
+  auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
+
+  std::vector<llvm::Value*> string_oper_lvs{str_values->getValueAt(0),
+                                            str_values->getValueAt(1),
+                                            string_ops_handle_lv,
+                                            cider_string_hasher_handle_lv};
+
+  auto id = cgen_state_->emitExternalCall("apply_string_ops_and_encode_cider",
+                                          get_int_type(32, cgen_state_->context_),
+                                          string_oper_lvs);
+  llvm::Value* res_str_ptr =
+      cgen_state_->emitExternalCall("cider_hasher_decode_str_ptr",
+                                    get_int_ptr_type(8, cgen_state_->context_),
+                                    {id, cider_string_hasher_handle_lv});
+  llvm::Value* res_str_len =
+      cgen_state_->emitExternalCall("cider_hasher_decode_str_len",
+                                    get_int_type(32, cgen_state_->context_),
+                                    {id, cider_string_hasher_handle_lv});
+
+  return std::make_unique<TwoValueColValues>(res_str_ptr, res_str_len);
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::StringOper* expr,

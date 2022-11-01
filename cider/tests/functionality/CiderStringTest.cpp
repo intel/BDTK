@@ -273,24 +273,23 @@ TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringLikeTest) {
   prepareArrowBatch();
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1111'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '1111%'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '22%22'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '_33%'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '44_%'");
 
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '1111%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '22%22'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '_33%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '44_%'");
-
-  assertQueryArrow(
+  assertQueryArrowTemp(
       "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");
-  assertQueryArrow(
+  assertQueryArrowTemp(
       "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'",
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1111'",
                    "like_wo_cast.json");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
-  assertQueryArrow(
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
+  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
+  assertQueryArrowTemp(
       "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE '%111%'");
 }
 
@@ -298,14 +297,14 @@ TEST_F(CiderStringTestArrow, ArrowSubstringTest) {
   prepareArrowBatch();
 
   // variable source string
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 8) FROM test ");
+  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
+  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 1, 8) FROM test ");
 
   // out of range
-  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
+  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
+  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
+  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
+  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
 }
 
 class CiderConstantStringTest : public CiderTestBase {
