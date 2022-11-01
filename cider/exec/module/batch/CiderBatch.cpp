@@ -139,6 +139,10 @@ SQLTypes CiderBatch::getCiderType() const {
   return CiderBatchUtils::convertArrowTypeToCiderType(arrow_schema_->format);
 }
 
+const char* CiderBatch::getArrowFormatString() const {
+  return getArrowSchema()->format;
+}
+
 // TODO: Dictionary support is TBD.
 std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
   CHECK(!isMoved());
