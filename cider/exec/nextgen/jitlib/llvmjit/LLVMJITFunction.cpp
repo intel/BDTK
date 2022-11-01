@@ -31,7 +31,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 #include "util/Logger.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 LLVMJITFunction::LLVMJITFunction(const JITFunctionDescriptor& descriptor,
                                  LLVMJITModule& module,
                                  llvm::Function& func)
@@ -110,29 +110,30 @@ llvm::Value* createConstantImpl(llvm::LLVMContext& context, std::any value) {
 JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any value) {
   llvm::Value* llvm_value = nullptr;
   switch (type_tag) {
-    case BOOL:
-      llvm_value = createConstantImpl<BOOL>(getLLVMContext(), value);
+    case JITTypeTag::BOOL:
+      llvm_value = createConstantImpl<JITTypeTag::BOOL>(getLLVMContext(), value);
       break;
-    case INT8:
-      llvm_value = createConstantImpl<INT8>(getLLVMContext(), value);
+    case JITTypeTag::INT8:
+      llvm_value = createConstantImpl<JITTypeTag::INT8>(getLLVMContext(), value);
       break;
-    case INT16:
-      llvm_value = createConstantImpl<INT16>(getLLVMContext(), value);
+    case JITTypeTag::INT16:
+      llvm_value = createConstantImpl<JITTypeTag::INT16>(getLLVMContext(), value);
       break;
-    case INT32:
-      llvm_value = createConstantImpl<INT32>(getLLVMContext(), value);
+    case JITTypeTag::INT32:
+      llvm_value = createConstantImpl<JITTypeTag::INT32>(getLLVMContext(), value);
       break;
-    case INT64:
-      llvm_value = createConstantImpl<INT64>(getLLVMContext(), value);
+    case JITTypeTag::INT64:
+      llvm_value = createConstantImpl<JITTypeTag::INT64>(getLLVMContext(), value);
       break;
-    case FLOAT:
-      llvm_value = createConstantImpl<FLOAT>(getLLVMContext(), value);
+    case JITTypeTag::FLOAT:
+      llvm_value = createConstantImpl<JITTypeTag::FLOAT>(getLLVMContext(), value);
       break;
-    case DOUBLE:
-      llvm_value = createConstantImpl<DOUBLE>(getLLVMContext(), value);
+    case JITTypeTag::DOUBLE:
+      llvm_value = createConstantImpl<JITTypeTag::DOUBLE>(getLLVMContext(), value);
       break;
     default:
-      LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: " << type_tag;
+      LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: "
+                 << getJITTypeName(type_tag);
   }
   return std::make_unique<LLVMJITValue>(
       type_tag, *this, llvm_value, "", JITBackendTag::LLVMJIT, false);
@@ -168,10 +169,10 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   auto& param_type = descriptor_.params_type[index];
   llvm::Value* llvm_value = func_.arg_begin() + index;
   switch (param_type.type) {
-    case POINTER:
-    case INVALID:
-    case TUPLE:
-    case STRUCT:
+    case JITTypeTag::POINTER:
+    case JITTypeTag::INVALID:
+    case JITTypeTag::TUPLE:
+    case JITTypeTag::STRUCT:
       UNREACHABLE();
     default:
       return std::make_unique<LLVMJITValue>(param_type.type,
@@ -182,6 +183,6 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                             false);
   }
 }
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITFUNCTION_H

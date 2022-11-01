@@ -23,7 +23,7 @@
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 class JITModule {
  public:
   virtual JITFunctionPointer createJITFunction(
@@ -31,6 +31,6 @@ class JITModule {
 
   virtual void finish() = 0;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITMODULE_H

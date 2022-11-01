@@ -25,7 +25,7 @@
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 LLVMJITEngine::~LLVMJITEngine() {
   LLVMDisposeExecutionEngine(llvm::wrap(engine));
 }
@@ -60,4 +60,4 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
 
   return engine;
 }
-};  // namespace jitlib
+};  // namespace cider::jitlib

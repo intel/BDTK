@@ -23,7 +23,7 @@
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 
-namespace jitlib {
+namespace cider::jitlib {
 class LLVMJITModule;
 
 struct LLVMJITEngine {
@@ -43,6 +43,6 @@ class LLVMJITEngineBuilder {
 
   LLVMJITModule& module_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITENGINE_H

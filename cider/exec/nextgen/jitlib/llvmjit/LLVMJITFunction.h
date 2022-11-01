@@ -28,7 +28,7 @@
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 class LLVMJITModule;
 
 class LLVMJITFunction final : public JITFunction {
@@ -65,6 +65,6 @@ class LLVMJITFunction final : public JITFunction {
   llvm::Function& func_;
   mutable std::unique_ptr<llvm::IRBuilder<>> ir_builder_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif

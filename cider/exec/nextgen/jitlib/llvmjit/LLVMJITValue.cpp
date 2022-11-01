@@ -26,7 +26,7 @@
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "util/Logger.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 
 JITValue& LLVMJITValue::assign(JITValue& value) {
   if (!is_variable_) {
@@ -40,7 +40,7 @@ JITValue& LLVMJITValue::assign(JITValue& value) {
 JITValuePointer LLVMJITValue::notOp() {
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case BOOL:
+    case JITTypeTag::BOOL:
       ans = getFunctionBuilder(parent_function_).CreateNot(load());
       break;
     default:
@@ -58,14 +58,14 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case INT8:
-    case INT16:
-    case INT32:
-    case INT64:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
       ans = getFunctionBuilder(parent_function_).CreateSRem(load(), llvm_rh.load());
       break;
-    case FLOAT:
-    case DOUBLE:
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
       ans = getFunctionBuilder(parent_function_).CreateFRem(load(), llvm_rh.load());
       break;
     default:
@@ -83,14 +83,14 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case INT8:
-    case INT16:
-    case INT32:
-    case INT64:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
       ans = getFunctionBuilder(parent_function_).CreateSDiv(load(), llvm_rh.load());
       break;
-    case FLOAT:
-    case DOUBLE:
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
       ans = getFunctionBuilder(parent_function_).CreateFDiv(load(), llvm_rh.load());
       break;
     default:
@@ -108,14 +108,14 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case INT8:
-    case INT16:
-    case INT32:
-    case INT64:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
       ans = getFunctionBuilder(parent_function_).CreateMul(load(), llvm_rh.load());
       break;
-    case FLOAT:
-    case DOUBLE:
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
       ans = getFunctionBuilder(parent_function_).CreateFMul(load(), llvm_rh.load());
       break;
     default:
@@ -133,14 +133,14 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case INT8:
-    case INT16:
-    case INT32:
-    case INT64:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
       ans = getFunctionBuilder(parent_function_).CreateSub(load(), llvm_rh.load());
       break;
-    case FLOAT:
-    case DOUBLE:
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
       ans = getFunctionBuilder(parent_function_).CreateFSub(load(), llvm_rh.load());
       break;
     default:
@@ -158,14 +158,14 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case INT8:
-    case INT16:
-    case INT32:
-    case INT64:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
       ans = getFunctionBuilder(parent_function_).CreateAdd(load(), llvm_rh.load());
       break;
-    case FLOAT:
-    case DOUBLE:
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
       ans = getFunctionBuilder(parent_function_).CreateFAdd(load(), llvm_rh.load());
       break;
     default:
@@ -200,4 +200,4 @@ llvm::Value* LLVMJITValue::store(LLVMJITValue& rh) {
   return nullptr;
 }
 
-};  // namespace jitlib
+};  // namespace cider::jitlib

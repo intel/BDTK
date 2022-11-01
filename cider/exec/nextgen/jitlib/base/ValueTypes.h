@@ -25,9 +25,9 @@
 
 #include "util/Logger.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 enum class JITBackendTag { LLVMJIT };
-enum JITTypeTag {
+enum class JITTypeTag {
   INVALID,
   VOID,
   BOOL,
@@ -48,166 +48,165 @@ struct JITTypeTraits {
   static constexpr bool is_fixed_width = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = INVALID;
+  static constexpr JITTypeTag tag = JITTypeTag::INVALID;
   static constexpr const char* name = "INVALID";
 };
 
 template <>
-struct JITTypeTraits<VOID> {
+struct JITTypeTraits<JITTypeTag::VOID> {
   using NativeType = void;
   static constexpr bool isFixedWidth = false;
-  static constexpr JITTypeTag tag = VOID;
+  static constexpr JITTypeTag tag = JITTypeTag::VOID;
   static constexpr const char* name = "VOID";
 };
 
 template <>
-struct JITTypeTraits<BOOL> {
+struct JITTypeTraits<JITTypeTag::BOOL> {
   using NativeType = bool;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = BOOL;
+  static constexpr JITTypeTag tag = JITTypeTag::BOOL;
   static constexpr const char* name = "BOOL";
 };
 
 template <>
-struct JITTypeTraits<INT8> {
+struct JITTypeTraits<JITTypeTag::INT8> {
   using NativeType = int8_t;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = INT8;
+  static constexpr JITTypeTag tag = JITTypeTag::INT8;
   static constexpr const char* name = "INT8";
 };
 
 template <>
-struct JITTypeTraits<INT16> {
+struct JITTypeTraits<JITTypeTag::INT16> {
   using NativeType = int16_t;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = INT16;
+  static constexpr JITTypeTag tag = JITTypeTag::INT16;
   static constexpr const char* name = "INT16";
 };
 
 template <>
-struct JITTypeTraits<INT32> {
+struct JITTypeTraits<JITTypeTag::INT32> {
   using NativeType = int32_t;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = INT32;
+  static constexpr JITTypeTag tag = JITTypeTag::INT32;
   static constexpr const char* name = "INT32";
 };
 
 template <>
-struct JITTypeTraits<INT64> {
+struct JITTypeTraits<JITTypeTag::INT64> {
   using NativeType = int64_t;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = INT64;
+  static constexpr JITTypeTag tag = JITTypeTag::INT64;
   static constexpr const char* name = "INT64";
 };
 
 template <>
-struct JITTypeTraits<FLOAT> {
+struct JITTypeTraits<JITTypeTag::FLOAT> {
   using NativeType = float;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = FLOAT;
+  static constexpr JITTypeTag tag = JITTypeTag::FLOAT;
   static constexpr const char* name = "FLOAT";
 };
 
 template <>
-struct JITTypeTraits<DOUBLE> {
+struct JITTypeTraits<JITTypeTag::DOUBLE> {
   using NativeType = double;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = DOUBLE;
+  static constexpr JITTypeTag tag = JITTypeTag::DOUBLE;
   static constexpr const char* name = "DOUBLE";
 };
 
 template <>
-struct JITTypeTraits<POINTER> {
+struct JITTypeTraits<JITTypeTag::POINTER> {
   using NativeType = void*;
   static constexpr bool isFixedWidth = true;
   static constexpr uint64_t width = sizeof(NativeType);
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
-  static constexpr JITTypeTag tag = POINTER;
+  static constexpr JITTypeTag tag = JITTypeTag::POINTER;
   static constexpr const char* name = "POINTER";
 };
 
 template <>
-struct JITTypeTraits<TUPLE> {
+struct JITTypeTraits<JITTypeTag::TUPLE> {
   using NativeType = void;
   static constexpr bool isFixedWidth = false;
-  static constexpr JITTypeTag tag = TUPLE;
+  static constexpr JITTypeTag tag = JITTypeTag::TUPLE;
   static constexpr const char* name = "TUPLE";
 };
 
 template <>
-struct JITTypeTraits<STRUCT> {
+struct JITTypeTraits<JITTypeTag::STRUCT> {
   using NativeType = void;
   static constexpr bool isFixedWidth = false;
-  static constexpr JITTypeTag tag = STRUCT;
+  static constexpr JITTypeTag tag = JITTypeTag::STRUCT;
   static constexpr const char* name = "STRUCT";
 };
 
-inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
-  switch (type_tag) {
-    case BOOL:
-      return JITTypeTraits<BOOL>::width;
-    case INT8:
-      return JITTypeTraits<INT8>::width;
-    case INT16:
-      return JITTypeTraits<INT16>::width;
-    case INT32:
-      return JITTypeTraits<INT32>::width;
-    case INT64:
-      return JITTypeTraits<INT64>::width;
-    case FLOAT:
-      return JITTypeTraits<FLOAT>::width;
-    case DOUBLE:
-      return JITTypeTraits<DOUBLE>::width;
-    case POINTER:
-      return JITTypeTraits<POINTER>::width;
-    default:
-      LOG(FATAL) << "Invalid JITType in getJITTypeSize: " << type_tag;
-  }
-  return 0;
-}
-
 inline const char* getJITTypeName(JITTypeTag type_tag) {
   switch (type_tag) {
-    case BOOL:
-      return JITTypeTraits<BOOL>::name;
-    case INT8:
-      return JITTypeTraits<INT8>::name;
-    case INT16:
-      return JITTypeTraits<INT16>::name;
-    case INT32:
-      return JITTypeTraits<INT32>::name;
-    case INT64:
-      return JITTypeTraits<INT64>::name;
-    case FLOAT:
-      return JITTypeTraits<FLOAT>::name;
-    case DOUBLE:
-      return JITTypeTraits<DOUBLE>::name;
-    case POINTER:
-      return JITTypeTraits<POINTER>::name;
-    case TUPLE:
-      return JITTypeTraits<TUPLE>::name;
-    case STRUCT:
-      return JITTypeTraits<STRUCT>::name;
+    case JITTypeTag::BOOL:
+      return JITTypeTraits<JITTypeTag::BOOL>::name;
+    case JITTypeTag::INT8:
+      return JITTypeTraits<JITTypeTag::INT8>::name;
+    case JITTypeTag::INT16:
+      return JITTypeTraits<JITTypeTag::INT16>::name;
+    case JITTypeTag::INT32:
+      return JITTypeTraits<JITTypeTag::INT32>::name;
+    case JITTypeTag::INT64:
+      return JITTypeTraits<JITTypeTag::INT64>::name;
+    case JITTypeTag::FLOAT:
+      return JITTypeTraits<JITTypeTag::FLOAT>::name;
+    case JITTypeTag::DOUBLE:
+      return JITTypeTraits<JITTypeTag::DOUBLE>::name;
+    case JITTypeTag::POINTER:
+      return JITTypeTraits<JITTypeTag::POINTER>::name;
+    case JITTypeTag::TUPLE:
+      return JITTypeTraits<JITTypeTag::TUPLE>::name;
+    case JITTypeTag::STRUCT:
+      return JITTypeTraits<JITTypeTag::STRUCT>::name;
     default:
-      LOG(FATAL) << "Invalid JITType in getJITTypeName: " << type_tag;
+      LOG(FATAL) << "Invalid JITType in getJITTypeName";
   }
   return 0;
 }
 
-};  // namespace jitlib
+inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
+  switch (type_tag) {
+    case JITTypeTag::BOOL:
+      return JITTypeTraits<JITTypeTag::BOOL>::width;
+    case JITTypeTag::INT8:
+      return JITTypeTraits<JITTypeTag::INT8>::width;
+    case JITTypeTag::INT16:
+      return JITTypeTraits<JITTypeTag::INT16>::width;
+    case JITTypeTag::INT32:
+      return JITTypeTraits<JITTypeTag::INT32>::width;
+    case JITTypeTag::INT64:
+      return JITTypeTraits<JITTypeTag::INT64>::width;
+    case JITTypeTag::FLOAT:
+      return JITTypeTraits<JITTypeTag::FLOAT>::width;
+    case JITTypeTag::DOUBLE:
+      return JITTypeTraits<JITTypeTag::DOUBLE>::width;
+    case JITTypeTag::POINTER:
+      return JITTypeTraits<JITTypeTag::POINTER>::width;
+    default:
+      LOG(FATAL) << "Invalid JITType in getJITTypeSize: " << getJITTypeName(type_tag);
+  }
+  return 0;
+}
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_VALUETYPES_H

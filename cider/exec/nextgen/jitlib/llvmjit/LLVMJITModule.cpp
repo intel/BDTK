@@ -25,7 +25,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 
 LLVMJITModule::LLVMJITModule(const std::string& name)
     : context_(std::make_unique<llvm::LLVMContext>())
@@ -48,7 +48,7 @@ static llvm::FunctionType* getFunctionSignature(const JITFunctionDescriptor& des
       arguments.push_back(arg_type);
     } else {
       LOG(ERROR) << "Invalid argument type in getFunctionSignature: "
-                 << param_descriptor.type;
+                 << getJITTypeName(param_descriptor.type);
       return nullptr;
     }
   }
@@ -91,4 +91,4 @@ void* LLVMJITModule::getFunctionPtrImpl(LLVMJITFunction& function) {
   }
   return nullptr;
 }
-};  // namespace jitlib
+};  // namespace cider::jitlib

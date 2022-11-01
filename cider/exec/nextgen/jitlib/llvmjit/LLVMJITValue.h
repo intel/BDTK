@@ -26,7 +26,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 
 class LLVMJITValue final : public JITValue {
   friend LLVMJITFunction;
@@ -69,6 +69,6 @@ class LLVMJITValue final : public JITValue {
   llvm::Value* llvm_value_;
   bool is_variable_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITVALUE_H

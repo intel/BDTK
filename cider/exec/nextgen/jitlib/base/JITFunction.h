@@ -27,7 +27,7 @@
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 enum JITFunctionParamAttr : uint64_t {};
 
 struct JITFunctionParam {
@@ -91,6 +91,6 @@ class JITFunction {
 };
 
 using JITFunctionPointer = std::shared_ptr<JITFunction>;
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITFUNCTION_H

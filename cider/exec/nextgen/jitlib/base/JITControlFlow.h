@@ -23,6 +23,6 @@
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
 
-namespace jitlib {};  // namespace jitlib
+namespace cider::jitlib {};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITCONTROLFLOW_H

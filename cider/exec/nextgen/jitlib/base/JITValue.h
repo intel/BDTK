@@ -25,7 +25,7 @@
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 class JITValue;
 class JITFunction;
 
@@ -51,10 +51,10 @@ class JITValuePointer {
 
 class JITValue {
  public:
-  explicit JITValue(JITTypeTag type_tag,
-                    JITFunction& parent_function,
-                    const std::string& name,
-                    JITBackendTag backend)
+  JITValue(JITTypeTag type_tag,
+           JITFunction& parent_function,
+           const std::string& name,
+           JITBackendTag backend)
       : value_name_(name)
       , parent_function_(parent_function)
       , type_tag_(type_tag)
@@ -107,6 +107,6 @@ class JITValue {
   JITTypeTag type_tag_;
   JITBackendTag backend_tag_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUE_H
