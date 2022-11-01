@@ -574,11 +574,10 @@ CiderBatch DuckDbResultConvertor::fetchOneBatch(
       case ::duckdb::LogicalTypeId::FLOAT:
         addColumnDataToCiderBatch<float>(chunk, i, row_num, col_buf);
         break;
+      case ::duckdb::LogicalTypeId::DECIMAL:
       case ::duckdb::LogicalTypeId::DOUBLE:
         addColumnDataToCiderBatch<double>(chunk, i, row_num, col_buf);
         break;
-      case ::duckdb::LogicalTypeId::DECIMAL:
-        CIDER_THROW(CiderRuntimeException, "YOOOOOOOOOOOOOOOOOOOOOOOOOO");
       case ::duckdb::LogicalTypeId::DATE:
         addColumnDataToCiderBatch<CiderDateType>(chunk, i, row_num, col_buf);
         break;
