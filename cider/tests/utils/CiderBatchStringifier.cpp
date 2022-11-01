@@ -247,11 +247,11 @@ std::string VarcharBatchStringifier::stringifyValueAt(CiderBatch* batch, int row
   } else {
     auto start = offset_buffer[row_index];
     auto end = offset_buffer[row_index + 1];
-    auto len = offset_buffer[row_index + 1] - offset_buffer[row_index];
+    auto len = end - start;
     char str_buffer[len + 1];
 
     // copy char values and append \0
-    memcpy(&str_buffer, &data_buffer[start], len);
+    memcpy(&str_buffer, data_buffer + start, len);
     str_buffer[len] = '\0';
 
     return std::string(str_buffer);

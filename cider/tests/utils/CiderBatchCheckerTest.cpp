@@ -103,7 +103,6 @@ TEST(CiderBatchCheckerArrowTest, singleColumn) {
 }
 
 TEST(CiderBatchCheckerArrowTest, booleanTest) {
-  /// TODO: (YBRua) switch to ArrowArrayBuilder after relevent PR is merged
   auto batch_vec =
       std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
   auto batch_null =
@@ -427,6 +426,30 @@ TEST(CiderBatchCheckerArrowTest, UTF8CharTest) {
 
     EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch_nulls, actual_batch));
     EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch_nulls));
+  }
+
+  // empty string
+  {
+    auto vec_1 = std::vector<std::string>{"aabb", "", "ccdd", "", "eeff"};
+    auto vec_2 = std::vector<std::string>{"aabb", "", "ccdd", "blah", "eeff"};
+    auto nulls = std::vector<bool>{false, false, false, true, false};
+    auto [data_1, offsets_1] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_1);
+    auto [data_2, offset_2] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_2);
+
+    auto expected_batch_empty = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .setRowNum(5)
+            .addUTF8Column("col_str_n", data_1, offsets_1, nulls)
+            .build());
+
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .setRowNum(5)
+            .addUTF8Column("col_str_n", data_2, offset_2, nulls)
+            .build());
+
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch_empty, actual_batch));
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch_empty));
   }
 
   // data for more complex cases
