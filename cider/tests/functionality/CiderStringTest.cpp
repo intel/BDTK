@@ -255,16 +255,16 @@ class CiderStringTestArrow : public CiderTestBase {
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
 
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
-                                                  30,
-                                                  {"col_1", "col_2"},
-                                                  {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
-                                                  {0,0},
-                                                  GeneratePattern::Sequence,
-                                                  0,
-                                                  10);
-
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        30,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {0, 0},
+        GeneratePattern::Sequence,
+        0,
+        10);
   }
 };
 
@@ -272,19 +272,18 @@ class CiderStringNullableTestArrow : public CiderTestBase {
  public:
   CiderStringNullableTestArrow() {
     table_name_ = "test";
-    create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
+    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
 
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
-                                                  30,
-                                                  {"col_1", "col_2"},
-                                                  {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
-                                                  {2,2},
-                                                  GeneratePattern::Sequence,
-                                                  0,
-                                                  10);
-
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        30,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2},
+        GeneratePattern::Sequence,
+        0,
+        10);
   }
 };
 
@@ -297,8 +296,8 @@ TEST_F(CiderStringNullableTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
   assertQueryArrow("SELECT col_1 FROM test where col_2 <> '1111111111'");
   assertQueryArrow("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'");
-//  assertQueryArrow("SELECT col_2 FROM test where col_2 <> 'aaaaaaaaaaa'");
-//  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
+  //  assertQueryArrow("SELECT col_2 FROM test where col_2 <> 'aaaaaaaaaaa'");
+  //  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
   assertQueryArrow("SELECT col_2 FROM test where col_2 IS NOT NULL");
   //  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
 }
@@ -354,10 +353,10 @@ TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
   assertQueryArrow("SELECT col_1 FROM test where col_2 <> '1111111111'");
   assertQueryArrow("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'");
-//  assertQueryArrow("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");
-//  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
+  //  assertQueryArrow("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");
+  //  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
   assertQueryArrow("SELECT col_2 FROM test where col_2 IS NOT NULL");
-//  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
+  //  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
 }
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringLikeTest) {

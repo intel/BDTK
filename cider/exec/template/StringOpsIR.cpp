@@ -364,9 +364,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
       func_name, get_int_type(64, cgen_state_->context_), string_oper_lvs);
   llvm::Value* res_null = nullptr;
   if (str_values->getNull()) {
-    res_null = cgen_state_->emitExternalCall("cider_check_string_id_is_null",
-                                             get_int_type(1, cgen_state_->context_),
-                                             {id});
+    res_null = cgen_state_->emitExternalCall(
+        "cider_check_string_id_is_null", get_int_type(1, cgen_state_->context_), {id});
   }
   llvm::Value* res_str_ptr =
       cgen_state_->emitExternalCall("cider_hasher_decode_str_ptr",

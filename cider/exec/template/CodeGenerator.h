@@ -662,7 +662,8 @@ class CodeGenerator {
   std::unique_ptr<CodegenColValues> codegenLikeExpr(const Analyzer::LikeExpr*,
                                                     const CompilationOptions& co);
   std::unique_ptr<CodegenColValues> codegenStringOpExpr(const Analyzer::StringOper*,
-                                                    const CompilationOptions& co);
+                                                        const CompilationOptions& co);
+
  protected:
   Executor* executor() const {
     if (!executor_) {

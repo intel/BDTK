@@ -286,7 +286,7 @@ class CiderAggHashTable {
   const std::vector<size_t>& getTargetIndexMap() const { return target_index_map_; }
   CiderHasher& getHasher() { return hasher_; }
   const CiderHasher& getHasher() const { return hasher_; }
-  CiderStringHasher& getStringHasher() {return stringHasher_;}
+  CiderStringHasher& getStringHasher() { return stringHasher_; }
   const CiderStringHasher& getStringHasher() const { return stringHasher_; }
 
   CiderAggHashTableRowIteratorPtr getRowIterator(size_t buffer_index);
