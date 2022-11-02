@@ -59,6 +59,7 @@ class CiderBatch {
   size_t getBufferNum() const;
   size_t getChildrenNum() const;
   SQLTypes getCiderType() const;
+  const char* getArrowFormatString() const;
 
   bool isRootOwner() const { return ownership_; }
 

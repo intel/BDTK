@@ -26,7 +26,8 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderTestBase.cpp
     CiderBatchChecker.cpp
     CiderBenchmarkRunner.cpp
-    CiderRunner.cpp)
+    CiderRunner.cpp
+    CiderInt128.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
 target_link_libraries(test_utils cider_plan_parser)
@@ -51,6 +52,10 @@ add_executable(ArrowArrayBuilderTest ArrowArrayBuilderTest.cpp)
 target_link_libraries(ArrowArrayBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(ArrowArrayBuilderTest ${EXECUTABLE_OUTPUT_PATH}/ArrowArrayBuilderTest
          ${TEST_ARGS})
+
+add_executable(CiderInt128Test CiderInt128Test.cpp)
+target_link_libraries(CiderInt128Test ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderInt128Test ${EXECUTABLE_OUTPUT_PATH}/CiderInt128Test ${TEST_ARGS})
 
 add_executable(CiderBatchBuilderTest CiderBatchBuilderTest.cpp)
 target_link_libraries(CiderBatchBuilderTest ${EXECUTE_TEST_UTILS_LIBS})

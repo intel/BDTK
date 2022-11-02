@@ -25,7 +25,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 class LLVMJITModule final : public JITModule {
  public:
   friend LLVMJITEngineBuilder;
@@ -47,6 +47,6 @@ class LLVMJITModule final : public JITModule {
   std::unique_ptr<llvm::Module> module_;
   std::unique_ptr<LLVMJITEngine> engine_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITMODULE_H

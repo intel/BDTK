@@ -143,7 +143,9 @@ void DuckDbArrowSchemaAdaptor::SetArrowFormat(DuckDBArrowSchemaHolder& root_hold
     case ::duckdb::LogicalTypeId::DECIMAL: {
       uint8_t width, scale;
       type.GetDecimalProperties(width, scale);
-      std::string format = "d:" + to_string(width) + "," + to_string(scale);
+      // std::to_string(uint8_t) may result in converting ints to ASCII chars
+      // instead of string of ints (e.g. 97 -> 'a' instead of "97")
+      std::string format = "d:" + to_string(int(width)) + "," + to_string(int(scale));
       std::unique_ptr<char[]> format_ptr =
           std::unique_ptr<char[]>(new char[format.size() + 1]);
       for (size_t i = 0; i < format.size(); i++) {

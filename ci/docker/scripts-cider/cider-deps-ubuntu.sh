@@ -92,7 +92,8 @@ DEBIAN_FRONTEND=noninteractive sudo apt install -y \
     python-dev \
     python-yaml \
     swig \
-    pkg-config
+    pkg-config \
+    libtool
 
 # Needed to find sqlite3, xmltooling, and xml_security_c
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig:$PREFIX/lib64/pkgconfig:$PKG_CONFIG_PATH
@@ -111,6 +112,7 @@ VERS=0.16.0
 wget --continue -O thrift-$VERS.tar.gz https://github.com/apache/thrift/archive/refs/tags/v$VERS.tar.gz
 tar xvf thrift-$VERS.tar.gz
 pushd thrift-$VERS
+./bootstrap.sh
 CFLAGS="-fPIC" CXXFLAGS="-fPIC" JAVA_PREFIX=$PREFIX/lib ./configure \
     --with-lua=no \
     --with-python=no \

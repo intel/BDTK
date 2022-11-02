@@ -116,6 +116,8 @@ class QueryArrowDataGenerator {
         case ::substrait::Type::KindCase::kFp64:
           GENERATE_AND_ADD_COLUMN(double)
         case ::substrait::Type::KindCase::kString:
+        case ::substrait::Type::KindCase::kVarchar:
+        case ::substrait::Type::KindCase::kFixedChar:
           GENERATE_AND_ADD_UTF8_COLUMN()
         default:
           CIDER_THROW(CiderCompileException, "Type not supported.");

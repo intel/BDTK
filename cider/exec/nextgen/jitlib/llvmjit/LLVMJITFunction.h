@@ -28,7 +28,7 @@
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 class LLVMJITModule;
 
 class LLVMJITFunction final : public JITFunction {
@@ -42,6 +42,8 @@ class LLVMJITFunction final : public JITFunction {
   JITValuePointer createVariable(const std::string& name, JITTypeTag type_tag) override;
 
   JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
+
+  JITValuePointer getArgument(size_t index) override;
 
   void createReturn() override;
 
@@ -63,6 +65,6 @@ class LLVMJITFunction final : public JITFunction {
   llvm::Function& func_;
   mutable std::unique_ptr<llvm::IRBuilder<>> ir_builder_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif
