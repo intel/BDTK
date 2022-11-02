@@ -23,7 +23,7 @@
 
 namespace facebook::velox::plugin::plantransformer {
 
-PlanTransformer::PlanTransformer(PatternRewriterList& rewriterList,
+PlanTransformer::PlanTransformer(const PatternRewriterList& rewriterList,
                                  VeloxPlanNodePtr root) {
   rewriterList_ = rewriterList;
   root_ = root;
@@ -50,7 +50,7 @@ void PlanTransformer::matchFromSrcToTarget() {
 
 void PlanTransformer::updateMatchResultForBranch(
     int32_t branchId,
-    VeloxNodeAddrPlanSection& matchResult,
+    const VeloxNodeAddrPlanSection& matchResult,
     std::shared_ptr<PatternRewriter> rewriterPtr) {
   // update branchIdMatchResultMap_
   std::shared_ptr<MatchResultRewriterList> branchMatchResult;
@@ -193,45 +193,44 @@ bool PlanTransformer::foundBranchMatchResults(int32_t branchId) const {
 }
 
 void PlanTransformer::rewriteBranch(int32_t branchId) {
-    VeloxPlanBranch curBranch = orgBranches_->getBranch(branchId);
-    int32_t branchSize = curBranch.size();
-    std::shared_ptr<MatchResultRewriterList> branchMatchResults =
-        branchIdMatchResultMap_[branchId];
-    if (!branchMatchResults) {
-      return;
-    }
-    size_t matchResultsCount = branchMatchResults->size();
-    for (int idx = 0; idx < matchResultsCount; idx++) {
-      std::shared_ptr<PlanSectionRewriterPair> curPair = branchMatchResults->at(idx);
-      std::shared_ptr<VeloxNodeAddrPlanSection> curMatchResult = curPair->planSection;
-      if (curMatchResult->crossBranch()) {
-        // do not process the cross branch match result if its target not
-        // belongs to this branch.
-        if (branchId != curMatchResult->target.branchId) {
-          break;
-        }
+  VeloxPlanBranch curBranch = orgBranches_->getBranch(branchId);
+  int32_t branchSize = curBranch.size();
+  std::shared_ptr<MatchResultRewriterList> branchMatchResults =
+      branchIdMatchResultMap_[branchId];
+  if (!branchMatchResults) {
+    return;
+  }
+  size_t matchResultsCount = branchMatchResults->size();
+  for (int idx = 0; idx < matchResultsCount; idx++) {
+    std::shared_ptr<PlanSectionRewriterPair> curPair = branchMatchResults->at(idx);
+    std::shared_ptr<VeloxNodeAddrPlanSection> curMatchResult = curPair->planSection;
+    if (curMatchResult->crossBranch()) {
+      // do not process the cross branch match result if its target not
+      // belongs to this branch.
+      if (branchId != curMatchResult->target.branchId) {
+        break;
       }
-      VeloxPlanNodeAddr matchResultTarget =
-          orgBranches_->moveToTarget(curMatchResult->target);
-      VeloxPlanNodePtr matchResultPtr = rewriteMatchResult(*curPair);
-      if (!VeloxPlanNodeAddr::invalid().equal(matchResultTarget)) {
-        int32_t matchResultTargetBranchId = matchResultTarget.branchId;
-        if (matchResultTargetBranchId == branchId) {
-          PlanUtil::changeNodeSource(matchResultTarget.nodePtr, matchResultPtr);
-        } else {  // matchResult target node is a Join
-          if (branchId == orgBranches_->getLeftSrcBranchId(matchResultTargetBranchId)) {
-            PlanUtil::changeJoinNodeLeftSource(matchResultTarget.nodePtr, matchResultPtr);
-          } else {
-            PlanUtil::changeJoinNodeRightSource(matchResultTarget.nodePtr,
-                                                matchResultPtr);
-          }
+    }
+    VeloxPlanNodeAddr matchResultTarget =
+        orgBranches_->moveToTarget(curMatchResult->target);
+    VeloxPlanNodePtr matchResultPtr = rewriteMatchResult(*curPair);
+    if (!VeloxPlanNodeAddr::invalid().equal(matchResultTarget)) {
+      int32_t matchResultTargetBranchId = matchResultTarget.branchId;
+      if (matchResultTargetBranchId == branchId) {
+        PlanUtil::changeNodeSource(matchResultTarget.nodePtr, matchResultPtr);
+      } else {  // matchResult target node is a Join
+        if (branchId == orgBranches_->getLeftSrcBranchId(matchResultTargetBranchId)) {
+          PlanUtil::changeJoinNodeLeftSource(matchResultTarget.nodePtr, matchResultPtr);
+        } else {
+          PlanUtil::changeJoinNodeRightSource(matchResultTarget.nodePtr, matchResultPtr);
         }
       }
     }
+  }
 }
 
 VeloxPlanNodePtr PlanTransformer::rewriteMatchResult(
-    PlanSectionRewriterPair& resultPair) {
+    const PlanSectionRewriterPair& resultPair) {
   std::shared_ptr<VeloxNodeAddrPlanSection> planSectionPtr = resultPair.planSection;
   std::shared_ptr<PatternRewriter> rewriterPtr = resultPair.rewriter;
   VeloxPlanNodeAddrList sourceNodeList = orgBranches_->getAllSourcesOf(*planSectionPtr);

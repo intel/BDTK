@@ -94,8 +94,7 @@ inline TypePtr getVeloxType(const ::substrait::Type& typeName) {
       names.reserve(typeSize);
       for (int idx = 0; idx < typeSize; idx++) {
         names.emplace_back("col_" + std::to_string(idx));
-        rowTypes.emplace_back(std::move(
-            getVeloxType(const_cast<::substrait::Type&>(typeName.struct_().types(idx)))));
+        rowTypes.emplace_back(getVeloxType(typeName.struct_().types(idx)));
       }
       return ROW(std::move(names), std::move(rowTypes));
     }

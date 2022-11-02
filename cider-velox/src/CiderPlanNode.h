@@ -35,17 +35,14 @@ class CiderPlanNode : public core::PlanNode {
                          const core::PlanNodePtr& source,
                          const RowTypePtr& outputType,
                          const ::substrait::Plan& plan)
-      : core::PlanNode(id), sources_({source}), outputType_(outputType), plan_(plan) {}
+      : core::PlanNode(id), sources_({source}), plan_(plan), outputType_(outputType) {}
 
   explicit CiderPlanNode(const core::PlanNodeId& id,
                          const core::PlanNodePtr& left,
                          const core::PlanNodePtr& right,
                          const RowTypePtr& outputType,
-                         ::substrait::Plan plan)
-      : PlanNode(id)
-      , sources_({std::move(left), std::move(right)})
-      , outputType_(outputType)
-      , plan_(plan) {}
+                         const ::substrait::Plan& plan)
+      : PlanNode(id), sources_({left, right}), plan_(plan), outputType_(outputType) {}
 
   const RowTypePtr& outputType() const override;
 

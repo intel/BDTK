@@ -27,12 +27,11 @@
 
 namespace facebook::velox::plugin::plantransformer {
 std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddr& source) {
-  std::shared_ptr<VeloxPlanFragmentToSubstraitPlan> v2SPlanFragmentConvertor_ =
-      std::make_shared<VeloxPlanFragmentToSubstraitPlan>();
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddr& source) {
+  auto v2SPlanFragmentConvertor_ = std::make_shared<VeloxPlanFragmentToSubstraitPlan>();
 
-  std::shared_ptr<::substrait::Plan> sPlan =
+  auto sPlan =
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           planSection.target.nodePtr, planSection.source.nodePtr));
   return std::make_shared<CiderPlanNode>(planSection.target.nodePtr->id(),
@@ -42,12 +41,11 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
 }
 
 std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddrList& srcList) {
-  std::shared_ptr<VeloxPlanFragmentToSubstraitPlan> v2SPlanFragmentConvertor_ =
-      std::make_shared<VeloxPlanFragmentToSubstraitPlan>();
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& srcList) {
+  auto v2SPlanFragmentConvertor_ = std::make_shared<VeloxPlanFragmentToSubstraitPlan>();
 
-  std::shared_ptr<::substrait::Plan> sPlan =
+  auto sPlan =
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           planSection.target.nodePtr, planSection.source.nodePtr));
 
@@ -55,15 +53,15 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
   int32_t leftSrcBranchId = PlanBranches::getLeftSrcBranchId(srcBranchId);
   int32_t rightSrcBranchId = PlanBranches::getRightSrcBranchId(srcBranchId);
   NodeAddrMapPtr newSrcMap = PlanUtil::toNodeAddrMap(srcList);
-  std::pair<bool, VeloxPlanNodePtr> newLeftSrc =
+  const auto& [leftFound, leftSource] =
       PlanUtil::findInNodeAddrMap(newSrcMap, leftSrcBranchId, 0);
-  std::pair<bool, VeloxPlanNodePtr> newRightSrc =
+  const auto& [rightFound, rightSource] =
       PlanUtil::findInNodeAddrMap(newSrcMap, rightSrcBranchId, 0);
-  if (newLeftSrc.first && newRightSrc.first) {
+  if (leftFound && rightFound) {
     std::shared_ptr<CiderPlanNode> ciderPlanNode =
         std::make_shared<CiderPlanNode>(planSection.target.nodePtr->id(),
-                                        newLeftSrc.second,
-                                        newRightSrc.second,
+                                        leftSource,
+                                        rightSource,
                                         planSection.target.nodePtr->outputType(),
                                         *sPlan);
     return ciderPlanNode;
