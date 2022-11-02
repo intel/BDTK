@@ -26,6 +26,8 @@
 #include <vector>
 
 #include "DataConvertor.h"
+#include "velox/type/IntervalDayTime.h"
+#include "velox/type/Type.h"
 #include "velox/vector/VectorStream.h"
 #include "velox/vector/tests/VectorMaker.h"
 
@@ -122,6 +124,26 @@ void testToCiderDirect<Timestamp>(RowVectorPtr rowVector,
       EXPECT_EQ(plugin::inline_int_null_value<int64_t>(), col_0[idx]);
     } else {
       EXPECT_EQ(data[idx].value().toMicros(), col_0[idx]);
+    }
+  }
+}
+
+template <>
+void testToCiderDirect<Date>(RowVectorPtr rowVector,
+                             const std::vector<std::optional<Date>>& data,
+                             int numRows,
+                             memory::MemoryPool* pool) {
+  static const int64_t SecondsInOneDay = 24 * 60 * 60;
+  std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
+  CiderBatch cb = convertor->convertToCider(rowVector, numRows, nullptr, pool);
+  EXPECT_EQ(numRows, cb.row_num());
+
+  auto col_0 = reinterpret_cast<const int64_t*>(cb.column(0));
+  for (auto idx = 0; idx < numRows; idx++) {
+    if (data[idx] == std::nullopt) {
+      EXPECT_EQ(plugin::inline_int_null_value<int64_t>(), col_0[idx]);
+    } else {
+      EXPECT_EQ(data[idx]->days() * SecondsInOneDay, col_0[idx]);
     }
   }
 }
@@ -287,6 +309,39 @@ TEST_F(DataConvertorTest, directToCiderTimestampOneCol) {
   auto col = makeNullableFlatVector<Timestamp>(data);
   auto rowVector = makeRowVector({col});
   testToCiderDirect<Timestamp>(rowVector, data, numRows, pool_.get());
+}
+
+TEST_F(DataConvertorTest, directToCiderDateOneCol) {
+  std::vector<std::optional<Date>> data = {
+      Date(1),
+      Date(2),
+      Date(3),
+      std::nullopt,
+      Date(5),
+      Date(6),
+      std::nullopt,
+      Date(8),
+      Date(9),
+      Date(10),
+  };
+  auto col_flat = makeNullableFlatVector<Date>(data);
+  auto rowVector_flat = makeRowVector({col_flat});
+  testToCiderDirect<Date>(rowVector_flat, data, data.size(), pool_.get());
+
+  auto col_dict = makeDictionaryVector<Date>(data);
+  auto rowVector_dict = makeRowVector({col_dict});
+  testToCiderDirect<Date>(rowVector_dict, data, data.size(), pool_.get());
+
+  std::vector<std::optional<Date>> data_constant = {Date(1), Date(1), Date(1)};
+  auto col_constant = makeConstantVector<Date>(data_constant);
+  auto rowVector_constant = makeRowVector({col_constant});
+  testToCiderDirect<Date>(
+      rowVector_constant, data_constant, data_constant.size(), pool_.get());
+
+  std::vector<std::optional<Date>> data_null = {std::nullopt, std::nullopt, std::nullopt};
+  auto col_null = makeConstantVector<Date>(data_null);
+  auto rowVector_null = makeRowVector({col_null});
+  testToCiderDirect<Date>(rowVector_null, data_null, data_null.size(), pool_.get());
 }
 
 template <typename T>
@@ -461,6 +516,34 @@ void testToVeloxDirect<Timestamp>(CiderBatch& input,
     } else {
       EXPECT_EQ(childVal_0->valueAt(idx),
                 Timestamp(col_0[idx] / 1000000, (col_0[idx] % 1000000) * 1000));
+    }
+  }
+}
+
+template <>
+void testToVeloxDirect<Date>(CiderBatch& input,
+                             const CiderTableSchema& schema,
+                             memory::MemoryPool* pool) {
+  static const int64_t SecondsInOneDay = 24 * 60 * 60;
+  std::shared_ptr<DataConvertor> convertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
+  RowVectorPtr rvp = convertor->convertToRowVector(input, schema, pool);
+
+  RowVector* row = rvp.get();
+  auto* rowVector = row->as<RowVector>();
+  EXPECT_EQ(1, rowVector->childrenSize());
+  VectorPtr& child_0 = rowVector->childAt(0);
+  EXPECT_TRUE(child_0->mayHaveNulls());
+
+  auto childVal_0 = child_0->asFlatVector<Date>();
+  auto nulls_0 = child_0->rawNulls();
+  const int64_t* col_0 = reinterpret_cast<const int64_t*>(input.column(0));
+  int num_rows = input.row_num();
+
+  for (auto idx = 0; idx < num_rows; idx++) {
+    if (col_0[idx] == plugin::inline_int_null_value<int64_t>()) {
+      EXPECT_TRUE(bits::isBitNull(nulls_0, idx));
+    } else {
+      EXPECT_EQ(childVal_0->valueAt(idx), Date(col_0[idx] / SecondsInOneDay));
     }
   }
 }
@@ -714,6 +797,37 @@ TEST_F(DataConvertorTest, directToVeloxTimestampOneCol) {
   col_types.push_back(col_type);
   CiderTableSchema schema(col_names, col_types);
   testToVeloxDirect<Timestamp>(input, schema, pool_.get());
+  std::free(col_0);
+}
+
+TEST_F(DataConvertorTest, directToVeloxDateOneCol) {
+  std::vector<const int8_t*> col_buffer;
+  int64_t* col_0 = reinterpret_cast<int64_t*>(pool_->allocate(sizeof(int64_t) * 10));
+  int num_rows = 10;
+  for (int i = 0; i < num_rows; i++) {
+    col_0[i] = i * 86400;
+  }
+  for (int i = 3; i < num_rows; i += 4) {
+    col_0[i] = plugin::inline_int_null_value<int64_t>();
+  }
+  col_buffer.push_back(reinterpret_cast<const int8_t*>(col_0));
+  CiderBatch input(num_rows, col_buffer);
+
+  std::vector<std::string> col_names = {"col_0"};
+  std::vector<::substrait::Type> col_types;
+  ::substrait::Type col_type;
+  std::string type_json = R"(
+    {
+      "date": {
+        "typeVariationReference": 0,
+        "nullability": "NULLABILITY_REQUIRED"
+      }
+    }
+    )";
+  google::protobuf::util::JsonStringToMessage(type_json, &col_type);
+  col_types.push_back(col_type);
+  CiderTableSchema schema(col_names, col_types);
+  testToVeloxDirect<Date>(input, schema, pool_.get());
   std::free(col_0);
 }
 

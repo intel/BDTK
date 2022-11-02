@@ -30,19 +30,19 @@
 
 TEST(CiderBatchCheckerArrowTest, colNumCheck) {
   auto data = std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  auto expected = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data)
           .build());
-  auto actual_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data)
           .build());
-  auto actual_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data)
@@ -58,12 +58,12 @@ TEST(CiderBatchCheckerArrowTest, rowNumCheck) {
   auto data_1 = std::vector<int>{0, 1, 2, 3, 4};
   auto data_2 = std::vector<int>{0, 1, 2, 3, 4, 5};
 
-  auto expected = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data_1)
           .build());
-  auto actual = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(6)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), data_2)
@@ -79,12 +79,12 @@ TEST(CiderBatchCheckerArrowTest, rowNumCheck) {
     auto nulls = std::vector<bool>{                                                    \
         false, true, false, true, false, true, false, true, false, true};              \
                                                                                        \
-    auto expected##C_TYPE = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(       \
+    auto expected##C_TYPE = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(       \
         ArrowArrayBuilder()                                                            \
             .setRowNum(10)                                                             \
             .addColumn<C_TYPE>("", CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE), data, nulls) \
             .build());                                                                 \
-    auto actual##C_TYPE = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(         \
+    auto actual##C_TYPE = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(         \
         ArrowArrayBuilder()                                                            \
             .setRowNum(10)                                                             \
             .addColumn<C_TYPE>("", CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE), data, nulls) \
@@ -102,15 +102,55 @@ TEST(CiderBatchCheckerArrowTest, singleColumn) {
   TEST_SINGLE_COLUMN_ARROW(double, Fp64);
 }
 
+TEST(CiderBatchCheckerArrowTest, booleanTest) {
+  auto batch_vec =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+  auto batch_null =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  // ignore order
+  auto batch_vec_2 =
+      std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
+  auto batch_null_2 =
+      std::vector<bool>{true, false, true, false, true, false, true, false, true, false};
+
+  auto batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto eq_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec, batch_null)
+          .addBoolColumn<bool>("", batch_vec)
+          .build());
+  auto neq_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", std::vector<bool>(10, true), batch_null)
+          .addBoolColumn<bool>("", std::vector<bool>(10, true))
+          .build());
+
+  auto ignore_order_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addBoolColumn<bool>("", batch_vec_2, batch_null_2)
+          .addBoolColumn("", batch_vec_2)
+          .build());
+
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, eq_batch));
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, neq_batch));
+
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(batch, ignore_order_batch));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(batch, ignore_order_batch, true));
+}
+
 TEST(CiderBatchCheckerArrowTest, rowValue) {
   std::vector<int> vec1{1, 2, 3, 4, 5};
-  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int>("int", CREATE_SUBSTRAIT_TYPE(I32), vec1)
           .build());
 
   std::vector<int> vec2{0, 2, 3, 4, 5};
-  auto actual_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int>("int", CREATE_SUBSTRAIT_TYPE(I32), vec2)
           .build());
@@ -123,12 +163,12 @@ TEST(CiderBatchCheckerArrowTest, integerTypeCheck) {
   std::vector<int> vec1{1, 2, 3, 4, 5};
   std::vector<int64_t> vec2{1, 2, 3, 4, 5};
 
-  auto expected_batch1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int>("int", CREATE_SUBSTRAIT_TYPE(I32), vec1)
           .build());
 
-  auto actual_batch1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_batch1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int64_t>("long", CREATE_SUBSTRAIT_TYPE(I64), vec2)
           .build());
@@ -136,13 +176,13 @@ TEST(CiderBatchCheckerArrowTest, integerTypeCheck) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch1, actual_batch1));
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch1, expected_batch1));
 
-  auto expected_batch2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int>("int", CREATE_SUBSTRAIT_TYPE(I32), vec1)
           .addColumn<int>("int", CREATE_SUBSTRAIT_TYPE(I32), vec1)
           .build());
 
-  auto actual_batch2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_batch2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<int>("int", CREATE_SUBSTRAIT_TYPE(I32), vec1)
           .addColumn<int64_t>("long", CREATE_SUBSTRAIT_TYPE(I64), vec2)
@@ -156,12 +196,12 @@ TEST(CiderBatchCheckerArrowTest, floatTypeCheck) {
   std::vector<double> vec1{1, 2, 3, 4, 5};
   std::vector<float> vec2{1, 2, 3, 4, 5};
 
-  auto expected_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<double>("double", CREATE_SUBSTRAIT_TYPE(Fp64), vec1)
           .build());
 
-  auto actual_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .addColumn<float>("float", CREATE_SUBSTRAIT_TYPE(Fp32), vec2)
           .build());
@@ -178,13 +218,13 @@ TEST(CiderBatchCheckerArrowTest, nullTest) {
   auto no_null = std::vector<bool>(5, false);
 
   // no nulls
-  auto expected_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int32_t>("", CREATE_SUBSTRAIT_TYPE(I32), data_int32, no_null)
           .addColumn<float>("", CREATE_SUBSTRAIT_TYPE(Fp32), data_fp32, no_null)
           .build());
-  auto actual_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int32_t>("", CREATE_SUBSTRAIT_TYPE(I32), data_int32, no_null)
@@ -194,13 +234,13 @@ TEST(CiderBatchCheckerArrowTest, nullTest) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_1, expected_1));
 
   // all nulls
-  auto expected_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int32_t>("", CREATE_SUBSTRAIT_TYPE(I32), data_int32, all_null)
           .addColumn<float>("", CREATE_SUBSTRAIT_TYPE(Fp32), data_fp32, all_null)
           .build());
-  auto actual_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int32_t>("", CREATE_SUBSTRAIT_TYPE(I32), data_int32, all_null)
@@ -219,12 +259,12 @@ TEST(CiderBatchCheckerArrowTest, ignoreOrder) {
       std::vector<bool>{true, true, true, true, true, false, false, false, false, false};
 
   // different order, without nulls
-  auto expected_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_1)
           .build());
-  auto actual_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_2)
@@ -235,12 +275,12 @@ TEST(CiderBatchCheckerArrowTest, ignoreOrder) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_1, expected_1, true));
 
   // different order, with nulls
-  auto expected_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto expected_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_1, nulls_1)
           .build());
-  auto actual_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto actual_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_2, nulls_2)
@@ -261,7 +301,7 @@ TEST(CiderBatchCheckerArrowTest, multiBatches) {
   auto nulls =
       std::vector<bool>{true, true, false, false, false, false, false, false, true, true};
 
-  auto one_batch = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto one_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(10)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec, nulls)
@@ -271,22 +311,22 @@ TEST(CiderBatchCheckerArrowTest, multiBatches) {
   std::vector<std::shared_ptr<CiderBatch>> many_batches_1;
   // different order
   std::vector<std::shared_ptr<CiderBatch>> many_batches_2;
-  auto manys_1 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto manys_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_1, nulls_1)
           .build());
-  auto manys_2 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto manys_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_2, nulls_2)
           .build());
-  auto manys_3 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto manys_3 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_1, nulls_1)
           .build());
-  auto manys_4 = ArrowToCiderBatch::createCiderBatchFromArrowBuilder(
+  auto manys_4 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("", CREATE_SUBSTRAIT_TYPE(I32), vec_2, nulls_2)
@@ -313,9 +353,170 @@ TEST(CiderBatchCheckerArrowTest, multiBatches) {
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(many_batches_1, many_batches_2, true));
 }
 
-/// TODO: (YBRua) tests to be added
-/// 1. VarChar tests
-/// 2. date / time tests
+TEST(CiderBatchCheckerArrowTest, UTF8CharTest) {
+  // common resource
+  auto vec = std::vector<std::string>{"aaaaa", "bbbbb", "aaaaabbbbb"};
+  auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+  auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder().setRowNum(3).addUTF8Column("col_str", data, offsets).build());
+
+  // one to one ordered
+  {
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder().setRowNum(3).addUTF8Column("col_str", data, offsets).build());
+
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batch));
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch));
+  }
+
+  // one to one non-ordered
+  {
+    auto vec = std::vector<std::string>{"aaaaabbbbb", "bbbbb", "aaaaa"};
+    auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder().setRowNum(3).addUTF8Column("col_str", data, offsets).build());
+
+    EXPECT_FALSE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batch));
+    EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch));
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batch, true));
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch, true));
+  }
+
+  // not equal
+  {
+    auto vec = std::vector<std::string>{"ababa", "babab", "aaaababbbb"};
+    auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder().setRowNum(3).addUTF8Column("col_str", data, offsets).build());
+
+    EXPECT_FALSE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batch));
+    EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch));
+  }
+
+  // bad offset
+  {
+    auto vec = std::vector<std::string>{"aaaaab", "bbbb", "aaaaabbbbb"};
+    auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder().setRowNum(3).addUTF8Column("col_str", data, offsets).build());
+
+    EXPECT_FALSE(CiderBatchChecker::checkArrowEq(expected_batch, actual_batch));
+    EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch));
+  }
+
+  // null value
+  {
+    auto vec = std::vector<std::string>{"aaaaa", "bbbbb", "aaaaabbbbb", "ccccc"};
+    auto nulls = std::vector<bool>{false, false, false, true};
+    auto [data, offsets] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+
+    auto expected_batch_nulls = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .setRowNum(4)
+            .addUTF8Column("col_str", data, offsets, nulls)
+            .build());
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .setRowNum(4)
+            .addUTF8Column("col_str", data, offsets, nulls)
+            .build());
+
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch_nulls, actual_batch));
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch_nulls));
+  }
+
+  // empty string
+  {
+    auto vec_1 = std::vector<std::string>{"aabb", "", "ccdd", "", "eeff"};
+    auto vec_2 = std::vector<std::string>{"aabb", "", "ccdd", "blah", "eeff"};
+    auto nulls = std::vector<bool>{false, false, false, true, false};
+    auto [data_1, offsets_1] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_1);
+    auto [data_2, offset_2] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_2);
+
+    auto expected_batch_empty = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .setRowNum(5)
+            .addUTF8Column("col_str_n", data_1, offsets_1, nulls)
+            .build());
+
+    auto actual_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .setRowNum(5)
+            .addUTF8Column("col_str_n", data_2, offset_2, nulls)
+            .build());
+
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch_empty, actual_batch));
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_batch, expected_batch_empty));
+  }
+
+  // data for more complex cases
+  auto vec_batch_1 = std::vector<std::string>{"bbbbb", "aaaaa"};
+  auto vec_batch_2 = std::vector<std::string>{"aaaaabbbbb"};
+  std::vector<std::shared_ptr<CiderBatch>> actual_vecs_1;
+
+  auto [data_1, offsets_1] =
+      ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_batch_1);
+  auto [data_2, offsets_2] =
+      ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_batch_2);
+
+  auto actual_batch_1 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(2)
+          .addUTF8Column("col_str", data_1, offsets_1)
+          .build());
+  auto actual_batch_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(1)
+          .addUTF8Column("col_str", data_2, offsets_2)
+          .build());
+
+  actual_vecs_1.emplace_back(actual_batch_1);
+  actual_vecs_1.emplace_back(actual_batch_2);
+
+  auto vec_batch_3 = std::vector<std::string>{"bbbbb", "aaaaabbbbb"};
+  auto vec_batch_4 = std::vector<std::string>{"aaaaa"};
+  std::vector<std::shared_ptr<CiderBatch>> actual_vecs_2;
+
+  auto [data_3, offsets_3] =
+      ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_batch_3);
+  auto [data_4, offsets_4] =
+      ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec_batch_4);
+
+  auto actual_batch_3 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(2)
+          .addUTF8Column("col_str", data_3, offsets_3)
+          .build());
+  auto actual_batch_4 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .setRowNum(1)
+          .addUTF8Column("col_str", data_4, offsets_4)
+          .build());
+
+  actual_vecs_2.emplace_back(actual_batch_3);
+  actual_vecs_2.emplace_back(actual_batch_4);
+
+  // one to many non-ordered
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(expected_batch, actual_vecs_1));
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(expected_batch, actual_vecs_2));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_vecs_1, true));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, actual_vecs_2, true));
+
+  // many to one non-ordered
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_vecs_1, expected_batch));
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_vecs_2, expected_batch));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_vecs_1, expected_batch, true));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_vecs_2, expected_batch, true));
+
+  // many to many non-ordered
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_vecs_1, actual_vecs_2));
+  EXPECT_FALSE(CiderBatchChecker::checkArrowEq(actual_vecs_2, actual_vecs_1));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_vecs_1, actual_vecs_2, true));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(actual_vecs_2, actual_vecs_1, true));
+}
 
 // Old CiderBatch tests below
 

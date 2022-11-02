@@ -21,6 +21,6 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 #define JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 
-namespace jitlib {};  // namespace jitlib
+namespace cider::jitlib {};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H

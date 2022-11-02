@@ -69,6 +69,14 @@ class ProjectIDCodeGenerator : public SimpleAggregateCodeGenerator {
                                                       CgenState* cgen_state);
 };
 
+class ProjectIDStringCodeGenerator : public ProjectIDCodeGenerator {
+ public:
+  void codegen(CodegenColValues* input,
+               llvm::Value* output_buffer,
+               llvm::Value* index,
+               llvm::Value* output_null_buffer = nullptr) const override;
+};
+
 // Aggregate code generator for COUNT(*), COUNT(col), DISTINCT COUNT(col).
 class CountAggregateCodeGenerator : public AggregateCodeGenerator {
  public:

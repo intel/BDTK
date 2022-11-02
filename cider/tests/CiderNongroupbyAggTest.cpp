@@ -188,6 +188,7 @@ void testScalarTypeSingleKey(MockTable* table,
 }
 
 TEST_F(CiderNongroupbyAggArrowFormatTest, SingleKeyScalarTypeTest) {
+  GTEST_SKIP_("FIXME(haiwei): [POAE7-2511] Update verify test case of Non Groupby Agg");
   AggResult tinyint_agg_result_not_null = {.count_one = 5,
                                            .count_column = 5,
                                            .sum_int64 = -630,

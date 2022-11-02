@@ -339,8 +339,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
 
   if (lhs_nullable && rhs_nullable) {
     if (lhs_nullable->getNull() && rhs_nullable->getNull()) {
-      null = cgen_state_->ir_builder_.CreateAnd(lhs_nullable->getNull(),
-                                                rhs_nullable->getNull());
+      null = cgen_state_->ir_builder_.CreateOr(lhs_nullable->getNull(),
+                                               rhs_nullable->getNull());
     } else {
       null = lhs_nullable->getNull() ? lhs_nullable->getNull() : rhs_nullable->getNull();
     }
@@ -348,7 +348,14 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
     null = lhs_nullable ? lhs_nullable->getNull() : rhs_nullable->getNull();
   }
 
-  return codegenFixedSizeColCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+  switch (lhs_ti.get_type()) {
+    case kVARCHAR:
+    case kTEXT:
+    case kCHAR:
+      return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+    default:
+      return codegenFixedSizeColCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+  }
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColCmpFun(
@@ -372,6 +379,25 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColCmpFun(
           : cgen_state_->ir_builder_.CreateFCmp(
                 llvm_fcmp_pred(bin_oper->get_optype()), lh_value, rh_value);
 
+  return std::make_unique<FixedSizeColValues>(value, null);
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenVarcharCmpFun(
+    const Analyzer::BinOper* bin_oper,
+    CodegenColValues* lhs,
+    CodegenColValues* rhs,
+    llvm::Value* null) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  auto lhs_fixsize = dynamic_cast<TwoValueColValues*>(lhs);
+  CHECK(lhs_fixsize);
+  auto rhs_fixsize = dynamic_cast<TwoValueColValues*>(rhs);
+  CHECK(rhs_fixsize);
+
+  llvm::Value* value = cgen_state_->emitCall("string_eq",
+                                             {lhs_fixsize->getValueAt(0),
+                                              lhs_fixsize->getValueAt(1),
+                                              rhs_fixsize->getValueAt(0),
+                                              rhs_fixsize->getValueAt(1)});
   return std::make_unique<FixedSizeColValues>(value, null);
 }
 

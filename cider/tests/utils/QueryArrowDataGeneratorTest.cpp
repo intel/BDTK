@@ -137,8 +137,9 @@ TEST(QueryArrowDataGeneratorTest, genNullColumnTest) {
                                                 {CREATE_SUBSTRAIT_TYPE(I32)},
                                                 {0},
                                                 GeneratePattern::Sequence);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0xFF);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFF);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0b11111111);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0b11111111);
+  EXPECT_EQ(array->children[0]->null_count, 0);
   QueryArrowDataGenerator::generateBatchByTypes(schema,
                                                 array,
                                                 10,
@@ -147,7 +148,8 @@ TEST(QueryArrowDataGeneratorTest, genNullColumnTest) {
                                                 {1},
                                                 GeneratePattern::Sequence);
   EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0x00);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0xFC);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0] + 1), 0b11111100);
+  EXPECT_EQ(array->children[0]->null_count, 10);
 }
 
 TEST(QueryArrowDataGeneratorTest, genBoolColumnTest) {
@@ -173,10 +175,54 @@ TEST(QueryArrowDataGeneratorTest, genBoolColumnTest) {
                                                 GeneratePattern::Random,
                                                 1,
                                                 1);
-  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[1]), 0xFF);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[1]), 0b11111111);
 }
 
-// TODO: add STRING DATA TIMESTAMP tests
+TEST(QueryArrowDataGeneratorTest, genStringColumnTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                3,
+                                                {"col_str"},
+                                                {CREATE_SUBSTRAIT_TYPE(String)},
+                                                {0},
+                                                GeneratePattern::Random,
+                                                0,
+                                                6);
+  EXPECT_EQ(std::string(schema->children[0]->format), "u");
+  const char* random_str = (const char*)(array->children[0]->buffers[2]);
+  int32_t* offsets = (int32_t*)(array->children[0]->buffers[1]);
+
+  std::cout << "random_str:" << std::string(random_str) << std::endl;
+  std::cout << "str1: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 0)
+            << std::endl;
+  std::cout << "str2: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 1)
+            << std::endl;
+  std::cout << "str3: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 2)
+            << std::endl;
+
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                3,
+                                                {"col_str"},
+                                                {CREATE_SUBSTRAIT_TYPE(String)},
+                                                {0},
+                                                GeneratePattern::Sequence,
+                                                0,
+                                                5);
+
+  const char* sequence_str = (const char*)(array->children[0]->buffers[2]);
+  offsets = (int32_t*)(array->children[0]->buffers[1]);
+
+  std::cout << "sequence_str:" << std::string(sequence_str) << std::endl;
+  std::cout << "str1: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 0)
+            << std::endl;
+  std::cout << "str2: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 1)
+            << std::endl;
+  std::cout << "str3: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 2)
+            << std::endl;
+}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

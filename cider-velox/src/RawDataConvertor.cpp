@@ -276,6 +276,8 @@ int8_t* toCiderImplWithConstantEncoding<TypeKind::TIMESTAMP>(VectorPtr& child,
   VELOX_NYI(" {} conversion is not supported with constant encoding", child->typeKind());
 }
 
+static constexpr int64_t SecondsInOneDay = 24 * 60 * 60;
+
 template <>
 int8_t* toCiderImpl<TypeKind::DATE>(VectorPtr& child,
                                     int idx,
@@ -290,7 +292,8 @@ int8_t* toCiderImpl<TypeKind::DATE>(VectorPtr& child,
     if (child->mayHaveNulls() && bits::isBitNull(nulls, pos)) {
       column[pos] = std::numeric_limits<int64_t>::min();
     } else {
-      column[pos] = rawValues[pos].days();
+      // date is represented by seconds in old CiderBatch
+      column[pos] = rawValues[pos].days() * SecondsInOneDay;
     }
   }
   return reinterpret_cast<int8_t*>(column);
@@ -301,8 +304,17 @@ int8_t* toCiderImplWithDictEncoding<TypeKind::DATE>(VectorPtr& child,
                                                     int idx,
                                                     int num_rows,
                                                     memory::MemoryPool* pool) {
-  VELOX_NYI(" {} conversion is not supported yet with dictionary encoding",
-            child->typeKind());
+  auto dict = dynamic_cast<const DictionaryVector<Date>*>(child.get());
+  int64_t* column =
+      reinterpret_cast<int64_t*>(pool->allocate(sizeof(int64_t) * num_rows));
+  for (auto i = 0; i < num_rows; i++) {
+    if (dict->isNullAt(i)) {
+      column[i] = std::numeric_limits<int64_t>::min();
+    } else {
+      column[i] = dict->valueAt(i).days() * SecondsInOneDay;
+    }
+  }
+  return reinterpret_cast<int8_t*>(column);
 }
 
 template <>
@@ -310,8 +322,17 @@ int8_t* toCiderImplWithConstantEncoding<TypeKind::DATE>(VectorPtr& child,
                                                         int idx,
                                                         int num_rows,
                                                         memory::MemoryPool* pool) {
-  VELOX_NYI(" {} conversion is not supported yet with constant encoding",
-            child->typeKind());
+  auto constant = dynamic_cast<const ConstantVector<Date>*>(child.get());
+  int64_t* column =
+      reinterpret_cast<int64_t*>(pool->allocate(sizeof(int64_t) * num_rows));
+  int64_t value = std::numeric_limits<int64_t>::min();
+  if (!constant->mayHaveNulls()) {
+    value = (*constant->rawValues()).days() * SecondsInOneDay;
+  }
+  for (auto i = 0; i < num_rows; i++) {
+    column[i] = value;
+  }
+  return reinterpret_cast<int8_t*>(column);
 }
 
 int8_t* toCiderResult(VectorPtr& child, int idx, int num_rows, memory::MemoryPool* pool) {
@@ -517,7 +538,7 @@ VectorPtr toVeloxImpl<TypeKind::DATE>(const TypePtr& vType,
       result->setNull(pos, true);
     } else {
       auto value = srcValues[pos];
-      flatResult->set(pos, Date(value));
+      flatResult->set(pos, Date(value / SecondsInOneDay));
     }
   }
   return result;

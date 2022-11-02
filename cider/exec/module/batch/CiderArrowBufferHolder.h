@@ -50,8 +50,10 @@ class CiderArrowArrayBufferHolder {
 
   ArrowArray* getDictPtr();
 
+  size_t getBufferSizeAt(size_t index);
+
  private:
-  void relaseBuffer(size_t index);
+  void releaseBuffer(size_t index);
 
   std::vector<void*> buffers_;
   std::vector<size_t> buffers_bytes_;  // Used for allocator.

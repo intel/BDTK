@@ -21,12 +21,15 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include "ArrowArrayBuilder.h"
+#include "QueryArrowDataGenerator.h"
 #include "tests/utils/CiderTestBase.h"
 
 #define NULL_VALUE_I32 std::numeric_limits<int32_t>::min()
 #define NULL_VALUE_FLOAT std::numeric_limits<float>::min()
 #define NULL_VALUE_DOUBLE std::numeric_limits<double>::min()
 
+// To be deperacated, old test cases.
 class CiderAggTest : public CiderTestBase {
  public:
   CiderAggTest() {
@@ -63,6 +66,48 @@ class CiderAggTest : public CiderTestBase {
                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
                                                  {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2}))};
+  }
+};
+
+class CiderArrowAggTest : public CiderTestBase {
+ public:
+  CiderArrowAggTest() {
+    table_name_ = "test";
+    create_ddl_ =
+        "CREATE TABLE test(col_i8 TINYINT NOT NULL, col_i16 SMALLINT NOT NULL, col_i32 "
+        "INT NOT NULL, col_i64 "
+        "BIGINT NOT NULL, col_fp32 FLOAT NOT NULL, col_fp64 DOUBLE NOT NULL, "
+        "half_null_i8 "
+        "TINYINT, half_null_i16 SMALLINT, half_null_i32 INT, half_null_i64 BIGINT, "
+        "half_null_fp32 FLOAT, half_null_fp64 DOUBLE);";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  10,
+                                                  {"col_i8",
+                                                   "col_i16",
+                                                   "col_i32",
+                                                   "col_i64",
+                                                   "col_fp32",
+                                                   "col_fp64",
+                                                   "half_null_i8",
+                                                   "half_null_i16",
+                                                   "half_null_i32",
+                                                   "half_null_i64",
+                                                   "half_null_fp32",
+                                                   "half_null_fp64"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I16),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I16),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
+                                                  {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2});
   }
 };
 
@@ -104,6 +149,52 @@ TEST_F(CiderAggTest, sumTest) {
   assertQuery("SELECT SUM(half_null_fp64) FROM test");
   assertQuery("SELECT SUM(half_null_fp64) FROM test where half_null_fp64 IS NOT NULL");
   // TODO: SUM(decimal) with half null
+}
+
+TEST_F(CiderArrowAggTest, aggArrowTest) {
+  // SUM(tinyint)
+  assertQueryArrow("SELECT SUM(col_i8) FROM test");
+  // SUM(smallint)
+  assertQueryArrow("SELECT SUM(col_i16) FROM test");
+  // SUM(int)
+  assertQueryArrow("SELECT SUM(col_i32) FROM test");
+  // SUM(bigint)
+  assertQueryArrow("SELECT SUM(col_i64) FROM test");
+  // SUM(float)
+  assertQueryArrow("SELECT SUM(col_fp32) FROM test");
+  // SUM(double)
+  assertQueryArrow("SELECT SUM(col_fp64) FROM test");
+  // TODO: SUM(decimal)
+  // SUM(tinyint) with half null
+  assertQueryArrow("SELECT SUM(half_null_i8) FROM test");
+  // SUM(smallint) with half null
+  assertQueryArrow("SELECT SUM(half_null_i16) FROM test");
+  // SUM(int) with half null
+  assertQueryArrow("SELECT SUM(half_null_i32) FROM test");
+  // SUM(bigint) with half null
+  assertQueryArrow("SELECT SUM(half_null_i64) FROM test");
+  // SUM(float) with half null
+  assertQueryArrow("SELECT SUM(half_null_fp32) FROM test");
+  // SUM(double) with half null
+  assertQueryArrow("SELECT SUM(half_null_fp64) FROM test");
+  // In cider, COUNT(*) has same syntax as COUNT(1)
+  // COUNT(*)
+  assertQueryArrow("SELECT COUNT(*) FROM test");
+  // COUNT(1)
+  assertQueryArrow("SELECT COUNT(1) FROM test");
+  GTEST_SKIP();
+  // COUNT AGG
+  assertQueryArrow("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
+  assertQueryArrow("SELECT COUNT(1), MAX(col_i8) FROM test");
+  assertQueryArrow("SELECT COUNT(col_i8), MAX(col_i8) FROM test");
+  // COUNT(DISTINCT tinyint)
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i8) FROM test");
+  // COUNT(DISTINCT smallint)
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i16) FROM test");
+  // COUNT(DISTINCT int)
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i32) FROM test");
+  // COUNT(DISTINCT bigint)
+  assertQueryArrow("SELECT COUNT(DISTINCT col_i64) FROM test");
 }
 
 TEST_F(CiderAggTest, countTest) {
@@ -918,6 +1009,10 @@ TEST_F(CiderCountDistinctConstantTest, countDistinctConstantTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
 
   int err{0};
   try {

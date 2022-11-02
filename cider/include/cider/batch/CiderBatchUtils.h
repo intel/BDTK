@@ -68,6 +68,11 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type);
 
 ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table);
 
+std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index);
+
+// convert non group-by agg result to Arrow format
+CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch);
+
 };  // namespace CiderBatchUtils
 
 #endif

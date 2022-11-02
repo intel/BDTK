@@ -27,6 +27,7 @@
 #include <string>
 #include "CiderQueryRunner.h"
 #include "DuckDbQueryRunner.h"
+#include "QueryArrowDataGenerator.h"
 #include "QueryDataGenerator.h"
 #include "cider/CiderBatch.h"
 #include "cider/CiderException.h"
@@ -55,6 +56,9 @@ class CiderTestBase : public testing::Test {
   void assertQueryArrow(const std::string& sql, const std::string& json_file = "");
   void assertQueryArrowIgnoreOrder(const std::string& sql,
                                    const std::string& json_file = "");
+  // To be deprecated. for string and other unsupported types.
+  void assertQueryArrowTemp(const std::string& sql, const std::string& json_file = "");
+
   // a method for test count distinct with multi batch case
   void assertQueryForCountDistinct(
       const std::string& sql,
@@ -97,6 +101,10 @@ class CiderJoinTestBase : public CiderTestBase {
                                const std::string& json_file = "",
                                const bool ignore_order = true);
 
+  void assertJoinQueryRowEqualForArrowFormat(const std::string& sql,
+                                             const std::string& json_file = "",
+                                             const bool ignore_order = true);
+
   virtual void resetHashTable() {}
 
   void assertJoinQueryAndReset(const std::string& sql,
@@ -113,10 +121,28 @@ class CiderJoinTestBase : public CiderTestBase {
     resetHashTable();
   }
 
+  void assertJoinQueryRowEqualForArrowFormatAndReset(const std::string& sql,
+                                                     const std::string& json_file = "",
+                                                     const bool ignore_order = true) {
+    assertJoinQueryRowEqualForArrowFormat(sql, json_file, ignore_order);
+    resetHashTable();
+  }
+
  protected:
   std::string build_table_name_;
   std::string build_table_ddl_;
   std::shared_ptr<CiderBatch> build_table_;
+};
+
+class CiderArrowFormatJoinTestBase : public CiderJoinTestBase {
+ public:
+  void SetUp() override {
+    duckDbQueryRunner_.createTableAndInsertArrowData(table_name_, create_ddl_, input_);
+    duckDbQueryRunner_.createTableAndInsertArrowData(
+        build_table_name_, build_table_ddl_, {build_table_});
+
+    ciderQueryRunner_.prepare(create_ddl_ + " " + build_table_ddl_);
+  }
 };
 
 #endif  // CIDER_CIDERTESTBASE_H

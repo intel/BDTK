@@ -20,7 +20,10 @@
 cmake_minimum_required(VERSION 3.16)
 message(STATUS "Building using CMake version: ${CMAKE_VERSION}")
 
-project(ModularSQL LANGUAGES C CXX)
+set(BDTK_VERSION "0.9.0")
+
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" BDTK_BASE_VERSION
+             "${BDTK_VERSION}")
 
 # if no build build type is specified, default to release builds
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -28,6 +31,23 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
       Release
       CACHE STRING "Choose the type of build.")
 endif()
+
+project(BDTK VERSION "${BDTK_BASE_VERSION}")
+
+set(BDTK_VERSION_MAJOR "${BDTK_VERSION_MAJOR}")
+set(BDTK_VERSION_MINOR "${BDTK_VERSION_MINOR}")
+set(BDTK_VERSION_PATCH "${BDTK_VERSION_PATCH}")
+
+set(BDTK_SO_VERSION "${BDTK_VERSION_MAJOR}")
+set(BDTK_FULL_SO_VERSION
+    "${BDTK_SO_VERSION}.${BDTK_VERSION_MINOR}.${BDTK_VERSION_PATCH}")
+
+message(
+  STATUS "BDTK version: "
+         "${BDTK_VERSION_MAJOR}.${BDTK_VERSION_MINOR}.${BDTK_VERSION_PATCH} "
+         "(full: '${BDTK_VERSION}')")
+message(
+  STATUS "BDTK SO version: ${BDTK_SO_VERSION} (full: ${BDTK_FULL_SO_VERSION})")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)

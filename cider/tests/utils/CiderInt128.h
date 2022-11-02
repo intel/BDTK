@@ -18,31 +18,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef JITLIB_LLVMJIT_LLVMJITENGINE_H
-#define JITLIB_LLVMJIT_LLVMJITENGINE_H
 
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#ifndef CIDER_CIDERDECIMAL128_H
+#define CIDER_CIDERDECIMAL128_H
 
-namespace cider::jitlib {
-class LLVMJITModule;
+#include <cstdint>
+#include <limits>
+#include <string>
 
-struct LLVMJITEngine {
-  llvm::ExecutionEngine* engine{nullptr};
+#include "cider/CiderBatch.h"
 
-  ~LLVMJITEngine();
-};
-
-class LLVMJITEngineBuilder {
+class CiderInt128Utils {
  public:
-  explicit LLVMJITEngineBuilder(LLVMJITModule& module);
-
-  std::unique_ptr<LLVMJITEngine> build();
-
- private:
-  static void initializationTargets();
-
-  LLVMJITModule& module_;
+  static std::string Int128ToString(__int128_t input);
+  static std::string Decimal128ToString(__int128_t input,
+                                        uint8_t precision,
+                                        uint8_t scale);
+  static double Decimal128ToDouble(__int128_t input, uint8_t precision, uint8_t scale);
 };
-};  // namespace cider::jitlib
 
-#endif  // JITLIB_LLVMJIT_LLVMJITENGINE_H
+#endif

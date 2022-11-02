@@ -21,57 +21,54 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITVALUE_H
 #define JITLIB_LLVMJIT_LLVMJITVALUE_H
 
-#include "exec/nextgen/jitlib/base/JITValues.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 
-namespace jitlib {
+namespace cider::jitlib {
 
 class LLVMJITValue final : public JITValue {
   friend LLVMJITFunction;
 
  public:
   explicit LLVMJITValue(JITTypeTag type_tag,
-                        LLVMJITFunction& function,
+                        LLVMJITFunction& parent_function,
                         llvm::Value* value,
                         const std::string& name = "value",
                         JITBackendTag backend = JITBackendTag::LLVMJIT,
                         bool is_variable = false)
-      : JITValue(type_tag, name, backend)
-      , parent_function_(function)
+      : JITValue(type_tag, parent_function, name, backend)
+      , parent_function_(parent_function)
       , llvm_value_(value)
       , is_variable_(is_variable) {}
 
-  JITValue& assign(JITValue& value) override {
-    store(static_cast<LLVMJITValue&>(value));
-    return *this;
-  }
+ public:
+  JITValue& assign(JITValue& value) override;
+
+  JITValuePointer notOp() override;
+
+  JITValuePointer add(JITValue& rh) override;
+  JITValuePointer sub(JITValue& rh) override;
+  JITValuePointer mul(JITValue& rh) override;
+  JITValuePointer div(JITValue& rh) override;
+  JITValuePointer mod(JITValue& rh) override;
 
  private:
   static llvm::IRBuilder<>& getFunctionBuilder(const LLVMJITFunction& function) {
     return static_cast<llvm::IRBuilder<>&>(function);
   }
 
-  llvm::Value* load() {
-    if (is_variable_) {
-      return getFunctionBuilder(parent_function_).CreateLoad(llvm_value_, false);
-    } else {
-      return llvm_value_;
-    }
-  }
+  static void checkOprandsType(JITTypeTag lh, JITTypeTag rh, const char* op);
 
-  llvm::Value* store(LLVMJITValue& rh) {
-    if (is_variable_) {
-      return getFunctionBuilder(parent_function_)
-          .CreateStore(rh.load(), llvm_value_, false);
-    }
-    return nullptr;
-  }
+  llvm::Value* load();
+
+  llvm::Value* store(LLVMJITValue& rh);
 
   LLVMJITFunction& parent_function_;
   llvm::Value* llvm_value_;
   bool is_variable_;
 };
-};  // namespace jitlib
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITVALUE_H

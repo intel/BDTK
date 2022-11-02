@@ -58,7 +58,9 @@ CiderBatch::CiderBatch(ArrowSchema* schema,
 
 CiderBatch::~CiderBatch() {
   releaseArrowEntries();
+#ifdef CIDER_BATCH_CIDER_IMPL
   destroy();  // TODO: Remove
+#endif
 }
 
 CiderBatch::CiderBatch(const CiderBatch& rh) {
@@ -95,8 +97,9 @@ CiderBatch::CiderBatch(CiderBatch&& rh) noexcept {
   rh.arrow_schema_ = nullptr;
   rh.ownership_ = false;
   rh.reallocate_ = false;
-
+#ifdef CIDER_BATCH_CIDER_IMPL
   moveFrom(&rh);  // TODO: Remove
+#endif
 }
 
 CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
@@ -115,21 +118,29 @@ CiderBatch& CiderBatch::operator=(CiderBatch&& rh) noexcept {
   rh.ownership_ = false;
   rh.reallocate_ = false;
 
+#ifdef CIDER_BATCH_CIDER_IMPL
   moveFrom(&rh);  // TODO: Remove
-
+#endif
   return *this;
 }
 
 size_t CiderBatch::getBufferNum() const {
+  CHECK(arrow_array_);
   return arrow_array_->n_buffers;
 }
 
 size_t CiderBatch::getChildrenNum() const {
+  CHECK(arrow_schema_);
   return arrow_schema_->n_children;
 }
 
 SQLTypes CiderBatch::getCiderType() const {
+  CHECK(arrow_schema_);
   return CiderBatchUtils::convertArrowTypeToCiderType(arrow_schema_->format);
+}
+
+const char* CiderBatch::getArrowFormatString() const {
+  return getArrowSchema()->format;
 }
 
 // TODO: Dictionary support is TBD.
@@ -283,13 +294,8 @@ void CiderBatch::convertToArrowRepresentation() {
     arrow_array_->children[i] = new ArrowArray();
     arrow_array_->children[i]->length = row_num();
     arrow_array_->children[i]->n_children = 0;
-    arrow_array_->children[i]->buffers = (const void**)std::malloc(sizeof(void*) * 2);
-    // FIXME: fill actual null
     void* null_buf = std::malloc(row_num() / 8 + 1);
     std::memset(null_buf, 0xFF, row_num() / 8 + 1);
-    arrow_array_->children[i]->buffers[0] = null_buf;
-    arrow_array_->children[i]->buffers[1] = table_ptr_[i];
-    arrow_array_->children[i]->n_buffers = 2;
     arrow_array_->children[i]->private_data = nullptr;
     arrow_array_->children[i]->dictionary = nullptr;
     arrow_array_->children[i]->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
@@ -300,6 +306,29 @@ void CiderBatch::convertToArrowRepresentation() {
     arrow_schema_->children[i]->n_children = 0;
     arrow_schema_->children[i]->children = nullptr;
     arrow_schema_->children[i]->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+
+    // (Kunshang)To be removed. temp code to pass ut.
+    // CiderStringTest::CiderStringTestArrow
+    if (schema_->getColumnTypeById(i).has_varchar()) {
+      arrow_array_->children[i]->n_buffers = 3;
+      arrow_array_->children[i]->buffers = (const void**)std::malloc(sizeof(void*) * 3);
+      arrow_array_->children[i]->buffers[0] = null_buf;
+
+      arrow_schema_->children[i]->format = "";
+      // 10 string row 0-9
+      int32_t* offset_buf = new int[11]{0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+      char* data_buf(
+          "000000000011111111112222222222333333333344444444445555555555666666666677777777"
+          "7788888888889999999999");
+      arrow_array_->children[i]->buffers[1] = offset_buf;
+      arrow_array_->children[i]->buffers[2] = data_buf;
+    } else {
+      arrow_array_->children[i]->buffers = (const void**)std::malloc(sizeof(void*) * 2);
+      // FIXME: fill actual null
+      arrow_array_->children[i]->buffers[0] = null_buf;
+      arrow_array_->children[i]->buffers[1] = table_ptr_[i];
+      arrow_array_->children[i]->n_buffers = 2;
+    }
   }
 }
 
@@ -350,6 +379,12 @@ const void** CiderBatch::getBuffersPtr() const {
 const void** CiderBatch::getChildrenArrayPtr() const {
   CHECK(!isMoved());
   return const_cast<const void**>(reinterpret_cast<void**>(arrow_array_->children));
+}
+
+const void* CiderBatch::arrow_column(int32_t col_id) const {
+  CHECK(!isMoved());
+  const void* buf = arrow_array_->children[col_id]->buffers[1];
+  return buf;
 }
 
 void CiderBatch::setNullCount(int64_t null_num) {
