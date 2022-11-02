@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include "planTransformer/PlanTransformer.h"
+#include "../planTransformer/PlanTransformer.h"
 
 namespace facebook::velox::plugin::plantransformer {
 class CiderPlanTransformerFactory {

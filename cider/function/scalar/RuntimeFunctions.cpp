@@ -953,7 +953,7 @@ extern "C" ALWAYS_INLINE int64_t* get_matching_group_value_columnar(
     const uint32_t key_qw_count,
     const size_t entry_count) {
   auto off = h;
-  if (groups_buffer[off] == EMPTY_KEY_64) {
+  if (groups_buffer[off] == empty_key_64) {
     for (size_t i = 0; i < key_qw_count; ++i) {
       groups_buffer[off] = key[i];
       off += entry_count;
@@ -988,7 +988,7 @@ extern "C" ALWAYS_INLINE int64_t* get_matching_group_value_perfect_hash(
     const uint32_t key_count,
     const uint32_t row_size_quad) {
   uint32_t off = hashed_index * row_size_quad;
-  if (groups_buffer[off] == EMPTY_KEY_64) {
+  if (groups_buffer[off] == empty_key_64) {
     for (uint32_t i = 0; i < key_count; ++i) {
       groups_buffer[off + i] = key[i];
     }
@@ -1019,7 +1019,7 @@ extern "C" ALWAYS_INLINE void set_matching_group_value_perfect_hash_columnar(
     const int64_t* key,
     const uint32_t key_count,
     const uint32_t entry_count) {
-  if (groups_buffer[hashed_index] == EMPTY_KEY_64) {
+  if (groups_buffer[hashed_index] == empty_key_64) {
     for (uint32_t i = 0; i < key_count; i++) {
       groups_buffer[i * entry_count + hashed_index] = key[i];
     }

@@ -91,3 +91,5 @@ FORCE_INLINE uint32_t MurmurHash3Impl(const void* key, int len, uint32_t seed) {
 
   return h1;
 }
+
+#undef ROTL32

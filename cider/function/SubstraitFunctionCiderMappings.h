@@ -64,8 +64,8 @@ class SubstraitFunctionCiderMappings {
   }
 
   /// scalar function names in difference between engine own and Substrait.
-  virtual const FunctionSQLScalarOpsMappings scalarMappings() const {
-    static const FunctionSQLScalarOpsMappings scalarMappings{
+  virtual const FunctionSQLScalarOpsMappings& scalarMappings() const {
+    static const FunctionSQLScalarOpsMappings mapping{
         {"lt", SQLOps::kLT},
         {"and", SQLOps::kAND},
         {"or", SQLOps::kOR},
@@ -90,24 +90,24 @@ class SubstraitFunctionCiderMappings {
         {"is_not_distinct_from", SQLOps::kBW_EQ},
         {"is_distinct_from", SQLOps::kBW_NE},
     };
-    return scalarMappings;
+    return mapping;
   };
 
   /// aggregate function names in difference between engine own and Substrait.
-  virtual const FunctionSQLAggOpsMappings aggregateMappings() const {
-    static const FunctionSQLAggOpsMappings aggregateMappings{
+  virtual const FunctionSQLAggOpsMappings& aggregateMappings() const {
+    static const FunctionSQLAggOpsMappings mapping{
         {"sum", SQLAgg::kSUM},
         {"min", SQLAgg::kMIN},
         {"max", SQLAgg::kMAX},
         {"avg", SQLAgg::kAVG},
         {"count", SQLAgg::kCOUNT},
     };
-    return aggregateMappings;
+    return mapping;
   };
 
   /// window function names in difference between engine own and Substrait.
-  virtual const FunctionSQLOpSupportTypeMappings opsSupportTypeMappings() const {
-    static const FunctionSQLOpSupportTypeMappings opsSupportTypeMappings{
+  virtual const FunctionSQLOpSupportTypeMappings& opsSupportTypeMappings() const {
+    static const FunctionSQLOpSupportTypeMappings mapping{
         {"sum", OpSupportExprType::kAGG_EXPR},
         {"min", OpSupportExprType::kAGG_EXPR},
         {"max", OpSupportExprType::kAGG_EXPR},
@@ -143,7 +143,7 @@ class SubstraitFunctionCiderMappings {
         {"substring", OpSupportExprType::kSUBSTRING_STRING_OPER},
         {"like", OpSupportExprType::kLIKE_EXPR},
     };
-    return opsSupportTypeMappings;
+    return mapping;
   };
 };
 

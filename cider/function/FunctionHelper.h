@@ -40,9 +40,8 @@ inline ExtArgumentType ext_arg_type_ensure_column(const ExtArgumentType ext_arg_
       return ExtArgumentType::ColumnDouble;
     case ExtArgumentType::Bool:
       return ExtArgumentType::ColumnBool;
-    default:
-      return ext_arg_type;
   }
+  return ext_arg_type;
 }
 
 inline ExtArgumentType ext_arg_type_ensure_column_list(
@@ -62,9 +61,8 @@ inline ExtArgumentType ext_arg_type_ensure_column_list(
       return ExtArgumentType::ColumnListDouble;
     case ExtArgumentType::Bool:
       return ExtArgumentType::ColumnListBool;
-    default:
-      return ext_arg_type;
   }
+  return ext_arg_type;
 }
 
 inline bool is_ext_arg_type_array(const ExtArgumentType ext_arg_type) {
@@ -77,10 +75,8 @@ inline bool is_ext_arg_type_array(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::ArrayDouble:
     case ExtArgumentType::ArrayBool:
       return true;
-
-    default:
-      return false;
   }
+  return false;
 }
 
 inline bool is_ext_arg_type_column(const ExtArgumentType ext_arg_type) {
@@ -94,10 +90,8 @@ inline bool is_ext_arg_type_column(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::ColumnBool:
     case ExtArgumentType::ColumnTextEncodingDict:
       return true;
-
-    default:
-      return false;
   }
+  return false;
 }
 
 inline bool is_ext_arg_type_column_list(const ExtArgumentType ext_arg_type) {
@@ -111,10 +105,8 @@ inline bool is_ext_arg_type_column_list(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::ColumnListBool:
     case ExtArgumentType::ColumnListTextEncodingDict:
       return true;
-
-    default:
-      return false;
   }
+  return false;
 }
 
 inline bool is_ext_arg_type_pointer(const ExtArgumentType ext_arg_type) {
@@ -127,10 +119,8 @@ inline bool is_ext_arg_type_pointer(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::PDouble:
     case ExtArgumentType::PBool:
       return true;
-
-    default:
-      return false;
   }
+  return false;
 }
 
 inline bool is_ext_arg_type_scalar(const ExtArgumentType ext_arg_type) {
@@ -144,10 +134,8 @@ inline bool is_ext_arg_type_scalar(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::Bool:
     case ExtArgumentType::TextEncodingNone:
       return true;
-
-    default:
-      return false;
   }
+  return false;
 }
 
 inline bool is_ext_arg_type_scalar_integer(const ExtArgumentType ext_arg_type) {
@@ -157,9 +145,8 @@ inline bool is_ext_arg_type_scalar_integer(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::Int32:
     case ExtArgumentType::Int64:
       return true;
-    default:
-      return false;
   }
+  return false;
 }
 
 inline int32_t max_digits_for_ext_integer_arg(const ExtArgumentType ext_arg_type) {
@@ -172,10 +159,9 @@ inline int32_t max_digits_for_ext_integer_arg(const ExtArgumentType ext_arg_type
       return 9;
     case ExtArgumentType::Int64:
       return 18;
-    default:
-      UNREACHABLE();
-      return 0;
   }
+  UNREACHABLE();
+  return 0;
 }
 
 inline bool is_ext_arg_type_nonscalar(const ExtArgumentType ext_arg_type) {
