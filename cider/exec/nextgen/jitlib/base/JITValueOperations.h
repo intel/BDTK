@@ -30,7 +30,8 @@ namespace cider::jitlib {
 template <typename T>
 struct is_jitvalue_convertable {
   using NativeType = typename std::remove_reference<T>::type;
-  static constexpr bool v = std::is_arithmetic_v<T> || std::is_same_v<T, bool>;
+  static constexpr bool v =
+      std::is_arithmetic_v<NativeType> || std::is_same_v<NativeType, bool>;
 };
 template <typename T>
 inline constexpr bool is_jitvalue_convertable_v = is_jitvalue_convertable<T>::v;
