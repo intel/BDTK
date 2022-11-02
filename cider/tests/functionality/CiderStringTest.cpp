@@ -255,56 +255,151 @@ class CiderStringTestArrow : public CiderTestBase {
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
 
-    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-        10,
-        {"col_1", "col_2"},
-        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)}))};
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  30,
+                                                  {"col_1", "col_2"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {0,0},
+                                                  GeneratePattern::Sequence,
+                                                  0,
+                                                  10);
+
   }
 };
 
-TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
-  prepareArrowBatch();
-  assertQueryArrow("SELECT col_1 FROM test ");
+class CiderStringNullableTestArrow : public CiderTestBase {
+ public:
+  CiderStringNullableTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
+
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  30,
+                                                  {"col_1", "col_2"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {2,2},
+                                                  GeneratePattern::Sequence,
+                                                  0,
+                                                  10);
+
+  }
+};
+
+TEST_F(CiderStringNullableTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test ");
   assertQueryArrow("SELECT col_1, col_2 FROM test ");
+  assertQueryArrow("SELECT * FROM test ");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 = 'aaaa'");
   assertQueryArrow("SELECT col_2 FROM test where col_2 = '0000000000'");
   assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
+  assertQueryArrow("SELECT col_1 FROM test where col_2 <> '1111111111'");
+  assertQueryArrow("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'");
+//  assertQueryArrow("SELECT col_2 FROM test where col_2 <> 'aaaaaaaaaaa'");
+//  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 IS NOT NULL");
+  //  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
+}
+
+TEST_F(CiderStringNullableTestArrow, ArrowBasicStringLikeTest) {
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '22%22'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '_33%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '44_%'");
+
+  assertQueryArrow(
+      "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");
+  assertQueryArrow(
+      "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'",
+                   "like_wo_cast.json");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
+  assertQueryArrow(
+      "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE '%111%'");
+}
+
+TEST_F(CiderStringNullableTestArrow, ArrowSubstringTest) {
+  // variable source string
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
+
+  // out of range
+  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
+
+  // from for
+  assertQueryArrow("SELECT SUBSTRING(col_2 from 2 for 8) FROM test ");
+
+  // zero length
+  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 0) FROM test ");
+
+  // negative wrap
+  assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
+}
+
+TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
+  assertQueryArrow("SELECT col_2 FROM test ");
+  assertQueryArrow("SELECT col_1, col_2 FROM test ");
+  assertQueryArrow("SELECT * FROM test ");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 = 'aaaa'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 = '0000000000'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
+  assertQueryArrow("SELECT col_1 FROM test where col_2 <> '1111111111'");
+  assertQueryArrow("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'");
+//  assertQueryArrow("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");
+//  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 IS NOT NULL");
+//  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
 }
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringLikeTest) {
-  prepareArrowBatch();
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1111'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '1111%'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '22%22'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '_33%'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '44_%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '22%22'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '_33%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '44_%'");
 
-  assertQueryArrowTemp(
+  assertQueryArrow(
       "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");
-  assertQueryArrowTemp(
+  assertQueryArrow(
       "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 LIKE '%1111'",
+  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'",
                    "like_wo_cast.json");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
-  assertQueryArrowTemp("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
-  assertQueryArrowTemp(
+  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
+  assertQueryArrow(
       "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE '%111%'");
 }
 
 TEST_F(CiderStringTestArrow, ArrowSubstringTest) {
-  prepareArrowBatch();
-
   // variable source string
-  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
-  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 1, 8) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
 
   // out of range
-  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
-  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
-  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
-  assertQueryArrowTemp("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
+  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
+
+  // from for
+  assertQueryArrow("SELECT SUBSTRING(col_2 from 2 for 8) FROM test ");
+
+  // zero length
+  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 0) FROM test ");
+
+  // negative wrap
+  assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

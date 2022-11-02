@@ -303,7 +303,7 @@ void TargetExprCodegen::codegenAggregate(
             LL_BUILDER.CreateIntToPtr(LL_BUILDER.CreateLoad(project_arraies_ptr, false),
                                       llvm::Type::getInt8PtrTy(context));
         if (target_info.sql_type.is_string()) {
-          // muset be a ProjectIDStringCodeGenerator
+          // must be a ProjectIDStringCodeGenerator
           generator->codegen(agg_input_data, project_arraies_i8, row_num);
         } else {
           llvm::Value* col_data =

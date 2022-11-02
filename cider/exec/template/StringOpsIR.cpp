@@ -113,10 +113,27 @@ apply_string_ops_and_encode_cider(const char* str_ptr,
   return id;
 }
 
+extern "C" RUNTIME_EXPORT int64_t
+apply_string_ops_and_encode_cider_nullable(const char* str_ptr,
+                                           const int32_t str_len,
+                                           const int64_t string_ops_handle,
+                                           const int64_t string_hasher_handle,
+                                           bool is_null) {
+  if (is_null) {
+    return -1;
+  }
+  return apply_string_ops_and_encode_cider(
+      str_ptr, str_len, string_ops_handle, string_hasher_handle);
+}
+
+extern "C" RUNTIME_EXPORT bool cider_check_string_id_is_null(const int64_t id) {
+  return id == -1;
+}
 extern "C" RUNTIME_EXPORT char* cider_hasher_decode_str_ptr(
     const int64_t id,
     const int64_t string_hasher_handle) {
-  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  CiderStringHasher* string_hasher =
+      reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
   CiderByteArray res = string_hasher->lookupValueById(id);
   return (char*)res.ptr;
 }
@@ -333,15 +350,24 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   const int64_t cider_string_hasher_handle =
       reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
   auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
+  std::string func_name = "apply_string_ops_and_encode_cider";
 
   std::vector<llvm::Value*> string_oper_lvs{str_values->getValueAt(0),
                                             str_values->getValueAt(1),
                                             string_ops_handle_lv,
                                             cider_string_hasher_handle_lv};
-
-  auto id = cgen_state_->emitExternalCall("apply_string_ops_and_encode_cider",
-                                          get_int_type(32, cgen_state_->context_),
-                                          string_oper_lvs);
+  if (str_values->getNull()) {
+    func_name.append("_nullable");
+    string_oper_lvs.push_back(str_values->getNull());
+  }
+  auto id = cgen_state_->emitExternalCall(
+      func_name, get_int_type(64, cgen_state_->context_), string_oper_lvs);
+  llvm::Value* res_null = nullptr;
+  if (str_values->getNull()) {
+    res_null = cgen_state_->emitExternalCall("cider_check_string_id_is_null",
+                                             get_int_type(1, cgen_state_->context_),
+                                             {id});
+  }
   llvm::Value* res_str_ptr =
       cgen_state_->emitExternalCall("cider_hasher_decode_str_ptr",
                                     get_int_ptr_type(8, cgen_state_->context_),
@@ -351,7 +377,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
                                     get_int_type(32, cgen_state_->context_),
                                     {id, cider_string_hasher_handle_lv});
 
-  return std::make_unique<TwoValueColValues>(res_str_ptr, res_str_len);
+  return std::make_unique<TwoValueColValues>(res_str_ptr, res_str_len, res_null);
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::StringOper* expr,

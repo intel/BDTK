@@ -127,6 +127,8 @@ extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(int8_t* str_data
                                                                 bool is_null) {
   if (is_null) {
     CiderBitUtils::clearBitAt(agg_null_buffer, index);
+    int32_t current_offset = reinterpret_cast<int32_t*>(str_offset_buffer)[index];
+    reinterpret_cast<int32_t*>(str_offset_buffer)[index + 1] = current_offset;
   } else {
     cider_agg_id_proj_string(str_data_buffer, str_offset_buffer, index, str_ptr, str_len);
   }
