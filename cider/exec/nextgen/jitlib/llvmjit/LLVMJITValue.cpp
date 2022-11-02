@@ -37,6 +37,38 @@ JITValue& LLVMJITValue::assign(JITValue& value) {
   return *this;
 }
 
+JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::BOOL:
+      ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return std::make_unique<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "and", JITBackendTag::LLVMJIT, false);
+}
+
+JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::BOOL:
+      ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return std::make_unique<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "or", JITBackendTag::LLVMJIT, false);
+}
+
 JITValuePointer LLVMJITValue::notOp() {
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
@@ -175,6 +207,60 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
 
   return std::make_unique<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "add", JITBackendTag::LLVMJIT, false);
+}
+
+JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmpType,
+                                                   llvm::CmpInst::Predicate FCmpType,
+                                                   JITValue& rh,
+                                                   const char* value) {
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), value);
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_)
+                .CreateICmp(ICmpType, load(), llvm_rh.load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_)
+                .CreateFCmp(FCmpType, load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for add operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return std::make_unique<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, value, JITBackendTag::LLVMJIT, false);
+}
+
+JITValuePointer LLVMJITValue::eq(JITValue& rh) {
+  return createCmpInstruction(llvm::CmpInst::ICMP_EQ, llvm::CmpInst::FCMP_OEQ, rh, "eq");
+}
+
+JITValuePointer LLVMJITValue::ne(JITValue& rh) {
+  return createCmpInstruction(llvm::CmpInst::ICMP_NE, llvm::CmpInst::FCMP_ONE, rh, "ne");
+}
+
+JITValuePointer LLVMJITValue::lt(JITValue& rh) {
+  return createCmpInstruction(llvm::CmpInst::ICMP_SLT, llvm::CmpInst::FCMP_OLT, rh, "lt");
+}
+
+JITValuePointer LLVMJITValue::le(JITValue& rh) {
+  return createCmpInstruction(llvm::CmpInst::ICMP_SLE, llvm::CmpInst::FCMP_OLE, rh, "le");
+}
+
+JITValuePointer LLVMJITValue::gt(JITValue& rh) {
+  return createCmpInstruction(llvm::CmpInst::ICMP_SGT, llvm::CmpInst::FCMP_OGT, rh, "gt");
+}
+
+JITValuePointer LLVMJITValue::ge(JITValue& rh) {
+  return createCmpInstruction(llvm::CmpInst::ICMP_SGE, llvm::CmpInst::FCMP_OGE, rh, "ge");
 }
 
 void LLVMJITValue::checkOprandsType(JITTypeTag lh, JITTypeTag rh, const char* op) {
