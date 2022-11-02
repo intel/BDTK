@@ -214,27 +214,30 @@ class QueryArrowDataGenerator {
                               const GeneratePattern pattern,
                               const int32_t null_chance,
                               const int64_t min_len = 0,
-                              const int64_t max_len = -1) {
+                              const int64_t max_len = 0) {
     CHECK_GE(min_len, 0);
     CHECK_GE(max_len, min_len);
     std::string col_data = "";
     std::vector<bool> null_data(row_num);
     std::vector<int32_t> offset_data;
     std::mt19937 rng(std::random_device{}());  // NOLINT
+    size_t default_strlen = (max_len < min_len || max_len <= 0) ? 10 : max_len;
     switch (pattern) {
       case GeneratePattern::Sequence:
         offset_data.push_back(0);
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
-          col_data += (sequence_string(max_len, i));
-          offset_data.push_back(offset_data[i] + max_len);
+          col_data += (sequence_string(default_strlen, i));
+          offset_data.push_back(offset_data[i] + default_strlen);
         }
         break;
       case GeneratePattern::Random:
         offset_data.push_back(0);
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
-          size_t str_len = rand() % (max_len + 1) + min_len;  // NOLINT
+          size_t str_len = (max_len - min_len + 1) > 0
+                               ? (rand() % (max_len - min_len + 1) + min_len)  // NOLINT
+                               : default_strlen;
           col_data += (random_string(str_len));
           offset_data.push_back(offset_data[i] + str_len);
         }
