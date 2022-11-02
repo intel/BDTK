@@ -80,15 +80,17 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
 
     auto planNodeIdGenerator = std::make_shared<PlanNodeIdGenerator>();
 
-    auto planNode =
-        PlanBuilder(planNodeIdGenerator)
-            .values({leftBatch})
-            .hashJoin(makeKeyNames(keyTypes.size(), "t_"),
-                      makeKeyNames(keyTypes.size(), "u_"),
-                      PlanBuilder(planNodeIdGenerator).values({rightBatch}).planNode(),
-                      filter,
-                      concat(leftType->names(), rightType->names()))
-            .planNode();
+    auto planNode = PlanBuilder(planNodeIdGenerator)
+                        .values({leftBatch})
+                        .hashJoin(makeKeyNames(keyTypes.size(), "t_"),
+                                  makeKeyNames(keyTypes.size(), "u_"),
+                                  PlanBuilder(planNodeIdGenerator)
+                                      .values({rightBatch})
+                                      .project(rightType->names())
+                                      .planNode(),
+                                  filter,
+                                  concat(leftType->names(), rightType->names()))
+                        .planNode();
 
     createDuckDbTable("t", {leftBatch});
     createDuckDbTable("u", {rightBatch});
