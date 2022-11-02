@@ -31,6 +31,7 @@ class LLVMIfBuilder final : public IfBuilder {
   LLVMIfBuilder(llvm::Function& function, llvm::IRBuilder<>& builder)
       : func_(function), builder_(builder) {}
 
+  // TBD: Refactor with template to avoid using std::function.
   void build(const std::function<JITValuePointer()>& condition,
              const std::function<void()>& if_true_block,
              const std::function<void()>& else_block) override;
