@@ -34,22 +34,23 @@ class PlanBranches {
  public:
   // Plan Branches is a read-only branch view of the plan start from root.
   PlanBranches(VeloxPlanNodePtr root);  // NOLINT
-  VeloxPlanNodePtr getRoot() { return root_; }
+  VeloxPlanNodePtr getRoot() const { return root_; }
   // get all the source branch ids of the plan;
-  std::vector<int32_t> getPlanSourceBranchIds() { return srcBranchIds_; }
-  std::vector<int32_t> getSrcToRootBranchIds() { return srcToRootBranchIds_; }
+  std::vector<int32_t> getPlanSourceBranchIds() const { return srcBranchIds_; }
+  std::vector<int32_t> getSrcToRootBranchIds() const { return srcToRootBranchIds_; }
   // branch Id start from 1.
-  VeloxPlanBranch getBranch(int32_t branchId);
+  VeloxPlanBranch getBranch(int32_t branchId) const;
   static int32_t getParentBranchId(int32_t branchId);
   static int32_t getLeftSrcBranchId(int32_t branchId);
   static int32_t getRightSrcBranchId(int32_t branchId);
-  VeloxPlanNodeAddr getPlanNodeAddr(int32_t branchId, int32_t nodeId);
-  VeloxPlanNodeAddr getBranchSrcNodeAddr(int32_t branchId);
-  VeloxPlanNodeAddr moveToTarget(VeloxPlanNodeAddr& curNodeAddr);
-  VeloxPlanNodeAddrList getAllSourcesOf(VeloxNodeAddrPlanSection& planSection);
-  BranchSrcToTargetIterator getBranchSrcToTargetIterator(int32_t branchId);
+  VeloxPlanNodeAddr getPlanNodeAddr(int32_t branchId, int32_t nodeId) const;
+  VeloxPlanNodeAddr getBranchSrcNodeAddr(int32_t branchId) const;
+  VeloxPlanNodeAddr moveToTarget(const VeloxPlanNodeAddr& curNodeAddr) const;
+  VeloxPlanNodeAddrList getAllSourcesOf(
+      const VeloxNodeAddrPlanSection& planSection) const;
+  BranchSrcToTargetIterator getBranchSrcToTargetIterator(int32_t branchId) const;
   BranchSrcToTargetIterator getPlanSectionSrcToTargetIterator(
-      VeloxNodeAddrPlanSection& planSection);
+      const VeloxNodeAddrPlanSection& planSection) const;
 
  private:
   // Split the plan into branches
@@ -68,13 +69,13 @@ class PlanBranches {
 // This class travels the plan from source to target.
 class BranchSrcToTargetIterator {
  public:
-  BranchSrcToTargetIterator(PlanBranches& branches, int32_t branchId);
-  BranchSrcToTargetIterator(PlanBranches& branches,
-                            VeloxNodeAddrPlanSection& planSection);
-  bool hasNext();
+  BranchSrcToTargetIterator(const PlanBranches& branches, int32_t branchId);
+  BranchSrcToTargetIterator(const PlanBranches& branches,
+                            const VeloxNodeAddrPlanSection& planSection);
+  bool hasNext() const;
   VeloxPlanNodeAddr next();
-  VeloxPlanNodeAddr getCurPos();
-  void setCurPos(VeloxPlanNodeAddr& curPos);
+  VeloxPlanNodeAddr getCurPos() const;
+  void setCurPos(const VeloxPlanNodeAddr& curPos);
 
  private:
   std::shared_ptr<PlanBranches> planBranches_;

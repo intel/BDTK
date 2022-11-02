@@ -31,13 +31,13 @@ using StatePtr = std::shared_ptr<State>;
 class State {
  public:
   State() {}
-  virtual StatePtr accept(VeloxPlanNodeAddr nodeAddr) { return nullptr; }
+  virtual StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) { return nullptr; }
   virtual bool isFinal() { return false; }
 };
 
 class StateMachine {
  public:
-  virtual bool accept(VeloxPlanNodeAddr nodePtr) = 0;
+  virtual bool accept(const VeloxPlanNodeAddr& nodePtr) = 0;
   bool finish() { return getCurState()->isFinal(); }
   virtual void setInitState() = 0;
   void reset() {
@@ -53,7 +53,7 @@ class StateMachine {
       return VeloxPlanNodeAddrList{};
     }
   }
-  virtual void addToMatchResult(VeloxPlanNodeAddr nodeAddr) {
+  virtual void addToMatchResult(const VeloxPlanNodeAddr& nodeAddr) {
     matchResult_.emplace_back(nodeAddr);
   }
   virtual void clearMatchResult() { matchResult_ = {}; }
@@ -68,7 +68,8 @@ class StateMachine {
 class SequencePlanPattern : public PlanPattern {
  public:
   std::pair<bool, VeloxNodeAddrPlanSection> matchFromSrc(
-      BranchSrcToTargetIterator branchIte) const;
+      BranchSrcToTargetIterator& branchIte) const override;
+
   void setStateMachine(std::shared_ptr<StateMachine> stateMachine) {
     stateMachine_ = stateMachine;
   }

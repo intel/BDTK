@@ -48,7 +48,7 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
   }
 
   std::unique_ptr<exec::JoinBridge> toJoinBridge(
-      const std::shared_ptr<const core::PlanNode>& node) {
+      const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderJoinNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
       return std::make_unique<CiderJoinBridge>();
     }
@@ -56,7 +56,7 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
   }
 
   exec::OperatorSupplier toOperatorSupplier(
-      const std::shared_ptr<const core::PlanNode>& node) {
+      const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderJoinNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
       return [ciderJoinNode](int32_t operatorId, exec::DriverCtx* ctx) {
         return std::make_unique<CiderJoinBuild>(operatorId, ctx, ciderJoinNode);

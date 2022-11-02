@@ -60,28 +60,30 @@ void PlanUtil::changeJoinNodeRightSource(VeloxPlanNodePtr node, VeloxPlanNodePtr
   nodeSources = {nodeSources[0], right};
 }
 
-void PlanUtil::changeSingleSourcePlanSectionSource(VeloxNodeAddrPlanSection& planSection,
-                                                   VeloxPlanNodeAddr& source) {
+void PlanUtil::changeSingleSourcePlanSectionSource(
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddr& source) {
   PlanUtil::changeNodeSource(planSection.source.nodePtr, source.nodePtr);
 }
 
-void PlanUtil::changeMultiSourcePlanSectionSources(VeloxNodeAddrPlanSection& planSection,
-                                                   VeloxPlanNodeAddrList& sourceList) {
+void PlanUtil::changeMultiSourcePlanSectionSources(
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& sourceList) {
   NodeAddrMapPtr newSrcPtrMap = toNodeAddrMap(sourceList);
   PlanBranches planBranches{planSection.target.root};
   VeloxPlanNodeAddrList sources = planBranches.getAllSourcesOf(planSection);
   for (VeloxPlanNodeAddr oldSrc : sources) {
     VeloxPlanNodeAddr target = planBranches.moveToTarget(oldSrc);
-    auto foundInSrcNodeAddMap =
+    const auto& [found, sourceNode] =
         findInNodeAddrMap(newSrcPtrMap, oldSrc.branchId, oldSrc.nodeId);
-    if (foundInSrcNodeAddMap.first) {
+    if (found) {
       if (target.branchId == oldSrc.branchId) {  // target is not a join
-        changeNodeSource(target.nodePtr, foundInSrcNodeAddMap.second);
+        changeNodeSource(target.nodePtr, sourceNode);
       } else {
-        if (planBranches.getLeftSrcBranchId(target.branchId) == oldSrc.branchId) {
-          changeJoinNodeLeftSource(target.nodePtr, foundInSrcNodeAddMap.second);
+        if (PlanBranches::getLeftSrcBranchId(target.branchId) == oldSrc.branchId) {
+          changeJoinNodeLeftSource(target.nodePtr, sourceNode);
         } else {
-          changeJoinNodeRightSource(target.nodePtr, foundInSrcNodeAddMap.second);
+          changeJoinNodeRightSource(target.nodePtr, sourceNode);
         }
       }
     }
@@ -89,7 +91,7 @@ void PlanUtil::changeMultiSourcePlanSectionSources(VeloxNodeAddrPlanSection& pla
 }
 
 VeloxPlanNodeAddrList PlanUtil::getPlanNodeListForPlanSection(
-    VeloxNodeAddrPlanSection& planSection) {
+    const VeloxNodeAddrPlanSection& planSection) {
   PlanBranches planBranches{planSection.target.root};
   BranchSrcToTargetIterator nodeIte =
       planBranches.getPlanSectionSrcToTargetIterator(planSection);
@@ -100,10 +102,9 @@ VeloxPlanNodeAddrList PlanUtil::getPlanNodeListForPlanSection(
   return planSectonList;
 }
 
-
-NodeAddrMapPtr PlanUtil::toNodeAddrMap(VeloxPlanNodeAddrList& nodeAddrList) {
+NodeAddrMapPtr PlanUtil::toNodeAddrMap(const VeloxPlanNodeAddrList& nodeAddrList) {
   NodeAddrMap sourcePtrMap;
-  for (auto sourceAddr : nodeAddrList) {
+  for (const auto& sourceAddr : nodeAddrList) {
     std::pair<int32_t, int32_t> nodeAddr{};
     nodeAddr.first = sourceAddr.branchId;
     nodeAddr.second = sourceAddr.nodeId;

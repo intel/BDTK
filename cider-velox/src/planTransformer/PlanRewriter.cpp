@@ -23,19 +23,18 @@
 #include "PlanUtil.h"
 
 namespace facebook::velox::plugin::plantransformer {
-VeloxPlanNodePtr PlanRewriter::rewrite(VeloxNodeAddrPlanSection& planSection,
-                                       VeloxPlanNodeAddr& source) {
-  auto rewrittenResult = rewritePlanSectionWithSingleSource(planSection, source);
+VeloxPlanNodePtr PlanRewriter::rewrite(const VeloxNodeAddrPlanSection& planSection,
+                                       const VeloxPlanNodeAddr& source) const {
+  auto [rewritted, result] = rewritePlanSectionWithSingleSource(planSection, source);
   // if this plan sectoin need to be rewritten, just rewite it with the result
   // of rewritePlanSectionWithSingleSource. If
   // rewritePlanSectionWithSingleSource returns a nullptr, the framework treat
   // it as deletion for the whole plan section.
-  if (rewrittenResult.first) {
-    auto resultPtr = rewrittenResult.second;
-    if (resultPtr == nullptr) {
-      resultPtr = source.nodePtr;
+  if (rewritted) {
+    if (result == nullptr) {
+      result = source.nodePtr;
     }
-    return resultPtr;
+    return result;
   } else {
     // if this plan section needn't to be rewitten,simply link it
     // to the new source.
@@ -44,12 +43,13 @@ VeloxPlanNodePtr PlanRewriter::rewrite(VeloxNodeAddrPlanSection& planSection,
   }
 }
 
-VeloxPlanNodePtr PlanRewriter::rewriteWithMultiSrc(VeloxNodeAddrPlanSection& planSection,
-                                                   VeloxPlanNodeAddrList& srcList) {
-  auto rewrittenResult = rewritePlanSectionWithMultiSources(planSection, srcList);
-  if (rewrittenResult.first) {
-    auto resultPtr = rewrittenResult.second;
-    if (resultPtr == nullptr) {
+VeloxPlanNodePtr PlanRewriter::rewriteWithMultiSrc(
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& srcList) const {
+  const auto& [rewritted, result] =
+      rewritePlanSectionWithMultiSources(planSection, srcList);
+  if (rewritted) {
+    if (result == nullptr) {
       // For cross branch plan section, it's not reasonable to simply
       // delete the whole plan section since the target node of the plan section
       // may can not accept multi sources.So for this situation, we
@@ -57,7 +57,7 @@ VeloxPlanNodePtr PlanRewriter::rewriteWithMultiSrc(VeloxNodeAddrPlanSection& pla
       VELOX_FAIL(
           "PlanSection with multi sources nodes should not be rewritten to nullptr");
     }
-    return resultPtr;
+    return result;
   } else {
     // if this plan section needn't to be rewitten,simply link it
     // to the new source.
