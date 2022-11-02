@@ -329,9 +329,9 @@ void DuckDbQueryRunner::createTableAndInsertArrowData(
       for (int col_idx = 0; col_idx < col_num; ++col_idx) {
         auto child = current_batch->getChildAt(col_idx);
         auto child_type = child->getCiderType();
-        auto valid_bitmap = child->getNulls();
+        const uint8_t* valid_bitmap = child->getNulls();
         if (!valid_bitmap || CiderBitUtils::isBitSetAt(valid_bitmap, row_idx)) {
-          auto value = GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC();
+          ::duckdb::Value value = GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC();
           appender.Append(value);
         } else {
           appender.Append(nullptr);
@@ -492,7 +492,7 @@ void addColumnDataToCiderBatch<CiderByteArray>(
 void DuckDbResultConvertor::updateChildrenNullCounts(CiderBatch& batch) {
   for (int i = 0; i < batch.getChildrenNum(); ++i) {
     auto child = batch.getChildAt(i);
-    auto validity_map = child->getNulls();
+    const uint8_t* validity_map = child->getNulls();
     int null_count = 0;
     if (validity_map) {
       for (int j = 0; j < batch.getLength(); ++j) {

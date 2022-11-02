@@ -77,7 +77,7 @@ std::string StructBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_
     CIDER_THROW(CiderRuntimeException, "StructBatch is nullptr.");
   }
 
-  auto valid_bitmap = batch->getNulls();
+  const uint8_t* valid_bitmap = batch->getNulls();
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     // this usually should not happen, values in struct batch are expected to be valid
     // but just in case
@@ -91,20 +91,22 @@ std::string StructBatchStringifier::stringifyValueAt(CiderBatch* batch, int row_
   for (auto col_index = 0; col_index < col_num; ++col_index) {
     auto child = batch->getChildAt(col_index);
     auto& col_stringifier = child_stringifiers_[col_index];
-    auto value_str = col_stringifier->stringifyValueAt(child.get(), row_index);
+    std::string value_str = col_stringifier->stringifyValueAt(child.get(), row_index);
     row.addCol(value_str);
   }
   row.finish();
   return row.getString();
 }
 
-uint8_t DecimalBatchStringifier::getScale(const ScalarBatch<__int128_t>* batch) {
+const uint8_t DecimalBatchStringifier::getScale(
+    const ScalarBatch<__int128_t>* batch) const {
   auto type_str = std::string(batch->getArrowFormatString());
   uint8_t scale = std::stoi(type_str.substr(type_str.find(',') + 1));
   return scale;
 }
 
-uint8_t DecimalBatchStringifier::getPrecision(const ScalarBatch<__int128_t>* batch) {
+const uint8_t DecimalBatchStringifier::getPrecision(
+    const ScalarBatch<__int128_t>* batch) const {
   auto type_str = std::string(batch->getArrowFormatString());
   auto start = type_str.find(':') + 1;
   auto end = type_str.find(',');
@@ -119,10 +121,10 @@ std::string DecimalBatchStringifier::stringifyValueAt(CiderBatch* batch, int row
                 "ScalarBatch is nullptr, maybe check your casting?");
   }
 
-  auto scale = getScale(scalar_batch);
-  auto precision = getPrecision(scalar_batch);
-  auto data_buffer = scalar_batch->getRawData();
-  auto valid_bitmap = scalar_batch->getNulls();
+  const uint8_t scale = getScale(scalar_batch);
+  const uint8_t precision = getPrecision(scalar_batch);
+  const __int128_t* data_buffer = scalar_batch->getRawData();
+  const uint8_t* valid_bitmap = scalar_batch->getNulls();
 
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
@@ -154,8 +156,8 @@ std::string ScalarBatchStringifier<T>::stringifyValueAt(CiderBatch* batch,
                 "ScalarBatch is nullptr, maybe check your casting?");
   }
 
-  auto data_buffer = scalar_batch->getRawData();
-  auto valid_bitmap = scalar_batch->getNulls();
+  const T* data_buffer = scalar_batch->getRawData();
+  const uint8_t* valid_bitmap = scalar_batch->getNulls();
 
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
@@ -174,8 +176,8 @@ std::string ScalarBatchStringifier<float>::stringifyValueAt(CiderBatch* batch,
                 "ScalarBatch is nullptr, maybe check your casting?");
   }
 
-  auto data_buffer = scalar_batch->getRawData();
-  auto valid_bitmap = scalar_batch->getNulls();
+  const float* data_buffer = scalar_batch->getRawData();
+  const uint8_t* valid_bitmap = scalar_batch->getNulls();
 
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
@@ -197,8 +199,8 @@ std::string ScalarBatchStringifier<double>::stringifyValueAt(CiderBatch* batch,
                 "ScalarBatch is nullptr, maybe check your casting?");
   }
 
-  auto data_buffer = scalar_batch->getRawData();
-  auto valid_bitmap = scalar_batch->getNulls();
+  const double* data_buffer = scalar_batch->getRawData();
+  const uint8_t* valid_bitmap = scalar_batch->getNulls();
 
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
@@ -220,8 +222,8 @@ std::string ScalarBatchStringifier<bool>::stringifyValueAt(CiderBatch* batch,
                 "ScalarBatch is nullptr, maybe check your casting?");
   }
 
-  auto data_buffer = scalar_batch->getRawData();
-  auto valid_bitmap = scalar_batch->getNulls();
+  const uint8_t* data_buffer = scalar_batch->getRawData();
+  const uint8_t* valid_bitmap = scalar_batch->getNulls();
 
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
@@ -238,22 +240,17 @@ std::string VarcharBatchStringifier::stringifyValueAt(CiderBatch* batch, int row
                 "ScalarBatch is nullptr, maybe check your casting?");
   }
 
-  auto data_buffer = varchar_batch->getRawData();
-  auto offset_buffer = varchar_batch->getRawOffset();
-  auto valid_bitmap = varchar_batch->getNulls();
+  const uint8_t* data_buffer = varchar_batch->getRawData();
+  const int32_t* offset_buffer = varchar_batch->getRawOffset();
+  const uint8_t* valid_bitmap = varchar_batch->getNulls();
 
   if (valid_bitmap && !CiderBitUtils::isBitSetAt(valid_bitmap, row_index)) {
     return NULL_VALUE;
   } else {
-    auto start = offset_buffer[row_index];
-    auto end = offset_buffer[row_index + 1];
-    auto len = end - start;
-    char str_buffer[len + 1];
+    int32_t start = offset_buffer[row_index];
+    int32_t end = offset_buffer[row_index + 1];
+    int32_t len = end - start;
 
-    // copy char values and append \0
-    memcpy(&str_buffer, data_buffer + start, len);
-    str_buffer[len] = '\0';
-
-    return std::string(str_buffer);
+    return std::string(reinterpret_cast<const char*>(data_buffer) + start, len);
   }
 }
