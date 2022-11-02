@@ -16,14 +16,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+set(DEP_LIBS ${EXECUTE_TEST_LIBS} jitlib translator)
 
-set(NEXTGEN_DEPS cider_util)
+set(TEST_ARGS "--gtest_output=xml:../")
 
-# AddressSanitizer needs to set overcommit_memory as allowed.
-option(ENABLE_ASN "Enable AddressSanitizer for Nextgen Project." OFF)
-if(ENABLE_ASN)
-  list(APPEND NEXTGEN_DEPS -fsanitize=address)
-endif()
-
-add_subdirectory(jitlib)
-add_subdirectory(translator)
+add_executable(FilterTest FilterTest.cpp)
+target_link_libraries(FilterTest ${DEP_LIBS})
+add_test(FilterTest ${EXECUTABLE_OUTPUT_PATH}/FilterTest ${TEST_ARGS})

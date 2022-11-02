@@ -283,7 +283,9 @@ CIDER_CHECKOP_FUNCTION(GE, >=)
 #undef CIDER_CHECKOP_FUNCTION
 
 #define UNREACHABLE() LOG(FATAL) << "UNREACHABLE "
-#else  // NO_BOOST
+#define UNIMPLEMENTED() LOG(FATAL) << "UNIMPLEMENTED! "
+#define TODO(author, msg) LOG(FATAL) << "TODO(" #author "):" #msg  // TODO(author): msg
+#else                                                              // NO_BOOST
 
 // Provided for backward compatibility to allow code to compile.
 template <Severity severity>
