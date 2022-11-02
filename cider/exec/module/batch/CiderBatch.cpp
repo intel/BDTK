@@ -139,6 +139,10 @@ SQLTypes CiderBatch::getCiderType() const {
   return CiderBatchUtils::convertArrowTypeToCiderType(arrow_schema_->format);
 }
 
+const char* CiderBatch::getArrowFormatString() const {
+  return getArrowSchema()->format;
+}
+
 // TODO: Dictionary support is TBD.
 std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
   CHECK(!isMoved());
@@ -375,6 +379,12 @@ const void** CiderBatch::getBuffersPtr() const {
 const void** CiderBatch::getChildrenArrayPtr() const {
   CHECK(!isMoved());
   return const_cast<const void**>(reinterpret_cast<void**>(arrow_array_->children));
+}
+
+const void* CiderBatch::arrow_column(int32_t col_id) const {
+  CHECK(!isMoved());
+  const void* buf = arrow_array_->children[col_id]->buffers[1];
+  return buf;
 }
 
 void CiderBatch::setNullCount(int64_t null_num) {

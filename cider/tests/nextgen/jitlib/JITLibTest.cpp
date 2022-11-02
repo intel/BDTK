@@ -18,51 +18,129 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/jitlib/JITLib.h"
 
 #include <gtest/gtest.h>
+#include <functional>
 
+#include "exec/nextgen/jitlib/JITLib.h"
 #include "tests/TestHelpers.h"
 
-using namespace jitlib;
+using namespace cider::jitlib;
 
 class JITLibTests : public ::testing::Test {};
 
-TEST_F(JITLibTests, BasicTest) {
-  LLVMJITModule module("Test");
-
-  JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func1",
-      .ret_type = JITFunctionParam{.type = INT32},
-      .params_type = {JITFunctionParam{.name = "x", .type = INT32}},
+template <JITTypeTag Type, typename NativeType, typename BuilderType>
+void executeSingleParamTest(NativeType input, NativeType output, BuilderType builder) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = Type},
+      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
   });
-  {
-    JITValuePointer x = function1->createVariable("x1", INT32);
-    JITValuePointer init_val = function1->createConstant(INT32, 123);
-    *x = *init_val;
-    function1->createReturn(*x);
-  }
-  function1->finish();
-
-  JITFunctionPointer function2 = module.createJITFunction(
-      JITFunctionDescriptor{.function_name = "test_func2",
-                            .ret_type = JITFunctionParam{.type = INT32},
-                            .params_type = {}});
-  {
-    JITValuePointer x = function2->createVariable("x1", INT32);
-    JITValuePointer init_val = function1->createConstant(INT32, 321);
-    *x = *function2->emitJITFunctionCall(
-        *function1,
-        JITFunctionEmitDescriptor{.ret_type = INT32, .params_vector = {init_val.get()}});
-    function2->createReturn(*x);
-  }
-  function2->finish();
+  builder(function.get());
+  function->finish();
   module.finish();
 
-  auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
-  EXPECT_EQ(ptr1(12), 123);
-  auto ptr2 = function2->getFunctionPointer<int32_t>();
-  EXPECT_EQ(ptr2(), 123);
+  auto func_ptr = function->getFunctionPointer<NativeType, NativeType>();
+  EXPECT_EQ(func_ptr(input), output);
+}
+
+using OpFunc = JITValuePointer(JITValue&, JITValue&);
+template <JITTypeTag Type, typename T>
+void executeBinaryOp(T left, T right, T output, OpFunc op) {
+  using NativeType = typename JITTypeTraits<Type>::NativeType;
+  executeSingleParamTest<Type>(
+      static_cast<NativeType>(left),
+      static_cast<NativeType>(output),
+      [&, right = static_cast<NativeType>(right)](JITFunction* func) {
+        auto left = func->createVariable("left", Type);
+        *left = func->getArgument(0);
+
+        auto right_const = func->createConstant(Type, right);
+        auto ans = op(left, right_const);
+
+        func->createReturn(ans);
+      });
+}
+
+TEST_F(JITLibTests, ArithmeticOPTest) {
+  // Sum
+  executeBinaryOp<JITTypeTag::INT8>(
+      10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      10, 20, 31, [](JITValue& a, JITValue& b) { return a + 1 + b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      10, 20, 31, [](JITValue& a, JITValue& b) { return 1 + a + b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      10, 20, 31, [](JITValue& a, JITValue& b) { return a + b + 1; });
+  executeBinaryOp<JITTypeTag::FLOAT>(
+      10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + b + 0.5; });
+  executeBinaryOp<JITTypeTag::DOUBLE>(
+      10.0, 20.0, 30.5, [](JITValue& a, JITValue& b) { return a + 0.5 + b; });
+
+  // Sub
+  executeBinaryOp<JITTypeTag::INT8>(
+      20, 10, 9, [](JITValue& a, JITValue& b) { return a - b - 1; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      20, 10, 9, [](JITValue& a, JITValue& b) { return a - 1 - b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      20, 10, 9, [](JITValue& a, JITValue& b) { return a - b - 1; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      20, 10, 9, [](JITValue& a, JITValue& b) { return a - 1 - b; });
+  executeBinaryOp<JITTypeTag::FLOAT>(
+      20.0, 10.0, 9.5, [](JITValue& a, JITValue& b) { return a - b - 0.5; });
+  executeBinaryOp<JITTypeTag::DOUBLE>(
+      20.0, 10.0, 9.5, [](JITValue& a, JITValue& b) { return a - 0.5 - b; });
+
+  // Multi
+  executeBinaryOp<JITTypeTag::INT8>(
+      2, 2, 12, [](JITValue& a, JITValue& b) { return a * b * 3; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      2, 2, 12, [](JITValue& a, JITValue& b) { return a * 3 * b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      2, 2, 12, [](JITValue& a, JITValue& b) { return 3 * a * b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      2, 2, 12, [](JITValue& a, JITValue& b) { return a * b * 3; });
+  executeBinaryOp<JITTypeTag::FLOAT>(
+      20.0, 10.0, 100.0, [](JITValue& a, JITValue& b) { return a * b * 0.5; });
+  executeBinaryOp<JITTypeTag::DOUBLE>(
+      20.0, 10.0, 100.0, [](JITValue& a, JITValue& b) { return a * 0.5 * b; });
+
+  // Div
+  executeBinaryOp<JITTypeTag::INT8>(
+      100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      100, 2, 10, [](JITValue& a, JITValue& b) { return a / b / 5; });
+  executeBinaryOp<JITTypeTag::FLOAT>(
+      20.0, 10.0, 4.0, [](JITValue& a, JITValue& b) { return a / b / 0.5; });
+  executeBinaryOp<JITTypeTag::DOUBLE>(
+      20.0, 10.0, 4.0, [](JITValue& a, JITValue& b) { return a / b / 0.5; });
+
+  // Mod
+  executeBinaryOp<JITTypeTag::INT8>(
+      109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      109, 10, 4, [](JITValue& a, JITValue& b) { return a % b % 5; });
+  executeBinaryOp<JITTypeTag::FLOAT>(
+      25.5, 10.0, 0.5, [](JITValue& a, JITValue& b) { return a % b % 1.0; });
+  executeBinaryOp<JITTypeTag::DOUBLE>(
+      25.5, 10.0, 0.5, [](JITValue& a, JITValue& b) { return a % b % 1.0; });
+}
+
+TEST_F(JITLibTests, LogicalOpTest) {
+  // Not
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, false, [](JITValue& a, JITValue& b) { return !a; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, true, true, [](JITValue& a, JITValue& b) { return !a; });
 }
 
 int main(int argc, char** argv) {

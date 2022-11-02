@@ -157,6 +157,16 @@ template <>
   return ::duckdb::Value(CiderBitUtils::isBitSetAt(data_buffer, offset));
 }
 
+::duckdb::Value duckDbValueAtVarcharBatch(const VarcharBatch* batch, int64_t offset) {
+  auto data_buffer = batch->getRawData();
+  auto offset_buffer = batch->getRawOffset();
+  auto len = offset_buffer[offset + 1] - offset_buffer[offset];
+  char copy[len + 1];
+  memcpy(&copy, &data_buffer[offset_buffer[offset]], len);
+  copy[len] = '\0';
+  return ::duckdb::Value(std::string(copy));
+}
+
 #define GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC                                               \
   [&]() {                                                                               \
     switch (child_type) {                                                               \
@@ -180,6 +190,8 @@ template <>
       case SQLTypes::kDOUBLE:                                                           \
         return duckDbValueAtScalarBatch<double>(child->as<ScalarBatch<double>>(),       \
                                                 row_idx);                               \
+      case SQLTypes::kVARCHAR:                                                          \
+        return duckDbValueAtVarcharBatch(child->as<VarcharBatch>(), row_idx);           \
       default:                                                                          \
         CIDER_THROW(CiderUnsupportedException,                                          \
                     "Unsupported type for converting to duckdb values.");               \
@@ -317,9 +329,9 @@ void DuckDbQueryRunner::createTableAndInsertArrowData(
       for (int col_idx = 0; col_idx < col_num; ++col_idx) {
         auto child = current_batch->getChildAt(col_idx);
         auto child_type = child->getCiderType();
-        auto valid_bitmap = child->getNulls();
+        const uint8_t* valid_bitmap = child->getNulls();
         if (!valid_bitmap || CiderBitUtils::isBitSetAt(valid_bitmap, row_idx)) {
-          auto value = GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC();
+          ::duckdb::Value value = GEN_DUCK_DB_VALUE_FROM_ARROW_FUNC();
           appender.Append(value);
         } else {
           appender.Append(nullptr);
@@ -480,7 +492,7 @@ void addColumnDataToCiderBatch<CiderByteArray>(
 void DuckDbResultConvertor::updateChildrenNullCounts(CiderBatch& batch) {
   for (int i = 0; i < batch.getChildrenNum(); ++i) {
     auto child = batch.getChildAt(i);
-    auto validity_map = child->getNulls();
+    const uint8_t* validity_map = child->getNulls();
     int null_count = 0;
     if (validity_map) {
       for (int j = 0; j < batch.getLength(); ++j) {

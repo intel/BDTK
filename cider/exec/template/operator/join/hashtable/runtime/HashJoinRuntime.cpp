@@ -184,8 +184,11 @@ auto fill_hash_join_buff_impl(int32_t* buff,
       }
       elem = outer_id;
     }
-    CHECK_GE(elem, type_info.min_val)
-        << "Element " << elem << " less than min val " << type_info.min_val;
+    // skip null value
+    if (elem < type_info.min_val) {
+      VLOG(1) << "Element " << elem << " less than min val " << type_info.min_val;
+      continue;
+    }
     if (filling_func(elem, index)) {
       return -1;
     }
@@ -483,8 +486,11 @@ void count_matches_impl(int32_t* count_buff,
       }
       elem = outer_id;
     }
-    CHECK_GE(elem, type_info.min_val)
-        << "Element " << elem << " less than min val " << type_info.min_val;
+    // skip null value
+    if (elem < type_info.min_val) {
+      VLOG(1) << "Element " << elem << " less than min val " << type_info.min_val;
+      continue;
+    }
     auto* entry_ptr = slot_selector(count_buff, elem);
     mapd_add(entry_ptr, int32_t(1));
   }
@@ -632,8 +638,11 @@ void fill_row_ids_impl(int32_t* buff,
       }
       elem = outer_id;
     }
-    CHECK_GE(elem, type_info.min_val)
-        << "Element " << elem << " less than min val " << type_info.min_val;
+    // skip null value
+    if (elem < type_info.min_val) {
+      VLOG(4) << "Element " << elem << " less than min val " << type_info.min_val;
+      continue;
+    }
     auto pos_ptr = slot_selector(pos_buff, elem);
     CHECK_NE(*pos_ptr, invalid_slot_val);
     const auto bin_idx = pos_ptr - pos_buff;

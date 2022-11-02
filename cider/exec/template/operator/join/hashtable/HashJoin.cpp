@@ -159,7 +159,8 @@ HashJoinMatchingSet HashJoin::codegenMatchingSet(
     const bool is_bw_eq,
     const int64_t sub_buff_size,
     Executor* executor,
-    bool is_bucketized) {
+    bool is_bucketized,
+    bool is_cider_format) {
   AUTOMATIC_IR_METADATA(executor->cgen_state_.get());
   using namespace std::string_literals;
 
@@ -169,7 +170,11 @@ HashJoinMatchingSet HashJoin::codegenMatchingSet(
     fname += "_bitwise";
   }
   if (!is_bw_eq && col_is_nullable) {
-    fname += "_nullable";
+    if (is_cider_format) {
+      fname += "_nullable_cider";
+    } else {
+      fname += "_nullable";
+    }
   }
 
   const auto slot_lv = executor->cgen_state_->emitCall(fname, hash_join_idx_args_in);

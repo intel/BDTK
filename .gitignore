@@ -316,3 +316,6 @@ src/amalgamation/
 .cproject
 .settings
 ~
+
+# logs
+bdtk_log/

@@ -33,7 +33,7 @@ We provide Dockerfile to help developers setup and install BDTK dependencies.
    $ docker build -t ${image_name} .
 
    # Start a docker container for development
-   docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk ${image_name} -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
+   docker run -d --name ${container_name} --privileged=true -v ${path_to_bdtk}:/workspace/bdtk -v ${path_to_presto}:/workspace/presto ${image_name} /usr/sbin/init
    # Tips: you can run with more CPU cores to accelerate building time
    # docker run -d ... ${image_name} --cpus="30" /usr/sbin/init
 
@@ -55,7 +55,7 @@ Integrate BDTK with Presto
    $ cd ${path-to-presto}/presto-native-execution
    # Integrate BDTK with Presto
    $ export WORKER_DIR=${path-to-presto}/presto-native-execution
-   $ bash ${WORKER_DIR}/velox-plugin/ci/scripts/integrate-presto-bdtk.sh release
+   $ bash ${WORKER_DIR}/BDTK/ci/scripts/integrate-presto-bdtk.sh release
 
 Now the you can check your executable presto server file in ${WORKER_DIR}/_build/release/presto_cpp/main/presto_server
 
@@ -185,7 +185,7 @@ Run a DEMO using HDFS
 
    # Set temp env variable for adaptors installation
    $ export KERBEROS_INCLUDE_DIRS=${path-to-krb}/src/include
-   $ cd ${path-to-presto}/presto-native-execution/velox-plugin/ci/scripts
+   $ cd ${path-to-presto}/presto-native-execution/BDTK/ci/scripts
    # Run the script to set up for adpators
    $ ./setup-adapters.sh
 

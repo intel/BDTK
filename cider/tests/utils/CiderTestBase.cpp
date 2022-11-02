@@ -167,3 +167,21 @@ void CiderJoinTestBase::assertJoinQueryRowEqual(const std::string& sql,
 
   EXPECT_TRUE(CiderBatchChecker::checkEq(duck_res_batches, cider_res_batch, true));
 }
+
+void CiderJoinTestBase::assertJoinQueryRowEqualForArrowFormat(
+    const std::string& sql,
+    const std::string& json_file,
+    const bool ignore_order) {
+  VLOG(4) << sql;
+  auto duck_res = duckDbQueryRunner_.runSql(sql);
+  auto duck_res_batches =
+      DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(duck_res);
+
+  auto cider_input = json_file.size() ? json_file : sql;
+  auto cider_res_batch =
+      std::make_shared<CiderBatch>(ciderQueryRunner_.runJoinQueryOneBatchForArrowFormat(
+          cider_input, *input_[0], *build_table_));
+
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(
+      duck_res_batches[0], cider_res_batch, ignore_order));
+}
