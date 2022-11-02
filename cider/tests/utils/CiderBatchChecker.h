@@ -206,6 +206,9 @@ class CiderBatchChecker {
   static bool checkOneStructBatchEqual(CiderBatch* expected_batch,
                                        CiderBatch* actual_batch);
 
+  static bool checkOneVarcharBatchEqual(const VarcharBatch* expected_batch,
+                                        const VarcharBatch* actual_batch);
+
   static bool checkByteArrayEqual(const int8_t* expected_buffer,
                                   const int64_t expected_buffer_offset,
                                   const int8_t* actual_buffer,

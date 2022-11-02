@@ -53,9 +53,14 @@ class ScalarBatchStringifier : public CiderBatchStringifier {
 // so we use gcc's __int128_t to directly decode the values in arrow array
 class DecimalBatchStringifier : public CiderBatchStringifier {
  private:
-  uint8_t getScale(const ScalarBatch<__int128_t>* batch);
-  uint8_t getPrecision(const ScalarBatch<__int128_t>* batch);
+  const uint8_t getScale(const ScalarBatch<__int128_t>* batch) const;
+  const uint8_t getPrecision(const ScalarBatch<__int128_t>* batch) const;
 
+ public:
+  std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
+};
+
+class VarcharBatchStringifier : public CiderBatchStringifier {
  public:
   std::string stringifyValueAt(CiderBatch* batch, int row_index) override;
 };
