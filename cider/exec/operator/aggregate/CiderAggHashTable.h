@@ -112,7 +112,7 @@ class CiderStringHasher {
   const CiderByteArray lookupValueById(int64_t id) const;
 
  private:
-  // Stop counting distinct values after this many and revert to regular hash.
+  // Stop counting distinct values after this threshold and revert to regular hash.
   static constexpr int32_t kMaxDistinct = 100'000;
   static constexpr uint32_t kStringBufferUnitSize = 1024;
   static constexpr uint64_t kMaxDistinctStringsBytes = 1 << 20;
@@ -125,7 +125,7 @@ class CiderStringHasher {
   //   		↓		not found       4 update string ptr    |
   // 1 generate an id                                |
   // 2 cache string ptr to stringCacheVec            |
-  // 3 copy to contigous memory uStringValStorage_	--
+  // 3 copy to contiguous memory uStringValStorage_	--
   robin_hood::unordered_flat_set<UStringVal, UStringValHash, UStringValCmp> uStringVals;
   std::vector<UStringVal> stringCacheVec;
 
