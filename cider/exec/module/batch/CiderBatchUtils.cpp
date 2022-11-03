@@ -61,9 +61,9 @@ namespace CiderBatchUtils {
     C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                             \
     for (auto j = 0; j < table_row_num; ++j) {                                \
       C_TYPE value = buf[j];                                                  \
-      bool is_not_null = null_buf[j];                                         \
+      bool is_null = (null_buf[j] == 0);                                      \
       col_data.push_back(value);                                              \
-      null_data.push_back(!is_not_null);                                      \
+      null_data.push_back(is_null);                                           \
     }                                                                         \
     builder = builder.addColumn<C_TYPE>(names[i], type, col_data, null_data); \
     break;                                                                    \
