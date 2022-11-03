@@ -153,13 +153,14 @@ TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {
   {
     JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
     ret = function->getArgument(0);
-    auto if_builder = function->getIfBuilder();
-    if_builder->build(
-        [&]() {
+    auto if_builder = function->createIfBuilder();
+    if_builder
+        ->condition([&]() {
           auto condition = function->getArgument(1);
           return condition;
-        },
-        [&]() { ret = ret + 1; });
+        })
+        ->ifTrue([&]() { ret = ret + 1; })
+        ->build();
     function->createReturn(ret);
   }
   function->finish();
@@ -180,14 +181,15 @@ TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
   {
     JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
     ret = function->getArgument(0);
-    auto if_builder = function->getIfBuilder();
-    if_builder->build(
-        [&]() {
+    auto if_builder = function->createIfBuilder();
+    if_builder
+        ->condition([&]() {
           auto condition = function->getArgument(1);
           return condition;
-        },
-        [&]() { ret = ret + 1; },
-        [&]() { ret = ret + 10; });
+        })
+        ->ifTrue([&]() { ret = ret + 1; })
+        ->ifFalse([&]() { ret = ret + 10; })
+        ->build();
     function->createReturn(ret);
   }
   function->finish();
@@ -208,32 +210,35 @@ TEST_F(JITLibTests, NestedIFControlFlowTest) {
   {
     JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
     ret = function->getArgument(0);
-    auto if_builder = function->getIfBuilder();
-    if_builder->build(
-        [&]() {
+    auto if_builder = function->createIfBuilder();
+    if_builder
+        ->condition([&]() {
           auto condition = function->getArgument(1);
           return condition;
-        },
-        [&]() {
-          auto if_builder = function->getIfBuilder();
-          if_builder->build(
-              [&]() {
+        })
+        ->ifTrue([&]() {
+          auto if_builder = function->createIfBuilder();
+          if_builder
+              ->condition([&]() {
                 auto condition = function->getArgument(1);
                 return condition;
-              },
-              [&]() { ret = ret + 10; },
-              [&]() { ret = ret + 1; });
-        },
-        [&]() {
-          auto if_builder = function->getIfBuilder();
-          if_builder->build(
-              [&]() {
+              })
+              ->ifTrue([&]() { ret = ret + 10; })
+              ->ifFalse([&]() { ret = ret + 1; })
+              ->build();
+        })
+        ->ifFalse([&]() {
+          auto if_builder = function->createIfBuilder();
+          if_builder
+              ->condition([&]() {
                 auto condition = function->getArgument(1);
                 return condition;
-              },
-              [&]() { ret = ret + 10; },
-              [&]() { ret = ret + 1; });
-        });
+              })
+              ->ifTrue([&]() { ret = ret + 10; })
+              ->ifFalse([&]() { ret = ret + 1; })
+              ->build();
+        })
+        ->build();
     function->createReturn(ret);
   }
   function->finish();
@@ -253,13 +258,14 @@ TEST_F(JITLibTests, BasicForControlFlowTest) {
     JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
     ret = function->createConstant(JITTypeTag::INT32, 0);
 
-    auto loop_builder = function->getForBuilder();
+    auto loop_builder = function->createLoopBuilder();
     JITValuePointer index = function->createVariable("index", JITTypeTag::INT32);
     *index = function->createConstant(JITTypeTag::INT32, 9);
 
-    loop_builder->build([&]() { return index + 0; },
-                        [&]() { ret = ret + index; },
-                        [&]() { index = index - 1; });
+    loop_builder->condition([&]() { return index + 0; })
+        ->loop([&]() { ret = ret + index; })
+        ->update([&]() { index = index - 1; })
+        ->build();
 
     function->createReturn(ret);
   }
@@ -287,13 +293,14 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
       }
       --levels;
 
-      auto loop_builder = function->getForBuilder();
+      auto loop_builder = function->createLoopBuilder();
       JITValuePointer index = function->createVariable("index", JITTypeTag::INT32);
       *index = function->createConstant(JITTypeTag::INT32, 10);
 
-      loop_builder->build([&]() { return index + 0; },
-                          [&]() { nested_loop_builder(); },
-                          [&]() { index = index - 1; });
+      loop_builder->condition([&]() { return index + 0; })
+          ->loop([&]() { nested_loop_builder(); })
+          ->update([&]() { index = index - 1; })
+          ->build();
     };
     nested_loop_builder();
 

@@ -28,12 +28,12 @@
 
 namespace cider::jitlib {
 class LLVMIfBuilder;
-class LLVMForBuilder;
+class LLVMLoopBuilder;
 
 class LLVMJITValue final : public JITValue {
   friend LLVMJITFunction;
   friend LLVMIfBuilder;
-  friend LLVMForBuilder;
+  friend LLVMLoopBuilder;
 
  public:
   explicit LLVMJITValue(JITTypeTag type_tag,

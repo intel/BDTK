@@ -74,9 +74,9 @@ class JITFunction {
 
   virtual JITValuePointer getArgument(size_t index) = 0;
 
-  virtual IfBuilderPointer getIfBuilder() = 0;
+  virtual IfBuilderPointer createIfBuilder() = 0;
 
-  virtual ForBuilderPointer getForBuilder() = 0;
+  virtual LoopBuilderPointer createLoopBuilder() = 0;
 
   virtual void createReturn() = 0;
 

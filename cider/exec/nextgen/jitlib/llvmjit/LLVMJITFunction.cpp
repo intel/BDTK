@@ -185,12 +185,12 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   }
 }
 
-IfBuilderPointer LLVMJITFunction::getIfBuilder() {
+IfBuilderPointer LLVMJITFunction::createIfBuilder() {
   return std::make_unique<LLVMIfBuilder>(func_, *ir_builder_);
 }
 
-ForBuilderPointer LLVMJITFunction::getForBuilder() {
-  return std::make_unique<LLVMForBuilder>(func_, *ir_builder_);
+LoopBuilderPointer LLVMJITFunction::createLoopBuilder() {
+  return std::make_unique<LLVMLoopBuilder>(func_, *ir_builder_);
 }
 };  // namespace cider::jitlib
 
