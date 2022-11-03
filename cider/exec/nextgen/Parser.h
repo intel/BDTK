@@ -29,6 +29,7 @@
 
 namespace cider::exec::nextgen {
 
+/// \brief A parser convert from the plan fragment to an OpPipeline
 class Parser {
  public:
   // source--> filter -->sink

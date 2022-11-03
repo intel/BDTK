@@ -19,4 +19,5 @@
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
 target_link_libraries(NextgenCompilerTest ${EXECUTE_TEST_LIBS})
-add_test(NextgenCompilerTest NextgenCompilerTest ${TEST_ARGS})
+add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
+         ${TEST_ARGS})

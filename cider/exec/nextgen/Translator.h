@@ -29,12 +29,16 @@ namespace cider::exec::nextgen {
 class Context;
 class JITTuple;
 
+/// \brief A translator will generate code for an OpNode
+///
+/// A translator is associated to a Context and consume a JITTuple, the generate code will
+/// save to the Context
 class Translator {
  public:
   Translator() = default;
   virtual ~Translator() = default;
 
-  virtual void consume(Context* context, JITTuple* input) {}
+  virtual void consume(const JITTuple& input, Context* context) {}
 
  protected:
   std::shared_ptr<OpNode> opNode_;

@@ -29,6 +29,7 @@
 
 namespace cider::exec::nextgen {
 
+/// \brief A transformer convert an OpPipeline to a translator
 class Transformer {
  public:
   static std::unique_ptr<Translator> toTranslator(const OpPipeline& pipeline) {

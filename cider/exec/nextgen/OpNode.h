@@ -25,19 +25,23 @@
 #include <memory>
 #include <vector>
 
+#include "type/plan/Analyzer.h"
+
 namespace cider::exec::nextgen {
 
+/// \brief A OpNode is a relational operation in a plan
+///
+/// Note: Each OpNode has zero or one source
 class OpNode {
  public:
   OpNode() = default;
   virtual ~OpNode() = default;
 
-  /// The name of the operator node
+  /// \brief The name of the operator node
   virtual const char* name() const = 0;
 
  protected:
   // input_;
-  // output_;
   // schema_;
 };
 
@@ -48,7 +52,12 @@ class FilterNode : public OpNode {
  public:
   FilterNode() : OpNode() {}
 
+  FilterNode(std::vector<Analyzer::Expr*>& filter) : filter_(std::move(filter)) {}
+
   const char* name() const override { return "FilterNode"; }
+
+ private:
+  std::vector<Analyzer::Expr*> filter_;
 };
 
 }  // namespace cider::exec::nextgen

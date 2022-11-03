@@ -28,10 +28,18 @@
 
 namespace cider::exec::nextgen {
 
+/// \brief An OpPipeline is a linear sequence of relational operators that operate on
+/// tuple data
 class OpPipeline {
  public:
+  OpPipeline() = default;
   OpPipeline(const OpNodeVector& nodes) : nodes_(nodes) {}
   virtual ~OpPipeline() = default;
+
+  /// \brief Register an operator node in this pipeline
+  ///
+  /// \input opNode The operator node to add to the pipeline
+  void registerOpNode(const OpNodePtr opNode);
 
  private:
   OpNodeVector nodes_;
