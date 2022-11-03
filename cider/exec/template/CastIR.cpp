@@ -59,11 +59,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   auto ti = uoper->get_type_info();
   auto operand = uoper->get_operand();
   const auto operand_as_const = dynamic_cast<const Analyzer::Constant*>(operand);
-  // For dictionary encoded constants, the cast holds the dictionary id
-  // information as the compression parameter; handle this case separately.
-  if (operand_as_const) {
-    CIDER_THROW(CiderCompileException, "Cast for constant is not supported now.");
-  }
 
   auto operand_lv = codegen(operand, co, true);
 
