@@ -29,10 +29,10 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../thirdparty/substrait-cpp/src/FunctionLookup.h"
-#include "../thirdparty/substrait-cpp/src/FunctionMapping.h"
-#include "../thirdparty/substrait-cpp/src/FunctionSignature.h"
-#include "../thirdparty/substrait-cpp/src/Type.h"
+#include "FunctionLookup.h"
+#include "FunctionMapping.h"
+#include "FunctionSignature.h"
+#include "Type.h"
 #include "function/SubstraitFunctionCiderMappings.h"
 
 enum PlatformType { SubstraitPlatform, PrestoPlatform, SparkPlatform };
