@@ -129,7 +129,32 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
   }
 
   void extract(const std::vector<const int8_t*>& rowAddrs, CiderBatch* output) override {
-    UNREACHABLE();
+    size_t rowNum = rowAddrs.size();
+    auto varcharOutput = output->asMutable<VarcharBatch>();
+
+    CHECK(varcharOutput->resizeBatch(rowNum));
+    uint8_t* buffer = varcharOutput->getMutableRawData();
+    int32_t* offset = varcharOutput->getMutableRawOffset();
+    uint8_t* nulls = varcharOutput->getMutableNulls();
+
+    offset[0] = 0;
+    int64_t null_count = 0;
+    for (size_t i = 0; i < rowNum; ++i) {
+      const int8_t* rowPtr = rowAddrs[i];
+      const int64_t* id = reinterpret_cast<const int64_t*>(rowPtr + offset_);
+      CiderByteArray value = hasher_->lookupValueById(*id);
+      // TODO(yizhong): null should not be decided by length
+      if (!value.len) {
+        CiderBitUtils::clearBitAt(nulls, i);
+        ++null_count;
+      } else {
+        offset[i + 1] = offset[i] + value.len;
+        varcharOutput->resizeDataBuffer(offset[i + 1]);
+        buffer = varcharOutput->getMutableRawData();
+        std::memcpy(buffer + offset[i], value.ptr, value.len);
+      }
+    }
+    output->setNullCount(null_count);
   }
 
  private:

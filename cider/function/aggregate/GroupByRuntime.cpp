@@ -67,7 +67,7 @@ extern "C" RUNTIME_EXPORT NEVER_INLINE int64_t* get_group_value_cider(
   return agg_hash_table->getGroupTargetPtr(key);
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int32_t
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
 cider_get_string_id(int64_t* agg_hashtable_ptr, const uint8_t* ptr, uint32_t len) {
   CiderAggHashTable* agg_hash_table =
       reinterpret_cast<CiderAggHashTable*>(agg_hashtable_ptr);

@@ -20,7 +20,188 @@
  */
 
 #include <gtest/gtest.h>
+#include "QueryArrowDataGenerator.h"
 #include "tests/utils/CiderTestBase.h"
+class CiderGroupByTinyintArrowTest : public CiderTestBase {
+ public:
+  CiderGroupByTinyintArrowTest() {
+    table_name_ = "table_test";
+    create_ddl_ =
+        "CREATE TABLE table_test(col_a TINYINT NOT NULL, col_b TINYINT NOT NULL, col_c "
+        "TINYINT NOT NULL, col_d VARCHAR);";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  4,
+                                                  {"col_a", "col_b", "col_c", "col_d"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(FixedChar)},
+                                                  {0, 0, 0, 0},
+                                                  GeneratePattern::Sequence,
+                                                  1,
+                                                  10);
+  }
+};
+
+TEST_F(CiderGroupByTinyintArrowTest, tmpGroupByTest) {
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d", "", true);
+}
+
+class CiderGroupByVarcharArrowTest : public CiderTestBase {
+ public:
+  // TODO(yizhong): make col_d to 50% chance nullable and change min length to 0
+  // after null string is supported
+  CiderGroupByVarcharArrowTest() {
+    table_name_ = "table_test";
+    create_ddl_ =
+        "CREATE TABLE table_test(col_a BIGINT NOT NULL, col_b BIGINT NOT NULL, col_c "
+        "VARCHAR NOT NULL, col_d VARCHAR);";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  500,
+                                                  {"col_a", "col_b", "col_c", "col_d"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {0, 0, 0, 0},
+                                                  GeneratePattern::Random,
+                                                  1,
+                                                  10);
+  }
+};
+
+TEST_F(CiderGroupByVarcharArrowTest, varcharGroupByTest) {
+  /*single not null group by key*/
+  assertQueryArrow("SELECT SUM(col_a), col_c FROM table_test GROUP BY col_c", "", true);
+
+  /*single null group by key*/
+  assertQueryArrow("SELECT SUM(col_a), col_d FROM table_test GROUP BY col_d", "", true);
+
+  /*one not null varchar group by key*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c", "", true);
+
+  /*one null varchar group by key */
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d", "", true);
+
+  /*two null and not null varchar group by keys*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
+      "col_d",
+      "",
+      true);
+
+  /*four mixed group by keys*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d",
+      "",
+      true);
+
+  // TODO(yizhong): Enable after string compare is supported.
+  GTEST_SKIP_("Enable after string CmpFun is supported.");
+  /*one not null varchar group by key with one condition*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d <> 'a'",
+      "",
+      true);
+
+  /*one not null varchar group by key with one not null condition*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d IS NOT NULL",
+      "",
+      true);
+
+  /*one null varchar group by key with one null condition*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d IS NULL",
+      "",
+      true);
+
+  /*multiple group by keys with multiple having conditions*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c HAVING "
+      "col_a IS NOT "
+      "NULL AND col_c IS NOT NULL ",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
+      "col_d HAVING "
+      "col_a IS NOT NULL AND col_c <> 'ABC' AND col_d <> 'abc'",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
+      "col_c <> 'AAA' AND col_d IS NULL ",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
+      "col_c <> 'AAA' AND col_d IS NOT NULL ",
+      "",
+      true);
+
+  /*multiple group by keys with multiple where conditions*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL AND col_d "
+      "IS NOT NULL GROUP BY col_a, col_d",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
+      "NOT NULL AND col_b IS "
+      "NOT NULL AND col_c <> 'AAA' GROUP BY col_a, col_b, col_c",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NULL "
+      "GROUP BY col_a, col_b, col_c, col_d",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NOT NULL "
+      "GROUP BY col_a, col_b, col_c, col_d",
+      "",
+      true);
+
+  /*multiple group by keys with multiple where and having conditions*/
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL GROUP BY "
+      "col_a, col_d HAVING col_d IS NOT NULL",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
+      "NOT NULL AND col_b IS NOT NULL GROUP BY col_a, col_b, col_c HAVING col_c <> 'AAA'",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND "
+      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
+      "col_d IS NULL",
+      "",
+      true);
+  assertQueryArrow(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND "
+      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
+      "col_d IS NOT NULL ",
+      "",
+      true);
+}
 
 /* Set to small data set will also cover all cases.
  * We could set to a larger data set after we fix outBatch schema issuem, because
@@ -748,7 +929,10 @@ WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByIntegerTest,
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();
