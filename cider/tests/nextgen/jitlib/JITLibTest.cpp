@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <functional>
 
 #include "exec/nextgen/jitlib/JITLib.h"
@@ -53,7 +54,7 @@ void executeBinaryOp(T left, T right, T output, OpFunc op) {
       static_cast<NativeType>(left),
       static_cast<NativeType>(output),
       [&, right = static_cast<NativeType>(right)](JITFunction* func) {
-        auto left = func->createVariable("left", Type);
+        auto left = func->createVariable(Type, "left");
         *left = func->getArgument(0);
 
         auto right_const = func->createConstant(Type, right);
@@ -86,7 +87,7 @@ void executeCompareOp(T left, T right, bool output, OpFunc op) {
       static_cast<NativeType>(left),
       output,
       [&, right = static_cast<NativeType>(right)](JITFunction* func) {
-        auto left = func->createVariable("left", Type);
+        auto left = func->createVariable(Type, "left");
         *left = func->getArgument(0);
 
         auto right_const = func->createConstant(Type, right);
@@ -314,7 +315,7 @@ TEST_F(JITLibTests, ExternalModuleTest) {
                             .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
                             .params_type = {}});
   {
-    JITValuePointer x = function1->createVariable("x1", JITTypeTag::INT32);
+    JITValuePointer x = function1->createVariable(JITTypeTag::INT32, "x1");
     JITValuePointer a = function1->createConstant(JITTypeTag::INT32, 123);
     JITValuePointer b = function1->createConstant(JITTypeTag::INT32, 876);
     *x = *function1->emitRuntimeFunctionCall(
@@ -339,7 +340,7 @@ TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {
       .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
                       JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
   {
-    JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
     ret = function->getArgument(0);
     auto if_builder = function->createIfBuilder();
     if_builder
@@ -367,7 +368,7 @@ TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
       .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
                       JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
   {
-    JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
     ret = function->getArgument(0);
     auto if_builder = function->createIfBuilder();
     if_builder
@@ -396,7 +397,7 @@ TEST_F(JITLibTests, NestedIFControlFlowTest) {
       .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
                       JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
   {
-    JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
     ret = function->getArgument(0);
     auto if_builder = function->createIfBuilder();
     if_builder
@@ -443,11 +444,11 @@ TEST_F(JITLibTests, BasicForControlFlowTest) {
       JITFunctionDescriptor{.function_name = "test_func",
                             .ret_type = JITFunctionParam{.type = JITTypeTag::INT32}});
   {
-    JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
     ret = function->createConstant(JITTypeTag::INT32, 0);
 
     auto loop_builder = function->createLoopBuilder();
-    JITValuePointer index = function->createVariable("index", JITTypeTag::INT32);
+    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
     *index = function->createConstant(JITTypeTag::INT32, 9);
 
     loop_builder->condition([&]() { return index + 0; })
@@ -470,7 +471,7 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
       JITFunctionDescriptor{.function_name = "test_func",
                             .ret_type = JITFunctionParam{.type = JITTypeTag::INT32}});
   {
-    JITValuePointer ret = function->createVariable("ret", JITTypeTag::INT32);
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
     ret = function->createConstant(JITTypeTag::INT32, 0);
 
     int levels = 5;
@@ -482,7 +483,7 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
       --levels;
 
       auto loop_builder = function->createLoopBuilder();
-      JITValuePointer index = function->createVariable("index", JITTypeTag::INT32);
+      JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
       *index = function->createConstant(JITTypeTag::INT32, 10);
 
       loop_builder->condition([&]() { return index + 0; })
@@ -499,6 +500,42 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
 
   auto func_ptr = function->getFunctionPointer<int32_t>();
   EXPECT_EQ(func_ptr(), 100000);
+}
+
+TEST_F(JITLibTests, TupleTest) {
+  LLVMJITModule module("Test Module");
+
+  JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_Tuple",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "a", .type = JITTypeTag::INT32}}});
+
+  JITValuePointer x_in = function1->createVariable(JITTypeTag::INT32, "x1");
+  JITValuePointer a_in = function1->getArgument(0);
+  JITValuePointer b_in = function1->createConstant(JITTypeTag::INT32, 876);
+
+  JITTuple layer1 = function1->createJITTuple();
+  JITTuple layer2 = function1->createJITTuple();
+  JITTuple layer3 = function1->createJITTuple();
+
+  layer2.append(b_in);
+  layer1.append(x_in);
+  layer1.append(a_in);
+  layer1.insert(layer2, 1);
+  layer1.append(layer3);
+
+  auto& x_out = layer1.getElementAs<JITValue>(0);
+  auto& layer2_out = layer1.getElementAs<JITTuple>(1);
+  auto& a_out = layer1.getElementAs<JITValue>(2);
+  auto& b_out = layer2_out.getElementAs<JITValue>(0);
+
+  x_out = a_out + b_out;
+  function1->createReturn(x_out);
+  function1->finish();
+  module.finish();
+
+  auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
+  EXPECT_EQ(ptr1(123), 999);
 }
 
 int main(int argc, char** argv) {

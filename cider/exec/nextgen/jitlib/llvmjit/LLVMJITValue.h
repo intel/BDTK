@@ -40,9 +40,8 @@ class LLVMJITValue final : public JITValue {
                         LLVMJITFunction& parent_function,
                         llvm::Value* value,
                         const std::string& name = "value",
-                        JITBackendTag backend = JITBackendTag::LLVMJIT,
                         bool is_variable = false)
-      : JITValue(type_tag, parent_function, name, backend)
+      : JITValue(type_tag, parent_function, name)
       , parent_function_(parent_function)
       , llvm_value_(value)
       , is_variable_(is_variable) {}

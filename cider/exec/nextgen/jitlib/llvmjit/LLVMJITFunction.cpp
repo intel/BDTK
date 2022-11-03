@@ -69,8 +69,8 @@ void* LLVMJITFunction::getFunctionPointer() {
   return module_.getFunctionPtrImpl(*this);
 }
 
-JITValuePointer LLVMJITFunction::createVariable(const std::string& name,
-                                                JITTypeTag type_tag) {
+JITValuePointer LLVMJITFunction::createVariable(JITTypeTag type_tag,
+                                                const std::string& name) {
   auto llvm_type = getLLVMType(type_tag, getLLVMContext());
 
   auto current_block = ir_builder_->GetInsertBlock();
@@ -84,8 +84,11 @@ JITValuePointer LLVMJITFunction::createVariable(const std::string& name,
 
   ir_builder_->SetInsertPoint(current_block);
 
-  return std::make_unique<LLVMJITValue>(
-      type_tag, *this, variable_memory, name, JITBackendTag::LLVMJIT, true);
+  return std::make_unique<LLVMJITValue>(type_tag, *this, variable_memory, name, true);
+}
+
+JITTuple LLVMJITFunction::createJITTuple() {
+  return JITTuple(JITTypeTag::TUPLE);
 }
 
 void LLVMJITFunction::createReturn() {
@@ -139,8 +142,7 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
       LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: "
                  << getJITTypeName(type_tag);
   }
-  return std::make_unique<LLVMJITValue>(
-      type_tag, *this, llvm_value, "", JITBackendTag::LLVMJIT, false);
+  return std::make_unique<LLVMJITValue>(type_tag, *this, llvm_value, "", false);
 }
 
 JITValuePointer LLVMJITFunction::emitJITFunctionCall(
@@ -157,8 +159,7 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     }
 
     llvm::Value* ans = ir_builder_->CreateCall(&llvmjit_function.func_, args);
-    return std::make_unique<LLVMJITValue>(
-        descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
+    return std::make_unique<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
   } else {
     LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return nullptr;
@@ -183,8 +184,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
   }
 
   llvm::Value* ans = ir_builder_->CreateCall(func, args);
-  return std::make_unique<LLVMJITValue>(
-      descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
+  return std::make_unique<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
 }
 
 void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
@@ -244,7 +244,6 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                             *this,
                                             llvm_value,
                                             param_type.name,
-                                            JITBackendTag::LLVMJIT,
                                             false);
   }
 }

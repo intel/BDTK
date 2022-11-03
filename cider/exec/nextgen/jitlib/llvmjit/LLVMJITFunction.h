@@ -39,9 +39,11 @@ class LLVMJITFunction final : public JITFunction {
 
   operator llvm::IRBuilder<>&() const { return *ir_builder_; }
 
-  JITValuePointer createVariable(const std::string& name, JITTypeTag type_tag) override;
+  JITValuePointer createVariable(JITTypeTag type_tag, const std::string& name) override;
 
   JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
+
+  JITTuple createJITTuple() override;
 
   JITValuePointer getArgument(size_t index) override;
 

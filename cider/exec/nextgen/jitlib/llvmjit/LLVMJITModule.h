@@ -53,10 +53,9 @@ class LLVMJITModule final : public JITModule {
   std::unique_ptr<LLVMJITEngine> engine_;
 
   // runtime module
- public:
+ private:
   void copyRuntimeModule();
 
- private:
   llvm::ValueToValueMapTy vmap_;
   std::unique_ptr<llvm::Module> runtime_module_;
 };
