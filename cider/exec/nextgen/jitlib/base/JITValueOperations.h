@@ -218,7 +218,7 @@ JITValuePointer operator==(JITValue& lh, T rh) {
 
 template <typename T, IsJITValueConvertable<T> = true>
 JITValuePointer operator==(T lh, JITValue& rh) {
-  return lh == rh;
+  return rh == lh;
 }
 
 JITValuePointer operator!=(JITValue& lh, JITValue& rh) {
@@ -236,7 +236,7 @@ JITValuePointer operator!=(JITValue& lh, T rh) {
 
 template <typename T, IsJITValueConvertable<T> = true>
 JITValuePointer operator!=(T lh, JITValue& rh) {
-  return lh != rh;
+  return rh != lh;
 }
 
 JITValuePointer operator<(JITValue& lh, JITValue& rh) {

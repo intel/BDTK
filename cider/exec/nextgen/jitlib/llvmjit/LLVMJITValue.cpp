@@ -45,7 +45,7 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for and operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -61,7 +61,7 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for or operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -126,7 +126,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFDiv(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for mul operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for div operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -231,7 +231,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
                 .CreateFCmp(FCmpType, load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for add operation. Name=" << getValueName()
+      LOG(FATAL) << "Invalid JITValue type for compare operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
