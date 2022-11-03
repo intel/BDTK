@@ -221,10 +221,17 @@ extern "C" ALWAYS_INLINE int64_t scale_decimal_down_nullable(const int64_t opera
   tmp = operand >= 0 ? operand + tmp : operand - tmp;
   return tmp / scale;
 }
-
+// to be deprecated
 extern "C" ALWAYS_INLINE int64_t scale_decimal_down_not_nullable(const int64_t operand,
                                                                  const int64_t scale,
                                                                  const int64_t null_val) {
+  int64_t tmp = scale >> 1;
+  tmp = operand >= 0 ? operand + tmp : operand - tmp;
+  return tmp / scale;
+}
+
+extern "C" ALWAYS_INLINE int64_t scale_decimal_down(const int64_t operand,
+                                                    const int64_t scale) {
   int64_t tmp = scale >> 1;
   tmp = operand >= 0 ? operand + tmp : operand - tmp;
   return tmp / scale;

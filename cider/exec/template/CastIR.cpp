@@ -58,30 +58,28 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   CHECK_EQ(uoper->get_optype(), kCAST);
   auto ti = uoper->get_type_info();
   auto operand = uoper->get_operand();
-  const auto operand_as_const = dynamic_cast<const Analyzer::Constant*>(operand);
-
-  auto operand_lv = codegen(operand, co, true);
   auto operand_ti = operand->get_type_info();
-  operand_ti.set_notnull(true);
-  ti.set_notnull(true);
-  if (ti.is_string() && operand_ti.is_string()) {
-    // don't need to do any cast. But return type will be TwoValueColValues
-    return operand_lv;
-  }
 
-  auto fixedsize_lv = dynamic_cast<FixedSizeColValues*>(operand_lv.get());
-  CHECK(fixedsize_lv);
-  // TODO(kaidi): Refactor codegenCast.
-  llvm::Value* cast_lv = nullptr;
-  if (operand_ti.get_type() == kTIMESTAMP && ti.get_type() == kTIMESTAMP) {
-    cast_lv = codegenCastBetweenTimes(fixedsize_lv->getValue(), operand_ti, ti);
-  } else if (operand_ti.get_type() == kDATE || ti.get_type() == kDATE) {
-    cast_lv = codegenCastBetweenTimeAndDate(fixedsize_lv->getValue(), operand_ti, ti);
-  } else {
-    cast_lv = codegenCast(fixedsize_lv->getValue(), operand_ti, ti, operand_as_const, co);
+  auto operand_nullable = codegen(operand, co, true);
+  auto operand_fixedsize = dynamic_cast<FixedSizeColValues*>(operand_nullable.get());
+  CHECK(operand_fixedsize);
+  auto operand_lv = operand_fixedsize->getValue();
+  llvm::Value* target_lv = nullptr;
+  if (operand_lv->getType()->isIntegerTy()) {
+    if (operand_ti.get_type() == kTIMESTAMP && ti.get_type() == kTIMESTAMP) {
+      target_lv = codegenCastBetweenTimes(operand_lv, operand_ti, ti);
+    } else if (operand_ti.get_type() == kDATE || ti.get_type() == kDATE) {
+      target_lv = codegenCastBetweenTimeAndDate(operand_lv, operand_ti, ti);
+    } else if (ti.is_integer() || ti.is_decimal() || ti.is_boolean()) {
+      target_lv = codegenCastBetweenIntTypesForArrow(operand_lv, operand_ti, ti);
+    } else if (ti.is_fp()) {
+      target_lv = codegenCastToFpForArrow(operand_lv, operand_ti, ti);
+    }
+  } else if (operand_lv->getType()->isFloatTy() || operand_lv->getType()->isDoubleTy()) {
+    target_lv = codegenCastFromFpForArrow(operand_lv, operand_ti, ti);
   }
-
-  return std::make_unique<FixedSizeColValues>(cast_lv, fixedsize_lv->getNull());
+  CHECK(target_lv);
+  return std::make_unique<FixedSizeColValues>(target_lv, operand_fixedsize->getNull());
 }
 
 namespace {
@@ -224,63 +222,6 @@ llvm::Value* CodeGenerator::codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                                       cgen_state_->inlineIntNull(operand_ti)})
              : cgen_state_->ir_builder_.CreateSDiv(
                    ts_lv, cgen_state_->llInt(static_cast<int64_t>(scale)));
-}
-
-llvm::Value* CodeGenerator::codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
-                                                          const SQLTypeInfo& operand_ti,
-                                                          const SQLTypeInfo& target_ti) {
-  AUTOMATIC_IR_METADATA(cgen_state_);
-  const auto operand_width = get_bit_width(operand_ti, true);
-  const auto target_width = get_bit_width(target_ti, true);
-  int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
-      abs(operand_ti.get_dimension() - target_ti.get_dimension()));
-  int64_t cast_scaled = dim_scaled * kSecondsInOneDay;
-  llvm::Value* target_lv = nullptr;
-  if (target_width == operand_width) {
-    target_lv = operand_lv;
-  } else if (target_width > operand_width) {
-    llvm::Value* cast_lv = cgen_state_->ir_builder_.CreateCast(
-        llvm::Instruction::CastOps::SExt,
-        operand_lv,
-        get_int_type(target_width, cgen_state_->context_));
-
-    target_lv = cgen_state_->ir_builder_.CreateMul(
-        cast_lv, llvm::ConstantInt::get(cast_lv->getType(), cast_scaled));
-  } else {
-    llvm::Value* trunc_lv = cgen_state_->emitCall(
-        "floor_div_lhs",
-        {operand_lv, llvm::ConstantInt::get(operand_lv->getType(), cast_scaled)});
-
-    target_lv = cgen_state_->ir_builder_.CreateCast(
-        llvm::Instruction::CastOps::Trunc,
-        trunc_lv,
-        get_int_type(target_width, cgen_state_->context_));
-  }
-  return target_lv;
-}
-
-llvm::Value* CodeGenerator::codegenCastBetweenTimes(llvm::Value* operand_lv,
-                                                    const SQLTypeInfo& operand_ti,
-                                                    const SQLTypeInfo& target_ti) {
-  AUTOMATIC_IR_METADATA(cgen_state_);
-  const auto operand_dimen = operand_ti.get_dimension();
-  const auto target_dimen = target_ti.get_dimension();
-  CHECK(operand_lv->getType()->isIntegerTy(64));
-  const auto scale =
-      DateTimeUtils::get_timestamp_precision_scale(abs(operand_dimen - target_dimen));
-
-  llvm::Value* target_lv = nullptr;
-  if (operand_dimen == target_dimen) {
-    return operand_lv;
-  } else if (operand_dimen < target_dimen) {
-    target_lv = cgen_state_->ir_builder_.CreateMul(
-        operand_lv, llvm::ConstantInt::get(operand_lv->getType(), scale));
-  } else {
-    target_lv = cgen_state_->emitCall(
-        "floor_div_lhs",
-        {operand_lv, llvm::ConstantInt::get(operand_lv->getType(), scale)});
-  }
-  return target_lv;
 }
 
 llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,
@@ -569,4 +510,153 @@ llvm::Value* CodeGenerator::codegenCastFromFp(llvm::Value* operand_lv,
   }
   CHECK(false);
   return nullptr;
+}
+
+llvm::Value* CodeGenerator::codegenCastFromFpForArrow(llvm::Value* operand_lv,
+                                                      const SQLTypeInfo& operand_ti,
+                                                      const SQLTypeInfo& ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  if (operand_ti.get_type() == ti.get_type()) {
+    return operand_lv;
+  }
+
+  if (ti.get_type() == kDOUBLE) {
+    return cgen_state_->ir_builder_.CreateFPExt(
+        operand_lv, llvm::Type::getDoubleTy(cgen_state_->context_));
+  } else if (ti.get_type() == kFLOAT) {
+    return cgen_state_->ir_builder_.CreateFPTrunc(
+        operand_lv, llvm::Type::getFloatTy(cgen_state_->context_));
+  } else if (ti.is_integer()) {
+    // Round by adding/subtracting 0.5 before fptosi.
+    auto* fp_type = operand_lv->getType()->isFloatTy()
+                        ? llvm::Type::getFloatTy(cgen_state_->context_)
+                        : llvm::Type::getDoubleTy(cgen_state_->context_);
+    auto* zero = llvm::ConstantFP::get(fp_type, 0.0);
+    auto* mhalf = llvm::ConstantFP::get(fp_type, -0.5);
+    auto* phalf = llvm::ConstantFP::get(fp_type, 0.5);
+    auto* is_negative = cgen_state_->ir_builder_.CreateFCmpOLT(operand_lv, zero);
+    auto* offset = cgen_state_->ir_builder_.CreateSelect(is_negative, mhalf, phalf);
+    operand_lv = cgen_state_->ir_builder_.CreateFAdd(operand_lv, offset);
+    return cgen_state_->ir_builder_.CreateFPToSI(
+        operand_lv, get_int_type(get_bit_width(ti), cgen_state_->context_));
+  } else {
+    CIDER_THROW(CiderCompileException,
+                "Cast from " + operand_ti.get_type_name() + " to " + ti.get_type_name() +
+                    " not supported");
+  }
+}
+
+llvm::Value* CodeGenerator::codegenCastToFpForArrow(llvm::Value* operand_lv,
+                                                    const SQLTypeInfo& operand_ti,
+                                                    const SQLTypeInfo& ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  if (operand_ti.get_type() == ti.get_type()) {
+    return operand_lv;
+  }
+  auto const fp_type = ti.get_type() == kFLOAT
+                           ? llvm::Type::getFloatTy(cgen_state_->context_)
+                           : llvm::Type::getDoubleTy(cgen_state_->context_);
+
+  auto result_lv = cgen_state_->ir_builder_.CreateSIToFP(operand_lv, fp_type);
+  if (auto const scale = static_cast<unsigned>(operand_ti.get_scale())) {
+    double const multiplier = shared::power10inv(scale);
+    result_lv = cgen_state_->ir_builder_.CreateFMul(
+        result_lv, llvm::ConstantFP::get(result_lv->getType(), multiplier));
+  }
+  return result_lv;
+}
+
+llvm::Value* CodeGenerator::codegenCastBetweenIntTypesForArrow(
+    llvm::Value* operand_lv,
+    const SQLTypeInfo& operand_ti,
+    const SQLTypeInfo& ti,
+    bool upscale,
+    bool needs_error_check) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+
+  if (operand_ti.is_decimal() || ti.is_decimal()) {
+    if (upscale && operand_ti.get_scale() < ti.get_scale()) {
+      auto scale = exp_to_scale(ti.get_scale() - operand_ti.get_scale());
+      const auto scale_lv =
+          llvm::ConstantInt::get(get_int_type(64, cgen_state_->context_), scale);
+      operand_lv = cgen_state_->ir_builder_.CreateSExt(
+          operand_lv, get_int_type(64, cgen_state_->context_));
+      if (needs_error_check) {
+        codegenCastBetweenIntTypesOverflowChecksForArrow(
+            operand_lv, operand_ti, ti, scale);
+      }
+      operand_lv = cgen_state_->ir_builder_.CreateMul(operand_lv, scale_lv);
+    } else if (operand_ti.is_decimal()) {
+      // rounded scale down
+      auto scale = (int64_t)exp_to_scale(operand_ti.get_scale() - ti.get_scale());
+      const auto scale_lv =
+          llvm::ConstantInt::get(get_int_type(64, cgen_state_->context_), scale);
+
+      const auto operand_width =
+          static_cast<llvm::IntegerType*>(operand_lv->getType())->getBitWidth();
+
+      std::string method_name = "scale_decimal_down";
+      CHECK(operand_width == 64);
+      operand_lv = cgen_state_->emitCall(method_name, {operand_lv, scale_lv});
+    }
+  }
+  const auto operand_width =
+      static_cast<llvm::IntegerType*>(operand_lv->getType())->getBitWidth();
+  const auto target_width = get_bit_width(ti);
+  if (target_width == operand_width) {
+    return operand_lv;
+  }
+  if (needs_error_check && ti.is_integer() && operand_ti.is_integer() &&
+      operand_ti.get_logical_size() > ti.get_logical_size()) {
+    codegenCastBetweenIntTypesOverflowChecksForArrow(operand_lv, operand_ti, ti, 1);
+  }
+  return cgen_state_->ir_builder_.CreateCast(
+      target_width > operand_width ? llvm::Instruction::CastOps::SExt
+                                   : llvm::Instruction::CastOps::Trunc,
+      operand_lv,
+      get_int_type(target_width, cgen_state_->context_));
+}
+
+void CodeGenerator::codegenCastBetweenIntTypesOverflowChecksForArrow(
+    llvm::Value* operand_lv,
+    const SQLTypeInfo& operand_ti,
+    const SQLTypeInfo& ti,
+    const int64_t scale) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  llvm::Value* chosen_max{nullptr};
+  llvm::Value* chosen_min{nullptr};
+  std::tie(chosen_max, chosen_min) =
+      cgen_state_->inlineIntMaxMin(ti.get_logical_size(), true);
+  auto cast_ok = llvm::BasicBlock::Create(
+      cgen_state_->context_, "cast_ok", cgen_state_->current_func_);
+  auto cast_fail = llvm::BasicBlock::Create(
+      cgen_state_->context_, "cast_fail", cgen_state_->current_func_);
+  auto operand_max = static_cast<llvm::ConstantInt*>(chosen_max)->getSExtValue() / scale;
+  auto operand_min = static_cast<llvm::ConstantInt*>(chosen_min)->getSExtValue() / scale;
+  const auto ti_llvm_type =
+      get_int_type(8 * ti.get_logical_size(), cgen_state_->context_);
+  llvm::Value* operand_max_lv = llvm::ConstantInt::get(ti_llvm_type, operand_max);
+  llvm::Value* operand_min_lv = llvm::ConstantInt::get(ti_llvm_type, operand_min);
+  if (operand_ti.get_logical_size() > ti.get_logical_size()) {
+    const auto operand_ti_llvm_type =
+        get_int_type(8 * operand_ti.get_logical_size(), cgen_state_->context_);
+    operand_max_lv =
+        cgen_state_->ir_builder_.CreateSExt(operand_max_lv, operand_ti_llvm_type);
+    operand_min_lv =
+        cgen_state_->ir_builder_.CreateSExt(operand_min_lv, operand_ti_llvm_type);
+  }
+  llvm::Value* over{nullptr};
+  llvm::Value* under{nullptr};
+
+  over = cgen_state_->ir_builder_.CreateICmpSGT(operand_lv, operand_max_lv);
+  under = cgen_state_->ir_builder_.CreateICmpSLE(operand_lv, operand_min_lv);
+
+  const auto detected = cgen_state_->ir_builder_.CreateOr(over, under, "overflow");
+  cgen_state_->ir_builder_.CreateCondBr(detected, cast_fail, cast_ok);
+
+  cgen_state_->ir_builder_.SetInsertPoint(cast_fail);
+  cgen_state_->ir_builder_.CreateRet(
+      cgen_state_->llInt(Executor::ERR_OVERFLOW_OR_UNDERFLOW));
+
+  cgen_state_->ir_builder_.SetInsertPoint(cast_ok);
 }

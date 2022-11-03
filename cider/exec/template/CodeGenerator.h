@@ -63,10 +63,16 @@ class CodeGenerator {
   static llvm::ConstantInt* codegenIntConst(const Analyzer::Constant* constant,
                                             CgenState* cgen_state);
 
+  // to be deprecated
   llvm::Value* codegenCastBetweenIntTypes(llvm::Value* operand_lv,
                                           const SQLTypeInfo& operand_ti,
                                           const SQLTypeInfo& ti,
                                           bool upscale = true);
+
+  llvm::Value* codegenCastBetweenIntTypesForArrow(llvm::Value* operand_lv,
+                                                  const SQLTypeInfo& operand_ti,
+                                                  const SQLTypeInfo& ti,
+                                                  bool upscale = true);
 
   void codegenCastBetweenIntTypesOverflowChecks(llvm::Value* operand_lv,
                                                 const SQLTypeInfo& operand_ti,
@@ -454,13 +460,23 @@ class CodeGenerator {
                                      const bool operand_is_const,
                                      const CompilationOptions& co);
 
+  // to be deprecated
   llvm::Value* codegenCastToFp(llvm::Value* operand_lv,
                                const SQLTypeInfo& operand_ti,
                                const SQLTypeInfo& ti);
 
+  llvm::Value* codegenCastToFpForArrow(llvm::Value* operand_lv,
+                                       const SQLTypeInfo& operand_ti,
+                                       const SQLTypeInfo& ti);
+
+  // to be deprecated
   llvm::Value* codegenCastFromFp(llvm::Value* operand_lv,
                                  const SQLTypeInfo& operand_ti,
                                  const SQLTypeInfo& ti);
+
+  llvm::Value* codegenCastFromFpForArrow(llvm::Value* operand_lv,
+                                         const SQLTypeInfo& operand_ti,
+                                         const SQLTypeInfo& ti);
 
   llvm::Value* codegenArithWithOverflowCheckForArrow(const Analyzer::BinOper*,
                                                      FixedSizeColValues*,
