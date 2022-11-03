@@ -22,32 +22,6 @@
 #include <gtest/gtest.h>
 #include "QueryArrowDataGenerator.h"
 #include "tests/utils/CiderTestBase.h"
-class CiderGroupByTinyintArrowTest : public CiderTestBase {
- public:
-  CiderGroupByTinyintArrowTest() {
-    table_name_ = "table_test";
-    create_ddl_ =
-        "CREATE TABLE table_test(col_a TINYINT NOT NULL, col_b TINYINT NOT NULL, col_c "
-        "TINYINT NOT NULL, col_d VARCHAR);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
-                                                  4,
-                                                  {"col_a", "col_b", "col_c", "col_d"},
-                                                  {CREATE_SUBSTRAIT_TYPE(I8),
-                                                   CREATE_SUBSTRAIT_TYPE(I8),
-                                                   CREATE_SUBSTRAIT_TYPE(I8),
-                                                   CREATE_SUBSTRAIT_TYPE(FixedChar)},
-                                                  {0, 0, 0, 0},
-                                                  GeneratePattern::Sequence,
-                                                  1,
-                                                  10);
-  }
-};
-
-TEST_F(CiderGroupByTinyintArrowTest, tmpGroupByTest) {
-  assertQueryArrow(
-      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d", "", true);
-}
 
 class CiderGroupByVarcharArrowTest : public CiderTestBase {
  public:
