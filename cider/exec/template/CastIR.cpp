@@ -54,6 +54,7 @@ llvm::Value* CodeGenerator::codegenCast(const Analyzer::UOper* uoper,
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
     const Analyzer::UOper* uoper,
     const CompilationOptions& co) {
+  std::cout << uoper->toString() << std::endl;
   AUTOMATIC_IR_METADATA(cgen_state_);
   CHECK_EQ(uoper->get_optype(), kCAST);
   auto ti = uoper->get_type_info();
@@ -66,6 +67,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   auto operand_ti = operand->get_type_info();
   operand_ti.set_notnull(true);
   ti.set_notnull(true);
+  if (ti.is_string() && operand_ti.is_string()) {
+    // don't need to do any cast. But return type will be TwoValueColValues
+    return operand_lv;
+  }
 
   auto fixedsize_lv = dynamic_cast<FixedSizeColValues*>(operand_lv.get());
   CHECK(fixedsize_lv);

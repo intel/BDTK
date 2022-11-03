@@ -296,10 +296,10 @@ TEST_F(CiderStringNullableTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
   assertQueryArrow("SELECT col_1 FROM test where col_2 <> '1111111111'");
   assertQueryArrow("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'");
-  //  assertQueryArrow("SELECT col_2 FROM test where col_2 <> 'aaaaaaaaaaa'");
-  //  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 <> 'aaaaaaaaaaa'");
+  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
   assertQueryArrow("SELECT col_2 FROM test where col_2 IS NOT NULL");
-  //  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
 }
 
 TEST_F(CiderStringNullableTestArrow, ArrowBasicStringLikeTest) {
@@ -353,10 +353,10 @@ TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test where col_2 <> '0000000000'");
   assertQueryArrow("SELECT col_1 FROM test where col_2 <> '1111111111'");
   assertQueryArrow("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'");
-  //  assertQueryArrow("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");
-  //  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
+  assertQueryArrow("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");
+  assertQueryArrow("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");
   assertQueryArrow("SELECT col_2 FROM test where col_2 IS NOT NULL");
-  //  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
+  assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
 }
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringLikeTest) {
