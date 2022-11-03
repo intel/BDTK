@@ -28,7 +28,7 @@
 std::vector<ConcatenatedRow> CiderBatchChecker::arrowToConcatenatedRowVector(
     const std::vector<std::shared_ptr<CiderBatch>>& cider_batches) {
   std::vector<ConcatenatedRow> total_row;
-  for (auto batch : cider_batches) {
+  for (auto& batch : cider_batches) {
     auto col_num = batch->getChildrenNum();
 
     auto root_stringifier = std::make_unique<StructBatchStringifier>(batch.get());
@@ -62,7 +62,7 @@ bool CiderBatchChecker::colNumCheck(
 int CiderBatchChecker::getTotalNumOfRows(
     const std::vector<std::shared_ptr<CiderBatch>>& batches) {
   int num_rows = 0;
-  for (auto batch : batches) {
+  for (auto& batch : batches) {
     num_rows += batch->getLength();
   }
   return num_rows;
@@ -83,8 +83,8 @@ bool CiderBatchChecker::checkValidityBitmapEqual(const CiderBatch* expected_batc
     return false;
   }
 
-  auto expected_buffer = expected_batch->getNulls();
-  auto actual_buffer = actual_batch->getNulls();
+  const uint8_t* expected_buffer = expected_batch->getNulls();
+  const uint8_t* actual_buffer = actual_batch->getNulls();
 
   if (!expected_buffer && !actual_buffer) {
     // both buffers are nullptr, no need to check
@@ -122,8 +122,8 @@ bool CiderBatchChecker::checkOneScalarBatchEqual(const ScalarBatch<T>* expected_
               << std::endl;
     return false;
   }
-  auto expected_data_buffer = expected_batch->getRawData();
-  auto actual_data_buffer = actual_batch->getRawData();
+  const T* expected_data_buffer = expected_batch->getRawData();
+  const T* actual_data_buffer = actual_batch->getRawData();
 
   int row_num = actual_batch->getLength();
 
@@ -148,10 +148,10 @@ template <>
 bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
     const ScalarBatch<bool>* expected_batch,
     const ScalarBatch<bool>* actual_batch) {
-  auto expected_data_buf = expected_batch->getRawData();
-  auto expected_valid_buf = expected_batch->getNulls();
-  auto actual_data_buf = actual_batch->getRawData();
-  auto actual_valid_buf = actual_batch->getNulls();
+  const uint8_t* expected_data_buf = expected_batch->getRawData();
+  const uint8_t* expected_valid_buf = expected_batch->getNulls();
+  const uint8_t* actual_data_buf = actual_batch->getRawData();
+  const uint8_t* actual_valid_buf = actual_batch->getNulls();
 
   /// NOTE: (YBRua) When data is null, the corresponding bit can take any value of 0 or 1
   /// causing the compare to fail even if the two batches are actually equal
@@ -192,6 +192,48 @@ bool CiderBatchChecker::checkOneScalarBatchEqual<bool>(
   actual_masked = actual_masked & (0xFF >> n_paddings);
 
   if (expected_masked != actual_masked) {
+    return false;
+  }
+
+  return true;
+}
+
+bool CiderBatchChecker::checkOneVarcharBatchEqual(const VarcharBatch* expected_batch,
+                                                  const VarcharBatch* actual_batch) {
+  if (!expected_batch || !actual_batch) {
+    std::cout << "One or more ScalarBatches are null_ptr in checkOneScalarBatchEqual. "
+              << "This can be caused by casting a ScalarBatch to a wrong type."
+              << std::endl;
+    return false;
+  }
+
+  // compare nulls
+  bool null_buffer_eq = checkValidityBitmapEqual(expected_batch, actual_batch);
+  if (!null_buffer_eq) {
+    std::cout << "Null buffer memcmp failed." << std::endl;
+    return false;
+  }
+
+  int row_num = actual_batch->getLength();
+
+  // compare offset
+  const int32_t* expected_offsets = expected_batch->getRawOffset();
+  const int32_t* actual_offsets = actual_batch->getRawOffset();
+  bool offset_buffer_eq =
+      !memcmp(expected_offsets, actual_offsets, row_num * sizeof(int32_t));
+  if (!offset_buffer_eq) {
+    std::cout << "Offset buffer memcmp failed." << std::endl;
+    return false;
+  }
+
+  // compare data
+  bool data_buffer_eq = true;
+  const uint8_t* actual_data_buffer = actual_batch->getRawData();
+  const uint8_t* expected_data_buffer = expected_batch->getRawData();
+  int32_t n_chars = actual_offsets[row_num];  // last value indicates total length
+  data_buffer_eq = !memcmp(expected_data_buffer, actual_data_buffer, n_chars);
+  if (!data_buffer_eq) {
+    std::cout << "Data buffer memcmp failed." << std::endl;
     return false;
   }
 
@@ -250,6 +292,16 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
         is_equal =
             checkOneScalarBatchEqual<double>(expected_child->as<ScalarBatch<double>>(),
                                              actual_child->as<ScalarBatch<double>>());
+        break;
+      case SQLTypes::kDECIMAL:
+        // duckdb decimals use 16 bytes, but cider decimals use 8 bytes
+        // therefore buffer compare will never pass, no need to check it
+        return false;
+      case SQLTypes::kTEXT:
+      case SQLTypes::kCHAR:
+      case SQLTypes::kVARCHAR:
+        is_equal = checkOneVarcharBatchEqual(expected_child->as<VarcharBatch>(),
+                                             actual_child->as<VarcharBatch>());
         break;
       case SQLTypes::kSTRUCT:
         is_equal = checkOneStructBatchEqual(expected_child.get(), actual_child.get());

@@ -59,6 +59,7 @@ class CiderBatch {
   size_t getBufferNum() const;
   size_t getChildrenNum() const;
   SQLTypes getCiderType() const;
+  const char* getArrowFormatString() const;
 
   bool isRootOwner() const { return ownership_; }
 
@@ -112,6 +113,8 @@ class CiderBatch {
 
   const void** getChildrenArrayPtr() const;
 
+  std::string toStringForArrow() const;
+
  protected:
   using SchemaReleaser = void (*)(struct ArrowSchema*);
   using ArrayReleaser = void (*)(struct ArrowArray*);
@@ -145,6 +148,11 @@ class CiderBatch {
   bool ownership_{false};  // Whether need to release the tree of schema_ and array_.
   bool reallocate_{
       false};  // Whether permitted to (re-)allocate memory to buffers of array_.
+
+  void printByTypeForArrow(std::stringstream& ss,
+                           const char* type,
+                           const ArrowArray* array,
+                           int64_t length) const;
 #endif
 
 #ifdef CIDER_BATCH_CIDER_IMPL
@@ -323,6 +331,10 @@ class CiderBatch {
   const int8_t** table() const {
     return table_ptr_.empty() ? nullptr : const_cast<const int8_t**>(table_ptr_.data());
   }
+
+  // same as column(), return the pointer to the child array's data buffer regardless of
+  // its type
+  const void* arrow_column(int32_t col_id) const;
 
   int64_t row_num() const { return row_num_; }
 

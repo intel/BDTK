@@ -35,13 +35,15 @@ class PlanUtil {
                                    VeloxPlanNodePtr right);
   static void changeJoinNodeLeftSource(VeloxPlanNodePtr node, VeloxPlanNodePtr left);
   static void changeJoinNodeRightSource(VeloxPlanNodePtr node, VeloxPlanNodePtr right);
-  static void changeSingleSourcePlanSectionSource(VeloxNodeAddrPlanSection& planSection,
-                                                  VeloxPlanNodeAddr& source);
-  static void changeMultiSourcePlanSectionSources(VeloxNodeAddrPlanSection& planSection,
-                                                  VeloxPlanNodeAddrList& source);
+  static void changeSingleSourcePlanSectionSource(
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source);
+  static void changeMultiSourcePlanSectionSources(
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& source);
   static VeloxPlanNodeAddrList getPlanNodeListForPlanSection(
-      VeloxNodeAddrPlanSection& planSection);
-  static NodeAddrMapPtr toNodeAddrMap(VeloxPlanNodeAddrList& nodeAddrList);
+      const VeloxNodeAddrPlanSection& planSection);
+  static NodeAddrMapPtr toNodeAddrMap(const VeloxPlanNodeAddrList& nodeAddrList);
   static std::pair<bool, VeloxPlanNodePtr> findInNodeAddrMap(NodeAddrMapPtr map,
                                                              int32_t branchId,
                                                              int32_t nodeId);

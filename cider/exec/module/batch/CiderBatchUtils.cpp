@@ -22,6 +22,8 @@
 #include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
+#include "tests/utils/CiderInt128.h"
+
 #include "include/cider/CiderException.h"
 #include "include/cider/batch/CiderBatch.h"
 #include "include/cider/batch/CiderBatchUtils.h"
@@ -214,12 +216,13 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
     case 'i':
       return kINT;
     case 'l':
-    case 'd':
       return kBIGINT;
     case 'f':
       return kFLOAT;
     case 'g':
       return kDOUBLE;
+    case 'd':
+      return kDECIMAL;
     case '+':
       // Complex Types
       switch (format[1]) {
@@ -311,6 +314,8 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
     case Type::kDate:
       return "tdm";
     case Type::kVarchar:
+    case Type::kFixedChar:
+    case Type::kString:
       return "u";
     default:
       CIDER_THROW(CiderRuntimeException,
@@ -365,12 +370,13 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
     case 'i':
       return ScalarBatch<int32_t>::Create(schema, allocator, array);
     case 'l':
-    case 'd':
       return ScalarBatch<int64_t>::Create(schema, allocator, array);
     case 'f':
       return ScalarBatch<float>::Create(schema, allocator, array);
     case 'g':
       return ScalarBatch<double>::Create(schema, allocator, array);
+    case 'd':
+      return ScalarBatch<__int128_t>::Create(schema, allocator, array);
     case '+':
       // Complex Types
       switch (format[1]) {

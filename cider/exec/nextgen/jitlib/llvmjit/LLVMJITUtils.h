@@ -26,39 +26,58 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 
-namespace jitlib {
+namespace cider::jitlib {
 inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
   switch (tag) {
-    case VOID:
+    case JITTypeTag::VOID:
       return llvm::Type::getVoidTy(ctx);
-    case INT8:
+    case JITTypeTag::BOOL:
+      return llvm::Type::getInt1Ty(ctx);
+    case JITTypeTag::INT8:
       return llvm::Type::getInt8Ty(ctx);
-    case INT16:
+    case JITTypeTag::INT16:
       return llvm::Type::getInt16Ty(ctx);
-    case INT32:
+    case JITTypeTag::INT32:
       return llvm::Type::getInt32Ty(ctx);
-    case INT64:
+    case JITTypeTag::INT64:
       return llvm::Type::getInt64Ty(ctx);
+    case JITTypeTag::FLOAT:
+      return llvm::Type::getFloatTy(ctx);
+    case JITTypeTag::DOUBLE:
+      return llvm::Type::getDoubleTy(ctx);
     default:
       return nullptr;
   }
 }
 
-inline llvm::Value* getLLVMConstant(uint64_t value,
-                                    JITTypeTag tag,
-                                    llvm::LLVMContext& ctx) {
+inline llvm::Value* getLLVMConstantInt(uint64_t value,
+                                       JITTypeTag tag,
+                                       llvm::LLVMContext& ctx) {
   llvm::Type* type = getLLVMType(tag, ctx);
   switch (tag) {
-    case INT8:
-    case INT16:
-    case INT32:
-    case INT64:
+    case JITTypeTag::BOOL:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
       return llvm::ConstantInt::get(type, value, true);
     default:
       return nullptr;
   }
 }
 
-};  // namespace jitlib
+inline llvm::Value* getLLVMConstantFP(double value,
+                                      JITTypeTag tag,
+                                      llvm::LLVMContext& ctx) {
+  llvm::Type* type = getLLVMType(tag, ctx);
+  switch (tag) {
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      return llvm::ConstantFP::get(type, value);
+    default:
+      return nullptr;
+  }
+}
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITUTILS_H

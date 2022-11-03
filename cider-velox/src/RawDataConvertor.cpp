@@ -456,7 +456,6 @@ VectorPtr toVeloxImpl<TypeKind::VARCHAR>(const TypePtr& vType,
   auto result = BaseVector::create(vType, num_rows, pool);
   auto flatResult = result->as<FlatVector<StringView>>();
   const CiderByteArray* srcValues = reinterpret_cast<const CiderByteArray*>(data_buffer);
-  auto rawValues = flatResult->mutableRawValues<uint64_t>();
   for (auto pos = 0; pos < num_rows; pos++) {
     if (srcValues[pos].ptr == nullptr) {
       result->setNull(pos, true);
@@ -606,8 +605,6 @@ RowVectorPtr RawDataConvertor::convertToRowVector(const CiderBatch& input,
   for (int i = 0; i < num_cols; i++) {
     auto& sType = schema.getColumnTypeById(i);
     types.push_back(getVeloxType(sType));
-    auto currentData = input.column(i);
-    auto columNum = input.column_num();
     if (sType.kind_case() == substrait::Type::kStruct) {
       // TODO : (ZhangJie) Support nested struct.
       // For the case, struct[sum, count].

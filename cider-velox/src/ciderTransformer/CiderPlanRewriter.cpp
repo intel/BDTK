@@ -26,15 +26,15 @@
 namespace facebook::velox::plugin::plantransformer {
 
 std::pair<bool, VeloxPlanNodePtr> CiderPlanRewriter::rewritePlanSectionWithSingleSource(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddr& source) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddr& source) const {
   VeloxPlanNodePtr resultPtr = CiderPlanUtil::toCiderPlanNode(planSection, source);
   return std::pair<bool, VeloxPlanNodePtr>(true, resultPtr);
 }
 
 std::pair<bool, VeloxPlanNodePtr> CiderPlanRewriter::rewritePlanSectionWithMultiSources(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddrList& srcList) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& srcList) const {
   VeloxPlanNodePtr resultPtr = CiderPlanUtil::toCiderPlanNode(planSection, srcList);
   return std::pair<bool, VeloxPlanNodePtr>(true, resultPtr);
 }

@@ -141,7 +141,7 @@ class SchemaUtils {
   }
 };
 
-class ArrowToCiderBatch {
+class ArrowBuilderUtils {
  public:
   static std::shared_ptr<CiderBatch> createCiderBatchFromArrowBuilder(
       std::tuple<ArrowSchema*&, ArrowArray*&> array_with_schema) {
@@ -152,10 +152,18 @@ class ArrowToCiderBatch {
     return std::make_shared<CiderBatch>(
         schema, array, std::make_shared<CiderDefaultAllocator>());
   }
-};
 
-std::shared_ptr<CiderBatch> createSimpleBooleanTestData(
-    const std::vector<bool>& data = {},
-    const std::vector<bool>& null = {});
+  static std::tuple<std::string, std::vector<int32_t>> createDataAndOffsetFromStrVector(
+      const std::vector<std::string>& input) {
+    std::vector<int32_t> offsets{0};
+    std::string str_buffer;
+    for (auto& s : input) {
+      str_buffer = str_buffer + s;
+      offsets.push_back(offsets.back() + s.size());
+    }
+
+    return {str_buffer, offsets};
+  }
+};
 
 #endif  // CIDER_UTILS_H

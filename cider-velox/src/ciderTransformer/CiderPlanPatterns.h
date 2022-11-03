@@ -29,15 +29,15 @@ class CompoundStateMachine : public StateMachine {
   class CompoundState : public State {};
   class Initial : public CompoundState {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class Filter : public CompoundState {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class Project : public CompoundState {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class Aggregate : public CompoundState {
    public:
@@ -53,14 +53,14 @@ class CompoundStateMachine : public StateMachine {
   };
   CompoundStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); };
-  bool accept(VeloxPlanNodeAddr nodeAddr) override;
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
 
 class LeftDeepJoinStateMachine : public StateMachine {
  public:
   class Initial : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class NotAccept : public State {
    public:
@@ -68,11 +68,11 @@ class LeftDeepJoinStateMachine : public StateMachine {
   };
   class OneJoin : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class LeftJoin : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class EndWithLeftJoin : public State {
    public:
@@ -80,9 +80,9 @@ class LeftDeepJoinStateMachine : public StateMachine {
   };
   LeftDeepJoinStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); };
-  bool accept(VeloxPlanNodeAddr nodeAddr) override;
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
   VeloxPlanNodeAddrList matchResult() override;
-  void addToMatchResult(VeloxPlanNodeAddr nodeAddr) override;
+  void addToMatchResult(const VeloxPlanNodeAddr& nodeAddr) override;
   void clearMatchResult() override;
 
  private:
@@ -108,7 +108,7 @@ class FilterStateMachine : public StateMachine {
  public:
   class Initial : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class NotAccept : public State {
    public:
@@ -120,14 +120,14 @@ class FilterStateMachine : public StateMachine {
   };
   FilterStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); };
-  bool accept(VeloxPlanNodeAddr nodeAddr) override;
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
 
 class PartialAggStateMachine : public StateMachine {
  public:
   class Initial : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class NotAccept : public State {
    public:
@@ -139,7 +139,7 @@ class PartialAggStateMachine : public StateMachine {
   };
   PartialAggStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); };
-  bool accept(VeloxPlanNodeAddr nodeAddr) override;
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
 
 class FilterPattern : public SequencePlanPattern {

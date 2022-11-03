@@ -41,13 +41,13 @@ using MatchResultRewriterList = std::vector<std::shared_ptr<PlanSectionRewriterP
 
 class PlanTransformer {
  public:
-  PlanTransformer(PatternRewriterList& rewriterList, VeloxPlanNodePtr root);
+  PlanTransformer(const PatternRewriterList& rewriterList, VeloxPlanNodePtr root);
   VeloxPlanNodePtr transform();
 
  private:
   void matchFromSrcToTarget();
   void updateMatchResultForBranch(int32_t branchId,
-                                  VeloxNodeAddrPlanSection& matchResult,
+                                  const VeloxNodeAddrPlanSection& matchResult,
                                   std::shared_ptr<PatternRewriter> rewriterPtr);
   bool acceptMatchResult(const VeloxNodeAddrPlanSection& matchResult) const;
   void matchSourceBranch(BranchSrcToTargetIterator& srcBranchIte);
@@ -59,7 +59,7 @@ class PlanTransformer {
   void rewriteBranch(int32_t branchId);
   // rewrite a single match result and insert the rewrittern result into the
   // rewritten map
-  VeloxPlanNodePtr rewriteMatchResult(PlanSectionRewriterPair& resultPair);
+  VeloxPlanNodePtr rewriteMatchResult(const PlanSectionRewriterPair& resultPair);
   VeloxPlanNodePtr lookupRewrittenMap(int32_t branchId, int32_t nodeId);
   void insertRewrittenMap(int32_t branchId, int32_t nodeId, VeloxPlanNodePtr planNode);
   bool coveredByMatchResult(int32_t branchId) const;
@@ -83,7 +83,7 @@ class PlanTransformer {
 // getTransformer can be called to get the transformer.
 class PlanTransformerFactory {
  public:
-  PlanTransformerFactory() {}
+  PlanTransformerFactory() = default;
   PlanTransformerFactory& registerPattern(std::shared_ptr<PlanPattern> pattern,
                                           std::shared_ptr<PlanRewriter> rewriter);
   std::shared_ptr<PlanTransformer> getTransformer(VeloxPlanNodePtr root);

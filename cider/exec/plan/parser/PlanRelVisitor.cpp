@@ -269,6 +269,21 @@ void JoinRelVisitor::visit(JoinQualContext* join_qual_context) {
   join_condition_quals.insert(join_condition_quals.end(),
                               quals_cf.simple_quals.begin(),
                               quals_cf.simple_quals.end());
+  // postJoinFilter
+  if (rel_node_.has_post_join_filter()) {
+    auto cider_post_join_filter_expr = toAnalyzerExprConverter_->toAnalyzerExpr(
+        rel_node_.post_join_filter(),
+        function_map_,
+        variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_));
+    auto post_join_filter_quals_cf =
+        qual_to_conjunctive_form(fold_expr(cider_post_join_filter_expr.get()));
+    join_condition_quals.insert(join_condition_quals.end(),
+                                post_join_filter_quals_cf.quals.begin(),
+                                post_join_filter_quals_cf.quals.end());
+    join_condition_quals.insert(join_condition_quals.end(),
+                                post_join_filter_quals_cf.simple_quals.begin(),
+                                post_join_filter_quals_cf.simple_quals.end());
+  }
   join_qual.quals = join_condition_quals;
   join_quals_ptr->insert(join_quals_ptr->begin(), join_qual);
 }

@@ -48,18 +48,18 @@ class PatternRewriter {
   }
 
   std::pair<bool, VeloxNodeAddrPlanSection> matchFromSrc(
-      BranchSrcToTargetIterator branchIte) const {
+      BranchSrcToTargetIterator& branchIte) const {
     std::shared_ptr<PlanPattern> p = clonePattern(pattern_);
     return p->match(branchIte);
   }
 
-  VeloxPlanNodePtr rewrite(VeloxNodeAddrPlanSection& planSection,
-                           VeloxPlanNodeAddr& source) const {
+  VeloxPlanNodePtr rewrite(const VeloxNodeAddrPlanSection& planSection,
+                           const VeloxPlanNodeAddr& source) const {
     return rewriter_->rewrite(planSection, source);
   }
 
-  VeloxPlanNodePtr rewriteWithMultiSrc(VeloxNodeAddrPlanSection& planSection,
-                                       VeloxPlanNodeAddrList& srcList) const {
+  VeloxPlanNodePtr rewriteWithMultiSrc(const VeloxNodeAddrPlanSection& planSection,
+                                       const VeloxPlanNodeAddrList& srcList) const {
     return rewriter_->rewriteWithMultiSrc(planSection, srcList);
   }
 

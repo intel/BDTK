@@ -22,6 +22,7 @@
 #pragma once
 
 #include "CiderPlanNode.h"
+#include "cider/CiderInterface.h"
 #include "velox/exec/JoinBridge.h"
 #include "velox/exec/Operator.h"
 
@@ -31,12 +32,12 @@ namespace facebook::velox::plugin {
 // multi-threaded probe pipeline.
 class CiderJoinBridge : public exec::JoinBridge {
  public:
-  void setData(std::vector<VectorPtr> data);
+  void setData(CiderBatch& data);
 
-  std::optional<std::vector<VectorPtr>> dataOrFuture(ContinueFuture* future);
+  std::optional<CiderBatch> dataOrFuture(ContinueFuture* future);
 
  private:
-  std::optional<std::vector<VectorPtr>> data_;
+  std::optional<CiderBatch> data_;
 };
 
 class CiderJoinBuild : public exec::Operator {
@@ -66,6 +67,9 @@ class CiderJoinBuild : public exec::Operator {
   // Future for synchronizing with other Drivers of the same pipeline. All build
   // Drivers must be completed before making the hash table.
   ContinueFuture future_{ContinueFuture::makeEmpty()};
+
+  std::shared_ptr<DataConvertor> dataConvertor_;
+  std::chrono::microseconds convertorInternalCounter;
 
   std::vector<VectorPtr> data_;
 };

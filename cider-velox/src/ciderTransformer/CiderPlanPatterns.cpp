@@ -24,7 +24,7 @@
 namespace facebook::velox::plugin::plantransformer {
 using namespace facebook::velox::core;
 
-StatePtr CompoundStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr CompoundStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(nodePtr)) {
     return std::make_shared<CompoundStateMachine::Filter>();
@@ -35,7 +35,7 @@ StatePtr CompoundStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-StatePtr CompoundStateMachine::Filter::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr CompoundStateMachine::Filter::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto projNode = std::dynamic_pointer_cast<const ProjectNode>(nodePtr)) {
     return std::make_shared<CompoundStateMachine::Project>();
@@ -44,7 +44,7 @@ StatePtr CompoundStateMachine::Filter::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-StatePtr CompoundStateMachine::Project::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr CompoundStateMachine::Project::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto aggNode = std::dynamic_pointer_cast<const AggregationNode>(nodePtr)) {
     return std::make_shared<CompoundStateMachine::Aggregate>();
@@ -53,7 +53,7 @@ StatePtr CompoundStateMachine::Project::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-bool CompoundStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
+bool CompoundStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
   StatePtr curState = getCurState();
   if (curState != nullptr) {
     curState = curState->accept(nodeAddr);
@@ -71,7 +71,7 @@ bool CompoundStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-StatePtr LeftDeepJoinStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr LeftDeepJoinStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto joinNode = std::dynamic_pointer_cast<const AbstractJoinNode>(nodePtr)) {
     // Only accept one join node for now. change to return
@@ -84,7 +84,7 @@ StatePtr LeftDeepJoinStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-StatePtr LeftDeepJoinStateMachine::LeftJoin::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr LeftDeepJoinStateMachine::LeftJoin::accept(const VeloxPlanNodeAddr& nodeAddr) {
   // encounter the sequence end
   if (StateMachine::endOfSequence().equal(nodeAddr)) {
     return std::make_shared<EndWithLeftJoin>();
@@ -101,7 +101,7 @@ StatePtr LeftDeepJoinStateMachine::LeftJoin::accept(VeloxPlanNodeAddr nodeAddr) 
   }
 }
 
-bool LeftDeepJoinStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
+bool LeftDeepJoinStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
   StatePtr curState = getCurState();
   if (curState != nullptr) {
     curState = curState->accept(nodeAddr);
@@ -142,7 +142,7 @@ VeloxPlanNodeAddrList LeftDeepJoinStateMachine::matchResult() {
   }
 }
 
-void LeftDeepJoinStateMachine::addToMatchResult(VeloxPlanNodeAddr nodeAddr) {
+void LeftDeepJoinStateMachine::addToMatchResult(const VeloxPlanNodeAddr& nodeAddr) {
   if (inCompoundState()) {
     compoundMatchResult_.emplace_back(nodeAddr);
   } else {
@@ -163,7 +163,7 @@ bool LeftDeepJoinStateMachine::inCompoundState() {
   return false;
 }
 
-StatePtr LeftDeepJoinStateMachine::OneJoin::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr LeftDeepJoinStateMachine::OneJoin::accept(const VeloxPlanNodeAddr& nodeAddr) {
   // encounter the sequence end
   if (StateMachine::endOfSequence().equal(nodeAddr)) {
     return std::make_shared<EndWithLeftJoin>();
@@ -173,7 +173,7 @@ StatePtr LeftDeepJoinStateMachine::OneJoin::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-StatePtr FilterStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr FilterStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(nodePtr)) {
     return std::make_shared<FilterStateMachine::Filter>();
@@ -182,7 +182,7 @@ StatePtr FilterStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-bool FilterStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
+bool FilterStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
   StatePtr curState = getCurState();
   if (curState != nullptr) {
     curState = curState->accept(nodeAddr);
@@ -198,7 +198,7 @@ bool FilterStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
   }
 }
 
-StatePtr PartialAggStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr PartialAggStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
 
   if (auto aggNode = std::dynamic_pointer_cast<const AggregationNode>(nodePtr)) {
@@ -210,7 +210,7 @@ StatePtr PartialAggStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
   return std::make_shared<PartialAggStateMachine::NotAccept>();
 }
 
-bool PartialAggStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
+bool PartialAggStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
   StatePtr curState = getCurState();
   if (curState != nullptr) {
     curState = curState->accept(nodeAddr);

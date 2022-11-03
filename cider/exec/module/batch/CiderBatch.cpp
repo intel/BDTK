@@ -139,6 +139,10 @@ SQLTypes CiderBatch::getCiderType() const {
   return CiderBatchUtils::convertArrowTypeToCiderType(arrow_schema_->format);
 }
 
+const char* CiderBatch::getArrowFormatString() const {
+  return getArrowSchema()->format;
+}
+
 // TODO: Dictionary support is TBD.
 std::unique_ptr<CiderBatch> CiderBatch::getChildAt(size_t index) {
   CHECK(!isMoved());
@@ -377,6 +381,12 @@ const void** CiderBatch::getChildrenArrayPtr() const {
   return const_cast<const void**>(reinterpret_cast<void**>(arrow_array_->children));
 }
 
+const void* CiderBatch::arrow_column(int32_t col_id) const {
+  CHECK(!isMoved());
+  const void* buf = arrow_array_->children[col_id]->buffers[1];
+  return buf;
+}
+
 void CiderBatch::setNullCount(int64_t null_num) {
   CHECK(!isMoved());
   arrow_array_->null_count = null_num;
@@ -410,4 +420,62 @@ bool CiderBatch::isMoved() const {
 bool CiderBatch::containsNull() const {
   CHECK(!isMoved());
   return getNulls() && getNullCount();
+}
+
+#define PRINT_BY_TYPE(C_TYPE)                   \
+  {                                             \
+    ss << "column type: " << #C_TYPE << " ";    \
+    C_TYPE* buf = (C_TYPE*)(array->buffers[1]); \
+    for (int j = 0; j < length; j++) {          \
+      ss << buf[j] << "\t";                     \
+    }                                           \
+    break;                                      \
+  }
+
+std::string CiderBatch::toStringForArrow() const {
+  std::stringstream ss;
+  ss << "row num: " << this->arrow_array_->length
+     << ", column num: " << this->arrow_array_->n_children << ".\n";
+
+  for (auto i = 0; i < this->arrow_array_->n_children; i++) {
+    if (this->arrow_array_->children[i] != nullptr) {
+      printByTypeForArrow(ss,
+                          this->arrow_schema_->children[i]->format,
+                          this->arrow_array_->children[i],
+                          this->arrow_array_->length);
+    } else {
+    }
+    ss << '\n';
+  }
+  return ss.str();
+}
+
+void CiderBatch::printByTypeForArrow(std::stringstream& ss,
+                                     const char* type,
+                                     const ArrowArray* array,
+                                     int64_t length) const {
+  switch (type[0]) {
+    case 'b':
+    case 'c':
+      PRINT_BY_TYPE(int8_t);
+    case 's':
+      PRINT_BY_TYPE(int16_t);
+    case 'i':
+      PRINT_BY_TYPE(int32_t);
+    case 'l':
+      PRINT_BY_TYPE(int64_t);
+    case 'f':
+      PRINT_BY_TYPE(float);
+    case 'g':
+      PRINT_BY_TYPE(double);
+    case 'u':
+      ss << "column type: String ";
+      for (int i = 0; i < length; i++) {
+        ss << CiderBatchUtils::extractUtf8ArrowArrayAt(array, i) << " ";
+      }
+      ss << std::endl;
+      break;
+    default:
+      CIDER_THROW(CiderCompileException, "Not supported type to print value!");
+  }
 }
