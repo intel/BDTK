@@ -672,7 +672,7 @@ TEST_F(CiderFilterRandomTestArrow, DistinctFromTest) {
       "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_1 IS NOT DISTINCT "
       "FROM col_5",
       "mixed_distinct_from.json");
-  // TODO:(yma11) enable this after StringOp supported
+  // TODO: (yma11) enable this after StringOp supported
   GTEST_SKIP_("string not supported in arrow");
   // mixed case with string
   assertQueryArrowIgnoreOrder(
