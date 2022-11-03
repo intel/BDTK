@@ -63,7 +63,8 @@ class SubstraitFunctionCiderMappings {
     return iter->second;
   }
 
-  /// scalar function names in difference between engine own and Substrait.
+ private:
+  // scalar function name and sql-ops mapping.
   virtual const FunctionSQLScalarOpsMappings& scalarMappings() const {
     static const FunctionSQLScalarOpsMappings mapping{
         {"lt", SQLOps::kLT},
@@ -93,7 +94,7 @@ class SubstraitFunctionCiderMappings {
     return mapping;
   };
 
-  /// aggregate function names in difference between engine own and Substrait.
+  // aggregate function names and sql-agg mapping.
   virtual const FunctionSQLAggOpsMappings& aggregateMappings() const {
     static const FunctionSQLAggOpsMappings mapping{
         {"sum", SQLAgg::kSUM},
@@ -105,7 +106,7 @@ class SubstraitFunctionCiderMappings {
     return mapping;
   };
 
-  /// window function names in difference between engine own and Substrait.
+  // scalar and agg function and expr-type mapping.
   virtual const FunctionSQLOpSupportTypeMappings& opsSupportTypeMappings() const {
     static const FunctionSQLOpSupportTypeMappings mapping{
         {"sum", OpSupportExprType::kAGG_EXPR},

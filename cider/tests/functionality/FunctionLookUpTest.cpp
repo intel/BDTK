@@ -24,9 +24,6 @@
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "function/FunctionLookupEngine.h"
 #include "function/SubstraitFunctionCiderMappings.h"
-#include "function/substrait/SubstraitFunctionLookup.h"
-#include "function/substrait/SubstraitType.h"
-#include "function/substrait/VeloxToSubstraitMappings.h"
 
 class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:
@@ -62,16 +59,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest)
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -85,16 +78,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI8>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI8>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI8>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI8>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI8>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI8>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -108,16 +97,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI16>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI16>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI16>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI16>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI16>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI16>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -130,11 +115,9 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "avg";
-  function_signature.arguments = {
-      cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
+  function_signature.arguments = {io::substrait::Type::decode("struct<fp64,i64>")};
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -148,14 +131,11 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "equal";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI32>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -169,16 +149,12 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -192,16 +168,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -214,11 +186,9 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "avg";
-  function_signature.arguments = {
-      cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
+  function_signature.arguments = {io::substrait::Type::decode("struct<fp64,i64>")};
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -232,14 +202,11 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) 
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "equal";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI32>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
@@ -252,16 +219,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
   // it should match with the correct type
@@ -275,16 +238,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {
   function_signature.from_platform = PlatformType::SparkPlatform;
   function_signature.func_name = "between__3";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
 
   EXPECT_THROW(
       {
@@ -305,11 +264,9 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionAggTest) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::SparkPlatform;
   function_signature.func_name = "avg";
-  function_signature.arguments = {
-      cider::function::substrait::SubstraitType::decode("struct<fp64,i64>")};
+  function_signature.arguments = {io::substrait::Type::decode("struct<fp64,i64>")};
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>();
 
   EXPECT_THROW(
       {
@@ -331,14 +288,11 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkIntentionScalarTest) {
   function_signature.from_platform = PlatformType::SparkPlatform;
   function_signature.func_name = "equal";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI32>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
 
   EXPECT_THROW(
       {
@@ -360,16 +314,12 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkUnregisteredTest) {
   function_signature.from_platform = PlatformType::SparkPlatform;
   function_signature.func_name = "between_unregisterd";
   function_signature.arguments = {
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(),
   };
   function_signature.return_type =
-      std::make_shared<const cider::function::substrait::SubstraitScalarType<
-          cider::function::substrait::SubstraitTypeKind::kBool>>();
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
 
   EXPECT_THROW(
       {

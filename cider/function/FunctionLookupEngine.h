@@ -29,17 +29,18 @@
 #include <unordered_set>
 #include <vector>
 
+#include "../thirdparty/substrait-cpp/src/FunctionLookup.h"
+#include "../thirdparty/substrait-cpp/src/FunctionMapping.h"
+#include "../thirdparty/substrait-cpp/src/FunctionSignature.h"
+#include "../thirdparty/substrait-cpp/src/Type.h"
 #include "function/SubstraitFunctionCiderMappings.h"
-#include "function/substrait/SubstraitFunctionLookup.h"
-#include "function/substrait/SubstraitType.h"
-#include "function/substrait/VeloxToSubstraitMappings.h"
 
 enum PlatformType { SubstraitPlatform, PrestoPlatform, SparkPlatform };
 
 struct FunctionSignature {
   std::string func_name;
-  std::vector<cider::function::substrait::SubstraitTypePtr> arguments;
-  cider::function::substrait::SubstraitTypePtr return_type;
+  std::vector<io::substrait::TypePtr> arguments;
+  io::substrait::TypePtr return_type;
   PlatformType from_platform;
 };
 
@@ -51,8 +52,6 @@ struct FunctionDescriptor {
 };
 
 using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
-using SubstraitFunctionLookupPtr =
-    std::shared_ptr<const cider::function::substrait::SubstraitFunctionLookup>;
 
 class FunctionLookupEngine {
  public:
@@ -97,11 +96,11 @@ class FunctionLookupEngine {
       std::make_shared<const SubstraitFunctionCiderMappings>();
 
   // internal scalar function lookup ptr
-  SubstraitFunctionLookupPtr scalar_function_look_up_ptr_;
+  io::substrait::FunctionLookupPtr scalar_function_look_up_ptr_;
   // internal aggregate function lookup ptr
-  SubstraitFunctionLookupPtr aggregate_function_look_up_ptr_;
+  io::substrait::FunctionLookupPtr aggregate_function_look_up_ptr_;
   // extension function lookup ptr
-  SubstraitFunctionLookupPtr extension_function_look_up_ptr_;
+  io::substrait::FunctionLookupPtr extension_function_look_up_ptr_;
 
   const PlatformType from_platform_;
 };
