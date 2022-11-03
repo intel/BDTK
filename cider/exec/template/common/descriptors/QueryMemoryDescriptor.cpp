@@ -47,7 +47,7 @@ bool is_int_and_no_bigger_than(const SQLTypeInfo& ti, const size_t byte_width) {
 }
 
 bool is_valid_int32_range(const ExpressionRange& range) {
-  return range.getIntMin() > INT32_MIN && range.getIntMax() < EMPTY_KEY_32 - 1;
+  return range.getIntMin() > INT32_MIN && range.getIntMax() < empty_key_32 - 1;
 }
 
 std::vector<int64_t> target_expr_group_by_indices(

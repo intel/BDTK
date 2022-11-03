@@ -257,6 +257,8 @@ inline int64_t datetrunc_millennium_impl(int64_t timeval) {
 
 DATE_TRUNC_FUNC_JIT(datetrunc_millennium)
 
+#undef DATE_TRUNC_FUNC_JIT
+
 /*
  * @brief support the SQL DATE_TRUNC function in internal (non-JITed) code
  */

@@ -133,6 +133,12 @@ extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(int8_t* str_data
 }
 
 DEF_CIDER_SIMPLE_AGG_FUNCS(id, cider_agg_id)
+
+#undef DEF_CIDER_SIMPLE_AGG_FP_NULLABLE
+#undef DEF_CIDER_SIMPLE_AGG_FP
+#undef DEF_CIDER_SIMPLE_AGG_INT_NULLABLE
+#undef DEF_CIDER_SIMPLE_AGG_INT
+#undef DEF_CIDER_SIMPLE_AGG_FUNCS
 /********************************************************************************/
 
 /********************** Project Id Functions *****************************/
@@ -213,6 +219,11 @@ DEF_CIDER_ID_PROJ_FP(double, double, 64)
 DEF_CIDER_ID_PROJ_FP_NULLABLE(float, float, 32)
 DEF_CIDER_ID_PROJ_FP_NULLABLE(double, double, 64)
 
+#undef DEF_CIDER_ID_PROJ_FP_NULLABLE
+#undef DEF_CIDER_ID_PROJ_FP
+#undef DEF_CIDER_ID_PROJ_INT_NULLABLE
+#undef DEF_CIDER_ID_PROJ_INT
+
 /********************************************************************************/
 
 /********************** Count Aggregation Functions *****************************/
@@ -234,6 +245,9 @@ DEF_CIDER_COUNT_AGG(32)
 DEF_CIDER_COUNT_AGG(64)
 DEF_CIDER_COUNT_AGG_NULLABLE(32)
 DEF_CIDER_COUNT_AGG_NULLABLE(64)
+
+#undef DEF_CIDER_COUNT_AGG_NULLABLE
+#undef DEF_CIDER_COUNT_AGG
 /********************************************************************************/
 
 #endif  // CIDER_FUNCTION_RUNTIME_FUNCTIONS_H

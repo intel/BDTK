@@ -447,4 +447,7 @@ CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
   return std::move(result);
 }
 
+#undef GENERATE_AND_ADD_COLUMN
+#undef GENERATE_AND_ADD_BOOL_COLUMN
+
 }  // namespace CiderBatchUtils

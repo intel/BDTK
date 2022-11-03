@@ -151,6 +151,7 @@ SubstraitType::scalarTypeMapping() {
   };
   return scalarTypeMap;
 }
+#undef SUBSTRAIT_SCALAR_TYPE_MAPPING
 
 const std::string SubstraitFixedBinaryType::signature() const {
   std::stringstream sign;

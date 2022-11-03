@@ -119,10 +119,10 @@ extern "C" void agg_count_distinct_bitmap(int64_t* agg,
                                           const int64_t val,
                                           const int64_t min_val);
 
-#define EMPTY_KEY_64 std::numeric_limits<int64_t>::max()
-#define EMPTY_KEY_32 std::numeric_limits<int32_t>::max()
-#define EMPTY_KEY_16 std::numeric_limits<int16_t>::max()
-#define EMPTY_KEY_8 std::numeric_limits<int8_t>::max()
+constexpr int64_t empty_key_64 = std::numeric_limits<int64_t>::max();
+constexpr int32_t empty_key_32 = std::numeric_limits<int32_t>::max();
+constexpr int16_t empty_key_16 = std::numeric_limits<int16_t>::max();
+constexpr int8_t empty_key_8 = std::numeric_limits<int8_t>::max();
 
 extern "C" RUNTIME_EXPORT uint32_t key_hash(const int64_t* key,
                                             const uint32_t key_qw_count,
@@ -253,12 +253,12 @@ template <typename T = int64_t>
 inline T get_empty_key() {
   static_assert(std::is_same<T, int64_t>::value,
                 "Unsupported template parameter other than int64_t for now");
-  return EMPTY_KEY_64;
+  return empty_key_64;
 }
 
 template <>
 inline int32_t get_empty_key() {
-  return EMPTY_KEY_32;
+  return empty_key_32;
 }
 
 #endif  // CIDER_FUNCTION_RUNTIMEFUNCTIONS_H

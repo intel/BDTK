@@ -108,14 +108,14 @@ QueryMemoryDescriptor ResultSet::fixupQueryMemoryDescriptor(
 ALWAYS_INLINE
 void fill_empty_key_32(int32_t* key_ptr_i32, const size_t key_count) {
   for (size_t i = 0; i < key_count; ++i) {
-    key_ptr_i32[i] = EMPTY_KEY_32;
+    key_ptr_i32[i] = empty_key_32;
   }
 }
 
 ALWAYS_INLINE
 void fill_empty_key_64(int64_t* key_ptr_i64, const size_t key_count) {
   for (size_t i = 0; i < key_count; ++i) {
-    key_ptr_i64[i] = EMPTY_KEY_64;
+    key_ptr_i64[i] = empty_key_64;
   }
 }
 
