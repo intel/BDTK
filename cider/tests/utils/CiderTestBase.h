@@ -53,9 +53,7 @@ class CiderTestBase : public testing::Test {
                    const std::shared_ptr<CiderBatch> expected_batch,
                    const bool ignoreOrder = false);
 
-  void assertQueryArrow(const std::string& sql,
-                        const std::string& json_file = "",
-                        const bool ignore_order = false);
+  void assertQueryArrow(const std::string& sql, const std::string& json_file = "");
   void assertQueryArrowIgnoreOrder(const std::string& sql,
                                    const std::string& json_file = "");
   // To be deprecated. for string and other unsupported types.

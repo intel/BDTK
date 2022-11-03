@@ -49,132 +49,117 @@ class CiderGroupByVarcharArrowTest : public CiderTestBase {
 
 TEST_F(CiderGroupByVarcharArrowTest, varcharGroupByTest) {
   /*single not null group by key*/
-  assertQueryArrow("SELECT SUM(col_a), col_c FROM table_test GROUP BY col_c", "", true);
+  assertQueryArrowIgnoreOrder("SELECT SUM(col_a), col_c FROM table_test GROUP BY col_c",
+                              "");
 
   /*single null group by key*/
-  assertQueryArrow("SELECT SUM(col_a), col_d FROM table_test GROUP BY col_d", "", true);
+  assertQueryArrowIgnoreOrder("SELECT SUM(col_a), col_d FROM table_test GROUP BY col_d",
+                              "");
 
   /*one not null varchar group by key*/
-  assertQueryArrow(
-      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c", "", true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c", "");
 
   /*one null varchar group by key */
-  assertQueryArrow(
-      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d", "", true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d", "");
 
   /*two null and not null varchar group by keys*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
       "col_d",
-      "",
-      true);
+      "");
 
   /*four mixed group by keys*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
       "BY col_a, col_b, col_c, col_d",
-      "",
-      true);
+      "");
 
   // TODO(yizhong): Enable after string compare is supported.
   GTEST_SKIP_("Enable after string CmpFun is supported.");
   /*one not null varchar group by key with one condition*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
       "col_d <> 'a'",
-      "",
-      true);
+      "");
 
   /*one not null varchar group by key with one not null condition*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
       "col_d IS NOT NULL",
-      "",
-      true);
+      "");
 
   /*one null varchar group by key with one null condition*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
       "col_d IS NULL",
-      "",
-      true);
+      "");
 
   /*multiple group by keys with multiple having conditions*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c HAVING "
       "col_a IS NOT "
       "NULL AND col_c IS NOT NULL ",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
       "col_d HAVING "
       "col_a IS NOT NULL AND col_c <> 'ABC' AND col_d <> 'abc'",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
       "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
       "col_c <> 'AAA' AND col_d IS NULL ",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
       "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
       "col_c <> 'AAA' AND col_d IS NOT NULL ",
-      "",
-      true);
+      "");
 
   /*multiple group by keys with multiple where conditions*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL AND col_d "
       "IS NOT NULL GROUP BY col_a, col_d",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
       "NOT NULL AND col_b IS "
       "NOT NULL AND col_c <> 'AAA' GROUP BY col_a, col_b, col_c",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
       "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NULL "
       "GROUP BY col_a, col_b, col_c, col_d",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
       "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NOT NULL "
       "GROUP BY col_a, col_b, col_c, col_d",
-      "",
-      true);
+      "");
 
   /*multiple group by keys with multiple where and having conditions*/
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL GROUP BY "
       "col_a, col_d HAVING col_d IS NOT NULL",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
       "NOT NULL AND col_b IS NOT NULL GROUP BY col_a, col_b, col_c HAVING col_c <> 'AAA'",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
       "col_a IS NOT NULL AND "
       "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
       "col_d IS NULL",
-      "",
-      true);
-  assertQueryArrow(
+      "");
+  assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
       "col_a IS NOT NULL AND "
       "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
       "col_d IS NOT NULL ",
-      "",
-      true);
+      "");
 }
 
 /* Set to small data set will also cover all cases.
