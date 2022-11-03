@@ -1475,7 +1475,8 @@ Executor::GroupColLLVMValue Executor::groupByColumnCodegen(
 std::unique_ptr<FixedSizeColValues> Executor::groupByColumnCodegen(
     Analyzer::Expr* group_by_col,
     const size_t col_width,
-    const CompilationOptions& co) {
+    const CompilationOptions& co,
+    llvm::Argument* groups_buffer) {
   // TODO: refactor code from previous function.
   AUTOMATIC_IR_METADATA(cgen_state_.get());
   CHECK_GE(col_width, sizeof(int32_t));
@@ -1492,6 +1493,13 @@ std::unique_ptr<FixedSizeColValues> Executor::groupByColumnCodegen(
         get_int_type(col_width * 8, cgen_state_->context_)));
 
     return std::unique_ptr<FixedSizeColValues>(fixed_size_group_key);
+  } else if (auto multi_value_group_key =
+                 dynamic_cast<MultipleValueColValues*>(group_key)) {
+    auto ret = cgen_state_->emitCall("cider_get_string_id",
+                                     {groups_buffer,
+                                      multi_value_group_key->getValues()[0],
+                                      multi_value_group_key->getValues()[1]});
+    return std::make_unique<FixedSizeColValues>(ret);
   } else {
     CIDER_THROW(CiderCompileException, "Group key should be fixed-size now.");
   }
