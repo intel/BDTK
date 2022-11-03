@@ -170,7 +170,7 @@ uint64_t CiderHasher::updateHashMode(const uint64_t entry_num_limit,
   return entry_num_limit_max;
 }
 
-void CiderHasher::copyStringToLocal(UStringVal* uString) {
+void CiderStringHasher::copyStringToLocal(UStringVal* uString) {
   auto size = uString->size();
   if (size <= sizeof(int64_t)) {
     return;
@@ -201,7 +201,7 @@ void CiderHasher::copyStringToLocal(UStringVal* uString) {
   uString->setData(str->data() + start);
 }
 
-int64_t CiderHasher::lookupIdByValue(CiderByteArray value) {
+int64_t CiderStringHasher::lookupIdByValue(CiderByteArray value) {
   if (!value.ptr) {
     return 0;
   }
@@ -225,7 +225,7 @@ int64_t CiderHasher::lookupIdByValue(CiderByteArray value) {
   return -1;
 }
 
-const CiderByteArray CiderHasher::lookupValueById(int64_t id) const {
+const CiderByteArray CiderStringHasher::lookupValueById(int64_t id) const {
   if (0 == id) {
     return {0, nullptr};
   }

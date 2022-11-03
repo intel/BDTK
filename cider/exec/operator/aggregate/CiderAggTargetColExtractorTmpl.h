@@ -101,7 +101,8 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
   SimpleAggExtractor(const std::string& name,
                      size_t colIndex,
                      const CiderAggHashTable* hashtable)
-      : CiderAggTargetColExtractor(name, colIndex), hasher_(&hashtable->getHasher()) {
+      : CiderAggTargetColExtractor(name, colIndex)
+      , stringHasher_(&hashtable->getStringHasher()) {
     auto& colInfo = hashtable->getColEntryInfo(colIndex);
     offset_ = colInfo.slot_offset;
     null_offset_ = colInfo.is_key ? hashtable->getKeyNullVectorOffset()
@@ -116,7 +117,7 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
     for (size_t i = 0; i < rowNum; ++i) {
       const int8_t* rowPtr = rowAddrs[i];
       const ST* id = reinterpret_cast<const ST*>(rowPtr + offset_);
-      CiderByteArray raw_str = hasher_->lookupValueById(*id);
+      CiderByteArray raw_str = stringHasher_->lookupValueById(*id);
       // Old CiderBatch can't manage memory of VarChar type properly, there will exist
       // memory leak problem.
       targetVector[i].len = raw_str.len;
@@ -134,7 +135,7 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
 
  private:
   size_t offset_;
-  const CiderHasher* hasher_;
+  const CiderStringHasher* stringHasher_;
 };
 
 template <typename SUMT, typename COUNTT, typename AVGT>

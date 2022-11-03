@@ -270,6 +270,27 @@ llvm::Value* CodeGenerator::codegenPerRowStringOper(const Analyzer::StringOper* 
                                        string_oper_lvs);
 }
 
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(const Analyzer::StringOper* expr,
+                                                      const CompilationOptions& co){
+  CHECK_GE(expr->getArity(), 1UL);
+  CHECK(expr->hasNoneEncodedTextArg());
+
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  CHECK_GE(expr->getArity(), 1UL);
+
+  const auto& expr_ti = expr->get_type_info();
+  const auto primary_arg = remove_cast(expr->getArg(0));
+  CHECK(primary_arg->get_type_info().is_none_encoded_string());
+
+  auto primary_str = codegen(primary_arg, co, true);
+
+  const auto string_op_infos = getStringOpInfos(expr);
+  CHECK(string_op_infos.size());
+  const auto string_ops = getStringOps(string_op_infos);
+
+  return nullptr;
+}
+
 llvm::Value* CodeGenerator::codegen(const Analyzer::StringOper* expr,
                                     const CompilationOptions& co) {
   CHECK_GE(expr->getArity(), 1UL);

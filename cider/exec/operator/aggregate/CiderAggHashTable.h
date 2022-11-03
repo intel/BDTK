@@ -106,6 +106,36 @@ struct UStringValCmp {
   }
 };
 
+class CiderStringHasher {
+ public:
+  int64_t lookupIdByValue(CiderByteArray value);
+  const CiderByteArray lookupValueById(int64_t id) const;
+
+ private:
+  // Stop counting distinct values after this many and revert to regular hash.
+  static constexpr int32_t kMaxDistinct = 100'000;
+  static constexpr uint32_t kStringBufferUnitSize = 1024;
+  static constexpr uint64_t kMaxDistinctStringsBytes = 1 << 20;
+
+  bool distinctOverflow_ = false;
+
+  //   string
+  // 		  ↓		insert
+  // uStringVals   <----------------------------------
+  //   		↓		not found       4 update string ptr    |
+  // 1 generate an id                                |
+  // 2 cache string ptr to stringCacheVec            |
+  // 3 copy to contigous memory uStringValStorage_	--
+  robin_hood::unordered_flat_set<UStringVal, UStringValHash, UStringValCmp> uStringVals;
+  std::vector<UStringVal> stringCacheVec;
+
+  // Memory for unique string values.
+  std::vector<std::string> uStringValStorage_;
+  uint64_t distinctStringsBytes_ = 0;
+
+  void copyStringToLocal(UStringVal* uString);
+};
+
 class CiderHasher {
  public:
   enum HashMode { kRangeHash, kDirectHash };
@@ -158,9 +188,6 @@ class CiderHasher {
                           const uint64_t entry_num_limit_max);
   HashMode getHashMode() { return mode_; }
 
-  int64_t lookupIdByValue(CiderByteArray value);
-  const CiderByteArray lookupValueById(int64_t id) const;
-
  private:
   bool updateHashKeyRange(kColumnInfo& col_info, const uint64_t entry_num_limit);
 
@@ -202,29 +229,6 @@ class CiderHasher {
 
   static HashMode initMode(const std::vector<SQLTypeInfo>& key_types);
   static bool supportRangeHash(SQLTypeInfo key_type);
-
-  bool distinctOverflow_ = false;
-
-  //   string
-  // 		  ↓		insert
-  // uStringVals   <----------------------------------
-  //   		↓		not found       4 update string ptr    |
-  // 1 generate an id                                |
-  // 2 cache string ptr to stringCacheVec            |
-  // 3 copy to contigous memory uStringValStorage_	--
-  robin_hood::unordered_flat_set<UStringVal, UStringValHash, UStringValCmp> uStringVals;
-  std::vector<UStringVal> stringCacheVec;
-
-  // Memory for unique string values.
-  std::vector<std::string> uStringValStorage_;
-  uint64_t distinctStringsBytes_ = 0;
-
-  // Stop counting distinct values after this many and revert to regular hash.
-  static constexpr int32_t kMaxDistinct = 100'000;
-  static constexpr uint32_t kStringBufferUnitSize = 1024;
-  static constexpr uint64_t kMaxDistinctStringsBytes = 1 << 20;
-
-  void copyStringToLocal(UStringVal* uString);
 
   const size_t key_num_;
   const size_t key_size_;
@@ -282,6 +286,8 @@ class CiderAggHashTable {
   const std::vector<size_t>& getTargetIndexMap() const { return target_index_map_; }
   CiderHasher& getHasher() { return hasher_; }
   const CiderHasher& getHasher() const { return hasher_; }
+  CiderStringHasher& getStringHasher() {return stringHasher_;}
+  const CiderStringHasher& getStringHasher() const { return stringHasher_; }
 
   CiderAggHashTableRowIteratorPtr getRowIterator(size_t buffer_index);
   std::string toString() const;
@@ -348,6 +354,7 @@ class CiderAggHashTable {
   std::shared_ptr<CiderAllocator> allocator_;
 
   CiderHasher hasher_;
+  CiderStringHasher stringHasher_;
 
   size_t group_key_null_offset_;
   size_t group_target_offset_;
