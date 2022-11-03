@@ -328,6 +328,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   CHECK(expr->hasNoneEncodedTextArg());
 
   const auto& expr_ti = expr->get_type_info();
+  // Should probably CHECK we have a UOper cast to dict encoded to be consistent
   const auto primary_arg = remove_cast(expr->getArg(0));
   CHECK(primary_arg->get_type_info().is_none_encoded_string());
 
