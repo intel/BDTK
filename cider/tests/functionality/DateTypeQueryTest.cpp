@@ -161,7 +161,6 @@ TEST_F(DateRandomAndNullQueryTest, SimpleExtractDateTest3) {
 }
 
 TEST_F(DateRandomAndNullQueryTest, ExtractDateWithAggTest) {
-  GTEST_SKIP();
   assertQueryArrow("SELECT MIN(extract(year from col_b)) FROM test");
   assertQueryArrow("SELECT MAX(extract(year from col_b)) FROM test");
   assertQueryArrow("SELECT MIN(extract(day from col_b)) FROM test");
@@ -181,7 +180,6 @@ TEST_F(DateTypeQueryTest, SimpleDateTest) {
       "SELECT col_a FROM test where col_b >= date '1970-01-01' and col_b < date "
       "'1970-02-01' ");
 
-  GTEST_SKIP();
   assertQueryArrow("SELECT SUM(col_a) FROM test where col_b <= date '1980-01-01' ");
 }
 
@@ -271,7 +269,6 @@ TEST_F(DateRandomAndNullQueryTest, DateOpTest) {
       "SELECT col_a + interval '10' day, extract(day from col_b) FROM test where col_a > "
       "date '1970-02-01' and extract(day from col_b) > 20");
 
-  GTEST_SKIP();
   assertQueryArrow(
       "SELECT MIN(extract(year from col_b)) FROM test where extract(year from col_b) > "
       "1972");

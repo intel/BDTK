@@ -302,6 +302,7 @@ bool CiderBatchChecker::checkOneStructBatchEqual(CiderBatch* expected_batch,
       case SQLTypes::kVARCHAR:
         is_equal = checkOneVarcharBatchEqual(expected_child->as<VarcharBatch>(),
                                              actual_child->as<VarcharBatch>());
+        break;
       case SQLTypes::kDATE:
         is_equal =
             checkOneScalarBatchEqual<int32_t>(expected_child->as<ScalarBatch<int32_t>>(),
