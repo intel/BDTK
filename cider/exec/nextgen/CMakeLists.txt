@@ -25,4 +25,9 @@ if(ENABLE_ASN)
   list(APPEND NEXTGEN_DEPS -fsanitize=address)
 endif()
 
+option(ENABLE_JITLIB_DEBUG "Enable debugging symbols for the JIT" OFF)
+if(ENABLE_JITLIB_DEBUG)
+  add_definitions("-DWITH_JITLIB_DEBUG")
+endif()
+
 add_subdirectory(jitlib)

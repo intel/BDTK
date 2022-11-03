@@ -21,6 +21,8 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITMODULE_H
 #define JITLIB_LLVMJIT_LLVMJITMODULE_H
 
+#include <llvm/IR/LegacyPassManager.h>
+
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/Transforms/Utils/ValueMapper.h>
 
@@ -46,6 +48,7 @@ class LLVMJITModule final : public JITModule {
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);
+  void optimizeIR(llvm::Module* module, llvm::legacy::PassManager& pass_manager);
 
  private:
   std::unique_ptr<llvm::LLVMContext> context_;

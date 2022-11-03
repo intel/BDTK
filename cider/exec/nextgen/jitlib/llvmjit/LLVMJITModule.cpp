@@ -23,6 +23,14 @@
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Transforms/Utils/Cloning.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/AlwaysInliner.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Instrumentation.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Utils.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
@@ -110,7 +118,45 @@ void LLVMJITModule::finish() {
   llvm::outs() << *module_;
 
   LLVMJITEngineBuilder builder(*this);
+
+#ifndef WITH_JITLIB_DEBUG
+  llvm::legacy::PassManager pass_manager;
+  optimizeIR(module_.get(), pass_manager);
+
+#endif  // WITH_JITLIB_DEBUG
   engine_ = builder.build();
+}
+
+void LLVMJITModule::optimizeIR(llvm::Module* module,
+                               llvm::legacy::PassManager& pass_manager) {
+  // the always inliner legacy pass must always run first
+  pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
+
+  pass_manager.add(llvm::createSROAPass());
+  // mem ssa drops unused load and store instructions, e.g. passing variables directly
+  // where possible
+  pass_manager.add(
+      llvm::createEarlyCSEPass(/*enable_mem_ssa=*/true));  // Catch trivial redundancies
+
+  pass_manager.add(llvm::createJumpThreadingPass());  // Thread jumps.
+  pass_manager.add(llvm::createCFGSimplificationPass());
+
+  // remove load/stores in PHIs if instructions can be accessed directly post thread
+  // jumps
+  pass_manager.add(llvm::createNewGVNPass());
+
+  pass_manager.add(llvm::createDeadStoreEliminationPass());
+  pass_manager.add(llvm::createLICMPass());
+
+  pass_manager.add(llvm::createInstructionCombiningPass());
+
+  // module passes
+  pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
+  pass_manager.add(llvm::createGlobalOptimizerPass());
+
+  pass_manager.add(llvm::createCFGSimplificationPass());  // cleanup after everything
+
+  pass_manager.run(*module);
 }
 
 void* LLVMJITModule::getFunctionPtrImpl(LLVMJITFunction& function) {
