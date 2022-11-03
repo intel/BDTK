@@ -365,8 +365,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
       func_name, get_int_type(64, cgen_state_->context_), string_oper_lvs);
   llvm::Value* res_null = nullptr;
   if (str_values->getNull()) {
-    res_null = cgen_state_->emitExternalCall(
-        "cider_check_string_id_is_null", get_int_type(1, cgen_state_->context_), {id});
+    res_null = str_values->getNull();
   }
   llvm::Value* res_str_ptr =
       cgen_state_->emitExternalCall("cider_hasher_decode_str_ptr",
@@ -380,6 +379,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   return std::make_unique<TwoValueColValues>(res_str_ptr, res_str_len, res_null);
 }
 
+// To be deprecated.
 llvm::Value* CodeGenerator::codegen(const Analyzer::StringOper* expr,
                                     const CompilationOptions& co) {
   CHECK_GE(expr->getArity(), 1UL);
@@ -448,6 +448,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenLikeExpr(
   return ret;
 }
 
+// To be deprecated.
 llvm::Value* CodeGenerator::codegen(const Analyzer::LikeExpr* expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);

@@ -108,6 +108,7 @@ struct UStringValCmp {
 
 class CiderStringHasher {
  public:
+  // id = 0 => empty string, id = -1 => null
   int64_t lookupIdByValue(CiderByteArray value);
   const CiderByteArray lookupValueById(int64_t id) const;
 

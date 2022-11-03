@@ -223,7 +223,7 @@ int64_t CiderStringHasher::lookupIdByValue(CiderByteArray value) {
 }
 
 const CiderByteArray CiderStringHasher::lookupValueById(int64_t id) const {
-  if (0 == id) {
+  if (0 == id || -1 == id) {
     return {0, nullptr};
   }
   UStringVal uString = stringCacheVec[id - 1];
