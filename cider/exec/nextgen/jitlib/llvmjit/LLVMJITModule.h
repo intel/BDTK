@@ -21,6 +21,9 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITMODULE_H
 #define JITLIB_LLVMJIT_LLVMJITMODULE_H
 
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/Transforms/Utils/ValueMapper.h>
+
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
@@ -32,20 +35,30 @@ class LLVMJITModule final : public JITModule {
   friend LLVMJITFunction;
 
  public:
-  explicit LLVMJITModule(const std::string& name);
+  explicit LLVMJITModule(const std::string& name,
+                         bool should_copy_runtime_module = false);
 
   JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
+
+  llvm::LLVMContext& getLLVMContext() { return *context_; }
 
   void finish() override;
 
  protected:
-  llvm::LLVMContext& getLLVMContext() { return *context_; }
   void* getFunctionPtrImpl(LLVMJITFunction& function);
 
  private:
   std::unique_ptr<llvm::LLVMContext> context_;
   std::unique_ptr<llvm::Module> module_;
   std::unique_ptr<LLVMJITEngine> engine_;
+
+  // runtime module
+ public:
+  void copyRuntimeModule();
+
+ private:
+  llvm::ValueToValueMapTy vmap_;
+  std::unique_ptr<llvm::Module> runtime_module_;
 };
 };  // namespace cider::jitlib
 
