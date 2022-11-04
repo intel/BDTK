@@ -386,6 +386,7 @@ class CodeGenerator {
 
   llvm::Value* codgenAdjustFixedEncNull(llvm::Value*, const SQLTypeInfo&);
 
+  // TODO: (spevenhe) Will deprecate
   std::vector<llvm::Value*> codegenOuterJoinNullPlaceholder(
       const Analyzer::ColumnVar* col_var,
       const bool fetch_column,

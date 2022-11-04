@@ -109,6 +109,7 @@ int adjusted_range_table_index(const Analyzer::ColumnVar* col_var) {
 
 }  // namespace
 
+// TODO: (spevenhe) Will deprecate
 std::vector<llvm::Value*> CodeGenerator::codegenColumn(const Analyzer::ColumnVar* col_var,
                                                        const bool fetch_column,
                                                        const CompilationOptions& co) {
@@ -127,8 +128,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
 
-  // TBD: Outer-Join codegenOuterJoinNullPlaceholder() is a placeholder, seems not
-  // supported completely.
   // TBD: Window function support.
   // TBD: Lazy fetch support.
   // TODO: Reuse columns fetched in JOIN stage.
@@ -545,6 +544,7 @@ llvm::Value* CodeGenerator::foundOuterJoinMatch(const size_t nesting_level) cons
   return cgen_state_->outer_join_match_found_per_level_[nesting_level - 1];
 }
 
+// TODO: (spevenhe) Will deprecate
 std::vector<llvm::Value*> CodeGenerator::codegenOuterJoinNullPlaceholder(
     const Analyzer::ColumnVar* col_var,
     const bool fetch_column,
