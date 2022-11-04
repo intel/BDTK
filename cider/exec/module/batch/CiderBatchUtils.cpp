@@ -40,7 +40,7 @@ namespace CiderBatchUtils {
     col_data.reserve(table_row_num);                                        \
     null_data.reserve(table_row_num);                                       \
     C_TYPE* buf = (C_TYPE*)table_ptr[i];                                    \
-    C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                           \
+    C_TYPE* null_buf = (C_TYPE*)table_ptr[i + column_num];                  \
     for (auto j = 0; j < table_row_num; ++j) {                              \
       C_TYPE value = buf[j];                                                \
       bool is_not_null = null_buf[j];                                       \
@@ -58,7 +58,7 @@ namespace CiderBatchUtils {
     col_data.reserve(table_row_num);                                          \
     null_data.reserve(table_row_num);                                         \
     C_TYPE* buf = (C_TYPE*)table_ptr[i];                                      \
-    C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                             \
+    C_TYPE* null_buf = (C_TYPE*)table_ptr[i + column_num];                    \
     for (auto j = 0; j < table_row_num; ++j) {                                \
       C_TYPE value = buf[j];                                                  \
       bool is_null = (null_buf[j] == 0);                                      \
