@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -33,7 +32,6 @@ class ExprGenerator {
 
  public:
   // Generates IR value(s) for the given analyzer expression.
-  JITTuple codegen(const Analyzer::Expr* expr, const JITTuple& input);
   JITTuple codegen(const std::vector<ExprPtr> exprs, const JITTuple& input) {
     JITTuple next_input = input;
     for (const auto& expr : exprs) {
@@ -42,6 +40,7 @@ class ExprGenerator {
     }
     return next_input;
   }
+  JITTuple codegen(const Analyzer::Expr* expr, const JITTuple& input);
 
  protected:
   JITTuple codegenBinOper(const Analyzer::BinOper*, const JITTuple& input);

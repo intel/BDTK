@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -77,12 +76,6 @@ class JITTuple {
 class OpNode {
  public:
   using ExprPtr = std::shared_ptr<Analyzer::Expr>;
-
-  OpNode(const std::vector<ExprPtr>& exprs) : exprs_(exprs) {}
-  OpNode(std::vector<ExprPtr>&& exprs) : exprs_(std::move(exprs)) {}
-  OpNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
-
-  std::vector<ExprPtr> exprs_;
 };
 
 class Translator {
@@ -92,20 +85,9 @@ class Translator {
   Translator() = default;
   virtual ~Translator() = default;
 
-  Translator(const std::vector<ExprPtr>& exprs) {
-    opNode_ = std::make_shared<OpNode>(exprs);
-  }
-  Translator(std::vector<ExprPtr>&& exprs) {
-    opNode_ = std::make_shared<OpNode>(std::move(exprs));
-  }
-  Translator(std::initializer_list<ExprPtr> exprs) {
-    opNode_ = std::make_shared<OpNode>(exprs);
-  }
-
-  virtual void consume(Context& context, const JITTuple& input) {}
+  virtual void consume(Context& context, const JITTuple& input) = 0;
 
  protected:
-  std::shared_ptr<OpNode> opNode_;
   std::shared_ptr<Translator> successor_;
 };
 

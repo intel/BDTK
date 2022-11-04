@@ -28,16 +28,39 @@
 #include "dummy.h"
 #include "type/plan/Analyzer.h"
 
+class FilterNode : public OpNode {
+ public:
+  //   FilterNode(const std::vector<ExprPtr>& exprs) : exprs_(exprs) {}
+  //   FilterNode(std::vector<ExprPtr>&& exprs) : exprs_(std::move(exprs)) {}
+  FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
+  template <typename T>
+  FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+
+  std::vector<ExprPtr> exprs_;
+};
+
 class FilterTranslator : public Translator {
  public:
-  FilterTranslator(const std::vector<ExprPtr>& exprs) : Translator(exprs) {}
-  FilterTranslator(std::vector<ExprPtr>&& exprs) : Translator(std::move(exprs)) {}
-  FilterTranslator(std::initializer_list<ExprPtr> exprs) : Translator(exprs) {}
+  template <typename T>
+  FilterTranslator(T&& exprs) {
+    filterNode_ = std::make_unique<FilterNode>(std::forward<T>(exprs));
+  }
+  //   FilterTranslator(const std::vector<ExprPtr>& exprs) {
+  //     filterNode_ = std::make_unique<FilterNode>(exprs);
+  //   }
+  //   FilterTranslator(std::vector<ExprPtr>&& exprs) {
+  //     filterNode_ = std::make_unique<FilterNode>(std::move(exprs));
+  //   }
+  FilterTranslator(std::initializer_list<ExprPtr> exprs) {
+    filterNode_ = std::make_unique<FilterNode>(exprs);
+  }
 
   void consume(Context& context, const JITTuple& input) override;
 
  private:
   JITTuple codegen(Context& context, const JITTuple& input);
+
+  std::unique_ptr<FilterNode> filterNode_;
 };
 
 #endif

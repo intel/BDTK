@@ -32,7 +32,7 @@ void FilterTranslator::consume(Context& context, const JITTuple& input) {
 
 JITTuple FilterTranslator::codegen(Context& context, const JITTuple& input) {
   ExprGenerator gen;
-  JITTuple cond_tuple = gen.codegen(opNode_->exprs_, input);
+  JITTuple cond_tuple = gen.codegen(filterNode_->exprs_, input);
 
   llvm::Value* cond = nullptr;
   TODO("MaJian", "extract cond from tuple");
