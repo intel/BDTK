@@ -78,25 +78,47 @@ class CiderFilterRandomTestBase : public CiderTestBase {
                                                  100))};
   }
 };
-class CiderFilterNullTestBase : public CiderTestBase {
+
+class CiderProjectAllTestBase : public CiderTestBase {
  public:
-  CiderFilterNullTestBase() {
+  CiderProjectAllTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT,
-        col_3 FLOAT, col_4 DOUBLE);)";
-    input_ = {std::make_shared<CiderBatch>(
-        QueryDataGenerator::generateBatchByTypes(99,
-                                                 {"col_1", "col_2", "col_3", "col_4"},
-                                                 {CREATE_SUBSTRAIT_TYPE(I32),
-                                                  CREATE_SUBSTRAIT_TYPE(I64),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp64)},
-                                                 {7, 7, 7, 7}))};
+        "CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, "
+        "col_5 FLOAT, col_6 DOUBLE, col_7 DATE, col_8 BOOLEAN);";
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        100,
+        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
+        {CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I8),
+         CREATE_SUBSTRAIT_TYPE(I16),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Date),
+         CREATE_SUBSTRAIT_TYPE(Bool)},
+        {1, 2, 2, 2, 3, 3, 4, 2},
+        GeneratePattern::Random))};
   }
 };
 
->>>>>>> 6bb2682 (add date type doc)
+TEST_F(CiderProjectAllTestBase, filterProjectAllTest) {
+  assertQuery("SELECT * FROM test");
+
+  assertQuery("SELECT * FROM test where TRUE");
+
+  assertQuery(
+      "SELECT * FROM test where (col_3 > 0 and col_4 > 0) or (col_5 < 0 and col_6 < 0)");
+
+  assertQuery("SELECT * FROM test where col_2 <> 0 and col_7 > '1972-02-01'");
+
+  assertQuery("SELECT *, 3 >= 2 FROM test where col_8 = true");
+
+  assertQuery(
+      "SELECT * , (2*col_1) as col_8, (col_7 + interval '1' year) as col_9 FROM test "
+      "where  col_7 > '1972-02-01'");
+}
+
 TEST_F(CiderFilterSequenceTestBase, inTest) {
   assertQuery("SELECT * FROM test WHERE col_1 in (24, 25, 26)", "in_int32_array.json");
   assertQuery("SELECT * FROM test WHERE col_2 in (24, 25, 26)", "in_int64_array.json");
@@ -370,23 +392,38 @@ class CiderProjectAllTestArrow : public CiderTestBase {
  public:
   CiderProjectAllTestArrow() {
     table_name_ = "test";
+    // TODO(yizhong): Enable this after date and bool is supported in arrow.
+    // create_ddl_ =
+    //     "CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT,
+    //     " "col_5 FLOAT, col_6 DOUBLE, col_7 DATE, col_8 BOOLEAN);";
+    // input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+    //     100,
+    //     {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
+    //     {CREATE_SUBSTRAIT_TYPE(I32),
+    //      CREATE_SUBSTRAIT_TYPE(I64),
+    //      CREATE_SUBSTRAIT_TYPE(I8),
+    //      CREATE_SUBSTRAIT_TYPE(I16),
+    //      CREATE_SUBSTRAIT_TYPE(Fp32),
+    //      CREATE_SUBSTRAIT_TYPE(Fp64),
+    //      CREATE_SUBSTRAIT_TYPE(Date),
+    //      CREATE_SUBSTRAIT_TYPE(Bool)},
+    //     {1, 2, 2, 2, 3, 3, 4, 2},
+    //     GeneratePattern::Random))};
+
     create_ddl_ =
-        "CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, "
-        "col_5 FLOAT, col_6 DOUBLE, col_7 DATE, col_8 BOOLEAN);";
+        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, col_5 FLOAT, col_6 DOUBLE);)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         100,
-        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
+        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I8),
          CREATE_SUBSTRAIT_TYPE(I16),
          CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Date),
-         CREATE_SUBSTRAIT_TYPE(Bool)},
-        {1, 2, 2, 2, 3, 3, 4, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp64)},
+        {1, 2, 2, 2, 3, 3},
         GeneratePattern::Random);
   }
 };
@@ -396,13 +433,14 @@ TEST_F(CiderProjectAllTestArrow, ArrowFilterProjectAllTest) {
   assertQueryArrow("SELECT * FROM test where TRUE");
   assertQueryArrow(
       "SELECT * FROM test where (col_3 > 0 and col_4 > 0) or (col_5 < 0 and col_6 < 0) ");
-  assertQueryArrow("SELECT * FROM test where col_2 <> 0 and col_7 > date '1972-02-01'");
-  assertQueryArrow(
-      "SELECT * , (2*col_1) , (col_7 + interval '1' year) as col_9 FROM test "
-      "where  col_7 > date '1972-02-01'");
-  // FIXME: constant(boolean) support with Arrow format.
-  GTEST_SKIP();
+
+  // TODO(yizhong): Enable this after date and bool is supported in arrow.
+  GTEST_SKIP_("date codegen is not ready.");
+  assertQueryArrow("SELECT * FROM test where col_2 <> 0 and col_7 > '1972-02-01'");
   assertQueryArrow("SELECT *, 3 >= 2 FROM test where col_8 = true");
+  assertQueryArrow(
+      "SELECT * , (2*col_1) as col_8, (col_7 + interval '1' year) as col_9 FROM test "
+      "where  col_7 > '1972-02-01'");
 }
 
 TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {

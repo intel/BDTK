@@ -159,7 +159,7 @@ inline uint64_t exp_to_scale(const unsigned exp) {
   return res;
 }
 
-inline size_t get_bit_width(const SQLTypeInfo& ti) {
+inline size_t get_bit_width(const SQLTypeInfo& ti, bool is_arrow_format = false) {
   const auto int_type = ti.is_decimal() ? kBIGINT : ti.get_type();
   switch (int_type) {
     case kNULLT:
@@ -180,7 +180,11 @@ inline size_t get_bit_width(const SQLTypeInfo& ti) {
     case kDOUBLE:
       return 64;
     case kDATE:
-      return 32;
+      if (is_arrow_format) {
+        return 32;
+      } else {
+        return 64;
+      }
     case kTIME:
     case kTIMESTAMP:
     case kINTERVAL_DAY_TIME:

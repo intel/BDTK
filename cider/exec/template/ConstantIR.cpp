@@ -31,7 +31,8 @@ std::vector<llvm::Value*> CodeGenerator::codegen(const Analyzer::Constant* const
   AUTOMATIC_IR_METADATA(cgen_state_);
   if (co.hoist_literals) {
     std::vector<const Analyzer::Constant*> constants(1, constant);
-    return codegenHoistedConstants(constants, enc_type, dict_id);
+    return codegenHoistedConstants(
+        constants, enc_type, dict_id, co.use_cider_data_format);
   }
   const auto& type_info = constant->get_type_info();
   const auto type =
@@ -122,7 +123,8 @@ std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstantsLoads(
     const SQLTypeInfo& type_info,
     const EncodingType enc_type,
     const int dict_id,
-    const int16_t lit_off) {
+    const int16_t lit_off,
+    bool is_arrow_format) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   std::string literal_name = "literal_" + std::to_string(lit_off);
   auto lit_buff_query_func_lv = get_arg_by_name(cgen_state_->query_func_, "literals");
@@ -182,7 +184,7 @@ std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstantsLoads(
   }
 
   llvm::Type* val_ptr_type{nullptr};
-  const auto val_bits = get_bit_width(type_info);
+  const auto val_bits = get_bit_width(type_info, is_arrow_format);
   CHECK_EQ(size_t(0), val_bits % 8);
   if (type_info.is_integer() || type_info.is_decimal() || type_info.is_time() ||
       type_info.is_timeinterval() || type_info.is_string() || type_info.is_boolean()) {
@@ -278,7 +280,8 @@ std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstantsPlaceholders(
 std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstants(
     const std::vector<const Analyzer::Constant*>& constants,
     const EncodingType enc_type,
-    const int dict_id) {
+    const int dict_id,
+    bool is_arrow_format) {
   AUTOMATIC_IR_METADATA(cgen_state_);
   CHECK(!constants.empty());
   const auto& type_info = constants.front()->get_type_info();
@@ -307,8 +310,8 @@ std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstants(
   auto entry = cgen_state_->query_func_literal_loads_.find(lit_off);
 
   if (entry == cgen_state_->query_func_literal_loads_.end()) {
-    hoisted_literal_loads =
-        codegenHoistedConstantsLoads(type_info, enc_type, dict_id, lit_off);
+    hoisted_literal_loads = codegenHoistedConstantsLoads(
+        type_info, enc_type, dict_id, lit_off, is_arrow_format);
     cgen_state_->query_func_literal_loads_[lit_off] = hoisted_literal_loads;
   } else {
     hoisted_literal_loads = entry->second;

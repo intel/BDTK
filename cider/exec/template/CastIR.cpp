@@ -226,8 +226,8 @@ llvm::Value* CodeGenerator::codegenCastBetweenTimeAndDate(llvm::Value* operand_l
                                                           const SQLTypeInfo& operand_ti,
                                                           const SQLTypeInfo& target_ti) {
   AUTOMATIC_IR_METADATA(cgen_state_);
-  const auto operand_width = get_bit_width(operand_ti);
-  const auto target_width = get_bit_width(target_ti);
+  const auto operand_width = get_bit_width(operand_ti, true);
+  const auto target_width = get_bit_width(target_ti, true);
   int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
       abs(operand_ti.get_dimension() - target_ti.get_dimension()));
   int64_t cast_scaled = dim_scaled * kSecondsInOneDay;
