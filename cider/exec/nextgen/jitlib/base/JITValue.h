@@ -81,8 +81,8 @@ class JITValue {
   virtual JITValue& assign(JITValue& value) = 0;
 
   // // Logical Operators
-  // virtual JITValuePointer andOp(JITValue& rh) = 0;
-  // virtual JITValuePointer orOp(JITValue& rh) = 0;
+  virtual JITValuePointer andOp(JITValue& rh) = 0;
+  virtual JITValuePointer orOp(JITValue& rh) = 0;
   virtual JITValuePointer notOp() = 0;
 
   // // Arithmetic Operations
@@ -94,12 +94,12 @@ class JITValue {
   virtual JITValuePointer mod(JITValue& rh) = 0;
 
   // // Compare Operators
-  // virtual JITValuePointer eq(JITValue& rh) = 0;
-  // virtual JITValuePointer ne(JITValue& rh) = 0;
-  // virtual JITValuePointer lt(JITValue& rh) = 0;
-  // virtual JITValuePointer le(JITValue& rh) = 0;
-  // virtual JITValuePointer gt(JITValue& rh) = 0;
-  // virtual JITValuePointer ge(JITValue& rh) = 0;
+  virtual JITValuePointer eq(JITValue& rh) = 0;
+  virtual JITValuePointer ne(JITValue& rh) = 0;
+  virtual JITValuePointer lt(JITValue& rh) = 0;
+  virtual JITValuePointer le(JITValue& rh) = 0;
+  virtual JITValuePointer gt(JITValue& rh) = 0;
+  virtual JITValuePointer ge(JITValue& rh) = 0;
 
  private:
   std::string value_name_;
