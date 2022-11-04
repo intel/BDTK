@@ -328,7 +328,7 @@ void runVarcharBatchTest(VarcharBatch* batch,
     return len;
   }();
   EXPECT_EQ(total_len, offset[offset.size() - 1]);
-  EXPECT_TRUE(batch->resizeDataBuffer(total_len));
+  EXPECT_TRUE(batch->resizeDataBufferIfNeeded(total_len));
   EXPECT_EQ(batch->getLength(), data.size());
   EXPECT_EQ(batch->getNullCount(), 0);
 

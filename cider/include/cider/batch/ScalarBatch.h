@@ -127,7 +127,7 @@ class VarcharBatch final : public CiderBatch {
     return reinterpret_cast<const int32_t*>(getBuffersPtr()[getOffsetBufferIndex()]);
   }
 
-  bool resizeDataBuffer(int64_t size) {
+  bool resizeDataBufferIfNeeded(int64_t size) {
     CHECK(!isMoved());
     if (!permitBufferAllocate()) {
       return false;
