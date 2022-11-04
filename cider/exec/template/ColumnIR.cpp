@@ -619,7 +619,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder
   cgen_state_->ir_builder_.CreateCondBr(
       outer_join_match_lv, outer_join_args_bb, outer_join_nulls_bb);
 
-  // for matched rows in right, extract mathed results
+  // for matched rows in right, extract matched results
   cgen_state_->ir_builder_.SetInsertPoint(outer_join_nulls_bb);
   auto null_constant =
       makeExpr<Analyzer::Constant>(col_var->get_type_info().get_type(), true);
@@ -628,7 +628,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder
       dynamic_cast<FixedSizeColValues*>(null_target_lvs.get());
   cgen_state_->ir_builder_.CreateBr(phi_bb);
 
-  // for NOT matched rows in right, return null constant result
+  // for NOT matched rows in right, return null constant results
   cgen_state_->ir_builder_.SetInsertPoint(outer_join_args_bb);
   Executor::FetchCacheAnchor anchor(cgen_state_);
   auto input_col_descriptor_ptr = colByteStream(col_var, fetch_column, true);
@@ -645,7 +645,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder
   target_phi->addIncoming(orig_lvs_FixedSize->getValue(), outer_join_args_bb);
   target_phi->addIncoming(null_target_lvs_FixedSize->getValue(), outer_join_nulls_bb);
   llvm::PHINode* null_phi = nullptr;
-  // For not null column
+  // for not null column
   if (orig_lvs_FixedSize->getNull() && null_target_lvs_FixedSize->getNull()) {
     null_phi = cgen_state_->ir_builder_.CreatePHI(
         llvm::Type::getInt1Ty(cgen_state_->context_), 2);
