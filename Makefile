@@ -47,13 +47,13 @@ clean:
 	@rm -rf build-*
 
 build-common:
-	@sed -i "s/COMMAND protoc --proto_path \$${CMAKE_SOURCE_DIR}\/ --cpp_out \$${CMAKE_SOURCE_DIR}/COMMAND protoc --proto_path \$${proto_directory}\/ --cpp_out \$${PROTO_OUTPUT_DIR}/g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
-	@sed -i "s/set(THRIFT_LIB \$${THRIFT_ROOT}\/lib\/libthrift.a)/set(THRIFT_LIB \/usr\/local\/lib\/libthrift.a)/g" ./thirdparty/velox/third_party/CMakeLists.txt
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/algebra.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/function.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/plan.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/type_expressions.proto
+	# @sed -i "s/COMMAND protoc --proto_path \$${CMAKE_SOURCE_DIR}\/ --cpp_out \$${CMAKE_SOURCE_DIR}/COMMAND protoc --proto_path \$${proto_directory}\/ --cpp_out \$${PROTO_OUTPUT_DIR}/g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
+	# @sed -i "s/set(THRIFT_LIB \$${THRIFT_ROOT}\/lib\/libthrift.a)/set(THRIFT_LIB \/usr\/local\/lib\/libthrift.a)/g" ./thirdparty/velox/third_party/CMakeLists.txt
+	# @sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/algebra.proto
+	# @sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/function.proto
+	# @sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
+	# @sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/plan.proto
+	# @sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/type_expressions.proto
 
 	@mkdir -p build-${BUILD_TYPE}
 	@cd build-${BUILD_TYPE} && \

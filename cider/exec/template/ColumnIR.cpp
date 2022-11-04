@@ -132,14 +132,15 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
   // TBD: Window function support.
   // TBD: Lazy fetch support.
   // TODO: Reuse columns fetched in JOIN stage.
-  if (col_var->get_rte_idx() > 1 &&
+  if (col_var->get_rte_idx() > 0 &&
       !cgen_state_->outer_join_match_found_per_level_.empty() &&
       foundOuterJoinMatch(col_var->get_rte_idx())) {
-    // to(spevenhe) add out codegen like: return codegenOuterJoinNullPlaceholder(col_var,
-    // fetch_column, co) to support left join; add after vector<CodegenColValues>
-    // supported
-    CIDER_THROW(CiderCompileException,
-                "Range table index of ColumnExpr should LE than 0.");
+    // join table more than two
+    if (col_var->get_rte_idx() > 1) {
+      CIDER_THROW(CiderCompileException,
+                  "Range table index of ColumnExpr should LE than 1.");
+    }
+    return codegenOuterJoinNullPlaceholder(col_var, co, fetch_column);
   }
 
   if (col_var->get_table_id() > 0) {
@@ -597,6 +598,62 @@ std::vector<llvm::Value*> CodeGenerator::codegenOuterJoinNullPlaceholder(
   cgen_state_->ir_builder_.CreateBr(back_from_outer_join_bb);
   cgen_state_->ir_builder_.SetInsertPoint(back_from_outer_join_bb);
   return target_lvs;
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder(
+    const Analyzer::ColumnVar* col_var,
+    const CompilationOptions& co,
+    const bool fetch_column) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  // create IR code blocks
+  const auto outer_join_args_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "left_outer_join_not_nulls", cgen_state_->current_func_);
+  const auto outer_join_nulls_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "left_outer_join_nulls", cgen_state_->current_func_);
+  const auto phi_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "left_outer_join_result_phi", cgen_state_->current_func_);
+
+  // check null
+  const auto outer_join_match_lv = foundOuterJoinMatch(col_var->get_rte_idx());
+  CHECK(outer_join_match_lv);
+  cgen_state_->ir_builder_.CreateCondBr(
+      outer_join_match_lv, outer_join_args_bb, outer_join_nulls_bb);
+
+  // for matched rows in right, extract mathed results
+  cgen_state_->ir_builder_.SetInsertPoint(outer_join_nulls_bb);
+  auto null_constant =
+      makeExpr<Analyzer::Constant>(col_var->get_type_info().get_type(), true);
+  const auto null_target_lvs = codegen(null_constant.get(), co, false);
+  auto null_target_lvs_FixedSize =
+      dynamic_cast<FixedSizeColValues*>(null_target_lvs.get());
+  cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+  // for NOT matched rows in right, return null constant result
+  cgen_state_->ir_builder_.SetInsertPoint(outer_join_args_bb);
+  Executor::FetchCacheAnchor anchor(cgen_state_);
+  auto input_col_descriptor_ptr = colByteStream(col_var, fetch_column, true);
+  auto pos_arg = posArg(col_var);
+  std::unique_ptr<CodegenColValues> orig_lvs;
+  orig_lvs = codegenFixedLengthColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
+  auto orig_lvs_FixedSize = dynamic_cast<FixedSizeColValues*>(orig_lvs.get());
+  cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+  // doing IF kind statement
+  cgen_state_->ir_builder_.SetInsertPoint(phi_bb);
+  const auto target_type = orig_lvs_FixedSize->getValue()->getType();
+  auto target_phi = cgen_state_->ir_builder_.CreatePHI(target_type, 2);
+  target_phi->addIncoming(orig_lvs_FixedSize->getValue(), outer_join_args_bb);
+  target_phi->addIncoming(null_target_lvs_FixedSize->getValue(), outer_join_nulls_bb);
+  llvm::PHINode* null_phi = nullptr;
+  // For not null column
+  if (orig_lvs_FixedSize->getNull() && null_target_lvs_FixedSize->getNull()) {
+    null_phi = cgen_state_->ir_builder_.CreatePHI(
+        llvm::Type::getInt1Ty(cgen_state_->context_), 2);
+    null_phi->addIncoming(orig_lvs_FixedSize->getNull(), outer_join_args_bb);
+    null_phi->addIncoming(null_target_lvs_FixedSize->getNull(), outer_join_nulls_bb);
+  }
+  return std::make_unique<FixedSizeColValues>(target_phi, null_phi);
+  ;
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::resolveGroupedColumnReferenceCider(

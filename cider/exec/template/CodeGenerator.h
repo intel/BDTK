@@ -391,6 +391,11 @@ class CodeGenerator {
       const bool fetch_column,
       const CompilationOptions& co);
 
+  std::unique_ptr<CodegenColValues> codegenOuterJoinNullPlaceholder(
+      const Analyzer::ColumnVar* col_var,
+      const CompilationOptions& co,
+      const bool fetch_column);
+
   // TODO: (yma11) Will deprecate
   llvm::Value* codegenIntArith(const Analyzer::BinOper*,
                                llvm::Value*,
