@@ -149,7 +149,7 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
         offset[i + 1] = offset[i];
       } else {
         offset[i + 1] = offset[i] + value.len;
-        varcharOutput->resizeDataBufferIfNeeded(offset[i + 1]);
+        varcharOutput->resizeDataBufferIfNeeded(offset[i], offset[i + 1]);
         buffer = varcharOutput->getMutableRawData();
         std::memcpy(buffer + offset[i], value.ptr, value.len);
       }

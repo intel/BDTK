@@ -127,7 +127,7 @@ class VarcharBatch final : public CiderBatch {
     return reinterpret_cast<const int32_t*>(getBuffersPtr()[getOffsetBufferIndex()]);
   }
 
-  bool resizeDataBufferIfNeeded(int64_t size) {
+  bool resizeDataBuffer(int64_t size) {
     CHECK(!isMoved());
     if (!permitBufferAllocate()) {
       return false;
@@ -135,6 +135,22 @@ class VarcharBatch final : public CiderBatch {
 
     auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
     array_holder->allocBuffer(2, size);
+    return true;
+  }
+
+  bool resizeDataBufferIfNeeded(int64_t curr, int64_t needed) {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+    size_t capacity = array_holder->getBufferSizeAt(2);
+    if (capacity == 0) {
+      array_holder->allocBuffer(2, 4096);
+    } else if (needed > capacity * 0.9) {  // do reallocate when reach 90% of capacity
+      array_holder->allocBuffer(2, capacity * 2);
+    }
     return true;
   }
 
