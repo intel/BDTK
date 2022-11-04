@@ -31,6 +31,18 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 namespace cider::jitlib {
+
+enum class OptimizeLevel {
+  DEBUG,
+  RELEASE
+  // TBD other optimizeLevel to be added
+};
+
+// compilation config info
+struct CompilationOptions {
+  OptimizeLevel optimize_level = OptimizeLevel::DEBUG;
+};
+
 class LLVMJITModule final : public JITModule {
  public:
   friend LLVMJITEngineBuilder;
@@ -40,6 +52,8 @@ class LLVMJITModule final : public JITModule {
   explicit LLVMJITModule(const std::string& name,
                          bool should_copy_runtime_module = false);
 
+  LLVMJITModule(const std::string& name, CompilationOptions co);
+
   JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
 
   llvm::LLVMContext& getLLVMContext() { return *context_; }
@@ -48,7 +62,7 @@ class LLVMJITModule final : public JITModule {
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);
-  void optimizeIR(llvm::Module* module, llvm::legacy::PassManager& pass_manager);
+  void optimizeIR(llvm::Module* module);
 
  private:
   std::unique_ptr<llvm::LLVMContext> context_;
@@ -62,6 +76,7 @@ class LLVMJITModule final : public JITModule {
  private:
   llvm::ValueToValueMapTy vmap_;
   std::unique_ptr<llvm::Module> runtime_module_;
+  CompilationOptions co_;
 };
 };  // namespace cider::jitlib
 
