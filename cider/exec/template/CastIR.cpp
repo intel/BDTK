@@ -54,7 +54,6 @@ llvm::Value* CodeGenerator::codegenCast(const Analyzer::UOper* uoper,
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
     const Analyzer::UOper* uoper,
     const CompilationOptions& co) {
-  std::cout << uoper->toString() << std::endl;
   AUTOMATIC_IR_METADATA(cgen_state_);
   CHECK_EQ(uoper->get_optype(), kCAST);
   auto ti = uoper->get_type_info();
