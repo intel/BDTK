@@ -742,7 +742,7 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   int err{0};
   logger::LogOptions log_options(argv[0]);
-  log_options.severity_ = logger::Severity::DEBUG4;
+  log_options.severity_ = logger::Severity::INFO;
   log_options.set_options();  // update default values
   logger::init(log_options);
   try {
