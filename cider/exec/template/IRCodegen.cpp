@@ -1493,8 +1493,7 @@ std::unique_ptr<FixedSizeColValues> Executor::groupByColumnCodegen(
         get_int_type(col_width * 8, cgen_state_->context_)));
 
     return std::unique_ptr<FixedSizeColValues>(fixed_size_group_key);
-  } else if (auto multi_value_group_key =
-                 dynamic_cast<MultipleValueColValues*>(group_key)) {
+  } else if (auto multi_value_group_key = dynamic_cast<TwoValueColValues*>(group_key)) {
     auto ret = cgen_state_->emitCall("cider_get_string_id",
                                      {groups_buffer,
                                       multi_value_group_key->getValues()[0],
