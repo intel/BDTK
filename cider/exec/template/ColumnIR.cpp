@@ -620,15 +620,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder
       outer_join_match_lv, outer_join_args_bb, outer_join_nulls_bb);
 
   // for matched rows in right, extract matched results
-  cgen_state_->ir_builder_.SetInsertPoint(outer_join_nulls_bb);
-  auto null_constant =
-      makeExpr<Analyzer::Constant>(col_var->get_type_info().get_type(), true);
-  const auto null_target_lvs = codegen(null_constant.get(), co, false);
-  auto null_target_lvs_FixedSize =
-      dynamic_cast<FixedSizeColValues*>(null_target_lvs.get());
-  cgen_state_->ir_builder_.CreateBr(phi_bb);
-
-  // for NOT matched rows in right, return null constant results
   cgen_state_->ir_builder_.SetInsertPoint(outer_join_args_bb);
   Executor::FetchCacheAnchor anchor(cgen_state_);
   auto input_col_descriptor_ptr = colByteStream(col_var, fetch_column, true);
@@ -636,6 +627,15 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder
   std::unique_ptr<CodegenColValues> orig_lvs;
   orig_lvs = codegenFixedLengthColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
   auto orig_lvs_FixedSize = dynamic_cast<FixedSizeColValues*>(orig_lvs.get());
+  cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+  // for NOT matched rows in right, return null constant results
+  cgen_state_->ir_builder_.SetInsertPoint(outer_join_nulls_bb);
+  auto null_constant =
+      makeExpr<Analyzer::Constant>(col_var->get_type_info().get_type(), true);
+  const auto null_target_lvs = codegen(null_constant.get(), co, false);
+  auto null_target_lvs_FixedSize =
+      dynamic_cast<FixedSizeColValues*>(null_target_lvs.get());
   cgen_state_->ir_builder_.CreateBr(phi_bb);
 
   // doing IF kind statement
