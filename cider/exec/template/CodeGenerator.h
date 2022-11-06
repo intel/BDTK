@@ -72,12 +72,18 @@ class CodeGenerator {
   llvm::Value* codegenCastBetweenIntTypesForArrow(llvm::Value* operand_lv,
                                                   const SQLTypeInfo& operand_ti,
                                                   const SQLTypeInfo& ti,
-                                                  bool upscale = true);
-
+                                                  bool upscale = true,
+                                                  bool needs_error_check = false);
+  // to be deprecated
   void codegenCastBetweenIntTypesOverflowChecks(llvm::Value* operand_lv,
                                                 const SQLTypeInfo& operand_ti,
                                                 const SQLTypeInfo& ti,
                                                 const int64_t scale);
+
+  void codegenCastBetweenIntTypesOverflowChecksForArrow(llvm::Value* operand_lv,
+                                                        const SQLTypeInfo& operand_ti,
+                                                        const SQLTypeInfo& ti,
+                                                        const int64_t scale);
 
   // Generates the index of the current row in the context of query execution.
   llvm::Value* posArg(const Analyzer::Expr*) const;

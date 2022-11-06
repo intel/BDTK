@@ -71,7 +71,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
     } else if (operand_ti.get_type() == kDATE || ti.get_type() == kDATE) {
       target_lv = codegenCastBetweenTimeAndDate(operand_lv, operand_ti, ti);
     } else if (ti.is_integer() || ti.is_decimal() || ti.is_boolean()) {
-      target_lv = codegenCastBetweenIntTypesForArrow(operand_lv, operand_ti, ti);
+      target_lv = codegenCastBetweenIntTypesForArrow(
+          operand_lv, operand_ti, ti, co.needs_error_check);
     } else if (ti.is_fp()) {
       target_lv = codegenCastToFpForArrow(operand_lv, operand_ti, ti);
     }
