@@ -721,20 +721,20 @@ std::unique_ptr<QueryMemoryDescriptor> GroupByAndAggregate::initQueryMemoryDescr
     CIDER_THROW(CiderWatchdogException, "Query would use too much memory");
   }
 
-    return QueryMemoryDescriptor::init(executor_,
-                                       ra_exe_unit_,
-                                       query_infos_,
-                                       col_range_info,
-                                       keyless_info,
-                                       allow_multifrag,
-                                       crt_min_byte_width,
-                                       shard_count,
-                                       max_groups_buffer_entry_count,
-                                       count_distinct_descriptors,
-                                       must_use_baseline_sort,
-                                       output_columnar_hint,
-                                       /*streaming_top_n_hint=*/true,
-                                       co);
+  return QueryMemoryDescriptor::init(executor_,
+                                     ra_exe_unit_,
+                                     query_infos_,
+                                     col_range_info,
+                                     keyless_info,
+                                     allow_multifrag,
+                                     crt_min_byte_width,
+                                     shard_count,
+                                     max_groups_buffer_entry_count,
+                                     count_distinct_descriptors,
+                                     must_use_baseline_sort,
+                                     output_columnar_hint,
+                                     /*streaming_top_n_hint=*/true,
+                                     co);
 }
 
 bool GroupByAndAggregate::codegen(llvm::Value* filter_result,
@@ -1055,8 +1055,8 @@ std::tuple<llvm::Value*, llvm::Value*> GroupByAndAggregate::codegenGroupBy(
             : false;
     llvm::Value *group_expr_lv, *original_value, *null_value;
     if (co.use_cider_data_format) {
-      auto curr_group_key =
-          executor_->groupByColumnCodegen(group_expr.get(), col_width_size, co);
+      auto curr_group_key = executor_->groupByColumnCodegen(
+          group_expr.get(), col_width_size, co, groups_buffer);
       group_expr_lv = curr_group_key->getValue();
       null_value = curr_group_key->getNull();
     } else {

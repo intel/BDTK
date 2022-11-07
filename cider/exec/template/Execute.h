@@ -537,9 +537,11 @@ class Executor {
                                          const bool thread_mem_shared,
                                          llvm::Argument* groups_buffer = nullptr);
 
-  std::unique_ptr<FixedSizeColValues> groupByColumnCodegen(Analyzer::Expr* group_by_col,
-                                                           const size_t col_width,
-                                                           const CompilationOptions& co);
+  std::unique_ptr<FixedSizeColValues> groupByColumnCodegen(
+      Analyzer::Expr* group_by_col,
+      const size_t col_width,
+      const CompilationOptions& co,
+      llvm::Argument* groups_buffer = nullptr);
 
   llvm::Value* castToFP(llvm::Value*,
                         SQLTypeInfo const& from_ti,

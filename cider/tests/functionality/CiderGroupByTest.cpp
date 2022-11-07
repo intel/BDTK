@@ -20,7 +20,129 @@
  */
 
 #include <gtest/gtest.h>
+#include "QueryArrowDataGenerator.h"
 #include "tests/utils/CiderTestBase.h"
+
+class CiderGroupByVarcharArrowTest : public CiderTestBase {
+ public:
+  // TODO(yizhong): make col_d to 50% chance nullable and change min length to 0
+  // after null string is supported
+  CiderGroupByVarcharArrowTest() {
+    table_name_ = "table_test";
+    create_ddl_ =
+        "CREATE TABLE table_test(col_a BIGINT NOT NULL, col_b BIGINT NOT NULL, col_c "
+        "VARCHAR NOT NULL, col_d VARCHAR NOT NULL);";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  500,
+                                                  {"col_a", "col_b", "col_c", "col_d"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {0, 0, 0, 0},
+                                                  GeneratePattern::Random,
+                                                  1,
+                                                  10);
+  }
+};
+
+TEST_F(CiderGroupByVarcharArrowTest, varcharGroupByTest) {
+  /*single not null group by key*/
+  assertQueryArrowIgnoreOrder("SELECT SUM(col_a), col_c FROM table_test GROUP BY col_c");
+
+  /*single null group by key*/
+  assertQueryArrowIgnoreOrder("SELECT SUM(col_a), col_d FROM table_test GROUP BY col_d");
+
+  /*one not null varchar group by key*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c");
+
+  /*one null varchar group by key */
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d");
+
+  /*two null and not null varchar group by keys*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
+      "col_d");
+
+  /*four mixed group by keys*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d");
+
+  // TODO(yizhong): Enable after string compare is supported.
+  GTEST_SKIP_("Enable after string CmpFun is supported.");
+  /*one not null varchar group by key with one condition*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d <> 'a'");
+
+  /*one not null varchar group by key with one not null condition*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d IS NOT NULL");
+
+  /*one null varchar group by key with one null condition*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
+      "col_d IS NULL");
+
+  /*multiple group by keys with multiple having conditions*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_c FROM table_test GROUP BY col_a, col_c HAVING "
+      "col_a IS NOT "
+      "NULL AND col_c IS NOT NULL ");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_c, col_d FROM table_test GROUP BY col_a, col_c, "
+      "col_d HAVING "
+      "col_a IS NOT NULL AND col_c <> 'ABC' AND col_d <> 'abc'");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
+      "col_c <> 'AAA' AND col_d IS NULL ");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test GROUP "
+      "BY col_a, col_b, col_c, col_d HAVING col_a IS NOT NULL AND col_b IS NOT NULL AND "
+      "col_c <> 'AAA' AND col_d IS NOT NULL ");
+
+  /*multiple group by keys with multiple where conditions*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL AND col_d "
+      "IS NOT NULL GROUP BY col_a, col_d");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
+      "NOT NULL AND col_b IS "
+      "NOT NULL AND col_c <> 'AAA' GROUP BY col_a, col_b, col_c");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NULL "
+      "GROUP BY col_a, col_b, col_c, col_d");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND col_b IS NOT NULL AND col_c <> 'AAA' AND col_d IS NOT NULL "
+      "GROUP BY col_a, col_b, col_c, col_d");
+
+  /*multiple group by keys with multiple where and having conditions*/
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_d FROM table_test WHERE col_a IS NOT NULL GROUP BY "
+      "col_a, col_d HAVING col_d IS NOT NULL");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c FROM table_test WHERE col_a IS "
+      "NOT NULL AND col_b IS NOT NULL GROUP BY col_a, col_b, col_c HAVING col_c <> "
+      "'AAA'");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND "
+      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
+      "col_d IS NULL");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
+      "col_a IS NOT NULL AND "
+      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
+      "col_d IS NOT NULL ");
+}
 
 /* Set to small data set will also cover all cases.
  * We could set to a larger data set after we fix outBatch schema issuem, because
@@ -748,7 +870,10 @@ WHERE_AND_HAVING_GROUP_BY_TEST_UNIT(CiderGroupByIntegerTest,
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-
+  logger::LogOptions log_options(argv[0]);
+  log_options.parse_command_line(argc, argv);
+  log_options.max_files_ = 0;  // stderr only by default
+  logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();
