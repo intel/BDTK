@@ -28,6 +28,7 @@
 #define ANALYZER_H
 
 #include "cider/CiderException.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "type/schema/ColumnInfo.h"
 #include "util/Logger.h"
@@ -288,9 +289,20 @@ class ColumnVar : public Expr {
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
 
+  void set_value_and_null(cider::jitlib::JITValue* value,
+                          cider::jitlib::JITValue* null = nullptr) {
+    value_ = value;
+    null_ = null;
+  }
+  cider::jitlib::JITValue& get_value() const { return *value_; }
+  cider::jitlib::JITValue& get_null() const { return *null_; }
+
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins
   ColumnInfoPtr col_info_;
+
+  cider::jitlib::JITValue* value_;
+  cider::jitlib::JITValue* null_;
 };
 
 /*

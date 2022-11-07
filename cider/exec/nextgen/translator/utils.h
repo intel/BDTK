@@ -18,50 +18,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_DUMMY_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_DUMMY_H
 
-#include <initializer_list>
-#include <memory>
-#include <utility>
-#include <vector>
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_UTILS_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_UTILS_H
 
-#include <llvm/IR/Function.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <boost/container/small_vector.hpp>
-
-#include "exec/nextgen/jitlib/base/JITFunction.h"
+#include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/translator/dummy.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
+#include "util/Logger.h"
 
 namespace cider::exec::nextgen::translator {
 using namespace cider::jitlib;
 
-class Context {
- public:
-  Context(JITFunction* func_) : query_func_(func_) {}
-  JITFunction* query_func_;
-};
+JITTypeTag getJITTag(const Analyzer::ColumnVar* col_var) {
+  CHECK(!col_var);
+  const auto& col_ti = col_var->get_type_info();
+  switch (col_ti.get_type()) {
+    case kINT:
+      return JITTypeTag::INT32;
+    default:
+      TODO("MaJian", "add other type maps");
+  }
+  return JITTypeTag::INVALID;
+}
 
-class OpNode {
- public:
-  using ExprPtr = std::shared_ptr<Analyzer::Expr>;
-};
-
-class Translator {
- public:
-  using ExprPtr = std::shared_ptr<Analyzer::Expr>;
-
-  Translator() = default;
-  virtual ~Translator() = default;
-
-  virtual void consume(Context& context) = 0;
-
- protected:
-  std::shared_ptr<Translator> successor_;
-};
+JITTypeTag getJITTag(JITValuePointer& ptr) {
+  return JITTypeTag::INVALID;
+}
 
 }  // namespace cider::exec::nextgen::translator
 #endif

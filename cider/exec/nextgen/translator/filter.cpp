@@ -19,20 +19,24 @@
  * under the License.
  */
 
-#include "filter.h"
+#include "exec/nextgen/translator/filter.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/translator/dummy.h"
-#include "expr.h"
+#include "exec/nextgen/translator/expr.h"
 
-void FilterTranslator::consume(Context& context, const JITTuple& input) {
-  auto next_input = codegen(context, input);
+namespace cider::exec::nextgen::translator {
+void FilterTranslator::consume(Context& context) {
+  auto next_input = codegen(context);
   if (successor_) {
-    successor_->consume(context, next_input);
+    successor_->consume(context);
   }
 }
 
-JITTuple FilterTranslator::codegen(Context& context, const JITTuple& input) {
-  ExprGenerator gen;
-  JITTuple cond_tuple = gen.codegen(filterNode_->exprs_, input);
+JITValuePointer FilterTranslator::codegen(Context& context) {
+  ExprGenerator gen(context.query_func_);
+  for (const auto& expr : filterNode_->exprs_) {
+    gen.codegen(expr.get());
+  }
 
   llvm::Value* cond = nullptr;
   TODO("MaJian", "extract cond from tuple");
@@ -46,5 +50,7 @@ JITTuple FilterTranslator::codegen(Context& context, const JITTuple& input) {
   //   context.ir_builder_.CreateCondBr(cond, cond_true, cond_false);
 
   //   return {cond_true, cond_false};
-  return JITTuple{};
+  return JITValuePointer(nullptr);
 }
+
+}  // namespace cider::exec::nextgen::translator

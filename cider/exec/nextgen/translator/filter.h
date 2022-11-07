@@ -25,16 +25,16 @@
 #include <initializer_list>
 #include <memory>
 
-#include "dummy.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/translator/dummy.h"
 #include "type/plan/Analyzer.h"
 
+namespace cider::exec::nextgen::translator {
 class FilterNode : public OpNode {
  public:
-  //   FilterNode(const std::vector<ExprPtr>& exprs) : exprs_(exprs) {}
-  //   FilterNode(std::vector<ExprPtr>&& exprs) : exprs_(std::move(exprs)) {}
-  FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
   template <typename T>
   FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
 
   std::vector<ExprPtr> exprs_;
 };
@@ -45,22 +45,17 @@ class FilterTranslator : public Translator {
   FilterTranslator(T&& exprs) {
     filterNode_ = std::make_unique<FilterNode>(std::forward<T>(exprs));
   }
-  //   FilterTranslator(const std::vector<ExprPtr>& exprs) {
-  //     filterNode_ = std::make_unique<FilterNode>(exprs);
-  //   }
-  //   FilterTranslator(std::vector<ExprPtr>&& exprs) {
-  //     filterNode_ = std::make_unique<FilterNode>(std::move(exprs));
-  //   }
   FilterTranslator(std::initializer_list<ExprPtr> exprs) {
     filterNode_ = std::make_unique<FilterNode>(exprs);
   }
 
-  void consume(Context& context, const JITTuple& input) override;
+  void consume(Context& context) override;
 
  private:
-  JITTuple codegen(Context& context, const JITTuple& input);
+  JITValuePointer codegen(Context& context);
 
   std::unique_ptr<FilterNode> filterNode_;
 };
 
+}  // namespace cider::exec::nextgen::translator
 #endif

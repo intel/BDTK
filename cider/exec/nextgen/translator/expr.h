@@ -24,48 +24,56 @@
 
 #include <llvm/IR/Value.h>
 
-#include "dummy.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/translator/dummy.h"
 #include "type/plan/Analyzer.h"
 
+namespace cider::exec::nextgen::translator {
+using namespace cider::jitlib;
+
 class ExprGenerator {
+ public:
   using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
- public:
+  ExprGenerator(JITFunction* func) : func_(func) {}
+
+  // std::vector<JITValuePointer> codegen(const std::vector<ExprPtr> exprs, const
+  // JITTuple& input) {
+  //   JITTuple next_input = input;
+  //   for (const auto& expr : exprs) {
+  //     auto vals = codegen(expr.get(), next_input);
+  //     // merge vals into next_input
+  //   }
+  //   return next_input;
+  // }
   // Generates IR value(s) for the given analyzer expression.
-  JITTuple codegen(const std::vector<ExprPtr> exprs, const JITTuple& input) {
-    JITTuple next_input = input;
-    for (const auto& expr : exprs) {
-      auto vals = codegen(expr.get(), next_input);
-      // merge vals into next_input
-    }
-    return next_input;
-  }
-  JITTuple codegen(const Analyzer::Expr* expr, const JITTuple& input);
+  JITValuePointer codegen(const Analyzer::Expr* expr);
 
  protected:
-  JITTuple codegenBinOper(const Analyzer::BinOper*, const JITTuple& input);
-  JITTuple codegenColumnExpr(const Analyzer::ColumnVar* col_var, const JITTuple& input);
+  JITValuePointer codegenBinOper(const Analyzer::BinOper*);
+  JITValuePointer codegenColumnExpr(const Analyzer::ColumnVar* col_var);
 
-  JITTuple codegenCmpFun(const Analyzer::BinOper* bin_oper, const JITTuple& input);
-  JITTuple codegenFixedSizeColCmpFun(const Analyzer::BinOper* bin_oper,
-                                     llvm::Value* lhs,
-                                     llvm::Value* rhs,
-                                     llvm::Value* null);
-  // JITTuple codegenConstantExpr(const Analyzer::Constant*, const JITTuple& input);
+  JITValuePointer codegenCmpFun(const Analyzer::BinOper* bin_oper);
+  JITValuePointer codegenFixedSizeColCmpFun(const Analyzer::BinOper* bin_oper,
+                                            JITValue& lhs,
+                                            JITValue& rhs,
+                                            JITValue& null);
+  // JITTuple codegenConstantExpr(const Analyzer::Constant*);
 
-  // JITTuple codegenCaseExpr(const Analyzer::CaseExpr*, const JITTuple& input);
+  // JITTuple codegenCaseExpr(const Analyzer::CaseExpr*);
 
   // JITTuple codegenCaseExpr(const Analyzer::CaseExpr*,
   //                          llvm::Type* case_llvm_type,
-  //                          const bool is_real_str,
-  //                          const JITTuple& input);
+  //                          const bool is_real_str);
 
-  // JITTuple codegenUOper(const Analyzer::UOper*, const JITTuple& input);
+  // JITTuple codegenUOper(const Analyzer::UOper*);
 
   // JITTuple codegenFixedLengthColVar(const Analyzer::ColumnVar* col_var,
   //                                   llvm::Value* col_byte_stream,
-  //                                   llvm::Value* pos_arg,
-  //                                   const JITTuple& input);
+  //                                   llvm::Value* pos_arg);
+ private:
+  JITFunction* func_;
 };
 
+}  // namespace cider::exec::nextgen::translator
 #endif

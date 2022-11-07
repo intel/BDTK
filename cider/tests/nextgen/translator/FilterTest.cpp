@@ -18,21 +18,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/jitlib/JITLib.h"
 
 #include <gtest/gtest.h>
 #include <memory>
 
+#include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/translator/filter.h"
 #include "tests/TestHelpers.h"
+#include "type/plan/Analyzer.h"
 
 using namespace cider::jitlib;
+using namespace cider::exec::nextgen::translator;
+using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
 class FilterTests : public ::testing::Test {};
 
-using ExprPtr = std::shared_ptr<Analyzer::Expr>;
-
-ExprPtr makeColumnVar() {
+std::shared_ptr<Analyzer::ColumnVar> makeColumnVar() {
   SQLTypes subtypes{SQLTypes::kNULLT};
   SQLTypes intType{SQLTypes::kINT};
   SQLTypeInfo col_info(intType, 0, 0, false, EncodingType::kENCODING_NONE, 0, subtypes);
@@ -60,27 +61,39 @@ ExprPtr makeCmp(ExprPtr lhs, ExprPtr rhs) {
       ti_boolean, false, SQLOps::kLT, SQLQualifier::kONE, lhs, rhs);
 }
 
+template <JITTypeTag Type, typename NativeType, typename Builder>
+void executeFilterTest(NativeType input, bool output, Builder builder) {
+  LLVMJITModule module("Test");
+  JITFunctionPointer func = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_filter_op",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::BOOL},
+      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
+  });
+  auto var = func->createVariable("var", JITTypeTag::INT32);
+  *var = func->getArgument(0);
+
+  builder(func.get(), var);
+
+  // func->createReturn(ans);
+
+  func->finish();
+  module.finish();
+
+  auto func_ptr = func->getFunctionPointer<bool, NativeType>();
+  EXPECT_EQ(func_ptr(input), output);
+}
+
 TEST_F(FilterTests, BasicTest) {
-  //   LLVMJITModule module("Test");
-  //   JITFunctionPointer func = module.createJITFunction(JITFunctionDescriptor{
-  //       .function_name = "test_filter_func",
-  //       .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
-  //       .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32}},
-  //   });
+  executeFilterTest<JITTypeTag::INT32>(
+      10, true, [](JITFunction* func, JITValuePointer& var) {
+        auto var_expr = makeColumnVar();
+        var_expr->set_value_and_null(var.get());
+        // var < 5
+        FilterTranslator trans({makeCmp(var_expr, makeConstant(5))});
 
-  // col < 5
-  FilterTranslator trans({makeCmp(makeColumnVar(), makeConstant(5))});
-
-  Context context;
-  JITTuple input_col;
-  trans.consume(context, input_col);
-
-  //   func->finish();
-
-  //   module.finish();
-
-  //   auto ptr1 = func->getFunctionPointer<int32_t, int32_t>();
-  //   EXPECT_EQ(ptr1(12), 123);
+        Context context(func);
+        trans.consume(context);
+      });
 }
 
 int main(int argc, char** argv) {

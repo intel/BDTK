@@ -21,19 +21,22 @@
 
 #include <llvm/IR/Value.h>
 
-#include "Execute.h"
-#include "expr.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/translator/expr.h"
+#include "exec/nextgen/translator/utils.h"
+#include "exec/template/Execute.h"
 #include "util/Logger.h"
 
+namespace cider::exec::nextgen::translator {
 // Cider Data Format
 // Generates IR value(s) for the given analyzer expression.
-JITTuple ExprGenerator::codegen(const Analyzer::Expr* expr, const JITTuple& input) {
+JITValuePointer ExprGenerator::codegen(const Analyzer::Expr* expr) {
   if (!expr) {
-    return JITTuple{};
+    return JITValuePointer(nullptr);
   }
   auto bin_oper = dynamic_cast<const Analyzer::BinOper*>(expr);
   if (bin_oper) {
-    return codegenBinOper(bin_oper, input);
+    return codegenBinOper(bin_oper);
   }
   // auto u_oper = dynamic_cast<const Analyzer::UOper*>(expr);
   // if (u_oper) {
@@ -41,7 +44,7 @@ JITTuple ExprGenerator::codegen(const Analyzer::Expr* expr, const JITTuple& inpu
   // }
   auto col_var = dynamic_cast<const Analyzer::ColumnVar*>(expr);
   if (col_var) {
-    return codegenColumnExpr(col_var, input);
+    return codegenColumnExpr(col_var);
   }
   // auto constant = dynamic_cast<const Analyzer::Constant*>(expr);
   // if (constant) {
@@ -72,29 +75,30 @@ JITTuple ExprGenerator::codegen(const Analyzer::Expr* expr, const JITTuple& inpu
   CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");
 }
 
-JITTuple ExprGenerator::codegenBinOper(const Analyzer::BinOper* bin_oper,
-                                       const JITTuple& input) {
+JITValuePointer ExprGenerator::codegenBinOper(const Analyzer::BinOper* bin_oper) {
   const auto optype = bin_oper->get_optype();
   // if (IS_ARITHMETIC(optype)) {
   //   return codegenArithFun(bin_oper, co);
   // }
   if (IS_COMPARISON(optype)) {
-    return codegenCmpFun(bin_oper, input);
+    return codegenCmpFun(bin_oper);
   }
   // if (IS_LOGIC(optype)) {
   //   return codegenLogicalFun(bin_oper, co);
   // }
 
   UNREACHABLE();
+  return nullptr;
 }
 
-JITTuple ExprGenerator::codegenColumnExpr(const Analyzer::ColumnVar* col_var,
-                                          const JITTuple& input) {
+JITValuePointer ExprGenerator::codegenColumnExpr(const Analyzer::ColumnVar* col_var) {
   TODO("MaJian", "how to find column from input?");
+  auto var = func_->createVariable("var", getJITTag(col_var));
+  *var = col_var->get_value();
+  return var;
 }
 
-JITTuple ExprGenerator::codegenCmpFun(const Analyzer::BinOper* bin_oper,
-                                      const JITTuple& input) {
+JITValuePointer ExprGenerator::codegenCmpFun(const Analyzer::BinOper* bin_oper) {
   const auto lhs = bin_oper->get_left_operand();
   const auto rhs = bin_oper->get_right_operand();
 
@@ -106,10 +110,10 @@ JITTuple ExprGenerator::codegenCmpFun(const Analyzer::BinOper* bin_oper,
   const auto& rhs_ti = rhs->get_type_info();
   CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
 
-  auto lhs_tuple = codegen(lhs, input);
-  auto rhs_tuple = codegen(rhs, input);
+  auto lhs_ptr = codegen(lhs);
+  auto rhs_ptr = codegen(rhs);
 
-  llvm::Value* null = nullptr;
+  auto null = func_->createVariable("null", getJITTag(lhs_ptr));
   TODO("MaJian", "merge null");
   // auto lhs_nullable = dynamic_cast<NullableColValues*>(lhs_lv.get());
   // auto rhs_nullable = dynamic_cast<NullableColValues*>(rhs_lv.get());
@@ -133,23 +137,23 @@ JITTuple ExprGenerator::codegenCmpFun(const Analyzer::BinOper* bin_oper,
       // return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
       UNIMPLEMENTED();
     default:
-      return codegenFixedSizeColCmpFun(
-          bin_oper, lhs_tuple.getValue(), rhs_tuple.getValue(), null);
+      return codegenFixedSizeColCmpFun(bin_oper, *lhs_ptr, *rhs_ptr, null);
   }
+  return nullptr;
 }
 
-JITTuple ExprGenerator::codegenFixedSizeColCmpFun(const Analyzer::BinOper* bin_oper,
-                                                  llvm::Value* lhs,
-                                                  llvm::Value* rhs,
-                                                  llvm::Value* null) {
-  CHECK(lhs && rhs);
-
-  llvm::Value* value;
+JITValuePointer ExprGenerator::codegenFixedSizeColCmpFun(
+    const Analyzer::BinOper* bin_oper,
+    JITValue& lhs,
+    JITValue& rhs,
+    JITValue& null) {
   TODO("MaJian", "gen icmp operation");
   // llvm::Value* value =
   //     lhs->getType()->isIntegerTy()
   //         ? ir_builder_.CreateICmp(llvm_icmp_pred(bin_oper->get_optype()), lhs, rhs)
   //         : ir_builder_.CreateFCmp(llvm_fcmp_pred(bin_oper->get_optype()), lhs, rhs);
 
-  return JITTuple(value, null);
+  return nullptr;
 }
+
+}  // namespace cider::exec::nextgen::translator
