@@ -175,7 +175,7 @@ class CodeGenerator {
                           const SQLTypeInfo&,
                           const Analyzer::Expr*,
                           const CompilationOptions&);
-
+  // only be called for In expr.
   std::unique_ptr<CodegenColValues> codegenCmpFun(const SQLOps,
                                                   const SQLQualifier,
                                                   llvm::Value*,
@@ -183,6 +183,10 @@ class CodeGenerator {
                                                   const SQLTypeInfo&,
                                                   const Analyzer::Expr*,
                                                   const CompilationOptions&);
+
+  // only be called for string type In expr
+  std::unique_ptr<CodegenColValues> codegenStringEq(CodegenColValues* lhs,
+                                                    CodegenColValues* rhs);
 
   // Deprecating
   llvm::Value* codegenIsNull(const Analyzer::UOper*, const CompilationOptions&);
@@ -231,6 +235,9 @@ class CodeGenerator {
   // Cider Data Format
   std::unique_ptr<CodegenColValues> codegenInValues(const Analyzer::InValues* expr,
                                                     const CompilationOptions& co);
+  // Cider Data Format
+  std::unique_ptr<CodegenColValues> codegenInValuesString(const Analyzer::InValues* expr,
+                                                          const CompilationOptions& co);
   // TODO: (yma11) will deprecate
   llvm::Value* codegen(const Analyzer::InValues*, const CompilationOptions&);
 
@@ -593,6 +600,9 @@ class CodeGenerator {
 
   std::unique_ptr<InValuesBitmap> createInValuesBitmap(const Analyzer::InValues*,
                                                        const CompilationOptions&);
+
+  std::unique_ptr<InValuesBitmap> createInValuesBitmapArrow(const Analyzer::InValues*,
+                                                            const CompilationOptions&);
 
   bool checkExpressionRanges(const Analyzer::UOper*, int64_t, int64_t);
 

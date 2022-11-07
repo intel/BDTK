@@ -56,8 +56,6 @@ class CiderTestBase : public testing::Test {
   void assertQueryArrow(const std::string& sql, const std::string& json_file = "");
   void assertQueryArrowIgnoreOrder(const std::string& sql,
                                    const std::string& json_file = "");
-  // To be deprecated. for string and other unsupported types.
-  void assertQueryArrowTemp(const std::string& sql, const std::string& json_file = "");
 
   // a method for test count distinct with multi batch case
   void assertQueryForCountDistinct(
