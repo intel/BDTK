@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_FILTER_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_FILTER_H
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_SINK_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_SINK_H
 
 #include <initializer_list>
 #include <memory>
@@ -30,36 +30,30 @@
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::translator {
-class FilterNode : public OpNode {
+class SinkNode : public OpNode {
  public:
-  FilterNode() = default;
+  SinkNode() = default;
   template <typename T>
-  FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
-  // FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
+  SinkNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  // SinkNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
 
   std::vector<ExprPtr> exprs_;
 };
 
-class FilterTranslator : public Translator {
+class SinkTranslator : public Translator {
  public:
   template <typename T>
-  FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = FilterNode(std::forward<T>(exprs));
-    successor_.swap(succ);
+  SinkTranslator(T&& exprs) {
+    node_ = SinkNode(std::forward<T>(exprs));
   }
-  // FilterTranslator(std::initializer_list<ExprPtr> exprs,
-  //                  std::unique_ptr<Translator> succ) {
-  //   node_ = FilterNode(exprs);
-  //   successor_.swap(succ);
-  // }
+  // SinkTranslator(std::initializer_list<ExprPtr> exprs) { node_ = SinkNode(exprs); }
 
   void consume(Context& context) override;
 
  private:
   JITValuePointer codegen(Context& context);
 
-  FilterNode node_;
-  std::unique_ptr<Translator> successor_;
+  SinkNode node_;
 };
 
 }  // namespace cider::exec::nextgen::translator

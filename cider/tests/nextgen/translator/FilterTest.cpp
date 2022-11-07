@@ -24,8 +24,10 @@
 
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/translator/filter.h"
+#include "exec/nextgen/translator/sink.h"
 #include "tests/TestHelpers.h"
 #include "type/plan/Analyzer.h"
+#include "util/sqldefs.h"
 
 using namespace cider::jitlib;
 using namespace cider::exec::nextgen::translator;
@@ -33,32 +35,10 @@ using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
 class FilterTests : public ::testing::Test {};
 
-std::shared_ptr<Analyzer::ColumnVar> makeColumnVar() {
-  SQLTypes subtypes{SQLTypes::kNULLT};
-  SQLTypes intType{SQLTypes::kINT};
-  SQLTypeInfo col_info(intType, 0, 0, false, EncodingType::kENCODING_NONE, 0, subtypes);
-
-  return std::make_shared<Analyzer::ColumnVar>(col_info, 100, 1, 0);
-}
-
 ExprPtr makeConstant(int32_t val) {
-  SQLTypes subtypes{SQLTypes::kNULLT};
-  SQLTypes intType{SQLTypes::kINT};
-  SQLTypeInfo col_info(intType, 0, 0, false, EncodingType::kENCODING_NONE, 0, subtypes);
-
   Datum d;
   d.intval = val;
-  return std::make_shared<Analyzer::Constant>(col_info, false, d);
-}
-
-ExprPtr makeCmp(ExprPtr lhs, ExprPtr rhs) {
-  SQLTypes subtypes{SQLTypes::kNULLT};
-  SQLTypes sqlTypes{SQLTypes::kBOOLEAN};
-  SQLTypeInfo ti_boolean(
-      sqlTypes, 0, 0, false, EncodingType::kENCODING_NONE, 0, subtypes);
-
-  return std::make_shared<Analyzer::BinOper>(
-      ti_boolean, false, SQLOps::kLT, SQLQualifier::kONE, lhs, rhs);
+  return std::make_shared<Analyzer::Constant>(kINT, true, d);
 }
 
 template <JITTypeTag Type, typename NativeType, typename Builder>
@@ -74,8 +54,6 @@ void executeFilterTest(NativeType input, bool output, Builder builder) {
 
   builder(func.get(), var);
 
-  // func->createReturn(ans);
-
   func->finish();
   module.finish();
 
@@ -84,16 +62,34 @@ void executeFilterTest(NativeType input, bool output, Builder builder) {
 }
 
 TEST_F(FilterTests, BasicTest) {
-  executeFilterTest<JITTypeTag::INT32>(
-      10, true, [](JITFunction* func, JITValuePointer& var) {
-        auto var_expr = makeColumnVar();
-        var_expr->set_value_and_null(var.get());
-        // var < 5
-        FilterTranslator trans({makeCmp(var_expr, makeConstant(5))});
+  executeFilterTest<JITTypeTag::INT32>(1, 6, [](JITFunction* func, JITValuePointer& var) {
+    // if (var <= 5) {
+    //   var = var + 5;
+    // }
+    // return var;
 
-        Context context(func);
-        trans.consume(context);
-      });
+    // var
+    auto col_var =
+        std::make_shared<Analyzer::ColumnVar>(SQLTypeInfo(SQLTypes::kINT), 100, 1, 0);
+    col_var->set_value_and_null(var.get());
+
+    // constant
+    auto const_var = makeConstant(5);
+
+    // var + 5
+    auto add_expr = std::make_shared<Analyzer::BinOper>(
+        SQLTypes::kINT, SQLOps::kPLUS, SQLQualifier::kONE, col_var, const_var);
+    auto sink = std::make_unique<SinkTranslator>(std::vector<ExprPtr>{add_expr});
+
+    // var <= 5
+    auto cmp_expr = std::make_shared<Analyzer::BinOper>(
+        SQLTypes::kBOOLEAN, SQLOps::kLE, SQLQualifier::kONE, col_var, const_var);
+
+    FilterTranslator trans(std::vector<ExprPtr>{cmp_expr}, std::move(sink));
+
+    Context context(func);
+    trans.consume(context);
+  });
 }
 
 int main(int argc, char** argv) {

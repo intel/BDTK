@@ -19,48 +19,35 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_FILTER_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_FILTER_H
-
-#include <initializer_list>
-#include <memory>
-
+#include "exec/nextgen/translator/sink.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/translator/dummy.h"
-#include "type/plan/Analyzer.h"
+#include "exec/nextgen/translator/expr.h"
 
 namespace cider::exec::nextgen::translator {
-class FilterNode : public OpNode {
- public:
-  FilterNode() = default;
-  template <typename T>
-  FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
-  // FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
+void SinkTranslator::consume(Context& context) {
+  auto next_input = codegen(context);
+}
 
-  std::vector<ExprPtr> exprs_;
-};
-
-class FilterTranslator : public Translator {
- public:
-  template <typename T>
-  FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = FilterNode(std::forward<T>(exprs));
-    successor_.swap(succ);
+JITValuePointer SinkTranslator::codegen(Context& context) {
+  ExprGenerator gen(context.query_func_);
+  for (const auto& expr : node_.exprs_) {
+    gen.codegen(expr.get());
   }
-  // FilterTranslator(std::initializer_list<ExprPtr> exprs,
-  //                  std::unique_ptr<Translator> succ) {
-  //   node_ = FilterNode(exprs);
-  //   successor_.swap(succ);
-  // }
 
-  void consume(Context& context) override;
+  llvm::Value* cond = nullptr;
+  TODO("MaJian", "extract cond from tuple");
 
- private:
-  JITValuePointer codegen(Context& context);
+  // build control flow
+  TODO("MaJian", "move to control flow");
+  //   auto* cond_true = llvm::BasicBlock::Create(
+  //       *context.llvm_context_, "filter_true", context.query_func_);
+  //   auto* cond_false = llvm::BasicBlock::Create(
+  //       *context.llvm_context_, "filter_false", context.query_func_);
+  //   context.ir_builder_.CreateCondBr(cond, cond_true, cond_false);
 
-  FilterNode node_;
-  std::unique_ptr<Translator> successor_;
-};
+  //   return {cond_true, cond_false};
+  return JITValuePointer(nullptr);
+}
 
 }  // namespace cider::exec::nextgen::translator
-#endif

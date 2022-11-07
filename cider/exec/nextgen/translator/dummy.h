@@ -48,6 +48,8 @@ class Context {
 class OpNode {
  public:
   using ExprPtr = std::shared_ptr<Analyzer::Expr>;
+  OpNode() = default;
+  virtual ~OpNode() = default;
 };
 
 class Translator {
@@ -58,9 +60,6 @@ class Translator {
   virtual ~Translator() = default;
 
   virtual void consume(Context& context) = 0;
-
- protected:
-  std::shared_ptr<Translator> successor_;
 };
 
 }  // namespace cider::exec::nextgen::translator

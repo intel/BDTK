@@ -34,7 +34,7 @@ void FilterTranslator::consume(Context& context) {
 
 JITValuePointer FilterTranslator::codegen(Context& context) {
   ExprGenerator gen(context.query_func_);
-  for (const auto& expr : filterNode_->exprs_) {
+  for (const auto& expr : node_.exprs_) {
     gen.codegen(expr.get());
   }
 

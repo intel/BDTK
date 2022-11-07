@@ -16,8 +16,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(TRANSLATOR_SOURCE ${CMAKE_CURRENT_LIST_DIR}/filter.cpp
-                      ${CMAKE_CURRENT_LIST_DIR}/expr.cpp)
+set(TRANSLATOR_SOURCE ${CMAKE_CURRENT_LIST_DIR}/expr.cpp
+                      ${CMAKE_CURRENT_LIST_DIR}/filter.cpp
+                      ${CMAKE_CURRENT_LIST_DIR}/sink.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/cider/exec/template)
 add_library(translator STATIC ${TRANSLATOR_SOURCE})
 target_link_libraries(translator ${llvm_libs} ${NEXTGEN_DEPS})
