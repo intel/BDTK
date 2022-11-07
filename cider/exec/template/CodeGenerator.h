@@ -236,7 +236,7 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
 
-  // To be deperacated.
+  // To be deprecated.
   std::vector<llvm::Value*> codegen(const Analyzer::CaseExpr*, const CompilationOptions&);
 
   // to be deprecated
@@ -281,8 +281,9 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::LowerExpr*, const CompilationOptions&);
 
+  // To be deprecated.
   llvm::Value* codegen(const Analyzer::StringOper*, const CompilationOptions&);
-
+  // To be deprecated.
   llvm::Value* codegen(const Analyzer::LikeExpr*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::RegexpExpr*, const CompilationOptions&);
@@ -675,6 +676,11 @@ class CodeGenerator {
 
   std::unique_ptr<CodegenColValues> codegenInputColumn(const Analyzer::ColumnVar* col_var,
                                                        const bool fetch_column);
+
+  std::unique_ptr<CodegenColValues> codegenLikeExpr(const Analyzer::LikeExpr*,
+                                                    const CompilationOptions& co);
+  std::unique_ptr<CodegenColValues> codegenStringOpExpr(const Analyzer::StringOper*,
+                                                        const CompilationOptions& co);
 
  protected:
   Executor* executor() const {

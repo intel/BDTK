@@ -201,6 +201,10 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (datetrunc_expr) {
     return codegenDateTrunc(datetrunc_expr, co);
   }
+  auto like_expr = dynamic_cast<const Analyzer::LikeExpr*>(expr);
+  if (like_expr) {
+    return codegenLikeExpr(like_expr, co);
+  }
   auto function_oper_expr = dynamic_cast<const Analyzer::FunctionOper*>(expr);
   if (function_oper_expr) {
     return codegenFunctionOp(function_oper_expr, co);
@@ -213,6 +217,11 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (in_values) {
     return codegenInValues(in_values, co);
   }
+  auto string_op_expr = dynamic_cast<const Analyzer::StringOper*>(expr);
+  if (string_op_expr) {
+    return codegenStringOpExpr(string_op_expr, co);
+  }
+
   CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");
 }
 
@@ -251,6 +260,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
 
   switch (ti.get_type()) {
     case kVARCHAR:
+    case kTEXT:
+    case kCHAR:
       CHECK(constant_value.size() == 3);
       return std::make_unique<TwoValueColValues>(
           constant_value[1],

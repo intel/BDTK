@@ -1169,7 +1169,7 @@ bool checkByteArrayEq(CiderByteArray cba1, CiderByteArray cba2) {
 }
 
 TEST_F(CiderHasherTest, StringUidConvertTest) {
-  CiderHasher hasher({SQLTypeInfo(kVARCHAR)}, 8, false);
+  CiderStringHasher hasher;
 
   CiderByteArray str1(1, reinterpret_cast<const uint8_t*>("1"));
   int64_t id1 = hasher.lookupIdByValue(str1);

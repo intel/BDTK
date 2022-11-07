@@ -159,6 +159,7 @@ Executor::Executor(const ExecutorId executor_id,
     , data_provider_(data_provider)
     , buffer_provider_(buffer_provider)
     , temporary_tables_(nullptr)
+    , stringHasher_(new CiderStringHasher())
     , input_table_info_cache_(this) {
   initialize_extension_module_sources();
   update_extension_modules();
@@ -332,6 +333,10 @@ StringDictionaryProxy* Executor::getStringDictionaryProxy(
   std::lock_guard<std::mutex> lock(
       str_dict_mutex_);  // TODO: can we use RowSetMemOwner state mutex here?
   return row_set_mem_owner->getOrAddStringDictProxy(db_id_, dict_id_in, with_generation);
+}
+
+CiderStringHasher* Executor::getCiderStringHasherHandle() const {
+  return stringHasher_;
 }
 
 StringDictionaryProxy* RowSetMemoryOwner::getOrAddStringDictProxy(
