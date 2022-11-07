@@ -406,15 +406,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenLikeExpr(
   }
   auto pattern = dynamic_cast<const Analyzer::Constant*>(expr->get_like_expr());
   CHECK(pattern);
-  //  auto fast_dict_like_lv = codegenDictLike(expr->get_own_arg(),
-  //                                           pattern,
-  //                                           expr->get_is_ilike(),
-  //                                           expr->get_is_simple(),
-  //                                           escape_char,
-  //                                           co);
-  //  if (fast_dict_like_lv) {
-  //    return fast_dict_like_lv;
-  //  }
+
   const auto& ti = expr->get_arg()->get_type_info();
   CHECK(ti.is_string());
   if (g_enable_watchdog && ti.get_compression() != kENCODING_NONE) {
