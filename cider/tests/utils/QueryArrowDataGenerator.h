@@ -217,8 +217,6 @@ class QueryArrowDataGenerator {
                               const int32_t null_chance,
                               const int64_t min_len = 0,
                               const int64_t max_len = 0) {
-    // CHECK_GE(min_len, 0);
-    // CHECK_GE(max_len, min_len);
     std::string col_data = "";
     std::vector<bool> null_data(row_num);
     std::vector<int32_t> offset_data;
