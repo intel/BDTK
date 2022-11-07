@@ -311,7 +311,7 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
     table_name_ = "table_probe";
     create_ddl_ =
         "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, "
-        "l_double DOUBLE, l_float FLOAT);";
+        "l_double DOUBLE, l_float FLOAT, l_varchar VARCHAR(10));";
 
     ArrowSchema* actual_schema = nullptr;
     ArrowArray* actual_array = nullptr;
@@ -320,12 +320,13 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
         actual_schema,
         actual_array,
         100,
-        {"l_bigint", "l_int", "l_double", "l_float"},
+        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
         GeneratePattern::Sequence);
     input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
         actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
@@ -333,7 +334,7 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
     build_table_name_ = "table_hash";
     build_table_ddl_ =
         "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, "
-        "r_double DOUBLE, r_float FLOAT);";
+        "r_double DOUBLE, r_float FLOAT, r_varchar VARCHAR(10));";
 
     ArrowSchema* build_schema = nullptr;
     ArrowArray* build_array = nullptr;
@@ -341,12 +342,13 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
         build_schema,
         build_array,
         80,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2});
     build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
         build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
   }
@@ -358,12 +360,13 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
         build_schema,
         build_array,
         80,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2});
 
     build_table_.reset(new CiderBatch(
         build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
@@ -378,7 +381,7 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
     table_name_ = "table_probe";
     create_ddl_ =
         "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, l_double DOUBLE, "
-        "l_float FLOAT);";
+        "l_float FLOAT, l_varchar VARCHAR(10));";
 
     ArrowSchema* actual_schema = nullptr;
     ArrowArray* actual_array = nullptr;
@@ -387,12 +390,13 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         actual_schema,
         actual_array,
         100,
-        {"l_bigint", "l_int", "l_double", "l_float"},
+        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
         GeneratePattern::Random,
         -50,
         50);
@@ -402,7 +406,7 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
     build_table_name_ = "table_hash";
     build_table_ddl_ =
         "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, r_double DOUBLE, "
-        "r_float FLOAT);";
+        "r_float FLOAT, r_varchar VARCHAR(10));";
 
     ArrowSchema* build_schema = nullptr;
     ArrowArray* build_array = nullptr;
@@ -410,12 +414,13 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         build_schema,
         build_array,
         100,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {3, 3, 3, 3},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3},
         GeneratePattern::Random,
         -30,
         30);
@@ -430,12 +435,13 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         build_schema,
         build_array,
         100,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {3, 3, 3, 3},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3},
         GeneratePattern::Random,
         -30,
         30);
