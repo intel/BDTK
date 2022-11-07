@@ -129,7 +129,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValues(
   return std::make_unique<FixedSizeColValues>(result, lhs_null);
 }
 
-
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValuesString(
     const Analyzer::InValues* expr,
     const CompilationOptions& co) {
@@ -164,9 +163,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValuesString(
       const int64_t cider_string_hasher_handle =
           reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
       auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
-      auto id_val =
-          cgen_state_->emitCall("look_up_string_id_from_hasher",
-                                {lhs_str_ptr, lhs_str_len, cider_string_hasher_handle_lv});
+      auto id_val = cgen_state_->emitCall(
+          "look_up_string_id_from_hasher",
+          {lhs_str_ptr, lhs_str_len, cider_string_hasher_handle_lv});
       return cgen_state_->addInValuesBitmap(in_vals_bitmap)
           ->codegen(id_val, lhs_null, executor());
     } else {

@@ -334,7 +334,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   // TODO: Decimal constant support.
   const auto& lhs_ti = lhs->get_type_info();
   const auto& rhs_ti = rhs->get_type_info();
-  if(!lhs_ti.is_string() && !rhs_ti.is_string()) {
+  if (!lhs_ti.is_string() && !rhs_ti.is_string()) {
     CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
   }
 
