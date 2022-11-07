@@ -36,9 +36,17 @@ class JITValuePointer {
   template <typename T>
   JITValuePointer(std::unique_ptr<T>&& ptr) : ptr_(ptr.release()) {}
 
+  JITValuePointer(const JITValuePointer&) = delete;
+
+  JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_.release()) {}
+
   JITValue* get() { return ptr_.get(); }
 
  public:
+  JITValuePointer& operator=(const JITValuePointer&) = delete;
+
+  JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
+
   JITValue& operator*() { return *ptr_; }
 
   JITValue* operator->() { return ptr_.get(); }
@@ -107,6 +115,11 @@ class JITValue {
   JITTypeTag type_tag_;
   JITBackendTag backend_tag_;
 };
+
+inline JITValuePointer& JITValuePointer::operator=(JITValuePointer&& rh) noexcept {
+  *ptr_ = *rh;
+  return *this;
+}
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUE_H

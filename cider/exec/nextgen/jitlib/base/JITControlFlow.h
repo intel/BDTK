@@ -21,8 +21,73 @@
 #ifndef JITLIB_BASE_JITCONTROLFLOW_H
 #define JITLIB_BASE_JITCONTROLFLOW_H
 
+#include <functional>
+
 #include "exec/nextgen/jitlib/base/JITValue.h"
 
-namespace cider::jitlib {};  // namespace cider::jitlib
+namespace cider::jitlib {  // namespace cider::jitlib
+class IfBuilder {
+ public:
+  virtual ~IfBuilder() = default;
+
+  virtual void build() = 0;
+
+  template <typename T>
+  IfBuilder* condition(T&& fun) {
+    condition_ = fun;
+    return this;
+  }
+
+  template <typename T>
+  IfBuilder* ifTrue(T&& fun) {
+    if_true_ = fun;
+    return this;
+  }
+
+  template <typename T>
+  IfBuilder* ifFalse(T&& fun) {
+    if_false_ = fun;
+    return this;
+  }
+
+ protected:
+  std::function<JITValuePointer()> condition_;
+  std::function<void()> if_true_;
+  std::function<void()> if_false_;
+};
+
+class LoopBuilder {
+ public:
+  virtual ~LoopBuilder() = default;
+
+  virtual void build() = 0;
+
+  template <typename T>
+  LoopBuilder* condition(T&& fun) {
+    condition_ = fun;
+    return this;
+  }
+
+  template <typename T>
+  LoopBuilder* loop(T&& fun) {
+    loop_body_ = fun;
+    return this;
+  }
+
+  template <typename T>
+  LoopBuilder* update(T&& fun) {
+    update_ = fun;
+    return this;
+  }
+
+ protected:
+  std::function<JITValuePointer()> condition_;
+  std::function<void()> loop_body_;
+  std::function<void()> update_;
+};
+
+using IfBuilderPointer = std::unique_ptr<IfBuilder>;
+using LoopBuilderPointer = std::unique_ptr<LoopBuilder>;
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITCONTROLFLOW_H
