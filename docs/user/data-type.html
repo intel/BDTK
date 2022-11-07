@@ -48,57 +48,56 @@
 <p>Cider scalar datatypes, sizes and usage notes are described in the following table:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="9%" />
-<col width="15%" />
-<col width="76%" />
+<col width="8%" />
+<col width="19%" />
+<col width="73%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Type</th>
-<th class="head">Size(bytes)</th>
+<tr class="row-odd"><th class="head">SQL Type</th>
+<th class="head">Arrow data type</th>
 <th class="head">Notes</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>BOOLEAN</td>
-<td>1</td>
+<td>boolean</td>
 <td>boolean values true and false.</td>
 </tr>
 <tr class="row-odd"><td>TINYINT</td>
-<td>1</td>
+<td>int8</td>
 <td>Minimum value of -2^7 and  maximum value of 2^7 - 1.</td>
 </tr>
 <tr class="row-even"><td>SMALLINT</td>
-<td>2</td>
+<td>int16</td>
 <td>Minimum value of -2^15 and maximum value of 2^15 - 1.</td>
 </tr>
 <tr class="row-odd"><td>INTEGER</td>
-<td>4</td>
+<td>int32</td>
 <td>Minimum value of -2^31 and maximum value of 2^31 - 1.</td>
 </tr>
 <tr class="row-even"><td>BIGINT</td>
-<td>8</td>
+<td>int64</td>
 <td>Minimum value of -2^63 and maximum value of 2^63 - 1.</td>
 </tr>
 <tr class="row-odd"><td>FLOAT</td>
-<td>4</td>
+<td>float32</td>
 <td>single precision floating point value. Minimum value: -3.4e38, Maximum value: 3.4e38.</td>
 </tr>
 <tr class="row-even"><td>DOUBLE</td>
-<td>8</td>
+<td>float64</td>
 <td>double precision floating-point value. Minimum value: -1.79e308, Maximum value: 1.79e308.</td>
 </tr>
 <tr class="row-odd"><td>TIME</td>
-<td>8</td>
+<td>time64 [microseconds]</td>
 <td>the value is in units of microseconds since the beginning of any day,
 supported formats: HH:mm:ss[.SSS][XXX].</td>
 </tr>
 <tr class="row-even"><td>DATE</td>
-<td>8</td>
-<td>the value is epoch from 1970-01-01 in seconds,supported formats:yyyy-mm-dd.
-if you want to convert to days elapsed, you need to divide 24*60*60.</td>
+<td>date32 [days]</td>
+<td>days since 1970-01-01,supported formats:yyyy-mm-dd.</td>
 </tr>
 <tr class="row-odd"><td>TIMESTAMP</td>
-<td>8</td>
+<td>timestamp [microseconds]</td>
 <td>Mixed Date and Time Value, supported formats: yyyy-MM-dd HH:mm:ss[.SSS][XXX]</td>
 </tr>
 </tbody>
