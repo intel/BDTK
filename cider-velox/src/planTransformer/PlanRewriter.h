@@ -32,11 +32,11 @@ class PlanRewriter {
   PlanRewriter() {}
   ~PlanRewriter() {}
   // The methods called by PlanTransformer.
-  VeloxPlanNodePtr rewrite(VeloxNodeAddrPlanSection& planSection,
-                           VeloxPlanNodeAddr& source);
+  VeloxPlanNodePtr rewrite(const VeloxNodeAddrPlanSection& planSection,
+                           const VeloxPlanNodeAddr& source) const;
 
-  VeloxPlanNodePtr rewriteWithMultiSrc(VeloxNodeAddrPlanSection& planSection,
-                                       VeloxPlanNodeAddrList& srcList);
+  VeloxPlanNodePtr rewriteWithMultiSrc(const VeloxNodeAddrPlanSection& planSection,
+                                       const VeloxPlanNodeAddrList& srcList) const;
 
   // rewrite the plan section.
   // planSection: the plan section which need to be rewrite.
@@ -45,10 +45,10 @@ class PlanRewriter {
   // rewritten the second nodeptr indicate the rewritten result if rewritten is
   // needed.
   virtual std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const = 0;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source) const = 0;
   virtual std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const = 0;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList) const = 0;
 };
 }  // namespace facebook::velox::plugin::plantransformer

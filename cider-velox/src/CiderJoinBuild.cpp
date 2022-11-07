@@ -25,7 +25,7 @@
 
 namespace facebook::velox::plugin {
 
-void CiderJoinBridge::setData(std::vector<VectorPtr> data) {
+void CiderJoinBridge::setData(CiderBatch& data) {
   std::vector<ContinuePromise> promises;
   {
     std::lock_guard<std::mutex> l(mutex_);
@@ -36,8 +36,7 @@ void CiderJoinBridge::setData(std::vector<VectorPtr> data) {
   notify(std::move(promises));
 }
 
-std::optional<std::vector<VectorPtr>> CiderJoinBridge::dataOrFuture(
-    ContinueFuture* future) {
+std::optional<CiderBatch> CiderJoinBridge::dataOrFuture(ContinueFuture* future) {
   std::lock_guard<std::mutex> l(mutex_);
   VELOX_CHECK(!cancelled_, "Getting data after the build side is aborted");
   if (data_.has_value()) {
@@ -51,7 +50,9 @@ std::optional<std::vector<VectorPtr>> CiderJoinBridge::dataOrFuture(
 CiderJoinBuild::CiderJoinBuild(int32_t operatorId,
                                exec::DriverCtx* driverCtx,
                                std::shared_ptr<const CiderPlanNode> joinNode)
-    : Operator(driverCtx, nullptr, operatorId, joinNode->id(), "CiderJoinBuild") {}
+    : Operator(driverCtx, nullptr, operatorId, joinNode->id(), "CiderJoinBuild") {
+  dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT);
+}
 
 void CiderJoinBuild::addInput(RowVectorPtr input) {
   if (input->size() > 0) {
@@ -91,10 +92,20 @@ void CiderJoinBuild::noMoreInput() {
     promise.setValue();
   }
 
+  auto rowVectorPtr = RowVector::createEmpty(data_.front()->type(), operatorCtx_->pool());
+  for (auto batch : data_) {
+    rowVectorPtr->append(batch.get());
+  }
+
+  auto buildBatch = dataConvertor_->convertToCider(rowVectorPtr,
+                                                   rowVectorPtr->size(),
+                                                   &convertorInternalCounter,
+                                                   operatorCtx_->pool());
+
   auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
       operatorCtx_->driverCtx()->splitGroupId, planNodeId());
   if (auto ciderJoinBridge = std::dynamic_pointer_cast<CiderJoinBridge>(joinBridge)) {
-    ciderJoinBridge->setData(std::move(data_));
+    ciderJoinBridge->setData(buildBatch);
   }
 }
 

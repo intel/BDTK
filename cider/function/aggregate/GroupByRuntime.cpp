@@ -254,7 +254,7 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t* get_group_value_fast(
     key_diff /= bucket;
   }
   int64_t off = key_diff * row_size_quad;
-  if (groups_buffer[off] == EMPTY_KEY_64) {
+  if (groups_buffer[off] == empty_key_64) {
     groups_buffer[off] = key;
   }
   return groups_buffer + off + 1;
@@ -272,7 +272,7 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t* get_group_value_fast_with_origi
     key_diff /= bucket;
   }
   int64_t off = key_diff * row_size_quad;
-  if (groups_buffer[off] == EMPTY_KEY_64) {
+  if (groups_buffer[off] == empty_key_64) {
     groups_buffer[off] = orig_key;
   }
   return groups_buffer + off + 1;
@@ -287,7 +287,7 @@ get_columnar_group_bin_offset(int64_t* key_base_ptr,
   if (bucket) {
     off /= bucket;
   }
-  if (key_base_ptr[off] == EMPTY_KEY_64) {
+  if (key_base_ptr[off] == empty_key_64) {
     key_base_ptr[off] = key;
   }
   return off;

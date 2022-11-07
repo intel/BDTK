@@ -498,7 +498,7 @@ void QueryMemoryInitializer::initColumnarGroups(
     const size_t key_count{query_mem_desc.getGroupbyColCount()};
     for (size_t i = 0; i < key_count; ++i) {
       buffer_ptr = initColumnarBuffer<int64_t>(reinterpret_cast<int64_t*>(buffer_ptr),
-                                               EMPTY_KEY_64,
+                                               empty_key_64,
                                                groups_buffer_entry_count);
     }
   }

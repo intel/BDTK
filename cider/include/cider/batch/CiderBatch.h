@@ -113,6 +113,8 @@ class CiderBatch {
 
   const void** getChildrenArrayPtr() const;
 
+  std::string toStringForArrow() const;
+
  protected:
   using SchemaReleaser = void (*)(struct ArrowSchema*);
   using ArrayReleaser = void (*)(struct ArrowArray*);
@@ -146,6 +148,11 @@ class CiderBatch {
   bool ownership_{false};  // Whether need to release the tree of schema_ and array_.
   bool reallocate_{
       false};  // Whether permitted to (re-)allocate memory to buffers of array_.
+
+  void printByTypeForArrow(std::stringstream& ss,
+                           const char* type,
+                           const ArrowArray* array,
+                           int64_t length) const;
 #endif
 
 #ifdef CIDER_BATCH_CIDER_IMPL

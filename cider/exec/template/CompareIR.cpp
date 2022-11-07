@@ -324,6 +324,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   if (is_unnest(lhs) || is_unnest(rhs)) {
     CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
   }
+  // handle "is distinct from"
+  const auto optype = bin_oper->get_optype();
+  if (optype == kBW_EQ or optype == kBW_NE) {
+    return optype == kBW_EQ ? codegenLogicalFun(lower_bw_eq(bin_oper).get(), co)
+                            : codegenLogicalFun(lower_bw_ne(bin_oper).get(), co);
+  }
   // TODO: String, Array support.
   // TODO: Decimal constant support.
   const auto& lhs_ti = lhs->get_type_info();

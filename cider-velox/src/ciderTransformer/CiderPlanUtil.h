@@ -35,10 +35,10 @@ class CiderPlanUtil {
  public:
   // Construct a CiderPlanNode based on the plan section with given source
   static std::shared_ptr<CiderPlanNode> toCiderPlanNode(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source);
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source);
   static std::shared_ptr<CiderPlanNode> toCiderPlanNode(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList);
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList);
 };
 }  // namespace facebook::velox::plugin::plantransformer

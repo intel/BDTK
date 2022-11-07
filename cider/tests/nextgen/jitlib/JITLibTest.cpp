@@ -63,6 +63,39 @@ void executeBinaryOp(T left, T right, T output, OpFunc op) {
       });
 }
 
+template <JITTypeTag Type, typename NativeType, typename BuilderType>
+void executeCompareSingleParamTest(NativeType input, bool output, BuilderType builder) {
+  LLVMJITModule module("TestOperator");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_operator_func",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::BOOL},
+      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
+  });
+  builder(function.get());
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<bool, NativeType>();
+  EXPECT_EQ(func_ptr(input), output);
+}
+
+template <JITTypeTag Type, typename T>
+void executeCompareOp(T left, T right, bool output, OpFunc op) {
+  using NativeType = typename JITTypeTraits<Type>::NativeType;
+  executeCompareSingleParamTest<Type>(
+      static_cast<NativeType>(left),
+      output,
+      [&, right = static_cast<NativeType>(right)](JITFunction* func) {
+        auto left = func->createVariable("left", Type);
+        *left = func->getArgument(0);
+
+        auto right_const = func->createConstant(Type, right);
+        auto ans = op(left, right_const);
+
+        func->createReturn(ans);
+      });
+}
+
 TEST_F(JITLibTests, ArithmeticOPTest) {
   // Sum
   executeBinaryOp<JITTypeTag::INT8>(
@@ -141,6 +174,161 @@ TEST_F(JITLibTests, LogicalOpTest) {
       true, false, false, [](JITValue& a, JITValue& b) { return !a; });
   executeBinaryOp<JITTypeTag::BOOL>(
       false, true, true, [](JITValue& a, JITValue& b) { return !a; });
+
+  // and
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, false, [](JITValue& a, JITValue& b) { return a && b && true; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, true, true, [](JITValue& a, JITValue& b) { return a && true && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, false, [](JITValue& a, JITValue& b) { return false && a && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, false, false, [](JITValue& a, JITValue& b) { return true && a && b; });
+
+  // or
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, true, [](JITValue& a, JITValue& b) { return a || false || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, true, true, [](JITValue& a, JITValue& b) { return a || b || false; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, true, true, [](JITValue& a, JITValue& b) { return true || a || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, false, false, [](JITValue& a, JITValue& b) { return a || false || b; });
+}
+
+TEST_F(JITLibTests, CompareOpTest) {
+  // eq
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == 100; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 20.0, false, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 20.0, true, [](JITValue& a, JITValue& b) { return 20.0 == b; });
+
+  // ne
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a != 40; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 20, true, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return 100.0 != b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 2.0, true, [](JITValue& a, JITValue& b) { return a != b; });
+
+  // gt
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a > 200; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, true, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, false, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return 102.0 > b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return a > b; });
+
+  // ge
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a >= 30; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, false, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, false, [](JITValue& a, JITValue& b) { return 99.2 >= b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a >= b; });
+
+  // lt
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return 4 < b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 101, true, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return b < 103.2; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return a < b; });
+
+  // le
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 101, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, false, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, true, [](JITValue& a, JITValue& b) { return 97 <= b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a <= 100.0; });
+}
+
+TEST_F(JITLibTests, ExternalModuleTest) {
+  LLVMJITModule module("Test Module", true);
+
+  JITFunctionPointer function1 = module.createJITFunction(
+      JITFunctionDescriptor{.function_name = "test_externalModule",
+                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+                            .params_type = {}});
+  {
+    JITValuePointer x = function1->createVariable("x1", JITTypeTag::INT32);
+    JITValuePointer a = function1->createConstant(JITTypeTag::INT32, 123);
+    JITValuePointer b = function1->createConstant(JITTypeTag::INT32, 876);
+    *x = *function1->emitRuntimeFunctionCall(
+        "external_call_test_sum",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {a.get(), b.get()}});
+    function1->createReturn(*x);
+  }
+
+  function1->finish();
+  module.finish();
+
+  auto ptr = function1->getFunctionPointer<int32_t>();
+  EXPECT_EQ(ptr(), 999);
 }
 
 TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {

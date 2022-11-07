@@ -127,12 +127,20 @@ extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(int8_t* str_data
                                                                 bool is_null) {
   if (is_null) {
     CiderBitUtils::clearBitAt(agg_null_buffer, index);
+    int32_t current_offset = reinterpret_cast<int32_t*>(str_offset_buffer)[index];
+    reinterpret_cast<int32_t*>(str_offset_buffer)[index + 1] = current_offset;
   } else {
     cider_agg_id_proj_string(str_data_buffer, str_offset_buffer, index, str_ptr, str_len);
   }
 }
 
 DEF_CIDER_SIMPLE_AGG_FUNCS(id, cider_agg_id)
+
+#undef DEF_CIDER_SIMPLE_AGG_FP_NULLABLE
+#undef DEF_CIDER_SIMPLE_AGG_FP
+#undef DEF_CIDER_SIMPLE_AGG_INT_NULLABLE
+#undef DEF_CIDER_SIMPLE_AGG_INT
+#undef DEF_CIDER_SIMPLE_AGG_FUNCS
 /********************************************************************************/
 
 /********************** Project Id Functions *****************************/
@@ -213,6 +221,11 @@ DEF_CIDER_ID_PROJ_FP(double, double, 64)
 DEF_CIDER_ID_PROJ_FP_NULLABLE(float, float, 32)
 DEF_CIDER_ID_PROJ_FP_NULLABLE(double, double, 64)
 
+#undef DEF_CIDER_ID_PROJ_FP_NULLABLE
+#undef DEF_CIDER_ID_PROJ_FP
+#undef DEF_CIDER_ID_PROJ_INT_NULLABLE
+#undef DEF_CIDER_ID_PROJ_INT
+
 /********************************************************************************/
 
 /********************** Count Aggregation Functions *****************************/
@@ -234,6 +247,9 @@ DEF_CIDER_COUNT_AGG(32)
 DEF_CIDER_COUNT_AGG(64)
 DEF_CIDER_COUNT_AGG_NULLABLE(32)
 DEF_CIDER_COUNT_AGG_NULLABLE(64)
+
+#undef DEF_CIDER_COUNT_AGG_NULLABLE
+#undef DEF_CIDER_COUNT_AGG
 /********************************************************************************/
 
 #endif  // CIDER_FUNCTION_RUNTIME_FUNCTIONS_H

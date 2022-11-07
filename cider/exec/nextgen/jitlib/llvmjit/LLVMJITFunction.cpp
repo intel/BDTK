@@ -24,10 +24,13 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 #include <llvm/IR/Function.h>
+#include <llvm/IR/InstIterator.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Transforms/Utils/Cloning.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 #include "util/Logger.h"
@@ -159,6 +162,67 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
   } else {
     LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return nullptr;
+  }
+}
+
+// look up a runtime function based on the name
+JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
+    const std::string& fname,
+    const JITFunctionEmitDescriptor& descriptor) {
+  auto func = module_.module_->getFunction(fname);
+  if (!func) {
+    LOG(FATAL) << "Function: " << fname << " does not exist.";
+  }
+  cloneFunctionRecursive(func);
+
+  llvm::SmallVector<llvm::Value*, JITFunctionEmitDescriptor::DefaultParamsNum> args;
+  args.reserve(descriptor.params_vector.size());
+  for (auto jit_value : descriptor.params_vector) {
+    LLVMJITValue* llvmjit_value = static_cast<LLVMJITValue*>(jit_value);
+    args.push_back(llvmjit_value->llvm_value_);
+  }
+
+  llvm::Value* ans = ir_builder_->CreateCall(func, args);
+  return std::make_unique<LLVMJITValue>(
+      descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
+}
+
+void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
+  CHECK(fn);
+  if (!fn->isDeclaration()) {
+    return;
+  }
+  // Get the implementation from the runtime module.
+  auto func_impl = module_.runtime_module_->getFunction(fn->getName());
+  CHECK(func_impl) << fn->getName().str();
+  if (func_impl->isDeclaration()) {
+    return;
+  }
+
+  auto target_it = fn->arg_begin();
+  for (auto arg_it = func_impl->arg_begin(); arg_it != func_impl->arg_end(); ++arg_it) {
+    target_it->setName(arg_it->getName());
+    module_.vmap_[&*arg_it] = &*target_it++;
+  }
+
+  llvm::SmallVector<llvm::ReturnInst*, JITFunctionEmitDescriptor::DefaultParamsNum>
+      returns;  // Ignore returns cloned.
+#if LLVM_VERSION_MAJOR > 12
+  llvm::CloneFunctionInto(fn,
+                          func_impl,
+                          module_.vmap_,
+                          llvm::CloneFunctionChangeType::DifferentModule,
+                          Returns);
+#else
+  llvm::CloneFunctionInto(
+      fn, func_impl, module_.vmap_, /*ModuleLevelChanges=*/true, returns);
+#endif
+
+  for (auto it = llvm::inst_begin(fn), e = llvm::inst_end(fn); it != e; ++it) {
+    if (llvm::isa<llvm::CallInst>(*it)) {
+      auto& call = llvm::cast<llvm::CallInst>(*it);
+      cloneFunctionRecursive(call.getCalledFunction());
+    }
   }
 }
 

@@ -294,30 +294,6 @@ class ArrowArrayBuilder {
     return {schema_, array_};
   }
 
-#define PRINT_BY_TYPE(C_TYPE)                   \
-  {                                             \
-    ss << "column type: " << #C_TYPE << " ";    \
-    C_TYPE* buf = (C_TYPE*)(array->buffers[1]); \
-    for (int j = 0; j < length; j++) {          \
-      ss << buf[j] << "\t";                     \
-    }                                           \
-    break;                                      \
-  }
-
-  static std::string toString(const ArrowSchema* schema, const ArrowArray* array) {
-    std::stringstream ss;
-    ss << "row num: " << array->length << ", column num: " << array->n_children << ".\n";
-
-    for (auto i = 0; i < array->n_children; i++) {
-      if (array->children[i] != nullptr) {
-        printByType(ss, schema->children[i]->format, array->children[i], array->length);
-      } else {
-      }
-      ss << '\n';
-    }
-    return ss.str();
-  }
-
  private:
   std::string table_name_ = "";
   size_t row_num_;
@@ -330,36 +306,6 @@ class ArrowArrayBuilder {
   ArrowArray* array_;
 
   std::shared_ptr<CiderAllocator> allocator_;
-
-  static void printByType(std::stringstream& ss,
-                          const char* type,
-                          const ArrowArray* array,
-                          int64_t length) {
-    switch (type[0]) {
-      case 'b':
-      case 'c':
-        PRINT_BY_TYPE(int8_t);
-      case 's':
-        PRINT_BY_TYPE(int16_t);
-      case 'i':
-        PRINT_BY_TYPE(int32_t);
-      case 'l':
-        PRINT_BY_TYPE(int64_t);
-      case 'f':
-        PRINT_BY_TYPE(float);
-      case 'g':
-        PRINT_BY_TYPE(double);
-      case 'u':
-        ss << "column type: String ";
-        for (int i = 0; i < length; i++) {
-          ss << CiderBatchUtils::extractUtf8ArrowArrayAt(array, i) << " ";
-        }
-        ss << std::endl;
-        break;
-      default:
-        CIDER_THROW(CiderCompileException, "Not supported type to print value!");
-    }
-  }
 };
 
 #endif  // CIDER_ARROWARRAYBUILDER_H

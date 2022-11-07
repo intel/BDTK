@@ -414,6 +414,8 @@ SUBSTRAIT_SCALAR_ACCESSOR(kIntervalDay);
 SUBSTRAIT_SCALAR_ACCESSOR(kTimestampTz);
 SUBSTRAIT_SCALAR_ACCESSOR(kUuid);
 
+#undef SUBSTRAIT_SCALAR_ACCESSOR
+
 }  // namespace cider::function::substrait
 
 namespace std {

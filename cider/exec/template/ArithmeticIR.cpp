@@ -30,6 +30,7 @@ extern bool g_null_div_by_zero;
 extern bool g_inf_div_by_zero;
 namespace {
 
+// Need keep for Arrow
 std::string numeric_or_time_interval_type_name(const SQLTypeInfo& ti1,
                                                const SQLTypeInfo& ti2) {
   if (ti2.is_timeinterval()) {
@@ -40,6 +41,7 @@ std::string numeric_or_time_interval_type_name(const SQLTypeInfo& ti1,
 
 }  // namespace
 
+// TODO: (yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenArith(const Analyzer::BinOper* bin_oper,
                                          const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
@@ -117,7 +119,8 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenArithFun(
     null = lhs_nullable ? lhs_nullable->getNull() : rhs_nullable->getNull();
   }
 
-  return codegenFixedSizeColArithFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+  return codegenFixedSizeColArithFun(
+      bin_oper, lhs_lv.get(), rhs_lv.get(), null, co.needs_error_check);
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColArithFun(
@@ -125,7 +128,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColArithFun(
     CodegenColValues* lhs,
     CodegenColValues* rhs,
     llvm::Value* null,
-    bool overflow_check) {
+    bool needs_error_check) {
   AUTOMATIC_IR_METADATA(cgen_state_);
 
   auto lhs_fixsize = dynamic_cast<FixedSizeColValues*>(lhs);
@@ -133,45 +136,88 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedSizeColArithFun(
 
   CHECK(lhs_fixsize && rhs_fixsize);
 
-  if (overflow_check) {
-    // TODO: overflow_check code generation.
-    CIDER_THROW(CiderUnsupportedException, "");
-  }
-
   llvm::Value* value = nullptr;
   auto lh_value = lhs_fixsize->getValue(), rh_value = rhs_fixsize->getValue();
+
+  if (!needs_error_check) {
+    switch (bin_oper->get_optype()) {
+      case kMINUS:
+        value = lh_value->getType()->isIntegerTy()
+                    ? cgen_state_->ir_builder_.CreateSub(lh_value, rh_value)
+                    : cgen_state_->ir_builder_.CreateFSub(lh_value, rh_value);
+        break;
+      case kPLUS:
+        value = lh_value->getType()->isIntegerTy()
+                    ? cgen_state_->ir_builder_.CreateAdd(lh_value, rh_value)
+                    : cgen_state_->ir_builder_.CreateFAdd(lh_value, rh_value);
+        break;
+      case kMULTIPLY:
+        value = lh_value->getType()->isIntegerTy()
+                    ? cgen_state_->ir_builder_.CreateMul(lh_value, rh_value)
+                    : cgen_state_->ir_builder_.CreateFMul(lh_value, rh_value);
+        break;
+      case kDIVIDE:
+        value = lh_value->getType()->isIntegerTy()
+                    ? cgen_state_->ir_builder_.CreateSDiv(lh_value, rh_value)
+                    : cgen_state_->ir_builder_.CreateFDiv(lh_value, rh_value);
+        break;
+      case kMODULO:
+        value = lh_value->getType()->isIntegerTy()
+                    ? cgen_state_->ir_builder_.CreateSRem(lh_value, rh_value)
+                    : cgen_state_->ir_builder_.CreateFRem(lh_value, rh_value);
+        break;
+      default:
+        CHECK(false);
+    }
+    return std::make_unique<FixedSizeColValues>(value, null);
+  }
+  const auto lhs_operand = bin_oper->get_left_operand();
+  const auto rhs_operand = bin_oper->get_right_operand();
+  const auto& lhs_type = lhs_operand->get_type_info();
+  const auto& rhs_type = rhs_operand->get_type_info();
+  const auto int_typename = numeric_or_time_interval_type_name(lhs_type, rhs_type);
+  const auto null_check_suffix = get_null_check_suffix(lhs_type, rhs_type);
+  const auto& oper_type = rhs_type.is_timeinterval() ? rhs_type : lhs_type;
   switch (bin_oper->get_optype()) {
     case kMINUS:
-      value = lh_value->getType()->isIntegerTy()
-                  ? cgen_state_->ir_builder_.CreateSub(lh_value, rh_value)
-                  : cgen_state_->ir_builder_.CreateFSub(lh_value, rh_value);
-      break;
     case kPLUS:
-      value = lh_value->getType()->isIntegerTy()
-                  ? cgen_state_->ir_builder_.CreateAdd(lh_value, rh_value)
-                  : cgen_state_->ir_builder_.CreateFAdd(lh_value, rh_value);
-      break;
-    case kMULTIPLY:
-      value = lh_value->getType()->isIntegerTy()
-                  ? cgen_state_->ir_builder_.CreateMul(lh_value, rh_value)
-                  : cgen_state_->ir_builder_.CreateFMul(lh_value, rh_value);
-      break;
+    case kMULTIPLY: {
+      // add overflow check for only INT-like types?
+      if (lhs_type.is_integer() || lhs_type.is_decimal() || lhs_type.is_timeinterval()) {
+        return std::make_unique<FixedSizeColValues>(
+            codegenArithWithOverflowCheckForArrow(
+                bin_oper, lhs_fixsize, rhs_fixsize, null_check_suffix, oper_type),
+            null);
+      } else {
+        CHECK(lhs_type.is_fp());
+        switch (bin_oper->get_optype()) {
+          case kMINUS:
+            value = cgen_state_->ir_builder_.CreateFSub(lh_value, rh_value);
+            break;
+          case kPLUS:
+            value = cgen_state_->ir_builder_.CreateFAdd(lh_value, rh_value);
+            break;
+          case kMULTIPLY:
+            value = cgen_state_->ir_builder_.CreateFMul(lh_value, rh_value);
+            break;
+        }
+        return std::make_unique<FixedSizeColValues>(value, null);
+      }
+    }
     case kDIVIDE:
-      value = lh_value->getType()->isIntegerTy()
-                  ? cgen_state_->ir_builder_.CreateSDiv(lh_value, rh_value)
-                  : cgen_state_->ir_builder_.CreateFDiv(lh_value, rh_value);
-      break;
-    case kMODULO:
-      value = lh_value->getType()->isIntegerTy()
-                  ? cgen_state_->ir_builder_.CreateSRem(lh_value, rh_value)
-                  : cgen_state_->ir_builder_.CreateFRem(lh_value, rh_value);
-      break;
+    case kMODULO: {
+      // add div/mod 0 check
+      return std::make_unique<FixedSizeColValues>(
+          codegenArithWithDivZeroCheckForArrow(
+              bin_oper, lhs_fixsize, rhs_fixsize, null_check_suffix, oper_type),
+          null);
+    }
     default:
       CHECK(false);
   }
-  return std::make_unique<FixedSizeColValues>(value, null);
 }
 
+// TODO:(yma11) Will deprecate
 // Handle integer or integer-like (decimal, time, date) operand types.
 llvm::Value* CodeGenerator::codegenIntArith(const Analyzer::BinOper* bin_oper,
                                             llvm::Value* lhs_lv,
@@ -231,6 +277,7 @@ llvm::Value* CodeGenerator::codegenIntArith(const Analyzer::BinOper* bin_oper,
   return nullptr;
 }
 
+// TODO:(yma11) Will deprecate
 // Handle floating point operand types.
 llvm::Value* CodeGenerator::codegenFpArith(const Analyzer::BinOper* bin_oper,
                                            llvm::Value* lhs_lv,
@@ -319,6 +366,7 @@ bool CodeGenerator::checkExpressionRanges(const Analyzer::BinOper* bin_oper,
   return false;
 }
 
+// TODO:(yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenAdd(const Analyzer::BinOper* bin_oper,
                                        llvm::Value* lhs_lv,
                                        llvm::Value* rhs_lv,
@@ -377,6 +425,7 @@ llvm::Value* CodeGenerator::codegenAdd(const Analyzer::BinOper* bin_oper,
   return ret;
 }
 
+// TODO:(yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenSub(const Analyzer::BinOper* bin_oper,
                                        llvm::Value* lhs_lv,
                                        llvm::Value* rhs_lv,
@@ -437,6 +486,21 @@ llvm::Value* CodeGenerator::codegenSub(const Analyzer::BinOper* bin_oper,
   return ret;
 }
 
+void CodeGenerator::codegenSkipOverflowCheckForNullForArrow(
+    llvm::Value* lhs_null,
+    llvm::Value* rhs_null,
+    llvm::BasicBlock* no_overflow_bb,
+    const SQLTypeInfo& ti) {
+  const auto has_null_operand_lv =
+      rhs_null ? cgen_state_->ir_builder_.CreateOr(lhs_null, rhs_null) : lhs_null;
+  auto operands_not_null = llvm::BasicBlock::Create(
+      cgen_state_->context_, "operands_not_null", cgen_state_->current_func_);
+  cgen_state_->ir_builder_.CreateCondBr(
+      has_null_operand_lv, no_overflow_bb, operands_not_null);
+  cgen_state_->ir_builder_.SetInsertPoint(operands_not_null);
+}
+
+// TODO:(yma11) should be deprecated, replaced by codegenSkipOverflowCheckForNullForArrow
 void CodeGenerator::codegenSkipOverflowCheckForNull(llvm::Value* lhs_lv,
                                                     llvm::Value* rhs_lv,
                                                     llvm::BasicBlock* no_overflow_bb,
@@ -521,6 +585,7 @@ llvm::Value* CodeGenerator::codegenMul(const Analyzer::BinOper* bin_oper,
   return ret;
 }
 
+// TODO:(yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenDiv(llvm::Value* lhs_lv,
                                        llvm::Value* rhs_lv,
                                        const std::string& null_typename,
@@ -701,6 +766,7 @@ llvm::Value* CodeGenerator::codegenDeciDiv(const Analyzer::BinOper* bin_oper,
                     /*upscale*/ false);
 }
 
+// TODO:(yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenMod(llvm::Value* lhs_lv,
                                        llvm::Value* rhs_lv,
                                        const std::string& null_typename,
@@ -829,6 +895,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenUMinusFun(
   return std::make_unique<FixedSizeColValues>(result, fixedsize_lv->getNull());
 }
 
+// Need keep for Arrow
 llvm::Function* CodeGenerator::getArithWithOverflowIntrinsic(
     const Analyzer::BinOper* bin_oper,
     llvm::Type* type) {
@@ -850,6 +917,105 @@ llvm::Function* CodeGenerator::getArithWithOverflowIntrinsic(
   return llvm::Intrinsic::getDeclaration(cgen_state_->module_, fn_id, type);
 }
 
+llvm::Value* CodeGenerator::codegenArithWithDivZeroCheckForArrow(
+    const Analyzer::BinOper* bin_oper,
+    FixedSizeColValues* lhs,
+    FixedSizeColValues* rhs,
+    const std::string& null_check_suffix,
+    const SQLTypeInfo& ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  auto lhs_lv = lhs->getValue(), rhs_lv = rhs->getValue();
+  auto lhs_null = lhs->getNull(), rhs_null = rhs->getNull();
+  llvm::BasicBlock* div_ok{nullptr};
+  llvm::BasicBlock* div_zero{nullptr};
+  div_ok = llvm::BasicBlock::Create(
+      cgen_state_->context_, "div_ok", cgen_state_->current_func_);
+  if (!null_check_suffix.empty()) {
+    codegenSkipOverflowCheckForNullForArrow(lhs_null, rhs_null, div_ok, ti);
+  }
+  div_zero = llvm::BasicBlock::Create(
+      cgen_state_->context_, "div_zero", cgen_state_->current_func_);
+  auto zero_const = rhs_lv->getType()->isIntegerTy()
+                        ? llvm::ConstantInt::get(rhs_lv->getType(), 0, true)
+                        : llvm::ConstantFP::get(rhs_lv->getType(), 0.);
+  cgen_state_->ir_builder_.CreateCondBr(
+      zero_const->getType()->isFloatingPointTy()
+          ? cgen_state_->ir_builder_.CreateFCmp(
+                llvm::FCmpInst::FCMP_ONE, rhs_lv, zero_const)
+          : cgen_state_->ir_builder_.CreateICmp(
+                llvm::ICmpInst::ICMP_NE, rhs_lv, zero_const),
+      div_ok,
+      div_zero);
+  cgen_state_->ir_builder_.SetInsertPoint(div_ok);
+  llvm::Value* ret = nullptr;
+  switch (bin_oper->get_optype()) {
+    case kDIVIDE:
+      ret = lhs_lv->getType()->isIntegerTy()
+                ? cgen_state_->ir_builder_.CreateSDiv(lhs_lv, rhs_lv)
+                : cgen_state_->ir_builder_.CreateFDiv(lhs_lv, rhs_lv);
+      break;
+    case kMODULO:
+      ret = lhs_lv->getType()->isIntegerTy()
+                ? cgen_state_->ir_builder_.CreateSRem(lhs_lv, rhs_lv)
+                : cgen_state_->ir_builder_.CreateFRem(lhs_lv, rhs_lv);
+      break;
+    default:
+      CIDER_THROW(CiderCompileException,
+                  "Only support divide and mod in codegenArithWithDivZeroCheckForArrow.");
+  }
+  cgen_state_->ir_builder_.SetInsertPoint(div_zero);
+  cgen_state_->ir_builder_.CreateRet(cgen_state_->llInt(Executor::ERR_DIV_BY_ZERO));
+  cgen_state_->ir_builder_.SetInsertPoint(div_ok);
+  return ret;
+}
+
+llvm::Value* CodeGenerator::codegenArithWithOverflowCheckForArrow(
+    const Analyzer::BinOper* bin_oper,
+    FixedSizeColValues* lhs,
+    FixedSizeColValues* rhs,
+    const std::string& null_check_suffix,
+    const SQLTypeInfo& ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  llvm::BasicBlock* check_ok = llvm::BasicBlock::Create(
+      cgen_state_->context_, "ovf_ok", cgen_state_->current_func_);
+  llvm::BasicBlock* check_fail = llvm::BasicBlock::Create(
+      cgen_state_->context_, "ovf_detected", cgen_state_->current_func_);
+  llvm::BasicBlock* null_check{nullptr};
+  auto lhs_lv = lhs->getValue(), rhs_lv = rhs->getValue();
+  auto lhs_null = lhs->getNull(), rhs_null = rhs->getNull();
+  if (!null_check_suffix.empty()) {
+    null_check = cgen_state_->ir_builder_.GetInsertBlock();
+    codegenSkipOverflowCheckForNullForArrow(lhs_null, rhs_null, check_ok, ti);
+  }
+
+  // Compute result and overflow flag
+  auto func = getArithWithOverflowIntrinsic(bin_oper, lhs_lv->getType());
+  auto ret_and_overflow = cgen_state_->ir_builder_.CreateCall(
+      func, std::vector<llvm::Value*>{lhs_lv, rhs_lv});
+  auto ret = cgen_state_->ir_builder_.CreateExtractValue(ret_and_overflow,
+                                                         std::vector<unsigned>{0});
+  auto overflow = cgen_state_->ir_builder_.CreateExtractValue(ret_and_overflow,
+                                                              std::vector<unsigned>{1});
+  auto val_bb = cgen_state_->ir_builder_.GetInsertBlock();
+
+  // Return error on overflow
+  cgen_state_->ir_builder_.CreateCondBr(overflow, check_fail, check_ok);
+  cgen_state_->ir_builder_.SetInsertPoint(check_fail);
+  cgen_state_->ir_builder_.CreateRet(
+      cgen_state_->llInt(Executor::ERR_OVERFLOW_OR_UNDERFLOW));
+
+  cgen_state_->ir_builder_.SetInsertPoint(check_ok);
+  if (null_check) {
+    auto phi = cgen_state_->ir_builder_.CreatePHI(ret->getType(), 2);
+    phi->addIncoming(llvm::ConstantInt::get(ret->getType(), inline_int_null_val(ti)),
+                     null_check);
+    phi->addIncoming(ret, val_bb);
+    ret = phi;
+  }
+  return ret;
+}
+
+// TODO: (yma11) Will deprecate
 llvm::Value* CodeGenerator::codegenBinOpWithOverflowForCPU(
     const Analyzer::BinOper* bin_oper,
     llvm::Value* lhs_lv,

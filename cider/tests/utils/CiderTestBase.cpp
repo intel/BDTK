@@ -123,6 +123,16 @@ bool CiderTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
   return false;
 }
 
+bool CiderTestBase::executeIncorrectQueryArrow(const std::string& wrong_sql) {
+  try {
+    auto cider_res_batch = ciderQueryRunner_.runQueryOneBatch(wrong_sql, input_[0], true);
+  } catch (const CiderException& e) {
+    LOG(ERROR) << e.what();
+    return true;
+  }
+  return false;
+}
+
 void CiderJoinTestBase::assertJoinQuery(const std::string& sql,
                                         const std::string& json_file,
                                         const bool compare_value) {

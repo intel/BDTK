@@ -40,12 +40,12 @@ namespace CiderBatchUtils {
     col_data.reserve(table_row_num);                                        \
     null_data.reserve(table_row_num);                                       \
     C_TYPE* buf = (C_TYPE*)table_ptr[i];                                    \
-    C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                           \
+    C_TYPE* null_buf = (C_TYPE*)table_ptr[i + column_num];                  \
     for (auto j = 0; j < table_row_num; ++j) {                              \
       C_TYPE value = buf[j];                                                \
-      bool is_null = null_buf[j];                                           \
+      bool is_not_null = null_buf[j];                                       \
       col_data.push_back(value);                                            \
-      null_data.push_back(is_null);                                         \
+      null_data.push_back(!is_not_null);                                    \
     }                                                                       \
     builder = builder.addBoolColumn<C_TYPE>(names[i], col_data, null_data); \
     break;                                                                  \
@@ -57,12 +57,11 @@ namespace CiderBatchUtils {
     std::vector<bool> null_data;                                              \
     col_data.reserve(table_row_num);                                          \
     null_data.reserve(table_row_num);                                         \
-    null_data.push_back(false);                                               \
     C_TYPE* buf = (C_TYPE*)table_ptr[i];                                      \
-    C_TYPE* null_buf = (C_TYPE*)table_ptr[i * 2];                             \
+    C_TYPE* null_buf = (C_TYPE*)table_ptr[i + column_num];                    \
     for (auto j = 0; j < table_row_num; ++j) {                                \
       C_TYPE value = buf[j];                                                  \
-      bool is_null = null_buf[j];                                             \
+      bool is_null = (null_buf[j] == 0);                                      \
       col_data.push_back(value);                                              \
       null_data.push_back(is_null);                                           \
     }                                                                         \
@@ -446,5 +445,8 @@ CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
                     std::make_shared<CiderDefaultAllocator>());
   return std::move(result);
 }
+
+#undef GENERATE_AND_ADD_COLUMN
+#undef GENERATE_AND_ADD_BOOL_COLUMN
 
 }  // namespace CiderBatchUtils

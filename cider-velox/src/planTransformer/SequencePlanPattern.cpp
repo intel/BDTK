@@ -23,7 +23,7 @@
 
 namespace facebook::velox::plugin::plantransformer {
 std::pair<bool, VeloxNodeAddrPlanSection> SequencePlanPattern::matchFromSrc(
-    BranchSrcToTargetIterator branchIte) const {
+    BranchSrcToTargetIterator& branchIte) const {
   while (branchIte.hasNext()) {
     auto nodeAddr = branchIte.next();
     bool isAccept = stateMachine_->accept(nodeAddr);

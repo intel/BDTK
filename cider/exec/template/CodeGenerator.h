@@ -139,7 +139,7 @@ class CodeGenerator {
       CodegenColValues* lhs,
       CodegenColValues* rhs,
       llvm::Value* null,
-      bool overflow_check = false);
+      bool needs_error_check = false);
 
   // Deprecating
   llvm::Value* codegenUMinus(const Analyzer::UOper*, const CompilationOptions&);
@@ -289,8 +289,12 @@ class CodeGenerator {
   std::vector<llvm::Value*> codegenArrayExpr(const Analyzer::ArrayExpr*,
                                              const CompilationOptions&);
 
+  // TODO:(yma11) will deprecate
   llvm::Value* codegenFunctionOper(const Analyzer::FunctionOper*,
                                    const CompilationOptions&);
+
+  std::unique_ptr<CodegenColValues> codegenFunctionOp(const Analyzer::FunctionOper*,
+                                                      const CompilationOptions& co);
 
   llvm::Value* codegenFunctionOperWithCustomTypeHandling(
       const Analyzer::FunctionOperWithCustomTypeHandling*,
@@ -387,11 +391,13 @@ class CodeGenerator {
       const bool fetch_column,
       const CompilationOptions& co);
 
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenIntArith(const Analyzer::BinOper*,
                                llvm::Value*,
                                llvm::Value*,
                                const CompilationOptions&);
 
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenFpArith(const Analyzer::BinOper*,
                               llvm::Value*,
                               llvm::Value*,
@@ -420,6 +426,19 @@ class CodeGenerator {
                                  const SQLTypeInfo& operand_ti,
                                  const SQLTypeInfo& ti);
 
+  llvm::Value* codegenArithWithOverflowCheckForArrow(const Analyzer::BinOper*,
+                                                     FixedSizeColValues*,
+                                                     FixedSizeColValues*,
+                                                     const std::string& null_check_suffix,
+                                                     const SQLTypeInfo&);
+
+  llvm::Value* codegenArithWithDivZeroCheckForArrow(const Analyzer::BinOper*,
+                                                    FixedSizeColValues*,
+                                                    FixedSizeColValues*,
+                                                    const std::string& null_check_suffix,
+                                                    const SQLTypeInfo&);
+
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenAdd(const Analyzer::BinOper*,
                           llvm::Value*,
                           llvm::Value*,
@@ -428,6 +447,7 @@ class CodeGenerator {
                           const SQLTypeInfo&,
                           const CompilationOptions&);
 
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenSub(const Analyzer::BinOper*,
                           llvm::Value*,
                           llvm::Value*,
@@ -436,11 +456,17 @@ class CodeGenerator {
                           const SQLTypeInfo&,
                           const CompilationOptions&);
 
+  // TODO: (yma11) Will deprecate
   void codegenSkipOverflowCheckForNull(llvm::Value* lhs_lv,
                                        llvm::Value* rhs_lv,
                                        llvm::BasicBlock* no_overflow_bb,
                                        const SQLTypeInfo& ti);
 
+  void codegenSkipOverflowCheckForNullForArrow(llvm::Value* lhs_null,
+                                               llvm::Value* rhs_null,
+                                               llvm::BasicBlock* no_overflow_bb,
+                                               const SQLTypeInfo& ti);
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenMul(const Analyzer::BinOper*,
                           llvm::Value*,
                           llvm::Value*,
@@ -450,6 +476,7 @@ class CodeGenerator {
                           const CompilationOptions&,
                           bool downscale = true);
 
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenDiv(llvm::Value*,
                           llvm::Value*,
                           const std::string& null_typename,
@@ -460,6 +487,7 @@ class CodeGenerator {
 
   llvm::Value* codegenDeciDiv(const Analyzer::BinOper*, const CompilationOptions&);
 
+  // TODO: (yma11) Will deprecate
   llvm::Value* codegenMod(llvm::Value*,
                           llvm::Value*,
                           const std::string& null_typename,
@@ -562,6 +590,10 @@ class CodeGenerator {
       const Analyzer::FunctionOper* function_oper,
       const std::vector<llvm::Value*>& orig_arg_lvs);
 
+  std::tuple<ArgNullcheckBBs, llvm::Value*> beginArgsNullcheckForArrow(
+      const Analyzer::FunctionOper* function_oper,
+      const std::vector<llvm::Value*>& orig_arg_lvs);
+
   llvm::Value* endArgsNullcheck(const ArgNullcheckBBs&,
                                 llvm::Value*,
                                 llvm::Value*,
@@ -569,6 +601,9 @@ class CodeGenerator {
 
   llvm::Value* codegenFunctionOperNullArg(const Analyzer::FunctionOper*,
                                           const std::vector<llvm::Value*>&);
+
+  llvm::Value* codegenFunctionOperNullArgForArrow(const Analyzer::FunctionOper*,
+                                                  const std::vector<llvm::Value*>&);
 
   std::pair<llvm::Value*, llvm::Value*> codegenArrayBuff(llvm::Value* chunk,
                                                          llvm::Value* row_pos,
@@ -582,6 +617,14 @@ class CodeGenerator {
                          llvm::Value* buffer_is_null,
                          std::vector<llvm::Value*>& output_args);
 
+  std::vector<llvm::Value*> codegenFunctionOperCastArgsForArrow(
+      const Analyzer::FunctionOper*,
+      const ExtensionFunction*,
+      const std::vector<llvm::Value*>&,
+      const std::vector<size_t>&,
+      const std::unordered_map<llvm::Value*, llvm::Value*>&,
+      const CompilationOptions&);
+
   std::vector<llvm::Value*> codegenFunctionOperCastArgs(
       const Analyzer::FunctionOper*,
       const ExtensionFunction*,
@@ -590,11 +633,13 @@ class CodeGenerator {
       const std::unordered_map<llvm::Value*, llvm::Value*>&,
       const CompilationOptions&);
 
+  // Need keep for Arrow
   // Return LLVM intrinsic providing fast arithmetic with overflow check
   // for the given binary operation.
   llvm::Function* getArithWithOverflowIntrinsic(const Analyzer::BinOper* bin_oper,
                                                 llvm::Type* type);
 
+  // TODO: (yma11) Will deprecate
   // Generate code for the given binary operation with overflow check.
   // Signed integer add, sub and mul operations are supported.
   // Return the IR value which holds operation result.

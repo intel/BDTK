@@ -28,12 +28,12 @@
 
 template <typename T = int64_t>
 inline T SUFFIX(get_invalid_key)() {
-  return EMPTY_KEY_64;
+  return empty_key_64;
 }
 
 template <>
 inline int32_t SUFFIX(get_invalid_key)() {
-  return EMPTY_KEY_32;
+  return empty_key_32;
 }
 
 #include <cstring>

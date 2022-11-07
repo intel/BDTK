@@ -23,7 +23,7 @@
 
 namespace facebook::velox::plugin::plantransformer {
 std::pair<bool, VeloxNodeAddrPlanSection> PlanPattern::match(
-    BranchSrcToTargetIterator branchIte) {
+    BranchSrcToTargetIterator& branchIte) const {
   std::pair<bool, VeloxNodeAddrPlanSection> result = matchFromSrc(branchIte);
   if (result.first) {
     if (!result.second.isValid()) {

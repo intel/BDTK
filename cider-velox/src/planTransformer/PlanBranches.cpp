@@ -68,8 +68,8 @@ VeloxPlanBranch PlanBranches::makePlanBranch(VeloxPlanNodePtr root) {
   return branch;
 }
 
-VeloxPlanBranch PlanBranches::getBranch(int32_t branchId) {
-  return branchMap_[branchId];
+VeloxPlanBranch PlanBranches::getBranch(int32_t branchId) const {
+  return branchMap_.at(branchId);
 }
 
 int32_t PlanBranches::getParentBranchId(int32_t branchId) {
@@ -101,18 +101,18 @@ int32_t PlanBranches::getRightSrcBranchId(int32_t branchId) {
   }
 }
 
-VeloxPlanNodeAddr PlanBranches::getPlanNodeAddr(int32_t branchId, int32_t nodeId) {
+VeloxPlanNodeAddr PlanBranches::getPlanNodeAddr(int32_t branchId, int32_t nodeId) const {
   VeloxPlanBranch branch = getBranch(branchId);
   return VeloxPlanNodeAddr{root_, branchId, nodeId, branch[nodeId]};
 }
 
-VeloxPlanNodeAddr PlanBranches::getBranchSrcNodeAddr(int32_t branchId) {
+VeloxPlanNodeAddr PlanBranches::getBranchSrcNodeAddr(int32_t branchId) const {
   VeloxPlanBranch branch = getBranch(branchId);
   int32_t nodeId = branch.size() - 1;
   return VeloxPlanNodeAddr{root_, branchId, nodeId, branch[nodeId]};
 }
 
-VeloxPlanNodeAddr PlanBranches::moveToTarget(VeloxPlanNodeAddr& nodeAddr) {
+VeloxPlanNodeAddr PlanBranches::moveToTarget(const VeloxPlanNodeAddr& nodeAddr) const {
   if (!VeloxPlanNodeAddr::invalid().equal(nodeAddr) && root_ != nodeAddr.nodePtr) {
     VeloxPlanNodeAddr curNodeAddr = nodeAddr;
     VeloxPlanNodePtr root = curNodeAddr.root;
@@ -147,7 +147,7 @@ VeloxPlanNodeAddr PlanBranches::moveToTarget(VeloxPlanNodeAddr& nodeAddr) {
 }
 
 VeloxPlanNodeAddrList PlanBranches::getAllSourcesOf(
-    VeloxNodeAddrPlanSection& planSection) {
+    const VeloxNodeAddrPlanSection& planSection) const {
   BranchSrcToTargetIterator planSectionIte =
       getPlanSectionSrcToTargetIterator(planSection);
   VeloxPlanNodeAddrList sourcesList{};
@@ -187,16 +187,17 @@ VeloxPlanNodeAddrList PlanBranches::getAllSourcesOf(
   return sourcesList;
 }
 
-BranchSrcToTargetIterator PlanBranches::getBranchSrcToTargetIterator(int32_t branchId) {
+BranchSrcToTargetIterator PlanBranches::getBranchSrcToTargetIterator(
+    int32_t branchId) const {
   return BranchSrcToTargetIterator(*this, branchId);
 }
 
 BranchSrcToTargetIterator PlanBranches::getPlanSectionSrcToTargetIterator(
-    VeloxNodeAddrPlanSection& planSection) {
+    const VeloxNodeAddrPlanSection& planSection) const {
   return BranchSrcToTargetIterator(*this, planSection);
 }
 
-BranchSrcToTargetIterator::BranchSrcToTargetIterator(PlanBranches& branches,
+BranchSrcToTargetIterator::BranchSrcToTargetIterator(const PlanBranches& branches,
                                                      int32_t branchId) {
   planBranches_ = std::make_shared<PlanBranches>(branches);
   branchId_ = branchId;
@@ -205,15 +206,15 @@ BranchSrcToTargetIterator::BranchSrcToTargetIterator(PlanBranches& branches,
 }
 
 BranchSrcToTargetIterator::BranchSrcToTargetIterator(
-    PlanBranches& branches,
-    VeloxNodeAddrPlanSection& planSection) {
+    const PlanBranches& branches,
+    const VeloxNodeAddrPlanSection& planSection) {
   planBranches_ = std::make_shared<PlanBranches>(branches);
   branchId_ = -1;
   curPlanNodeId_ = planSection.source;
   planSection_ = std::make_shared<VeloxNodeAddrPlanSection>(planSection);
 }
 
-bool BranchSrcToTargetIterator::hasNext() {
+bool BranchSrcToTargetIterator::hasNext() const {
   if (firstMove_) {
     return true;
   }
@@ -249,11 +250,11 @@ VeloxPlanNodeAddr BranchSrcToTargetIterator::next() {
   return curPlanNodeId_;
 }
 
-VeloxPlanNodeAddr BranchSrcToTargetIterator::getCurPos() {
+VeloxPlanNodeAddr BranchSrcToTargetIterator::getCurPos() const {
   return curPlanNodeId_;
 }
 
-void BranchSrcToTargetIterator::setCurPos(VeloxPlanNodeAddr& curPos) {
+void BranchSrcToTargetIterator::setCurPos(const VeloxPlanNodeAddr& curPos) {
   curPlanNodeId_ = curPos;
 }
 

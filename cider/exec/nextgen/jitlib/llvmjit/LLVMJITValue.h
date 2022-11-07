@@ -50,6 +50,8 @@ class LLVMJITValue final : public JITValue {
  public:
   JITValue& assign(JITValue& value) override;
 
+  JITValuePointer andOp(JITValue& rh) override;
+  JITValuePointer orOp(JITValue& rh) override;
   JITValuePointer notOp() override;
 
   JITValuePointer add(JITValue& rh) override;
@@ -58,10 +60,22 @@ class LLVMJITValue final : public JITValue {
   JITValuePointer div(JITValue& rh) override;
   JITValuePointer mod(JITValue& rh) override;
 
+  JITValuePointer eq(JITValue& rh) override;
+  JITValuePointer ne(JITValue& rh) override;
+  JITValuePointer lt(JITValue& rh) override;
+  JITValuePointer le(JITValue& rh) override;
+  JITValuePointer gt(JITValue& rh) override;
+  JITValuePointer ge(JITValue& rh) override;
+
  private:
   static llvm::IRBuilder<>& getFunctionBuilder(const LLVMJITFunction& function) {
     return static_cast<llvm::IRBuilder<>&>(function);
   }
+
+  JITValuePointer createCmpInstruction(llvm::CmpInst::Predicate ICmpType,
+                                       llvm::CmpInst::Predicate FCmpType,
+                                       JITValue& rh,
+                                       const char* value);
 
   static void checkOprandsType(JITTypeTag lh, JITTypeTag rh, const char* op);
 

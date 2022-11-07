@@ -33,10 +33,11 @@ class PlanPattern {
   PlanPattern() {}
   ~PlanPattern() {}
 
-  std::pair<bool, VeloxNodeAddrPlanSection> match(BranchSrcToTargetIterator branchIte);
+  std::pair<bool, VeloxNodeAddrPlanSection> match(
+      BranchSrcToTargetIterator& branchIte) const;
 
   // matchFromSrc from source to target.
   virtual std::pair<bool, VeloxNodeAddrPlanSection> matchFromSrc(
-      BranchSrcToTargetIterator branchIte) const = 0;
+      BranchSrcToTargetIterator& branchIte) const = 0;
 };
 }  // namespace facebook::velox::plugin::plantransformer

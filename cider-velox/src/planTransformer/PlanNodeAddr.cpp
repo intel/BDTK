@@ -23,11 +23,11 @@
 
 namespace facebook::velox::plugin::plantransformer {
 
-bool VeloxPlanSection::multiSectionSource() {
+bool VeloxPlanSection::multiSectionSource() const {
   return (source->sources().size() > 1);
 }
 
-bool VeloxPlanNodeAddr::equal(VeloxPlanNodeAddr addr) const {
+bool VeloxPlanNodeAddr::equal(const VeloxPlanNodeAddr& addr) const {
   return (root == addr.root && branchId == addr.branchId && nodeId == addr.nodeId);
 }
 
@@ -47,14 +47,12 @@ bool VeloxNodeAddrPlanSection::isValid() const {
   if (target.branchId > source.branchId) {
     return false;
   } else if (target.branchId == source.branchId) {
-    if (target.nodeId > source.nodeId) {
-      return false;
-    }
+    return target.nodeId <= source.nodeId;
   }
   return true;
 }
 
-bool VeloxNodeAddrPlanSection::isBefore(VeloxNodeAddrPlanSection section) const {
+bool VeloxNodeAddrPlanSection::isBefore(const VeloxNodeAddrPlanSection& section) const {
   if (target.equal(section.target)) {
     return true;
   }
