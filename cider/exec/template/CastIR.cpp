@@ -61,16 +61,21 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   const auto operand_as_const = dynamic_cast<const Analyzer::Constant*>(operand);
 
   auto operand_lv = codegen(operand, co, true);
-
-  // TODO: Refactor codegenCast.
   auto operand_ti = operand->get_type_info();
   operand_ti.set_notnull(true);
   ti.set_notnull(true);
 
   auto fixedsize_lv = dynamic_cast<FixedSizeColValues*>(operand_lv.get());
   CHECK(fixedsize_lv);
-  auto cast_lv =
-      codegenCast(fixedsize_lv->getValue(), operand_ti, ti, operand_as_const, co);
+  // TODO(kaidi): Refactor codegenCast.
+  llvm::Value* cast_lv = nullptr;
+  if (operand_ti.get_type() == kTIMESTAMP && ti.get_type() == kTIMESTAMP) {
+    cast_lv = codegenCastBetweenTimes(fixedsize_lv->getValue(), operand_ti, ti);
+  } else if (operand_ti.get_type() == kDATE || ti.get_type() == kDATE) {
+    cast_lv = codegenCastBetweenTimeAndDate(fixedsize_lv->getValue(), operand_ti, ti);
+  } else {
+    cast_lv = codegenCast(fixedsize_lv->getValue(), operand_ti, ti, operand_as_const, co);
+  }
 
   return std::make_unique<FixedSizeColValues>(cast_lv, fixedsize_lv->getNull());
 }
@@ -215,6 +220,63 @@ llvm::Value* CodeGenerator::codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                                       cgen_state_->inlineIntNull(operand_ti)})
              : cgen_state_->ir_builder_.CreateSDiv(
                    ts_lv, cgen_state_->llInt(static_cast<int64_t>(scale)));
+}
+
+llvm::Value* CodeGenerator::codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
+                                                          const SQLTypeInfo& operand_ti,
+                                                          const SQLTypeInfo& target_ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto operand_width = get_bit_width(operand_ti, true);
+  const auto target_width = get_bit_width(target_ti, true);
+  int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
+      abs(operand_ti.get_dimension() - target_ti.get_dimension()));
+  int64_t cast_scaled = dim_scaled * kSecondsInOneDay;
+  llvm::Value* target_lv = nullptr;
+  if (target_width == operand_width) {
+    target_lv = operand_lv;
+  } else if (target_width > operand_width) {
+    llvm::Value* cast_lv = cgen_state_->ir_builder_.CreateCast(
+        llvm::Instruction::CastOps::SExt,
+        operand_lv,
+        get_int_type(target_width, cgen_state_->context_));
+
+    target_lv = cgen_state_->ir_builder_.CreateMul(
+        cast_lv, llvm::ConstantInt::get(cast_lv->getType(), cast_scaled));
+  } else {
+    llvm::Value* trunc_lv = cgen_state_->emitCall(
+        "floor_div_lhs",
+        {operand_lv, llvm::ConstantInt::get(operand_lv->getType(), cast_scaled)});
+
+    target_lv = cgen_state_->ir_builder_.CreateCast(
+        llvm::Instruction::CastOps::Trunc,
+        trunc_lv,
+        get_int_type(target_width, cgen_state_->context_));
+  }
+  return target_lv;
+}
+
+llvm::Value* CodeGenerator::codegenCastBetweenTimes(llvm::Value* operand_lv,
+                                                    const SQLTypeInfo& operand_ti,
+                                                    const SQLTypeInfo& target_ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto operand_dimen = operand_ti.get_dimension();
+  const auto target_dimen = target_ti.get_dimension();
+  CHECK(operand_lv->getType()->isIntegerTy(64));
+  const auto scale =
+      DateTimeUtils::get_timestamp_precision_scale(abs(operand_dimen - target_dimen));
+
+  llvm::Value* target_lv = nullptr;
+  if (operand_dimen == target_dimen) {
+    return operand_lv;
+  } else if (operand_dimen < target_dimen) {
+    target_lv = cgen_state_->ir_builder_.CreateMul(
+        operand_lv, llvm::ConstantInt::get(operand_lv->getType(), scale));
+  } else {
+    target_lv = cgen_state_->emitCall(
+        "floor_div_lhs",
+        {operand_lv, llvm::ConstantInt::get(operand_lv->getType(), scale)});
+  }
+  return target_lv;
 }
 
 llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,

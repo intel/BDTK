@@ -537,7 +537,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }
     case substrait::Expression_Literal::LiteralTypeCase::kDate: {
-      constant_value.bigintval = s_literal_expr.date() * kSecsPerDay;
+      constant_value.intval = s_literal_expr.date();
       return std::make_shared<Analyzer::Constant>(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }

@@ -192,6 +192,15 @@ template <>
                                                 row_idx);                               \
       case SQLTypes::kVARCHAR:                                                          \
         return duckDbValueAtVarcharBatch(child->as<VarcharBatch>(), row_idx);           \
+      case SQLTypes::kDATE:                                                             \
+        return duckDbValueAtScalarBatch<int32_t>(child->as<ScalarBatch<int32_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kTIME:                                                             \
+        return duckDbValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(),     \
+                                                 row_idx);                              \
+      case SQLTypes::kTIMESTAMP:                                                        \
+        return duckDbValueAtScalarBatch<int64_t>(child->as<ScalarBatch<int64_t>>(),     \
+                                                 row_idx);                              \
       default:                                                                          \
         CIDER_THROW(CiderUnsupportedException,                                          \
                     "Unsupported type for converting to duckdb values.");               \

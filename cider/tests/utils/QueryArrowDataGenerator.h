@@ -32,6 +32,21 @@
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
 
+// test date data within [970-01-01..2970-01-01].
+static constexpr int32_t kMinDay = -1000 * 365;
+static constexpr int32_t kMaxDay = 1000 * 365;
+
+// test time data since the beginning of any day range of [0..86,399,999,999] microseconds
+static constexpr int64_t kMinTime = 0;
+static constexpr int64_t kMaxTime = 86399999999;
+
+// test timestamp data within [970-01-01 00:00:00.000000..2970-01-01 23:59:59.999999],
+// with microsecond precision.
+static constexpr int64_t kMinTimestamp =
+    kMinDay * kSecondsInOneDay * kMicrosecondsInSecond;
+static constexpr int64_t kMaxTimestamp =
+    kMaxDay * kSecondsInOneDay * kMicrosecondsInSecond;
+
 // TODO(yizhong): Enable this after QueryDataGenerator is deleted.
 // enum GeneratePatternArrow { SequenceArrow, RandomArrow };
 
@@ -78,6 +93,20 @@
     break;                                                                       \
   }
 
+#define GENERATE_AND_ADD_TIMING_COLUMN(C_TYPE, DEFAULT_MIN_VAL, DEFAULT_MAX_VAL)      \
+  {                                                                                   \
+    std::vector<C_TYPE> col_data;                                                     \
+    std::vector<bool> null_data;                                                      \
+    std::tie(col_data, null_data) =                                                   \
+        value_min > value_max                                                         \
+            ? generateAndFillVector<C_TYPE>(                                          \
+                  row_num, pattern, null_chance[i], DEFAULT_MIN_VAL, DEFAULT_MAX_VAL) \
+            : generateAndFillVector<C_TYPE>(                                          \
+                  row_num, pattern, null_chance[i], value_min, value_max);            \
+    builder = builder.addColumn<C_TYPE>(names[i], type, col_data, null_data);         \
+    break;                                                                            \
+  }
+
 #define N_MAX std::numeric_limits<T>::max()
 
 #define N_MIN std::numeric_limits<T>::min()
@@ -119,6 +148,12 @@ class QueryArrowDataGenerator {
         case ::substrait::Type::KindCase::kVarchar:
         case ::substrait::Type::KindCase::kFixedChar:
           GENERATE_AND_ADD_UTF8_COLUMN()
+        case ::substrait::Type::KindCase::kDate:
+          GENERATE_AND_ADD_TIMING_COLUMN(int32_t, kMinDay, kMaxDay)
+        case ::substrait::Type::KindCase::kTime:
+          GENERATE_AND_ADD_TIMING_COLUMN(int64_t, kMinTime, kMaxTime)
+        case ::substrait::Type::KindCase::kTimestamp:
+          GENERATE_AND_ADD_TIMING_COLUMN(int64_t, kMinTimestamp, kMaxTimestamp)
         default:
           CIDER_THROW(CiderCompileException, "Type not supported.");
       }

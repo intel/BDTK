@@ -183,6 +183,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegen(const Analyzer::Expr* e
   if (constant) {
     return codegenConstantExpr(constant, co);
   }
+
+  auto extract_expr = dynamic_cast<const Analyzer::ExtractExpr*>(expr);
+  if (extract_expr) {
+    return codegenExtract(extract_expr, co);
+  }
+
   auto dateadd_expr = dynamic_cast<const Analyzer::DateaddExpr*>(expr);
   if (dateadd_expr) {
     return codegenDateAdd(dateadd_expr, co);

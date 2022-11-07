@@ -190,13 +190,14 @@ inline const Analyzer::Expr* extract_cast_arg(const Analyzer::Expr* expr) {
   return cast_expr->get_operand();
 }
 
-inline std::string numeric_type_name(const SQLTypeInfo& ti) {
+inline std::string numeric_type_name(const SQLTypeInfo& ti,
+                                     bool is_arrow_format = false) {
   CHECK(ti.is_integer() || ti.is_decimal() || ti.is_boolean() || ti.is_time() ||
         ti.is_fp() || (ti.is_string() && ti.get_compression() == kENCODING_DICT) ||
         ti.is_timeinterval());
   if (ti.is_integer() || ti.is_decimal() || ti.is_boolean() || ti.is_time() ||
       ti.is_string() || ti.is_timeinterval()) {
-    return "int" + std::to_string(ti.get_logical_size() * 8) + "_t";
+    return "int" + std::to_string(get_bit_width(ti, is_arrow_format)) + "_t";
   }
   return ti.get_type() == kDOUBLE ? "double" : "float";
 }

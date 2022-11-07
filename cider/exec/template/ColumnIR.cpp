@@ -61,9 +61,14 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
           return std::make_shared<FixedWidthReal>(false, ir_builder, nullable);
         case kDOUBLE:
           return std::make_shared<FixedWidthReal>(true, ir_builder, nullable);
+        case kDATE:
+          if (is_arrow_format) {
+            return std::make_shared<FixedWidthInt>(4, ir_builder, nullable);
+          } else {
+            return std::make_shared<FixedWidthInt>(8, ir_builder, nullable);
+          }
         case kTIME:
         case kTIMESTAMP:
-        case kDATE:
           return std::make_shared<FixedWidthInt>(8, ir_builder, nullable);
         default:
           CHECK(false);
@@ -98,9 +103,10 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
   }
 }
 
-size_t get_col_bit_width(const Analyzer::ColumnVar* col_var) {
+size_t get_col_bit_width(const Analyzer::ColumnVar* col_var,
+                         bool is_arrow_format = false) {
   const auto& type_info = col_var->get_type_info();
-  return get_bit_width(type_info);
+  return get_bit_width(type_info, is_arrow_format);
 }
 
 int adjusted_range_table_index(const Analyzer::ColumnVar* col_var) {
@@ -208,7 +214,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
   const auto& col_ti = col_var->get_type_info();
   if (dec_type->isIntegerTy()) {
     auto dec_width = static_cast<llvm::IntegerType*>(dec_type)->getBitWidth();
-    auto col_width = get_col_bit_width(col_var);
+    auto col_width = get_col_bit_width(col_var, true);
     dec_val_cast = cgen_state_->ir_builder_.CreateCast(
         static_cast<size_t>(col_width) > dec_width ? llvm::Instruction::CastOps::SExt
                                                    : llvm::Instruction::CastOps::Trunc,
