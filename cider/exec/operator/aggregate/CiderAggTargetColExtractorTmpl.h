@@ -143,7 +143,7 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
     for (size_t i = 0; i < rowNum; ++i) {
       const int8_t* rowPtr = rowAddrs[i];
       const int64_t* id = reinterpret_cast<const int64_t*>(rowPtr + offset_);
-      CiderByteArray value = hasher_->lookupValueById(*id);
+      CiderByteArray value = stringHasher_->lookupValueById(*id);
       if (-1 == value.len) {
         CiderBitUtils::clearBitAt(nulls, i);
         ++null_count;
