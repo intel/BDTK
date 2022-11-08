@@ -91,7 +91,7 @@
         "SELECT CAST(col_a as DOUBLE)  FROM test where CAST(col_b as INTEGER) > 20 ");   \
     assertQueryArrow(                                                                    \
         "SELECT CAST(col_a as INTEGER) + CAST(col_b as INTEGER) FROM test");             \
-    GTEST_SKIP();                                                                        \
+    GTEST_SKIP(); /* FiXME(yizhong): group by with arrow format not supported*/          \
     assertQueryArrowIgnoreOrder(                                                         \
         "SELECT CAST(col_a as INTEGER), count(col_b) FROM test GROUP BY col_a", "");     \
   }
@@ -163,7 +163,8 @@ class CastTypeQueryTest : public CiderTestBase {
 };
 
 TEST_F(CastTypeQueryTest, castTypeTest) {
-  // cast_boolean_into_integer will convert into if/then expr, already not support
+  // TODO: cast_bool_into_integer will convert into if/then expr, already not support with
+  // arrow format.
   assertQuery("SELECT CAST(col_4 as TINYINT) FROM test");
   assertQuery("SELECT CAST(col_4 as INTEGER) FROM test");
   // TODO: cast numeric type to string type now not supported.

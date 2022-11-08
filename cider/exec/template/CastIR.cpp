@@ -59,8 +59,11 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   auto ti = uoper->get_type_info();
   auto operand = uoper->get_operand();
   auto operand_ti = operand->get_type_info();
-
   auto operand_nullable = codegen(operand, co, true);
+  if (ti.is_string() && operand_ti.is_string()) {
+    // don't need to do any cast. But return type will be TwoValueColValues
+    return operand_nullable;
+  }
   auto operand_fixedsize = dynamic_cast<FixedSizeColValues*>(operand_nullable.get());
   CHECK(operand_fixedsize);
   auto operand_lv = operand_fixedsize->getValue();
@@ -225,6 +228,63 @@ llvm::Value* CodeGenerator::codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                    ts_lv, cgen_state_->llInt(static_cast<int64_t>(scale)));
 }
 
+llvm::Value* CodeGenerator::codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
+                                                          const SQLTypeInfo& operand_ti,
+                                                          const SQLTypeInfo& target_ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto operand_width = get_bit_width(operand_ti, true);
+  const auto target_width = get_bit_width(target_ti, true);
+  int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
+      abs(operand_ti.get_dimension() - target_ti.get_dimension()));
+  int64_t cast_scaled = dim_scaled * kSecondsInOneDay;
+  llvm::Value* target_lv = nullptr;
+  if (target_width == operand_width) {
+    target_lv = operand_lv;
+  } else if (target_width > operand_width) {
+    llvm::Value* cast_lv = cgen_state_->ir_builder_.CreateCast(
+        llvm::Instruction::CastOps::SExt,
+        operand_lv,
+        get_int_type(target_width, cgen_state_->context_));
+
+    target_lv = cgen_state_->ir_builder_.CreateMul(
+        cast_lv, llvm::ConstantInt::get(cast_lv->getType(), cast_scaled));
+  } else {
+    llvm::Value* trunc_lv = cgen_state_->emitCall(
+        "floor_div_lhs",
+        {operand_lv, llvm::ConstantInt::get(operand_lv->getType(), cast_scaled)});
+
+    target_lv = cgen_state_->ir_builder_.CreateCast(
+        llvm::Instruction::CastOps::Trunc,
+        trunc_lv,
+        get_int_type(target_width, cgen_state_->context_));
+  }
+  return target_lv;
+}
+
+llvm::Value* CodeGenerator::codegenCastBetweenTimes(llvm::Value* operand_lv,
+                                                    const SQLTypeInfo& operand_ti,
+                                                    const SQLTypeInfo& target_ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  const auto operand_dimen = operand_ti.get_dimension();
+  const auto target_dimen = target_ti.get_dimension();
+  CHECK(operand_lv->getType()->isIntegerTy(64));
+  const auto scale =
+      DateTimeUtils::get_timestamp_precision_scale(abs(operand_dimen - target_dimen));
+
+  llvm::Value* target_lv = nullptr;
+  if (operand_dimen == target_dimen) {
+    return operand_lv;
+  } else if (operand_dimen < target_dimen) {
+    target_lv = cgen_state_->ir_builder_.CreateMul(
+        operand_lv, llvm::ConstantInt::get(operand_lv->getType(), scale));
+  } else {
+    target_lv = cgen_state_->emitCall(
+        "floor_div_lhs",
+        {operand_lv, llvm::ConstantInt::get(operand_lv->getType(), scale)});
+  }
+  return target_lv;
+}
+
 llvm::Value* CodeGenerator::codegenCastFromString(llvm::Value* operand_lv,
                                                   const SQLTypeInfo& operand_ti,
                                                   const SQLTypeInfo& ti,
@@ -319,7 +379,7 @@ llvm::Value* CodeGenerator::codegenCastBetweenIntTypes(llvm::Value* operand_lv,
 
     std::string method_name = "scale_decimal_down_nullable";
     if (operand_ti.get_notnull()) {
-      method_name = "scale_decimal_down_not_nullable";
+      method_name = "scale_decimal_down";
     }
 
     CHECK(operand_width == 64);
@@ -592,10 +652,8 @@ llvm::Value* CodeGenerator::codegenCastBetweenIntTypesForArrow(
       auto scale = (int64_t)exp_to_scale(operand_ti.get_scale() - ti.get_scale());
       const auto scale_lv =
           llvm::ConstantInt::get(get_int_type(64, cgen_state_->context_), scale);
-
       const auto operand_width =
           static_cast<llvm::IntegerType*>(operand_lv->getType())->getBitWidth();
-
       std::string method_name = "scale_decimal_down";
       CHECK(operand_width == 64);
       operand_lv = cgen_state_->emitCall(method_name, {operand_lv, scale_lv});
@@ -651,13 +709,10 @@ void CodeGenerator::codegenCastBetweenIntTypesOverflowChecksForArrow(
 
   over = cgen_state_->ir_builder_.CreateICmpSGT(operand_lv, operand_max_lv);
   under = cgen_state_->ir_builder_.CreateICmpSLE(operand_lv, operand_min_lv);
-
   const auto detected = cgen_state_->ir_builder_.CreateOr(over, under, "overflow");
   cgen_state_->ir_builder_.CreateCondBr(detected, cast_fail, cast_ok);
-
   cgen_state_->ir_builder_.SetInsertPoint(cast_fail);
   cgen_state_->ir_builder_.CreateRet(
       cgen_state_->llInt(Executor::ERR_OVERFLOW_OR_UNDERFLOW));
-
   cgen_state_->ir_builder_.SetInsertPoint(cast_ok);
 }

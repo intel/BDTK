@@ -411,19 +411,21 @@ class CiderProjectAllTestArrow : public CiderTestBase {
     //     GeneratePattern::Random))};
 
     create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, col_5 FLOAT, col_6 DOUBLE);)";
+        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, col_5 FLOAT, col_6 DOUBLE, col_7 DATE, col_8 BOOLEAN);)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         100,
-        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6"},
+        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I8),
          CREATE_SUBSTRAIT_TYPE(I16),
          CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64)},
-        {1, 2, 2, 2, 3, 3},
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Date),
+         CREATE_SUBSTRAIT_TYPE(Bool)},
+        {1, 2, 2, 2, 3, 3, 4, 2},
         GeneratePattern::Random);
   }
 };
@@ -433,14 +435,11 @@ TEST_F(CiderProjectAllTestArrow, ArrowFilterProjectAllTest) {
   assertQueryArrow("SELECT * FROM test where TRUE");
   assertQueryArrow(
       "SELECT * FROM test where (col_3 > 0 and col_4 > 0) or (col_5 < 0 and col_6 < 0) ");
-
-  // TODO(yizhong): Enable this after date and bool is supported in arrow.
-  GTEST_SKIP_("date codegen is not ready.");
-  assertQueryArrow("SELECT * FROM test where col_2 <> 0 and col_7 > '1972-02-01'");
+  assertQueryArrow("SELECT * FROM test where col_2 <> 0 and col_7 > date '1972-02-01'");
   assertQueryArrow("SELECT *, 3 >= 2 FROM test where col_8 = true");
   assertQueryArrow(
-      "SELECT * , (2*col_1) as col_8, (col_7 + interval '1' year) as col_9 FROM test "
-      "where  col_7 > '1972-02-01'");
+      "SELECT * , (col_7 + interval '1' year) as col_9 FROM test "
+      "where  col_7 > date '1972-02-01' and col_8 = true");
 }
 
 TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
