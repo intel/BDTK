@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_OP_NODE_H
-#define CIDER_EXEC_NEXTGEN_OP_NODE_H
+#ifndef NEXTGEN_OPERATORS_OPNODE_H
+#define NEXTGEN_OPERATORS_OPNODE_H
 
 #include <memory>
 #include <vector>
@@ -28,46 +28,33 @@
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen {
-
 class Translator;
+class OpNode;
+
+using OpNodePtr = std::shared_ptr<OpNode>;
 
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
 class OpNode {
  public:
-  OpNode(const std::shared_ptr<OpNode>& input) : input_(input) {}
+  OpNode(const OpNodePtr& input) : input_(input) {}
 
   virtual ~OpNode() = default;
 
   /// \brief The name of the operator node
-  virtual const char* name() const = 0;
+  const char* name() const { return name_; }
 
   /// \brief Transform the operator to a translator
   virtual std::shared_ptr<Translator> toTranslator() const = 0;
 
  protected:
-  std::shared_ptr<OpNode> input_;
+  OpNodePtr input_;
+  const char* name_;
   // schema
 };
 
-using OpNodePtr = std::shared_ptr<OpNode>;
 using OpNodePtrVector = std::vector<OpNodePtr>;
-
-class FilterNode : public OpNode {
- public:
-  FilterNode(const OpNodePtr& input,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& filter)
-      : OpNode(input), filter_(filter) {}
-
-  const char* name() const override { return "FilterNode"; }
-
-  std::shared_ptr<Translator> toTranslator() const { return nullptr; }
-
- private:
-  std::vector<std::shared_ptr<Analyzer::Expr>> filter_;
-};
-
 }  // namespace cider::exec::nextgen
 
-#endif  // CIDER_EXEC_NEXTGEN_OP_NODE_H
+#endif  // NEXTGEN_OPERATORS_OPNODE_H

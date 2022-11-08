@@ -24,10 +24,9 @@
 
 #include <memory>
 
-#include "exec/nextgen/OpNode.h"
+#include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen {
-
 class QueryContext;
 class JITTuple;
 
@@ -53,14 +52,6 @@ class Translator {
   std::shared_ptr<QueryContext> context_;
   std::shared_ptr<Translator> successor_{nullptr};
 };
-
-class FilterTranslator : public Translator {
- public:
-  using Translator::Translator;
-
-  void consume(const JITTuple& input) override;
-};
-
 }  // namespace cider::exec::nextgen
 
 #endif  // CIDER_EXEC_NEXTGEN_TRANSLATOR_H

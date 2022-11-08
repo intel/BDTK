@@ -46,6 +46,7 @@
 
 namespace Analyzer {
 class Expr;
+using ExprPtr = std::shared_ptr<Expr>;
 }
 
 template <typename Tp, typename... Args>
