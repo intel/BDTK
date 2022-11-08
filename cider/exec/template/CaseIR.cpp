@@ -178,8 +178,13 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   Executor::FetchCacheAnchor anchor(cgen_state_);
   const auto& expr_pair_list = case_expr->get_expr_pair_list();
   std::vector<llvm::Value*> then_lvs;
+  std::vector<llvm::Value*> then_null_lvs;
   std::vector<llvm::BasicBlock*> then_bbs;
+  std::vector<llvm::BasicBlock*> then_null_bbs;
   llvm::Value* null_value = nullptr;
+  llvm::Value* else_null_value = nullptr;
+  llvm::Value* then_null_value = nullptr;
+  llvm::Value* if_null_value = nullptr;
   const auto end_bb = llvm::BasicBlock::Create(
       cgen_state_->context_, "end_case", cgen_state_->current_func_);
   for (const auto& expr_pair : expr_pair_list) {
@@ -187,7 +192,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     const auto if_expr_ptr = codegen(expr_pair.first.get(), co, true);
     auto if_expr = dynamic_cast<FixedSizeColValues*>(if_expr_ptr.get());
     if (if_expr && if_expr->getNull() != nullptr) {
-      null_value = if_expr->getNull();
+      if_null_value = if_expr->getNull();
     }
     const auto when_lv = toBool(if_expr->getValue());
     const auto cmp_bb = cgen_state_->ir_builder_.GetInsertBlock();
@@ -198,6 +203,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     cgen_state_->ir_builder_.SetInsertPoint(then_bb);
     const auto then_expr_ptr = codegen(expr_pair.second.get(), co, true);
     auto then_expr = dynamic_cast<FixedSizeColValues*>(then_expr_ptr.get());
+    if (then_expr && then_expr->getNull() != nullptr) {
+      then_null_value = then_expr->getNull();
+    }
     auto then_bb_lvs = then_expr->getValue();
     if (is_real_str) {
       // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
@@ -205,6 +213,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
                   "String type case when is not currently supported.");
     } else {
       then_lvs.push_back(then_bb_lvs);
+      then_null_lvs.push_back(then_null_value);
     }
     then_bbs.push_back(cgen_state_->ir_builder_.GetInsertBlock());
     cgen_state_->ir_builder_.CreateBr(end_bb);
@@ -218,6 +227,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   CHECK(else_expr);
   const auto else_expr_ptr = codegen(else_expr, co, true);
   auto else_expr_v = dynamic_cast<FixedSizeColValues*>(else_expr_ptr.get());
+  if (else_expr_v && else_expr_v->getNull() != nullptr) {
+    else_null_value = else_expr_v->getNull();
+  }
   auto else_lv = else_expr_v->getValue();
   CHECK(else_lv);
   auto else_bb = cgen_state_->ir_builder_.GetInsertBlock();
@@ -230,5 +242,11 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     then_phi->addIncoming(then_lvs[i], then_bbs[i]);
   }
   then_phi->addIncoming(else_lv, else_bb);
-  return std::make_unique<FixedSizeColValues>(then_phi, null_value);
+  auto then_null_phi = cgen_state_->ir_builder_.CreatePHI(
+      llvm::Type::getInt1Ty(cgen_state_->context_), expr_pair_list.size() + 1);
+  for (size_t i = 0; i < then_bbs.size(); ++i) {
+    then_null_phi->addIncoming(then_null_lvs[i], then_bbs[i]);
+  }
+  then_null_phi->addIncoming(else_null_value, else_bb);
+  return std::make_unique<FixedSizeColValues>(then_phi, then_null_phi);
 }
