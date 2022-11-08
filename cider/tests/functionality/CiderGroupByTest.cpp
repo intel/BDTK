@@ -548,26 +548,6 @@ TEST_F(CiderGroupByAvgMixArrowTest, avgTest) {
   // AVG(float)
   assertQueryArrowIgnoreOrder(
       "SELECT AVG(float_all_null_c) FROM table_test GROUP BY float_all_null_c");
-  // TODO(yizhong): Failed due to unexpected output schema from substrait-java.
-  GTEST_SKIP();
-  assertQueryArrowIgnoreOrder(
-      "SELECT AVG(float_not_null_a) FROM table_test GROUP BY float_not_null_a");
-  assertQueryArrowIgnoreOrder(
-      "SELECT AVG(float_half_null_b) FROM table_test GROUP BY float_half_null_b");
-
-  // TODO(yizhong): Support GroupBy & AVG multiple columns
-  assertQueryArrowIgnoreOrder(
-      "SELECT AVG(float_not_null_a), AVG(float_half_null_b) FROM table_test GROUP BY "
-      "float_not_null_a, float_half_null_b");
-  assertQueryArrowIgnoreOrder(
-      "SELECT AVG(float_not_null_a), AVG(float_half_null_b), AVG(float_all_null_c), "
-      "AVG(double_not_null_d), AVG(double_half_null_e), AVG(double_all_null_f), "
-      "AVG(tinyint_not_null_g), AVG(tinyint_half_null_h), AVG(tinyint_all_null_i), "
-      "AVG(integer_not_null_j), AVG(integer_half_null_k), AVG(integer_all_null_l) FROM "
-      "table_test GROUP BY float_not_null_a, float_half_null_b, float_all_null_c, "
-      "double_not_null_d, double_half_null_e, double_all_null_f, tinyint_not_null_g, "
-      "tinyint_half_null_h, tinyint_all_null_i, integer_not_null_j, integer_half_null_k, "
-      "integer_all_null_l, ");
 }
 
 NO_CONDITION_GROUP_BY_TEST_UNIT_ARROW(CiderGroupByBigintArrowTest,
