@@ -26,28 +26,28 @@
 namespace facebook::velox::plugin::plantransformer::test {
 class NullptrRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const override {
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source) const override {
     return std::pair<bool, VeloxPlanNodePtr>(true, nullptr);
   };
 
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const override {
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList) const override {
     return std::pair<bool, VeloxPlanNodePtr>(true, nullptr);
   };
 };
 
 class KeepOrginalRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const override {
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source) const override {
     return std::pair<bool, VeloxPlanNodePtr>(false, nullptr);
   };
 
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const override {
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList) const override {
     return std::pair<bool, VeloxPlanNodePtr>(false, nullptr);
   };
 };
