@@ -202,9 +202,18 @@ CiderRuntimeModule::CiderRuntimeModule(
     group_by_agg_iterator_ = nullptr;
   }
 
+  std::vector<TargetInfo> target_infos = target_exprs_to_infos(
+      rel_alg_exe->target_exprs, *ciderCompilationResult_->impl_->query_mem_desc_);
+
+  size_t column_num = ciderCompilationResult_->impl_->query_mem_desc_->getSlotCount();
+
   if (ciderCompilationOption_.use_cider_data_format && !is_group_by_) {
     auto agg_col_count = init_agg_vals_.size();
     for (size_t i = 0; i < agg_col_count; i++) {
+      if (target_infos[i].agg_kind == kCOUNT) {
+        init_agg_vals_.push_back(1);
+        continue;
+      }
       init_agg_vals_.push_back(0);
     }
   }
@@ -788,8 +797,16 @@ const std::string CiderRuntimeModule::convertQueryMemDescToString() const {
 void CiderRuntimeModule::resetAggVal() {
   const size_t agg_col_count =
       ciderCompilationResult_->impl_->query_mem_desc_->getSlotCount();
+  std::vector<TargetInfo> target_infos = target_exprs_to_infos(
+      ciderCompilationResult_->impl_->rel_alg_exe_unit_->target_exprs,
+      *ciderCompilationResult_->impl_->query_mem_desc_);
+
   for (int i = 0; i < init_agg_vals_.size(); i++) {
     if (ciderCompilationOption_.use_cider_data_format && i >= agg_col_count) {
+      if (target_infos[i - agg_col_count].agg_kind == kCOUNT) {
+        init_agg_vals_[i] = 1;
+        continue;
+      }
       init_agg_vals_[i] = 0;
       continue;
     }
