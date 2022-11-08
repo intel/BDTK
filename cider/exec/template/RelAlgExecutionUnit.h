@@ -127,6 +127,7 @@ struct RelAlgExecutionUnit {
   bool use_bump_allocator{false};
   // empty if not a UNION, true if UNION ALL, false if regular UNION
   const std::optional<bool> union_all;
+  std::vector<std::shared_ptr<Analyzer::Expr>> shared_target_exprs{};
 };
 
 std::ostream& operator<<(std::ostream& os, const RelAlgExecutionUnit& ra_exe_unit);

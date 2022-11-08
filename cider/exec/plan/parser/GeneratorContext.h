@@ -90,8 +90,10 @@ struct GeneratorContext {
     }
     // change target_expr to normal pointer for RelAlgeExecutionUnit
     std::vector<Analyzer::Expr*> target_exprs;
+    std::vector<std::shared_ptr<Analyzer::Expr>> shared_target_exprs;
     for (auto target_expr : target_exprs_) {
       target_exprs.emplace_back(getExpr(target_expr, is_partial_avg_));
+      shared_target_exprs.emplace_back(target_expr);
     }
     std::list<std::shared_ptr<Analyzer::Expr>> groupby_exprs;
     for (auto groupby_expr : groupby_exprs_) {
@@ -118,7 +120,8 @@ struct GeneratorContext {
                                    {},
                                    {},
                                    false,
-                                   std::nullopt};
+                                   std::nullopt,
+                                   shared_target_exprs};
     return rel_alg_eu;
   }
 };
