@@ -296,12 +296,7 @@ std::unique_ptr<InValuesBitmap> CodeGenerator::createInValuesBitmapArrow(
   }
   const auto stringHasher =
       ti.is_string() ? executor()->getCiderStringHasherHandle() : nullptr;
-  // FIXME: (yma11) in heavydb, use bitmap only when values count > 3
-  // and switch to normal OR op if not. We make this change because of
-  // type info check will fail for case substring(col, const_1, const_2) = "value"
-  // as substring has SQLTypeInfo(kTEXT, kENCODING_DICT, 0, kNULLT) while
-  // const_1/const_2 has SQLTypeInfo(kVARCHAR, kENCODING_NONE, 0, kNULLT)
-  if (val_count > 3 || ti.is_string()) {
+  if (val_count > 3) {
     using ListIterator = decltype(value_list.begin());
     std::vector<int64_t> values;
     const auto needle_null_val = CiderStringHasher::kIdNullString;
