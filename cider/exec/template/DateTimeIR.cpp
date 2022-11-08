@@ -76,6 +76,7 @@ const char* get_extract_function_name(ExtractField field) {
 
 }  // namespace
 
+// TODO:(spevenhe) Will deprecate
 llvm::Value* CodeGenerator::codegen(const Analyzer::ExtractExpr* extract_expr,
                                     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
@@ -273,11 +274,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenExtract(
             get_extract_timestamp_precision_scale(extract_expr->get_field())));
   }
   const auto extract_fname = get_extract_function_name(extract_expr->get_field());
-
-  llvm::Value* res_lv =
-      cgen_state_->emitExternalCall(extract_fname,
-                                    get_int_type(64, cgen_state_->context_),
-                                    std::vector<llvm::Value*>{fromtime_lv});
+  std::vector<llvm::Value*> extract_lvs{fromtime_lv};
+  if (fromtime_nullable->getNull()) {
+    extract_lvs.push_back(fromtime_nullable->getNull());
+  }
+  llvm::Value* res_lv = cgen_state_->emitExternalCall(
+      extract_fname, get_int_type(64, cgen_state_->context_), extract_lvs);
 
   return std::make_unique<FixedSizeColValues>(res_lv, fromtime_nullable->getNull());
 }

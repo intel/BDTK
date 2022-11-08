@@ -93,7 +93,7 @@ class DateRandomAndNullQueryOf2009Test : public CiderTestBase {
   }
 };
 
-TEST_F(DateTypeQueryTest, FunctionTest) {
+TEST_F(DateRandomAndNullQueryTest, FunctionTest) {
   assertQueryArrow("SELECT extract(year from col_b) FROM test",
                    "functions/date/year.json");
   assertQueryArrow("SELECT extract(quarter from col_b) FROM test",
@@ -110,15 +110,15 @@ TEST_F(DateTypeQueryTest, FunctionTest) {
 TEST_F(DateTypeQueryTest, SimpleExtractDateTest) {
   assertQueryArrow("SELECT extract(year from col_b) FROM test");
   assertQueryArrow("SELECT extract(quarter from col_b) FROM test",
-                   "extract/quarter.json");
+                   "extract/quarter_not_null.json");
   assertQueryArrow("SELECT extract(month from col_b) FROM test");
   assertQueryArrow("SELECT extract(day from col_b) FROM test");
   assertQueryArrow("SELECT extract(dayofweek from col_b) FROM test",
-                   "extract/day_of_week.json");
+                   "extract/day_of_week_not_null.json");
   assertQueryArrow("SELECT extract(isodow from col_b) FROM test",
-                   "extract/iso_day_of_week.json");
+                   "extract/iso_day_of_week_not_null.json");
   assertQueryArrow("SELECT extract(doy from col_b) FROM test",
-                   "extract/day_of_year.json");
+                   "extract/day_of_year_not_null.json");
 }
 
 // extract function of week in cider is based on Gregorian calendar (eg. YYYY-MM-dd).
@@ -135,15 +135,15 @@ TEST_F(DateRandomAndNullQueryOf2009Test, SimpleExtractDateTest2) {
 TEST_F(DateRandomQueryTest, SimpleExtractDateTest2) {
   assertQueryArrow("SELECT extract(year from col_b) FROM test");
   assertQueryArrow("SELECT extract(quarter from col_b) FROM test",
-                   "extract/quarter.json");
+                   "extract/quarter_not_null.json");
   assertQueryArrow("SELECT extract(month from col_b) FROM test");
   assertQueryArrow("SELECT extract(day from col_b) FROM test");
   assertQueryArrow("SELECT extract(dayofweek from col_b) FROM test",
-                   "extract/day_of_week.json");
+                   "extract/day_of_week_not_null.json");
   assertQueryArrow("SELECT extract(isodow from col_b) FROM test",
-                   "extract/iso_day_of_week.json");
+                   "extract/iso_day_of_week_not_null.json");
   assertQueryArrow("SELECT extract(doy from col_b) FROM test",
-                   "extract/day_of_year.json");
+                   "extract/day_of_year_not_null.json");
 }
 
 TEST_F(DateRandomAndNullQueryTest, SimpleExtractDateTest3) {
