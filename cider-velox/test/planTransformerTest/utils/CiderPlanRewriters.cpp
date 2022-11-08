@@ -39,8 +39,8 @@ void TestCiderPlanNode::addDetails(std::stringstream& stream) const {}
 
 std::pair<bool, VeloxPlanNodePtr>
 CiderPatternTestNodeRewriter::rewritePlanSectionWithMultiSources(
-    facebook::velox::plugin::plantransformer::VeloxNodeAddrPlanSection& planSection,
-    facebook::velox::plugin::plantransformer::VeloxPlanNodeAddrList& srcList) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& srcList) const {
   VeloxPlanNodeVec srcPtrList;
   for (VeloxPlanNodeAddr addr : srcList) {
     srcPtrList.emplace_back(addr.nodePtr);
@@ -51,8 +51,8 @@ CiderPatternTestNodeRewriter::rewritePlanSectionWithMultiSources(
 
 std::pair<bool, VeloxPlanNodePtr>
 CiderPatternTestNodeRewriter::rewritePlanSectionWithSingleSource(
-    facebook::velox::plugin::plantransformer::VeloxNodeAddrPlanSection& planSection,
-    facebook::velox::plugin::plantransformer::VeloxPlanNodeAddr& source) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddr& source) const {
   VeloxPlanNodePtr testNodePtr =
       std::make_shared<TestCiderPlanNode>("CiderTest", source.nodePtr);
   return std::pair<bool, VeloxPlanNodePtr>(true, testNodePtr);

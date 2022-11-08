@@ -35,15 +35,7 @@ class CiderCompoundPatternTest : public PlanTransformerTestBase {
     setTransformerFactory(transformerFactory);
   }
 
-  void SetUp() {
-    vectors_ = {std::dynamic_pointer_cast<RowVector>(
-        BatchMaker::createBatch({ROW({"c0"}, {BIGINT()})}, 1, *pool_))};
-    duckDbQueryRunner_.createTable("tmp", vectors_);
-  }
-
  protected:
-  std::vector<RowVectorPtr> vectors_;
-  DuckDbQueryRunner duckDbQueryRunner_;
   std::vector<std::string> projections_ = {"c0", "c1", "c0 + 2"};
   std::string filter_ = "c0 > 2 ";
   std::vector<std::string> aggs_ = {"SUM(c1)"};

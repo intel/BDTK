@@ -47,12 +47,12 @@ class TestCiderPlanNode : public PlanNode {
 
 class CiderPatternTestNodeRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const override;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source) const override;
 
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const override;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList) const override;
 };
 
 }  // namespace facebook::velox::plugin::plantransformer::test
