@@ -84,6 +84,8 @@ class TypeUtils {
         GENERATE_SUBSTRAIT_TYPE(String, string, nullalbility)
       case ::substrait::Type::KindCase::kVarchar:
         GENERATE_SUBSTRAIT_TYPE(VarChar, varchar, nullalbility)
+      case ::substrait::Type::KindCase::kFixedChar:
+        GENERATE_SUBSTRAIT_TYPE(FixedChar, fixed_char, nullalbility)
       case ::substrait::Type::KindCase::kDecimal:
         GENERATE_SUBSTRAIT_TYPE(Decimal, decimal, nullalbility)
       default:

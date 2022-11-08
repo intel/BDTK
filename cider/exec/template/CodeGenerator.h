@@ -57,7 +57,8 @@ class CodeGenerator {
   std::vector<llvm::Value*> codegenHoistedConstants(
       const std::vector<const Analyzer::Constant*>& constants,
       const EncodingType enc_type,
-      const int dict_id);
+      const int dict_id,
+      bool is_arrow_format = false);
 
   static llvm::ConstantInt* codegenIntConst(const Analyzer::Constant* constant,
                                             CgenState* cgen_state);
@@ -235,12 +236,18 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
 
-  // To be deperacated.
+  // To be deprecated.
   std::vector<llvm::Value*> codegen(const Analyzer::CaseExpr*, const CompilationOptions&);
 
+  // to be deprecated
   llvm::Value* codegen(const Analyzer::ExtractExpr*, const CompilationOptions&);
 
+  // to be deprecated
   llvm::Value* codegen(const Analyzer::DateaddExpr*, const CompilationOptions&);
+
+  std::unique_ptr<CodegenColValues> codegenExtract(
+      const Analyzer::ExtractExpr* extract_expr,
+      const CompilationOptions& co);
 
   std::unique_ptr<CodegenColValues> codegenDateAdd(
       const Analyzer::DateaddExpr* dateadd_expr,
@@ -274,8 +281,9 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::LowerExpr*, const CompilationOptions&);
 
+  // To be deprecated.
   llvm::Value* codegen(const Analyzer::StringOper*, const CompilationOptions&);
-
+  // To be deprecated.
   llvm::Value* codegen(const Analyzer::LikeExpr*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::RegexpExpr*, const CompilationOptions&);
@@ -334,7 +342,8 @@ class CodeGenerator {
   std::vector<llvm::Value*> codegenHoistedConstantsLoads(const SQLTypeInfo& type_info,
                                                          const EncodingType enc_type,
                                                          const int dict_id,
-                                                         const int16_t lit_off);
+                                                         const int16_t lit_off,
+                                                         bool is_arrow_format = false);
 
   std::vector<llvm::Value*> codegenHoistedConstantsPlaceholders(
       const SQLTypeInfo& type_info,
@@ -402,15 +411,24 @@ class CodeGenerator {
                               llvm::Value*,
                               llvm::Value*,
                               const CompilationOptions&);
-
+  // to be deprecated
   llvm::Value* codegenCastTimestampToDate(llvm::Value* ts_lv,
                                           const int dimen,
                                           const bool nullable);
 
+  // to be deprecated
   llvm::Value* codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                                             const SQLTypeInfo& operand_dimen,
                                             const SQLTypeInfo& target_dimen,
                                             const bool nullable);
+
+  llvm::Value* codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
+                                             const SQLTypeInfo& operand_ti,
+                                             const SQLTypeInfo& target_ti);
+
+  llvm::Value* codegenCastBetweenTimes(llvm::Value* operand_lv,
+                                       const SQLTypeInfo& operand_ti,
+                                       const SQLTypeInfo& target_ti);
 
   llvm::Value* codegenCastFromString(llvm::Value* operand_lv,
                                      const SQLTypeInfo& operand_ti,
@@ -658,6 +676,11 @@ class CodeGenerator {
 
   std::unique_ptr<CodegenColValues> codegenInputColumn(const Analyzer::ColumnVar* col_var,
                                                        const bool fetch_column);
+
+  std::unique_ptr<CodegenColValues> codegenLikeExpr(const Analyzer::LikeExpr*,
+                                                    const CompilationOptions& co);
+  std::unique_ptr<CodegenColValues> codegenStringOpExpr(const Analyzer::StringOper*,
+                                                        const CompilationOptions& co);
 
  protected:
   Executor* executor() const {

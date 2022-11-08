@@ -72,9 +72,10 @@ std::unique_ptr<AggregateCodeGenerator> SimpleAggregateCodeGenerator::Make(
           kMAX == target_info.agg_kind || kSUM == target_info.agg_kind);
   }
 
-  generator->target_width_ = get_bit_width(target_info.sql_type);
-  generator->arg_width_ = target_info.is_agg ? get_bit_width(target_info.agg_arg_type)
-                                             : generator->target_width_;
+  generator->target_width_ = get_bit_width(target_info.sql_type, true);
+  generator->arg_width_ = target_info.is_agg
+                              ? get_bit_width(target_info.agg_arg_type, true)
+                              : generator->target_width_;
   CHECK(generator->arg_width_ <= generator->target_width_);
   CHECK(generator->target_width_ <= (slot_size << 3));
 
@@ -168,7 +169,7 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
   generator->target_info_ = target_info;
   generator->cgen_state_ = cgen_state;
 
-  generator->target_width_ = get_bit_width(target_info.sql_type);
+  generator->target_width_ = get_bit_width(target_info.sql_type, true);
   generator->slot_size_ = (generator->target_width_ >> 3);
   generator->arg_width_ = generator->target_width_;
 
@@ -198,6 +199,8 @@ std::unique_ptr<AggregateCodeGenerator> ProjectIDCodeGenerator::Make(
         break;
     }
   } else if (target_info.sql_type.is_date()) {
+    generator->base_fname_ += "_int32";
+  } else if (target_info.sql_type.is_time()) {
     generator->base_fname_ += "_int64";
   } else if (target_info.sql_type.is_boolean()) {
     generator->base_fname_ += "_bool";
@@ -276,7 +279,7 @@ std::unique_ptr<AggregateCodeGenerator> CountAggregateCodeGenerator::Make(
   CHECK(target_info.is_agg);
   CHECK(kCOUNT == target_info.agg_kind || kAVG == target_info.agg_kind);
 
-  generator->target_width_ = get_bit_width(target_info.sql_type);
+  generator->target_width_ = get_bit_width(target_info.sql_type, true);
   CHECK(generator->target_width_ <= (slot_size << 3));
   CHECK(target_type.is_integer() || kAVG == target_info.agg_kind);
 

@@ -181,6 +181,7 @@ int64_t getBufferNum(const ArrowSchema* schema) {
     case 'f':
     case 'g':
     case 'd':
+    case 't':
       return 2;
     case '+':
       // Complex Types
@@ -188,11 +189,6 @@ int64_t getBufferNum(const ArrowSchema* schema) {
         // Struct Type
         case 's':
           return 1;
-      }
-    case 't':
-      // strcmp will return 0 if type == "tdm"
-      if (!strcmp(type, "tdm")) {
-        return 2;
       }
     case 'u':
       return 3;
@@ -231,6 +227,20 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
       }
     case 'u':
       return kVARCHAR;
+    case 't':
+      // date32 [days]
+      if (format[1] == 'd' && format[2] == 'D') {
+        return kDATE;
+      }
+      // time64 [microseconds]
+      if (format[1] == 't' && format[2] == 'u') {
+        return kTIME;
+      }
+      // timestamp [microseconds]
+      if (format[1] == 's' && format[2] == 'u') {
+        return kTIMESTAMP;
+      }
+      break;
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported data type to CiderBatch: ") + format);
@@ -256,6 +266,7 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
     case kSTRUCT:
       return "+s";
     case kVARCHAR:
+    case kTEXT:
       return "u";
     default:
       CIDER_THROW(CiderCompileException,
@@ -310,12 +321,19 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
       return "g";
     case Type::kStruct:
       return "+s";
-    case Type::kDate:
-      return "tdm";
     case Type::kVarchar:
     case Type::kFixedChar:
     case Type::kString:
       return "u";
+    // date32 [days]
+    case Type::kDate:
+      return "tdD";
+    // time64 [microseconds]
+    case Type::kTime:
+      return "ttu";
+    // timestamp [microseconds]
+    case Type::kTimestamp:
+      return "tsu";
     default:
       CIDER_THROW(CiderRuntimeException,
                   std::string("Unsupported to convert type ") + type.GetTypeName() +
@@ -384,10 +402,19 @@ std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> all
           return StructBatch::Create(schema, allocator, array);
       }
     case 't':
-      // strcmp will return 0 if type == "tdm"
-      if (!strcmp(format, "tdm")) {
+      // date32 [days]
+      if (format[1] == 'd' && format[2] == 'D') {
+        return ScalarBatch<int32_t>::Create(schema, allocator, array);
+      }
+      // time64 [microseconds]
+      if (format[1] == 't' && format[2] == 'u') {
         return ScalarBatch<int64_t>::Create(schema, allocator, array);
       }
+      // timestamp [microseconds]
+      if (format[1] == 's' && format[2] == 'u') {
+        return ScalarBatch<int64_t>::Create(schema, allocator, array);
+      }
+      break;
     case 'u':
       return VarcharBatch::Create(schema, allocator, array);
     default:

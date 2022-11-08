@@ -29,6 +29,7 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
@@ -246,6 +247,14 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                             JITBackendTag::LLVMJIT,
                                             false);
   }
+}
+
+IfBuilderPointer LLVMJITFunction::createIfBuilder() {
+  return std::make_unique<LLVMIfBuilder>(func_, *ir_builder_);
+}
+
+LoopBuilderPointer LLVMJITFunction::createLoopBuilder() {
+  return std::make_unique<LLVMLoopBuilder>(func_, *ir_builder_);
 }
 };  // namespace cider::jitlib
 
