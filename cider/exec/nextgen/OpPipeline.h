@@ -33,16 +33,20 @@ namespace cider::exec::nextgen {
 class OpPipeline {
  public:
   OpPipeline() = default;
-  OpPipeline(const OpNodeVector& nodes) : nodes_(nodes) {}
+
+  explicit OpPipeline(const OpNodePtrVector& nodes) : nodes_(nodes) {}
+
   virtual ~OpPipeline() = default;
 
   /// \brief Register an operator node in this pipeline
   ///
   /// \input opNode The operator node to add to the pipeline
-  void registerOpNode(const OpNodePtr opNode);
+  void appendOpNode(OpNodePtr node) { nodes_.push_back(node); }
+
+  const OpNodePtrVector& getOpNodes() const { return nodes_; }
 
  private:
-  OpNodeVector nodes_;
+  OpNodePtrVector nodes_;
 };
 
 }  // namespace cider::exec::nextgen

@@ -34,8 +34,8 @@ class Parser {
  public:
   // source--> filter -->sink
   static std::unique_ptr<OpPipeline> toOpPipeline(const RelAlgExecutionUnit& eu) {
-    OpNodeVector nodes;
-    return std::make_unique<OpPipeline>(nodes);
+    auto pipeline = std::make_unique<OpPipeline>();
+    return pipeline;
   }
 };
 

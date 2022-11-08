@@ -22,11 +22,13 @@
 #ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_H
 #define CIDER_EXEC_NEXTGEN_TRANSLATOR_H
 
+#include <memory>
+
 #include "exec/nextgen/OpNode.h"
 
 namespace cider::exec::nextgen {
 
-class Context;
+class QueryContext;
 class JITTuple;
 
 /// \brief A translator will generate code for an OpNode
@@ -35,18 +37,28 @@ class JITTuple;
 /// save to the Context
 class Translator {
  public:
-  Translator() = default;
+  Translator(const OpNodePtr& node, const std::shared_ptr<QueryContext>& context)
+      : node_(node), context_(context) {}
+
   virtual ~Translator() = default;
 
-  virtual void consume(const JITTuple& input, Context* context) {}
+  virtual void consume(const JITTuple& input) = 0;
+
+  void setSuccessor(const std::shared_ptr<Translator>& successor) {
+    successor_ = successor;
+  }
 
  protected:
-  std::shared_ptr<OpNode> opNode_;
-  std::shared_ptr<Translator> successor_;
+  OpNodePtr node_;
+  std::shared_ptr<QueryContext> context_;
+  std::shared_ptr<Translator> successor_{nullptr};
 };
 
 class FilterTranslator : public Translator {
  public:
+  using Translator::Translator;
+
+  void consume(const JITTuple& input) override;
 };
 
 }  // namespace cider::exec::nextgen

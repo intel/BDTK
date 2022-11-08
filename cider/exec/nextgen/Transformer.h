@@ -29,11 +29,23 @@
 
 namespace cider::exec::nextgen {
 
-/// \brief A transformer convert an OpPipeline to a translator
+/// \brief The Transformer class is responsible for transforming the OpPipeline to a
+/// translator
 class Transformer {
  public:
-  static std::unique_ptr<Translator> toTranslator(const OpPipeline& pipeline) {
-    return std::make_unique<Translator>();
+  static std::shared_ptr<Translator> toTranslator(const OpPipeline& pipeline) {
+    std::shared_ptr<Translator> root = nullptr;
+    std::shared_ptr<Translator> last = nullptr;
+    for (const auto& node : pipeline.getOpNodes()) {
+      auto translator = node->toTranslator();
+      if (root == nullptr) {
+        root = last = translator;
+      } else {
+        last->setSuccessor(translator);
+        last = translator;
+      }
+    }
+    return root;
   }
 };
 
