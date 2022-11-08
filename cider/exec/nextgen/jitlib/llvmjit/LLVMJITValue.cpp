@@ -50,7 +50,7 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "and", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "and", false);
 }
 
 JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
@@ -66,7 +66,7 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "or", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "or", false);
 }
 
 JITValuePointer LLVMJITValue::notOp() {
@@ -81,7 +81,7 @@ JITValuePointer LLVMJITValue::notOp() {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "not", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "not", false);
 }
 
 JITValuePointer LLVMJITValue::mod(JITValue& rh) {
@@ -106,7 +106,7 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "mod", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "mod", false);
 }
 
 JITValuePointer LLVMJITValue::div(JITValue& rh) {
@@ -131,7 +131,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "div", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "div", false);
 }
 
 JITValuePointer LLVMJITValue::mul(JITValue& rh) {
@@ -156,7 +156,7 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "mul", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "mul", false);
 }
 
 JITValuePointer LLVMJITValue::sub(JITValue& rh) {
@@ -181,7 +181,7 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "sub", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "sub", false);
 }
 
 JITValuePointer LLVMJITValue::add(JITValue& rh) {
@@ -206,7 +206,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "add", JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, "add", false);
 }
 
 JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmpType,
@@ -236,7 +236,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, value, JITBackendTag::LLVMJIT, false);
+      getValueTypeTag(), parent_function_, ans, value, false);
 }
 
 JITValuePointer LLVMJITValue::eq(JITValue& rh) {

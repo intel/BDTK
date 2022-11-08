@@ -27,6 +27,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 
 #include "exec/nextgen/jitlib/base/JITControlFlow.h"
+#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValueOperations.h"
 
 #endif  // NEXTGEN_JITLIB_JITLIB_H
