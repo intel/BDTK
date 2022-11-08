@@ -82,7 +82,7 @@ class CiderStringTestArrow : public CiderTestBase {
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
-        30,
+        50,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {0, 0},
@@ -350,7 +350,6 @@ TEST_F(CiderStringTestArrow, ArrowSubstringNestTest) {
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
-
   assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
@@ -418,9 +417,9 @@ TEST_F(CiderStringNullableTestArrow, ArrowSubstringTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
 }
 
-TEST_F(CiderStringNullableTestArrow, ArrowLowerTest) {
+TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
   // SELECT LOWER(column) FROM table
-  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "string_lower.json");
+  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
 
   /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
   /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
@@ -434,8 +433,17 @@ TEST_F(CiderStringNullableTestArrow, ArrowLowerTest) {
   // assertQueryArrow("SELECT LOWER('ABCDEFG');");
 
   // SELECT LOWER(literal) FROM table
-  assertQueryArrow("SELECT LOWER('aAbBcCdDeEfFgG12345') FROM test;",
-                   "string_lower_literal.json");
+  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
+                   "stringop_lower_literal_null.json");
+
+  // SELECT UPPER(column) FROM table
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
+
+  // SELECT UPPER(literal)
+  // assertQueryArrow("SELECT UPPER('abcdefg');");
+
+  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
+                   "stringop_upper_literal_null.json");
 }
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
@@ -459,6 +467,27 @@ TEST_F(CiderStringNullableTestArrow, ArrowSubstringNestTest) {
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
 
   assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
+}
+
+TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
+  // SELECT LOWER(column) FROM table
+  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
+
+  // SELECT LOWER(literal)
+  // assertQueryArrow("SELECT LOWER('ABCDEFG');");
+
+  // SELECT LOWER(literal) FROM table
+  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
+                   "stringop_lower_literal.json");
+
+  // SELECT UPPER(column) FROM table
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
+
+  // SELECT UPPER(literal)
+  // assertQueryArrow("SELECT UPPER('abcdefg');");
+
+  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
+                   "stringop_upper_literal.json");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

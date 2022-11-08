@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "lower:fchar"
+        "name": "upper:vchar"
       }
     }
   ],
@@ -22,7 +22,8 @@
             "common": {
               "emit": {
                 "outputMapping": [
-                  2
+                  2,
+                  3
                 ]
               }
             },
@@ -65,23 +66,36 @@
             },
             "expressions": [
               {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 1
+                    }
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
                 "scalarFunction": {
                   "functionReference": 0,
                   "args": [],
                   "outputType": {
                     "varchar": {
-                      "length": 19,
+                      "length": 10,
                       "typeVariationReference": 0,
-                      "nullability": "NULLABILITY_REQUIRED"
+                      "nullability": "NULLABILITY_NULLABLE"
                     }
                   },
                   "arguments": [
                     {
                       "value": {
-                        "literal": {
-                          "fixedChar": "aAbBcCdDeEfFgG12345",
-                          "nullable": false,
-                          "typeVariationReference": 0
+                        "selection": {
+                          "directReference": {
+                            "structField": {
+                              "field": 1
+                            }
+                          },
+                          "rootReference": {}
                         }
                       }
                     }
@@ -92,7 +106,8 @@
           }
         },
         "names": [
-          "EXPR$0"
+          "COL_2",
+          "EXPR$1"
         ]
       }
     }

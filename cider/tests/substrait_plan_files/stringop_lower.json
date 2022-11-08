@@ -21,7 +21,10 @@
           "project": {
             "common": {
               "emit": {
-                "outputMapping": [2, 3]
+                "outputMapping": [
+                  2,
+                  3
+                ]
               }
             },
             "input": {
@@ -30,20 +33,23 @@
                   "direct": {}
                 },
                 "baseSchema": {
-                  "names": ["COL_1", "COL_2"],
+                  "names": [
+                    "COL_1",
+                    "COL_2"
+                  ],
                   "struct": {
                     "types": [
                       {
                         "i32": {
                           "typeVariationReference": 0,
-                          "nullability": "NULLABILITY_NULLABLE"
+                          "nullability": "NULLABILITY_REQUIRED"
                         }
                       },
                       {
                         "varchar": {
                           "length": 10,
                           "typeVariationReference": 0,
-                          "nullability": "NULLABILITY_NULLABLE"
+                          "nullability": "NULLABILITY_REQUIRED"
                         }
                       }
                     ],
@@ -52,7 +58,9 @@
                   }
                 },
                 "namedTable": {
-                  "names": ["TEST"]
+                  "names": [
+                    "TEST"
+                  ]
                 }
               }
             },
@@ -75,7 +83,7 @@
                     "varchar": {
                       "length": 10,
                       "typeVariationReference": 0,
-                      "nullability": "NULLABILITY_NULLABLE"
+                      "nullability": "NULLABILITY_REQUIRED"
                     }
                   },
                   "arguments": [
@@ -97,7 +105,10 @@
             ]
           }
         },
-        "names": ["COL_2", "EXPR$1"]
+        "names": [
+          "COL_2",
+          "EXPR$1"
+        ]
       }
     }
   ],
