@@ -221,10 +221,7 @@ class QueryArrowDataGenerator {
     std::vector<bool> null_data(row_num);
     std::vector<int32_t> offset_data;
     std::mt19937 rng(std::random_device{}());  // NOLINT
-    size_t default_strlen =
-        (max_len < min_len || max_len <= 0 || (max_len - min_len) > 10)
-            ? 10
-            : max_len - min_len;
+    size_t default_strlen = (max_len < min_len || max_len <= 0) ? 10 : max_len;
     switch (pattern) {
       case GeneratePattern::Sequence:
         offset_data.push_back(0);
