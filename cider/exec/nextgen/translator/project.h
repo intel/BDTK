@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_SINK_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_SINK_H
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_PROJECT_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_PROJECT_H
 
 #include <initializer_list>
 #include <memory>
@@ -30,30 +30,31 @@
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::translator {
-class SinkNode : public OpNode {
+class ProjectNode : public OpNode {
  public:
-  SinkNode() = default;
+  ProjectNode() = default;
   template <typename T>
-  SinkNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
-  // SinkNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
+  ProjectNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  // ProjectNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
 
   std::vector<ExprPtr> exprs_;
 };
 
-class SinkTranslator : public Translator {
+class ProjectTranslator : public Translator {
  public:
   template <typename T>
-  SinkTranslator(T&& exprs) {
-    node_ = SinkNode(std::forward<T>(exprs));
+  ProjectTranslator(T&& exprs) {
+    node_ = ProjectNode(std::forward<T>(exprs));
   }
-  // SinkTranslator(std::initializer_list<ExprPtr> exprs) { node_ = SinkNode(exprs); }
+  // ProjectTranslator(std::initializer_list<ExprPtr> exprs) { node_ = ProjectNode(exprs);
+  // }
 
   void consume(Context& context) override;
 
  private:
-  JITValuePointer codegen(Context& context);
+  void codegen(Context& context);
 
-  SinkNode node_;
+  ProjectNode node_;
 };
 
 }  // namespace cider::exec::nextgen::translator

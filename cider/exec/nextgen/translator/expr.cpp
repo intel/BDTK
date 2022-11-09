@@ -27,7 +27,9 @@
 #include "exec/nextgen/translator/expr.h"
 #include "exec/nextgen/translator/utils.h"
 #include "exec/template/Execute.h"
+#include "type/data/sqltypes.h"
 #include "util/Logger.h"
+#include "util/sqldefs.h"
 
 namespace cider::exec::nextgen::translator {
 // Cider Data Format
@@ -50,10 +52,10 @@ JITExprValue& ExprGenerator::codegen(Analyzer::Expr* expr) {
   if (col_var) {
     return codegenColumnExpr(col_var);
   }
-  // auto constant = dynamic_cast<const Analyzer::Constant*>(expr);
-  // if (constant) {
-  //   return codegenConstantExpr(constant, co);
-  // }
+  auto constant = dynamic_cast<Analyzer::Constant*>(expr);
+  if (constant) {
+    return codegenConstantExpr(constant);
+  }
   // auto dateadd_expr = dynamic_cast<const Analyzer::DateaddExpr*>(expr);
   // if (dateadd_expr) {
   //   return codegenDateAdd(dateadd_expr, co);
@@ -80,26 +82,6 @@ JITExprValue& ExprGenerator::codegen(Analyzer::Expr* expr) {
 }
 
 JITExprValue& ExprGenerator::codegenBinOper(Analyzer::BinOper* bin_oper) {
-  const auto optype = bin_oper->get_optype();
-  // if (IS_ARITHMETIC(optype)) {
-  //   return codegenArithFun(bin_oper, co);
-  // }
-  if (IS_COMPARISON(optype)) {
-    return codegenCmpFun(bin_oper);
-  }
-  // if (IS_LOGIC(optype)) {
-  //   return codegenLogicalFun(bin_oper, co);
-  // }
-
-  UNREACHABLE();
-  return fake_val_;
-}
-
-JITExprValue& ExprGenerator::codegenColumnExpr(Analyzer::ColumnVar* col_var) {
-  return *col_var->get_expr_value();
-}
-
-JITExprValue& ExprGenerator::codegenCmpFun(Analyzer::BinOper* bin_oper) {
   if (auto expr_var = bin_oper->get_expr_value()) {
     return *expr_var;
   }
@@ -114,6 +96,10 @@ JITExprValue& ExprGenerator::codegenCmpFun(Analyzer::BinOper* bin_oper) {
   const auto& lhs_ti = lhs->get_type_info();
   const auto& rhs_ti = rhs->get_type_info();
   CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+  if (lhs_ti.is_decimal() || lhs_ti.is_timeinterval()) {
+    CIDER_THROW(CiderCompileException,
+                "Decimal and TimeInterval are not supported in arithmetic codegen now.");
+  }
 
   auto& lhs_val = codegen(lhs);
   auto& rhs_val = codegen(rhs);
@@ -142,10 +128,147 @@ JITExprValue& ExprGenerator::codegenCmpFun(Analyzer::BinOper* bin_oper) {
       // return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
       UNIMPLEMENTED();
     default:
-      return codegenFixedSizeColCmpFun(
-          bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
+      const auto optype = bin_oper->get_optype();
+      if (IS_ARITHMETIC(optype)) {
+        return codegenFixedSizeColArithFun(
+            bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
+      } else if (IS_COMPARISON(optype)) {
+        // return codegenCmpFun(bin_oper);
+        return codegenFixedSizeColCmpFun(
+            bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
+      } else if (IS_LOGIC(optype)) {
+        // return codegenLogicalFun(bin_oper, co);
+        UNIMPLEMENTED();
+      }
   }
   UNREACHABLE();
+  return fake_val_;
+}
+
+JITExprValue& ExprGenerator::codegenColumnExpr(Analyzer::ColumnVar* col_var) {
+  return *col_var->get_expr_value();
+}
+
+JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
+  if (auto expr_var = constant->get_expr_value()) {
+    return *expr_var;
+  }
+
+  const auto& ti = constant->get_type_info();
+  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
+  switch (type) {
+    case kNULLT:
+      CIDER_THROW(CiderCompileException,
+                  "NULL type literals are not currently supported in this context.");
+    case kBOOLEAN:
+      // return {llvm::ConstantInt::get(get_int_type(8, cgen_state_->context_),
+      //                                constant->get_constval().boolval)};
+      break;
+    case kTINYINT:
+    case kSMALLINT:
+    case kINT:
+    case kBIGINT:
+    case kTIME:
+    case kTIMESTAMP:
+    case kDATE:
+    case kINTERVAL_DAY_TIME:
+    case kINTERVAL_YEAR_MONTH:
+      return constant->set_expr_value(
+          func_->createConstant(getJITTag(type), constant->get_constval().intval));
+    case kFLOAT:
+      // return {llvm::ConstantFP::get(llvm::Type::getFloatTy(cgen_state_->context_),
+      //                               constant->get_constval().floatval)};
+      break;
+    case kDOUBLE:
+      // return {llvm::ConstantFP::get(llvm::Type::getDoubleTy(cgen_state_->context_),
+      //                               constant->get_constval().doubleval)};
+      break;
+    case kVARCHAR:
+    case kCHAR:
+    case kTEXT: {
+      // CHECK(constant->get_constval().stringval || constant->get_is_null());
+      // if (constant->get_is_null()) {
+      //   if (enc_type == kENCODING_DICT) {
+      //     return {
+      //         cgen_state_->llInt(static_cast<int32_t>(inline_int_null_val(type_info)))};
+      //   }
+      //   return {cgen_state_->llInt(int64_t(0)),
+      //           llvm::Constant::getNullValue(
+      //               llvm::PointerType::get(get_int_type(8, cgen_state_->context_), 0)),
+      //           cgen_state_->llInt(int32_t(0))};
+      // }
+      // const auto& str_const = *constant->get_constval().stringval;
+      // if (enc_type == kENCODING_DICT) {
+      //   return {
+      //       cgen_state_->llInt(executor()
+      //                              ->getStringDictionaryProxy(
+      //                                  dict_id, executor()->getRowSetMemoryOwner(),
+      //                                  true)
+      //                              ->getIdOfString(str_const))};
+      // }
+      // return {cgen_state_->llInt(int64_t(0)),
+      //         cgen_state_->addStringConstant(str_const),
+      //         cgen_state_->llInt(static_cast<int32_t>(str_const.size()))};
+      break;
+    }
+    default:
+      UNIMPLEMENTED();
+  }
+  UNREACHABLE();
+}
+
+// JITExprValue& ExprGenerator::codegenCmpFun(Analyzer::BinOper* bin_oper) {
+//   auto lhs = const_cast<Analyzer::Expr*>(bin_oper->get_left_operand());
+//   auto rhs = const_cast<Analyzer::Expr*>(bin_oper->get_right_operand());
+
+//   if (is_unnest(lhs) || is_unnest(rhs)) {
+//     CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
+//   }
+
+//   const auto& lhs_ti = lhs->get_type_info();
+//   const auto& rhs_ti = rhs->get_type_info();
+//   CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+
+//   auto& lhs_val = codegen(lhs);
+//   auto& rhs_val = codegen(rhs);
+
+//   auto null = func_->createVariable(getJITTag(lhs), "null");
+//   TODO("MaJian", "merge null");
+
+//   switch (lhs_ti.get_type()) {
+//     case kVARCHAR:
+//     case kTEXT:
+//     case kCHAR:
+//       // return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
+//       UNIMPLEMENTED();
+//     default:
+//       return codegenFixedSizeColCmpFun(
+//           bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
+//   }
+//   UNREACHABLE();
+//   return fake_val_;
+// }
+
+JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,
+                                                         JITValue& lhs,
+                                                         JITValue& rhs,
+                                                         JITValue& null) {
+  TODO("MaJian", "gen icmp operation");
+  switch (bin_oper->get_optype()) {
+    case kMINUS:
+      return bin_oper->set_expr_value(lhs - rhs);
+    case kPLUS:
+      return bin_oper->set_expr_value(lhs + rhs);
+    case kMULTIPLY:
+      return bin_oper->set_expr_value(lhs * rhs);
+    case kDIVIDE:
+      return bin_oper->set_expr_value(lhs / rhs);
+    case kMODULO:
+      return bin_oper->set_expr_value(lhs % rhs);
+    default:
+      UNREACHABLE();
+  }
+
   return fake_val_;
 }
 

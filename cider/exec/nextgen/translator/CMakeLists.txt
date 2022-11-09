@@ -18,7 +18,7 @@
 # under the License.
 set(TRANSLATOR_SOURCE
     ${CMAKE_CURRENT_LIST_DIR}/expr.cpp ${CMAKE_CURRENT_LIST_DIR}/filter.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/sink.cpp)
+    ${CMAKE_CURRENT_LIST_DIR}/project.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/cider/exec/template)
 add_library(translator STATIC ${TRANSLATOR_SOURCE})
 target_link_libraries(translator ${llvm_libs} ${NEXTGEN_DEPS})

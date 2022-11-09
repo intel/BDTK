@@ -56,7 +56,7 @@ class FilterTranslator : public Translator {
   void consume(Context& context) override;
 
  private:
-  JITValuePointer codegen(Context& context);
+  void codegen(Context& context);
 
   FilterNode node_;
   std::unique_ptr<Translator> successor_;

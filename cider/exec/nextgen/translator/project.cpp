@@ -19,23 +19,21 @@
  * under the License.
  */
 
-#include "exec/nextgen/translator/sink.h"
+#include "exec/nextgen/translator/project.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/translator/dummy.h"
 #include "exec/nextgen/translator/expr.h"
 
 namespace cider::exec::nextgen::translator {
-void SinkTranslator::consume(Context& context) {
+void ProjectTranslator::consume(Context& context) {
   codegen(context);
 }
 
-JITValuePointer SinkTranslator::codegen(Context& context) {
+void ProjectTranslator::codegen(Context& context) {
   ExprGenerator gen(context.query_func_);
   for (const auto& expr : node_.exprs_) {
-    context.out.emplace_back(&gen.codegen(expr.get()));
+    gen.codegen(expr.get());
   }
-
-  return nullptr;
 }
 
 }  // namespace cider::exec::nextgen::translator

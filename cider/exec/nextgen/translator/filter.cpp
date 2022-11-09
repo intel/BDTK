@@ -26,10 +26,10 @@
 
 namespace cider::exec::nextgen::translator {
 void FilterTranslator::consume(Context& context) {
-  auto next_input = codegen(context);
+  codegen(context);
 }
 
-JITValuePointer FilterTranslator::codegen(Context& context) {
+void FilterTranslator::codegen(Context& context) {
   auto& func_ = context.query_func_;
   auto if_builder = func_->createIfBuilder();
   if_builder
@@ -51,8 +51,6 @@ JITValuePointer FilterTranslator::codegen(Context& context) {
         successor_->consume(context);
       })
       ->build();
-
-  return nullptr;
 }
 
 }  // namespace cider::exec::nextgen::translator

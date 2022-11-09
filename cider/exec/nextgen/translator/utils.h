@@ -32,7 +32,7 @@ namespace cider::exec::nextgen::translator {
 using namespace cider::jitlib;
 
 JITTypeTag getJITTag(const Analyzer::Expr* col_var) {
-  CHECK(!col_var);
+  CHECK(col_var);
   const auto& col_ti = col_var->get_type_info();
   switch (col_ti.get_type()) {
     case kINT:
@@ -43,8 +43,33 @@ JITTypeTag getJITTag(const Analyzer::Expr* col_var) {
   return JITTypeTag::INVALID;
 }
 
-JITTypeTag getJITTag(JITValuePointer& ptr) {
-  return JITTypeTag::INVALID;
+JITTypeTag getJITTag(const SQLTypes& st) {
+  switch (st) {
+    case kBOOLEAN:
+      return JITTypeTag::BOOL;
+    case kTINYINT:
+    case kSMALLINT:
+    case kINT:
+    case kBIGINT:
+    case kTIME:
+    case kTIMESTAMP:
+    case kDATE:
+    case kINTERVAL_DAY_TIME:
+    case kINTERVAL_YEAR_MONTH:
+      return JITTypeTag::INT32;
+    case kFLOAT:
+      return JITTypeTag::FLOAT;
+    case kDOUBLE:
+      return JITTypeTag::DOUBLE;
+    case kVARCHAR:
+    case kCHAR:
+    case kTEXT:
+      UNIMPLEMENTED();
+    case kNULLT:
+    default:
+      return JITTypeTag::INVALID;
+  }
+  UNREACHABLE();
 }
 
 }  // namespace cider::exec::nextgen::translator
