@@ -519,9 +519,14 @@ class CodeGenerator {
                            const bool is_real_str,
                            const CompilationOptions&);
 
+  // Deprecating
   llvm::Value* codegenExtractHighPrecisionTimestamps(llvm::Value*,
                                                      const SQLTypeInfo&,
                                                      const ExtractField&);
+
+  llvm::Value* codegenExtractHighPrecisionTimestampsFun(llvm::Value*,
+                                                        const SQLTypeInfo&,
+                                                        const ExtractField&);
 
   llvm::Value* codegenDateTruncHighPrecisionTimestamps(llvm::Value*,
                                                        const SQLTypeInfo&,

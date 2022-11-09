@@ -290,7 +290,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenExtract(
         fromtime_lv, SQLTypeInfo(SQLTypes::kDATE), SQLTypeInfo(SQLTypes::kTIMESTAMP));
   }
   if (extract_expr_ti.is_high_precision_timestamp()) {
-    fromtime_lv = codegenExtractHighPrecisionTimestamps(
+    fromtime_lv = codegenExtractHighPrecisionTimestampsFun(
         fromtime_lv, extract_expr_ti, extract_expr->get_field());
   }
   if (!extract_expr_ti.is_high_precision_timestamp() &&
@@ -456,7 +456,33 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateTrunc(
   return std::make_unique<FixedSizeColValues>(value, from_fixsize->getNull());
 }
 
-// TODO: update after math runtime mul and div updated
+// TODO: (spevehe) Deprecate after math runtime mul and div updated
+llvm::Value* CodeGenerator::codegenExtractHighPrecisionTimestampsFun(
+    llvm::Value* ts_lv,
+    const SQLTypeInfo& ti,
+    const ExtractField& field) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  CHECK(ti.is_high_precision_timestamp());
+  CHECK(ts_lv->getType()->isIntegerTy(64));
+  if (is_subsecond_extract_field(field)) {
+    const auto result =
+        get_extract_high_precision_adjusted_scale(field, ti.get_dimension());
+    if (result.first == kMULTIPLY) {
+      return cgen_state_->ir_builder_.CreateMul(
+          ts_lv, cgen_state_->llInt(static_cast<int64_t>(result.second)));
+    } else if (result.first == kDIVIDE) {
+      return cgen_state_->ir_builder_.CreateSDiv(
+          ts_lv, cgen_state_->llInt(static_cast<int64_t>(result.second)));
+    } else {
+      return ts_lv;
+    }
+  }
+  return cgen_state_->ir_builder_.CreateSDiv(
+      ts_lv,
+      cgen_state_->llInt(
+          static_cast<int64_t>(get_timestamp_precision_scale(ti.get_dimension()))));
+}
+
 llvm::Value* CodeGenerator::codegenExtractHighPrecisionTimestamps(
     llvm::Value* ts_lv,
     const SQLTypeInfo& ti,
