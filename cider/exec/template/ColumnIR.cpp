@@ -214,13 +214,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
   const auto& col_ti = col_var->get_type_info();
   if (dec_type->isIntegerTy()) {
     auto dec_width = static_cast<llvm::IntegerType*>(dec_type)->getBitWidth();
-    auto col_width = get_col_bit_width(col_var, true);
-    dec_val_cast = cgen_state_->ir_builder_.CreateCast(
-        static_cast<size_t>(col_width) > dec_width ? llvm::Instruction::CastOps::SExt
-                                                   : llvm::Instruction::CastOps::Trunc,
-        value,
-        get_int_type(col_width, cgen_state_->context_));
-
+    auto col_width = get_col_bit_width(col_var, co.use_cider_data_format);
+    // Create a ZExt, SExt, or Trunc for int
+    dec_val_cast = cgen_state_->castToTypeIn(value, col_width);
     // TODO: Remove this part after new null representation ready.
     if ((col_ti.get_compression() == kENCODING_FIXED ||
          (col_ti.get_compression() == kENCODING_DICT && col_ti.get_size() < 4)) &&
