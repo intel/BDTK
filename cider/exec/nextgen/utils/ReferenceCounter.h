@@ -18,15 +18,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_JITLIB_JITLIB_H
-#define NEXTGEN_JITLIB_JITLIB_H
+#ifndef NEXTGEN_REF_COUNTER_H
+#define NEXTGEN_REF_COUNTER_H
 
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
+#include <cstddef>
 
-#include "exec/nextgen/jitlib/base/JITControlFlow.h"
-#include "exec/nextgen/jitlib/base/JITValueOperations.h"
+class ReferenceCounter {
+ protected:
+  ReferenceCounter() : ref_count_(0) {}
 
-#endif  // NEXTGEN_JITLIB_JITLIB_H
+  virtual ~ReferenceCounter() = default;
+
+  size_t getRefNum() { return ref_count_; }
+
+  void addRef() { ++ref_count_; }
+
+  void decRef() { --ref_count_; }
+
+  size_t ref_count_;
+};
+
+#endif

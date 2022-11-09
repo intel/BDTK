@@ -502,35 +502,38 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
   EXPECT_EQ(func_ptr(), 100000);
 }
 
-TEST_F(JITLibTests, TupleTest) {
+TEST_F(JITLibTests, PointerCounterTest) {
   LLVMJITModule module("Test Module");
 
   JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_Tuple",
+      .function_name = "test_pointer",
       .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
       .params_type = {JITFunctionParam{.name = "a", .type = JITTypeTag::INT32}}});
 
-  JITValuePointer x_in = function1->createVariable(JITTypeTag::INT32, "x1");
-  JITValuePointer a_in = function1->getArgument(0);
-  JITValuePointer b_in = function1->createConstant(JITTypeTag::INT32, 876);
+  JITValuePointer a = function1->getArgument(0);
+  JITValuePointer b = function1->createConstant(JITTypeTag::INT32, 876);
 
-  JITTuple layer1 = function1->createJITTuple();
-  JITTuple layer2 = function1->createJITTuple();
-  JITTuple layer3 = function1->createJITTuple();
+  std::vector<JITValuePointer> test_vector1;
+  JITValuePointer* track_ptr;
+  {
+    std::vector<JITValuePointer> test_vector2;
+    {
+      JITValuePointer res = function1->createVariable(JITTypeTag::INT32, "x1");
+      JITValuePointer temp_c = function1->createConstant(JITTypeTag::INT32, 111);
 
-  layer2.append(b_in);
-  layer1.append(x_in);
-  layer1.append(a_in);
-  layer1.insert(layer2, 1);
-  layer1.append(layer3);
+      test_vector1.push_back(res);
+      test_vector2.push_back(res);
+      EXPECT_EQ(res.getRefNum(), 3);
 
-  auto& x_out = layer1.getElementAs<JITValue>(0);
-  auto& layer2_out = layer1.getElementAs<JITTuple>(1);
-  auto& a_out = layer1.getElementAs<JITValue>(2);
-  auto& b_out = layer2_out.getElementAs<JITValue>(0);
+      test_vector2.push_back(temp_c);
+      EXPECT_EQ(temp_c.getRefNum(), 2);
+    }
+    EXPECT_EQ(test_vector1[0].getRefNum(), 2);
+  }
+  EXPECT_EQ(test_vector1[0].getRefNum(), 1);
 
-  x_out = a_out + b_out;
-  function1->createReturn(x_out);
+  test_vector1[0] = a + b;
+  function1->createReturn(test_vector1[0]);
   function1->finish();
   module.finish();
 

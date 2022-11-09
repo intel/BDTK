@@ -84,11 +84,7 @@ JITValuePointer LLVMJITFunction::createVariable(JITTypeTag type_tag,
 
   ir_builder_->SetInsertPoint(current_block);
 
-  return std::make_unique<LLVMJITValue>(type_tag, *this, variable_memory, name, true);
-}
-
-JITTuple LLVMJITFunction::createJITTuple() {
-  return JITTuple(JITTypeTag::TUPLE);
+  return makeJITValuePointer<LLVMJITValue>(type_tag, *this, variable_memory, name, true);
 }
 
 void LLVMJITFunction::createReturn() {
@@ -142,7 +138,7 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
       LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: "
                  << getJITTypeName(type_tag);
   }
-  return std::make_unique<LLVMJITValue>(type_tag, *this, llvm_value, "", false);
+  return makeJITValuePointer<LLVMJITValue>(type_tag, *this, llvm_value, "", false);
 }
 
 JITValuePointer LLVMJITFunction::emitJITFunctionCall(
@@ -159,7 +155,8 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     }
 
     llvm::Value* ans = ir_builder_->CreateCall(&llvmjit_function.func_, args);
-    return std::make_unique<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
+    return makeJITValuePointer<LLVMJITValue>(
+        descriptor.ret_type, *this, ans, "ret", false);
   } else {
     LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return nullptr;
@@ -184,7 +181,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
   }
 
   llvm::Value* ans = ir_builder_->CreateCall(func, args);
-  return std::make_unique<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
+  return makeJITValuePointer<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
 }
 
 void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
@@ -239,12 +236,12 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
     case JITTypeTag::STRUCT:
       UNREACHABLE();
     default:
-      return std::make_unique<LLVMJITValue>(param_type.type,
-                                            *this,
-                                            llvm_value,
-                                            param_type.name,
-                                            false,
-                                            param_type.sub_type);
+      return makeJITValuePointer<LLVMJITValue>(param_type.type,
+                                               *this,
+                                               llvm_value,
+                                               param_type.name,
+                                               false,
+                                               param_type.sub_type);
   }
 }
 
