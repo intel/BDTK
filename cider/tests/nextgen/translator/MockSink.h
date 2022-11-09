@@ -32,7 +32,7 @@
 namespace cider::exec::nextgen::translator {
 class MockSinkTranslator : public Translator {
  public:
-  MockSinkTranslator(size_t start_pos) : start_pos_(start_pos) {}
+  explicit MockSinkTranslator(size_t start_pos) : start_pos_(start_pos) {}
 
   void consume(Context& context) override { codegen(context); };
 

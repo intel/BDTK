@@ -22,4 +22,5 @@ set(TEST_ARGS "--gtest_output=xml:../")
 
 add_executable(FilterProjectTest FilterProjectTest.cpp)
 target_link_libraries(FilterProjectTest ${DEP_LIBS})
-add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest ${TEST_ARGS})
+add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
+         ${TEST_ARGS})
