@@ -1,5 +1,5 @@
 =====================
-Cider Sharing
+Sharing
 =====================
 
 Live Demo
