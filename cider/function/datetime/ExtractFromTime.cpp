@@ -49,51 +49,30 @@ unsigned week_start_from_yoe(unsigned const yoe) {
 
 }  // namespace
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_hour(const int64_t lcltime,
-                                                             const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_hour(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerDay) / kSecsPerHour;
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_minute(const int64_t lcltime, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_minute(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerHour) / kSecsPerMin;
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_second(const int64_t lcltime, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_second(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerMin);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_millisecond(const int64_t lcltime, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extract_millisecond(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerMin * kMilliSecsPerSec);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_microsecond(const int64_t lcltime, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extract_microsecond(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerMin * kMicroSecsPerSec);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_nanosecond(const int64_t lcltime, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extract_nanosecond(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerMin * kNanoSecsPerSec);
 }
 
@@ -108,10 +87,7 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_dow(const int64_t lcltim
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_quarterday(const int64_t lcltime, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extract_quarterday(const int64_t lcltime) {
   return unsigned_mod(lcltime, kSecsPerDay) / kSecsPerQuarterDay + 1;
 }
 
@@ -180,19 +156,11 @@ int32_t extract_year_fast(const int64_t lcltime) {
   return year;
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_epoch(const int64_t timeval, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_epoch(const int64_t timeval) {
   return timeval;
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_dateepoch(const int64_t timeval, const bool is_null = false) {
-  if (is_null == true) {
-    return 0;
-  }
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_dateepoch(const int64_t timeval) {
   return timeval - unsigned_mod(timeval, kSecsPerDay);
 }
 

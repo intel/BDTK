@@ -74,6 +74,33 @@ const char* get_extract_function_name(ExtractField field) {
   return "";
 }
 
+bool is_extract_function_complex(ExtractField field) {
+  switch (field) {
+    case kEPOCH:
+    case kDATEEPOCH:
+    case kQUARTERDAY:
+    case kHOUR:
+    case kMINUTE:
+    case kSECOND:
+    case kMILLISECOND:
+    case kMICROSECOND:
+    case kNANOSECOND:
+      return false;
+    case kDOW:
+    case kISODOW:
+    case kDAY:
+    case kWEEK:
+    case kWEEK_SUNDAY:
+    case kWEEK_SATURDAY:
+    case kDOY:
+    case kMONTH:
+    case kQUARTER:
+    case kYEAR:
+      return true;
+  }
+  UNREACHABLE();
+  return false;
+}
 }  // namespace
 
 // TODO:(spevenhe) Will deprecate
@@ -275,8 +302,13 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenExtract(
   }
   const auto extract_fname = get_extract_function_name(extract_expr->get_field());
   std::vector<llvm::Value*> extract_lvs{fromtime_lv};
-  if (fromtime_nullable->getNull()) {
-    extract_lvs.push_back(fromtime_nullable->getNull());
+  if (is_extract_function_complex(extract_expr->get_field())) {
+    if (fromtime_nullable->getNull()) {
+      extract_lvs.push_back(fromtime_nullable->getNull());
+    } else {
+      extract_lvs.push_back(
+          llvm::ConstantInt::get(llvm::Type::getInt1Ty(cgen_state_->context_), 0, true));
+    }
   }
   llvm::Value* res_lv = cgen_state_->emitExternalCall(
       extract_fname, get_int_type(64, cgen_state_->context_), extract_lvs);
@@ -424,6 +456,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateTrunc(
   return std::make_unique<FixedSizeColValues>(value, from_fixsize->getNull());
 }
 
+// TODO: update after math runtime mul and div updated
 llvm::Value* CodeGenerator::codegenExtractHighPrecisionTimestamps(
     llvm::Value* ts_lv,
     const SQLTypeInfo& ti,
