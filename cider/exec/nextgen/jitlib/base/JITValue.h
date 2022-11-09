@@ -62,22 +62,35 @@ class JITValuePointer {
 
   operator JITValue&() { return *ptr_; }
 
+  JITValuePointer operator[](JITValue& index);
+
  private:
   std::unique_ptr<JITValue> ptr_;
 };
 
 class JITValue : public JITBaseValue {
  public:
-  JITValue(JITTypeTag type_tag, JITFunction& parent_function, const std::string& name)
-      : JITBaseValue(type_tag), value_name_(name), parent_function_(parent_function) {}
+  JITValue(JITTypeTag type_tag,
+           JITFunction& parent_function,
+           const std::string& name,
+           JITTypeTag sub_type_tag)
+      : JITBaseValue(type_tag)
+      , value_name_(name)
+      , parent_function_(parent_function)
+      , sub_type_tag_(sub_type_tag) {}
+
+  virtual ~JITValue() = default;
 
   const std::string& getValueName() const { return value_name_; }
 
   JITTypeTag getValueTypeTag() const { return type_tag_; }
 
+  JITTypeTag getValueSubTypeTag() const { return sub_type_tag_; }
+
   JITFunction& getParentJITFunction() { return parent_function_; }
 
   JITValue& operator=(JITValue& rh) { return assign(rh); }
+  JITValuePointer operator[](JITValue& index) { return getElemAt(index); }
 
  public:
   JITValue(const JITValue&) = delete;
@@ -86,6 +99,7 @@ class JITValue : public JITBaseValue {
 
  public:
   virtual JITValue& assign(JITValue& value) = 0;
+  virtual JITValuePointer getElemAt(JITValue& index) = 0;
 
   // // Logical Operators
   virtual JITValuePointer andOp(JITValue& rh) = 0;
@@ -108,14 +122,23 @@ class JITValue : public JITBaseValue {
   virtual JITValuePointer gt(JITValue& rh) = 0;
   virtual JITValuePointer ge(JITValue& rh) = 0;
 
+  // Pointer Operators
+  virtual JITValuePointer castPointerSubType(JITTypeTag type_tag) = 0;
+  virtual JITValuePointer dereference() = 0;
+
  private:
   std::string value_name_;
   JITFunction& parent_function_;
+  JITTypeTag sub_type_tag_;
 };
 
 inline JITValuePointer& JITValuePointer::operator=(JITValuePointer&& rh) noexcept {
   *ptr_ = *rh;
   return *this;
+}
+
+inline JITValuePointer JITValuePointer::operator[](JITValue& index) {
+  return (*ptr_)[index];
 }
 };  // namespace cider::jitlib
 
