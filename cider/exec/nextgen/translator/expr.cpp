@@ -25,7 +25,6 @@
 #include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/translator/expr.h"
-#include "exec/nextgen/translator/utils.h"
 #include "exec/template/Execute.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
@@ -46,7 +45,7 @@ JITExprValue& ExprGenerator::codegen(Analyzer::Expr* expr) {
   }
   // auto u_oper = dynamic_cast<const Analyzer::UOper*>(expr);
   // if (u_oper) {
-  //   return codegenUOper(u_oper, co);
+  //   return codegenUOper(u_oper);
   // }
   auto col_var = dynamic_cast<Analyzer::ColumnVar*>(expr);
   if (col_var) {
@@ -58,24 +57,24 @@ JITExprValue& ExprGenerator::codegen(Analyzer::Expr* expr) {
   }
   // auto dateadd_expr = dynamic_cast<const Analyzer::DateaddExpr*>(expr);
   // if (dateadd_expr) {
-  //   return codegenDateAdd(dateadd_expr, co);
+  //   return codegenDateAdd(dateadd_expr);
   // }
   // auto datediff_expr = dynamic_cast<const Analyzer::DatediffExpr*>(expr);
   // if (datediff_expr) {
-  //   return codegenDateDiff(datediff_expr, co);
+  //   return codegenDateDiff(datediff_expr);
   // }
   // auto datetrunc_expr = dynamic_cast<const Analyzer::DatetruncExpr*>(expr);
   // if (datetrunc_expr) {
-  //   return codegenDateTrunc(datetrunc_expr, co);
+  //   return codegenDateTrunc(datetrunc_expr);
   // }
   // auto case_expr = dynamic_cast<const Analyzer::CaseExpr*>(expr);
   // if (case_expr) {
-  //   return codegenCaseExpr(case_expr, co);
+  //   return codegenCaseExpr(case_expr);
   // }
 
   // auto in_values = dynamic_cast<const Analyzer::InValues*>(expr);
   // if (in_values) {
-  //   return codegenInValues(in_values, co);
+  //   return codegenInValues(in_values);
   // }
 
   CIDER_THROW(CiderCompileException, "Cider data format codegen is not avaliable.");
@@ -161,8 +160,8 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
       CIDER_THROW(CiderCompileException,
                   "NULL type literals are not currently supported in this context.");
     case kBOOLEAN:
-      // return {llvm::ConstantInt::get(get_int_type(8, cgen_state_->context_),
-      //                                constant->get_constval().boolval)};
+      return constant->set_expr_value(
+          func_->createConstant(getJITTag(type), constant->get_constval().boolval));
       break;
     case kTINYINT:
     case kSMALLINT:
@@ -176,12 +175,12 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
       return constant->set_expr_value(
           func_->createConstant(getJITTag(type), constant->get_constval().intval));
     case kFLOAT:
-      // return {llvm::ConstantFP::get(llvm::Type::getFloatTy(cgen_state_->context_),
-      //                               constant->get_constval().floatval)};
+      return constant->set_expr_value(
+          func_->createConstant(getJITTag(type), constant->get_constval().floatval));
       break;
     case kDOUBLE:
-      // return {llvm::ConstantFP::get(llvm::Type::getDoubleTy(cgen_state_->context_),
-      //                               constant->get_constval().doubleval)};
+      return constant->set_expr_value(
+          func_->createConstant(getJITTag(type), constant->get_constval().doubleval));
       break;
     case kVARCHAR:
     case kCHAR:
@@ -216,38 +215,6 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
   }
   UNREACHABLE();
 }
-
-// JITExprValue& ExprGenerator::codegenCmpFun(Analyzer::BinOper* bin_oper) {
-//   auto lhs = const_cast<Analyzer::Expr*>(bin_oper->get_left_operand());
-//   auto rhs = const_cast<Analyzer::Expr*>(bin_oper->get_right_operand());
-
-//   if (is_unnest(lhs) || is_unnest(rhs)) {
-//     CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
-//   }
-
-//   const auto& lhs_ti = lhs->get_type_info();
-//   const auto& rhs_ti = rhs->get_type_info();
-//   CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
-
-//   auto& lhs_val = codegen(lhs);
-//   auto& rhs_val = codegen(rhs);
-
-//   auto null = func_->createVariable(getJITTag(lhs), "null");
-//   TODO("MaJian", "merge null");
-
-//   switch (lhs_ti.get_type()) {
-//     case kVARCHAR:
-//     case kTEXT:
-//     case kCHAR:
-//       // return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
-//       UNIMPLEMENTED();
-//     default:
-//       return codegenFixedSizeColCmpFun(
-//           bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
-//   }
-//   UNREACHABLE();
-//   return fake_val_;
-// }
 
 JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,
                                                          JITValue& lhs,

@@ -30,17 +30,16 @@ void FilterTranslator::consume(Context& context) {
 }
 
 void FilterTranslator::codegen(Context& context) {
-  auto& func_ = context.query_func_;
-  auto if_builder = func_->createIfBuilder();
-  if_builder
+  auto func = context.query_func_;
+  func->createIfBuilder()
       ->condition([&]() {
-        ExprGenerator gen(func_);
+        ExprGenerator gen(func);
 
-        auto bool_init = func_->createVariable(JITTypeTag::BOOL, "bool_init");
-        bool_init = func_->createConstant(JITTypeTag::BOOL, true);
+        auto bool_init = func->createVariable(JITTypeTag::BOOL, "bool_init");
+        bool_init = func->createConstant(JITTypeTag::BOOL, true);
         for (const auto& expr : node_.exprs_) {
           auto& cond = gen.codegen(expr.get());
-          bool_init = *bool_init && cond.get_value();
+          bool_init = bool_init && cond.get_value();
           TODO("MaJian", "support null in condition");
         }
         TODO("MaJian", "support short circuit logic operation");

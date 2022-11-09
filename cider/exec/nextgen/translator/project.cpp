@@ -30,12 +30,12 @@ void ProjectTranslator::consume(Context& context) {
 }
 
 void ProjectTranslator::codegen(Context& context) {
-  CHECK(successor_);
   ExprGenerator gen(context.query_func_);
   for (const auto& expr : node_.exprs_) {
     context.expr_outs_.push_back(&gen.codegen(expr.get()));
-    successor_->consume(context);
   }
+  CHECK(successor_);
+  successor_->consume(context);
 }
 
 }  // namespace cider::exec::nextgen::translator

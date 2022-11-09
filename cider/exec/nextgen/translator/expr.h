@@ -38,15 +38,6 @@ class ExprGenerator {
 
   ExprGenerator(JITFunction* func) : func_(func) {}
 
-  // std::vector<JITValuePointer> codegen(const std::vector<ExprPtr> exprs, const
-  // JITTuple& input) {
-  //   JITTuple next_input = input;
-  //   for (const auto& expr : exprs) {
-  //     auto vals = codegen(expr.get(), next_input);
-  //     // merge vals into next_input
-  //   }
-  //   return next_input;
-  // }
   // Generates IR value(s) for the given analyzer expression.
   JITExprValue& codegen(Analyzer::Expr* expr);
 
@@ -54,8 +45,6 @@ class ExprGenerator {
   JITExprValue& codegenBinOper(Analyzer::BinOper*);
   JITExprValue& codegenColumnExpr(Analyzer::ColumnVar* col_var);
 
-  // JITExprValue& codegenArithFun(Analyzer::BinOper* bin_oper);
-  // JITExprValue& codegenCmpFun(Analyzer::BinOper* bin_oper);
   JITExprValue& codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,
                                             JITValue& lhs,
                                             JITValue& rhs,
@@ -66,17 +55,53 @@ class ExprGenerator {
                                           JITValue& null);
   JITExprValue& codegenConstantExpr(Analyzer::Constant*);
 
-  // JITTuple codegenCaseExpr(const Analyzer::CaseExpr*);
+  // JITExprValue& codegenCaseExpr(const Analyzer::CaseExpr*);
 
-  // JITTuple codegenCaseExpr(const Analyzer::CaseExpr*,
+  // JITExprValue& codegenCaseExpr(const Analyzer::CaseExpr*,
   //                          llvm::Type* case_llvm_type,
   //                          const bool is_real_str);
 
-  // JITTuple codegenUOper(const Analyzer::UOper*);
+  // JITExprValue& codegenUOper(const Analyzer::UOper*);
 
-  // JITTuple codegenFixedLengthColVar(const Analyzer::ColumnVar* col_var,
+  // JITExprValue& codegenFixedLengthColVar(const Analyzer::ColumnVar* col_var,
   //                                   llvm::Value* col_byte_stream,
   //                                   llvm::Value* pos_arg);
+
+  JITTypeTag getJITTag(const SQLTypes& st) {
+    switch (st) {
+      case kBOOLEAN:
+        return JITTypeTag::BOOL;
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+      case kTIME:
+      case kTIMESTAMP:
+      case kDATE:
+      case kINTERVAL_DAY_TIME:
+      case kINTERVAL_YEAR_MONTH:
+        return JITTypeTag::INT32;
+      case kFLOAT:
+        return JITTypeTag::FLOAT;
+      case kDOUBLE:
+        return JITTypeTag::DOUBLE;
+      case kVARCHAR:
+      case kCHAR:
+      case kTEXT:
+        UNIMPLEMENTED();
+      case kNULLT:
+      default:
+        return JITTypeTag::INVALID;
+    }
+    UNREACHABLE();
+  }
+
+  JITTypeTag getJITTag(const Analyzer::Expr* col_var) {
+    CHECK(col_var);
+    const auto& col_ti = col_var->get_type_info();
+    return getJITTag(col_ti.get_type());
+  }
+
  private:
   JITFunction* func_;
   // just for unreachable branch return;
