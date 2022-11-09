@@ -19,23 +19,34 @@
  * under the License.
  */
 
-#include "exec/nextgen/translator/project.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
+
+#include <initializer_list>
+#include <memory>
+
+#include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/translator/dummy.h"
-#include "exec/nextgen/translator/expr.h"
+#include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::translator {
-void ProjectTranslator::consume(Context& context) {
-  codegen(context);
-}
+class MockSinkTranslator : public Translator {
+ public:
+  MockSinkTranslator(size_t start_pos) : start_pos_(start_pos) {}
 
-void ProjectTranslator::codegen(Context& context) {
-  CHECK(successor_);
-  ExprGenerator gen(context.query_func_);
-  for (const auto& expr : node_.exprs_) {
-    context.expr_outs_.push_back(&gen.codegen(expr.get()));
-    successor_->consume(context);
+  void consume(Context& context) override { codegen(context); };
+
+ private:
+  void codegen(Context& context) {
+    auto& func_ = context.query_func_;
+    for (auto& out : context.expr_outs_) {
+      auto var = func_->getArgument(start_pos_++);
+      var = out->get_value();
+    }
   }
-}
+
+  size_t start_pos_;
+};
 
 }  // namespace cider::exec::nextgen::translator
+#endif

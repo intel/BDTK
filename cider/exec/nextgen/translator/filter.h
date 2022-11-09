@@ -52,6 +52,8 @@ class FilterTranslator : public Translator {
   //   node_ = FilterNode(exprs);
   //   successor_.swap(succ);
   // }
+  FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
+      : node_(std::move(node)), successor_(std::move(succ)) {}
 
   void consume(Context& context) override;
 

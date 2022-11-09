@@ -28,6 +28,7 @@
 #include "exec/nextgen/translator/filter.h"
 #include "exec/nextgen/translator/project.h"
 #include "tests/TestHelpers.h"
+#include "tests/nextgen/translator/MockSink.h"
 #include "type/plan/Analyzer.h"
 #include "util/sqldefs.h"
 
@@ -49,26 +50,37 @@ void executeFilterTest(NativeType input, bool output, Builder builder) {
   JITFunctionPointer func = module.createJITFunction(JITFunctionDescriptor{
       .function_name = "test_filter_op",
       .ret_type = JITFunctionParam{.type = JITTypeTag::VOID},
-      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
+      .params_type = {JITFunctionParam{.name = "in", .type = Type},
+                      JITFunctionParam{.name = "out", .type = JITTypeTag::POINTER}},
   });
 
-  builder(func.get());
+  Context context(func.get());
+  builder(context);
 
   func->finish();
   module.finish();
 
-  auto func_ptr = func->getFunctionPointer<bool, NativeType>();
-  // EXPECT_EQ(func_ptr(input), output);
+  auto func_ptr = func->getFunctionPointer<void, NativeType, int64_t*>();
+  int64_t res = input;
+  func_ptr(input, &res);
+  EXPECT_EQ(res, output);
 }
 
 TEST_F(FilterTests, BasicTest) {
-  auto builder = [](JITFunction* func) {
+  // filter -> project -> mock sink
+  //
+  // void func(var, res) {
+  //   if (var <= 5) {
+  //     res = var + 5;
+  //   }
+  //   return;
+  // }
+  auto builder = [](Context& context) {
+    auto func = context.query_func_;
+    auto sink = std::make_unique<MockSinkTranslator>(1);
+
     auto var = func->createVariable(JITTypeTag::INT32, "var");
     *var = func->getArgument(0);
-    // if (var <= 5) {
-    //   var = var + 5;
-    // }
-    // return var;
 
     // var
     auto col_var =
@@ -88,14 +100,13 @@ TEST_F(FilterTests, BasicTest) {
     // var + 5
     auto add_expr = std::make_shared<Analyzer::BinOper>(
         SQLTypes::kINT, SQLOps::kPLUS, SQLQualifier::kONE, col_var, const_var);
-    auto sink = std::make_unique<ProjectTranslator>(std::vector<ExprPtr>{add_expr});
+    auto project = std::make_unique<ProjectTranslator>(std::vector<ExprPtr>{add_expr},
+                                                       std::move(sink));
 
-    FilterTranslator trans(std::vector<ExprPtr>{cmp_expr}, std::move(sink));
+    FilterTranslator trans(std::vector<ExprPtr>{cmp_expr}, std::move(project));
 
-    Context context(func);
     trans.consume(context);
 
-    // func->createReturn(context.out[0]->get_value());
     func->createReturn();
   };
 

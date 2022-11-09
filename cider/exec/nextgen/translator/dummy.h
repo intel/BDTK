@@ -44,7 +44,7 @@ class Context {
  public:
   Context(JITFunction* func_) : query_func_(func_) {}
   JITFunction* query_func_;
-  std::vector<cider::jitlib::JITExprValue*> out;
+  std::vector<cider::jitlib::JITExprValue*> expr_outs_;
 };
 
 class OpNode {

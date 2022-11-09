@@ -43,11 +43,17 @@ class ProjectNode : public OpNode {
 class ProjectTranslator : public Translator {
  public:
   template <typename T>
-  ProjectTranslator(T&& exprs) {
+  ProjectTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
     node_ = ProjectNode(std::forward<T>(exprs));
+    successor_.swap(succ);
   }
-  // ProjectTranslator(std::initializer_list<ExprPtr> exprs) { node_ = ProjectNode(exprs);
+  // ProjectTranslator(std::initializer_list<ExprPtr> exprs,
+  //                   std::unique_ptr<Translator> succ) {
+  //   node_ = ProjectNode(exprs);
+  //   successor_.swap(succ);
   // }
+  ProjectTranslator(ProjectNode&& node, std::unique_ptr<Translator>&& succ)
+      : node_(std::move(node)), successor_(std::move(succ)) {}
 
   void consume(Context& context) override;
 
@@ -55,6 +61,7 @@ class ProjectTranslator : public Translator {
   void codegen(Context& context);
 
   ProjectNode node_;
+  std::unique_ptr<Translator> successor_;
 };
 
 }  // namespace cider::exec::nextgen::translator

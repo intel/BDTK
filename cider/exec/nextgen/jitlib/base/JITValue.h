@@ -55,7 +55,7 @@ class JITValuePointer {
   JITValuePointer& operator=(const JITValuePointer&) = delete;
 
   JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
-  JITValuePointer& operator=(JITValue&& rh) noexcept;
+  JITValuePointer& operator=(JITValue& rh) noexcept;
 
   JITValue& operator*() { return *ptr_; }
 
@@ -138,7 +138,7 @@ inline JITValuePointer& JITValuePointer::operator=(JITValuePointer&& rh) noexcep
   return *this;
 }
 
-inline JITValuePointer& JITValuePointer::operator=(JITValue&& rh) noexcept {
+inline JITValuePointer& JITValuePointer::operator=(JITValue& rh) noexcept {
   *ptr_ = rh;
   return *this;
 }

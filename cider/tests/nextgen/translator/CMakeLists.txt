@@ -20,6 +20,6 @@ set(DEP_LIBS ${EXECUTE_TEST_LIBS} jitlib translator)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
-add_executable(FilterTest FilterTest.cpp)
-target_link_libraries(FilterTest ${DEP_LIBS})
-add_test(FilterTest ${EXECUTABLE_OUTPUT_PATH}/FilterTest ${TEST_ARGS})
+add_executable(FilterProjectTest FilterProjectTest.cpp)
+target_link_libraries(FilterProjectTest ${DEP_LIBS})
+add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest ${TEST_ARGS})
