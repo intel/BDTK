@@ -47,12 +47,10 @@ class ExprGenerator {
 
   JITExprValue& codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,
                                             JITValue& lhs,
-                                            JITValue& rhs,
-                                            JITValue& null);
+                                            JITValue& rhs);
   JITExprValue& codegenFixedSizeColCmpFun(Analyzer::BinOper* bin_oper,
                                           JITValue& lhs,
-                                          JITValue& rhs,
-                                          JITValue& null);
+                                          JITValue& rhs);
   JITExprValue& codegenConstantExpr(Analyzer::Constant*);
 
   // JITExprValue& codegenCaseExpr(const Analyzer::CaseExpr*);

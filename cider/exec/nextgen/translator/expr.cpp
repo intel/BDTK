@@ -103,7 +103,7 @@ JITExprValue& ExprGenerator::codegenBinOper(Analyzer::BinOper* bin_oper) {
   auto& lhs_val = codegen(lhs);
   auto& rhs_val = codegen(rhs);
 
-  auto null = func_->createVariable(getJITTag(lhs), "null");
+  // auto null = func_->createVariable(getJITTag(lhs), "null");
   TODO("MaJian", "merge null");
   // auto lhs_nullable = dynamic_cast<NullableColValues*>(lhs_lv.get());
   // auto rhs_nullable = dynamic_cast<NullableColValues*>(rhs_lv.get());
@@ -130,11 +130,11 @@ JITExprValue& ExprGenerator::codegenBinOper(Analyzer::BinOper* bin_oper) {
       const auto optype = bin_oper->get_optype();
       if (IS_ARITHMETIC(optype)) {
         return codegenFixedSizeColArithFun(
-            bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
+            bin_oper, lhs_val.get_value(), rhs_val.get_value());
       } else if (IS_COMPARISON(optype)) {
         // return codegenCmpFun(bin_oper);
         return codegenFixedSizeColCmpFun(
-            bin_oper, lhs_val.get_value(), rhs_val.get_value(), null);
+            bin_oper, lhs_val.get_value(), rhs_val.get_value());
       } else if (IS_LOGIC(optype)) {
         // return codegenLogicalFun(bin_oper, co);
         UNIMPLEMENTED();
@@ -218,8 +218,7 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
 
 JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,
                                                          JITValue& lhs,
-                                                         JITValue& rhs,
-                                                         JITValue& null) {
+                                                         JITValue& rhs) {
   TODO("MaJian", "gen icmp operation");
   switch (bin_oper->get_optype()) {
     case kMINUS:
@@ -241,8 +240,7 @@ JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_
 
 JITExprValue& ExprGenerator::codegenFixedSizeColCmpFun(Analyzer::BinOper* bin_oper,
                                                        JITValue& lhs,
-                                                       JITValue& rhs,
-                                                       JITValue& null) {
+                                                       JITValue& rhs) {
   TODO("MaJian", "gen icmp operation");
   switch (bin_oper->get_optype()) {
     case kEQ:

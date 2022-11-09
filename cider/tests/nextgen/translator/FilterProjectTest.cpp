@@ -36,22 +36,23 @@ using namespace cider::jitlib;
 using namespace cider::exec::nextgen::translator;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
-class FilterTests : public ::testing::Test {};
+class FilterProjectTests : public ::testing::Test {};
 
 ExprPtr makeConstant(int32_t val) {
   Datum d;
   d.intval = val;
-  return std::make_shared<Analyzer::Constant>(kINT, true, d);
+  return std::make_shared<Analyzer::Constant>(kINT, false, d);
 }
 
 template <JITTypeTag Type, typename NativeType, typename Builder>
-void executeFilterTest(NativeType input, bool output, Builder builder) {
+void executeFilterTest(NativeType input, NativeType expected, Builder builder) {
   LLVMJITModule module("Test");
   JITFunctionPointer func = module.createJITFunction(JITFunctionDescriptor{
       .function_name = "test_filter_op",
       .ret_type = JITFunctionParam{.type = JITTypeTag::VOID},
       .params_type = {JITFunctionParam{.name = "in", .type = Type},
-                      JITFunctionParam{.name = "out", .type = JITTypeTag::POINTER}},
+                      JITFunctionParam{
+                          .name = "out", .type = JITTypeTag::POINTER, .sub_type = Type}},
   });
 
   Context context(func.get());
@@ -60,13 +61,13 @@ void executeFilterTest(NativeType input, bool output, Builder builder) {
   func->finish();
   module.finish();
 
-  auto func_ptr = func->getFunctionPointer<void, NativeType, int64_t*>();
-  int64_t res = input;
-  func_ptr(input, &res);
-  EXPECT_EQ(res, output);
+  auto func_ptr = func->getFunctionPointer<void, NativeType, int32_t*>();
+  int32_t output = input;
+  func_ptr(input, &output);
+  EXPECT_EQ(expected, output);
 }
 
-TEST_F(FilterTests, BasicTest) {
+TEST_F(FilterProjectTests, BasicTest) {
   // filter -> project -> mock sink
   //
   // void func(var, res) {
@@ -79,15 +80,14 @@ TEST_F(FilterTests, BasicTest) {
     auto func = context.query_func_;
     auto sink = std::make_unique<MockSinkTranslator>(1);
 
-    auto var = func->createVariable(JITTypeTag::INT32, "var");
-    *var = func->getArgument(0);
+    auto input = func->getArgument(0);
 
     // var
     auto col_var =
         std::make_shared<Analyzer::ColumnVar>(SQLTypeInfo(SQLTypes::kINT), 100, 1, 0);
     // col_var->set_expr_value(std::vector{var.get()});
     std::vector<JITValuePointer> vec;
-    vec.emplace_back(std::move(var));
+    vec.emplace_back(std::move(input));
     col_var->set_expr_value(std::move(vec));
 
     // constant
@@ -111,7 +111,7 @@ TEST_F(FilterTests, BasicTest) {
   };
 
   executeFilterTest<JITTypeTag::INT32>(1, 6, builder);
-  executeFilterTest<JITTypeTag::INT32>(5, 5, builder);
+  executeFilterTest<JITTypeTag::INT32>(6, 6, builder);
 }
 
 int main(int argc, char** argv) {

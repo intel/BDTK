@@ -41,7 +41,7 @@ class MockSinkTranslator : public Translator {
     auto& func_ = context.query_func_;
     for (auto& out : context.expr_outs_) {
       auto var = func_->getArgument(start_pos_++);
-      var = out->get_value();
+      **var = out->get_value();
     }
   }
 
