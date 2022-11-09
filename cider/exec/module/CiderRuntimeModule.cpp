@@ -205,8 +205,6 @@ CiderRuntimeModule::CiderRuntimeModule(
   std::vector<TargetInfo> target_infos = target_exprs_to_infos(
       rel_alg_exe->target_exprs, *ciderCompilationResult_->impl_->query_mem_desc_);
 
-  size_t column_num = ciderCompilationResult_->impl_->query_mem_desc_->getSlotCount();
-
   if (ciderCompilationOption_.use_cider_data_format && !is_group_by_) {
     auto agg_col_count = init_agg_vals_.size();
     for (size_t i = 0; i < agg_col_count; i++) {
