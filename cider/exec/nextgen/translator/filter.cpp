@@ -20,37 +20,39 @@
  */
 
 #include "exec/nextgen/translator/filter.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/translator/dummy.h"
 #include "exec/nextgen/translator/expr.h"
 
 namespace cider::exec::nextgen::translator {
 void FilterTranslator::consume(Context& context) {
   auto next_input = codegen(context);
-  if (successor_) {
-    successor_->consume(context);
-  }
 }
 
 JITValuePointer FilterTranslator::codegen(Context& context) {
-  ExprGenerator gen(context.query_func_);
-  for (const auto& expr : node_.exprs_) {
-    gen.codegen(expr.get());
-  }
+  auto& func_ = context.query_func_;
+  auto if_builder = func_->createIfBuilder();
+  if_builder
+      ->condition([&]() {
+        ExprGenerator gen(func_);
 
-  llvm::Value* cond = nullptr;
-  TODO("MaJian", "extract cond from tuple");
+        auto bool_init = func_->createVariable(JITTypeTag::BOOL, "bool_init");
+        bool_init = func_->createConstant(JITTypeTag::BOOL, true);
+        for (const auto& expr : node_.exprs_) {
+          auto& cond = gen.codegen(expr.get());
+          bool_init = *bool_init && cond.get_value();
+          TODO("MaJian", "support null in condition");
+        }
+        TODO("MaJian", "support short circuit logic operation");
+        return bool_init;
+      })
+      ->ifTrue([&]() {
+        CHECK(successor_);
+        successor_->consume(context);
+      })
+      ->build();
 
-  // build control flow
-  TODO("MaJian", "move to control flow");
-  //   auto* cond_true = llvm::BasicBlock::Create(
-  //       *context.llvm_context_, "filter_true", context.query_func_);
-  //   auto* cond_false = llvm::BasicBlock::Create(
-  //       *context.llvm_context_, "filter_false", context.query_func_);
-  //   context.ir_builder_.CreateCondBr(cond, cond_true, cond_false);
-
-  //   return {cond_true, cond_false};
-  return JITValuePointer(nullptr);
+  return nullptr;
 }
 
 }  // namespace cider::exec::nextgen::translator

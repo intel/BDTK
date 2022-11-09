@@ -21,6 +21,7 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <vector>
 
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/translator/filter.h"
@@ -46,13 +47,11 @@ void executeFilterTest(NativeType input, bool output, Builder builder) {
   LLVMJITModule module("Test");
   JITFunctionPointer func = module.createJITFunction(JITFunctionDescriptor{
       .function_name = "test_filter_op",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::BOOL},
+      .ret_type = JITFunctionParam{.type = Type},
       .params_type = {JITFunctionParam{.name = "x", .type = Type}},
   });
-  auto var = func->createVariable("var", JITTypeTag::INT32);
-  *var = func->getArgument(0);
 
-  builder(func.get(), var);
+  builder(func.get());
 
   func->finish();
   module.finish();
@@ -62,7 +61,9 @@ void executeFilterTest(NativeType input, bool output, Builder builder) {
 }
 
 TEST_F(FilterTests, BasicTest) {
-  executeFilterTest<JITTypeTag::INT32>(1, 6, [](JITFunction* func, JITValuePointer& var) {
+  auto builder = [](JITFunction* func) {
+    auto var = func->createVariable(JITTypeTag::INT32, "var");
+    *var = func->getArgument(0);
     // if (var <= 5) {
     //   var = var + 5;
     // }
@@ -71,25 +72,33 @@ TEST_F(FilterTests, BasicTest) {
     // var
     auto col_var =
         std::make_shared<Analyzer::ColumnVar>(SQLTypeInfo(SQLTypes::kINT), 100, 1, 0);
-    col_var->set_value_and_null(var.get());
+    // col_var->set_expr_value(std::vector{var.get()});
+    std::vector<JITValuePointer> vec;
+    vec.emplace_back(std::move(var));
+    col_var->set_expr_value(std::move(vec));
 
     // constant
     auto const_var = makeConstant(5);
+
+    // var <= 5
+    auto cmp_expr = std::make_shared<Analyzer::BinOper>(
+        SQLTypes::kBOOLEAN, SQLOps::kLE, SQLQualifier::kONE, col_var, const_var);
 
     // var + 5
     auto add_expr = std::make_shared<Analyzer::BinOper>(
         SQLTypes::kINT, SQLOps::kPLUS, SQLQualifier::kONE, col_var, const_var);
     auto sink = std::make_unique<SinkTranslator>(std::vector<ExprPtr>{add_expr});
 
-    // var <= 5
-    auto cmp_expr = std::make_shared<Analyzer::BinOper>(
-        SQLTypes::kBOOLEAN, SQLOps::kLE, SQLQualifier::kONE, col_var, const_var);
-
     FilterTranslator trans(std::vector<ExprPtr>{cmp_expr}, std::move(sink));
 
     Context context(func);
     trans.consume(context);
-  });
+
+    func->createReturn(context.out[0]->get_value());
+  };
+
+  executeFilterTest<JITTypeTag::INT32>(1, 6, builder);
+  executeFilterTest<JITTypeTag::INT32>(5, 5, builder);
 }
 
 int main(int argc, char** argv) {

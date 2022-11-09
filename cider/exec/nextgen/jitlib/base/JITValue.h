@@ -55,6 +55,7 @@ class JITValuePointer {
   JITValuePointer& operator=(const JITValuePointer&) = delete;
 
   JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
+  JITValuePointer& operator=(JITValue&& rh) noexcept;
 
   JITValue& operator*() { return *ptr_; }
 
@@ -137,9 +138,15 @@ inline JITValuePointer& JITValuePointer::operator=(JITValuePointer&& rh) noexcep
   return *this;
 }
 
+inline JITValuePointer& JITValuePointer::operator=(JITValue&& rh) noexcept {
+  *ptr_ = rh;
+  return *this;
+}
+
 inline JITValuePointer JITValuePointer::operator[](JITValue& index) {
   return (*ptr_)[index];
 }
+
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUE_H

@@ -26,28 +26,16 @@
 
 namespace cider::exec::nextgen::translator {
 void SinkTranslator::consume(Context& context) {
-  auto next_input = codegen(context);
+  codegen(context);
 }
 
 JITValuePointer SinkTranslator::codegen(Context& context) {
   ExprGenerator gen(context.query_func_);
   for (const auto& expr : node_.exprs_) {
-    gen.codegen(expr.get());
+    context.out.emplace_back(&gen.codegen(expr.get()));
   }
 
-  llvm::Value* cond = nullptr;
-  TODO("MaJian", "extract cond from tuple");
-
-  // build control flow
-  TODO("MaJian", "move to control flow");
-  //   auto* cond_true = llvm::BasicBlock::Create(
-  //       *context.llvm_context_, "filter_true", context.query_func_);
-  //   auto* cond_false = llvm::BasicBlock::Create(
-  //       *context.llvm_context_, "filter_false", context.query_func_);
-  //   context.ir_builder_.CreateCondBr(cond, cond_true, cond_false);
-
-  //   return {cond_true, cond_false};
-  return JITValuePointer(nullptr);
+  return nullptr;
 }
 
 }  // namespace cider::exec::nextgen::translator

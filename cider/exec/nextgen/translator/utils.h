@@ -31,7 +31,7 @@
 namespace cider::exec::nextgen::translator {
 using namespace cider::jitlib;
 
-JITTypeTag getJITTag(const Analyzer::ColumnVar* col_var) {
+JITTypeTag getJITTag(const Analyzer::Expr* col_var) {
   CHECK(!col_var);
   const auto& col_ti = col_var->get_type_info();
   switch (col_ti.get_type()) {

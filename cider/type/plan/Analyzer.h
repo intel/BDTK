@@ -28,6 +28,7 @@
 #define ANALYZER_H
 
 #include "cider/CiderException.h"
+#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "type/schema/ColumnInfo.h"
@@ -209,9 +210,23 @@ class Expr : public std::enable_shared_from_this<Expr> {
    */
   virtual void get_domain(DomainSet& domain_set) const { domain_set.clear(); }
 
+  template <typename T>
+  cider::jitlib::JITExprValue& set_expr_value(T&& ptrs, bool is_variadic = false) {
+    expr_var_ =
+        std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs), is_variadic);
+    return *expr_var_;
+  }
+  cider::jitlib::JITExprValue& set_expr_value(cider::jitlib::JITValuePointer&& val) {
+    expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::move(val));
+    return *expr_var_;
+  }
+  cider::jitlib::JITExprValue* get_expr_value() const { return expr_var_.get(); }
+
  protected:
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
   bool contains_agg;
+
+  std::unique_ptr<cider::jitlib::JITExprValue> expr_var_;
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;
@@ -289,20 +304,9 @@ class ColumnVar : public Expr {
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
 
-  void set_value_and_null(cider::jitlib::JITValue* value,
-                          cider::jitlib::JITValue* null = nullptr) {
-    value_ = value;
-    null_ = null;
-  }
-  cider::jitlib::JITValue& get_value() const { return *value_; }
-  cider::jitlib::JITValue& get_null() const { return *null_; }
-
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins
   ColumnInfoPtr col_info_;
-
-  cider::jitlib::JITValue* value_;
-  cider::jitlib::JITValue* null_;
 };
 
 /*

@@ -34,6 +34,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
+#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::translator {
@@ -43,6 +44,7 @@ class Context {
  public:
   Context(JITFunction* func_) : query_func_(func_) {}
   JITFunction* query_func_;
+  std::vector<cider::jitlib::JITExprValue*> out;
 };
 
 class OpNode {

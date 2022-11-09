@@ -284,7 +284,7 @@ CIDER_CHECKOP_FUNCTION(GE, >=)
 
 #define UNREACHABLE() LOG(FATAL) << "UNREACHABLE "
 #define UNIMPLEMENTED() LOG(FATAL) << "UNIMPLEMENTED! "
-#define TODO(author, msg) LOG(FATAL) << "TODO(" #author "):" #msg  // TODO(author): msg
+#define TODO(author, msg) LOG(ERROR) << "TODO(" #author "):" #msg  // TODO(author): msg
 #else                                                              // NO_BOOST
 
 // Provided for backward compatibility to allow code to compile.

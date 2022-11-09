@@ -24,6 +24,7 @@
 
 #include <llvm/IR/Value.h>
 
+#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/translator/dummy.h"
 #include "type/plan/Analyzer.h"
@@ -47,17 +48,17 @@ class ExprGenerator {
   //   return next_input;
   // }
   // Generates IR value(s) for the given analyzer expression.
-  JITValuePointer codegen(const Analyzer::Expr* expr);
+  JITExprValue& codegen(Analyzer::Expr* expr);
 
  protected:
-  JITValuePointer codegenBinOper(const Analyzer::BinOper*);
-  JITValuePointer codegenColumnExpr(const Analyzer::ColumnVar* col_var);
+  JITExprValue& codegenBinOper(Analyzer::BinOper*);
+  JITExprValue& codegenColumnExpr(Analyzer::ColumnVar* col_var);
 
-  JITValuePointer codegenCmpFun(const Analyzer::BinOper* bin_oper);
-  JITValuePointer codegenFixedSizeColCmpFun(const Analyzer::BinOper* bin_oper,
-                                            JITValue& lhs,
-                                            JITValue& rhs,
-                                            JITValue& null);
+  JITExprValue& codegenCmpFun(Analyzer::BinOper* bin_oper);
+  JITExprValue& codegenFixedSizeColCmpFun(Analyzer::BinOper* bin_oper,
+                                          JITValue& lhs,
+                                          JITValue& rhs,
+                                          JITValue& null);
   // JITTuple codegenConstantExpr(const Analyzer::Constant*);
 
   // JITTuple codegenCaseExpr(const Analyzer::CaseExpr*);
@@ -73,6 +74,8 @@ class ExprGenerator {
   //                                   llvm::Value* pos_arg);
  private:
   JITFunction* func_;
+  // just for unreachable branch return;
+  JITExprValue fake_val_;
 };
 
 }  // namespace cider::exec::nextgen::translator
