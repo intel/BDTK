@@ -26,7 +26,6 @@
 #include "util/Logger.h"
 
 namespace cider::jitlib {
-enum class JITBackendTag { LLVMJIT };
 enum class JITTypeTag {
   INVALID,
   VOID,

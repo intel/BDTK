@@ -16,5 +16,22 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-add_subdirectory(jitlib)
-add_subdirectory(compiler)
+
+add_library(
+  velox_plan_transformer_test_utils
+  FilterProjectSwapTransformer.cpp
+  PlanTansformerTestUtil.cpp
+  PlanTransformerTestBase.cpp
+  InvalidPlanPatterns.h
+  TestPlanRewriters.h
+  VeloxTypes.h
+  CiderPlanRewriters.cpp)
+
+target_link_libraries(
+  velox_plan_transformer_test_utils
+  velox_plan_transformer
+  velox_type
+  velox_exec
+  gtest
+  velox_plugin
+  velox_core)

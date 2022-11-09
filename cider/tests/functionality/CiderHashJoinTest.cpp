@@ -311,7 +311,7 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
     table_name_ = "table_probe";
     create_ddl_ =
         "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, "
-        "l_double DOUBLE, l_float FLOAT);";
+        "l_double DOUBLE, l_float FLOAT, l_varchar VARCHAR(10));";
 
     ArrowSchema* actual_schema = nullptr;
     ArrowArray* actual_array = nullptr;
@@ -320,12 +320,13 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
         actual_schema,
         actual_array,
         100,
-        {"l_bigint", "l_int", "l_double", "l_float"},
+        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
         GeneratePattern::Sequence);
     input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
         actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
@@ -333,20 +334,21 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
     build_table_name_ = "table_hash";
     build_table_ddl_ =
         "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, "
-        "r_double DOUBLE, r_float FLOAT);";
+        "r_double DOUBLE, r_float FLOAT, r_varchar VARCHAR(10));";
 
     ArrowSchema* build_schema = nullptr;
     ArrowArray* build_array = nullptr;
     QueryArrowDataGenerator::generateBatchByTypes(
         build_schema,
         build_array,
-        90,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        80,
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2});
     build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
         build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
   }
@@ -357,13 +359,14 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
     QueryArrowDataGenerator::generateBatchByTypes(
         build_schema,
         build_array,
-        90,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        80,
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2});
 
     build_table_.reset(new CiderBatch(
         build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
@@ -378,7 +381,7 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
     table_name_ = "table_probe";
     create_ddl_ =
         "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, l_double DOUBLE, "
-        "l_float FLOAT);";
+        "l_float FLOAT, l_varchar VARCHAR(10));";
 
     ArrowSchema* actual_schema = nullptr;
     ArrowArray* actual_array = nullptr;
@@ -387,12 +390,13 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         actual_schema,
         actual_array,
         100,
-        {"l_bigint", "l_int", "l_double", "l_float"},
+        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
         GeneratePattern::Random,
         -50,
         50);
@@ -402,7 +406,7 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
     build_table_name_ = "table_hash";
     build_table_ddl_ =
         "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, r_double DOUBLE, "
-        "r_float FLOAT);";
+        "r_float FLOAT, r_varchar VARCHAR(10));";
 
     ArrowSchema* build_schema = nullptr;
     ArrowArray* build_array = nullptr;
@@ -410,12 +414,13 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         build_schema,
         build_array,
         100,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {3, 3, 3, 3},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3},
         GeneratePattern::Random,
         -30,
         30);
@@ -430,12 +435,13 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         build_schema,
         build_array,
         100,
-        {"r_bigint", "r_int", "r_double", "r_float"},
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {3, 3, 3, 3},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3},
         GeneratePattern::Random,
         -30,
         30);
@@ -446,6 +452,50 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         build_table_name_, build_table_ddl_, {build_table_});
   }
 };
+
+#define LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(                                             \
+    TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
+    /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE l_" #COLUMN_A " >  10 "); \
+    /*FILTER ON BUILD TABLE'S COLUMN WHICH IS ASLO IN JOIN CONDITION*/                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE r_" #COLUMN_A " >  10 "); \
+  }
+
+// TODO: (spevenhe) For not null query, the final project will go to
+// cider_agg_id_proj_xx() instead of cider_agg_id_proj_xx_nullable(),
+// So the returned null values are incorrect.
+// LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNoNullJoinTest,
+// ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
+// LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNoNullJoinTest,
+// ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
+
+LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableTest, *, int, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
+
+TEST_F(CiderOneToOneRandomJoinTest, PostJoinFilterTest) {
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a < 10;",
+      "post_join_filter1.json");
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a < 10;",
+      "post_join_filter1.json");
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a + r_a < 10;",
+      "post_join_filter2.json");
+  assertJoinQueryRowEqualAndReset(
+      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a + r_a < 10;",
+      "post_join_filter2.json");
+}
 
 // TODO: (spevenhe) to be deprecated, now some features like left join and is null is not
 // supported yet
@@ -693,29 +743,14 @@ TEST_F(CiderInnerJoinUsingTest, usingSyntaxTest) {
   assertJoinQuery("SELECT * from table_probe JOIN table_hash USING (col_a)");
 }
 
-TEST_F(CiderOneToOneRandomJoinTest, PostJoinFilterTest) {
-  assertJoinQueryRowEqualAndReset(
-      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a < 10;",
-      "post_join_filter1.json");
-  assertJoinQueryRowEqualAndReset(
-      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a < 10;",
-      "post_join_filter1.json");
-  assertJoinQueryRowEqualAndReset(
-      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a + r_a < 10;",
-      "post_join_filter2.json");
-  assertJoinQueryRowEqualAndReset(
-      "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a + r_a < 10;",
-      "post_join_filter2.json");
-}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  logger::LogOptions log_options(argv[0]);
-  log_options.parse_command_line(argc, argv);
-  log_options.max_files_ = 0;  // stderr only by default
-  logger::init(log_options);
-
   int err{0};
+  logger::LogOptions log_options(argv[0]);
+  log_options.severity_ = logger::Severity::INFO;
+  log_options.set_options();  // update default values
+  logger::init(log_options);
   try {
     err = RUN_ALL_TESTS();
   } catch (const std::exception& e) {

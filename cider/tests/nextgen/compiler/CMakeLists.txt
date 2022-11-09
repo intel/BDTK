@@ -16,5 +16,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-add_subdirectory(jitlib)
-add_subdirectory(compiler)
+
+add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
+target_link_libraries(NextgenCompilerTest ${EXECUTE_TEST_LIBS})
+add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
+         ${TEST_ARGS})

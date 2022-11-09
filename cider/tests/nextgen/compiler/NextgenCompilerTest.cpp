@@ -19,31 +19,23 @@
  * under the License.
  */
 
-#include <folly/init/Init.h>
-#include "PlanTranformerIncludes.h"
-#include "utils/InvalidPlanPatterns.h"
+#include <gtest/gtest.h>
+#include <memory>
 
-namespace facebook::velox::plugin::plantransformer::test {
-using namespace facebook::velox::core;
-class InvalidPlanPatternTest : public PlanTransformerTestBase {
- public:
-  InvalidPlanPatternTest() {
-    auto transformerFactory = PlanTransformerFactory().registerPattern(
-        std::make_shared<InvalidPlanPattern>(), std::make_shared<KeepOrginalRewriter>());
-    setTransformerFactory(transformerFactory);
-  }
-};
+#include "exec/nextgen/Parser.h"
+#include "exec/nextgen/Transformer.h"
+#include "tests/TestHelpers.h"
 
-TEST_F(InvalidPlanPatternTest, invalidPattern) {
-  VeloxPlanBuilder transformPlanBuilder;
-  VeloxPlanNodePtr planPtr = transformPlanBuilder.filter().proj().partialAgg().planNode();
-  EXPECT_THROW(getTransformer(planPtr)->transform(), std::runtime_error);
+TEST(NextgenCompilerTest, FrameworkTest) {
+  using namespace cider::exec::nextgen;
+  RelAlgExecutionUnit eu = {};
+  auto pipeline = Parser::toOpPipeline(eu);
+  auto translator = Transformer::toTranslator(*pipeline);
 }
 
-}  // namespace facebook::velox::plugin::plantransformer::test
-
 int main(int argc, char** argv) {
+  TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  folly::init(&argc, &argv, false);
-  return RUN_ALL_TESTS();
+  int err = RUN_ALL_TESTS();
+  return err;
 }

@@ -26,7 +26,7 @@
 namespace facebook::velox::plugin::plantransformer::test {
 using namespace facebook::velox::core;
 
-StatePtr ProjectFilterStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr ProjectFilterStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto projectNode = std::dynamic_pointer_cast<const ProjectNode>(nodePtr)) {
     return std::make_shared<ProjectFilterStateMachine::Project>();
@@ -35,7 +35,7 @@ StatePtr ProjectFilterStateMachine::Initial::accept(VeloxPlanNodeAddr nodeAddr) 
   }
 }
 
-StatePtr ProjectFilterStateMachine::Project::accept(VeloxPlanNodeAddr nodeAddr) {
+StatePtr ProjectFilterStateMachine::Project::accept(const VeloxPlanNodeAddr& nodeAddr) {
   VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
   if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(nodePtr)) {
     return std::make_shared<ProjectFilterStateMachine::Filter>();
@@ -44,7 +44,7 @@ StatePtr ProjectFilterStateMachine::Project::accept(VeloxPlanNodeAddr nodeAddr) 
   }
 }
 
-bool ProjectFilterStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
+bool ProjectFilterStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
   StatePtr curState = getCurState();
   if (curState != nullptr) {
     curState = curState->accept(nodeAddr);
@@ -62,8 +62,8 @@ bool ProjectFilterStateMachine::accept(VeloxPlanNodeAddr nodeAddr) {
 
 std::pair<bool, VeloxPlanNodePtr>
 ProjcetFilterSwapRewriter::rewritePlanSectionWithSingleSource(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddr& source) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddr& source) const {
   VeloxPlanNodeAddrList nodeList = PlanUtil::getPlanNodeListForPlanSection(planSection);
   if (nodeList.empty() || nodeList.size() != 2) {
     // don't change the plan
@@ -79,22 +79,22 @@ ProjcetFilterSwapRewriter::rewritePlanSectionWithSingleSource(
 
 std::pair<bool, VeloxPlanNodePtr>
 ProjcetFilterSwapRewriter::rewritePlanSectionWithMultiSources(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddrList& srcList) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& srcList) const {
   return std::pair<bool, VeloxPlanNodePtr>(false, nullptr);
 }
 
 std::pair<bool, VeloxPlanNodePtr>
 ProjcetFilterDeleteRewriter::rewritePlanSectionWithSingleSource(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddr& source) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddr& source) const {
   return std::pair<bool, VeloxPlanNodePtr>(true, source.nodePtr);
 }
 
 std::pair<bool, VeloxPlanNodePtr>
 ProjcetFilterDeleteRewriter::rewritePlanSectionWithMultiSources(
-    VeloxNodeAddrPlanSection& planSection,
-    VeloxPlanNodeAddrList& srcList) const {
+    const VeloxNodeAddrPlanSection& planSection,
+    const VeloxPlanNodeAddrList& srcList) const {
   return std::pair<bool, VeloxPlanNodePtr>(false, nullptr);
 }
 

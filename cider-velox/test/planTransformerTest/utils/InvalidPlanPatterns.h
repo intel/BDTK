@@ -48,7 +48,7 @@ class InvalidPlanPattern : public PlanPattern {
 class NotStartFromMatchPointPlanPattern : public PlanPattern {
  public:
   std::pair<bool, VeloxNodeAddrPlanSection> matchFromSrc(
-      BranchSrcToTargetIterator branchIte) const override {
+      BranchSrcToTargetIterator& branchIte) const override {
     VeloxPlanNodeAddr secondNode = VeloxPlanNodeAddr::invalid();
     VeloxPlanNodeAddr thirdNode = VeloxPlanNodeAddr::invalid();
     VeloxNodeAddrPlanSection planSection{};

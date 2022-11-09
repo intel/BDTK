@@ -1006,8 +1006,16 @@ JoinLoop::HoistedFiltersCallback Executor::buildHoistLeftHandSideFiltersCb(
                 // not seen this qual before. Generate filter.
                 VLOG(1) << "Generating code for hoisted left hand side qualifier "
                         << qual->toString();
-                auto cond = code_generator.toBool(
-                    code_generator.codegen(qual.get(), true, co).front());
+                llvm::Value* cond;
+                if (co.use_cider_data_format) {
+                  auto left_column = code_generator.codegen(qual.get(), co, true);
+                  auto left_column_fix_sized =
+                      dynamic_cast<FixedSizeColValues*>(left_column.get());
+                  cond = code_generator.toBool(left_column_fix_sized->getValue());
+                } else {
+                  cond = code_generator.toBool(
+                      code_generator.codegen(qual.get(), true, co).front());
+                }
                 filter_lv = builder.CreateAnd(filter_lv, cond);
               }
             }

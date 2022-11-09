@@ -395,10 +395,28 @@ class CodeGenerator {
 
   llvm::Value* codgenAdjustFixedEncNull(llvm::Value*, const SQLTypeInfo&);
 
+  // TODO: (spevenhe) Will deprecate
   std::vector<llvm::Value*> codegenOuterJoinNullPlaceholder(
       const Analyzer::ColumnVar* col_var,
       const bool fetch_column,
       const CompilationOptions& co);
+
+  std::unique_ptr<CodegenColValues> codegenOuterJoinNullPlaceholder(
+      const Analyzer::ColumnVar* col_var,
+      const CompilationOptions& co,
+      const bool fetch_column);
+
+  std::unique_ptr<CodegenColValues> outerJoinPhiCodeBlockForVarChar(
+      const std::unique_ptr<CodegenColValues> orig_lvs,
+      const std::unique_ptr<CodegenColValues> null_target_lvs,
+      llvm::BasicBlock* outer_join_args_bb,
+      llvm::BasicBlock* outer_join_nulls_bb);
+
+  std::unique_ptr<CodegenColValues> outerJoinPhiCodeBlockForDefault(
+      const std::unique_ptr<CodegenColValues> orig_lvs,
+      const std::unique_ptr<CodegenColValues> null_target_lvs,
+      llvm::BasicBlock* outer_join_args_bb,
+      llvm::BasicBlock* outer_join_nulls_bbo);
 
   // TODO: (yma11) Will deprecate
   llvm::Value* codegenIntArith(const Analyzer::BinOper*,

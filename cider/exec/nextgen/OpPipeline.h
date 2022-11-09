@@ -18,16 +18,37 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_JITLIB_JITLIB_H
-#define NEXTGEN_JITLIB_JITLIB_H
 
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
+#ifndef CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
+#define CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
 
-#include "exec/nextgen/jitlib/base/JITControlFlow.h"
-#include "exec/nextgen/jitlib/base/JITTuple.h"
-#include "exec/nextgen/jitlib/base/JITValueOperations.h"
+#include <vector>
 
-#endif  // NEXTGEN_JITLIB_JITLIB_H
+#include "exec/nextgen/OpNode.h"
+
+namespace cider::exec::nextgen {
+
+/// \brief An OpPipeline is a linear sequence of relational operators that operate on
+/// tuple data
+class OpPipeline {
+ public:
+  OpPipeline() = default;
+
+  explicit OpPipeline(const OpNodePtrVector& nodes) : nodes_(nodes) {}
+
+  virtual ~OpPipeline() = default;
+
+  /// \brief Register an operator node in this pipeline
+  ///
+  /// \input opNode The operator node to add to the pipeline
+  void appendOpNode(OpNodePtr node) { nodes_.push_back(node); }
+
+  const OpNodePtrVector& getOpNodes() const { return nodes_; }
+
+ private:
+  OpNodePtrVector nodes_;
+};
+
+}  // namespace cider::exec::nextgen
+
+#endif  // CIDER_EXEC_NEXTGEN_OP_PIPELINE_H

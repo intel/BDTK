@@ -31,11 +31,11 @@ class ProjectFilterStateMachine : public StateMachine {
  public:
   class Initial : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class Project : public State {
    public:
-    StatePtr accept(VeloxPlanNodeAddr nodeAddr) override;
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
   };
   class Filter : public State {
    public:
@@ -48,7 +48,7 @@ class ProjectFilterStateMachine : public StateMachine {
 
   ProjectFilterStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); }
-  bool accept(VeloxPlanNodeAddr nodeAddr) override;
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
 
 // This class accept "Filter->Proj" as a pattern.
@@ -61,20 +61,20 @@ class ProjectFilterPattern : public SequencePlanPattern {
 
 class ProjcetFilterSwapRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const override;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source) const override;
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const override;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList) const override;
 };
 
 class ProjcetFilterDeleteRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddr& source) const override;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddr& source) const override;
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
-      VeloxNodeAddrPlanSection& planSection,
-      VeloxPlanNodeAddrList& srcList) const override;
+      const VeloxNodeAddrPlanSection& planSection,
+      const VeloxPlanNodeAddrList& srcList) const override;
 };
 
 }  // namespace facebook::velox::plugin::plantransformer::test
