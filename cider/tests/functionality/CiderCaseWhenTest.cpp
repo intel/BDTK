@@ -236,6 +236,7 @@ COALESCE_TEST(CiderCaseWhenRandomWithNullTestBase, coalesceTest);
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not null " \
         "THEN col_bigint "                                                               \
         "WHEN col_double is not null THEN col_double ELSE 777 END from test");           \
+    GTEST_SKIP_("FIXME(haiwei): Cast test case, blocking by [POAE7-2512]");              \
     assertQueryArrow(                                                                    \
         "SELECT COALESCE(col_float) FROM test",                                          \
         "SELECT CASE WHEN col_float is not null THEN col_float ELSE null END "           \
@@ -256,9 +257,9 @@ COALESCE_TEST(CiderCaseWhenRandomWithNullTestBase, coalesceTest);
         "is not null THEN col_float ELSE null END from test");                           \
   }
 
-// COALESCE_ARROW_TEST(CiderCaseWhenSequenceTestBase, coalesceArrowTest);
-// COALESCE_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase, coalesceArrowTest);
-// COALESCE_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase, coalesceArrowTest);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, coalesceArrowTest);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, coalesceArrowTest);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, coalesceArrowTest);
 
 #define COALESCE_WITH_AGG_TEST(TEST_CLASS, UNIT_NAME)                                    \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
@@ -294,9 +295,6 @@ COALESCE_WITH_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, coalescewithAggTest)
         "SELECT sum(COALESCE(col_int, 777)) FROM test",                                  \
         "SELECT sum(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "           \
         "from test");                                                                    \
-    assertQueryArrow("SELECT sum(COALESCE(col_double)) FROM test",                       \
-                     "SELECT sum(CASE WHEN col_double is not null THEN col_double ELSE " \
-                     "null END) from test");                                             \
     assertQueryArrow("SELECT count(COALESCE(col_double, 777)) FROM test",                \
                      "SELECT count(CASE WHEN col_double is not null THEN col_double "    \
                      "ELSE 777 END) from test");                                         \
@@ -308,6 +306,10 @@ COALESCE_WITH_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, coalescewithAggTest)
         "SELECT sum(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
         "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
         "col_double ELSE 777 END) from test");                                           \
+    GTEST_SKIP_("FIXME(haiwei): Cast test case, blocking by [POAE7-2512]");              \
+    assertQueryArrow("SELECT sum(COALESCE(col_double)) FROM test",                       \
+                     "SELECT sum(CASE WHEN col_double is not null THEN col_double ELSE " \
+                     "null END) from test");                                             \
     assertQueryArrow(                                                                    \
         "SELECT sum(COALESCE(col_int, col_bigint, col_double)) FROM test",               \
         "SELECT sum(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
@@ -315,11 +317,12 @@ COALESCE_WITH_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, coalescewithAggTest)
         "col_double ELSE null END) from test");                                          \
   }
 
-// COALESCE_WITH_AGG_ARROW_TEST(CiderCaseWhenSequenceTestBase, coalescewithAggArrowTest);
-// COALESCE_WITH_AGG_ARROW_TEST(CiderCaseWhenSequenceWithNullTestBase,
-// coalescewithAggArrowTest);
-// COALESCE_WITH_AGG_ARROW_TEST(CiderCaseWhenRandomWithNullTestBase,
-// coalescewithAggArrowTest);
+COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
+                             coalescewithAggArrowTest);
+COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                             coalescewithAggArrowTest);
+COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                             coalescewithAggArrowTest);
 
 // The IF function is actually a language construct that is equivalent to the following
 // CASE expression: CASE
