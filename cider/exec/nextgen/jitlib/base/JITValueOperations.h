@@ -327,6 +327,9 @@ JITValuePointer operator>=(T lh, JITValue& rh) {
   return *lh_pointer >= rh;
 }
 
+JITValuePointer operator*(JITValue& value) {
+  return value.dereference();
+}
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUEOPERATIONS_H

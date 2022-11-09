@@ -538,6 +538,84 @@ TEST_F(JITLibTests, TupleTest) {
   EXPECT_EQ(ptr1(123), 999);
 }
 
+TEST_F(JITLibTests, ReadOnlyJITPointerTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.name = "ret", .type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "array",
+                                       .type = JITTypeTag::POINTER,
+                                       .sub_type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "len", .type = JITTypeTag::INT32}}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->createConstant(JITTypeTag::INT32, 0);
+
+    auto loop_builder = function->createLoopBuilder();
+    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+
+    auto array_ptr = function->getArgument(0);
+    auto array_len = function->getArgument(1);
+    *index = array_len - 1;
+
+    loop_builder->condition([&]() { return index + 0; })
+        ->loop([&]() { ret = ret + array_ptr[index]; })
+        ->update([&]() { index = index - 1; })
+        ->build();
+
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  int32_t data[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t*, int32_t>();
+  EXPECT_EQ(func_ptr(data, 10), 45);
+}
+
+TEST_F(JITLibTests, ReadAndWriteJITPointerTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type =
+          JITFunctionParam{
+              .name = "ret", .type = JITTypeTag::POINTER, .sub_type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "array_in",
+                                       .type = JITTypeTag::POINTER,
+                                       .sub_type = JITTypeTag::INT8},
+                      JITFunctionParam{.name = "array_out",
+                                       .type = JITTypeTag::POINTER,
+                                       .sub_type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "len", .type = JITTypeTag::INT32}}});
+  {
+    auto loop_builder = function->createLoopBuilder();
+    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+
+    auto array_in_ptr = function->getArgument(0);
+    auto array_in_ptr_i32 = array_in_ptr->castPointerSubType(JITTypeTag::INT32);
+    auto array_out_ptr = function->getArgument(1);
+    auto array_len = function->getArgument(2);
+    *index = array_len - 1;
+
+    loop_builder->condition([&]() { return index + 0; })
+        ->loop([&]() { array_out_ptr[index] = array_in_ptr_i32[index]; })
+        ->update([&]() { index = index - 1; })
+        ->build();
+
+    function->createReturn(array_out_ptr);
+  }
+  function->finish();
+  module.finish();
+
+  int32_t data_in[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  int32_t data_out[10]{0};
+  auto func_ptr = function->getFunctionPointer<int32_t*, int8_t*, int32_t*, int32_t>();
+  int32_t* out = func_ptr(reinterpret_cast<int8_t*>(data_in), data_out, 10);
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ(out[i], data_in[i]);
+  }
+}
+
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);

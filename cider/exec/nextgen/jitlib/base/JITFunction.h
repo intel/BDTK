@@ -35,6 +35,7 @@ enum JITFunctionParamAttr : uint64_t {};
 struct JITFunctionParam {
   std::string name{""};
   JITTypeTag type;
+  JITTypeTag sub_type{JITTypeTag::INVALID};
   uint64_t attribute;
 };
 
@@ -105,4 +106,4 @@ class JITFunction {
 using JITFunctionPointer = std::shared_ptr<JITFunction>;
 };  // namespace cider::jitlib
 
-#endif  // JITLIB_BASE_JITFUNCTION_H
+#endif // JITLIB_BASE_JITFUNCTION_H

@@ -33,6 +33,8 @@ class LLVMJITModule;
 
 class LLVMJITFunction final : public JITFunction {
  public:
+  friend class LLVMJITValue;
+
   explicit LLVMJITFunction(const JITFunctionDescriptor& descriptor,
                            LLVMJITModule& module,
                            llvm::Function& func);

@@ -186,7 +186,17 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
 
 JITValuePointer LLVMJITValue::add(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
-  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "add");
+
+  if (JITTypeTag::POINTER == getValueTypeTag()) {
+    auto rh_type = rh.getValueTypeTag();
+    if (rh_type != JITTypeTag::INT8 && rh_type != JITTypeTag::INT16 &&
+        rh_type != JITTypeTag::INT32 && rh_type != JITTypeTag::INT64) {
+      LOG(FATAL) << "Invalid index type for pointer offset operation. Name="
+                 << rh.getValueName() << ", Type=" << getJITTypeName(rh_type);
+    }
+  } else {
+    checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "add");
+  }
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
@@ -200,13 +210,21 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
     case JITTypeTag::DOUBLE:
       ans = getFunctionBuilder(parent_function_).CreateFAdd(load(), llvm_rh.load());
       break;
+    case JITTypeTag::POINTER:
+      ans = getFunctionBuilder(parent_function_).CreateGEP(load(), llvm_rh.load());
+      break;
     default:
       LOG(FATAL) << "Invalid JITValue type for add operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
   return std::make_unique<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "add", false);
+      getValueTypeTag(),
+      parent_function_,
+      ans,
+      JITTypeTag::POINTER == getValueTypeTag() ? "add_ptr" : "add",
+      false,
+      getValueSubTypeTag());
 }
 
 JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmpType,
@@ -284,6 +302,48 @@ llvm::Value* LLVMJITValue::store(LLVMJITValue& rh) {
         .CreateStore(rh.load(), llvm_value_, false);
   }
   return nullptr;
+}
+
+JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
+  if (JITTypeTag::POINTER != getValueTypeTag()) {
+    LOG(FATAL) << "Invalid operation to cast subtype of a non-POINTER JITValue. Type="
+               << getJITTypeName(getValueTypeTag());
+  }
+  llvm::Value* new_llvm_value =
+      getFunctionBuilder(parent_function_)
+          .CreateBitCast(load(),
+                         getLLVMPtrType(type_tag, parent_function_.getLLVMContext()));
+  return std::make_unique<LLVMJITValue>(JITTypeTag::POINTER,
+                                        parent_function_,
+                                        new_llvm_value,
+                                        "cast_ptr",
+                                        false,
+                                        type_tag);
+}
+
+JITValuePointer LLVMJITValue::dereference() {
+  if (JITTypeTag::POINTER != getValueTypeTag()) {
+    LOG(FATAL) << "Invalid operation to dereference of a non-POINTER JITValue. Type="
+               << getJITTypeName(getValueTypeTag());
+  }
+
+  return std::make_unique<LLVMJITValue>(getValueSubTypeTag(),
+                                        parent_function_,
+                                        llvm_value_,
+                                        "dereference_ptr",
+                                        true,
+                                        JITTypeTag::INVALID);
+}
+
+JITValuePointer LLVMJITValue::getElemAt(JITValue& index) {
+  if (JITTypeTag::POINTER != getValueTypeTag()) {
+    LOG(FATAL) << "Invalid operation to get elements from a non-POINTER JITValue. Type="
+               << getJITTypeName(getValueTypeTag());
+  }
+  auto element_ptr = add(index);
+  auto& llvm_element_ptr = static_cast<LLVMJITValue&>(*element_ptr);
+
+  return llvm_element_ptr.dereference();
 }
 
 };  // namespace cider::jitlib
