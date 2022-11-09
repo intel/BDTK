@@ -106,4 +106,4 @@ class JITFunction {
 using JITFunctionPointer = std::shared_ptr<JITFunction>;
 };  // namespace cider::jitlib
 
-#endif // JITLIB_BASE_JITFUNCTION_H
+#endif  // JITLIB_BASE_JITFUNCTION_H

@@ -313,12 +313,8 @@ JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
       getFunctionBuilder(parent_function_)
           .CreateBitCast(load(),
                          getLLVMPtrType(type_tag, parent_function_.getLLVMContext()));
-  return std::make_unique<LLVMJITValue>(JITTypeTag::POINTER,
-                                        parent_function_,
-                                        new_llvm_value,
-                                        "cast_ptr",
-                                        false,
-                                        type_tag);
+  return std::make_unique<LLVMJITValue>(
+      JITTypeTag::POINTER, parent_function_, new_llvm_value, "cast_ptr", false, type_tag);
 }
 
 JITValuePointer LLVMJITValue::dereference() {
