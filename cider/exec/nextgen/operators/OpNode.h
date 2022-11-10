@@ -22,6 +22,7 @@
 #ifndef NEXTGEN_TRANSLATOR_OPNODE_H
 #define NEXTGEN_TRANSLATOR_OPNODE_H
 
+#include "exec/nextgen/Context.h"
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen {
@@ -29,12 +30,14 @@ class Translator;
 class OpNode;
 
 using OpNodePtr = std::shared_ptr<OpNode>;
+using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
 class OpNode {
  public:
+  OpNode() = default;
   OpNode(const OpNodePtr& input) : input_(input) {}
 
   virtual ~OpNode() = default;
@@ -43,7 +46,7 @@ class OpNode {
   const char* name() const { return name_; }
 
   /// \brief Transform the operator to a translator
-  virtual std::shared_ptr<Translator> toTranslator() const = 0;
+  // virtual std::shared_ptr<Translator> toTranslator() const = 0;
 
  protected:
   OpNodePtr input_;
@@ -51,7 +54,17 @@ class OpNode {
   // schema
 };
 
+class Translator {
+ public:
+  using ExprPtr = std::shared_ptr<Analyzer::Expr>;
+
+  Translator() = default;
+  virtual ~Translator() = default;
+
+  virtual void consume(Context& context) = 0;
+};
+
 using OpNodePtrVector = std::vector<OpNodePtr>;
 }  // namespace cider::exec::nextgen
 
-#endif // NEXTGEN_TRANSLATOR_OPNODE_H
+#endif  // NEXTGEN_TRANSLATOR_OPNODE_H

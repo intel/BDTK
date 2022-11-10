@@ -22,7 +22,8 @@
 #ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
 #define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
 
-#include "exec/nextgen/operators/dummy.h"
+#include "exec/nextgen/Context.h"
+#include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::operators {
 class MockSinkTranslator : public Translator {

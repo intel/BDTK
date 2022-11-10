@@ -20,7 +20,6 @@
  */
 #include "exec/nextgen/operators/FilterNode.h"
 
-#include "exec/nextgen/operators/dummy.h"
 #include "exec/nextgen/operators/expr.h"
 
 namespace cider::exec::nextgen::operators {

@@ -19,9 +19,10 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
-#define CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
+#ifndef EXEC_NEXTGEN_OPPIPELINE_H
+#define EXEC_NEXTGEN_OPPIPELINE_H
 
+#include <memory>
 #include <vector>
 
 #include "exec/nextgen/operators/OpNode.h"
@@ -49,6 +50,7 @@ class OpPipeline {
   OpNodePtrVector nodes_;
 };
 
+using OpPipelinePtr = std::unique_ptr<OpPipeline>;
 }  // namespace cider::exec::nextgen
 
-#endif  // CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
+#endif  // EXEC_NEXTGEN_OPPIPELINE_H

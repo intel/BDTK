@@ -22,7 +22,7 @@
 #ifndef NEXTGEN_OPERATORS_FILTERNODE_H
 #define NEXTGEN_OPERATORS_FILTERNODE_H
 
-#include "exec/nextgen/operators/dummy.h"
+#include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::operators {
 class FilterNode : public OpNode {

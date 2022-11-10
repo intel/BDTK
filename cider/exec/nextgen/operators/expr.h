@@ -19,10 +19,11 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_EXPR_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_EXPR_H
+#ifndef NEXTGEN_OPERATORS_EXPR_H
+#define NEXTGEN_OPERATORS_EXPR_H
 
-#include "exec/nextgen/operators/dummy.h"
+#include "exec/nextgen/jitlib/JITLib.h"
+#include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::operators {
 using namespace cider::jitlib;
@@ -102,4 +103,4 @@ class ExprGenerator {
 };
 
 }  // namespace cider::exec::nextgen::operators
-#endif
+#endif // NEXTGEN_OPERATORS_EXPR_H

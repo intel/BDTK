@@ -27,6 +27,7 @@
 #include "tests/nextgen/translator/MockSink.h"
 
 using namespace cider::jitlib;
+using namespace cider::exec::nextgen;
 using namespace cider::exec::nextgen::operators;
 
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;

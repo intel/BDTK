@@ -20,6 +20,7 @@
  */
 
 #include "exec/nextgen/operators/expr.h"
+
 #include "exec/template/Execute.h"
 
 namespace cider::exec::nextgen::operators {

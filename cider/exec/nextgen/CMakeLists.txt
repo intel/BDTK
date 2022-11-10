@@ -28,5 +28,7 @@ endif()
 add_subdirectory(jitlib)
 add_subdirectory(operators)
 
-add_library(nextgen STATIC $<TARGET_OBJECTS:cider_operators>)
+set(NEXTGEN_SOURCE ${CMAKE_CURRENT_LIST_DIR}/Parser.cpp)
+
+add_library(nextgen STATIC $<TARGET_OBJECTS:cider_operators> ${NEXTGEN_SOURCE})
 target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib)
