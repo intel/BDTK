@@ -452,16 +452,10 @@ TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_literal.json");
 
   // string op on filter clause
-  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaa'",
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
                    "stringop_lower_condition.json");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
                    "stringop_upper_condition.json");
-}
-
-TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
-  // select column from table
-  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
-  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
 
   /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
   /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
@@ -474,6 +468,12 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
   // select literal
   // assertQueryArrow("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
   // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
+}
+
+TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
+  // select column from table
+  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
 
   // select literal from table
   assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
@@ -482,7 +482,7 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_literal_null.json");
 
   // string op on filter clause
-  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaa'",
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
                    "stringop_lower_condition_null.json");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
                    "stringop_upper_condition_null.json");

@@ -123,7 +123,7 @@
                         "value": {
                           "literal": {
                             "varChar": {
-                              "value": "aaaaaaaaa",
+                              "value": "aaaaaaaaaa",
                               "length": 10
                             },
                             "nullable": false,
