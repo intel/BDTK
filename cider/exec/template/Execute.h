@@ -44,6 +44,7 @@
 #include <llvm/Transforms/Utils/ValueMapper.h>
 #include <rapidjson/document.h>
 
+#include "exec/operator/aggregate/CiderAggHashTable.h"
 #include "exec/template/AggregatedColRange.h"
 #include "exec/template/BufferCompaction.h"
 #include "exec/template/CartesianProduct.h"
@@ -190,13 +191,14 @@ inline const Analyzer::Expr* extract_cast_arg(const Analyzer::Expr* expr) {
   return cast_expr->get_operand();
 }
 
-inline std::string numeric_type_name(const SQLTypeInfo& ti) {
+inline std::string numeric_type_name(const SQLTypeInfo& ti,
+                                     bool is_arrow_format = false) {
   CHECK(ti.is_integer() || ti.is_decimal() || ti.is_boolean() || ti.is_time() ||
         ti.is_fp() || (ti.is_string() && ti.get_compression() == kENCODING_DICT) ||
         ti.is_timeinterval());
   if (ti.is_integer() || ti.is_decimal() || ti.is_boolean() || ti.is_time() ||
       ti.is_string() || ti.is_timeinterval()) {
-    return "int" + std::to_string(ti.get_logical_size() * 8) + "_t";
+    return "int" + std::to_string(get_bit_width(ti, is_arrow_format)) + "_t";
   }
   return ti.get_type() == kDOUBLE ? "double" : "float";
 }
@@ -301,6 +303,8 @@ class Executor {
       const int dictId,
       const std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner,
       const bool with_generation) const;
+
+  CiderStringHasher* getCiderStringHasherHandle() const;
 
   enum class ExtModuleKinds {
     template_module,    // RuntimeFunctions.bc
@@ -533,9 +537,11 @@ class Executor {
                                          const bool thread_mem_shared,
                                          llvm::Argument* groups_buffer = nullptr);
 
-  std::unique_ptr<FixedSizeColValues> groupByColumnCodegen(Analyzer::Expr* group_by_col,
-                                                           const size_t col_width,
-                                                           const CompilationOptions& co);
+  std::unique_ptr<FixedSizeColValues> groupByColumnCodegen(
+      Analyzer::Expr* group_by_col,
+      const size_t col_width,
+      const CompilationOptions& co,
+      llvm::Argument* groups_buffer = nullptr);
 
   llvm::Value* castToFP(llvm::Value*,
                         SQLTypeInfo const& from_ti,
@@ -669,6 +675,8 @@ class Executor {
   }
 
   std::unique_ptr<CgenState> cgen_state_;
+  CiderStringHasher* stringHasher_;
+  mutable std::mutex str_hasher_mutex_;
 
   const std::unique_ptr<llvm::Module>& get_extension_module(ExtModuleKinds kind) const {
     auto it = extension_modules_.find(kind);

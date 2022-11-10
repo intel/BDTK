@@ -46,7 +46,7 @@ cp ./BDTK/build-Release/thirdparty/velox/third_party/yaml-cpp/libyaml-cpp.a ./pr
 
 sed -i 's/\"planTransformer\/PlanTransformer\.h\"/\"..\/planTransformer\/PlanTransformer\.h\"/' ./BDTK/cider-velox/src/ciderTransformer/CiderPlanTransformerFactory.h
 
-make PRESTO_ENABLE_PARQUET=ON -j ${CPU_COUNT:-`nproc`} release
+make VELOX_ENABLE_HDFS=ON PRESTO_ENABLE_PARQUET=ON -j ${CPU_COUNT:-`nproc`} release
 if [ $? -ne 0 ]; then
     echo "compile presto failed"
     exit
@@ -67,12 +67,13 @@ mkdir -p ${package_name}/archive
 cp  ./presto/presto-native-execution/_build/release/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
 
 cp  ./presto/presto-native-execution/_build/release/presto_cpp/main/presto_server ./${package_name}/bin
-cp  ./presto/presto-native-execution/presto_cpp/main/lib/libcider.so  ./${package_name}/lib
+cp -a ./presto/presto-native-execution/presto_cpp/main/lib/libcider.so*  ./${package_name}/lib
 cp	/usr/local/lib/libantlr4-runtime.so.4.9.3	./${package_name}/lib
 cp	/lib/x86_64-linux-gnu/libre2.so.5	./${package_name}/lib
 cp	/lib/libprotobuf.so.32	./${package_name}/lib
 cp	/usr/local/lib/libLLVM-9.so	./${package_name}/lib
 cp	/usr/local/lib/libtbb.so.12	./${package_name}/lib
+cp  /usr/local/lib/libhdfs3.so ./${package_name}/lib
 cp	/lib/x86_64-linux-gnu/libdouble-conversion.so.3	./${package_name}/lib
 cp	/lib/x86_64-linux-gnu/libglog.so.0	./${package_name}/lib
 cp	/lib/x86_64-linux-gnu/libgflags.so.2.2	./${package_name}/lib

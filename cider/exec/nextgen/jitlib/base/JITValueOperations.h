@@ -65,12 +65,48 @@ inline std::any castConstant(JITTypeTag target_type, T value) {
 }
 };  // namespace op_utils
 
+inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
+  return lh.andOp(rh);
+}
+
+inline JITValuePointer operator&&(JITValue& lh, bool rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh && *rh_pointer;
+}
+
+inline JITValuePointer operator&&(bool lh, JITValue& rh) {
+  return rh && lh;
+}
+
+inline JITValuePointer operator||(JITValue& lh, JITValue& rh) {
+  return lh.orOp(rh);
+}
+
+inline JITValuePointer operator||(JITValue& lh, bool rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh || *rh_pointer;
+}
+
+inline JITValuePointer operator||(bool lh, JITValue& rh) {
+  return rh || lh;
+}
+
+inline JITValuePointer operator!(JITValue& value) {
+  return value.notOp();
+}
+
 JITValuePointer operator+(JITValue& lh, JITValue& rh) {
   return lh.add(rh);
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator+(JITValue& lh, T rh) {
+inline JITValuePointer operator+(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
@@ -79,16 +115,16 @@ JITValuePointer operator+(JITValue& lh, T rh) {
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator+(T lh, JITValue& rh) {
+inline JITValuePointer operator+(T lh, JITValue& rh) {
   return rh + lh;
 }
 
-JITValuePointer operator-(JITValue& lh, JITValue& rh) {
+inline JITValuePointer operator-(JITValue& lh, JITValue& rh) {
   return lh.sub(rh);
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator-(JITValue& lh, T rh) {
+inline JITValuePointer operator-(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
@@ -97,7 +133,7 @@ JITValuePointer operator-(JITValue& lh, T rh) {
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator-(T lh, JITValue& rh) {
+inline JITValuePointer operator-(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
@@ -105,12 +141,12 @@ JITValuePointer operator-(T lh, JITValue& rh) {
   return *lh_pointer - rh;
 }
 
-JITValuePointer operator*(JITValue& lh, JITValue& rh) {
+inline JITValuePointer operator*(JITValue& lh, JITValue& rh) {
   return lh.mul(rh);
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator*(JITValue& lh, T rh) {
+inline JITValuePointer operator*(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
@@ -119,16 +155,16 @@ JITValuePointer operator*(JITValue& lh, T rh) {
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator*(T lh, JITValue& rh) {
+inline JITValuePointer operator*(T lh, JITValue& rh) {
   return rh * lh;
 }
 
-JITValuePointer operator/(JITValue& lh, JITValue& rh) {
+inline JITValuePointer operator/(JITValue& lh, JITValue& rh) {
   return lh.div(rh);
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator/(JITValue& lh, T rh) {
+inline JITValuePointer operator/(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
@@ -137,7 +173,7 @@ JITValuePointer operator/(JITValue& lh, T rh) {
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator/(T lh, JITValue& rh) {
+inline JITValuePointer operator/(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
@@ -145,12 +181,12 @@ JITValuePointer operator/(T lh, JITValue& rh) {
   return *lh_pointer / rh;
 }
 
-JITValuePointer operator%(JITValue& lh, JITValue& rh) {
+inline JITValuePointer operator%(JITValue& lh, JITValue& rh) {
   return lh.mod(rh);
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator%(JITValue& lh, T rh) {
+inline JITValuePointer operator%(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
@@ -159,7 +195,7 @@ JITValuePointer operator%(JITValue& lh, T rh) {
 }
 
 template <typename T, IsJITValueConvertable<T> = true>
-JITValuePointer operator%(T lh, JITValue& rh) {
+inline JITValuePointer operator%(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
@@ -167,10 +203,133 @@ JITValuePointer operator%(T lh, JITValue& rh) {
   return *lh_pointer % rh;
 }
 
-JITValuePointer operator!(JITValue& value) {
-  return value.notOp();
+inline JITValuePointer operator==(JITValue& lh, JITValue& rh) {
+  return lh.eq(rh);
 }
 
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator==(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh == *rh_pointer;
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator==(T lh, JITValue& rh) {
+  return rh == lh;
+}
+
+inline JITValuePointer operator!=(JITValue& lh, JITValue& rh) {
+  return lh.ne(rh);
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator!=(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh != *rh_pointer;
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator!=(T lh, JITValue& rh) {
+  return rh != lh;
+}
+
+inline JITValuePointer operator<(JITValue& lh, JITValue& rh) {
+  return lh.lt(rh);
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator<(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh < *rh_pointer;
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator<(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer < rh;
+}
+
+inline JITValuePointer operator<=(JITValue& lh, JITValue& rh) {
+  return lh.le(rh);
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator<=(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh <= *rh_pointer;
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator<=(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer <= rh;
+}
+
+inline JITValuePointer operator>(JITValue& lh, JITValue& rh) {
+  return lh.gt(rh);
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator>(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh > *rh_pointer;
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator>(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer > rh;
+}
+
+inline JITValuePointer operator>=(JITValue& lh, JITValue& rh) {
+  return lh.ge(rh);
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator>=(JITValue& lh, T rh) {
+  auto& parent_func = lh.getParentJITFunction();
+  auto type = lh.getValueTypeTag();
+  JITValuePointer rh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  return lh >= *rh_pointer;
+}
+
+template <typename T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator>=(T lh, JITValue& rh) {
+  auto& parent_func = rh.getParentJITFunction();
+  auto type = rh.getValueTypeTag();
+  JITValuePointer lh_pointer =
+      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+  return *lh_pointer >= rh;
+}
+
+inline JITValuePointer operator*(JITValue& value) {
+  return value.dereference();
+}
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUEOPERATIONS_H

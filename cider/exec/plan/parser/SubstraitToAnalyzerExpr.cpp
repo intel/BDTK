@@ -537,7 +537,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }
     case substrait::Expression_Literal::LiteralTypeCase::kDate: {
-      constant_value.bigintval = s_literal_expr.date() * kSecsPerDay;
+      constant_value.intval = s_literal_expr.date();
       return std::make_shared<Analyzer::Constant>(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }
@@ -869,7 +869,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildCoalesceEx
   else_expr = std::make_shared<Analyzer::Constant>(SQLTypes::kBOOLEAN, true);
   return Parser::CaseExpr::normalize(expr_list, else_expr);
 }
-
 
 bool isNotPrimitiveType(const SQLTypeInfo& type) {
   return type.is_time() || type.is_string();

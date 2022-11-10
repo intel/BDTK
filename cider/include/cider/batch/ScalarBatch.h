@@ -138,6 +138,22 @@ class VarcharBatch final : public CiderBatch {
     return true;
   }
 
+  bool resizeDataBufferIfNeeded(int64_t curr, int64_t needed) {
+    CHECK(!isMoved());
+    if (!permitBufferAllocate()) {
+      return false;
+    }
+
+    auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(getArrayPrivate());
+    size_t capacity = array_holder->getBufferSizeAt(2);
+    if (capacity == 0) {
+      array_holder->allocBuffer(2, 4096);
+    } else if (needed > capacity * 0.9) {  // do reallocate when reach 90% of capacity
+      array_holder->allocBuffer(2, capacity * 2);
+    }
+    return true;
+  }
+
  protected:
   inline const size_t getOffsetBufferIndex() const { return 1; }
   inline const size_t getDataBufferIndex() const { return 2; }

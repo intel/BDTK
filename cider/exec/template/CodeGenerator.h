@@ -57,20 +57,33 @@ class CodeGenerator {
   std::vector<llvm::Value*> codegenHoistedConstants(
       const std::vector<const Analyzer::Constant*>& constants,
       const EncodingType enc_type,
-      const int dict_id);
+      const int dict_id,
+      bool is_arrow_format = false);
 
   static llvm::ConstantInt* codegenIntConst(const Analyzer::Constant* constant,
                                             CgenState* cgen_state);
 
+  // to be deprecated
   llvm::Value* codegenCastBetweenIntTypes(llvm::Value* operand_lv,
                                           const SQLTypeInfo& operand_ti,
                                           const SQLTypeInfo& ti,
                                           bool upscale = true);
 
+  llvm::Value* codegenCastBetweenIntTypesForArrow(llvm::Value* operand_lv,
+                                                  const SQLTypeInfo& operand_ti,
+                                                  const SQLTypeInfo& ti,
+                                                  bool upscale = true,
+                                                  bool needs_error_check = false);
+  // to be deprecated
   void codegenCastBetweenIntTypesOverflowChecks(llvm::Value* operand_lv,
                                                 const SQLTypeInfo& operand_ti,
                                                 const SQLTypeInfo& ti,
                                                 const int64_t scale);
+
+  void codegenCastBetweenIntTypesOverflowChecksForArrow(llvm::Value* operand_lv,
+                                                        const SQLTypeInfo& operand_ti,
+                                                        const SQLTypeInfo& ti,
+                                                        const int64_t scale);
 
   // Generates the index of the current row in the context of query execution.
   llvm::Value* posArg(const Analyzer::Expr*) const;
@@ -235,12 +248,18 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::InIntegerSet* expr, const CompilationOptions& co);
 
-  // To be deperacated.
+  // To be deprecated.
   std::vector<llvm::Value*> codegen(const Analyzer::CaseExpr*, const CompilationOptions&);
 
+  // to be deprecated
   llvm::Value* codegen(const Analyzer::ExtractExpr*, const CompilationOptions&);
 
+  // to be deprecated
   llvm::Value* codegen(const Analyzer::DateaddExpr*, const CompilationOptions&);
+
+  std::unique_ptr<CodegenColValues> codegenExtract(
+      const Analyzer::ExtractExpr* extract_expr,
+      const CompilationOptions& co);
 
   std::unique_ptr<CodegenColValues> codegenDateAdd(
       const Analyzer::DateaddExpr* dateadd_expr,
@@ -274,8 +293,9 @@ class CodeGenerator {
 
   llvm::Value* codegen(const Analyzer::LowerExpr*, const CompilationOptions&);
 
+  // To be deprecated.
   llvm::Value* codegen(const Analyzer::StringOper*, const CompilationOptions&);
-
+  // To be deprecated.
   llvm::Value* codegen(const Analyzer::LikeExpr*, const CompilationOptions&);
 
   llvm::Value* codegen(const Analyzer::RegexpExpr*, const CompilationOptions&);
@@ -334,7 +354,8 @@ class CodeGenerator {
   std::vector<llvm::Value*> codegenHoistedConstantsLoads(const SQLTypeInfo& type_info,
                                                          const EncodingType enc_type,
                                                          const int dict_id,
-                                                         const int16_t lit_off);
+                                                         const int16_t lit_off,
+                                                         bool is_arrow_format = false);
 
   std::vector<llvm::Value*> codegenHoistedConstantsPlaceholders(
       const SQLTypeInfo& type_info,
@@ -386,10 +407,28 @@ class CodeGenerator {
 
   llvm::Value* codgenAdjustFixedEncNull(llvm::Value*, const SQLTypeInfo&);
 
+  // TODO: (spevenhe) Will deprecate
   std::vector<llvm::Value*> codegenOuterJoinNullPlaceholder(
       const Analyzer::ColumnVar* col_var,
       const bool fetch_column,
       const CompilationOptions& co);
+
+  std::unique_ptr<CodegenColValues> codegenOuterJoinNullPlaceholder(
+      const Analyzer::ColumnVar* col_var,
+      const CompilationOptions& co,
+      const bool fetch_column);
+
+  std::unique_ptr<CodegenColValues> outerJoinPhiCodeBlockForVarChar(
+      const std::unique_ptr<CodegenColValues> orig_lvs,
+      const std::unique_ptr<CodegenColValues> null_target_lvs,
+      llvm::BasicBlock* outer_join_args_bb,
+      llvm::BasicBlock* outer_join_nulls_bb);
+
+  std::unique_ptr<CodegenColValues> outerJoinPhiCodeBlockForDefault(
+      const std::unique_ptr<CodegenColValues> orig_lvs,
+      const std::unique_ptr<CodegenColValues> null_target_lvs,
+      llvm::BasicBlock* outer_join_args_bb,
+      llvm::BasicBlock* outer_join_nulls_bbo);
 
   // TODO: (yma11) Will deprecate
   llvm::Value* codegenIntArith(const Analyzer::BinOper*,
@@ -402,15 +441,24 @@ class CodeGenerator {
                               llvm::Value*,
                               llvm::Value*,
                               const CompilationOptions&);
-
+  // to be deprecated
   llvm::Value* codegenCastTimestampToDate(llvm::Value* ts_lv,
                                           const int dimen,
                                           const bool nullable);
 
+  // to be deprecated
   llvm::Value* codegenCastBetweenTimestamps(llvm::Value* ts_lv,
                                             const SQLTypeInfo& operand_dimen,
                                             const SQLTypeInfo& target_dimen,
                                             const bool nullable);
+
+  llvm::Value* codegenCastBetweenTimeAndDate(llvm::Value* operand_lv,
+                                             const SQLTypeInfo& operand_ti,
+                                             const SQLTypeInfo& target_ti);
+
+  llvm::Value* codegenCastBetweenTimes(llvm::Value* operand_lv,
+                                       const SQLTypeInfo& operand_ti,
+                                       const SQLTypeInfo& target_ti);
 
   llvm::Value* codegenCastFromString(llvm::Value* operand_lv,
                                      const SQLTypeInfo& operand_ti,
@@ -418,13 +466,23 @@ class CodeGenerator {
                                      const bool operand_is_const,
                                      const CompilationOptions& co);
 
+  // to be deprecated
   llvm::Value* codegenCastToFp(llvm::Value* operand_lv,
                                const SQLTypeInfo& operand_ti,
                                const SQLTypeInfo& ti);
 
+  llvm::Value* codegenCastToFpForArrow(llvm::Value* operand_lv,
+                                       const SQLTypeInfo& operand_ti,
+                                       const SQLTypeInfo& ti);
+
+  // to be deprecated
   llvm::Value* codegenCastFromFp(llvm::Value* operand_lv,
                                  const SQLTypeInfo& operand_ti,
                                  const SQLTypeInfo& ti);
+
+  llvm::Value* codegenCastFromFpForArrow(llvm::Value* operand_lv,
+                                         const SQLTypeInfo& operand_ti,
+                                         const SQLTypeInfo& ti);
 
   llvm::Value* codegenArithWithOverflowCheckForArrow(const Analyzer::BinOper*,
                                                      FixedSizeColValues*,
@@ -658,6 +716,11 @@ class CodeGenerator {
 
   std::unique_ptr<CodegenColValues> codegenInputColumn(const Analyzer::ColumnVar* col_var,
                                                        const bool fetch_column);
+
+  std::unique_ptr<CodegenColValues> codegenLikeExpr(const Analyzer::LikeExpr*,
+                                                    const CompilationOptions& co);
+  std::unique_ptr<CodegenColValues> codegenStringOpExpr(const Analyzer::StringOper*,
+                                                        const CompilationOptions& co);
 
  protected:
   Executor* executor() const {

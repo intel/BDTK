@@ -61,9 +61,14 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
           return std::make_shared<FixedWidthReal>(false, ir_builder, nullable);
         case kDOUBLE:
           return std::make_shared<FixedWidthReal>(true, ir_builder, nullable);
+        case kDATE:
+          if (is_arrow_format) {
+            return std::make_shared<FixedWidthInt>(4, ir_builder, nullable);
+          } else {
+            return std::make_shared<FixedWidthInt>(8, ir_builder, nullable);
+          }
         case kTIME:
         case kTIMESTAMP:
-        case kDATE:
           return std::make_shared<FixedWidthInt>(8, ir_builder, nullable);
         default:
           CHECK(false);
@@ -98,9 +103,10 @@ std::shared_ptr<Decoder> get_col_decoder(const Analyzer::ColumnVar* col_var,
   }
 }
 
-size_t get_col_bit_width(const Analyzer::ColumnVar* col_var) {
+size_t get_col_bit_width(const Analyzer::ColumnVar* col_var,
+                         bool is_arrow_format = false) {
   const auto& type_info = col_var->get_type_info();
-  return get_bit_width(type_info);
+  return get_bit_width(type_info, is_arrow_format);
 }
 
 int adjusted_range_table_index(const Analyzer::ColumnVar* col_var) {
@@ -109,6 +115,7 @@ int adjusted_range_table_index(const Analyzer::ColumnVar* col_var) {
 
 }  // namespace
 
+// TODO: (spevenhe) Will deprecate
 std::vector<llvm::Value*> CodeGenerator::codegenColumn(const Analyzer::ColumnVar* col_var,
                                                        const bool fetch_column,
                                                        const CompilationOptions& co) {
@@ -127,19 +134,18 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
     const CompilationOptions& co) {
   AUTOMATIC_IR_METADATA(cgen_state_);
 
-  // TBD: Outer-Join codegenOuterJoinNullPlaceholder() is a placeholder, seems not
-  // supported completely.
   // TBD: Window function support.
   // TBD: Lazy fetch support.
   // TODO: Reuse columns fetched in JOIN stage.
-  if (col_var->get_rte_idx() > 1 &&
+  if (col_var->get_rte_idx() > 0 &&
       !cgen_state_->outer_join_match_found_per_level_.empty() &&
       foundOuterJoinMatch(col_var->get_rte_idx())) {
-    // to(spevenhe) add out codegen like: return codegenOuterJoinNullPlaceholder(col_var,
-    // fetch_column, co) to support left join; add after vector<CodegenColValues>
-    // supported
-    CIDER_THROW(CiderCompileException,
-                "Range table index of ColumnExpr should LE than 0.");
+    // join table more than two
+    if (col_var->get_rte_idx() > 1) {
+      CIDER_THROW(CiderCompileException,
+                  "Range table index of ColumnExpr should LE than 1.");
+    }
+    return codegenOuterJoinNullPlaceholder(col_var, co, fetch_column);
   }
 
   if (col_var->get_table_id() > 0) {
@@ -208,13 +214,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenFixedLengthColVar(
   const auto& col_ti = col_var->get_type_info();
   if (dec_type->isIntegerTy()) {
     auto dec_width = static_cast<llvm::IntegerType*>(dec_type)->getBitWidth();
-    auto col_width = get_col_bit_width(col_var);
-    dec_val_cast = cgen_state_->ir_builder_.CreateCast(
-        static_cast<size_t>(col_width) > dec_width ? llvm::Instruction::CastOps::SExt
-                                                   : llvm::Instruction::CastOps::Trunc,
-        value,
-        get_int_type(col_width, cgen_state_->context_));
-
+    auto col_width = get_col_bit_width(col_var, co.use_cider_data_format);
+    // Create a ZExt, SExt, or Trunc for int
+    dec_val_cast = cgen_state_->castToTypeIn(value, col_width);
     // TODO: Remove this part after new null representation ready.
     if ((col_ti.get_compression() == kENCODING_FIXED ||
          (col_ti.get_compression() == kENCODING_DICT && col_ti.get_size() < 4)) &&
@@ -544,6 +546,7 @@ llvm::Value* CodeGenerator::foundOuterJoinMatch(const size_t nesting_level) cons
   return cgen_state_->outer_join_match_found_per_level_[nesting_level - 1];
 }
 
+// TODO: (spevenhe) Will deprecate
 std::vector<llvm::Value*> CodeGenerator::codegenOuterJoinNullPlaceholder(
     const Analyzer::ColumnVar* col_var,
     const bool fetch_column,
@@ -597,6 +600,131 @@ std::vector<llvm::Value*> CodeGenerator::codegenOuterJoinNullPlaceholder(
   cgen_state_->ir_builder_.CreateBr(back_from_outer_join_bb);
   cgen_state_->ir_builder_.SetInsertPoint(back_from_outer_join_bb);
   return target_lvs;
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenOuterJoinNullPlaceholder(
+    const Analyzer::ColumnVar* col_var,
+    const CompilationOptions& co,
+    const bool fetch_column) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  // create IR code blocks
+  const auto outer_join_args_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "left_outer_join_not_nulls", cgen_state_->current_func_);
+  const auto outer_join_nulls_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "left_outer_join_nulls", cgen_state_->current_func_);
+  const auto phi_bb = llvm::BasicBlock::Create(
+      cgen_state_->context_, "left_outer_join_result_phi", cgen_state_->current_func_);
+
+  // check null
+  const auto outer_join_match_lv = foundOuterJoinMatch(col_var->get_rte_idx());
+  CHECK(outer_join_match_lv);
+  cgen_state_->ir_builder_.CreateCondBr(
+      outer_join_match_lv, outer_join_args_bb, outer_join_nulls_bb);
+
+  // preprate some common variables
+  auto null_constant =
+      makeExpr<Analyzer::Constant>(col_var->get_type_info().get_type(), true);
+  auto input_col_descriptor_ptr = colByteStream(col_var, fetch_column, true);
+  auto col_type = col_var->get_type_info().get_type();
+
+  switch (col_type) {
+    case kVARCHAR: {
+      // for matched rows in right, extract matched results
+      cgen_state_->ir_builder_.SetInsertPoint(outer_join_args_bb);
+      Executor::FetchCacheAnchor anchor(cgen_state_);
+      auto pos_arg = posArg(col_var);
+      auto orig_lvs =
+          codegenVarCharColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
+      cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+      // for NOT matched rows in right, return null constant results
+      cgen_state_->ir_builder_.SetInsertPoint(outer_join_nulls_bb);
+      auto null_target_lvs =
+          codegen(null_constant.get(),
+                  CompilationOptions{false, ExecutorOptLevel::Default, false},
+                  false);
+      cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+      // doing IF kind statement between matched and not matched
+      cgen_state_->ir_builder_.SetInsertPoint(phi_bb);
+      return outerJoinPhiCodeBlockForVarChar(std::move(orig_lvs),
+                                             std::move(null_target_lvs),
+                                             outer_join_args_bb,
+                                             outer_join_nulls_bb);
+    }
+    default: {
+      // for matched rows in right, extract matched results
+      cgen_state_->ir_builder_.SetInsertPoint(outer_join_args_bb);
+      Executor::FetchCacheAnchor anchor(cgen_state_);
+      auto pos_arg = posArg(col_var);
+      auto orig_lvs =
+          codegenFixedLengthColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
+      cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+      // for NOT matched rows in right, return null constant results
+      cgen_state_->ir_builder_.SetInsertPoint(outer_join_nulls_bb);
+      auto null_target_lvs = codegen(null_constant.get(), co, false);
+      cgen_state_->ir_builder_.CreateBr(phi_bb);
+
+      // doing IF kind statement between matched and not matched
+      cgen_state_->ir_builder_.SetInsertPoint(phi_bb);
+      return outerJoinPhiCodeBlockForDefault(std::move(orig_lvs),
+                                             std::move(null_target_lvs),
+                                             outer_join_args_bb,
+                                             outer_join_nulls_bb);
+    }
+  }
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::outerJoinPhiCodeBlockForVarChar(
+    const std::unique_ptr<CodegenColValues> orig_lvs,
+    const std::unique_ptr<CodegenColValues> null_target_lvs,
+    llvm::BasicBlock* outer_join_args_bb,
+    llvm::BasicBlock* outer_join_nulls_bb) {
+  auto orig_lvs_Varchar = dynamic_cast<TwoValueColValues*>(orig_lvs.get());
+
+  auto null_target_lvs_Varchar = dynamic_cast<TwoValueColValues*>(null_target_lvs.get());
+  const auto str_ptr_type = orig_lvs_Varchar->getValueAt(0)->getType();
+  auto str_ptr_phi = cgen_state_->ir_builder_.CreatePHI(str_ptr_type, 2);
+  str_ptr_phi->addIncoming(orig_lvs_Varchar->getValueAt(0), outer_join_args_bb);
+  str_ptr_phi->addIncoming(null_target_lvs_Varchar->getValueAt(0), outer_join_nulls_bb);
+
+  const auto str_len_type = orig_lvs_Varchar->getValueAt(1)->getType();
+  auto str_len_phi = cgen_state_->ir_builder_.CreatePHI(str_len_type, 2);
+  str_len_phi->addIncoming(orig_lvs_Varchar->getValueAt(1), outer_join_args_bb);
+  str_len_phi->addIncoming(null_target_lvs_Varchar->getValueAt(1), outer_join_nulls_bb);
+  llvm::PHINode* null_phi = nullptr;
+  // for not null column
+  if (orig_lvs_Varchar->getNull() && null_target_lvs_Varchar->getNull()) {
+    const auto str_null_type = orig_lvs_Varchar->getNull()->getType();
+    null_phi = cgen_state_->ir_builder_.CreatePHI(str_null_type, 2);
+    null_phi->addIncoming(orig_lvs_Varchar->getNull(), outer_join_args_bb);
+    null_phi->addIncoming(null_target_lvs_Varchar->getNull(), outer_join_nulls_bb);
+  }
+  return std::make_unique<TwoValueColValues>(str_ptr_phi, str_len_phi, null_phi);
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::outerJoinPhiCodeBlockForDefault(
+    const std::unique_ptr<CodegenColValues> orig_lvs,
+    const std::unique_ptr<CodegenColValues> null_target_lvs,
+    llvm::BasicBlock* outer_join_args_bb,
+    llvm::BasicBlock* outer_join_nulls_bb) {
+  auto orig_lvs_FixedSize = dynamic_cast<FixedSizeColValues*>(orig_lvs.get());
+  auto null_target_lvs_FixedSize =
+      dynamic_cast<FixedSizeColValues*>(null_target_lvs.get());
+  const auto target_type = orig_lvs_FixedSize->getValue()->getType();
+  auto target_phi = cgen_state_->ir_builder_.CreatePHI(target_type, 2);
+  target_phi->addIncoming(orig_lvs_FixedSize->getValue(), outer_join_args_bb);
+  target_phi->addIncoming(null_target_lvs_FixedSize->getValue(), outer_join_nulls_bb);
+  llvm::PHINode* null_phi = nullptr;
+  // for not null column
+  if (orig_lvs_FixedSize->getNull() && null_target_lvs_FixedSize->getNull()) {
+    null_phi = cgen_state_->ir_builder_.CreatePHI(
+        llvm::Type::getInt1Ty(cgen_state_->context_), 2);
+    null_phi->addIncoming(orig_lvs_FixedSize->getNull(), outer_join_args_bb);
+    null_phi->addIncoming(null_target_lvs_FixedSize->getNull(), outer_join_nulls_bb);
+  }
+  return std::make_unique<FixedSizeColValues>(target_phi, null_phi);
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::resolveGroupedColumnReferenceCider(

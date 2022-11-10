@@ -21,7 +21,10 @@
 
 #include "PlanTransformerTestBase.h"
 
+#include "CiderPlanRewriters.h"
 #include "PlanTansformerTestUtil.h"
+
+using namespace facebook::velox::plugin::plantransformer;
 
 namespace facebook::velox::plugin::plantransformer::test {
 bool PlanTransformerTestBase::compareWithExpected(VeloxPlanNodePtr result,
@@ -32,4 +35,37 @@ std::shared_ptr<PlanTransformer> PlanTransformerTestBase::getTransformer(
     VeloxPlanNodePtr root) {
   return transformerFactory_.getTransformer(root);
 }
+
+VeloxPlanNodePtr PlanTransformerTestBase::getSingleProjectNode(
+    RowTypePtr rowType,
+    const std::vector<std::string> projections) {
+  return PlanBuilder()
+      .values(generateTestBatch(rowType, false))
+      .project(projections)
+      .planNode();
+}
+
+VeloxPlanNodePtr PlanTransformerTestBase::getSingleFilterNode(RowTypePtr rowType,
+                                                              const std::string filter) {
+  return PlanBuilder()
+      .values(generateTestBatch(rowType, false))
+      .filter(filter)
+      .planNode();
+}
+
+VeloxPlanNodePtr PlanTransformerTestBase::getCiderExpectedPtr(
+    RowTypePtr rowType,
+    VeloxPlanNodeVec joinSrcVec) {
+  return PlanBuilder()
+      .values(generateTestBatch(rowType, false))
+      .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+        if (joinSrcVec.empty()) {
+          return std::make_shared<TestCiderPlanNode>(id, input);
+        } else {
+          return std::make_shared<TestCiderPlanNode>(id, joinSrcVec);
+        }
+      })
+      .planNode();
+}
+
 }  // namespace facebook::velox::plugin::plantransformer::test

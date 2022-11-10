@@ -29,6 +29,15 @@ namespace cider::jitlib {
 class JITValue;
 class JITFunction;
 
+class JITBaseValue {
+ public:
+  JITBaseValue(JITTypeTag type_tag) : type_tag_(type_tag) {}
+  virtual ~JITBaseValue() = default;
+
+ protected:
+  JITTypeTag type_tag_;
+};
+
 class JITValuePointer {
  public:
   JITValuePointer(std::nullptr_t ptr) : ptr_(ptr) {}
@@ -36,29 +45,39 @@ class JITValuePointer {
   template <typename T>
   JITValuePointer(std::unique_ptr<T>&& ptr) : ptr_(ptr.release()) {}
 
+  JITValuePointer(const JITValuePointer&) = delete;
+
+  JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_.release()) {}
+
   JITValue* get() { return ptr_.get(); }
 
  public:
+  JITValuePointer& operator=(const JITValuePointer&) = delete;
+
+  JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
+
   JITValue& operator*() { return *ptr_; }
 
   JITValue* operator->() { return ptr_.get(); }
 
   operator JITValue&() { return *ptr_; }
 
+  JITValuePointer operator[](JITValue& index);
+
  private:
   std::unique_ptr<JITValue> ptr_;
 };
 
-class JITValue {
+class JITValue : public JITBaseValue {
  public:
   JITValue(JITTypeTag type_tag,
            JITFunction& parent_function,
            const std::string& name,
-           JITBackendTag backend)
-      : value_name_(name)
+           JITTypeTag sub_type_tag)
+      : JITBaseValue(type_tag)
+      , value_name_(name)
       , parent_function_(parent_function)
-      , type_tag_(type_tag)
-      , backend_tag_(backend) {}
+      , sub_type_tag_(sub_type_tag) {}
 
   virtual ~JITValue() = default;
 
@@ -66,11 +85,12 @@ class JITValue {
 
   JITTypeTag getValueTypeTag() const { return type_tag_; }
 
-  JITBackendTag getValueBackendTag() const { return backend_tag_; }
+  JITTypeTag getValueSubTypeTag() const { return sub_type_tag_; }
 
   JITFunction& getParentJITFunction() { return parent_function_; }
 
   JITValue& operator=(JITValue& rh) { return assign(rh); }
+  JITValuePointer operator[](JITValue& index) { return getElemAt(index); }
 
  public:
   JITValue(const JITValue&) = delete;
@@ -79,10 +99,11 @@ class JITValue {
 
  public:
   virtual JITValue& assign(JITValue& value) = 0;
+  virtual JITValuePointer getElemAt(JITValue& index) = 0;
 
   // // Logical Operators
-  // virtual JITValuePointer andOp(JITValue& rh) = 0;
-  // virtual JITValuePointer orOp(JITValue& rh) = 0;
+  virtual JITValuePointer andOp(JITValue& rh) = 0;
+  virtual JITValuePointer orOp(JITValue& rh) = 0;
   virtual JITValuePointer notOp() = 0;
 
   // // Arithmetic Operations
@@ -94,19 +115,31 @@ class JITValue {
   virtual JITValuePointer mod(JITValue& rh) = 0;
 
   // // Compare Operators
-  // virtual JITValuePointer eq(JITValue& rh) = 0;
-  // virtual JITValuePointer ne(JITValue& rh) = 0;
-  // virtual JITValuePointer lt(JITValue& rh) = 0;
-  // virtual JITValuePointer le(JITValue& rh) = 0;
-  // virtual JITValuePointer gt(JITValue& rh) = 0;
-  // virtual JITValuePointer ge(JITValue& rh) = 0;
+  virtual JITValuePointer eq(JITValue& rh) = 0;
+  virtual JITValuePointer ne(JITValue& rh) = 0;
+  virtual JITValuePointer lt(JITValue& rh) = 0;
+  virtual JITValuePointer le(JITValue& rh) = 0;
+  virtual JITValuePointer gt(JITValue& rh) = 0;
+  virtual JITValuePointer ge(JITValue& rh) = 0;
+
+  // Pointer Operators
+  virtual JITValuePointer castPointerSubType(JITTypeTag type_tag) = 0;
+  virtual JITValuePointer dereference() = 0;
 
  private:
   std::string value_name_;
   JITFunction& parent_function_;
-  JITTypeTag type_tag_;
-  JITBackendTag backend_tag_;
+  JITTypeTag sub_type_tag_;
 };
+
+inline JITValuePointer& JITValuePointer::operator=(JITValuePointer&& rh) noexcept {
+  *ptr_ = *rh;
+  return *this;
+}
+
+inline JITValuePointer JITValuePointer::operator[](JITValue& index) {
+  return (*ptr_)[index];
+}
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUE_H

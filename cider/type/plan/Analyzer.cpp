@@ -309,7 +309,8 @@ SQLTypeInfo StringOper::get_return_type(
     // Note that whether or not this is allowed is decided separately
     // in check_operand_types
     // If here, we have a dict-encoded column arg
-    return SQLTypeInfo(kTEXT, kENCODING_DICT, 0, kNULLT);
+    return SQLTypeInfo(
+        kTEXT, 0, 0, args[0]->get_type_info().get_notnull(), kENCODING_DICT, 0, kNULLT);
   } else {
     return SQLTypeInfo(args[0]->get_type_info());  // nullable by default
   }

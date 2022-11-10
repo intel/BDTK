@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <functional>
 
 #include "exec/nextgen/jitlib/JITLib.h"
@@ -53,7 +54,40 @@ void executeBinaryOp(T left, T right, T output, OpFunc op) {
       static_cast<NativeType>(left),
       static_cast<NativeType>(output),
       [&, right = static_cast<NativeType>(right)](JITFunction* func) {
-        auto left = func->createVariable("left", Type);
+        auto left = func->createVariable(Type, "left");
+        *left = func->getArgument(0);
+
+        auto right_const = func->createConstant(Type, right);
+        auto ans = op(left, right_const);
+
+        func->createReturn(ans);
+      });
+}
+
+template <JITTypeTag Type, typename NativeType, typename BuilderType>
+void executeCompareSingleParamTest(NativeType input, bool output, BuilderType builder) {
+  LLVMJITModule module("TestOperator");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_operator_func",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::BOOL},
+      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
+  });
+  builder(function.get());
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<bool, NativeType>();
+  EXPECT_EQ(func_ptr(input), output);
+}
+
+template <JITTypeTag Type, typename T>
+void executeCompareOp(T left, T right, bool output, OpFunc op) {
+  using NativeType = typename JITTypeTraits<Type>::NativeType;
+  executeCompareSingleParamTest<Type>(
+      static_cast<NativeType>(left),
+      output,
+      [&, right = static_cast<NativeType>(right)](JITFunction* func) {
+        auto left = func->createVariable(Type, "left");
         *left = func->getArgument(0);
 
         auto right_const = func->createConstant(Type, right);
@@ -141,6 +175,445 @@ TEST_F(JITLibTests, LogicalOpTest) {
       true, false, false, [](JITValue& a, JITValue& b) { return !a; });
   executeBinaryOp<JITTypeTag::BOOL>(
       false, true, true, [](JITValue& a, JITValue& b) { return !a; });
+
+  // and
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, false, [](JITValue& a, JITValue& b) { return a && b && true; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, true, true, [](JITValue& a, JITValue& b) { return a && true && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, false, [](JITValue& a, JITValue& b) { return false && a && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, false, false, [](JITValue& a, JITValue& b) { return true && a && b; });
+
+  // or
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, false, true, [](JITValue& a, JITValue& b) { return a || false || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, true, true, [](JITValue& a, JITValue& b) { return a || b || false; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, true, true, [](JITValue& a, JITValue& b) { return true || a || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, false, false, [](JITValue& a, JITValue& b) { return a || false || b; });
+}
+
+TEST_F(JITLibTests, CompareOpTest) {
+  // eq
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == 100; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 20.0, false, [](JITValue& a, JITValue& b) { return a == b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 20.0, true, [](JITValue& a, JITValue& b) { return 20.0 == b; });
+
+  // ne
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a != 40; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 20, true, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return a != b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return 100.0 != b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 2.0, true, [](JITValue& a, JITValue& b) { return a != b; });
+
+  // gt
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a > 200; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, true, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, false, [](JITValue& a, JITValue& b) { return a > b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return 102.0 > b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return a > b; });
+
+  // ge
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, true, [](JITValue& a, JITValue& b) { return a >= 30; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, true, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, false, [](JITValue& a, JITValue& b) { return a >= b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, false, [](JITValue& a, JITValue& b) { return 99.2 >= b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a >= b; });
+
+  // lt
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return 4 < b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, false, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 101, true, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return a < b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return b < 103.2; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, false, [](JITValue& a, JITValue& b) { return a < b; });
+
+  // le
+  executeCompareOp<JITTypeTag::INT8>(
+      100, 2, false, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT16>(
+      100, 100, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT32>(
+      100, 101, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, false, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::INT64>(
+      100, 99, true, [](JITValue& a, JITValue& b) { return 97 <= b; });
+  executeCompareOp<JITTypeTag::FLOAT>(
+      100.0, 101.0, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a <= b; });
+  executeCompareOp<JITTypeTag::DOUBLE>(
+      100.0, 100.0, true, [](JITValue& a, JITValue& b) { return a <= 100.0; });
+}
+
+TEST_F(JITLibTests, ExternalModuleTest) {
+  LLVMJITModule module("Test Module", true);
+
+  JITFunctionPointer function1 = module.createJITFunction(
+      JITFunctionDescriptor{.function_name = "test_externalModule",
+                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+                            .params_type = {}});
+  {
+    JITValuePointer x = function1->createVariable(JITTypeTag::INT32, "x1");
+    JITValuePointer a = function1->createConstant(JITTypeTag::INT32, 123);
+    JITValuePointer b = function1->createConstant(JITTypeTag::INT32, 876);
+    *x = *function1->emitRuntimeFunctionCall(
+        "external_call_test_sum",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {a.get(), b.get()}});
+    function1->createReturn(*x);
+  }
+
+  function1->finish();
+  module.finish();
+
+  auto ptr = function1->getFunctionPointer<int32_t>();
+  EXPECT_EQ(ptr(), 999);
+}
+
+TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->getArgument(0);
+    auto if_builder = function->createIfBuilder();
+    if_builder
+        ->condition([&]() {
+          auto condition = function->getArgument(1);
+          return condition;
+        })
+        ->ifTrue([&]() { ret = ret + 1; })
+        ->build();
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  EXPECT_EQ(func_ptr(123, false), 123);
+  EXPECT_EQ(func_ptr(123, true), 124);
+}
+
+TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->getArgument(0);
+    auto if_builder = function->createIfBuilder();
+    if_builder
+        ->condition([&]() {
+          auto condition = function->getArgument(1);
+          return condition;
+        })
+        ->ifTrue([&]() { ret = ret + 1; })
+        ->ifFalse([&]() { ret = ret + 10; })
+        ->build();
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  EXPECT_EQ(func_ptr(123, false), 133);
+  EXPECT_EQ(func_ptr(123, true), 124);
+}
+
+TEST_F(JITLibTests, NestedIFControlFlowTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->getArgument(0);
+    auto if_builder = function->createIfBuilder();
+    if_builder
+        ->condition([&]() {
+          auto condition = function->getArgument(1);
+          return condition;
+        })
+        ->ifTrue([&]() {
+          auto if_builder = function->createIfBuilder();
+          if_builder
+              ->condition([&]() {
+                auto condition = function->getArgument(1);
+                return condition;
+              })
+              ->ifTrue([&]() { ret = ret + 10; })
+              ->ifFalse([&]() { ret = ret + 1; })
+              ->build();
+        })
+        ->ifFalse([&]() {
+          auto if_builder = function->createIfBuilder();
+          if_builder
+              ->condition([&]() {
+                auto condition = function->getArgument(1);
+                return condition;
+              })
+              ->ifTrue([&]() { ret = ret + 10; })
+              ->ifFalse([&]() { ret = ret + 1; })
+              ->build();
+        })
+        ->build();
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  EXPECT_EQ(func_ptr(123, true), 133);
+  EXPECT_EQ(func_ptr(123, false), 124);
+}
+
+TEST_F(JITLibTests, BasicForControlFlowTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(
+      JITFunctionDescriptor{.function_name = "test_func",
+                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->createConstant(JITTypeTag::INT32, 0);
+
+    auto loop_builder = function->createLoopBuilder();
+    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+    *index = function->createConstant(JITTypeTag::INT32, 9);
+
+    loop_builder->condition([&]() { return index + 0; })
+        ->loop([&]() { ret = ret + index; })
+        ->update([&]() { index = index - 1; })
+        ->build();
+
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t>();
+  EXPECT_EQ(func_ptr(), 45);
+}
+
+TEST_F(JITLibTests, NestedForControlFlowTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(
+      JITFunctionDescriptor{.function_name = "test_func",
+                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->createConstant(JITTypeTag::INT32, 0);
+
+    int levels = 5;
+    std::function<void()> nested_loop_builder = [&]() {
+      if (0 == levels) {
+        ret = ret + 1;
+        return;
+      }
+      --levels;
+
+      auto loop_builder = function->createLoopBuilder();
+      JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+      *index = function->createConstant(JITTypeTag::INT32, 10);
+
+      loop_builder->condition([&]() { return index + 0; })
+          ->loop([&]() { nested_loop_builder(); })
+          ->update([&]() { index = index - 1; })
+          ->build();
+    };
+    nested_loop_builder();
+
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  auto func_ptr = function->getFunctionPointer<int32_t>();
+  EXPECT_EQ(func_ptr(), 100000);
+}
+
+TEST_F(JITLibTests, TupleTest) {
+  LLVMJITModule module("Test Module");
+
+  JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_Tuple",
+      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "a", .type = JITTypeTag::INT32}}});
+
+  JITValuePointer x_in = function1->createVariable(JITTypeTag::INT32, "x1");
+  JITValuePointer a_in = function1->getArgument(0);
+  JITValuePointer b_in = function1->createConstant(JITTypeTag::INT32, 876);
+
+  JITTuple layer1 = function1->createJITTuple();
+  JITTuple layer2 = function1->createJITTuple();
+  JITTuple layer3 = function1->createJITTuple();
+
+  layer2.append(b_in);
+  layer1.append(x_in);
+  layer1.append(a_in);
+  layer1.insert(layer2, 1);
+  layer1.append(layer3);
+
+  auto& x_out = layer1.getElementAs<JITValue>(0);
+  auto& layer2_out = layer1.getElementAs<JITTuple>(1);
+  auto& a_out = layer1.getElementAs<JITValue>(2);
+  auto& b_out = layer2_out.getElementAs<JITValue>(0);
+
+  x_out = a_out + b_out;
+  function1->createReturn(x_out);
+  function1->finish();
+  module.finish();
+
+  auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
+  EXPECT_EQ(ptr1(123), 999);
+}
+
+TEST_F(JITLibTests, ReadOnlyJITPointerTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type = JITFunctionParam{.name = "ret", .type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "array",
+                                       .type = JITTypeTag::POINTER,
+                                       .sub_type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "len", .type = JITTypeTag::INT32}}});
+  {
+    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+    ret = function->createConstant(JITTypeTag::INT32, 0);
+
+    auto loop_builder = function->createLoopBuilder();
+    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+
+    auto array_ptr = function->getArgument(0);
+    auto array_len = function->getArgument(1);
+    *index = array_len - 1;
+
+    loop_builder->condition([&]() { return index + 0; })
+        ->loop([&]() { ret = ret + array_ptr[index]; })
+        ->update([&]() { index = index - 1; })
+        ->build();
+
+    function->createReturn(ret);
+  }
+  function->finish();
+  module.finish();
+
+  int32_t data[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  auto func_ptr = function->getFunctionPointer<int32_t, int32_t*, int32_t>();
+  EXPECT_EQ(func_ptr(data, 10), 45);
+}
+
+TEST_F(JITLibTests, ReadAndWriteJITPointerTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
+      .function_name = "test_func",
+      .ret_type =
+          JITFunctionParam{
+              .name = "ret", .type = JITTypeTag::POINTER, .sub_type = JITTypeTag::INT32},
+      .params_type = {JITFunctionParam{.name = "array_in",
+                                       .type = JITTypeTag::POINTER,
+                                       .sub_type = JITTypeTag::INT8},
+                      JITFunctionParam{.name = "array_out",
+                                       .type = JITTypeTag::POINTER,
+                                       .sub_type = JITTypeTag::INT32},
+                      JITFunctionParam{.name = "len", .type = JITTypeTag::INT32}}});
+  {
+    auto loop_builder = function->createLoopBuilder();
+    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+
+    auto array_in_ptr = function->getArgument(0);
+    auto array_in_ptr_i32 = array_in_ptr->castPointerSubType(JITTypeTag::INT32);
+    auto array_out_ptr = function->getArgument(1);
+    auto array_len = function->getArgument(2);
+    *index = array_len - 1;
+
+    loop_builder->condition([&]() { return index + 0; })
+        ->loop([&]() { array_out_ptr[index] = array_in_ptr_i32[index]; })
+        ->update([&]() { index = index - 1; })
+        ->build();
+
+    function->createReturn(array_out_ptr);
+  }
+  function->finish();
+  module.finish();
+
+  int32_t data_in[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  int32_t data_out[10]{0};
+  auto func_ptr = function->getFunctionPointer<int32_t*, int8_t*, int32_t*, int32_t>();
+  int32_t* out = func_ptr(reinterpret_cast<int8_t*>(data_in), data_out, 10);
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ(out[i], data_in[i]);
+  }
 }
 
 int main(int argc, char** argv) {

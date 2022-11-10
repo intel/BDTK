@@ -33,17 +33,25 @@ class LLVMJITModule;
 
 class LLVMJITFunction final : public JITFunction {
  public:
+  friend class LLVMJITValue;
+
   explicit LLVMJITFunction(const JITFunctionDescriptor& descriptor,
                            LLVMJITModule& module,
                            llvm::Function& func);
 
   operator llvm::IRBuilder<>&() const { return *ir_builder_; }
 
-  JITValuePointer createVariable(const std::string& name, JITTypeTag type_tag) override;
+  JITValuePointer createVariable(JITTypeTag type_tag, const std::string& name) override;
 
   JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
 
+  JITTuple createJITTuple() override;
+
   JITValuePointer getArgument(size_t index) override;
+
+  IfBuilderPointer createIfBuilder() override;
+
+  LoopBuilderPointer createLoopBuilder() override;
 
   void createReturn() override;
 
@@ -53,6 +61,10 @@ class LLVMJITFunction final : public JITFunction {
       JITFunction& function,
       const JITFunctionEmitDescriptor& descriptor) override;
 
+  JITValuePointer emitRuntimeFunctionCall(
+      const std::string& fname,
+      const JITFunctionEmitDescriptor& descriptor) override;
+
   void finish() override;
 
  protected:
@@ -60,6 +72,8 @@ class LLVMJITFunction final : public JITFunction {
 
  private:
   void* getFunctionPointer() override;
+
+  void cloneFunctionRecursive(llvm::Function* fn);
 
   LLVMJITModule& module_;
   llvm::Function& func_;

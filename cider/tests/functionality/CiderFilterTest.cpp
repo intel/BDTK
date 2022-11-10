@@ -79,24 +79,6 @@ class CiderFilterRandomTestBase : public CiderTestBase {
   }
 };
 
-class CiderFilterNullTestBase : public CiderTestBase {
- public:
-  CiderFilterNullTestBase() {
-    table_name_ = "test";
-    create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT,
-        col_3 FLOAT, col_4 DOUBLE);)";
-    input_ = {std::make_shared<CiderBatch>(
-        QueryDataGenerator::generateBatchByTypes(99,
-                                                 {"col_1", "col_2", "col_3", "col_4"},
-                                                 {CREATE_SUBSTRAIT_TYPE(I32),
-                                                  CREATE_SUBSTRAIT_TYPE(I64),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                  CREATE_SUBSTRAIT_TYPE(Fp64)},
-                                                 {7, 7, 7, 7}))};
-  }
-};
-
 class CiderProjectAllTestBase : public CiderTestBase {
  public:
   CiderProjectAllTestBase() {
@@ -287,23 +269,7 @@ TEST_F(CiderFilterRandomTestBase, BetweenAnd) {
   assertQueryIgnoreOrder("SELECT * FROM test WHERE col_1 between 0 AND 1000 ");
 }
 
-TEST_F(CiderFilterRandomTestBase, inTest) {
-  // select these columns instead of *, due to schema is not aligned.
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
-              "in_int32_array.json");
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 in (24, 25, 26)",
-              "in_int64_array.json");
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 in (24, 25, 26)",
-              "in_fp32_array.json");
-  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_4 in (24, 25, 26)",
-              "in_fp64_array.json");
-  assertQuery(
-      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 not in (24, 25, 26)",
-      "not_in_fp32_array.json");
-  // TODO: add in (str_1, str_2, str_3)
-}
-
-TEST_F(CiderFilterNullTestBase, integerNullFilterTest) {
+TEST_F(CiderFilterRandomTestBase, integerNullFilterTest) {
   assertQuery("SELECT col_1 FROM test WHERE col_1 < 77");
   assertQuery("SELECT col_2 FROM test WHERE col_2 > 77");
   assertQuery("SELECT col_3 FROM test WHERE col_3 <= 77");
@@ -318,17 +284,22 @@ TEST_F(CiderFilterNullTestBase, integerNullFilterTest) {
 // Update[0913, jikunshang]: decimal type is WIP. String and varchar filter have been
 // supported in CiderStringTest.
 
-TEST_F(CiderFilterNullTestBase, inTest) {
-  assertQuery("SELECT * FROM test WHERE col_1 in (24, 25, 26)", "in_int32_array.json");
-  assertQuery("SELECT * FROM test WHERE col_2 in (24, 25, 26)", "in_int64_array.json");
-  assertQuery("SELECT * FROM test WHERE col_3 in (24, 25, 26)", "in_fp32_array.json");
-  assertQuery("SELECT * FROM test WHERE col_4 in (24, 25, 26)", "in_fp64_array.json");
+TEST_F(CiderFilterRandomTestBase, inTest) {
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
+              "in_int32_array.json");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 in (24, 25, 26)",
+              "in_int64_array.json");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 in (24, 25, 26)",
+              "in_fp32_array.json");
+  assertQuery("SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_4 in (24, 25, 26)",
+              "in_fp64_array.json");
   assertQuery("SELECT * FROM test WHERE col_1 IS NOT NULL AND col_1 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_2 IS NOT NULL AND col_2 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_3 IS NOT NULL AND col_3 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_4 IS NOT NULL AND col_4 in (24, 25, 26)");
-  assertQuery("SELECT * FROM test WHERE col_3 not in (24, 25, 26)",
-              "not_in_fp32_array.json");
+  assertQuery(
+      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 not in (24, 25, 26)",
+      "not_in_fp32_array.json");
   // TODO: add in (str_1, str_2, str_3)
 }
 
@@ -339,7 +310,6 @@ TEST_F(CiderFilterRandomTestBase, DistinctFromTest) {
       "col_8",
       "is_distinct_from.json",
       true);
-
   // IS NOT DISTINCT FROM
   assertQuery(
       "SELECT * FROM test WHERE col_2 IS NOT DISTINCT FROM col_6 OR col_1 IS NOT "
@@ -381,84 +351,40 @@ class CiderFilterSequenceTestArrow : public CiderTestBase {
   }
 };
 
-class CiderFilterTestArrowForInValues : public CiderTestBase {
- public:
-  CiderFilterTestArrowForInValues() {
-    table_name_ = "test";
-    create_ddl_ =
-        "CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE)";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
-                                                  99,
-                                                  {"col_1", "col_2", "col_3", "col_4"},
-                                                  {CREATE_SUBSTRAIT_TYPE(I32),
-                                                   CREATE_SUBSTRAIT_TYPE(I64),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
-                                                  {2, 2, 2, 2},
-                                                  GeneratePattern::Sequence,
-                                                  1,
-                                                  100);
-  }
-};
-
 class CiderFilterRandomTestArrow : public CiderTestBase {
  public:
   CiderFilterRandomTestArrow() {
     table_name_ = "test";
-    // TODO(yizhong): Enable this after string is supported in arrow.
-    // create_ddl_ =
-    //     R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
-    //        col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10),
-    //        col_10 VARCHAR(10));)";
-    // QueryArrowDataGenerator::generateBatchByTypes(schema,
-    //                                               array,
-    //                                               999,
-    //                                               {"col_1",
-    //                                                "col_2",
-    //                                                "col_3",
-    //                                                "col_4",
-    //                                                "col_5",
-    //                                                "col_6",
-    //                                                "col_7",
-    //                                                "col_8",
-    //                                                "col_9",
-    //                                                "col_10"},
-    //                                               {CREATE_SUBSTRAIT_TYPE(I32),
-    //                                                CREATE_SUBSTRAIT_TYPE(I64),
-    //                                                CREATE_SUBSTRAIT_TYPE(Fp32),
-    //                                                CREATE_SUBSTRAIT_TYPE(Fp64),
-    //                                                CREATE_SUBSTRAIT_TYPE(I32),
-    //                                                CREATE_SUBSTRAIT_TYPE(I64),
-    //                                                CREATE_SUBSTRAIT_TYPE(Fp32),
-    //                                                CREATE_SUBSTRAIT_TYPE(Fp64),
-    //                                                CREATE_SUBSTRAIT_TYPE(Varchar),
-    //                                                CREATE_SUBSTRAIT_TYPE(Varchar)},
-    //                                               {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-    //                                               GeneratePattern::Random,
-    //                                               1,
-    //                                               100);
-
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
-           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE);)";
-    QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
-        999,
-        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
-        {CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64)},
-        {2, 2, 2, 2, 2, 2, 2, 2},
-        GeneratePattern::Random,
-        1,
-        100);
+           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10), col_10 VARCHAR(10));)";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  99,
+                                                  {"col_1",
+                                                   "col_2",
+                                                   "col_3",
+                                                   "col_4",
+                                                   "col_5",
+                                                   "col_6",
+                                                   "col_7",
+                                                   "col_8",
+                                                   "col_9",
+                                                   "col_10"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+                                                  GeneratePattern::Random,
+                                                  1,
+                                                  100);
   }
 };
 
@@ -485,36 +411,35 @@ class CiderProjectAllTestArrow : public CiderTestBase {
     //     GeneratePattern::Random))};
 
     create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, col_5 FLOAT, col_6 DOUBLE);)";
+        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 TINYINT, col_4 SMALLINT, col_5 FLOAT, col_6 DOUBLE, col_7 DATE, col_8 BOOLEAN);)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         100,
-        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6"},
+        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(I8),
          CREATE_SUBSTRAIT_TYPE(I16),
          CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Fp64)},
-        {1, 2, 2, 2, 3, 3},
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Date),
+         CREATE_SUBSTRAIT_TYPE(Bool)},
+        {1, 2, 2, 2, 3, 3, 4, 2},
         GeneratePattern::Random);
   }
 };
 
-TEST_F(CiderProjectAllTestArrow, filterProjectAllTest) {
+TEST_F(CiderProjectAllTestArrow, ArrowFilterProjectAllTest) {
   assertQueryArrow("SELECT * FROM test");
   assertQueryArrow("SELECT * FROM test where TRUE");
   assertQueryArrow(
       "SELECT * FROM test where (col_3 > 0 and col_4 > 0) or (col_5 < 0 and col_6 < 0) ");
-
-  // TODO(yizhong): Enable this after date and bool is supported in arrow.
-  GTEST_SKIP_("date codegen is not ready.");
-  assertQueryArrow("SELECT * FROM test where col_2 <> 0 and col_7 > '1972-02-01'");
+  assertQueryArrow("SELECT * FROM test where col_2 <> 0 and col_7 > date '1972-02-01'");
   assertQueryArrow("SELECT *, 3 >= 2 FROM test where col_8 = true");
   assertQueryArrow(
-      "SELECT * , (2*col_1) as col_8, (col_7 + interval '1' year) as col_9 FROM test "
-      "where  col_7 > '1972-02-01'");
+      "SELECT * , (col_7 + interval '1' year) as col_9 FROM test "
+      "where  col_7 > date '1972-02-01' and col_8 = true");
 }
 
 TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
@@ -536,19 +461,31 @@ TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
       "SELECT * FROM test WHERE col_1 in (24 * 2 + 2, (25 + 2) * 10, 26)");
 }
 
-TEST_F(CiderFilterTestArrowForInValues, arrowInTest) {
+TEST_F(CiderFilterRandomTestArrow, ArrowInTest) {
   // prepareArrowBatch();
-  assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
-                   "in_int32_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",
-                   "in_int64_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_3 in (24, 25, 26)",
-                   "in_fp32_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_4 in (24, 25, 26)",
-                   "in_fp64_array.json");
-  assertQueryArrow("SELECT * FROM test WHERE col_3 not in (24, 25, 26)",
-                   "not_in_fp32_array.json");
-  // TODO: (yma1) add in (str_1, str_2, str_3)
+  assertQueryArrow(
+      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
+      "in_int32_array.json");
+  assertQueryArrow(
+      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 in (24, 25, 26)",
+      "in_int64_array.json");
+  assertQueryArrow(
+      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 in (24, 25, 26)",
+      "in_fp32_array.json");
+  assertQueryArrow(
+      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_4 in (24, 25, 26)",
+      "in_fp64_array.json");
+  assertQueryArrow(
+      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 not in (24, 25, 26)",
+      "not_in_fp32_array.json");
+  assertQueryArrow(
+      "SELECT * FROM test WHERE col_1 IS NOT NULL AND col_1 in (24, 25, 26)");
+  assertQueryArrow(
+      "SELECT * FROM test WHERE col_2 IS NOT NULL AND col_2 in (24, 25, 26)");
+  assertQueryArrow(
+      "SELECT * FROM test WHERE col_3 IS NOT NULL AND col_3 in (24, 25, 26)");
+  assertQueryArrow(
+      "SELECT* FROM test WHERE col_4 IS NOT NULL AND col_4 in (24, 25, 26) ");
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_1 in (24, 25, 26) and col_2 > 20");
   assertQueryArrowIgnoreOrder(
@@ -657,9 +594,7 @@ TEST_F(CiderFilterSequenceTestArrow, ArrowMultiColEqualTest) {
   assertQueryArrow("SELECT col_3, col_4 FROM test WHERE col_3 = col_4");
 }
 
-TEST_F(CiderFilterRandomTestArrow, multiColRandomTest) {
-  // TODO ?
-  GTEST_SKIP_("It seems not support column gt or lt column");
+TEST_F(CiderFilterRandomTestArrow, ArrowMmultiColRandomTest) {
   assertQueryArrow("SELECT col_1, col_5 FROM test WHERE col_1 < col_5");
   assertQueryArrow("SELECT col_2, col_6 FROM test WHERE col_2 < col_6");
   assertQueryArrow("SELECT col_3, col_7 FROM test WHERE col_3 <= col_7");
@@ -668,7 +603,7 @@ TEST_F(CiderFilterRandomTestArrow, multiColRandomTest) {
   assertQueryArrow(
       "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 <= col_3 and col_2 >= "
       "col_1");
-  assertQueryArrow(
+  assertQueryArrowIgnoreOrder(
       "SELECT col_1, col_2, col_3 FROM test WHERE col_2 >= col_3 or col_2 <= col_1", "");
   assertQueryArrow("SELECT col_1, col_5 FROM test WHERE col_1 < col_5 AND col_5 > 0");
 }
@@ -680,34 +615,10 @@ TEST_F(CiderFilterRandomTestArrow, complexFilter) {
 
 // isthmus will convert to lt and gt.
 TEST_F(CiderFilterRandomTestArrow, BetweenAnd) {
-  // TODO ? (the same as multiColRandomTest above)
-  GTEST_SKIP_("It seems not support column gt or lt column");
   assertQueryArrowIgnoreOrder("SELECT * FROM test WHERE col_1 between 0 AND 1000 ");
 }
 
-TEST_F(CiderFilterRandomTestArrow, inTest) {
-  // TODO(yizhong): Enable this after in is supported in arrow.
-  GTEST_SKIP_("in codegen is not ready.");
-  // select these columns instead of *, due to schema is not aligned.
-  assertQueryArrow(
-      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
-      "in_int32_array.json");
-  assertQueryArrow(
-      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_2 in (24, 25, 26)",
-      "in_int64_array.json");
-  assertQueryArrow(
-      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 in (24, 25, 26)",
-      "in_fp32_array.json");
-  assertQueryArrow(
-      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_4 in (24, 25, 26)",
-      "in_fp64_array.json");
-  assertQueryArrow(
-      "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_3 not in (24, 25, 26)",
-      "not_in_fp32_array.json");
-  // TODO: add in (str_1, str_2, str_3)
-}
-
-TEST_F(CiderFilterSequenceTestArrow, integerNullFilterTest) {
+TEST_F(CiderFilterRandomTestArrow, integerNullFilterTest) {
   assertQueryArrow("SELECT col_1 FROM test WHERE col_1 < 77");
   assertQueryArrow("SELECT col_2 FROM test WHERE col_2 > 77");
   assertQueryArrow("SELECT col_3 FROM test WHERE col_3 <= 77");
@@ -723,8 +634,6 @@ TEST_F(CiderFilterSequenceTestArrow, integerNullFilterTest) {
 // supported in CiderStringTest.
 
 TEST_F(CiderFilterSequenceTestArrow, inTest) {
-  // TODO(yizhong): Enable this after in is supported in arrow.
-  GTEST_SKIP_("in codegen is not ready.");
   assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
                    "in_int32_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",
@@ -747,26 +656,23 @@ TEST_F(CiderFilterSequenceTestArrow, inTest) {
 }
 
 TEST_F(CiderFilterRandomTestArrow, DistinctFromTest) {
-  // TODO(yizhong): Enable this after string is supported in arrow.
-  GTEST_SKIP_("string not supported in arrow");
   // IS DISTINCT FROM
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_4 IS DISTINCT FROM "
       "col_8",
       "is_distinct_from.json");
-
   // IS NOT DISTINCT FROM
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_2 IS NOT DISTINCT FROM col_6 OR col_1 IS NOT "
       "DISTINCT FROM col_5",
       "is_not_distinct_from.json");
-
   // mixed case
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_1 IS NOT DISTINCT "
       "FROM col_5",
       "mixed_distinct_from.json");
-
+  // TODO: (yma11) enable this after StringOp supported
+  GTEST_SKIP_("string not supported in arrow");
   // mixed case with string
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_9 IS DISTINCT FROM col_10 OR col_10 IS NOT DISTINCT "

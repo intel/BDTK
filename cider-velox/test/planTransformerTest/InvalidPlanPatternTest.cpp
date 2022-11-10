@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <folly/init/Init.h>
 #include "PlanTranformerIncludes.h"
 #include "utils/InvalidPlanPatterns.h"
 
@@ -31,7 +32,7 @@ class InvalidPlanPatternTest : public PlanTransformerTestBase {
         std::make_shared<InvalidPlanPattern>(), std::make_shared<KeepOrginalRewriter>());
     setTransformerFactory(transformerFactory);
   }
-}
+};
 
 TEST_F(InvalidPlanPatternTest, invalidPattern) {
   VeloxPlanBuilder transformPlanBuilder;
@@ -40,3 +41,9 @@ TEST_F(InvalidPlanPatternTest, invalidPattern) {
 }
 
 }  // namespace facebook::velox::plugin::plantransformer::test
+
+int main(int argc, char** argv) {
+  testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv, false);
+  return RUN_ALL_TESTS();
+}

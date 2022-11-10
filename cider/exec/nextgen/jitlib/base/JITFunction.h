@@ -24,6 +24,8 @@
 #include <any>
 #include <boost/container/small_vector.hpp>
 
+#include "exec/nextgen/jitlib/base/JITControlFlow.h"
+#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 
@@ -33,6 +35,7 @@ enum JITFunctionParamAttr : uint64_t {};
 struct JITFunctionParam {
   std::string name{""};
   JITTypeTag type;
+  JITTypeTag sub_type{JITTypeTag::INVALID};
   uint64_t attribute;
 };
 
@@ -66,12 +69,18 @@ class JITFunction {
     }
   }
 
-  virtual JITValuePointer createVariable(const std::string& name,
-                                         JITTypeTag type_tag) = 0;
+  virtual JITValuePointer createVariable(JITTypeTag type_tag,
+                                         const std::string& name) = 0;
 
   virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
 
+  virtual JITTuple createJITTuple() = 0;
+
   virtual JITValuePointer getArgument(size_t index) = 0;
+
+  virtual IfBuilderPointer createIfBuilder() = 0;
+
+  virtual LoopBuilderPointer createLoopBuilder() = 0;
 
   virtual void createReturn() = 0;
 
@@ -79,6 +88,10 @@ class JITFunction {
 
   virtual JITValuePointer emitJITFunctionCall(
       JITFunction& function,
+      const JITFunctionEmitDescriptor& descriptor) = 0;
+
+  virtual JITValuePointer emitRuntimeFunctionCall(
+      const std::string& fname,
       const JITFunctionEmitDescriptor& descriptor) = 0;
 
   virtual void finish() = 0;

@@ -101,7 +101,8 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
   SimpleAggExtractor(const std::string& name,
                      size_t colIndex,
                      const CiderAggHashTable* hashtable)
-      : CiderAggTargetColExtractor(name, colIndex), hasher_(&hashtable->getHasher()) {
+      : CiderAggTargetColExtractor(name, colIndex)
+      , stringHasher_(&hashtable->getStringHasher()) {
     auto& colInfo = hashtable->getColEntryInfo(colIndex);
     offset_ = colInfo.slot_offset;
     null_offset_ = colInfo.is_key ? hashtable->getKeyNullVectorOffset()
@@ -116,7 +117,7 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
     for (size_t i = 0; i < rowNum; ++i) {
       const int8_t* rowPtr = rowAddrs[i];
       const ST* id = reinterpret_cast<const ST*>(rowPtr + offset_);
-      CiderByteArray raw_str = hasher_->lookupValueById(*id);
+      CiderByteArray raw_str = stringHasher_->lookupValueById(*id);
       // Old CiderBatch can't manage memory of VarChar type properly, there will exist
       // memory leak problem.
       targetVector[i].len = raw_str.len;
@@ -129,12 +130,37 @@ class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtra
   }
 
   void extract(const std::vector<const int8_t*>& rowAddrs, CiderBatch* output) override {
-    UNREACHABLE();
+    size_t rowNum = rowAddrs.size();
+    auto varcharOutput = output->asMutable<VarcharBatch>();
+
+    CHECK(varcharOutput->resizeBatch(rowNum));
+    uint8_t* buffer = varcharOutput->getMutableRawData();
+    int32_t* offset = varcharOutput->getMutableRawOffset();
+    uint8_t* nulls = varcharOutput->getMutableNulls();
+
+    offset[0] = 0;
+    int64_t null_count = 0;
+    for (size_t i = 0; i < rowNum; ++i) {
+      const int8_t* rowPtr = rowAddrs[i];
+      const int64_t* id = reinterpret_cast<const int64_t*>(rowPtr + offset_);
+      CiderByteArray value = stringHasher_->lookupValueById(*id);
+      if (-1 == value.len) {
+        CiderBitUtils::clearBitAt(nulls, i);
+        ++null_count;
+        offset[i + 1] = offset[i];
+      } else {
+        offset[i + 1] = offset[i] + value.len;
+        varcharOutput->resizeDataBufferIfNeeded(offset[i], offset[i + 1]);
+        buffer = varcharOutput->getMutableRawData();
+        std::memcpy(buffer + offset[i], value.ptr, value.len);
+      }
+    }
+    output->setNullCount(null_count);
   }
 
  private:
   size_t offset_;
-  const CiderHasher* hasher_;
+  const CiderStringHasher* stringHasher_;
 };
 
 template <typename SUMT, typename COUNTT, typename AVGT>

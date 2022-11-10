@@ -24,9 +24,13 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 #include <llvm/IR/Function.h>
+#include <llvm/IR/InstIterator.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Transforms/Utils/Cloning.h>
 
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 #include "util/Logger.h"
@@ -65,8 +69,8 @@ void* LLVMJITFunction::getFunctionPointer() {
   return module_.getFunctionPtrImpl(*this);
 }
 
-JITValuePointer LLVMJITFunction::createVariable(const std::string& name,
-                                                JITTypeTag type_tag) {
+JITValuePointer LLVMJITFunction::createVariable(JITTypeTag type_tag,
+                                                const std::string& name) {
   auto llvm_type = getLLVMType(type_tag, getLLVMContext());
 
   auto current_block = ir_builder_->GetInsertBlock();
@@ -80,8 +84,11 @@ JITValuePointer LLVMJITFunction::createVariable(const std::string& name,
 
   ir_builder_->SetInsertPoint(current_block);
 
-  return std::make_unique<LLVMJITValue>(
-      type_tag, *this, variable_memory, name, JITBackendTag::LLVMJIT, true);
+  return std::make_unique<LLVMJITValue>(type_tag, *this, variable_memory, name, true);
+}
+
+JITTuple LLVMJITFunction::createJITTuple() {
+  return JITTuple(JITTypeTag::TUPLE);
 }
 
 void LLVMJITFunction::createReturn() {
@@ -135,8 +142,7 @@ JITValuePointer LLVMJITFunction::createConstant(JITTypeTag type_tag, std::any va
       LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createConstant: "
                  << getJITTypeName(type_tag);
   }
-  return std::make_unique<LLVMJITValue>(
-      type_tag, *this, llvm_value, "", JITBackendTag::LLVMJIT, false);
+  return std::make_unique<LLVMJITValue>(type_tag, *this, llvm_value, "", false);
 }
 
 JITValuePointer LLVMJITFunction::emitJITFunctionCall(
@@ -153,11 +159,70 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     }
 
     llvm::Value* ans = ir_builder_->CreateCall(&llvmjit_function.func_, args);
-    return std::make_unique<LLVMJITValue>(
-        descriptor.ret_type, *this, ans, "ret", JITBackendTag::LLVMJIT, false);
+    return std::make_unique<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
   } else {
     LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return nullptr;
+  }
+}
+
+// look up a runtime function based on the name
+JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
+    const std::string& fname,
+    const JITFunctionEmitDescriptor& descriptor) {
+  auto func = module_.module_->getFunction(fname);
+  if (!func) {
+    LOG(FATAL) << "Function: " << fname << " does not exist.";
+  }
+  cloneFunctionRecursive(func);
+
+  llvm::SmallVector<llvm::Value*, JITFunctionEmitDescriptor::DefaultParamsNum> args;
+  args.reserve(descriptor.params_vector.size());
+  for (auto jit_value : descriptor.params_vector) {
+    LLVMJITValue* llvmjit_value = static_cast<LLVMJITValue*>(jit_value);
+    args.push_back(llvmjit_value->llvm_value_);
+  }
+
+  llvm::Value* ans = ir_builder_->CreateCall(func, args);
+  return std::make_unique<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
+}
+
+void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
+  CHECK(fn);
+  if (!fn->isDeclaration()) {
+    return;
+  }
+  // Get the implementation from the runtime module.
+  auto func_impl = module_.runtime_module_->getFunction(fn->getName());
+  CHECK(func_impl) << fn->getName().str();
+  if (func_impl->isDeclaration()) {
+    return;
+  }
+
+  auto target_it = fn->arg_begin();
+  for (auto arg_it = func_impl->arg_begin(); arg_it != func_impl->arg_end(); ++arg_it) {
+    target_it->setName(arg_it->getName());
+    module_.vmap_[&*arg_it] = &*target_it++;
+  }
+
+  llvm::SmallVector<llvm::ReturnInst*, JITFunctionEmitDescriptor::DefaultParamsNum>
+      returns;  // Ignore returns cloned.
+#if LLVM_VERSION_MAJOR > 12
+  llvm::CloneFunctionInto(fn,
+                          func_impl,
+                          module_.vmap_,
+                          llvm::CloneFunctionChangeType::DifferentModule,
+                          Returns);
+#else
+  llvm::CloneFunctionInto(
+      fn, func_impl, module_.vmap_, /*ModuleLevelChanges=*/true, returns);
+#endif
+
+  for (auto it = llvm::inst_begin(fn), e = llvm::inst_end(fn); it != e; ++it) {
+    if (llvm::isa<llvm::CallInst>(*it)) {
+      auto& call = llvm::cast<llvm::CallInst>(*it);
+      cloneFunctionRecursive(call.getCalledFunction());
+    }
   }
 }
 
@@ -169,7 +234,6 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   auto& param_type = descriptor_.params_type[index];
   llvm::Value* llvm_value = func_.arg_begin() + index;
   switch (param_type.type) {
-    case JITTypeTag::POINTER:
     case JITTypeTag::INVALID:
     case JITTypeTag::TUPLE:
     case JITTypeTag::STRUCT:
@@ -179,9 +243,17 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                             *this,
                                             llvm_value,
                                             param_type.name,
-                                            JITBackendTag::LLVMJIT,
-                                            false);
+                                            false,
+                                            param_type.sub_type);
   }
+}
+
+IfBuilderPointer LLVMJITFunction::createIfBuilder() {
+  return std::make_unique<LLVMIfBuilder>(func_, *ir_builder_);
+}
+
+LoopBuilderPointer LLVMJITFunction::createLoopBuilder() {
+  return std::make_unique<LLVMLoopBuilder>(func_, *ir_builder_);
 }
 };  // namespace cider::jitlib
 

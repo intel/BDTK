@@ -21,31 +21,61 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITMODULE_H
 #define JITLIB_LLVMJIT_LLVMJITMODULE_H
 
+#include <llvm/IR/LegacyPassManager.h>
+
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/Transforms/Utils/ValueMapper.h>
+
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 namespace cider::jitlib {
+
+enum class OptimizeLevel {
+  DEBUG,
+  RELEASE
+  // TBD other optimizeLevel to be added
+};
+
+// compilation config info
+struct CompilationOptions {
+  OptimizeLevel optimize_level = OptimizeLevel::DEBUG;
+};
+
 class LLVMJITModule final : public JITModule {
  public:
   friend LLVMJITEngineBuilder;
   friend LLVMJITFunction;
 
  public:
-  explicit LLVMJITModule(const std::string& name);
+  explicit LLVMJITModule(const std::string& name,
+                         bool should_copy_runtime_module = false);
+
+  LLVMJITModule(const std::string& name, CompilationOptions co);
 
   JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
+
+  llvm::LLVMContext& getLLVMContext() { return *context_; }
 
   void finish() override;
 
  protected:
-  llvm::LLVMContext& getLLVMContext() { return *context_; }
   void* getFunctionPtrImpl(LLVMJITFunction& function);
+  void optimizeIR(llvm::Module* module);
 
  private:
   std::unique_ptr<llvm::LLVMContext> context_;
   std::unique_ptr<llvm::Module> module_;
   std::unique_ptr<LLVMJITEngine> engine_;
+
+  // runtime module
+ private:
+  void copyRuntimeModule();
+
+  llvm::ValueToValueMapTy vmap_;
+  std::unique_ptr<llvm::Module> runtime_module_;
+  CompilationOptions co_;
 };
 };  // namespace cider::jitlib
 

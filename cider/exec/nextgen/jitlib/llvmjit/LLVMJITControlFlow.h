@@ -21,6 +21,35 @@
 #ifndef JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 #define JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H
 
-namespace cider::jitlib {};  // namespace cider::jitlib
+#include <llvm/IR/IRBuilder.h>
+
+#include "exec/nextgen/jitlib/base/JITControlFlow.h"
+
+namespace cider::jitlib {
+class LLVMIfBuilder final : public IfBuilder {
+ public:
+  LLVMIfBuilder(llvm::Function& function, llvm::IRBuilder<>& builder)
+      : func_(function), builder_(builder) {}
+
+  // TBD: Refactor with template to avoid using std::function.
+  void build() override;
+
+ private:
+  llvm::Function& func_;
+  llvm::IRBuilder<>& builder_;
+};
+
+class LLVMLoopBuilder final : public LoopBuilder {
+ public:
+  LLVMLoopBuilder(llvm::Function& function, llvm::IRBuilder<>& builder)
+      : func_(function), builder_(builder) {}
+
+  void build() override;
+
+ private:
+  llvm::Function& func_;
+  llvm::IRBuilder<>& builder_;
+};
+};  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITCONTROLFLOW_H

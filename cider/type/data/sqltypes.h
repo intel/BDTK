@@ -863,11 +863,12 @@ class SQLTypeInfo {
             assert(false);
         }
         break;
+      case kDATE:
+        return sizeof(int32_t);
       case kTIMESTAMP:
       case kTIME:
       case kINTERVAL_DAY_TIME:
       case kINTERVAL_YEAR_MONTH:
-      case kDATE:
         switch (compression) {
           case kENCODING_NONE:
             return sizeof(int64_t);

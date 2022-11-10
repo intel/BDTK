@@ -202,21 +202,27 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateAdd(
   AUTOMATIC_IR_METADATA(cgen_state_);
   const auto& dateadd_expr_ti = dateadd_expr->get_type_info();
   CHECK(dateadd_expr_ti.get_type() == kTIMESTAMP || dateadd_expr_ti.get_type() == kDATE);
-  auto datetime = codegen(dateadd_expr->get_datetime_expr(), co, true);
-  auto datetime_fixsize = dynamic_cast<FixedSizeColValues*>(datetime.get());
-  auto datetime_value = datetime_fixsize->getValue();
 
-  CHECK(datetime_value->getType()->isIntegerTy(64));
+  auto datetime = codegen(dateadd_expr->get_datetime_expr(), co, true);
+  const auto& datetime_ti = dateadd_expr->get_datetime_expr()->get_type_info();
+  auto datetime_nullable = dynamic_cast<FixedSizeColValues*>(datetime.get());
+  CHECK(datetime_nullable);
+  auto datetime_lv = datetime_nullable->getValue();
+
+  // Implicitly cast to time type for unified time func calculation.
+  if (datetime_ti.get_type() == kDATE) {
+    datetime_lv = codegenCastBetweenTimeAndDate(
+        datetime_lv, SQLTypeInfo(SQLTypes::kDATE), SQLTypeInfo(SQLTypes::kTIMESTAMP));
+  }
 
   auto number = codegen(dateadd_expr->get_number_expr(), co, true);
-  auto number_fixsize = dynamic_cast<FixedSizeColValues*>(number.get());
-  auto number_value = number_fixsize->getValue();
+  auto number_nullable = dynamic_cast<FixedSizeColValues*>(number.get());
+  auto number_lv = number_nullable->getValue();
 
-  const auto& datetime_ti = dateadd_expr->get_datetime_expr()->get_type_info();
   std::vector<llvm::Value*> dateadd_args{
       cgen_state_->llInt(static_cast<int32_t>(dateadd_expr->get_field())),
-      number_value,
-      datetime_value};
+      number_lv,
+      datetime_lv};
   std::string dateadd_fname{"DateAdd"};
   if (is_subsecond_dateadd_field(dateadd_expr->get_field()) ||
       dateadd_expr_ti.is_high_precision_timestamp()) {
@@ -225,7 +231,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateAdd(
         cgen_state_->llInt(static_cast<int32_t>(datetime_ti.get_dimension())));
   }
 
-  llvm::Value* value =
+  llvm::Value* res_lv =
       cgen_state_->emitExternalCall(dateadd_fname,
                                     get_int_type(64, cgen_state_->context_),
                                     dateadd_args,
@@ -233,7 +239,47 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenDateAdd(
                                      llvm::Attribute::ReadNone,
                                      llvm::Attribute::Speculatable});
 
-  return std::make_unique<FixedSizeColValues>(value, datetime_fixsize->getNull());
+  if (dateadd_expr_ti.get_type() == kDATE) {
+    res_lv = codegenCastBetweenTimeAndDate(
+        res_lv, SQLTypeInfo(SQLTypes::kTIMESTAMP), SQLTypeInfo(SQLTypes::kDATE));
+  }
+
+  return std::make_unique<FixedSizeColValues>(res_lv, datetime_nullable->getNull());
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenExtract(
+    const Analyzer::ExtractExpr* extract_expr,
+    const CompilationOptions& co) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  auto fromtime = codegen(extract_expr->get_from_expr(), co, true);
+  const int32_t extract_field{extract_expr->get_field()};
+  const auto& extract_expr_ti = extract_expr->get_from_expr()->get_type_info();
+
+  auto fromtime_nullable = dynamic_cast<FixedSizeColValues*>(fromtime.get());
+  auto fromtime_lv = fromtime_nullable->getValue();
+  if (extract_expr_ti.get_type() == kDATE) {
+    fromtime_lv = codegenCastBetweenTimeAndDate(
+        fromtime_lv, SQLTypeInfo(SQLTypes::kDATE), SQLTypeInfo(SQLTypes::kTIMESTAMP));
+  }
+  if (extract_expr_ti.is_high_precision_timestamp()) {
+    fromtime_lv = codegenExtractHighPrecisionTimestamps(
+        fromtime_lv, extract_expr_ti, extract_expr->get_field());
+  }
+  if (!extract_expr_ti.is_high_precision_timestamp() &&
+      is_subsecond_extract_field(extract_expr->get_field())) {
+    fromtime_lv = cgen_state_->ir_builder_.CreateMul(
+        fromtime_lv,
+        cgen_state_->llInt(
+            get_extract_timestamp_precision_scale(extract_expr->get_field())));
+  }
+  const auto extract_fname = get_extract_function_name(extract_expr->get_field());
+
+  llvm::Value* res_lv =
+      cgen_state_->emitExternalCall(extract_fname,
+                                    get_int_type(64, cgen_state_->context_),
+                                    std::vector<llvm::Value*>{fromtime_lv});
+
+  return std::make_unique<FixedSizeColValues>(res_lv, fromtime_nullable->getNull());
 }
 
 llvm::Value* CodeGenerator::codegen(const Analyzer::DatediffExpr* datediff_expr,

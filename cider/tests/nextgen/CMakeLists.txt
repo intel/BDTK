@@ -17,3 +17,4 @@
 # specific language governing permissions and limitations
 # under the License.
 add_subdirectory(jitlib)
+add_subdirectory(compiler)

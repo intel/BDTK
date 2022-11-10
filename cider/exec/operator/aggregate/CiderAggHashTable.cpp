@@ -170,11 +170,8 @@ uint64_t CiderHasher::updateHashMode(const uint64_t entry_num_limit,
   return entry_num_limit_max;
 }
 
-void CiderHasher::copyStringToLocal(UStringVal* uString) {
+void CiderStringHasher::copyStringToLocal(UStringVal* uString) {
   auto size = uString->size();
-  if (size <= sizeof(int64_t)) {
-    return;
-  }
   if (distinctStringsBytes_ > kMaxDistinctStringsBytes) {
     distinctOverflow_ = true;
     return;
@@ -201,7 +198,7 @@ void CiderHasher::copyStringToLocal(UStringVal* uString) {
   uString->setData(str->data() + start);
 }
 
-int64_t CiderHasher::lookupIdByValue(CiderByteArray value) {
+int64_t CiderStringHasher::lookupIdByValue(CiderByteArray value) {
   if (!value.ptr) {
     return 0;
   }
@@ -213,20 +210,20 @@ int64_t CiderHasher::lookupIdByValue(CiderByteArray value) {
     if (pair.second) {
       if (uStringVals.size() > kMaxDistinct) {
         distinctOverflow_ = true;
-        CIDER_THROW(CiderCompileException, "Overflow in distinct string hash set.");
+        CIDER_THROW(CiderRuntimeException, "Overflow in distinct string hash set.");
       }
       copyStringToLocal(&*pair.first);
       stringCacheVec.emplace_back(*pair.first);
     }
     return uStringVals.find(uString)->id();
   } else {
-    CIDER_THROW(CiderCompileException, "Overflow in distinct string hash set.");
+    CIDER_THROW(CiderRuntimeException, "Overflow in distinct string hash set.");
   }
   return -1;
 }
 
-const CiderByteArray CiderHasher::lookupValueById(int64_t id) const {
-  if (0 == id) {
+const CiderByteArray CiderStringHasher::lookupValueById(int64_t id) const {
+  if (0 == id || -1 == id) {
     return {0, nullptr};
   }
   UStringVal uString = stringCacheVec[id - 1];
