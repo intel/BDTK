@@ -417,37 +417,6 @@ TEST_F(CiderStringNullableTestArrow, ArrowSubstringTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
 }
 
-TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
-  // select column from table
-  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
-  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
-
-  /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
-  /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
-  ///    DuckDb produces only 1 row, while Cider produces input_row_num rows.
-  ///    Because the compiled row_func IR always runs for input_row_num times
-  ///    at runtime in current implementation of Cider.
-  /// 2. If no input table (no FROM clause) is given, the generated Substrait plan will
-  ///    have a "virtualTable" (instead of a "namedTable") as a placeholder input.
-  ///    <https://substrait.io/relations/logical_relations/#virtual-table>
-  // select literal
-  // assertQueryArrow("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
-  // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
-
-  // select literal from table
-  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
-                   "stringop_lower_literal_null.json");
-  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
-                   "stringop_upper_literal_null.json");
-
-  // string op on filter clause
-  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaa'",
-                   "stringop_lower_condition_null.json");
-  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
-                   "stringop_upper_condition_null.json");
-
-}
-
 TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test ");
   assertQueryArrow("SELECT col_1, col_2 FROM test ");
@@ -487,6 +456,37 @@ TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
                    "stringop_lower_condition.json");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
                    "stringop_upper_condition.json");
+}
+
+TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
+  // select column from table
+  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
+
+  /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
+  /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
+  ///    DuckDb produces only 1 row, while Cider produces input_row_num rows.
+  ///    Because the compiled row_func IR always runs for input_row_num times
+  ///    at runtime in current implementation of Cider.
+  /// 2. If no input table (no FROM clause) is given, the generated Substrait plan will
+  ///    have a "virtualTable" (instead of a "namedTable") as a placeholder input.
+  ///    <https://substrait.io/relations/logical_relations/#virtual-table>
+  // select literal
+  // assertQueryArrow("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
+  // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
+
+  // select literal from table
+  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
+                   "stringop_lower_literal_null.json");
+  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
+                   "stringop_upper_literal_null.json");
+
+  // string op on filter clause
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaa'",
+                   "stringop_lower_condition_null.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+                   "stringop_upper_condition_null.json");
+
 }
 
 class CiderConstantStringTest : public CiderTestBase {
