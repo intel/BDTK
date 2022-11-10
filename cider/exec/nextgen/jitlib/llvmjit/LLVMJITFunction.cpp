@@ -234,7 +234,6 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   auto& param_type = descriptor_.params_type[index];
   llvm::Value* llvm_value = func_.arg_begin() + index;
   switch (param_type.type) {
-    case JITTypeTag::POINTER:
     case JITTypeTag::INVALID:
     case JITTypeTag::TUPLE:
     case JITTypeTag::STRUCT:
@@ -244,7 +243,8 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                             *this,
                                             llvm_value,
                                             param_type.name,
-                                            false);
+                                            false,
+                                            param_type.sub_type);
   }
 }
 

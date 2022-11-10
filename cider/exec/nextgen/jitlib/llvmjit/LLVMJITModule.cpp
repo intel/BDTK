@@ -81,13 +81,17 @@ LLVMJITModule::LLVMJITModule(const std::string& name, CompilationOptions co)
 
 static llvm::FunctionType* getFunctionSignature(const JITFunctionDescriptor& descriptor,
                                                 llvm::LLVMContext& context) {
-  llvm::Type* ret_type = getLLVMType(descriptor.ret_type.type, context);
+  auto get_llvm_type = [&context](const JITFunctionParam& param) -> llvm::Type* {
+    return JITTypeTag::POINTER == param.type ? getLLVMPtrType(param.sub_type, context)
+                                             : getLLVMType(param.type, context);
+  };
+  llvm::Type* ret_type = get_llvm_type(descriptor.ret_type);
 
   llvm::SmallVector<llvm::Type*, JITFunctionDescriptor::DefaultParamsNum> arguments;
   arguments.reserve(descriptor.params_type.size());
 
   for (const JITFunctionParam& param_descriptor : descriptor.params_type) {
-    llvm::Type* arg_type = getLLVMType(param_descriptor.type, context);
+    llvm::Type* arg_type = get_llvm_type(param_descriptor);
     if (arg_type) {
       arguments.push_back(arg_type);
     } else {

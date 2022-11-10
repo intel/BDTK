@@ -52,7 +52,7 @@ void LLVMIfBuilder::build() {
   auto after_bb = llvm::BasicBlock::Create(func_.getContext(), ".After_If", &func_);
 
   builder_.CreateCondBr(
-      castToBool(builder_, condition_llvm_value.llvm_value_), true_bb, false_bb);
+      castToBool(builder_, condition_llvm_value.load()), true_bb, false_bb);
 
   builder_.SetInsertPoint(true_bb);
   if (if_true_) {
@@ -83,7 +83,7 @@ void LLVMLoopBuilder::build() {
   auto for_update = llvm::BasicBlock::Create(func_.getContext(), ".Loop_Update", &func_);
   auto after_for = llvm::BasicBlock::Create(func_.getContext(), ".After_Loop", &func_);
   builder_.CreateCondBr(
-      castToBool(builder_, condition_llvm_value.llvm_value_), for_body, after_for);
+      castToBool(builder_, condition_llvm_value.load()), for_body, after_for);
 
   builder_.SetInsertPoint(for_body);
   if (loop_body_) {

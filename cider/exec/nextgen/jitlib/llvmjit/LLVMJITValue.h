@@ -40,14 +40,16 @@ class LLVMJITValue final : public JITValue {
                         LLVMJITFunction& parent_function,
                         llvm::Value* value,
                         const std::string& name = "value",
-                        bool is_variable = false)
-      : JITValue(type_tag, parent_function, name)
+                        bool is_variable = false,
+                        JITTypeTag sub_type_tag = JITTypeTag::INVALID)
+      : JITValue(type_tag, parent_function, name, sub_type_tag)
       , parent_function_(parent_function)
       , llvm_value_(value)
       , is_variable_(is_variable) {}
 
  public:
   JITValue& assign(JITValue& value) override;
+  JITValuePointer getElemAt(JITValue& index) override;
 
   JITValuePointer andOp(JITValue& rh) override;
   JITValuePointer orOp(JITValue& rh) override;
@@ -65,6 +67,9 @@ class LLVMJITValue final : public JITValue {
   JITValuePointer le(JITValue& rh) override;
   JITValuePointer gt(JITValue& rh) override;
   JITValuePointer ge(JITValue& rh) override;
+
+  JITValuePointer castPointerSubType(JITTypeTag sub_type) override;
+  JITValuePointer dereference() override;
 
  private:
   static llvm::IRBuilder<>& getFunctionBuilder(const LLVMJITFunction& function) {
