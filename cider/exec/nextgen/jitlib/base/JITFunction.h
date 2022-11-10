@@ -35,6 +35,7 @@ enum JITFunctionParamAttr : uint64_t {};
 struct JITFunctionParam {
   std::string name{""};
   JITTypeTag type;
+  JITTypeTag sub_type{JITTypeTag::INVALID};
   uint64_t attribute;
 };
 

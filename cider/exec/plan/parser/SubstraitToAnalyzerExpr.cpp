@@ -870,7 +870,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildCoalesceEx
   return Parser::CaseExpr::normalize(expr_list, else_expr);
 }
 
-
 bool isNotPrimitiveType(const SQLTypeInfo& type) {
   return type.is_time() || type.is_string();
 }

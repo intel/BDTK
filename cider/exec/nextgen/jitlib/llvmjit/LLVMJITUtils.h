@@ -50,6 +50,27 @@ inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
   }
 }
 
+inline llvm::PointerType* getLLVMPtrType(JITTypeTag sub_tag, llvm::LLVMContext& ctx) {
+  switch (sub_tag) {
+    case JITTypeTag::BOOL:
+      return llvm::Type::getInt1PtrTy(ctx);
+    case JITTypeTag::INT8:
+      return llvm::Type::getInt8PtrTy(ctx);
+    case JITTypeTag::INT16:
+      return llvm::Type::getInt16PtrTy(ctx);
+    case JITTypeTag::INT32:
+      return llvm::Type::getInt32PtrTy(ctx);
+    case JITTypeTag::INT64:
+      return llvm::Type::getInt64PtrTy(ctx);
+    case JITTypeTag::FLOAT:
+      return llvm::Type::getFloatPtrTy(ctx);
+    case JITTypeTag::DOUBLE:
+      return llvm::Type::getDoublePtrTy(ctx);
+    default:
+      return nullptr;
+  }
+}
+
 inline llvm::Value* getLLVMConstantInt(uint64_t value,
                                        JITTypeTag tag,
                                        llvm::LLVMContext& ctx) {
