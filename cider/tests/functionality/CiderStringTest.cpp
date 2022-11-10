@@ -418,8 +418,9 @@ TEST_F(CiderStringNullableTestArrow, ArrowSubstringTest) {
 }
 
 TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
-  // SELECT LOWER(column) FROM table
+  // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
 
   /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
   /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
@@ -429,21 +430,22 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
   /// 2. If no input table (no FROM clause) is given, the generated Substrait plan will
   ///    have a "virtualTable" (instead of a "namedTable") as a placeholder input.
   ///    <https://substrait.io/relations/logical_relations/#virtual-table>
-  // SELECT LOWER(literal)
-  // assertQueryArrow("SELECT LOWER('ABCDEFG');");
+  // select literal
+  // assertQueryArrow("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
+  // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
 
-  // SELECT LOWER(literal) FROM table
+  // select literal from table
   assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
                    "stringop_lower_literal_null.json");
-
-  // SELECT UPPER(column) FROM table
-  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
-
-  // SELECT UPPER(literal)
-  // assertQueryArrow("SELECT UPPER('abcdefg');");
-
   assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
                    "stringop_upper_literal_null.json");
+
+  // string op on filter clause
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaa'",
+                   "stringop_lower_condition_null.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+                   "stringop_upper_condition_null.json");
+
 }
 
 TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
@@ -470,24 +472,21 @@ TEST_F(CiderStringNullableTestArrow, ArrowSubstringNestTest) {
 }
 
 TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
-  // SELECT LOWER(column) FROM table
+  // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
-
-  // SELECT LOWER(literal)
-  // assertQueryArrow("SELECT LOWER('ABCDEFG');");
-
-  // SELECT LOWER(literal) FROM table
-  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
-                   "stringop_lower_literal.json");
-
-  // SELECT UPPER(column) FROM table
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
 
-  // SELECT UPPER(literal)
-  // assertQueryArrow("SELECT UPPER('abcdefg');");
-
+  // select literal from table
+  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
+                   "stringop_lower_literal.json");
   assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
                    "stringop_upper_literal.json");
+
+  // string op on filter clause
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaa'",
+                   "stringop_lower_condition.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+                   "stringop_upper_condition.json");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

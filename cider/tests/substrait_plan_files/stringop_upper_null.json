@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "upper:vchar"
+        "name": "upper:opt_vchar"
       }
     }
   ],

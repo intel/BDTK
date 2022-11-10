@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "lower:fchar"
+        "name": "lower:opt_fchar"
       }
     }
   ],
@@ -69,7 +69,7 @@
                   "functionReference": 0,
                   "args": [],
                   "outputType": {
-                    "varchar": {
+                    "fixedChar": {
                       "length": 10,
                       "typeVariationReference": 0,
                       "nullability": "NULLABILITY_REQUIRED"

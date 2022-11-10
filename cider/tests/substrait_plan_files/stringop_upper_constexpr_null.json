@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "lower:opt_vchar"
+        "name": "upper:opt_fchar"
       }
     }
   ],
@@ -22,8 +22,7 @@
             "common": {
               "emit": {
                 "outputMapping": [
-                  2,
-                  3
+                  1
                 ]
               }
             },
@@ -34,22 +33,14 @@
                 },
                 "baseSchema": {
                   "names": [
-                    "COL_1",
-                    "COL_2"
+                    "ZERO"
                   ],
                   "struct": {
                     "types": [
                       {
                         "i32": {
                           "typeVariationReference": 0,
-                          "nullability": "NULLABILITY_NULLABLE"
-                        }
-                      },
-                      {
-                        "varchar": {
-                          "length": 10,
-                          "typeVariationReference": 0,
-                          "nullability": "NULLABILITY_NULLABLE"
+                          "nullability": "NULLABILITY_REQUIRED"
                         }
                       }
                     ],
@@ -57,45 +48,40 @@
                     "nullability": "NULLABILITY_REQUIRED"
                   }
                 },
-                "namedTable": {
-                  "names": [
-                    "TEST"
+                "virtualTable": {
+                  "values": [
+                    {
+                      "fields": [
+                        {
+                          "i32": 0,
+                          "nullable": false,
+                          "typeVariationReference": 0
+                        }
+                      ]
+                    }
                   ]
                 }
               }
             },
             "expressions": [
               {
-                "selection": {
-                  "directReference": {
-                    "structField": {
-                      "field": 1
-                    }
-                  },
-                  "rootReference": {}
-                }
-              },
-              {
                 "scalarFunction": {
                   "functionReference": 0,
                   "args": [],
                   "outputType": {
-                    "varchar": {
-                      "length": 10,
+                    "fixedChar": {
+                      "length": 7,
                       "typeVariationReference": 0,
-                      "nullability": "NULLABILITY_NULLABLE"
+                      "nullability": "NULLABILITY_REQUIRED"
                     }
                   },
                   "arguments": [
                     {
                       "value": {
-                        "selection": {
-                          "directReference": {
-                            "structField": {
-                              "field": 1
-                            }
-                          },
-                          "rootReference": {}
+                        "literal": {
+                          "fixedChar": "abcdefg",
+                          "nullable": false,
+                          "typeVariationReference": 0
                         }
                       }
                     }
@@ -106,8 +92,7 @@
           }
         },
         "names": [
-          "COL_2",
-          "EXPR$1"
+          "EXPR$0"
         ]
       }
     }
