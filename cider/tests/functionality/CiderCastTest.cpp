@@ -163,12 +163,38 @@ class CastTypeQueryTest : public CiderTestBase {
 };
 
 TEST_F(CastTypeQueryTest, castTypeTest) {
-  // TODO: cast_bool_into_integer will convert into if/then expr, already not support with
-  // arrow format.
   assertQuery("SELECT CAST(col_4 as TINYINT) FROM test");
   assertQuery("SELECT CAST(col_4 as INTEGER) FROM test");
   // TODO: cast numeric type to string type now not supported.
   // assertQuery("SELECT CAST(col_2 as VARCHAR(10)) FROM test");
+}
+
+class CastTypeQueryForArrowTest : public CiderTestBase {
+ public:
+  CastTypeQueryForArrowTest() {
+    table_name_ = "test";
+    create_ddl_ =
+        "CREATE TABLE test(col_1 TINYINT NOT NULL, col_2 INTEGER NOT NULL, col_3 "
+        "VARCHAR(10) NOT NULL, col_4 "
+        "BOOLEAN NOT NULL, col_5 DATE NOT NULL);";
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        20,
+        {"col_1", "col_2", "col_3", "col_4", "col_5"},
+        {CREATE_SUBSTRAIT_TYPE(I8),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Varchar),
+         CREATE_SUBSTRAIT_TYPE(Bool),
+         CREATE_SUBSTRAIT_TYPE(Date)});
+  }
+};
+
+TEST_F(CastTypeQueryForArrowTest, castTypeTestForArrow) {
+  assertQueryArrow("SELECT CAST(col_4 as TINYINT) FROM test");
+  assertQueryArrow("SELECT CAST(col_4 as INTEGER) FROM test");
+  // TODO: cast numeric type to string type now not supported.
+  // assertQueryArrow("SELECT CAST(col_2 as VARCHAR(10)) FROM test");
 }
 
 int main(int argc, char** argv) {
