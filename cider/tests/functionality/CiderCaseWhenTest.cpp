@@ -257,25 +257,24 @@ IF_TEST(CiderCaseWhenSequenceTestBase, ifTest);
 IF_TEST(CiderCaseWhenSequenceWithNullTestBase, ifTest);
 IF_TEST(CiderCaseWhenRandomWithNullTestBase, ifTest);
 
-#define IF_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                             \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
-    assertQueryArrow("SELECT IF(col_int = 1 ,10, 1) FROM test",                          \
-                     "SELECT CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test");       \
-    assertQueryArrow(                                                                    \
-        "SELECT IF(col_int > 20, col_bigint, col_double) FROM test",                     \
-        "SELECT CASE WHEN col_int > 20 THEN col_bigint ELSE col_double END FROM test");  \
-    assertQueryArrow(                                                                    \
-        "SELECT SUM(IF(col_int > 20, col_double, 5)) FROM test",                         \
-        "SELECT SUM(CASE WHEN col_int > 20 THEN col_double ELSE 5 END) FROM test");      \
-    assertQueryArrow(                                                                    \
-        "SELECT SUM(IF(col_double > 20, 5, col_double)) FROM test",                      \
-        "SELECT SUM(CASE WHEN col_double > 20 THEN 5 ELSE col_double END) FROM test");   \
+#define IF_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                            \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertQueryArrow("SELECT IF(col_int = 1 ,10, 1) FROM test",                         \
+                     "SELECT CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test");      \
+    assertQueryArrow(                                                                   \
+        "SELECT IF(col_int > 20, col_bigint, col_double) FROM test",                    \
+        "SELECT CASE WHEN col_int > 20 THEN col_bigint ELSE col_double END FROM test"); \
+    assertQueryArrow(                                                                   \
+        "SELECT SUM(IF(col_int > 20, col_double, 5)) FROM test",                        \
+        "SELECT SUM(CASE WHEN col_int > 20 THEN col_double ELSE 5 END) FROM test");     \
+    assertQueryArrow(                                                                   \
+        "SELECT SUM(IF(col_double > 20, 5, col_double)) FROM test",                     \
+        "SELECT SUM(CASE WHEN col_double > 20 THEN 5 ELSE col_double END) FROM test");  \
   }
 
 IF_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, ifArrowTest);
-// FIXME(haiwei): if with null value
-// IF_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, ifArrowTest);
-// IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifArrowTest);
+IF_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, ifArrowTest);
+IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifArrowTest);
 
 #define CASE_WHEN_TEST(TEST_CLASS, UNIT_NAME)                                           \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
@@ -360,35 +359,31 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
     assertQueryArrow(                                                                   \
         "SELECT col_double, CASE WHEN col_int > 5 THEN 4 ELSE 3"                        \
         " END FROM test");                                                              \
-    assertQueryArrowIgnoreOrder(                                                        \
-        "SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");          \
     assertQueryArrow(                                                                   \
-        "SELECT col_int, CASE WHEN col_bigint < 9 THEN 2 ELSE 1"                        \
-        " END FROM test");                                                              \
+        "SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");          \
     assertQueryArrow(                                                                   \
         "SELECT col_bigint, CASE WHEN col_double > 5 THEN 3 ELSE 2"                     \
         " END FROM test");                                                              \
     assertQueryArrow(                                                                   \
         "SELECT col_bigint, CASE WHEN col_double > 50 THEN 3 ELSE 2"                    \
         " END FROM test");                                                              \
-    assertQueryArrowIgnoreOrder(                                                        \
+    assertQueryArrow(                                                                   \
         "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 ELSE 0" \
         " END FROM test");                                                              \
-    assertQueryArrowIgnoreOrder(                                                        \
+    assertQueryArrow(                                                                   \
         "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 WHEN "  \
         "col_int = 3 THEN 30 ELSE 0 END FROM test");                                    \
     assertQueryArrow("SELECT SUM(CASE WHEN col_int >50 THEN 10 ELSE 1 END) FROM test"); \
+    assertQueryArrow("SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");    \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN "  \
+        "col_int = 3 THEN 30 END FROM test");                                           \
+    assertQueryArrow(                                                                   \
+        "SELECT col_int, CASE WHEN col_bigint < 9 THEN 2 ELSE 1"                        \
+        " END FROM test");                                                              \
     assertQueryArrow(                                                                   \
         "(SELECT SUM(CASE WHEN col_bigint < 30 THEN 10 WHEN col_bigint > 70"            \
         " THEN 20 WHEN col_bigint = 50 THEN 30 ELSE 1 END) FROM test)");                \
-    GTEST_SKIP_(                                                                        \
-        "FIXME(haiwei): [POAE7-2535] Support Case/IF Function for Arrow Format with "   \
-        "Null value");                                                                  \
-    assertQueryArrowIgnoreOrder(                                                        \
-        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");                 \
-    assertQueryArrowIgnoreOrder(                                                        \
-        "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN "  \
-        "col_int = 3 THEN 30 END FROM test");                                           \
   }
 
 #define CASE_WHEN_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                 \
@@ -396,11 +391,6 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
     assertQueryArrow(                                                                   \
         "SELECT sum(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "    \
         "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                            \
-    assertQueryArrow(                                                                   \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
-        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",     \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
-        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)");    \
     assertQueryArrow("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test"); \
     assertQueryArrow(                                                                   \
         "(SELECT SUM(CASE WHEN col_int = 3 THEN 11 ELSE 2 END),"                        \
@@ -409,18 +399,17 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
         "(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END),"                          \
         " SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");                  \
     assertQueryArrow(                                                                   \
-        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "     \
-        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "   \
-        "END");                                                                         \
-    assertQueryArrow(                                                                   \
         "(SELECT SUM(CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN"       \
         " col_int = 3 THEN 30 ELSE 1 END) FROM test)");                                 \
-    GTEST_SKIP_(                                                                        \
-        "FIXME(haiwei): [POAE7-2535] Support Case/IF Function for Arrow Format with "   \
-        "Null value");                                                                  \
     assertQueryArrow(                                                                   \
         "(SELECT SUM(CASE WHEN col_int < 10 THEN 11 END),"                              \
         " SUM(CASE WHEN col_double > 10 THEN 12 END) FROM test)");                      \
+    assertQueryArrow(                                                                   \
+        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "     \
+        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "   \
+        "END");                                                                         \
+    GTEST_SKIP_(                                                                        \
+        "FIXME(haiwei): Support Case/IF Function for Arrow Format with Group By");      \
     assertQueryArrow(                                                                   \
         "SELECT count(1), SUM(CASE WHEN col_int = 7 THEN col_bigint END), SUM(CASE "    \
         "WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE WHEN col_int = 7 THEN "    \
@@ -429,18 +418,20 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
         "SELECT col_int,  SUM(CASE WHEN col_int = 5 THEN col_bigint + 3 END),"          \
         " SUM(CASE WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END)"       \
         " FROM test GROUP BY col_int");                                                 \
+    assertQueryArrow(                                                                   \
+        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",     \
+        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)");    \
   }
 
 CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, caseWhenArrowTest);
-// FIXME(haiwei): [POAE7-2535] Support Case/IF Function for Arrow Format with Null value
-// CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, caseWhenArrowTest);
-// CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, caseWhenArrowTest);
+CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, caseWhenArrowTest);
+CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, caseWhenArrowTest);
 CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, caseWhenAggArrowTest);
-// FIXME(haiwei): [POAE7-2535] Support Case/IF Function for Arrow Format with Null value
-// CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
-// caseWhenAggArrowTest);
-// CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
-// caseWhenAggArrowTest);
+CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                         caseWhenAggArrowTest);
+CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, caseWhenAggArrowTest);
 
 #define STRING_TEST(TEST_CLASS, UNIT_NAME)                                               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \

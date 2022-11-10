@@ -178,18 +178,28 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   Executor::FetchCacheAnchor anchor(cgen_state_);
   const auto& expr_pair_list = case_expr->get_expr_pair_list();
   std::vector<llvm::Value*> then_lvs;
+  std::vector<llvm::Value*> then_null_lvs;
   std::vector<llvm::BasicBlock*> then_bbs;
-  llvm::Value* null_value = nullptr;
+  llvm::Value* when_null_lv = nullptr;
   const auto end_bb = llvm::BasicBlock::Create(
       cgen_state_->context_, "end_case", cgen_state_->current_func_);
   for (const auto& expr_pair : expr_pair_list) {
     Executor::FetchCacheAnchor branch_anchor(cgen_state_);
     const auto if_expr_ptr = codegen(expr_pair.first.get(), co, true);
     auto if_expr = dynamic_cast<FixedSizeColValues*>(if_expr_ptr.get());
-    if (if_expr && if_expr->getNull() != nullptr) {
-      null_value = if_expr->getNull();
-    }
+    CHECK(if_expr);
     const auto when_lv = toBool(if_expr->getValue());
+    when_null_lv = if_expr->getNull();
+    CHECK(when_lv);
+    llvm::Value* final_when_lv = nullptr;
+    if (when_null_lv) {
+      llvm::Value* filter_lv = cgen_state_->llBool(true);
+      filter_lv = cgen_state_->ir_builder_.CreateAnd(
+          filter_lv, cgen_state_->ir_builder_.CreateNot(when_null_lv));
+      final_when_lv = cgen_state_->ir_builder_.CreateAnd(filter_lv, when_lv);
+    } else {
+      final_when_lv = when_lv;
+    }
     const auto cmp_bb = cgen_state_->ir_builder_.GetInsertBlock();
     const auto then_bb = llvm::BasicBlock::Create(cgen_state_->context_,
                                                   "then_case",
@@ -198,27 +208,35 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     cgen_state_->ir_builder_.SetInsertPoint(then_bb);
     const auto then_expr_ptr = codegen(expr_pair.second.get(), co, true);
     auto then_expr = dynamic_cast<FixedSizeColValues*>(then_expr_ptr.get());
+    CHECK(then_expr);
     auto then_bb_lvs = then_expr->getValue();
+    auto then_bb_null_lvs = then_expr->getNull();
+    CHECK(then_bb_lvs);
     if (is_real_str) {
       // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
       CIDER_THROW(CiderCompileException,
                   "String type case when is not currently supported.");
     } else {
       then_lvs.push_back(then_bb_lvs);
+      if (then_bb_null_lvs) {
+        then_null_lvs.push_back(then_bb_null_lvs);
+      }
     }
     then_bbs.push_back(cgen_state_->ir_builder_.GetInsertBlock());
     cgen_state_->ir_builder_.CreateBr(end_bb);
     const auto when_bb = llvm::BasicBlock::Create(
         cgen_state_->context_, "when_case", cgen_state_->current_func_);
     cgen_state_->ir_builder_.SetInsertPoint(cmp_bb);
-    cgen_state_->ir_builder_.CreateCondBr(when_lv, then_bb, when_bb);
+    cgen_state_->ir_builder_.CreateCondBr(final_when_lv, then_bb, when_bb);
     cgen_state_->ir_builder_.SetInsertPoint(when_bb);
   }
   const auto else_expr = case_expr->get_else_expr();
   CHECK(else_expr);
   const auto else_expr_ptr = codegen(else_expr, co, true);
   auto else_expr_v = dynamic_cast<FixedSizeColValues*>(else_expr_ptr.get());
+  CHECK(else_expr_v);
   auto else_lv = else_expr_v->getValue();
+  auto else_null_lv = else_expr_v->getNull();
   CHECK(else_lv);
   auto else_bb = cgen_state_->ir_builder_.GetInsertBlock();
   cgen_state_->ir_builder_.CreateBr(end_bb);
@@ -230,5 +248,19 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     then_phi->addIncoming(then_lvs[i], then_bbs[i]);
   }
   then_phi->addIncoming(else_lv, else_bb);
-  return std::make_unique<FixedSizeColValues>(then_phi, null_value);
+  llvm::PHINode* then_null_phi = nullptr;
+  if (then_null_lvs.size() > 0 && else_null_lv) {
+    then_null_phi = cgen_state_->ir_builder_.CreatePHI(
+        llvm::Type::getInt1Ty(cgen_state_->context_), expr_pair_list.size() + 1);
+    CHECK_EQ(then_bbs.size(), then_null_lvs.size());
+    for (size_t i = 0; i < then_bbs.size(); ++i) {
+      then_null_phi->addIncoming(then_null_lvs[i], then_bbs[i]);
+    }
+    then_null_phi->addIncoming(else_null_lv, else_bb);
+  }
+  if (then_null_phi) {
+    return std::make_unique<FixedSizeColValues>(then_phi, then_null_phi);
+  } else {
+    return std::make_unique<FixedSizeColValues>(then_phi, when_null_lv);
+  }
 }

@@ -422,14 +422,24 @@ bool CiderBatch::containsNull() const {
   return getNulls() && getNullCount();
 }
 
-#define PRINT_BY_TYPE(C_TYPE)                   \
-  {                                             \
-    ss << "column type: " << #C_TYPE << " ";    \
-    C_TYPE* buf = (C_TYPE*)(array->buffers[1]); \
-    for (int j = 0; j < length; j++) {          \
-      ss << buf[j] << "\t";                     \
-    }                                           \
-    break;                                      \
+#define PRINT_BY_TYPE(C_TYPE)                                                      \
+  {                                                                                \
+    ss << "column type: " << #C_TYPE << " ";                                       \
+    C_TYPE* buf = (C_TYPE*)(array->buffers[1]);                                    \
+    const uint8_t* null_buf = reinterpret_cast<const uint8_t*>(array->buffers[0]); \
+    bool has_null_buf = false;                                                     \
+    if (null_buf != nullptr) {                                                     \
+      has_null_buf = true;                                                         \
+    }                                                                              \
+    for (int j = 0; j < length; j++) {                                             \
+      if (has_null_buf && !CiderBitUtils::isBitSetAt(null_buf, j)) {               \
+        ss << "NULL"                                                               \
+           << "\t";                                                                \
+      } else {                                                                     \
+        ss << buf[j] << "\t";                                                      \
+      }                                                                            \
+    }                                                                              \
+    break;                                                                         \
   }
 
 std::string CiderBatch::toStringForArrow() const {
