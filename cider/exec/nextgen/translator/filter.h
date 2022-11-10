@@ -43,17 +43,17 @@ class FilterNode : public OpNode {
 class FilterTranslator : public Translator {
  public:
   template <typename T>
-  FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
+  FilterTranslator(T&& exprs, std::unique_ptr<Translator> successor) {
     node_ = FilterNode(std::forward<T>(exprs));
-    successor_.swap(succ);
+    successor_.swap(successor);
   }
   // FilterTranslator(std::initializer_list<ExprPtr> exprs,
-  //                  std::unique_ptr<Translator> succ) {
+  //                  std::unique_ptr<Translator> successor) {
   //   node_ = FilterNode(exprs);
-  //   successor_.swap(succ);
+  //   successor_.swap(successor);
   // }
-  FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
-      : node_(std::move(node)), successor_(std::move(succ)) {}
+  FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& successor)
+      : node_(std::move(node)), successor_(std::move(successor)) {}
 
   void consume(Context& context) override;
 

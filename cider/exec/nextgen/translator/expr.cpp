@@ -130,11 +130,11 @@ JITExprValue& ExprGenerator::codegenBinOper(Analyzer::BinOper* bin_oper) {
       const auto optype = bin_oper->get_optype();
       if (IS_ARITHMETIC(optype)) {
         return codegenFixedSizeColArithFun(
-            bin_oper, lhs_val.get_value(), rhs_val.get_value());
+            bin_oper, lhs_val.getValue(), rhs_val.getValue());
       } else if (IS_COMPARISON(optype)) {
         // return codegenCmpFun(bin_oper);
         return codegenFixedSizeColCmpFun(
-            bin_oper, lhs_val.get_value(), rhs_val.get_value());
+            bin_oper, lhs_val.getValue(), rhs_val.getValue());
       } else if (IS_LOGIC(optype)) {
         // return codegenLogicalFun(bin_oper, co);
         UNIMPLEMENTED();

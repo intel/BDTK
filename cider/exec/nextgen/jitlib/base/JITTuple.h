@@ -82,15 +82,15 @@ class JITExprValue {
     ptrs_.push_back(std::move(val));
   }
 
-  cider::jitlib::JITValue& get_value() {
+  cider::jitlib::JITValue& getValue() {
     CHECK_GT(ptrs_.size(), 0);
     return *ptrs_[0];
   }
-  cider::jitlib::JITValue& get_null() {
+  cider::jitlib::JITValue& getNull() {
     CHECK_GT(ptrs_.size(), 1);
     return *ptrs_[1];
   }
-  cider::jitlib::JITValue& get_len() {
+  cider::jitlib::JITValue& getLen() {
     CHECK(is_variadic_);
     CHECK_EQ(ptrs_.size(), 3);
     return *ptrs_[2];

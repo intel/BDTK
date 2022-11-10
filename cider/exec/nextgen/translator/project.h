@@ -43,17 +43,17 @@ class ProjectNode : public OpNode {
 class ProjectTranslator : public Translator {
  public:
   template <typename T>
-  ProjectTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
+  ProjectTranslator(T&& exprs, std::unique_ptr<Translator> successor) {
     node_ = ProjectNode(std::forward<T>(exprs));
-    successor_.swap(succ);
+    successor_.swap(successor);
   }
   // ProjectTranslator(std::initializer_list<ExprPtr> exprs,
-  //                   std::unique_ptr<Translator> succ) {
+  //                   std::unique_ptr<Translator> successor) {
   //   node_ = ProjectNode(exprs);
-  //   successor_.swap(succ);
+  //   successor_.swap(successor);
   // }
-  ProjectTranslator(ProjectNode&& node, std::unique_ptr<Translator>&& succ)
-      : node_(std::move(node)), successor_(std::move(succ)) {}
+  ProjectTranslator(ProjectNode&& node, std::unique_ptr<Translator>&& successor)
+      : node_(std::move(node)), successor_(std::move(successor)) {}
 
   void consume(Context& context) override;
 
