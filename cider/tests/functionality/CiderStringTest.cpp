@@ -486,7 +486,6 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_lower_condition_null.json");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
                    "stringop_upper_condition_null.json");
-
 }
 
 class CiderConstantStringTest : public CiderTestBase {
