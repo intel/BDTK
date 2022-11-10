@@ -70,7 +70,7 @@ const char* get_extract_function_name(ExtractField field) {
     case kYEAR:
       return "extract_year";
   }
-  UNREACHABLE();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
   return "";
 }
 
@@ -98,7 +98,7 @@ bool is_extract_function_complex(ExtractField field) {
     case kYEAR:
       return true;
   }
-  UNREACHABLE();
+  CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
   return false;
 }
 }  // namespace
