@@ -162,7 +162,6 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
     case kBOOLEAN:
       return constant->set_expr_value(
           func_->createConstant(getJITTag(type), constant->get_constval().boolval));
-      break;
     case kTINYINT:
     case kSMALLINT:
     case kINT:
@@ -177,37 +176,13 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
     case kFLOAT:
       return constant->set_expr_value(
           func_->createConstant(getJITTag(type), constant->get_constval().floatval));
-      break;
     case kDOUBLE:
       return constant->set_expr_value(
           func_->createConstant(getJITTag(type), constant->get_constval().doubleval));
-      break;
     case kVARCHAR:
     case kCHAR:
     case kTEXT: {
-      // CHECK(constant->get_constval().stringval || constant->get_is_null());
-      // if (constant->get_is_null()) {
-      //   if (enc_type == kENCODING_DICT) {
-      //     return {
-      //         cgen_state_->llInt(static_cast<int32_t>(inline_int_null_val(type_info)))};
-      //   }
-      //   return {cgen_state_->llInt(int64_t(0)),
-      //           llvm::Constant::getNullValue(
-      //               llvm::PointerType::get(get_int_type(8, cgen_state_->context_), 0)),
-      //           cgen_state_->llInt(int32_t(0))};
-      // }
-      // const auto& str_const = *constant->get_constval().stringval;
-      // if (enc_type == kENCODING_DICT) {
-      //   return {
-      //       cgen_state_->llInt(executor()
-      //                              ->getStringDictionaryProxy(
-      //                                  dict_id, executor()->getRowSetMemoryOwner(),
-      //                                  true)
-      //                              ->getIdOfString(str_const))};
-      // }
-      // return {cgen_state_->llInt(int64_t(0)),
-      //         cgen_state_->addStringConstant(str_const),
-      //         cgen_state_->llInt(static_cast<int32_t>(str_const.size()))};
+      UNIMPLEMENTED();
       break;
     }
     default:
@@ -219,7 +194,6 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
 JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,
                                                          JITValue& lhs,
                                                          JITValue& rhs) {
-  TODO("MaJian", "gen icmp operation");
   switch (bin_oper->get_optype()) {
     case kMINUS:
       return bin_oper->set_expr_value(lhs - rhs);
@@ -241,7 +215,6 @@ JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_
 JITExprValue& ExprGenerator::codegenFixedSizeColCmpFun(Analyzer::BinOper* bin_oper,
                                                        JITValue& lhs,
                                                        JITValue& rhs) {
-  TODO("MaJian", "gen icmp operation");
   switch (bin_oper->get_optype()) {
     case kEQ:
       return bin_oper->set_expr_value(lhs == rhs);
