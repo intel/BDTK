@@ -25,7 +25,7 @@
 #include <memory>
 
 #include "exec/nextgen/OpPipeline.h"
-#include "exec/nextgen/Translator.h"
+#include "exec/nextgen/operators/Translator.h"
 
 namespace cider::exec::nextgen {
 

@@ -22,12 +22,9 @@
 #ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_EXPR_H
 #define CIDER_EXEC_NEXTGEN_TRANSLATOR_EXPR_H
 
-#include <llvm/IR/Value.h>
+#include "exec/nextgen/operators/dummy.h"
 
-#include "exec/nextgen/translator/dummy.h"
-#include "type/plan/Analyzer.h"
-
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 using namespace cider::jitlib;
 
 class ExprGenerator {
@@ -104,5 +101,5 @@ class ExprGenerator {
   JITExprValue fake_val_;
 };
 
-}  // namespace cider::exec::nextgen::translator
+}  // namespace cider::exec::nextgen::operators
 #endif

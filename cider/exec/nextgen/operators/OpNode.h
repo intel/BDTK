@@ -19,11 +19,8 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_OPERATORS_OPNODE_H
-#define NEXTGEN_OPERATORS_OPNODE_H
-
-#include <memory>
-#include <vector>
+#ifndef NEXTGEN_TRANSLATOR_OPNODE_H
+#define NEXTGEN_TRANSLATOR_OPNODE_H
 
 #include "type/plan/Analyzer.h"
 
@@ -57,4 +54,4 @@ class OpNode {
 using OpNodePtrVector = std::vector<OpNodePtr>;
 }  // namespace cider::exec::nextgen
 
-#endif  // NEXTGEN_OPERATORS_OPNODE_H
+#endif // NEXTGEN_TRANSLATOR_OPNODE_H

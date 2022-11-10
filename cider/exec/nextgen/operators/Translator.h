@@ -22,8 +22,6 @@
 #ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_H
 #define CIDER_EXEC_NEXTGEN_TRANSLATOR_H
 
-#include <memory>
-
 #include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen {

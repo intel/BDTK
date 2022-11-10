@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include "exec/nextgen/OpNode.h"
+#include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen {
 

@@ -22,14 +22,9 @@
 #ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
 #define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
 
-#include <initializer_list>
-#include <memory>
+#include "exec/nextgen/operators/dummy.h"
 
-#include "exec/nextgen/jitlib/base/JITValueOperations.h"
-#include "exec/nextgen/translator/dummy.h"
-#include "type/plan/Analyzer.h"
-
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 class MockSinkTranslator : public Translator {
  public:
   explicit MockSinkTranslator(size_t start_pos) : start_pos_(start_pos) {}
@@ -48,5 +43,5 @@ class MockSinkTranslator : public Translator {
   size_t start_pos_;
 };
 
-}  // namespace cider::exec::nextgen::translator
+}  // namespace cider::exec::nextgen::operators
 #endif

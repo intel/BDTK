@@ -27,9 +27,10 @@
 #include <vector>
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
+#include "exec/nextgen/jitlib/JITLib.h"
 #include "type/plan/Analyzer.h"
 
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 using namespace cider::jitlib;
 
 class Context {
@@ -67,5 +68,5 @@ class Translator {
   virtual void consume(Context& context) = 0;
 };
 
-}  // namespace cider::exec::nextgen::translator
+}  // namespace cider::exec::nextgen::operators
 #endif

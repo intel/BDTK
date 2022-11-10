@@ -17,9 +17,5 @@
 # specific language governing permissions and limitations
 # under the License.
 add_subdirectory(jitlib)
-<<<<<<< HEAD
 add_subdirectory(compiler)
 add_subdirectory(translator)
-=======
-# add_subdirectory(compiler)
->>>>>>> add9bf2 (Staged)

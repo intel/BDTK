@@ -20,20 +20,15 @@
  */
 
 #include <gtest/gtest.h>
-#include <memory>
-#include <vector>
 
-#include "exec/nextgen/jitlib/JITLib.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "exec/nextgen/translator/filter.h"
-#include "exec/nextgen/translator/project.h"
+#include "exec/nextgen/operators/FilterNode.h"
+#include "exec/nextgen/operators/ProjectNode.h"
 #include "tests/TestHelpers.h"
 #include "tests/nextgen/translator/MockSink.h"
-#include "type/plan/Analyzer.h"
-#include "util/sqldefs.h"
 
 using namespace cider::jitlib;
-using namespace cider::exec::nextgen::translator;
+using namespace cider::exec::nextgen::operators;
+
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
 class FilterProjectTests : public ::testing::Test {};

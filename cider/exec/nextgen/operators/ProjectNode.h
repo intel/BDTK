@@ -19,17 +19,12 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_PROJECT_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_PROJECT_H
+#ifndef NEXTGEN_OPERATORS_PROJECTNODE_H
+#define NEXTGEN_OPERATORS_PROJECTNODE_H
 
-#include <initializer_list>
-#include <memory>
+#include "exec/nextgen/operators/dummy.h"
 
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/translator/dummy.h"
-#include "type/plan/Analyzer.h"
-
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 class ProjectNode : public OpNode {
  public:
   template <typename T, IsVecOf<T, ExprPtr> = true>
@@ -66,5 +61,5 @@ class ProjectTranslator : public Translator {
   std::unique_ptr<Translator> successor_;
 };
 
-}  // namespace cider::exec::nextgen::translator
-#endif
+}  // namespace cider::exec::nextgen::operators
+#endif  // NEXTGEN_OPERATORS_PROJECTNODE_H

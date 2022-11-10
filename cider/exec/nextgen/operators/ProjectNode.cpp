@@ -19,12 +19,11 @@
  * under the License.
  */
 
-#include "exec/nextgen/translator/project.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/translator/dummy.h"
-#include "exec/nextgen/translator/expr.h"
+#include "exec/nextgen/operators/ProjectNode.h"
 
-namespace cider::exec::nextgen::translator {
+#include "exec/nextgen/operators/expr.h"
+
+namespace cider::exec::nextgen::operators {
 void ProjectTranslator::consume(Context& context) {
   codegen(context);
 }
@@ -38,4 +37,4 @@ void ProjectTranslator::codegen(Context& context) {
   successor_->consume(context);
 }
 
-}  // namespace cider::exec::nextgen::translator
+}  // namespace cider::exec::nextgen::operators
