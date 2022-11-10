@@ -330,7 +330,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   const auto& expr_ti = expr->get_type_info();
   // Should probably CHECK we have a UOper cast to dict encoded to be consistent
   const auto primary_arg = remove_cast(expr->getArg(0));
-  CHECK(primary_arg->get_type_info().is_none_encoded_string());
 
   auto primary_str = codegen(primary_arg, co, true);  // Twovalue
   auto str_values = dynamic_cast<TwoValueColValues*>(primary_str.get());
