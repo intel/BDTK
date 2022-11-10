@@ -334,7 +334,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   // TODO: Decimal constant support.
   const auto& lhs_ti = lhs->get_type_info();
   const auto& rhs_ti = rhs->get_type_info();
-  CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+  if (!lhs_ti.is_string() && !rhs_ti.is_string()) {
+    CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+  }
 
   auto lhs_lv = codegen(lhs, co, true);
   auto rhs_lv = codegen(rhs, co, true);
@@ -548,6 +550,21 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCmpFun(
   }
   CHECK(false);
   return nullptr;
+}
+
+std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringEq(CodegenColValues* lhs,
+                                                                 CodegenColValues* rhs) {
+  auto lhs_fixsize = dynamic_cast<TwoValueColValues*>(lhs);
+  CHECK(lhs_fixsize);
+  auto rhs_fixsize = dynamic_cast<TwoValueColValues*>(rhs);
+  CHECK(rhs_fixsize);
+
+  llvm::Value* value = cgen_state_->emitCall("string_eq",
+                                             {lhs_fixsize->getValueAt(0),
+                                              lhs_fixsize->getValueAt(1),
+                                              rhs_fixsize->getValueAt(0),
+                                              rhs_fixsize->getValueAt(1)});
+  return std::make_unique<FixedSizeColValues>(value);
 }
 
 // TODO:(yma11) Will deprecate
