@@ -210,11 +210,11 @@ std::optional<int64_t> dateTimeParseOptional<kDATE>(std::string_view str,
   return *date + tz.value_or(0);
 }
 
-int32_t parseDateInDays(std::string_view str, unsigned const dim) {
+int32_t parseDateInDays(std::string_view str) {
   DateTimeParser parser;
   // Parse date
   parser.setFormatType(DateTimeParser::FormatType::Date);
-  std::optional<int64_t> seconds = parser.parse(str, dim);
+  std::optional<int64_t> seconds = parser.parse(str, 0);
   if (!seconds) {
     CIDER_THROW(CiderCompileException, "Not a valid date string!");
   }

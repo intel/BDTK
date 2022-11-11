@@ -292,8 +292,8 @@ std::vector<llvm::Value*> CodeGenerator::codegenHoistedConstants(
       const auto constant = constants[device_id];
       const auto& crt_type_info = constant->get_type_info();
       CHECK(type_info == crt_type_info);
-      checked_lit_off =
-          cgen_state_->getOrAddLiteral(constant, enc_type, dict_id, device_id);
+      checked_lit_off = cgen_state_->getOrAddLiteral(
+          constant, enc_type, dict_id, device_id, is_arrow_format);
       if (device_id) {
         CHECK_EQ(lit_off, checked_lit_off);
       } else {

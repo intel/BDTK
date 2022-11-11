@@ -130,6 +130,20 @@ class CiderStringNullableTestArrow : public CiderTestBase {
   }
 };
 
+class CiderStringToDateTest : public CiderTestBase {
+ public:
+  CiderStringToDateTest() {
+    table_name_ = "test";
+    create_ddl_ = R"(CREATE TABLE test(col_int INTEGER, col_str VARCHAR(10));)";
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        100,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2},
+        GeneratePattern::Special_Date_format_String))};
+  }
+};
+
 class CiderStringToDateTestForArrow : public CiderTestBase {
  public:
   CiderStringToDateTestForArrow() {
@@ -146,6 +160,17 @@ class CiderStringToDateTestForArrow : public CiderTestBase {
   }
 };
 
+TEST_F(CiderStringToDateTest, NestedTryCastStringOpTest) {
+  // FIXME(kaidi): support cast string to date with arrow format
+  GTEST_SKIP();
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
+  assertQuery("SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > 2000");
+  assertQuery(
+      "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > col_int");
+}
+
 TEST_F(CiderStringToDateTestForArrow, NestedTryCastStringOpTest) {
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
@@ -161,6 +186,19 @@ TEST_F(CiderStringToDateTestForArrow, NestedTryCastStringOpTest) {
 // assertQuery("SELECT * FROM test where SUBSTRING(col_2, 1, 10) = '0000000000'");
 // assertQuery("SELECT * FROM test where SUBSTRING(col_2, 1, 10) IS NOT NULL");
 // }
+
+TEST_F(CiderStringToDateTest, DateStrTest) {
+  // FIXME(kaidi): support cast string to date with arrow format
+  GTEST_SKIP();
+  assertQuery(
+      "select col_str from test where col_str between date '1970-01-01' and date "
+      "'2077-12-31'",
+      "cast_str_to_date_implictly.json");
+  assertQuery("SELECT CAST(col_str AS DATE) FROM test");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
+              "functions/date/year_cast_string_to_date.json");
+}
 
 TEST_F(CiderStringToDateTestForArrow, DateStrTest) {
   assertQueryArrow(
