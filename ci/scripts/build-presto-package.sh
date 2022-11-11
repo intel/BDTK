@@ -64,37 +64,46 @@ mkdir -p ${package_name}/lib
 mkdir -p ${package_name}/function
 mkdir -p ${package_name}/bin
 mkdir -p ${package_name}/archive
-cp  ./presto/presto-native-execution/_build/release/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
+cp ./presto/presto-native-execution/_build/release/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
 
-cp  ./presto/presto-native-execution/_build/release/presto_cpp/main/presto_server ./${package_name}/bin
-cp -a ./presto/presto-native-execution/presto_cpp/main/lib/libcider.so*  ./${package_name}/lib
-cp	/usr/local/lib/libantlr4-runtime.so.4.9.3	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libre2.so.5	./${package_name}/lib
-cp	/lib/libprotobuf.so.32	./${package_name}/lib
-cp	/usr/local/lib/libLLVM-9.so	./${package_name}/lib
-cp	/usr/local/lib/libtbb.so.12	./${package_name}/lib
-cp  /usr/local/lib/libhdfs3.so ./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libdouble-conversion.so.3	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libglog.so.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libgflags.so.2.2	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libsodium.so.23	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libssl.so.1.1	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libcrypto.so.1.1	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_context.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libevent-2.1.so.7	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libsnappy.so.1	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_regex.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_locale.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_log.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_program_options.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libedit.so.2	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libunwind.so.8	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libicui18n.so.66	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libicuuc.so.66	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libbsd.so.0	./${package_name}/lib
-cp	/lib/x86_64-linux-gnu/libicudata.so.66	./${package_name}/lib
+DEPS_LIBRARY=(
+    ./presto/presto-native-execution/presto_cpp/main/lib/libcider.so
+    /usr/local/lib/libantlr4-runtime.so
+    /lib/x86_64-linux-gnu/libre2.so
+    /lib/libprotobuf.so
+    /usr/local/lib/libLLVM-9.so
+    /usr/local/lib/libtbb.so
+    /usr/local/lib/libhdfs3.so
+    /usr/lib/x86_64-linux-gnu/libgsasl.so
+    /usr/lib/x86_64-linux-gnu/libntlm.so
+    /lib/x86_64-linux-gnu/libdouble-conversion.so
+    /lib/x86_64-linux-gnu/libglog.so
+    /lib/x86_64-linux-gnu/libgflags.so
+    /lib/x86_64-linux-gnu/libsodium.so
+    /lib/x86_64-linux-gnu/libssl.so
+    /lib/x86_64-linux-gnu/libcrypto.so
+    /lib/x86_64-linux-gnu/libboost_context.so
+    /lib/x86_64-linux-gnu/libevent-2.1.so
+    /lib/x86_64-linux-gnu/libsnappy.so
+    /lib/x86_64-linux-gnu/libboost_regex.so
+    /lib/x86_64-linux-gnu/libboost_locale.so
+    /lib/x86_64-linux-gnu/libboost_log.so
+    /lib/x86_64-linux-gnu/libboost_filesystem.so
+    /lib/x86_64-linux-gnu/libboost_program_options.so
+    /lib/x86_64-linux-gnu/libboost_thread.so
+    /lib/x86_64-linux-gnu/libedit.so
+    /lib/x86_64-linux-gnu/libunwind.so
+    /lib/x86_64-linux-gnu/libicui18n.so
+    /lib/x86_64-linux-gnu/libicuuc.so
+    /lib/x86_64-linux-gnu/libbsd.so
+    /lib/x86_64-linux-gnu/libicudata.so
+)
+cp ./presto/presto-native-execution/_build/release/presto_cpp/main/presto_server ./${package_name}/bin
+
+for lib_prefix in ${DEPS_LIBRARY[@]}
+do
+    cp -a ${lib_prefix}* ./${package_name}/lib
+done
 
 tar -czvf ${package_name}.tar.gz ${package_name}
 
