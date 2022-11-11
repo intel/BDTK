@@ -124,6 +124,7 @@ include_directories(thirdparty/robin-hood-hashing/src/include)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 include(substrait-cpp)
+include_directories(${SUBSTRAITCPP_INCLUDE_DIR})
 
 #
 # Subdirectories

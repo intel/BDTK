@@ -76,5 +76,5 @@ add_custom_command(
 
 add_library(cider_function ${function_source_files})
 
+add_dependencies(cider_function SUBSTRAITCPP)
 target_link_libraries(cider_function ${SUBSTRAITCPP_LIB})
-target_include_directories(cider_function PRIVATE ${SUBSTRAITCPP_INCLUDE_DIR})
