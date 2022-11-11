@@ -69,9 +69,9 @@ const SQLOps FunctionLookupEngine::getFunctionScalarOp(
   const std::string& func_name = function_signature.func_name;
   const std::vector<io::substrait::TypePtr>& arguments = function_signature.arguments;
   const io::substrait::TypePtr& return_type = function_signature.return_type;
-  const auto& functionVariantPtr =
+  const auto& function_variant_ptr =
       scalar_function_look_up_ptr_->lookupFunction({func_name, arguments, return_type});
-  if (functionVariantPtr != nullptr) {
+  if (function_variant_ptr != nullptr) {
     return function_mappings_->getFunctionScalarOp(func_name);
   }
   return SQLOps::kUNDEFINED_OP;
@@ -91,9 +91,9 @@ const SQLAgg FunctionLookupEngine::getFunctionAggOp(
   const std::string& func_name = function_signature.func_name;
   const std::vector<io::substrait::TypePtr>& arguments = function_signature.arguments;
   const io::substrait::TypePtr& return_type = function_signature.return_type;
-  const auto& functionVariantPtr = aggregate_function_look_up_ptr_->lookupFunction(
+  const auto& function_variant_ptr = aggregate_function_look_up_ptr_->lookupFunction(
       {func_name, arguments, return_type});
-  if (functionVariantPtr != nullptr) {
+  if (function_variant_ptr != nullptr) {
     return function_mappings_->getFunctionAggOp(func_name);
   }
   return SQLAgg::kUNDEFINED_AGG;
@@ -113,9 +113,9 @@ const OpSupportExprType FunctionLookupEngine::getScalarFunctionOpSupportType(
   const std::string& func_name = function_signature.func_name;
   const std::vector<io::substrait::TypePtr>& arguments = function_signature.arguments;
   const io::substrait::TypePtr& return_type = function_signature.return_type;
-  const auto& functionVariantPtr =
+  const auto& function_variant_ptr =
       scalar_function_look_up_ptr_->lookupFunction({func_name, arguments, return_type});
-  if (functionVariantPtr != nullptr) {
+  if (function_variant_ptr != nullptr) {
     return function_mappings_->getFunctionOpSupportType(func_name);
   }
   return OpSupportExprType::kUNDEFINED_EXPR;
@@ -135,9 +135,9 @@ const OpSupportExprType FunctionLookupEngine::getAggFunctionOpSupportType(
   const std::string& func_name = function_signature.func_name;
   const std::vector<io::substrait::TypePtr>& arguments = function_signature.arguments;
   const io::substrait::TypePtr& return_type = function_signature.return_type;
-  const auto& functionVariantPtr = aggregate_function_look_up_ptr_->lookupFunction(
+  const auto& function_variant_ptr = aggregate_function_look_up_ptr_->lookupFunction(
       {func_name, arguments, return_type});
-  if (functionVariantPtr != nullptr) {
+  if (function_variant_ptr != nullptr) {
     return function_mappings_->getFunctionOpSupportType(func_name);
   }
   return OpSupportExprType::kUNDEFINED_EXPR;
@@ -157,9 +157,9 @@ const OpSupportExprType FunctionLookupEngine::getExtensionFunctionOpSupportType(
   const std::string& func_name = function_signature.func_name;
   const std::vector<io::substrait::TypePtr>& arguments = function_signature.arguments;
   const io::substrait::TypePtr& return_type = function_signature.return_type;
-  const auto& functionVariantPtr = extension_function_look_up_ptr_->lookupFunction(
+  const auto& function_variant_ptr = extension_function_look_up_ptr_->lookupFunction(
       {func_name, arguments, return_type});
-  if (functionVariantPtr != nullptr) {
+  if (function_variant_ptr != nullptr) {
     return OpSupportExprType::kFUNCTION_OPER;
   }
   return OpSupportExprType::kUNDEFINED_EXPR;
