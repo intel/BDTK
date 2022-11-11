@@ -19,38 +19,18 @@
  * under the License.
  */
 
-#ifndef EXEC_NEXTGEN_OPPIPELINE_H
-#define EXEC_NEXTGEN_OPPIPELINE_H
-
-#include <memory>
-#include <vector>
+#ifndef NEXTGEN_PARSERS_PARSER_H
+#define NEXTGEN_PARSERS_PARSER_H
 
 #include "exec/nextgen/operators/OpNode.h"
+#include "exec/template/RelAlgExecutionUnit.h"
 
-namespace cider::exec::nextgen {
+namespace cider::exec::nextgen::parsers {
 
-/// \brief An OpPipeline is a linear sequence of relational operators that operate on
-/// tuple data
-class OpPipeline {
- public:
-  OpPipeline() = default;
+/// \brief A parser convert from the plan fragment to an OpPipeline
+// source--> filter -->sink
+operators::OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu);
 
-  explicit OpPipeline(const OpNodePtrVector& nodes) : nodes_(nodes) {}
+}  // namespace cider::exec::nextgen::parsers
 
-  virtual ~OpPipeline() = default;
-
-  /// \brief Register an operator node in this pipeline
-  ///
-  /// \input opNode The operator node to add to the pipeline
-  void appendOpNode(OpNodePtr node) { nodes_.push_back(node); }
-
-  const OpNodePtrVector& getOpNodes() const { return nodes_; }
-
- private:
-  OpNodePtrVector nodes_;
-};
-
-using OpPipelinePtr = std::unique_ptr<OpPipeline>;
-}  // namespace cider::exec::nextgen
-
-#endif  // EXEC_NEXTGEN_OPPIPELINE_H
+#endif  // NEXTGEN_PARSERS_PARSER_H

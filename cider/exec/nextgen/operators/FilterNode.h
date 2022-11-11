@@ -32,7 +32,9 @@ class FilterNode : public OpNode {
   FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
   // FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
 
-  std::vector<ExprPtr> exprs_;
+  ExprPtrVector getExprs() override { return exprs_; }
+
+  ExprPtrVector exprs_;
 };
 
 class FilterTranslator : public Translator {

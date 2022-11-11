@@ -22,15 +22,15 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "exec/nextgen/Parser.h"
+#include "exec/nextgen/parsers/Parser.h"
 #include "exec/nextgen/Transformer.h"
 #include "tests/TestHelpers.h"
 
 TEST(NextgenCompilerTest, FrameworkTest) {
   using namespace cider::exec::nextgen;
   RelAlgExecutionUnit eu = {};
-  auto pipeline = Parser::toOpPipeline(eu);
-  auto translator = Transformer::toTranslator(*pipeline);
+  auto pipeline = parsers::toOpPipeline(eu);
+  auto translator = Transformer::toTranslator(pipeline);
 }
 
 int main(int argc, char** argv) {

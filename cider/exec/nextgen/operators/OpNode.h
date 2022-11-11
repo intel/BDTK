@@ -25,25 +25,30 @@
 #include "exec/nextgen/Context.h"
 #include "type/plan/Analyzer.h"
 
-namespace cider::exec::nextgen {
+namespace cider::exec::nextgen::operators {
 class Translator;
 class OpNode;
 
 using OpNodePtr = std::shared_ptr<OpNode>;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
+using ExprPtrVector = std::vector<ExprPtr>;
 
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
-class OpNode {
+class OpNode : protected std::enable_shared_from_this<OpNode> {
  public:
-  OpNode() = default;
-  OpNode(const OpNodePtr& input) : input_(input) {}
+  OpNode(const char* name = "None", const OpNodePtr& prev = nullptr)
+      : input_(prev), name_(name) {}
 
   virtual ~OpNode() = default;
 
   /// \brief The name of the operator node
   const char* name() const { return name_; }
+
+  void setInputOpNode(const OpNodePtr& prev) { input_ = prev; }
+
+  virtual ExprPtrVector getExprs() = 0;
 
   /// \brief Transform the operator to a translator
   // virtual std::shared_ptr<Translator> toTranslator() const = 0;
@@ -58,13 +63,28 @@ class Translator {
  public:
   using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
-  Translator() = default;
+  Translator(const OpNodePtr& op_node = nullptr) : op_node_(op_node) {}
+
   virtual ~Translator() = default;
 
   virtual void consume(Context& context) = 0;
+
+ protected:
+  OpNodePtr op_node_;
 };
 
-using OpNodePtrVector = std::vector<OpNodePtr>;
-}  // namespace cider::exec::nextgen
+using OpPipeline = std::vector<OpNodePtr>;
+
+template <typename OpNodeT, typename... Args>
+OpNodePtr createOpNode(Args&&... args) {
+  return std::make_shared<OpNodeT>(std::forward<Args>(args)...);
+}
+
+template <typename OpNodeT>
+bool isa(const OpNodePtr& op) {
+  return dynamic_cast<OpNodeT*>(op.get());
+}
+
+}  // namespace cider::exec::nextgen::operators
 
 #endif  // NEXTGEN_TRANSLATOR_OPNODE_H

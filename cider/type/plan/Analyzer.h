@@ -47,7 +47,8 @@
 namespace Analyzer {
 class Expr;
 using ExprPtr = std::shared_ptr<Expr>;
-}
+using ExprPtrRefVector = std::vector<ExprPtr*>;
+}  // namespace Analyzer
 
 template <typename Tp, typename... Args>
 inline typename std::enable_if<std::is_base_of<Analyzer::Expr, Tp>::value,
@@ -233,6 +234,12 @@ class Expr : public std::enable_shared_from_this<Expr> {
   }
 
   cider::jitlib::JITExprValue* get_expr_value() const { return expr_var_.get(); }
+
+  // TODO (bigPYJ1151): to pure virtual.
+  virtual ExprPtrRefVector get_children_reference() {
+    UNREACHABLE();
+    return {};
+  }
 
  protected:
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
@@ -605,6 +612,10 @@ class BinOper : public Expr {
   static bool simple_predicate_has_simple_cast(
       const std::shared_ptr<Analyzer::Expr> cast_operand,
       const std::shared_ptr<Analyzer::Expr> const_operand);
+
+  ExprPtrRefVector get_children_reference() override {
+    return {&left_operand, &right_operand};
+  }
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.

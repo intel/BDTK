@@ -34,6 +34,8 @@ class ProjectNode : public OpNode {
     (exprs_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
+  ExprPtrVector getExprs() override { return exprs_; }
+
   std::vector<ExprPtr> exprs_;
 };
 
