@@ -74,29 +74,16 @@ const char* get_extract_function_name(ExtractField field) {
   return "";
 }
 
+constexpr int simple_extract_field = kEPOCH | kDATEEPOCH | kQUARTERDAY | kHOUR | kMINUTE |
+                                     kSECOND | kMILLISECOND | kMICROSECOND | kNANOSECOND;
+constexpr int complex_extract_field = kDOW | kISODOW | kDAY | kWEEK | kWEEK_SUNDAY |
+                                      kWEEK_SATURDAY | kDOY | kMONTH | kQUARTER | kYEAR;
+
 bool is_extract_function_complex(ExtractField field) {
-  switch (field) {
-    case kEPOCH:
-    case kDATEEPOCH:
-    case kQUARTERDAY:
-    case kHOUR:
-    case kMINUTE:
-    case kSECOND:
-    case kMILLISECOND:
-    case kMICROSECOND:
-    case kNANOSECOND:
-      return false;
-    case kDOW:
-    case kISODOW:
-    case kDAY:
-    case kWEEK:
-    case kWEEK_SUNDAY:
-    case kWEEK_SATURDAY:
-    case kDOY:
-    case kMONTH:
-    case kQUARTER:
-    case kYEAR:
-      return true;
+  if (simple_extract_field & field) {
+    return false;
+  } else if (complex_extract_field & field) {
+    return true;
   }
   CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
   return false;
@@ -465,7 +452,7 @@ llvm::Value* CodeGenerator::codegenExtractHighPrecisionTimestampsFun(
   CHECK(ti.is_high_precision_timestamp());
   CHECK(ts_lv->getType()->isIntegerTy(64));
   if (is_subsecond_extract_field(field)) {
-    const auto result =
+    const std::pair<SQLOps, int64_t> result =
         get_extract_high_precision_adjusted_scale(field, ti.get_dimension());
     if (result.first == kMULTIPLY) {
       return cgen_state_->ir_builder_.CreateMul(
