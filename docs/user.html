@@ -16,8 +16,8 @@
     <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="BDTK User Guide" href="user/quick-start.html" />
-    <link rel="prev" title="Cider in 10 minutes" href="cider-in-10-min.html" /> 
+    <link rel="next" title="How to use" href="user/quick-start.html" />
+    <link rel="prev" title="BDTK in 10 minutes" href="cider-in-10-min.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -26,10 +26,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="user/quick-start.html" title="BDTK User Guide"
+          <a href="user/quick-start.html" title="How to use"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="cider-in-10-min.html" title="Cider in 10 minutes"
+          <a href="cider-in-10-min.html" title="BDTK in 10 minutes"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>
@@ -44,23 +44,27 @@
 <h1>User Guide<a class="headerlink" href="#user-guide" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="user/quick-start.html">BDTK User Guide</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="user/quick-start.html">How to use</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="user/quick-start.html#environment-preparation">Environment Preparation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/quick-start.html#run-with-prestodb">Run with Prestodb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quick-start.html#how-to-run-simple-examples-with-prestodb-in-dev-environment">How to run simple examples with Prestodb in DEV environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quick-start.html#how-to-run-simple-examples-with-prestodb-in-distributed-environment">How to run simple examples with Prestodb in distributed environment</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user/data-type.html">Data Types</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/data-type.html#scalar-types">Scalar Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/feature-type.html">Supported features</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/data-type.html">Data Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/agg-func.html">Aggregate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/condition-expr.html">Conditional Expression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/conversion-func.html">Conversion Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/logic-cmp-op.html">Logical and Comparsion ops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/math-func.html">Mathematical Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/string-func.html">String Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/time-func.html">Time Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/feature/syntax-support.html">Sql Syntax</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user/function-support.html">Function support</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#aggregate-functions">Aggregate Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#logical-ops-and-comparsion-functions">Logical Ops and Comparsion Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#conversion-functions">Conversion Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#time-functions">Time Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#conditional-expression-functions">Conditional Expression Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#mathematical-functions">Mathematical Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/function-support.html#string-functions">String Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/utils.html">Utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/utils.html#sql2ir">Sql2IR</a></li>
 </ul>
 </li>
 </ul>
@@ -75,10 +79,10 @@
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="cider-in-10-min.html"
-                        title="previous chapter">Cider in 10 minutes</a></p>
+                        title="previous chapter">BDTK in 10 minutes</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="user/quick-start.html"
-                        title="next chapter">BDTK User Guide</a></p>
+                        title="next chapter">How to use</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -109,10 +113,10 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="user/quick-start.html" title="BDTK User Guide"
+          <a href="user/quick-start.html" title="How to use"
              >next</a> |</li>
         <li class="right" >
-          <a href="cider-in-10-min.html" title="Cider in 10 minutes"
+          <a href="cider-in-10-min.html" title="BDTK in 10 minutes"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Cider 1.0 documentation</a> &#187;</li> 
       </ul>

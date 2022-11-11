@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Development Specification &#8212; Cider 1.0 documentation</title>
+    <title>Implementation Specification &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -16,8 +16,8 @@
     <script type="text/javascript" src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="CiderAllocator use guide" href="CiderAllocator-use-guide.html" />
-    <link rel="prev" title="Syntax support in Cider" href="syntax-support.html" /> 
+    <link rel="next" title="Sharing" href="../cider-sharing.html" />
+    <link rel="prev" title="How to contribute" href="debugging.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -26,10 +26,10 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="CiderAllocator-use-guide.html" title="CiderAllocator use guide"
+          <a href="../cider-sharing.html" title="Sharing"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="syntax-support.html" title="Syntax support in Cider"
+          <a href="debugging.html" title="How to contribute"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../develop.html" accesskey="U">Developer Guide</a> &#187;</li> 
@@ -41,22 +41,348 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="development-specification">
-<h1>Development Specification<a class="headerlink" href="#development-specification" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="implementation-specification">
+<h1>Implementation Specification<a class="headerlink" href="#implementation-specification" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="exception-specification">
-<h2>1 Exception Specification<a class="headerlink" href="#exception-specification" title="Permalink to this headline">¶</a></h2>
+<h2>Exception Specification<a class="headerlink" href="#exception-specification" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="cider-exception">
-<h3>1.1 cider exception<a class="headerlink" href="#cider-exception" title="Permalink to this headline">¶</a></h3>
+<h3>cider exception<a class="headerlink" href="#cider-exception" title="Permalink to this headline">¶</a></h3>
 <p>For exceptions in the cider directory, please import cider/include/cider/CiderException.h</p>
 <p>Exception types such as CiderException, CiderRuntimeException, and CiderCompileException are defined,</p>
 <p>please use the macro CIDER_THROW to throw exceptions, such as CIDER_THROW(CiderCompileException, “Exception message”);</p>
 </div>
 <div class="section" id="cider-velox-exception">
-<h3>1.2 cider-velox Exception<a class="headerlink" href="#cider-velox-exception" title="Permalink to this headline">¶</a></h3>
+<h3>cider-velox exception<a class="headerlink" href="#cider-velox-exception" title="Permalink to this headline">¶</a></h3>
 <p>For exceptions in the cider-velox directory, please use thirdparty/velox/velox/common/base/Exceptions.h,</p>
 <p>Exception types such as VeloxException, VeloxUserError, VeloxRuntimeError are defined,</p>
 <p>please use the macros VELOX_UNSUPPORTED, VELOX_FAIL, VELOX_USER_FAIL, VELOX_NYI to throw exceptions,</p>
 <p>for example VELOX_UNSUPPORTED(“Conversion is not supported yet, type is {}”, type);</p>
+</div>
+</div>
+<div class="section" id="ciderallocator-use-guide">
+<h2>CiderAllocator use guide<a class="headerlink" href="#ciderallocator-use-guide" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="introduction-to-ciderallocator">
+<h3>introduction to CiderAllocator<a class="headerlink" href="#introduction-to-ciderallocator" title="Permalink to this headline">¶</a></h3>
+<p>We provide the allocation interface in CiderAllocator.h and two default implementations</p>
+<p>CiderDefaultAllocator provide the default allocate and deallocate function via system library</p>
+<p>AlignAllocator provide the function to perform memory alignment</p>
+</div>
+<div class="section" id="how-to-use">
+<h3>how to use<a class="headerlink" href="#how-to-use" title="Permalink to this headline">¶</a></h3>
+<p>user can construct an allocator from upstream memory pool, and then memory allocated will be in the pool.
+or use the CiderDefaultAllocator, AlignAllocator if they don’t want to do it,
+but this allocator must be present and passed throughout the calling logic
+because Only in this way can you know the memory usage during the entire operation for memory managerment</p>
+<p>A typical usage in CiderRunTimeModule</p>
+<div class="section" id="add-the-member-variables-in-h-file">
+<h4>1. add the member variables in .h file<a class="headerlink" href="#add-the-member-variables-in-h-file" title="Permalink to this headline">¶</a></h4>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">std::shared_ptr&lt;CiderAllocator&gt;</span> <span class="pre">allocator</span></code></dt>
+<dd><p class="first">and add it in the constructor:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CiderRuntimeModule</span><span class="p">(</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderCompilationResult</span><span class="o">&gt;</span> <span class="n">ciderCompilationResult</span><span class="p">,</span>
+  <span class="n">CiderCompilationOption</span> <span class="n">ciderCompilationOption</span> <span class="o">=</span> <span class="n">CiderCompilationOption</span><span class="p">::</span><span class="n">defaults</span><span class="p">(),</span>
+  <span class="n">CiderExecutionOption</span> <span class="n">ciderExecutionOption</span> <span class="o">=</span> <span class="n">CiderExecutionOption</span><span class="p">::</span><span class="n">defaults</span><span class="p">(),</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderAllocator</span><span class="o">&gt;</span> <span class="n">allocator</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">CiderDefaultAllocator</span><span class="o">&gt;</span><span class="p">());</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="in-cpp-implementation-class">
+<h4>2. in .cpp implementation class<a class="headerlink" href="#in-cpp-implementation-class" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CiderRuntimeModule</span><span class="p">::</span><span class="n">CiderRuntimeModule</span><span class="p">(</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderCompilationResult</span><span class="o">&gt;</span> <span class="n">ciderCompilationResult</span><span class="p">,</span>
+    <span class="n">CiderCompilationOption</span> <span class="n">ciderCompilationOption</span><span class="p">,</span>
+    <span class="n">CiderExecutionOption</span> <span class="n">ciderExecutionOption</span><span class="p">,</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">CiderAllocator</span><span class="o">&gt;</span> <span class="n">allocator</span><span class="p">)</span>
+    <span class="p">:</span> <span class="n">ciderCompilationResult_</span><span class="p">(</span><span class="n">ciderCompilationResult</span><span class="p">)</span>
+    <span class="p">,</span> <span class="n">ciderCompilationOption_</span><span class="p">(</span><span class="n">ciderCompilationOption</span><span class="p">)</span>
+    <span class="p">,</span> <span class="n">ciderExecutionOption_</span><span class="p">(</span><span class="n">ciderExecutionOption</span><span class="p">)</span>
+    <span class="p">,</span> <span class="n">allocator_</span><span class="p">(</span><span class="n">allocator</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="then-we-can-use-it-in-the-implementation-class-for-memory-allocation-and-release">
+<h4>3. Then we can use it in the implementation class for memory allocation and release<a class="headerlink" href="#then-we-can-use-it-in-the-implementation-class-for-memory-allocation-and-release" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">const</span> <span class="n">int8_t</span><span class="o">**</span> <span class="n">col_buffers</span> <span class="o">=</span> <span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="n">const</span> <span class="n">int8_t</span><span class="o">**&gt;</span><span class="p">(</span><span class="n">allocator_</span><span class="o">-&gt;</span><span class="n">allocate</span><span class="p">(</span><span class="n">sizeof</span><span class="p">(</span><span class="n">int8_t</span><span class="o">**</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">total_col_num</span><span class="p">)));</span>
+<span class="n">allocator_</span><span class="o">-&gt;</span><span class="n">deallocate</span><span class="p">(</span><span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="n">int8_t</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">col_buffers</span><span class="p">),</span><span class="n">sizeof</span><span class="p">(</span><span class="n">int8_t</span><span class="o">**</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">total_col_num</span><span class="p">));</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="finally-we-can-pass-a-custom-allocator-when-creating-ciderruntimemodule-or-use-the-default">
+<h4>4. Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default<a class="headerlink" href="#finally-we-can-pass-a-custom-allocator-when-creating-ciderruntimemodule-or-use-the-default" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">auto</span> <span class="n">customAllocator</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">CustomAllocator</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">cider_runtime_module_</span> <span class="o">=</span> <span class="n">std</span><span class="p">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">CiderRuntimeModule</span><span class="o">&gt;</span><span class="p">(</span><span class="n">compile_res_</span><span class="p">,</span> <span class="n">compile_option</span><span class="p">,</span> <span class="n">exe_option</span><span class="p">,</span> <span class="n">customAllocator</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="logger">
+<h2>Logger<a class="headerlink" href="#logger" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;util/Logger.h&quot;</span></code></p>
+<p>The BDTK Logger is based on <a class="reference external" href="https://www.boost.org/libs/log/doc/html/index.html">Boost.Log</a> with a design goal of being largely, though not completely, backward
+compatible with <a class="reference external" href="https://github.com/google/glog">glog</a> in usage, but with additional control over the logging format and other features.</p>
+<p>For the developer, log entries are made in a syntax that is similar to <code class="docutils literal notranslate"><span class="pre">std::ostream</span></code>. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;x = &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">x</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">INFO</span></code> is one common example of the log “severity” level. Other severities are <code class="docutils literal notranslate"><span class="pre">WARNING</span></code>, <code class="docutils literal notranslate"><span class="pre">FATAL</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DEBUG1</span></code>, etc. See <a class="reference internal" href="#severity">Severity</a>.</p>
+<div class="section" id="initialization-and-global-instances">
+<h3>Initialization and Global Instances<a class="headerlink" href="#initialization-and-global-instances" title="Permalink to this headline">¶</a></h3>
+<p>To initialize the logging system, the function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">namespace</span> <span class="n">logger</span> <span class="p">{</span>
+
+<span class="n">void</span> <span class="n">init</span><span class="p">(</span><span class="n">LogOptions</span> <span class="n">const</span><span class="o">&amp;</span><span class="p">);</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>LogOptions has the following public member variables and member functions:</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">boost::filesystem::path</span> <span class="pre">log_dir_{&quot;bdtk_log&quot;};</span></code> // Logging directory. May be relative to data directory, or absolute.</li>
+<li><code class="docutils literal notranslate"><span class="pre">std::string</span> <span class="pre">file_name_pattern_{&quot;.{SEVERITY}.%Y%m%d-%H%M%S.log&quot;};</span></code> // file_name_pattern is prepended with base_name.</li>
+<li><code class="docutils literal notranslate"><span class="pre">std::string</span> <span class="pre">symlink_{&quot;.{SEVERITY}&quot;};</span></code> // symlink is prepended with base_name.</li>
+<li><code class="docutils literal notranslate"><span class="pre">Severity</span> <span class="pre">severity_{Severity::INFO};</span></code>  // log level.</li>
+<li><code class="docutils literal notranslate"><span class="pre">Severity</span> <span class="pre">severity_clog_{Severity::ERROR};</span></code> //Log to console severity level.</li>
+<li><code class="docutils literal notranslate"><span class="pre">bool</span> <span class="pre">auto_flush_{true};</span></code> // Flush logging buffer to file after each message.</li>
+<li><code class="docutils literal notranslate"><span class="pre">size_t</span> <span class="pre">max_files_{100};</span></code> // The maximum number of log files, if it is 0, no log will be recorded</li>
+<li><code class="docutils literal notranslate"><span class="pre">size_t</span> <span class="pre">min_free_space_{20</span> <span class="pre">&lt;&lt;</span> <span class="pre">20};</span></code> // Minimum number of bytes left on device before oldest log files are deleted.</li>
+<li><code class="docutils literal notranslate"><span class="pre">size_t</span> <span class="pre">rotation_size_{10</span> <span class="pre">&lt;&lt;</span> <span class="pre">20};</span></code> // Maximum file size in bytes before new log files are started.</li>
+<li><code class="docutils literal notranslate"><span class="pre">LogOptions(char</span> <span class="pre">const*</span> <span class="pre">argv0);</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">boost::filesystem::path</span> <span class="pre">full_log_dir()</span> <span class="pre">const;</span></code> // get log path</li>
+<li><code class="docutils literal notranslate"><span class="pre">void</span> <span class="pre">set_base_path(std::string</span> <span class="pre">const&amp;</span> <span class="pre">base_path);</span></code> // set log base path</li>
+<li><code class="docutils literal notranslate"><span class="pre">void</span> <span class="pre">parse_command_line(int,</span> <span class="pre">char</span> <span class="pre">const*</span> <span class="pre">const*);</span></code> // Pass parameters using the command line<ul>
+<li><code class="docutils literal notranslate"><span class="pre">--log-directory</span></code> : Logging directory. May be relative to data directory, or absolute.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-file-name</span></code> : Log file name relative to log-directory.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-symlink</span></code> : Symlink to active log.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-severity</span></code> : Log to file severity level.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-severity-clog</span></code> : Log to console severity level.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-auto-flush</span></code> : Flush logging buffer to file after each message.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-max-files</span></code> : Maximum number of log files to keep.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-min-free-space</span></code> : Minimum number of bytes left on device before oldest log files are deleted.</li>
+<li><code class="docutils literal notranslate"><span class="pre">--log-rotation-size</span></code> : Maximum file size in bytes before new log files are started.</li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<p>must be invoked with the <code class="docutils literal notranslate"><span class="pre">logger::LogOptions</span></code> object to be applied. It is recommended
+to run this from <code class="docutils literal notranslate"><span class="pre">main()</span></code> as early as possible. use the <code class="docutils literal notranslate"><span class="pre">LOG</span></code>/<code class="docutils literal notranslate"><span class="pre">CHECK</span></code> macros for all normal logging. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="p">::</span><span class="n">LogOptions</span> <span class="n">log_options</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<span class="n">log_options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">);</span>
+<span class="n">log_options</span><span class="o">.</span><span class="n">max_files_</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">log_options</span><span class="o">.</span><span class="n">set_base_path</span><span class="p">(</span><span class="s2">&quot;/root/work&quot;</span><span class="p">);</span>
+<span class="n">log_options</span><span class="o">.</span><span class="n">log_dir_</span> <span class="o">=</span> <span class="s2">&quot;bdtk_log&quot;</span><span class="p">;</span>
+<span class="n">logger</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">log_options</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="severity">
+<h4>Severity<a class="headerlink" href="#severity" title="Permalink to this headline">¶</a></h4>
+<p>There are currently 8 severity levels that can be used with the <code class="docutils literal notranslate"><span class="pre">LOG()</span></code> macro, in decreasing order of
+severity from most severe to least:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="14%" />
+<col width="86%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Severity</strong></td>
+<td><strong>When to Use</strong></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">FATAL</span></code></td>
+<td>An unrecoverable error has occurred, and must be fixed in the software.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">ERROR</span></code></td>
+<td>A recoverable error has occurred, and must be fixed in the software.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">WARNING</span></code></td>
+<td>Something that “should not have” happened happened, but is not as demanding
+of an immediate fix as an <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>. Example: A deprecated feature is still
+being used, even though the user was informed of its deprecation.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">INFO</span></code></td>
+<td>Significant and informative milestones in the execution of the program.
+One must balance logging useful and informative information, against
+logging too much useless and redundant information that drowns the signal
+out with noise.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">DEBUG1</span></code></td>
+<td>More detailed information about the execution of the program than <code class="docutils literal notranslate"><span class="pre">INFO</span></code>
+that would be useful for debugging, but less detailed than the below debug
+levels. E.g. don’t log every row of a million-row table.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">DEBUG2</span></code></td>
+<td>More detailed information than <code class="docutils literal notranslate"><span class="pre">DEBUG1</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">DEBUG3</span></code></td>
+<td>More detailed information than <code class="docutils literal notranslate"><span class="pre">DEBUG2</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">DEBUG4</span></code></td>
+<td>More detailed information than <code class="docutils literal notranslate"><span class="pre">DEBUG3</span></code>.</td>
+</tr>
+</tbody>
+</table>
+<p>All <code class="docutils literal notranslate"><span class="pre">LOG()</span></code> calls with a lesser severity are ignored and not logged. For example if <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG1)</span></code> then log
+calls <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG1)</span></code>, <code class="docutils literal notranslate"><span class="pre">LOG(INFO)</span></code>, <code class="docutils literal notranslate"><span class="pre">LOG(WARNING)</span></code>, <code class="docutils literal notranslate"><span class="pre">LOG(ERROR)</span></code>, and <code class="docutils literal notranslate"><span class="pre">LOG(FATAL)</span></code> are active and
+will produce log entries when executed, and log calls <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG4)</span></code>, <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG3)</span></code>, and <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG2)</span></code>
+are ignored. If a function is called in the input stream, e.g. <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG2)</span> <span class="pre">&lt;&lt;</span> <span class="pre">f(x)</span></code>, then <code class="docutils literal notranslate"><span class="pre">f(x)</span></code> will
+be invoked if any only if <code class="docutils literal notranslate"><span class="pre">DEBUG2</span></code> is an active log severity.</p>
+<p>Errors that are logged with <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> and <code class="docutils literal notranslate"><span class="pre">FATAL</span></code> should be considered software errors, and not user errors.
+For example, if the user inputs a malformed SQL query, e.g. <code class="docutils literal notranslate"><span class="pre">SELEKT</span></code> instead of <code class="docutils literal notranslate"><span class="pre">SELECT</span></code>, then this
+should NOT be logged as an <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>, but instead logged as an <code class="docutils literal notranslate"><span class="pre">INFO</span></code> with an appropriate response to
+the user. This would be considered correct behavior of the software. In contrast, anytime an <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> or
+<code class="docutils literal notranslate"><span class="pre">FATAL</span></code> is logged, then it means there is a bug in the software that must be fixed.</p>
+</div>
+<div class="section" id="log-files">
+<h4>Log Files<a class="headerlink" href="#log-files" title="Permalink to this headline">¶</a></h4>
+<p>A separate log file is produced for <code class="docutils literal notranslate"><span class="pre">INFO</span></code>, <code class="docutils literal notranslate"><span class="pre">WARNING</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>, and <code class="docutils literal notranslate"><span class="pre">FATAL</span></code> if the log severity is
+active.  If any of the <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> severities are active, they are included into the <code class="docutils literal notranslate"><span class="pre">INFO</span></code> log file.  Each log
+file redundantly includes all entries that are more severe than itself. For example if <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG1)</span></code>
+then the <code class="docutils literal notranslate"><span class="pre">INFO</span></code> log file will include all log calls <code class="docutils literal notranslate"><span class="pre">LOG(DEBUG1)</span></code>, <code class="docutils literal notranslate"><span class="pre">LOG(INFO)</span></code>, <code class="docutils literal notranslate"><span class="pre">LOG(WARNING)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LOG(ERROR)</span></code>, and <code class="docutils literal notranslate"><span class="pre">LOG(FATAL)</span></code>; the <code class="docutils literal notranslate"><span class="pre">WARNING</span></code> log file will include all log calls <code class="docutils literal notranslate"><span class="pre">LOG(WARNING)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LOG(ERROR)</span></code>, and <code class="docutils literal notranslate"><span class="pre">LOG(FATAL)</span></code>.</p>
+<p>The name of the log file by default includes the program name, severity, and timestamp of when its first entry
+was made. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cider</span><span class="o">.</span><span class="n">INFO</span><span class="o">.</span><span class="mi">20220928</span><span class="o">-</span><span class="mf">162525.</span><span class="n">log</span>
+</pre></div>
+</div>
+<p>New log files are started on each (re)start. A symbolic link without the timestamp and file extension
+suffix points to the latest version. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cider</span><span class="o">.</span><span class="n">INFO</span> <span class="o">-&gt;</span> <span class="n">cider</span><span class="o">.</span><span class="n">INFO</span><span class="o">.</span><span class="mi">20220928</span><span class="o">-</span><span class="mf">162525.</span><span class="n">log</span>
+</pre></div>
+</div>
+<div class="section" id="format">
+<h5>Format<a class="headerlink" href="#format" title="Permalink to this headline">¶</a></h5>
+<p>The general format of a log entry is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span> <span class="p">(</span><span class="n">severity</span><span class="p">)</span> <span class="p">(</span><span class="n">process_id</span><span class="p">)</span> <span class="p">(</span><span class="n">query_id</span><span class="p">)</span> <span class="p">(</span><span class="n">thread_id</span><span class="p">)</span> <span class="p">(</span><span class="n">filename</span><span class="p">:</span><span class="n">line_number</span><span class="p">)</span> <span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2019</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">25</span><span class="p">:</span><span class="mf">25.659248</span> <span class="n">I</span> <span class="mi">26481</span> <span class="mi">0</span> <span class="mi">0</span> <span class="n">measure</span><span class="o">.</span><span class="n">h</span><span class="p">:</span><span class="mi">80</span> <span class="n">Timer</span> <span class="n">start</span>
+</pre></div>
+</div>
+<p>Field descriptions:</p>
+<div class="line-block">
+<div class="line">1. Timestamp in local timezone with microsecond resolution.</div>
+<div class="line">2. Single-character severity level. In same order as above severity levels:</div>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">F</span></code> <code class="docutils literal notranslate"><span class="pre">E</span></code> <code class="docutils literal notranslate"><span class="pre">W</span></code> <code class="docutils literal notranslate"><span class="pre">I</span></code> <code class="docutils literal notranslate"><span class="pre">1</span></code> <code class="docutils literal notranslate"><span class="pre">2</span></code> <code class="docutils literal notranslate"><span class="pre">3</span></code> <code class="docutils literal notranslate"><span class="pre">4</span></code></div>
+<div class="line">For instance the <code class="docutils literal notranslate"><span class="pre">I</span></code> implies that the above log entry is of <code class="docutils literal notranslate"><span class="pre">INFO</span></code> severity.</div>
+</div>
+<div class="line">3. The <cite>process_id</cite> assigned by the operating system.</div>
+<div class="line">4. The <cite>query_id</cite> is a unique 64-bit positive integer incrementally assigned to each new SQL query. A value of <cite>0</cite> indicates that the log line is outside of the context of any particular query, or that the <cite>query_id</cite> is not available.</div>
+<div class="line">5. The <cite>thread_id</cite> is a unique 64-bit positive integer incrementally assigned to each new thread. <cite>thread_id=1</cite> is assigned to the first thread each time the program starts.</div>
+<div class="line">6. Source filename:Line number.</div>
+<div class="line">7. Custom message sent to <code class="docutils literal notranslate"><span class="pre">LOG()</span></code> via the insertion <code class="docutils literal notranslate"><span class="pre">&lt;&lt;</span></code> operator.</div>
+</div>
+<p>Note that log entries can contain line breaks, thus not all log lines will begin with these fields if
+the message itself contains multiple lines.</p>
+</div>
+</div>
+<div class="section" id="macros">
+<h4>Macros<a class="headerlink" href="#macros" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="log">
+<h5>LOG<a class="headerlink" href="#log" title="Permalink to this headline">¶</a></h5>
+<p>In addition to the <code class="docutils literal notranslate"><span class="pre">LOG()</span></code> macro, there are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">LOG_IF(severity,</span> <span class="pre">condition)</span></code> - Same as <code class="docutils literal notranslate"><span class="pre">LOG(severity)</span></code> but first checks a boolean <code class="docutils literal notranslate"><span class="pre">condition</span></code> and logs
+only if evaluated to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">VLOG(n)</span></code> - Same as <code class="docutils literal notranslate"><span class="pre">LOG(DEBUGn)</span></code> for <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4</span></code>.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="check">
+<h5>CHECK<a class="headerlink" href="#check" title="Permalink to this headline">¶</a></h5>
+<p>In release mode, the <code class="docutils literal notranslate"><span class="pre">CHECK</span></code> macro does nothing. In debug mode,
+the <code class="docutils literal notranslate"><span class="pre">CHECK(condition)</span></code> macro evaluates <code class="docutils literal notranslate"><span class="pre">condition</span></code> as a boolean value. If true, then execution continues
+with nothing logged. Otherwise both the <code class="docutils literal notranslate"><span class="pre">condition</span></code> source code string is logged at <code class="docutils literal notranslate"><span class="pre">FATAL</span></code> severity,
+along with any optional <code class="docutils literal notranslate"><span class="pre">&lt;&lt;</span> <span class="pre">message</span></code>.</p>
+<div class="line-block">
+<div class="line">Similarly there are 6 binary <code class="docutils literal notranslate"><span class="pre">CHECK</span></code> comparison macros:</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">CHECK_EQ</span></code>, <code class="docutils literal notranslate"><span class="pre">CHECK_NE</span></code>, <code class="docutils literal notranslate"><span class="pre">CHECK_LT</span></code>, <code class="docutils literal notranslate"><span class="pre">CHECK_LE</span></code>, <code class="docutils literal notranslate"><span class="pre">CHECK_GT</span></code>, <code class="docutils literal notranslate"><span class="pre">CHECK_GE</span></code></div>
+<div class="line">which accept two parameters, and apply the comparison operators <code class="docutils literal notranslate"><span class="pre">==</span></code>, <code class="docutils literal notranslate"><span class="pre">!=</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;=</span></code>, respectively. For example, <code class="docutils literal notranslate"><span class="pre">CHECK_LT(1u,</span> <span class="pre">list.size())</span></code> will evaluate <code class="docutils literal notranslate"><span class="pre">1u</span> <span class="pre">&lt;</span> <span class="pre">list.size()</span></code>, and log and <code class="docutils literal notranslate"><span class="pre">abort()</span></code> if not true. The advantage of calling <code class="docutils literal notranslate"><span class="pre">CHECK_LT(1u,</span> <span class="pre">list.size())</span></code> over <code class="docutils literal notranslate"><span class="pre">CHECK(1u</span> <span class="pre">&lt;</span> <span class="pre">list.size())</span></code> is that the value of both operands will be logged if the test fails, which is not reported with <code class="docutils literal notranslate"><span class="pre">CHECK()</span></code>.</div>
+</div>
+</div>
+<div class="section" id="debug-timer">
+<h5>DEBUG_TIMER<a class="headerlink" href="#debug-timer" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">DebugTimer</span></code> objects can be instantiated in the code that measure and log the duration of their own lifetimes,
+and include the following features:</p>
+<ul class="simple">
+<li>Globally accessible via a macro. E.g. <code class="docutils literal notranslate"><span class="pre">auto</span> <span class="pre">timer</span> <span class="pre">=</span> <span class="pre">DEBUG_TIMER(__func__)</span></code>.</li>
+<li>Single multi-line log entry is reported for nested timers.</li>
+<li>Enabled with the <code class="docutils literal notranslate"><span class="pre">--enable-debug-timer</span></code> program option. Without it, the <code class="docutils literal notranslate"><span class="pre">timer</span></code> objects have no effect.</li>
+<li>Include timers from spawned threads. Requires a call on the child thread informing the parent thread id:
+<code class="docutils literal notranslate"><span class="pre">DEBUG_TIMER_NEW_THREAD(parent_thread_id);</span></code></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">foo</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">auto</span> <span class="n">timer</span> <span class="o">=</span> <span class="n">DEBUG_TIMER</span><span class="p">(</span><span class="vm">__func__</span><span class="p">);</span>
+  <span class="o">...</span>
+  <span class="n">bar</span><span class="p">();</span>
+  <span class="o">...</span>
+<span class="p">}</span>
+
+<span class="n">void</span> <span class="n">bar</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">auto</span> <span class="n">timer</span> <span class="o">=</span> <span class="n">DEBUG_TIMER</span><span class="p">(</span><span class="vm">__func__</span><span class="p">);</span>
+  <span class="o">...</span>
+  <span class="n">bar2</span><span class="p">();</span>
+  <span class="o">...</span>
+  <span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">();</span>  <span class="o">//</span> <span class="n">Manually</span> <span class="n">stop</span> <span class="n">timer</span> <span class="k">for</span> <span class="n">bar</span><span class="p">()</span><span class="o">.</span>
+  <span class="o">...</span>
+<span class="p">}</span>
+
+<span class="n">void</span> <span class="n">bar2</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">auto</span> <span class="n">timer</span> <span class="o">=</span> <span class="n">DEBUG_TIMER</span><span class="p">(</span><span class="vm">__func__</span><span class="p">);</span>
+  <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Upon the destruction of the <code class="docutils literal notranslate"><span class="pre">timer</span></code> object within <code class="docutils literal notranslate"><span class="pre">foo()</span></code>, a log entry similar to the following will be made:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2019</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">17</span><span class="n">T15</span><span class="p">:</span><span class="mi">22</span><span class="p">:</span><span class="mf">53.981002</span> <span class="n">I</span> <span class="mi">8980</span> <span class="n">foobar</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">70</span> <span class="n">DEBUG_TIMER</span> <span class="n">thread_id</span><span class="p">(</span><span class="mi">140719710320384</span><span class="p">)</span>
+<span class="mi">19</span><span class="n">ms</span> <span class="n">total</span> <span class="n">duration</span> <span class="k">for</span> <span class="n">foo</span>
+  <span class="mi">17</span><span class="n">ms</span> <span class="n">start</span><span class="p">(</span><span class="mi">10</span><span class="n">ms</span><span class="p">)</span> <span class="n">bar</span> <span class="n">foobar</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">100</span>
+    <span class="mi">13</span><span class="n">ms</span> <span class="n">start</span><span class="p">(</span><span class="mi">10</span><span class="n">ms</span><span class="p">)</span> <span class="n">bar2</span> <span class="n">foobar</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">130</span>
+</pre></div>
+</div>
+<p>Fields for the <code class="docutils literal notranslate"><span class="pre">Duration</span></code> lines (last two line above) are:</p>
+<ol class="arabic simple">
+<li>Lifetime of <code class="docutils literal notranslate"><span class="pre">timer</span></code> object.</li>
+<li>Time after start of current thread. (This can be used to find gaps in timing coverage.)</li>
+<li>String parameter to <code class="docutils literal notranslate"><span class="pre">DEBUG_TIMER</span></code> (<code class="docutils literal notranslate"><span class="pre">__func__</span></code> in above examples.)</li>
+<li>File:Line where <code class="docutils literal notranslate"><span class="pre">DEBUG_TIMER</span></code> was called from.</li>
+</ol>
+<p>The first root <code class="docutils literal notranslate"><span class="pre">DEBUG_TIMER</span></code> instance is in <code class="docutils literal notranslate"><span class="pre">foo()</span></code>, and the two others in <code class="docutils literal notranslate"><span class="pre">bar()</span></code> and <code class="docutils literal notranslate"><span class="pre">bar2()</span></code> are initiated
+upon subsequent calls into the call stack, represented by the indentations.  Once the first root <code class="docutils literal notranslate"><span class="pre">timer</span></code> object
+destructs, the entire <code class="docutils literal notranslate"><span class="pre">DurationTree</span></code> of recorded times are logged together into a single multi-line log entry,
+one line per <code class="docutils literal notranslate"><span class="pre">timer</span></code> instance.</p>
+<p>There is a <code class="docutils literal notranslate"><span class="pre">DebugTimer::stop()</span></code> method that manually stops the timer, serving the same function
+as the destructor. The destructor then will have no further effect.</p>
+<p>To embed timers in a spawned child thread, call <code class="docutils literal notranslate"><span class="pre">DEBUG_TIMER_NEW_THREAD(parent_thread_id);</span></code> from the child
+thread. The <code class="docutils literal notranslate"><span class="pre">parent_thread_id</span></code> must get its value from <code class="docutils literal notranslate"><span class="pre">logger::thread_id()</span></code> before the new thread is spawned.
+This will not start a timer, but will record the child-parent relationship so that subsequent <code class="docutils literal notranslate"><span class="pre">DEBUG_TIMER</span></code>
+calls are stored in the correct node of the parent tree.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Any timer that is created in a thread when no other timers are active in the same or parent thread is
+called a <em>root timer</em>. The timer stack is logged when the root timer destructs, or <code class="docutils literal notranslate"><span class="pre">stop()</span></code> is called,
+after which memory used for tracking the timer trees are freed.  The performance cost of this should be
+kept in mind when placing timers within the code.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Non-root timers that end <em>after</em> their root timer ends will result in a <strong>segmentation fault</strong> . This is easily avoided by not interleaving timer
+lifetimes with one another in the same block of code, and making sure that all child threads end prior
+to the ending of any corresponding root timer.</p>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -69,10 +395,39 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Development Specification</a><ul>
-<li><a class="reference internal" href="#exception-specification">1 Exception Specification</a><ul>
-<li><a class="reference internal" href="#cider-exception">1.1 cider exception</a></li>
-<li><a class="reference internal" href="#cider-velox-exception">1.2 cider-velox Exception</a></li>
+<li><a class="reference internal" href="#">Implementation Specification</a><ul>
+<li><a class="reference internal" href="#exception-specification">Exception Specification</a><ul>
+<li><a class="reference internal" href="#cider-exception">cider exception</a></li>
+<li><a class="reference internal" href="#cider-velox-exception">cider-velox exception</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ciderallocator-use-guide">CiderAllocator use guide</a><ul>
+<li><a class="reference internal" href="#introduction-to-ciderallocator">introduction to CiderAllocator</a></li>
+<li><a class="reference internal" href="#how-to-use">how to use</a><ul>
+<li><a class="reference internal" href="#add-the-member-variables-in-h-file">1. add the member variables in .h file</a></li>
+<li><a class="reference internal" href="#in-cpp-implementation-class">2. in .cpp implementation class</a></li>
+<li><a class="reference internal" href="#then-we-can-use-it-in-the-implementation-class-for-memory-allocation-and-release">3. Then we can use it in the implementation class for memory allocation and release</a></li>
+<li><a class="reference internal" href="#finally-we-can-pass-a-custom-allocator-when-creating-ciderruntimemodule-or-use-the-default">4. Finally we can pass a custom allocator when creating CiderRunTimeModule or use the default</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#logger">Logger</a><ul>
+<li><a class="reference internal" href="#initialization-and-global-instances">Initialization and Global Instances</a></li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#severity">Severity</a></li>
+<li><a class="reference internal" href="#log-files">Log Files</a><ul>
+<li><a class="reference internal" href="#format">Format</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#macros">Macros</a><ul>
+<li><a class="reference internal" href="#log">LOG</a></li>
+<li><a class="reference internal" href="#check">CHECK</a></li>
+<li><a class="reference internal" href="#debug-timer">DEBUG_TIMER</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -80,11 +435,11 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="syntax-support.html"
-                        title="previous chapter">Syntax support in Cider</a></p>
+  <p class="topless"><a href="debugging.html"
+                        title="previous chapter">How to contribute</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="CiderAllocator-use-guide.html"
-                        title="next chapter">CiderAllocator use guide</a></p>
+  <p class="topless"><a href="../cider-sharing.html"
+                        title="next chapter">Sharing</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -115,10 +470,10 @@
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="CiderAllocator-use-guide.html" title="CiderAllocator use guide"
+          <a href="../cider-sharing.html" title="Sharing"
              >next</a> |</li>
         <li class="right" >
-          <a href="syntax-support.html" title="Syntax support in Cider"
+          <a href="debugging.html" title="How to contribute"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">Cider 1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../develop.html" >Developer Guide</a> &#187;</li> 

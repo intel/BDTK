@@ -1,0 +1,143 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Aggregate Functions &#8212; Cider 1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Conditional Expression" href="condition-expr.html" />
+    <link rel="prev" title="Data Types" href="data-type.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="condition-expr.html" title="Conditional Expression"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="data-type.html" title="Data Types"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../user.html" >User Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../feature-type.html" accesskey="U">Supported features</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="aggregate-functions">
+<h1>Aggregate Functions<a class="headerlink" href="#aggregate-functions" title="Permalink to this headline">¶</a></h1>
+<p><strong>avg(x)</strong></p>
+<p>Returns the average (arithmetic mean) of all input values.</p>
+<p><strong>sum(x)</strong></p>
+<p>Returns the sum of all input values.</p>
+<p><strong>count(x)</strong></p>
+<p>Returns the number of non-null input values.</p>
+<p><strong>max(x)</strong></p>
+<p>Returns the maximum value of all input values</p>
+<p><strong>min(x)</strong></p>
+<p>Returns the minimum value of all input values.</p>
+<div class="section" id="avg-support-in-cider">
+<h2>AVG support in Cider<a class="headerlink" href="#avg-support-in-cider" title="Permalink to this headline">¶</a></h2>
+<p>Similar as other aggregation functions, ‘AVG’ has 2 phases(Partial/Final) in distributing data analytic engines. But computation is different in different phase. In AVG partial, computation is split into sum() and count() on target column/expression and in AVG final, sum() is done on previous summation and count value, then do a divide between these 2 values.</p>
+<p>Since Cider is positioned as a compute library under such a distributed engine at task level, it doesn’t support AVG syntax directly in its internal.</p>
+<p>It may have some conflictions when frontend framework offloads AVG function to Cider, mainly caused by different signature of referred functions, such as output type, etc. Take Velox for example, it specifies <strong>sum(int)</strong> with output type <strong>double</strong> in avg aggregation, while it violates rules in cider which uses output type <strong>bigint</strong>. This will cause codegen check failure. So for this case, we made a workaround by following Cider rules in internal and convert result to <strong>double</strong> when retriving result into CiderBatch, thus can keep consistent schema with following op in velox plan, such as avg final computation.</p>
+<p>Similar special handle will be needed when output type of agg functions from frontend framework violates with cider internal. In cider, the returned data types defined as following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="o">-</span> <span class="n">Aggregate</span> <span class="n">Function</span>
+  <span class="o">-</span> <span class="n">Output</span> <span class="n">Type</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">SUM</span>
+  <span class="o">-</span> <span class="n">If</span> <span class="n">argument</span> <span class="ow">is</span> <span class="n">integer</span><span class="p">,</span> <span class="n">output</span> <span class="nb">type</span> <span class="n">will</span> <span class="n">be</span> <span class="n">BIGINT</span><span class="o">.</span> <span class="n">Otherwise</span> <span class="n">same</span> <span class="k">as</span> <span class="n">argument</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">MIN</span>
+  <span class="o">-</span> <span class="n">Same</span> <span class="k">as</span> <span class="n">argument</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">MAX</span>
+  <span class="o">-</span> <span class="n">Same</span> <span class="k">as</span> <span class="n">argument</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="n">COUNT</span>
+  <span class="o">-</span> <span class="n">If</span> <span class="n">g_bigint_count</span> <span class="ow">is</span> <span class="n">true</span><span class="p">(</span><span class="n">default</span> <span class="n">false</span><span class="p">),</span> <span class="n">output</span> <span class="nb">type</span> <span class="ow">is</span> <span class="n">BIGINT</span><span class="o">.</span> <span class="n">Otherwise</span> <span class="n">uses</span> <span class="n">INT</span><span class="o">.</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Aggregate Functions</a><ul>
+<li><a class="reference internal" href="#avg-support-in-cider">AVG support in Cider</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="data-type.html"
+                        title="previous chapter">Data Types</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="condition-expr.html"
+                        title="next chapter">Conditional Expression</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/user/feature/agg-func.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="condition-expr.html" title="Conditional Expression"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="data-type.html" title="Data Types"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Cider 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../user.html" >User Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../feature-type.html" >Supported features</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Intel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
