@@ -22,7 +22,7 @@
             "common": {
               "emit": {
                 "outputMapping": [
-                  2
+                  3
                 ]
               }
             },
@@ -34,7 +34,8 @@
                 "baseSchema": {
                   "names": [
                     "COL_1",
-                    "COL_2"
+                    "COL_2",
+                    "COL_3"
                   ],
                   "struct": {
                     "types": [
@@ -49,6 +50,13 @@
                           "length": 10,
                           "typeVariationReference": 0,
                           "nullability": "NULLABILITY_REQUIRED"
+                        }
+                      },
+                      {
+                        "varchar": {
+                          "length": 10,
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
                         }
                       }
                     ],
@@ -69,7 +77,7 @@
                   "functionReference": 0,
                   "args": [],
                   "outputType": {
-                    "fixedChar": {
+                    "varchar": {
                       "length": 10,
                       "typeVariationReference": 0,
                       "nullability": "NULLABILITY_REQUIRED"
@@ -79,7 +87,7 @@
                     {
                       "value": {
                         "literal": {
-                          "fixedChar": "  345678  ",
+                          "fixedChar": "xxx3456   ",
                           "nullable": false,
                           "typeVariationReference": 0
                         }
@@ -88,7 +96,7 @@
                     {
                       "value": {
                         "literal": {
-                          "fixedChar": " ",
+                          "fixedChar": " x",
                           "nullable": false,
                           "typeVariationReference": 0
                         }

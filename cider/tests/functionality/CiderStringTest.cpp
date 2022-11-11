@@ -492,8 +492,46 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_condition_null.json");
 }
 
-TEST_F(CiderStringTestArrow, TrimTest) {
-  assertQueryArrow("SELECT TRIM('  345678  ') FROM test;", "stringop_trim_literal.json");
+class CiderTrimOpTestArrow : public CiderTestBase {
+ public:
+  CiderTrimOpTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL, col_3 VARCHAR(10)))";
+
+    auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    auto string_vec = std::vector<std::string>{"xxxxxxxxxx",
+                                               "xxxxxxxxxx",
+                                               "   3456789",
+                                               "   3456789",
+                                               "   3456   ",
+                                               "   3456   ",
+                                               "0123456   ",
+                                               "0123456   ",
+                                               "xxx3456   ",
+                                               "xxx3456   "};
+    auto is_null = std::vector<bool>{
+        false, true, false, true, false, true, false, true, false, true};
+    auto [vc_data, vc_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+
+    std::tie(schema_, array_) =
+        ArrowArrayBuilder()
+            .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
+            .addUTF8Column("col_2", vc_data, vc_offsets)
+            .addUTF8Column("col_3", vc_data, vc_offsets, is_null)
+            .build();
+  }
+};
+
+TEST_F(CiderTrimOpTestArrow, LiteralTrimTest) {
+  // basic trim (defaults to trim spaces)
+  assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
+  // trim other characters
+  assertQueryArrow("SELECT TRIM('x' FROM 'xxx3456   ') FROM test",
+                   "stringop_trim_literal_2.json");
+  assertQueryArrow("SELECT TRIM(' x' FROM 'xxx3456   ') FROM test",
+                   "stringop_trim_literal_3.json");
 }
 
 class CiderConstantStringTest : public CiderTestBase {
