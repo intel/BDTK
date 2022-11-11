@@ -19,7 +19,7 @@
 
 set(CIDER_PLAN_TRANSFORMER_SOURCES
     CiderPlanPatterns.cpp CiderPlanUtil.cpp CiderPlanRewriter.cpp
-    CiderPlanTransformerFactory.cpp)
+    CiderPlanTransformerFactory.cpp CiderPlanTransformerOptions.cpp)
 
 add_library(cider_plan_transformer ${CIDER_PLAN_TRANSFORMER_SOURCES})
 
