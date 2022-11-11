@@ -1,5 +1,5 @@
 =====================
-BDTK User Guide
+How to use
 =====================
 
 BDTK mainly acts as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox among the Prestissimo project. 
@@ -265,3 +265,158 @@ You can directly run presto native worker with them to skip compiling step.
    $ ./bin/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
 When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
+
+How to run simple examples with Prestodb in DEV environment
+-------------------------------------------------------------
+
+Configure Hive MetaStore
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Follow the steps from
+https://prestodb.io/docs/current/installation/deployment.html#configuring-presto
+to install Hive metastore (requiring HDFS pre-installed)
+
+Download and extract the binary tarball of Hive. For example, download
+and untar ``apache-hive-<VERSION>-bin.tar.gz``
+
+You only need to launch Hive Metastore to serve Presto catalog
+information such as table schema and partition location. If it is the
+first time to launch the Hive Metastore, prepare corresponding
+configuration files and environment, also initialize a new Metastore:
+
+::
+
+   export HIVE_HOME=`pwd`
+   cp conf/hive-default.xml.template conf/hive-site.xml
+   mkdir -p hcatalog/var/log/
+   # only required for the first time
+   bin/schematool -dbType derby -initSchema
+
+Start a Hive Metastore which will run in the background and listen on
+port 9083 (by default).
+
+::
+
+   hcatalog/sbin/hcat_server.sh start
+   # Output: 
+   # Started metastore server init, testing if initialized correctly...
+   # Metastore initialized successfully on port[9083].
+
+Prepare Cider as library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Resolve dependency, Copy ``$CIDER_BUILD_DIR/function`` to ``$JAVA_HOME/`` may need ``function/*.bc`` files
+
+Configure Prestodb server and run some example queries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Follow steps from
+https://github.com/intel-bigdata/presto/tree/cider#running-presto-in-your-ide
+
+**Running with IDE**
+
+After building Presto for the first time, you can load the project into
+your IDE and run the server. We recommend using `IntelliJ
+IDEA <http://www.jetbrains.com/idea/>`__. Because Presto is a standard
+Maven project, you can import it into your IDE using the root
+``pom.xml`` file. In IntelliJ, choose Open Project from the Quick Start
+box or choose Open from the File menu and select the root ``pom.xml``
+file.
+
+After opening the project in IntelliJ, double check that the Java SDK is
+properly configured for the project: \* Open the File menu and select
+Project Structure \* In the SDKs section, ensure that a 1.8 JDK is
+selected (create one if none exist) \* In the Project section, ensure
+the Project language level is set to 8.0 as Presto makes use of several
+Java 8 language features
+
+Presto comes with sample configuration that should work out-of-the-box
+for development. Use the following options to create a run
+configuration: \* Main Class: com.facebook.presto.server.PrestoServer \*
+VM Options:
+``-ea -XX:+UseG1GC -XX:G1HeapRegionSize=32M -XX:+UseGCOverheadLimit -XX:+ExplicitGCInvokesConcurrent -Xmx2G -Dconfig=etc/config.properties -Dlog.levels-file=etc/log.properties``
+\* Working directory: ``$MODULE_DIR$`` \* Use classpath of module:
+presto-main
+
+The working directory should be the ``presto-main`` subdirectory. In
+IntelliJ, using ``$MODULE_DIR$`` accomplishes this automatically.
+Additionally, the Hive plugin must be configured with location of your
+Hive metastore Thrift service. Add the following to the list of VM
+options, replacing ``localhost:9083`` with the correct host and port (or
+use the below value if you do not have a Hive metastore):
+``-Dhive.metastore.uri=thrift://localhost:9083``
+
+**How to improve Prestodb initialization speed**
+
+Speed up presto init Presto server will load a lot plugin and it will
+resolve dependency from maven central repo and this is really slow. A
+solution is to modify this class and bypass resolve step.
+
+::
+
+   git clone -b offline https://github.com/jikunshang/resolver.git
+   cd resolver
+   mvn clean install -DskipTests=true
+   # change resolver version in pom file
+   # presto/pom.xml L931    <version>1.4</version> ->   <version>1.7-SNAPSHOT</version>
+   And you can remove unnecessary catlog/connector by remove source/presto-main/etc/catalog/*.properties and source/presto-main/etc/catalog/config.properties  plugin.bundles=
+
+**Running filter/project queries with CLI**
+
+Start the CLI to connect to the server and run SQL queries:
+``presto-cli/target/presto-cli-*-executable.jar`` Run a query to see the
+nodes in the cluster:
+
+::
+
+   SELECT * FROM system.runtime.nodes;
+
+   presto> create table hive.default.test(a int, b double, c int) WITH (format = 'ORC');   
+   presto> INSERT INTO test VALUES (1, 2, 12), (2, 3, 13), (3, 4, 14), (4, 5, 15), (5, 6, 16);
+   set session hive.pushdown_filter_enabled=true;
+   presto> select * from hive.default.test where c > 12;
+
+**Running join queries with CLI**
+
+Start the CLI to connect to the server and run SQL queries:
+
+::
+
+   presto-cli/target/presto-cli-*-executable.jar
+   presto> create table hive.default.test_orc1(a int, b double, c int) WITH (format = 'ORC');   
+   presto> INSERT INTO hive.default.test_orc1 VALUES (1, 2, 12), (2, 3, 13), (3, 4, 14), (4, 5, 15), (5, 6, 16);
+   presto> SET SESSION join_distribution_type = 'PARTITIONED';
+   presto> create table hive.default.test_orc2 (a int, b double, c int) WITH (format = 'ORC');   
+   presto> INSERT INTO hive.default.test_orc2 VALUES (1, 2, 12), (2, 3, 13), (3, 4, 14), (4, 5, 15), (5, 6, 16);
+   presto> select * from hive.default.test_orc1 l, hive.default.test_orc2 r where l.a = r.a;
+
+How to run simple examples with Prestodb in distributed environment
+---------------------------------------------------------------------
+
+Build presto native execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Copy ci/build-presto-package.sh to an empty folder and run it. 
+Generate Prestodb.tar.gz archive
+
+Unzip the Prestodb package and enter the unzip package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+   tar -zxvf Prestodb.tar.gz
+   cd Prestodb
+
+Set the LD_LIBRARY_PATH environment variable include the lib folder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+   export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
+
+Run presto_server with parameter point to etc folder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+   
+   ./bin/presto_server -etc_dir=./etc

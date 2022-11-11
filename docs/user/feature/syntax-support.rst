@@ -1,5 +1,5 @@
 =================================
-Syntax support in Cider
+Sql Syntax
 =================================
 
 Having syntax support
@@ -81,121 +81,6 @@ when 'eno' col is known as a primary key or an unique index, like following:
 
 Thus this IN clause is handled through join op in Cider.
 
-AVG support in Cider
------------------------------------
-
-Similar as other aggregation functions, 'AVG' has 2 phases(Partial/Final) in distributing data analytic engines. But computation is different in different phase. In AVG partial, computation is split into sum() and count() on target column/expression and in AVG final, sum() is done on previous summation and count value, then do a divide between these 2 values.
-
-Since Cider is positioned as a compute library under such a distributed engine at task level, it doesn't support AVG syntax directly in its internal.
-
-It may have some conflictions when frontend framework offloads AVG function to Cider, mainly caused by different signature of referred functions, such as output type, etc. Take Velox for example, it specifies **sum(int)** with output type **double** in avg aggregation, while it violates rules in cider which uses output type **bigint**. This will cause codegen check failure. So for this case, we made a workaround by following Cider rules in internal and convert result to **double** when retriving result into CiderBatch, thus can keep consistent schema with following op in velox plan, such as avg final computation.
-
-Similar special handle will be needed when output type of agg functions from frontend framework violates with cider internal. In cider, the returned data types defined as following:
-
-.. list-table
-
-::
-
-   :widths: 10 30
-   :align: left
-   :header-rows: 1
-   * - Aggregate Function
-     - Output Type
-   * - SUM
-     - If argument is integer, output type will be BIGINT. Otherwise same as argument type.
-   * - MIN
-     - Same as argument type.
-   * - MAX
-     - Same as argument type.
-   * - COUNT
-     - If g_bigint_count is true(default false), output type is BIGINT. Otherwise uses INT.
-
-
-String Function support in Cider
------------------------------------
-Currently, Cider do not distinguish empty string and null string.
-
-1) Like function
-^^^^^^^^^^^^^^^^^^^^
-
-a. Acceptable wildcards: %, _, []
-b. Unacceptable wildcards: `*`, [^], [!] 
-c. Escape clause is not supported yet.
-
-Conditional Expressions in Cider
------------------------------------
-1) COALESCE
-^^^^^^^^^^^^^
-The COALESCE expression is a syntactic shortcut for the CASE expression
-
-The code COALESCE(expression1,...n) is executed in Cider as the following CASE expression:
-
-.. code-block:: sql
-
-        CASE  
-        WHEN (expression1 IS NOT NULL) THEN expression1  
-        WHEN (expression2 IS NOT NULL) THEN expression2  
-        ...  
-        ELSE expressionN  
-        END
-
-Example: 
-
-.. code-block:: sql
-
-        SELECT COALESCE(col_1, col_2, 777) FROM test
-
-
-is equal to
-
-.. code-block:: sql
-
-        SELECT CASE WHEN col_1 is not null THEN col_1 WHEN col_2 is not null THEN col_2 ELSE 777 END from test
-
-
-2) IF
-^^^^^^
-The IF function is actually a language construct that is executed in Cider as the following CASE expression
-
-.. code-block
-
-:: 
-
-        CASE
-        WHEN condition THEN true_value
-        [ ELSE false_value ]
-        END
-
-IF Functions: 
-
-1. .. code-block
-
-:: 
-
-        if(condition, true_value)
-
-Evaluates and returns true_value if condition is true, otherwise null is returned and true_value is not evaluated.
-
-is equal to
-
-.. code-block:: sql
-
-        CASE WHEN condition THEN true_value END
-
-2. .. code-block
-
-:: 
-
-        if(condition, true_value, false_value)
-
-Evaluates and returns true_value if condition is true, otherwise evaluates and returns false_value.
-
-is equal to
-
-.. code-block:: sql
-
-        CASE WHEN condition THEN true_value ELSE false_value END
-
 SELECT DISTINCT
 --------------------------------------
 
@@ -259,7 +144,7 @@ Let's define a simple test table the schema of which is
 
         CREATE TABLE tbl(col_a BIGINT, col_b BIGINT) 
 
-1) GROUPING SETS
+GROUPING SETS
 ^^^^^^^^^^^^^^^^^^
 Grouping sets allow users to specify multiple lists of columns to group on. The columns not part of a given sublist of grouping columns are set to **NULL**.
 
@@ -303,7 +188,7 @@ However, the only difference of them is using UNION ALL will trigger tableScan f
 
 This is important not only for performance, data quality will also be a significant problem when the source table varies from time to time.
 
-2) GROUP BY ROLLUP
+GROUP BY ROLLUP
 ^^^^^^^^^^^^^^^^^^^^
 The ROLLUP operator generates all possible subtotals for a given set of columns.
 
@@ -338,7 +223,7 @@ is **equivalent** to:
                 (col_a),
                 ()) 
 
-3) GROUP BY CUBE
+GROUP BY CUBE
 ^^^^^^^^^^^^^^^^^^^^
 The CUBE operator generates all possible grouping sets (i.e. a power set) for a given set of columns.
 
@@ -375,7 +260,7 @@ is **equivalent** to:
                 (col_b),
                 ()); 
 
-4) GROUP BY ALL/DISTINCT
+GROUP BY ALL/DISTINCT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We don't need to handle ALL/DISTINCT in Cider, since it will be transfered to GROUPING SETS when generating Presto plans.
@@ -443,7 +328,7 @@ is **equivalent** to:
 
 Using ALL will leave all duplicate grouping sets while DISTINCT will dedup them.
 
-5) GROUPING() operation
+GROUPING() operation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We can find the usage of SELECT GROUPING(col_a, col_b ...) FROM table GROUP BY ROLLUP (col_a, col_b ...)  in TPC-DS Query27.
