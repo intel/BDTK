@@ -19,9 +19,3 @@
 [submodule "thirdparty/benchmark"]
 	path = thirdparty/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "thirdparty/yaml-cpp"]
-	path = thirdparty/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
-[submodule "thirdparty/substrait-cpp"]
-	path = thirdparty/substrait-cpp
-	url = https://github.com/Intel-bigdata/substrait-cpp.git
