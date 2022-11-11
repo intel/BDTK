@@ -103,4 +103,4 @@ class ExprGenerator {
 };
 
 }  // namespace cider::exec::nextgen::operators
-#endif // NEXTGEN_OPERATORS_EXPR_H
+#endif  // NEXTGEN_OPERATORS_EXPR_H
