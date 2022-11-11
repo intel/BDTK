@@ -1784,6 +1784,36 @@ class LowerStringOper : public StringOper {
   std::vector<std::string> getArgNames() const override { return {"operand"}; }
 };
 
+class UpperStringOper : public StringOper {
+ public:
+  UpperStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::UPPER,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  UpperStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::UPPER,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  UpperStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+};
+
 class SubstringStringOper : public StringOper {
  public:
   SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,

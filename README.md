@@ -81,7 +81,7 @@ Run `make` in the root directory to compile the sources. For development, use
 an optimized version.  Use `make test-debug` or `make test-release` to run tests.
 
 ## How to Enable in Presto
-To use it with Prestodb, Intel version [Prestodb](https://github.com/intel-bigdata/presto/) is required together with Intel version [Velox](https://github.com/intel-bigdata/velox). Detailed steps are available at [installation guide](https://intel.github.io/BDTK/develop/debugging.html#how-to-run-simple-examples-with-prestodb-in-dev-environment).
+To use it with Prestodb, Intel version [Prestodb](https://github.com/intel-bigdata/presto/) is required together with Intel version [Velox](https://github.com/intel-bigdata/velox). Detailed steps are available at [installation guide](https://intel.github.io/BDTK/user/quick-start).
 
 # Roadmap
 In the coming release, following working items were prioritized.

@@ -72,6 +72,64 @@ class CiderNullableStringTest : public CiderTestBase {
   }
 };
 
+class CiderStringTestArrow : public CiderTestBase {
+ public:
+  CiderStringTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        50,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {0, 0},
+        GeneratePattern::Sequence,
+        0,
+        10);
+  }
+};
+
+class CiderStringRandomTestArrow : public CiderTestBase {
+ public:
+  CiderStringRandomTestArrow() {
+    table_name_ = "test";
+    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER, col_2 VARCHAR(10));)";
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        30,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2},
+        GeneratePattern::Random,
+        0,
+        10);
+  }
+};
+
+class CiderStringNullableTestArrow : public CiderTestBase {
+ public:
+  CiderStringNullableTestArrow() {
+    table_name_ = "test";
+    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        50,
+        {"col_1", "col_2"},
+        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2},
+        GeneratePattern::Sequence,
+        0,
+        10);
+  }
+};
+
 class CiderStringToDateTest : public CiderTestBase {
  public:
   CiderStringToDateTest() {
@@ -169,47 +227,47 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
   assertQuery("SELECT SUBSTRING(SUBSTRING(col_2, -4, 2), -1, 1) FROM test ");
 }
 
-#define BASIC_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                         \
+#define BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, ASSERT_FUNC)       \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                             \
-    assertQuery("SELECT col_2 FROM test ");                                   \
-    assertQuery("SELECT col_1, col_2 FROM test ");                            \
-    assertQuery("SELECT * FROM test ");                                       \
-    assertQuery("SELECT col_2 FROM test where col_2 = 'aaaa'");               \
-    assertQuery("SELECT col_2 FROM test where col_2 = '0000000000'");         \
-    assertQuery("SELECT col_2 FROM test where col_2 <> '0000000000'");        \
-    assertQuery("SELECT col_1 FROM test where col_2 <> '1111111111'");        \
-    assertQuery("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'"); \
-    assertQuery("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");           \
-    assertQuery("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");        \
-    assertQuery("SELECT col_2 FROM test where col_2 IS NOT NULL");            \
-    assertQuery("SELECT col_2 FROM test where col_2 < 'uuu'");                \
+    ASSERT_FUNC("SELECT col_2 FROM test ");                                   \
+    ASSERT_FUNC("SELECT col_1, col_2 FROM test ");                            \
+    ASSERT_FUNC("SELECT * FROM test ");                                       \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 = 'aaaa'");               \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 = '0000000000'");         \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 <> '0000000000'");        \
+    ASSERT_FUNC("SELECT col_1 FROM test where col_2 <> '1111111111'");        \
+    ASSERT_FUNC("SELECT col_1, col_2 FROM test where col_2 <> '2222222222'"); \
+    ASSERT_FUNC("SELECT * FROM test where col_2 <> 'aaaaaaaaaaa'");           \
+    ASSERT_FUNC("SELECT * FROM test where col_2 <> 'abcdefghijklmn'");        \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 IS NOT NULL");            \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 < 'uuu'");                \
   }
 
-#define LIKE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                     \
+#define LIKE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, ASSERT_FUNC)                   \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '%1111'");                      \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '1111%'");                      \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '%1111%'");                     \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '%1234%'");                     \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '22%22'");                      \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '_33%'");                       \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '44_%'");                       \
-    assertQuery(                                                                         \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '%1111'");                      \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '1111%'");                      \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '%1111%'");                     \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '%1234%'");                     \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '22%22'");                      \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '_33%'");                       \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '44_%'");                       \
+    ASSERT_FUNC(                                                                         \
         "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");        \
-    assertQuery(                                                                         \
+    ASSERT_FUNC(                                                                         \
         "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");       \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '%1111'", "like_wo_cast.json"); \
-    assertQuery("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");                  \
-    assertQuery("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");             \
-    assertQuery(                                                                         \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '%1111'", "like_wo_cast.json"); \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");                  \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");             \
+    ASSERT_FUNC(                                                                         \
         "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE "        \
         "'%111%'");                                                                      \
   }
 
-#define ESCAPE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                          \
+#define ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, ASSERT_FUNC)        \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                               \
     GTEST_SKIP_("Substrait does not support ESCAPE yet.");                      \
-    assertQuery("SELECT col_2 FROM test where col_2 LIKE '%aaaa' ESCAPE '$' "); \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '%aaaa' ESCAPE '$' "); \
   }
 
 /**
@@ -220,76 +278,87 @@ TEST_F(CiderStringTest, NestedSubstrTest) {
       "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111', '2222',
       '3333')");
 **/
-#define IN_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME)                                      \
+
+#define IN_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, ASSERT_FUNC)                    \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
-    assertQuery(                                                                        \
+    ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE col_2 IN ('0000000000', '1111111111', '2222222222')", \
         "in_string_array.json");                                                        \
-    assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111')",  \
+    ASSERT_FUNC("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111')",  \
                 "in_string_2_array_with_substr.json");                                  \
-    assertQuery(                                                                        \
+    ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
         "in_string_array_with_substr.json");                                            \
-    assertQuery(                                                                        \
+    ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE col_1 >= 0 and SUBSTRING(col_2, 1, 4) IN "            \
         "('0000', '1111', '2222', '3333')",                                             \
         "in_string_nest_with_binop.json");                                              \
   }
+
+#define BASIC_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
+  BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
+#define BASIC_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+  BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+
+#define LIKE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
+  LIKE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
+#define LIKE_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+  LIKE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+
+#define ESCAPE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
+  ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
+#define ESCAPE_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+  ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+
+#define IN_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
+  IN_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
+#define IN_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+  IN_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
 
 BASIC_STRING_TEST_UNIT(CiderStringTest, basicStringTest)
 LIKE_STRING_TEST_UNIT(CiderStringTest, likeStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderStringTest, escapeStringTest)
 IN_STRING_TEST_UNIT(CiderStringTest, inStringTest)
 
+BASIC_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, basicStringTest)
+LIKE_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, likeStringTest)
+ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, escapeStringTest)
+IN_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, inStringTest)
+
 BASIC_STRING_TEST_UNIT(CiderRandomStringTest, basicRandomStringTest)
 LIKE_STRING_TEST_UNIT(CiderRandomStringTest, likeRandomStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderRandomStringTest, escapeRandomStringTest)
 IN_STRING_TEST_UNIT(CiderRandomStringTest, inRandomStringTest)
+
+BASIC_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, basicRandomStringTest)
+LIKE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, likeRandomStringTest)
+ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, escapeRandomStringTest)
+IN_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, inRandomStringTest)
 
 BASIC_STRING_TEST_UNIT(CiderNullableStringTest, basicNullableStringTest)
 LIKE_STRING_TEST_UNIT(CiderNullableStringTest, likeNullableStringTest)
 ESCAPE_STRING_TEST_UNIT(CiderNullableStringTest, escapeNullableStringTest)
 IN_STRING_TEST_UNIT(CiderNullableStringTest, inNullableStringTest)
 
-class CiderStringTestArrow : public CiderTestBase {
- public:
-  CiderStringTestArrow() {
-    table_name_ = "test";
-    create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
+BASIC_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, basicStringTest)
+LIKE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, likeStringTest)
+ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, escapeStringTest)
+IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, inStringTest)
 
-    QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
-        30,
-        {"col_1", "col_2"},
-        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {0, 0},
-        GeneratePattern::Sequence,
-        0,
-        10);
-  }
-};
+TEST_F(CiderStringTestArrow, ArrowSubstringNestTest) {
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
+  assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
+}
 
-class CiderStringNullableTestArrow : public CiderTestBase {
- public:
-  CiderStringNullableTestArrow() {
-    table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
-
-    QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
-        30,
-        {"col_1", "col_2"},
-        {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {2, 2},
-        GeneratePattern::Sequence,
-        0,
-        10);
-  }
-};
+TEST_F(CiderStringRandomTestArrow, ArrowSubstringNestTest) {
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
+  assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
+}
 
 TEST_F(CiderStringNullableTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test ");
@@ -363,46 +432,60 @@ TEST_F(CiderStringTestArrow, ArrowBasicStringTest) {
   assertQueryArrow("SELECT col_2 FROM test where col_2 < 'uuu'");
 }
 
-TEST_F(CiderStringTestArrow, ArrowBasicStringLikeTest) {
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '1111%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1234%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '22%22'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '_33%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '44_%'");
+TEST_F(CiderStringNullableTestArrow, ArrowSubstringNestTest) {
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
+  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
 
-  assertQueryArrow(
-      "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");
-  assertQueryArrow(
-      "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 LIKE '%1111'",
-                   "like_wo_cast.json");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");
-  assertQueryArrow("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");
-  assertQueryArrow(
-      "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE '%111%'");
+  assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
-TEST_F(CiderStringTestArrow, ArrowSubstringTest) {
-  // variable source string
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
+TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
+  // select column from table
+  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
 
-  // out of range
-  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
+  // select literal from table
+  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
+                   "stringop_lower_literal.json");
+  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
+                   "stringop_upper_literal.json");
 
-  // from for
-  assertQueryArrow("SELECT SUBSTRING(col_2 from 2 for 8) FROM test ");
+  // string op on filter clause
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
+                   "stringop_lower_condition.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+                   "stringop_upper_condition.json");
 
-  // zero length
-  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 0) FROM test ");
+  /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
+  /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
+  ///    DuckDb produces only 1 row, while Cider produces input_row_num rows.
+  ///    Because the compiled row_func IR always runs for input_row_num times
+  ///    at runtime in current implementation of Cider.
+  /// 2. If no input table (no FROM clause) is given, the generated Substrait plan will
+  ///    have a "virtualTable" (instead of a "namedTable") as a placeholder input.
+  ///    <https://substrait.io/relations/logical_relations/#virtual-table>
+  // select literal
+  // assertQueryArrow("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
+  // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
+}
 
-  // negative wrap
-  assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
+TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
+  // select column from table
+  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
+  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
+
+  // select literal from table
+  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
+                   "stringop_lower_literal_null.json");
+  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
+                   "stringop_upper_literal_null.json");
+
+  // string op on filter clause
+  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
+                   "stringop_lower_condition_null.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+                   "stringop_upper_condition_null.json");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

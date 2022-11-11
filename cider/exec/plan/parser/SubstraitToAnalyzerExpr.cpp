@@ -36,8 +36,8 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
   return map.find(expr) == map.end() || !map.find(expr)->second;
 }
 
-bool isStringFunction(std::string function_name) {
-  std::unordered_set<std::string> supportedStrFunctionSet{"substring"};
+bool isStringFunction(const std::string& function_name) {
+  std::unordered_set<std::string> supportedStrFunctionSet{"substring", "lower", "upper"};
   return supportedStrFunctionSet.find(function_name) != supportedStrFunctionSet.end();
 }
 
@@ -799,10 +799,10 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
   auto string_op_kind = name_to_string_op_kind(function_name);
   switch (string_op_kind) {
-      //    case SqlStringOpKind::LOWER:
-      //      return makeExpr<Analyzer::LowerStringOper>(args);
-      //    case SqlStringOpKind::UPPER:
-      //      return makeExpr<Analyzer::UpperStringOper>(args);
+    case SqlStringOpKind::LOWER:
+      return makeExpr<Analyzer::LowerStringOper>(args);
+    case SqlStringOpKind::UPPER:
+      return makeExpr<Analyzer::UpperStringOper>(args);
       //    case SqlStringOpKind::INITCAP:
       //      return makeExpr<Analyzer::InitCapStringOper>(args);
       //    case SqlStringOpKind::REVERSE:
