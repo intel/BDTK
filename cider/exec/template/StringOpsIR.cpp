@@ -300,7 +300,7 @@ llvm::Value* CodeGenerator::codegenPerRowStringOper(const Analyzer::StringOper* 
         throw std::runtime_error("Unimplemented type for string-to-numeric translation");
       }
     }
-    const auto logical_size = return_ti.get_logical_size() * 8;
+    const auto logical_size = get_bit_width(return_ti, co.use_cider_data_format);
     auto llvm_return_type = return_ti.is_fp()
                                 ? get_fp_type(logical_size, cgen_state_->context_)
                                 : get_int_type(logical_size, cgen_state_->context_);
