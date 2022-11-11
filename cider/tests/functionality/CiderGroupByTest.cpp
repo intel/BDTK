@@ -189,12 +189,13 @@ class CiderGroupByPrimitiveTypeMixArrowTest : public CiderTestBase {
   CiderGroupByPrimitiveTypeMixArrowTest() {
     table_name_ = "table_test";
     create_ddl_ =
-        "CREATE TABLE table_test(float_not_null_a FLOAT, float_half_null_b FLOAT, "
-        "double_not_null_c DOUBLE, double_half_null_d DOUBLE, "
-        "tinyint_not_null_e TINYINT, tinyint_half_null_f TINYINT, smallint_not_null_g "
-        "SMALLINT, smallint_half_null_h SMALLINT, integer_not_null_i INTEGER, "
-        "integer_half_null_j INTEGER, bigint_not_null_k BIGINT, bigint_half_null_l "
-        "BIGINT, boolean_not_null_m BOOLEAN, boolean_half_null_n BOOLEAN);";
+        "CREATE TABLE table_test(float_not_null_a FLOAT NOT NULL, float_half_null_b "
+        "FLOAT, double_not_null_c DOUBLE NOT NULL, double_half_null_d DOUBLE, "
+        "tinyint_not_null_e TINYINT NOT NULL, tinyint_half_null_f TINYINT, "
+        "smallint_not_null_g SMALLINT NOT NULL, smallint_half_null_h SMALLINT, "
+        "integer_not_null_i INTEGER NOT NULL, integer_half_null_j INTEGER, "
+        "bigint_not_null_k BIGINT NOT NULL, bigint_half_null_l BIGINT, "
+        "boolean_not_null_m BOOLEAN NOT NULL, boolean_half_null_n BOOLEAN);";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
@@ -471,11 +472,9 @@ TEST_F(CiderGroupByPrimitiveTypeMixArrowTest, noConditionGroupByColTest) {
   // BIGINT not null col group by
   assertQueryArrowIgnoreOrder(
       "SELECT bigint_not_null_k, COUNT(*) FROM table_test GROUP BY bigint_not_null_k");
-  // TODO(yizhong): something wrong in IR with GroupBy boolean, will work it out soon
-  // BOOLEAN not null col group by
-  //   assertQueryArrowIgnoreOrder(
-  //       "SELECT boolean_not_null_m, COUNT(*) FROM table_test GROUP BY
-  //       boolean_not_null_m");
+  //   BOOLEAN not null col group by
+  assertQueryArrowIgnoreOrder(
+      "SELECT boolean_not_null_m, COUNT(*) FROM table_test GROUP BY boolean_not_null_m");
   // FLOAT null col group by
   assertQueryArrowIgnoreOrder(
       "SELECT float_half_null_b, COUNT(*) FROM table_test GROUP BY float_half_null_b");
@@ -497,16 +496,13 @@ TEST_F(CiderGroupByPrimitiveTypeMixArrowTest, noConditionGroupByColTest) {
   // BIGINT null col group by
   assertQueryArrowIgnoreOrder(
       "SELECT bigint_half_null_l, COUNT(*) FROM table_test GROUP BY bigint_half_null_l");
-  // TODO(yizhong): something wrong in IR with GroupBy boolean, will work it out soon
   // BOOLEAN null col group by
-  //   assertQueryArrowIgnoreOrder(
-  //       "SELECT boolean_half_null_n, COUNT(*) FROM table_test GROUP BY "
-  //       "boolean_half_null_n");
+  assertQueryArrowIgnoreOrder(
+      "SELECT boolean_half_null_n, COUNT(*) FROM table_test GROUP BY "
+      "boolean_half_null_n");
 }
 
 TEST_F(CiderGroupByPrimitiveTypeMixArrowTest, noConditionGroupByMultiColTest) {
-  // TODO(yizhong): something wrong in IR with GroupBy boolean, will work it out soon
-  GTEST_SKIP();
   assertQueryArrowIgnoreOrder(
       "SELECT bigint_not_null_k, boolean_not_null_m, COUNT(*), SUM(bigint_not_null_k) "
       "FROM table_test GROUP BY bigint_not_null_k, boolean_not_null_m");
