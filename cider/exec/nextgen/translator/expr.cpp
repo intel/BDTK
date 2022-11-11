@@ -189,6 +189,7 @@ JITExprValue& ExprGenerator::codegenConstantExpr(Analyzer::Constant* constant) {
       UNIMPLEMENTED();
   }
   UNREACHABLE();
+  return fake_val_;
 }
 
 JITExprValue& ExprGenerator::codegenFixedSizeColArithFun(Analyzer::BinOper* bin_oper,

@@ -22,6 +22,8 @@
 #ifndef JITLIB_BASE_JITTUPLE_H
 #define JITLIB_BASE_JITTUPLE_H
 
+#include <utility>
+
 #include <boost/container/small_vector.hpp>
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
@@ -72,10 +74,18 @@ class JITExprValue {
   JITExprValue(const JITExprValue&) = delete;
   JITExprValue(JITExprValue&&) = delete;
 
+  // for vector<JITValuePointer>;
   template <typename T>
   JITExprValue(T&& ptrs, bool is_variadic = false)
       : ptrs_(std::forward<T>(ptrs)), is_variadic_(is_variadic) {}
 
+  // for {JITValuePointer, ...}
+  template <typename... T>
+  JITExprValue(T&&... ptrs, bool is_variadic = false) : is_variadic_(is_variadic) {
+    (ptrs_.emplace_back(std::forward<T>(ptrs)), ...);
+  }
+
+  // for JITValuePointer
   // convert JITValuePointer to JITExprValue
   JITExprValue(JITValuePointer&& val) {
     is_variadic_ = false;

@@ -85,10 +85,7 @@ TEST_F(FilterProjectTests, BasicTest) {
     // var
     auto col_var =
         std::make_shared<Analyzer::ColumnVar>(SQLTypeInfo(SQLTypes::kINT), 100, 1, 0);
-    // col_var->set_expr_value(std::vector{var.get()});
-    std::vector<JITValuePointer> vec;
-    vec.emplace_back(std::move(input));
-    col_var->set_expr_value(std::move(vec));
+    col_var->set_expr_value({std::move(input)});
 
     // constant
     auto const_var = makeConstant(5);

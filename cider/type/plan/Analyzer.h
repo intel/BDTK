@@ -210,16 +210,28 @@ class Expr : public std::enable_shared_from_this<Expr> {
    */
   virtual void get_domain(DomainSet& domain_set) const { domain_set.clear(); }
 
+  // for vector<JITValuePointer>;
   template <typename T>
   cider::jitlib::JITExprValue& set_expr_value(T&& ptrs, bool is_variadic = false) {
     expr_var_ =
         std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs), is_variadic);
     return *expr_var_;
   }
+
+  // for {JITValuePointer, ...}
+  template <typename... T>
+  cider::jitlib::JITExprValue& set_expr_value(T&&... ptrs, bool is_variadic = false) {
+    expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs)...);
+    return *expr_var_;
+  }
+
+  // for JITValuePointer
+  // used with only value (no len and null, so is_variadic is false)
   cider::jitlib::JITExprValue& set_expr_value(cider::jitlib::JITValuePointer&& val) {
     expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::move(val));
     return *expr_var_;
   }
+
   cider::jitlib::JITExprValue* get_expr_value() const { return expr_var_.get(); }
 
  protected:
