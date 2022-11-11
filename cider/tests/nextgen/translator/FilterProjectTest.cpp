@@ -68,8 +68,6 @@ void executeFilterTest(NativeType input, NativeType expected, Builder builder) {
 }
 
 TEST_F(FilterProjectTests, BasicTest) {
-  // filter -> project -> mock sink
-  //
   // void func(var, res) {
   //   if (var <= 5) {
   //     res = var + 5;
@@ -78,7 +76,6 @@ TEST_F(FilterProjectTests, BasicTest) {
   // }
   auto builder = [](Context& context) {
     auto func = context.query_func_;
-    auto sink = std::make_unique<MockSinkTranslator>(1);
 
     auto input = func->getArgument(0);
 
@@ -97,10 +94,11 @@ TEST_F(FilterProjectTests, BasicTest) {
     // var + 5
     auto add_expr = std::make_shared<Analyzer::BinOper>(
         SQLTypes::kINT, SQLOps::kPLUS, SQLQualifier::kONE, col_var, const_var);
-    auto project = std::make_unique<ProjectTranslator>(std::vector<ExprPtr>{add_expr},
-                                                       std::move(sink));
 
-    FilterTranslator trans(std::vector<ExprPtr>{cmp_expr}, std::move(project));
+    // filter -> project -> sink
+    auto trans = FilterTranslator(cmp_expr,
+                                  std::make_unique<ProjectTranslator>(
+                                      add_expr, std::make_unique<MockSinkTranslator>(1)));
 
     trans.consume(context);
 

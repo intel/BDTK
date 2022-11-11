@@ -32,10 +32,12 @@
 namespace cider::exec::nextgen::translator {
 class ProjectNode : public OpNode {
  public:
-  ProjectNode() = default;
-  template <typename T>
+  template <typename T, IsVecOf<T, ExprPtr> = true>
   ProjectNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
-  // ProjectNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
+  template <typename... T>
+  ProjectNode(T&&... exprs) {
+    (exprs_.emplace_back(std::forward<T>(exprs)), ...);
+  }
 
   std::vector<ExprPtr> exprs_;
 };
@@ -47,11 +49,11 @@ class ProjectTranslator : public Translator {
     node_ = ProjectNode(std::forward<T>(exprs));
     successor_.swap(successor);
   }
-  // ProjectTranslator(std::initializer_list<ExprPtr> exprs,
-  //                   std::unique_ptr<Translator> successor) {
-  //   node_ = ProjectNode(exprs);
-  //   successor_.swap(successor);
-  // }
+  template <typename... T>
+  ProjectTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
+    node_ = ProjectNode(std::forward<T>(exprs)...);
+    successor_.swap(successor);
+  }
   ProjectTranslator(ProjectNode&& node, std::unique_ptr<Translator>&& successor)
       : node_(std::move(node)), successor_(std::move(successor)) {}
 

@@ -21,20 +21,12 @@
 #ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_DUMMY_H
 #define CIDER_EXEC_NEXTGEN_TRANSLATOR_DUMMY_H
 
-#include <initializer_list>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
-#include <llvm/IR/Function.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <boost/container/small_vector.hpp>
-
 #include "exec/nextgen/jitlib/base/JITFunction.h"
-#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::translator {
@@ -53,6 +45,17 @@ class OpNode {
   OpNode() = default;
   virtual ~OpNode() = default;
 };
+
+template <typename T, typename ST>
+struct is_vector_of {
+  using type = typename std::remove_reference<T>::type;
+  static constexpr bool v = std::is_same_v<type, std::vector<ST>>;
+};
+template <typename T, typename ST>
+inline constexpr bool is_vector_of_v = is_vector_of<T, ST>::v;
+
+template <typename T, typename ST>
+using IsVecOf = typename std::enable_if_t<is_vector_of_v<T, ST>, bool>;
 
 class Translator {
  public:
