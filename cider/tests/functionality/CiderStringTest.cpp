@@ -492,6 +492,10 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_condition_null.json");
 }
 
+TEST_F(CiderStringTestArrow, TrimTest) {
+  assertQueryArrow("SELECT TRIM('  345678  ') FROM test;", "stringop_trim_literal.json");
+}
+
 class CiderConstantStringTest : public CiderTestBase {
  public:
   CiderConstantStringTest() {

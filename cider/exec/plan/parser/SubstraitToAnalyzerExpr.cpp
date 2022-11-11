@@ -38,7 +38,7 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
 
 bool isStringFunction(const std::string& function_name) {
   std::unordered_set<std::string> supportedStrFunctionSet{
-      "substring", "substr", "lower", "upper"};
+      "substring", "substr", "lower", "upper", "trim", "ltrim", "rtrim"};
   return supportedStrFunctionSet.find(function_name) != supportedStrFunctionSet.end();
 }
 
@@ -816,11 +816,11 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       //    case SqlStringOpKind::RPAD: {
       //      return makeExpr<Analyzer::PadStringOper>(string_op_kind, args);
       //    }
-      //    case SqlStringOpKind::TRIM:
-      //    case SqlStringOpKind::LTRIM:
-      //    case SqlStringOpKind::RTRIM: {
-      //      return makeExpr<Analyzer::TrimStringOper>(string_op_kind, args);
-      //    }
+    case SqlStringOpKind::TRIM:
+    case SqlStringOpKind::LTRIM:
+    case SqlStringOpKind::RTRIM: {
+      return makeExpr<Analyzer::TrimStringOper>(string_op_kind, args);
+    }
     case SqlStringOpKind::SUBSTRING: {
       return makeExpr<Analyzer::SubstringStringOper>(args);
     }
