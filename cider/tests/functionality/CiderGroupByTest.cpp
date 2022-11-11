@@ -472,7 +472,7 @@ TEST_F(CiderGroupByPrimitiveTypeMixArrowTest, noConditionGroupByColTest) {
   // BIGINT not null col group by
   assertQueryArrowIgnoreOrder(
       "SELECT bigint_not_null_k, COUNT(*) FROM table_test GROUP BY bigint_not_null_k");
-  //   BOOLEAN not null col group by
+  // BOOLEAN not null col group by
   assertQueryArrowIgnoreOrder(
       "SELECT boolean_not_null_m, COUNT(*) FROM table_test GROUP BY boolean_not_null_m");
   // FLOAT null col group by
