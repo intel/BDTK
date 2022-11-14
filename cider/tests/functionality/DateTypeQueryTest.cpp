@@ -93,6 +93,7 @@ class DateRandomAndNullQueryOf2009Test : public CiderTestBase {
   }
 };
 
+// nullable test which will lead to @extract_xxx(i64 %xx, i1 %xx) in IR
 TEST_F(DateRandomAndNullQueryTest, FunctionTest) {
   assertQueryArrow("SELECT extract(year from col_b) FROM test",
                    "functions/date/year.json");
@@ -107,6 +108,7 @@ TEST_F(DateRandomAndNullQueryTest, FunctionTest) {
                    "functions/date/day_of_year.json");
 }
 
+// not null test which will lead to @extract_xxx(i64 %xx) in IR
 TEST_F(DateTypeQueryTest, SimpleExtractDateTest) {
   assertQueryArrow("SELECT extract(year from col_b) FROM test");
   assertQueryArrow("SELECT extract(quarter from col_b) FROM test",

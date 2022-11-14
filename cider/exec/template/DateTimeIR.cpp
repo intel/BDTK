@@ -71,7 +71,6 @@ const char* get_extract_function_name(ExtractField field) {
       return "extract_year";
   }
   CIDER_THROW(CiderUnsupportedException, fmt::format("field is {}", field));
-  return "";
 }
 
 constexpr int simple_extract_field = kEPOCH | kDATEEPOCH | kQUARTERDAY | kHOUR | kMINUTE |
