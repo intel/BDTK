@@ -89,16 +89,17 @@ class CiderArrowCaseWhenSequenceTestBase : public CiderTestBase {
   CiderArrowCaseWhenSequenceTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER NOT NULL, col_bigint BIGINT NOT NULL, col_double DOUBLE NOT NULL, col_float FLOAT NOT NULL);)";
+        R"(CREATE TABLE test(col_int INTEGER NOT NULL, col_bigint BIGINT NOT NULL, col_double DOUBLE NOT NULL, col_float FLOAT NOT NULL, col_str VARCHAR(10) NOT NULL);)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)});
   }
 };
 
@@ -107,17 +108,18 @@ class CiderArrowCaseWhenSequenceWithNullTestBase : public CiderTestBase {
   CiderArrowCaseWhenSequenceWithNullTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT);)";
+        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {3, 3, 3, 3});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3});
   }
 };
 
@@ -126,17 +128,18 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   CiderArrowCaseWhenRandomWithNullTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT);)";
+        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
         GeneratePattern::Random,
         2,
         102);
@@ -569,6 +572,18 @@ STRING_TEST(CiderCaseWhenRandomWithNullTestBase, stringTest);
 
 #define STRING_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                         \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
+    assertQueryArrow(                                                                    \
+        "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
+        "ELSE 0 "                                                                        \
+        "END FROM test");                                                                \
+    assertQueryArrow(                                                                    \
+        "SELECT col_int, CASE WHEN col_str < 'uuu' THEN 10 WHEN col_int > 3 THEN 20 "    \
+        "ELSE 0 END FROM test");                                                         \
+    assertQueryArrow(                                                                    \
+        "SELECT col_str, CASE WHEN col_str like '%mm%' THEN 10 WHEN col_int > 3 THEN "   \
+        "20 "                                                                            \
+        "ELSE 0 "                                                                        \
+        "END FROM test");                                                                \
     GTEST_SKIP_("FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]");                \
     assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
                      "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
