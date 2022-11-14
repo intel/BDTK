@@ -41,12 +41,6 @@ void CiderTestBase::assertQuery(const std::string& sql,
   EXPECT_TRUE(CiderBatchChecker::checkEq(duck_res_batch, cider_res_batch, ignore_order));
 }
 
-void CiderTestBase::prepareArrowBatch() {
-  for (auto iter = input_.begin(); iter != input_.end(); iter++) {
-    (*iter)->convertToArrowRepresentation();
-  }
-}
-
 void CiderTestBase::assertQueryArrow(const std::string& sql,
                                      const std::string& json_file) {
   auto duck_res = duckDbQueryRunner_.runSql(sql);
