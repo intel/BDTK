@@ -47,18 +47,14 @@ ExprPtr makeConstant(int32_t val) {
 template <JITTypeTag Type, typename NativeType, typename Builder>
 void executeFilterTest(NativeType input, NativeType expected, Builder builder) {
   LLVMJITModule module("Test");
-  JITFunctionPointer func = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_filter_op",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::VOID},
-      .params_type = {JITFunctionParam{.name = "in", .type = Type},
-                      JITFunctionParam{
-                          .name = "out", .type = JITTypeTag::POINTER, .sub_type = Type}},
-  });
-
-  Context context(func.get());
-  builder(context);
-
-  func->finish();
+  JITFunctionPointer func = JITFunctionBuilder()
+                                .setFuncName("test_filter_op")
+                                .registerModule(module)
+                                .addReturn(JITTypeTag::VOID)
+                                .addParameter(Type, "in")
+                                .addParameter(JITTypeTag::POINTER, "out", Type)
+                                .addProcedureBuilder(builder)
+                                .build();
   module.finish();
 
   auto func_ptr = func->getFunctionPointer<void, NativeType, int32_t*>();
@@ -74,10 +70,8 @@ TEST_F(FilterProjectTests, BasicTest) {
   //   }
   //   return;
   // }
-  auto builder = [](Context& context) {
-    auto func = context.query_func_;
-
-    auto input = func->getArgument(0);
+  auto builder = [](JITFunction* function) {
+    auto input = function->getArgument(0);
 
     // var
     auto col_var =
@@ -100,9 +94,10 @@ TEST_F(FilterProjectTests, BasicTest) {
                                   std::make_unique<ProjectTranslator>(
                                       add_expr, std::make_unique<MockSinkTranslator>(1)));
 
+    Context context(function);
     trans.consume(context);
 
-    func->createReturn();
+    function->createReturn();
   };
 
   executeFilterTest<JITTypeTag::INT32>(1, 6, builder);
