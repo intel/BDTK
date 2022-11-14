@@ -27,10 +27,12 @@
 namespace cider::exec::nextgen::operators {
 class FilterNode : public OpNode {
  public:
-  FilterNode() = default;
-  template <typename T>
+  template <typename T, IsVecOf<T, ExprPtr> = true>
   FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
-  // FilterNode(std::initializer_list<ExprPtr> exprs) : exprs_(exprs) {}
+  template <typename... T>
+  FilterNode(T&&... exprs) {
+    (exprs_.emplace_back(std::forward<T>(exprs)), ...);
+  }
 
   ExprPtrVector getExprs() override { return exprs_; }
 
@@ -44,11 +46,11 @@ class FilterTranslator : public Translator {
     node_ = FilterNode(std::forward<T>(exprs));
     successor_.swap(succ);
   }
-  // FilterTranslator(std::initializer_list<ExprPtr> exprs,
-  //                  std::unique_ptr<Translator> succ) {
-  //   node_ = FilterNode(exprs);
-  //   successor_.swap(succ);
-  // }
+  template <typename... T>
+  FilterTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
+    node_ = FilterNode(std::forward<T>(exprs)...);
+    successor_.swap(successor);
+  }
   FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
       : node_(std::move(node)), successor_(std::move(succ)) {}
 

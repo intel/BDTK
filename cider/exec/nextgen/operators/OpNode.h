@@ -22,6 +22,8 @@
 #ifndef NEXTGEN_TRANSLATOR_OPNODE_H
 #define NEXTGEN_TRANSLATOR_OPNODE_H
 
+#include <type_traits>
+
 #include "exec/nextgen/Context.h"
 #include "type/plan/Analyzer.h"
 
@@ -85,6 +87,17 @@ bool isa(const OpNodePtr& op) {
   return dynamic_cast<OpNodeT*>(op.get());
 }
 
+template <typename T, typename ST>
+struct is_vector_of {
+  using type = typename std::remove_reference<T>::type;
+  static constexpr bool v = std::is_same_v<type, std::vector<ST>>;
+};
+
+template <typename T, typename ST>
+inline constexpr bool is_vector_of_v = is_vector_of<T, ST>::v;
+
+template <typename T, typename ST>
+using IsVecOf = typename std::enable_if_t<is_vector_of_v<T, ST>, bool>;
 }  // namespace cider::exec::nextgen::operators
 
 #endif  // NEXTGEN_TRANSLATOR_OPNODE_H

@@ -37,7 +37,7 @@ void FilterTranslator::codegen(Context& context) {
         bool_init = func->createConstant(JITTypeTag::BOOL, true);
         for (const auto& expr : node_.exprs_) {
           auto& cond = gen.codegen(expr.get());
-          bool_init = bool_init && cond.get_value();
+          bool_init = bool_init && cond.getValue();
           TODO("MaJian", "support null in condition");
         }
         TODO("MaJian", "support short circuit logic operation");
