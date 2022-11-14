@@ -31,7 +31,7 @@ class CiderGroupByVarcharArrowTest : public CiderTestBase {
     table_name_ = "table_test";
     create_ddl_ =
         "CREATE TABLE table_test(col_a BIGINT NOT NULL, col_b BIGINT NOT NULL, col_c "
-        "VARCHAR NOT NULL, col_d VARCHAR NOT NULL);";
+        "VARCHAR NOT NULL, col_d VARCHAR);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   500,
@@ -73,7 +73,6 @@ TEST_F(CiderGroupByVarcharArrowTest, varcharGroupByTest) {
       "BY col_a, col_b, col_c, col_d");
 
   // TODO(yizhong): Enable after string compare is supported.
-  GTEST_SKIP_("Enable after string CmpFun is supported.");
   /*one not null varchar group by key with one condition*/
   assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
@@ -83,7 +82,6 @@ TEST_F(CiderGroupByVarcharArrowTest, varcharGroupByTest) {
   assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
       "col_d IS NOT NULL");
-
   /*one null varchar group by key with one null condition*/
   assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_d FROM table_test GROUP BY col_a, col_d HAVING "
@@ -134,14 +132,8 @@ TEST_F(CiderGroupByVarcharArrowTest, varcharGroupByTest) {
       "'AAA'");
   assertQueryArrowIgnoreOrder(
       "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
-      "col_a IS NOT NULL AND "
-      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
-      "col_d IS NULL");
-  assertQueryArrowIgnoreOrder(
-      "SELECT col_a, SUM(col_a), col_b, SUM(col_b), col_c, col_d FROM table_test WHERE "
-      "col_a IS NOT NULL AND "
-      "col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d HAVING col_c <> 'AAA' AND "
-      "col_d IS NOT NULL ");
+      "col_a IS NOT NULL AND col_b IS NOT NULL GROUP BY col_a, col_b, col_c, col_d "
+      "HAVING col_c <> 'AAA' AND col_d IS NOT NULL ");
 }
 
 /* Set to small data set will also cover all cases.
