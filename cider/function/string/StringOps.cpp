@@ -231,7 +231,7 @@ NullableStrType Trim::operator()(const std::string& str) const {
     // no trimming should be applied
     return str;
   }
-  if (trim_begin == trim_end) {
+  if (trim_begin >= trim_end) {
     // all chars should be trimmed
     return std::string("");
   }
