@@ -61,13 +61,13 @@
            {
             "fp32": {
              "type_variation_reference": 0,
-             "nullability": "NULLABILITY_REQUIRED"
+             "nullability": "NULLABILITY_NULLABLE"
             }
            },
            {
             "fp32": {
              "type_variation_reference": 0,
-             "nullability": "NULLABILITY_REQUIRED"
+             "nullability": "NULLABILITY_NULLABLE"
             }
            }
           ],
