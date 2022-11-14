@@ -23,7 +23,7 @@ By using this library, frontend SQL engines like Prestodb/Spark query performanc
 
 ## Problem Statement
 
-For big data analytic framework users, it becomes more and more significant needs for better performance. And most of existing big data analytic frameworks are built via Java and it's designed mostly for CPU only computation. To unblock performance further to hardware bare metal, native implementation and leveraging state-of-art hardwares are employed in this toolkit. 
+For big data analytic framework users, it becomes more and more significant needs for better performance. And most of existing big data analytic frameworks are built via Java and it's designed mostly for CPU only computation. To unblock performance further to bare metal hardware, native implementation and leveraging state-of-art hardwares are employed in this toolkit. 
 
 Furthermore, assembling & building becomes a new trend for data analytic solution providers. More and more SQL based solutions were built based on some primitive building blocks over the last five years. Having some performt OOB building blocks (as libraries) can significantly reduce time-to-value for building everything from scratch. With such general-purpose toolkit, it can significantly reduce time-to-value for analytic solution developers.
 
@@ -31,20 +31,20 @@ Furthermore, assembling & building becomes a new trend for data analytic solutio
 
 BDTK focuses on following areas:
 -	End-users of big data analytic frameworks who're looking for performance acceleration
--	Data engineers who want some Intel architecture based optimizations
+-	Data engineers who want some Intel architecture-based optimizations
 -	Database developers who're seeking for reusable building blocks
 -	Data Scientist who looks for heterogenous execution
 
-Users can reuse implemented operators/functions to build a full-featured SQL engine. Currently this library offers an highly optimized compiler to JITed function for execution.
+Users can reuse implemented operators/functions to build a full-featured SQL engine. Currently this library offers a highly optimized compiler to JITed function for execution.
  
 Building blocks utilizing compression codec (based on IAA, QAT) can be used directly to Hadoop/Spark for compression acceleration.
 
 # Introduction
-The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator,  QATCodec - compression codec wrapper based on Intel QAT accelerator. 
+The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator, QATCodec - compression codec wrapper based on Intel QAT accelerator. 
 
  - [Cider](https://github.com/intel/BDTK/tree/main/cider):
 
-   a modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs  [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
+   a modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
 
  - [Velox Plugin](https://github.com/intel/BDTK/tree/main/cider-velox):
 
@@ -84,7 +84,7 @@ $ docker build -t ${image_name} .
 $ docker run -d --name ${container_name} --privileged=true -v ${path_to_source_of_bdtk}:/workspace/bdtk ${image_name} /usr/sbin/init
 ```
 ## How To Build
-Once you have setup the Docker build envirenment for BDTK and get the source, you can enter the BDTK container and build like:
+Once you have setup the Docker build environment for BDTK and get the source, you can enter the BDTK container and build like:
 
 Run `make` in the root directory to compile the sources. For development, use
 `make debug` to build a non-optimized debug version, or `make release` to build
