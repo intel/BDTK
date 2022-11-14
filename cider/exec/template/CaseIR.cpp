@@ -158,9 +158,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   std::unique_ptr<CodegenColValues> case_val =
       codegenCaseExpr(case_expr, case_llvm_type, is_real_str, co);
   if (is_real_str) {
-    // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
-    /*CIDER_THROW(CiderCompileException,
-                "String type case when is not currently supported.");*/
     auto case_expr = dynamic_cast<FixedSizeColValues*>(case_val.get());
     std::vector<llvm::Value*> ret_vals{case_expr->getValue()};
     ret_vals.push_back(cgen_state_->emitCall("extract_str_ptr", {case_expr->getValue()}));
@@ -214,9 +211,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     cgen_state_->ir_builder_.SetInsertPoint(then_bb);
     const auto then_expr_ptr = codegen(expr_pair.second.get(), co, true);
     if (is_real_str) {
-      // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
-      /*CIDER_THROW(CiderCompileException,
-                  "String type case when is not currently supported.");*/
       auto then_multiple_expr =
           dynamic_cast<MultipleValueColValues*>(then_expr_ptr.get());
       CHECK(then_multiple_expr);
@@ -256,9 +250,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   llvm::Value* else_lv{nullptr};
   llvm::Value* else_null_lv{nullptr};
   if (is_real_str) {
-    // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
-    /*CIDER_THROW(CiderCompileException,
-                "String type case when is not currently supported.");*/
     auto else_multiple_expr = dynamic_cast<MultipleValueColValues*>(else_expr_ptr.get());
     CHECK(else_multiple_expr);
     auto else_lvs = else_multiple_expr->getValues();
