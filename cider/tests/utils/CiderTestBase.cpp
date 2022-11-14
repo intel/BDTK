@@ -188,8 +188,6 @@ void CiderJoinTestBase::assertJoinQueryRowEqualForArrowFormat(
     // range join with nulls.
     EXPECT_TRUE(duck_res_batches[0]->getChildrenNum() ==
                 cider_res_batch->getChildrenNum());
-    std::cout << duck_res_batches[0]->getLength() << std::endl;
-    std::cout << cider_res_batch->getLength() << std::endl;
     EXPECT_TRUE(duck_res_batches[0]->getLength() == cider_res_batch->getLength());
   }
 }
