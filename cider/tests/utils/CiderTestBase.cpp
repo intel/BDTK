@@ -59,6 +59,14 @@ void CiderTestBase::assertQueryArrow(const std::string& sql,
   EXPECT_TRUE(CiderBatchChecker::checkArrowEq(duck_res_batch, cider_res_batch));
 }
 
+void CiderTestBase::assertQueryArrow(const std::string& sql,
+                                     const std::shared_ptr<CiderBatch> expected_batch,
+                                     const bool ignore_order) {
+  auto cider_res_batch = std::make_shared<CiderBatch>(
+      ciderQueryRunner_.runQueryOneBatch(sql, input_[0], true));
+  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, cider_res_batch));
+}
+
 void CiderTestBase::assertQueryArrowIgnoreOrder(const std::string& sql,
                                                 const std::string& json_file) {
   auto duck_res = duckDbQueryRunner_.runSql(sql);

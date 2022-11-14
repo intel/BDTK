@@ -868,7 +868,8 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           int64_t* result = const_cast<int64_t*>(
               reinterpret_cast<const int64_t*>(outBuffers[flatten_index]));
           double* cast_buffer = reinterpret_cast<double*>(result);
-          if (result[0] == kBigIntNullValue) {
+          if (result[0] == kBigIntNullValue &&
+              !ciderCompilationOption_.use_cider_data_format) {
             cast_buffer[0] = kDoubleNullValue;
           } else {
             cast_buffer[0] = (double)result[0];
@@ -877,7 +878,8 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           float* result = const_cast<float*>(
               reinterpret_cast<const float*>(outBuffers[flatten_index]));
           double* cast_buffer = reinterpret_cast<double*>(result);
-          if (result[0] == kFloatNullValue) {
+          if (result[0] == kFloatNullValue &&
+              !ciderCompilationOption_.use_cider_data_format) {
             cast_buffer[0] = kDoubleNullValue;
           } else {
             cast_buffer[0] = (double)result[0];
