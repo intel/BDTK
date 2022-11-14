@@ -22,21 +22,6 @@
 #include "function/FunctionLookupEngine.h"
 #include "cider/CiderException.h"
 
-#define LOAD_EXTENSION_YAML_AND_INITIALIZE_FUNCTION_LOOK_UP(                            \
-    TYPE_NAME, TYPE_YAML_FILE_PATH, FUNCTION_MAPPING_TYPE)                              \
-  io::substrait::ExtensionPtr extension_function_ptr = io::substrait::Extension::load(  \
-      {getDataPath() + "/" #TYPE_NAME "/" + "" #TYPE_YAML_FILE_PATH ""});               \
-  io::substrait::FunctionMappingPtr func_mappings =                                     \
-      std::make_shared<const FUNCTION_MAPPING_TYPE>();                                  \
-  scalar_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>( \
-      cider_internal_function_ptr, func_mappings);                                      \
-  aggregate_function_look_up_ptr_ =                                                     \
-      std::make_shared<io::substrait::AggregateFunctionLookup>(                         \
-          cider_internal_function_ptr, func_mappings);                                  \
-  extension_function_look_up_ptr_ =                                                     \
-      std::make_shared<io::substrait::ScalarFunctionLookup>(extension_function_ptr,     \
-                                                            func_mappings);
-
 void FunctionLookupEngine::registerFunctionLookUpContext(
     const PlatformType from_platform) {
   // Load cider support function default yaml files first.
@@ -44,15 +29,32 @@ void FunctionLookupEngine::registerFunctionLookUpContext(
       io::substrait::Extension::load();
   // Load engine's extension function yaml files second.
   if (from_platform == PlatformType::SubstraitPlatform) {
-    LOAD_EXTENSION_YAML_AND_INITIALIZE_FUNCTION_LOOK_UP(
-        substrait, substrait_extension.yaml, io::substrait::FunctionMapping)
+    loadExtensionYamlAndInitializeFunctionLookup<io::substrait::FunctionMapping>(
+        "substrait", "substrait_extension.yaml", cider_internal_function_ptr);
   } else if (from_platform == PlatformType::PrestoPlatform) {
-    LOAD_EXTENSION_YAML_AND_INITIALIZE_FUNCTION_LOOK_UP(
-        presto, presto_extension.yaml, io::substrait::FunctionMapping)
+    loadExtensionYamlAndInitializeFunctionLookup<io::substrait::FunctionMapping>(
+        "presto", "presto_extension.yaml", cider_internal_function_ptr);
   } else {
     CIDER_THROW(CiderCompileException,
                 fmt::format("Function lookup unsupported platform {}", from_platform));
   }
+}
+
+template <typename T>
+void FunctionLookupEngine::loadExtensionYamlAndInitializeFunctionLookup(
+    std::string platform_name,
+    std::string yaml_extension_filename,
+    const io::substrait::ExtensionPtr& cider_internal_function_ptr) {
+  io::substrait::ExtensionPtr extension_function_ptr = io::substrait::Extension::load(
+      {fmt::format("{}/{}/{}", getDataPath(), platform_name, yaml_extension_filename)});
+  io::substrait::FunctionMappingPtr func_mappings = std::make_shared<const T>();
+  scalar_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>(
+      cider_internal_function_ptr, func_mappings);
+  aggregate_function_look_up_ptr_ =
+      std::make_shared<io::substrait::AggregateFunctionLookup>(
+          cider_internal_function_ptr, func_mappings);
+  extension_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>(
+      extension_function_ptr, func_mappings);
 }
 
 const SQLOps FunctionLookupEngine::getFunctionScalarOp(

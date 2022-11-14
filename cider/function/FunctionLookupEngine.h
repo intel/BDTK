@@ -74,6 +74,11 @@ class FunctionLookupEngine {
 
  private:
   void registerFunctionLookUpContext(const PlatformType from_platform);
+  template <typename T>
+  void loadExtensionYamlAndInitializeFunctionLookup(
+      std::string platform_name,
+      std::string yaml_extension_filename,
+      const io::substrait::ExtensionPtr& cider_internal_function_ptr);
 
   const SQLOps getFunctionScalarOp(const FunctionSignature& function_signature) const;
   const SQLAgg getFunctionAggOp(const FunctionSignature& function_signature) const;
