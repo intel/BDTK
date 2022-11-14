@@ -16,14 +16,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-set(NEXTGEN_DEPS cider_util)
-
-# AddressSanitizer needs to set overcommit_memory as allowed.
-option(ENABLE_ASN "Enable AddressSanitizer for Nextgen Project." OFF)
-if(ENABLE_ASN)
-  list(APPEND NEXTGEN_DEPS -fsanitize=address)
-endif()
-
-add_subdirectory(jitlib)
-add_subdirectory(translator)
+set(TRANSLATOR_SOURCE
+    ${CMAKE_CURRENT_LIST_DIR}/expr.cpp ${CMAKE_CURRENT_LIST_DIR}/filter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/project.cpp)
+include_directories(${CMAKE_SOURCE_DIR}/cider/exec/template)
+add_library(translator STATIC ${TRANSLATOR_SOURCE})
+target_link_libraries(translator ${llvm_libs} ${NEXTGEN_DEPS})

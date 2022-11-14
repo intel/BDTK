@@ -22,9 +22,12 @@
 #ifndef JITLIB_BASE_JITTUPLE_H
 #define JITLIB_BASE_JITTUPLE_H
 
+#include <utility>
+
 #include <boost/container/small_vector.hpp>
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "util/Logger.h"
 
 namespace cider::jitlib {
 class JITTuple final : public JITBaseValue {
@@ -62,6 +65,52 @@ class JITTuple final : public JITBaseValue {
  private:
   static constexpr size_t DefaultVectorSize = 4;
   boost::container::small_vector<JITBaseValue*, DefaultVectorSize> children;
+};
+
+class JITExprValue {
+ public:
+  JITExprValue() = default;
+  ~JITExprValue() = default;
+  JITExprValue(const JITExprValue&) = delete;
+  JITExprValue(JITExprValue&&) = delete;
+
+  // for vector<JITValuePointer>;
+  template <typename T>
+  JITExprValue(T&& ptrs, bool is_variadic = false)
+      : ptrs_(std::forward<T>(ptrs)), is_variadic_(is_variadic) {}
+
+  // for {JITValuePointer, ...}
+  template <typename... T>
+  JITExprValue(T&&... ptrs, bool is_variadic = false) : is_variadic_(is_variadic) {
+    (ptrs_.emplace_back(std::forward<T>(ptrs)), ...);
+  }
+
+  // for JITValuePointer
+  // convert JITValuePointer to JITExprValue
+  JITExprValue(JITValuePointer&& val) {
+    is_variadic_ = false;
+    ptrs_.push_back(std::move(val));
+  }
+
+  cider::jitlib::JITValue& getValue() {
+    CHECK_GT(ptrs_.size(), 0);
+    return *ptrs_[0];
+  }
+  cider::jitlib::JITValue& getNull() {
+    CHECK_GT(ptrs_.size(), 1);
+    return *ptrs_[1];
+  }
+  cider::jitlib::JITValue& getLen() {
+    CHECK(is_variadic_);
+    CHECK_EQ(ptrs_.size(), 3);
+    return *ptrs_[2];
+  }
+
+ private:
+  // fixed witdth column: value and null
+  // variadic(eg. string): value, null and len
+  std::vector<cider::jitlib::JITValuePointer> ptrs_{};
+  bool is_variadic_ = false;
 };
 
 };  // namespace cider::jitlib

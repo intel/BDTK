@@ -18,3 +18,4 @@
 # under the License.
 add_subdirectory(jitlib)
 add_subdirectory(compiler)
+add_subdirectory(translator)
