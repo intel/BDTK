@@ -159,10 +159,16 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
       codegenCaseExpr(case_expr, case_llvm_type, is_real_str, co);
   if (is_real_str) {
     // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
-    CIDER_THROW(CiderCompileException,
-                "String type case when is not currently supported.");
+    /*CIDER_THROW(CiderCompileException,
+                "String type case when is not currently supported.");*/
+    auto case_expr = dynamic_cast<FixedSizeColValues*>(case_val.get());
+    std::vector<llvm::Value*> ret_vals{case_expr->getValue()};
+    ret_vals.push_back(cgen_state_->emitCall("extract_str_ptr", {case_expr->getValue()}));
+    ret_vals.push_back(cgen_state_->emitCall("extract_str_len", {case_expr->getValue()}));
+    return std::make_unique<MultipleValueColValues>(ret_vals, case_expr->getNull());
+  } else {
+    return case_val;
   }
-  return case_val;
 }
 
 std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
@@ -207,19 +213,33 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
                                                   /*insert_before=*/end_bb);
     cgen_state_->ir_builder_.SetInsertPoint(then_bb);
     const auto then_expr_ptr = codegen(expr_pair.second.get(), co, true);
-    auto then_expr = dynamic_cast<FixedSizeColValues*>(then_expr_ptr.get());
-    CHECK(then_expr);
-    auto then_bb_lvs = then_expr->getValue();
-    auto then_bb_null_lvs = then_expr->getNull();
-    CHECK(then_bb_lvs);
     if (is_real_str) {
       // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
-      CIDER_THROW(CiderCompileException,
-                  "String type case when is not currently supported.");
+      /*CIDER_THROW(CiderCompileException,
+                  "String type case when is not currently supported.");*/
+      auto then_multiple_expr =
+          dynamic_cast<MultipleValueColValues*>(then_expr_ptr.get());
+      CHECK(then_multiple_expr);
+      auto then_bb_lvs = then_multiple_expr->getValues();
+      auto then_bb_null_lv = then_multiple_expr->getNull();
+      if (then_bb_lvs.size() == 3) {
+        then_lvs.push_back(
+            cgen_state_->emitCall("string_pack", {then_bb_lvs[1], then_bb_lvs[2]}));
+      } else {
+        then_lvs.push_back(then_bb_lvs.front());
+      }
+      if (then_bb_null_lv) {
+        then_null_lvs.push_back(then_bb_null_lv);
+      }
     } else {
-      then_lvs.push_back(then_bb_lvs);
-      if (then_bb_null_lvs) {
-        then_null_lvs.push_back(then_bb_null_lvs);
+      auto then_fixed_expr = dynamic_cast<FixedSizeColValues*>(then_expr_ptr.get());
+      CHECK(then_fixed_expr);
+      auto then_bb_lv = then_fixed_expr->getValue();
+      auto then_bb_null_lv = then_fixed_expr->getNull();
+      CHECK(then_bb_lv);
+      then_lvs.push_back(then_bb_lv);
+      if (then_bb_null_lv) {
+        then_null_lvs.push_back(then_bb_null_lv);
       }
     }
     then_bbs.push_back(cgen_state_->ir_builder_.GetInsertBlock());
@@ -233,10 +253,27 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   const auto else_expr = case_expr->get_else_expr();
   CHECK(else_expr);
   const auto else_expr_ptr = codegen(else_expr, co, true);
-  auto else_expr_v = dynamic_cast<FixedSizeColValues*>(else_expr_ptr.get());
-  CHECK(else_expr_v);
-  auto else_lv = else_expr_v->getValue();
-  auto else_null_lv = else_expr_v->getNull();
+  llvm::Value* else_lv{nullptr};
+  llvm::Value* else_null_lv{nullptr};
+  if (is_real_str) {
+    // FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]
+    /*CIDER_THROW(CiderCompileException,
+                "String type case when is not currently supported.");*/
+    auto else_multiple_expr = dynamic_cast<MultipleValueColValues*>(else_expr_ptr.get());
+    CHECK(else_multiple_expr);
+    auto else_lvs = else_multiple_expr->getValues();
+    if (else_lvs.size() == 3) {
+      else_lv = cgen_state_->emitCall("string_pack", {else_lvs[1], else_lvs[2]});
+    } else {
+      else_lv = else_lvs.front();
+    }
+    else_null_lv = else_multiple_expr->getNull();
+  } else {
+    auto else_expr_v = dynamic_cast<FixedSizeColValues*>(else_expr_ptr.get());
+    CHECK(else_expr_v);
+    else_lv = else_expr_v->getValue();
+    else_null_lv = else_expr_v->getNull();
+  }
   CHECK(else_lv);
   auto else_bb = cgen_state_->ir_builder_.GetInsertBlock();
   cgen_state_->ir_builder_.CreateBr(end_bb);
