@@ -717,7 +717,6 @@ std::vector<JoinLoop> Executor::buildJoinLoops(
     bool has_remaining_left_join_quals =
         rem_left_join_quals_it != plan_state_->left_join_non_hashtable_quals_.end() &&
         !rem_left_join_quals_it->second.empty();
-
     std::function<llvm::Value*(const std::vector<llvm::Value*>&)>
         outer_join_condition_remaining_quals_cb;
     if (co.use_cider_data_format) {
@@ -864,7 +863,6 @@ std::vector<JoinLoop> Executor::buildJoinLoops(
       // condition.
       VLOG(1) << "Unable to build hash table, falling back to loop join: "
               << fail_reasons_str;
-
       std::function<llvm::Value*(const std::vector<llvm::Value*>&)>
           outer_join_condition_cb;
       if (co.use_cider_data_format) {
