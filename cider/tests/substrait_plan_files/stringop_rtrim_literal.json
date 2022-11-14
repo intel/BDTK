@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "trim:fchar_fchar"
+        "name": "rtrim:fchar_fchar"
       }
     }
   ],
@@ -87,7 +87,7 @@
                     {
                       "value": {
                         "literal": {
-                          "fixedChar": "xxx3456   ",
+                          "fixedChar": "xxx3456xxx",
                           "nullable": false,
                           "typeVariationReference": 0
                         }
@@ -96,7 +96,7 @@
                     {
                       "value": {
                         "literal": {
-                          "fixedChar": " x",
+                          "fixedChar": "x",
                           "nullable": false,
                           "typeVariationReference": 0
                         }

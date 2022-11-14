@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "trim:fchar_fchar"
+        "name": "ltrim:vchar_fchar"
       }
     }
   ],
@@ -22,7 +22,8 @@
             "common": {
               "emit": {
                 "outputMapping": [
-                  3
+                  3,
+                  4
                 ]
               }
             },
@@ -86,10 +87,49 @@
                   "arguments": [
                     {
                       "value": {
+                        "selection": {
+                          "directReference": {
+                            "structField": {
+                              "field": 1
+                            }
+                          },
+                          "rootReference": {}
+                        }
+                      }
+                    },
+                    {
+                      "value": {
                         "literal": {
-                          "fixedChar": "xxx3456   ",
+                          "fixedChar": " x",
                           "nullable": false,
                           "typeVariationReference": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "scalarFunction": {
+                  "functionReference": 0,
+                  "args": [],
+                  "outputType": {
+                    "varchar": {
+                      "length": 10,
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "value": {
+                        "selection": {
+                          "directReference": {
+                            "structField": {
+                              "field": 2
+                            }
+                          },
+                          "rootReference": {}
                         }
                       }
                     },
@@ -109,7 +149,8 @@
           }
         },
         "names": [
-          "EXPR$0"
+          "EXPR$0",
+          "EXPR$1"
         ]
       }
     }
