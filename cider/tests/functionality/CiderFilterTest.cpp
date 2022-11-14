@@ -443,7 +443,6 @@ TEST_F(CiderProjectAllTestArrow, ArrowFilterProjectAllTest) {
 }
 
 TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
-  // prepareArrowBatch();
   assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
                    "in_int32_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",
@@ -462,7 +461,6 @@ TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
 }
 
 TEST_F(CiderFilterRandomTestArrow, ArrowInTest) {
-  // prepareArrowBatch();
   assertQueryArrow(
       "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
       "in_int32_array.json");
