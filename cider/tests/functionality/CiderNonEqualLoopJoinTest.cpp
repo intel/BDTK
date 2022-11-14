@@ -173,20 +173,6 @@ class CiderArrowRandomNullableJoinTest : public CiderArrowFormatJoinTestBase {
   }
 };
 
-// TEST_F(CiderArrowSeqNotNullJoinTest, loopJoinTest) {
-//     assertJoinQueryRowEqualForArrowFormatAndReset("SELECT l_float,r_float FROM
-//     table_probe LEFT JOIN table_hash ON l_float = r_float");
-//     assertJoinQueryRowEqualForArrowFormatAndReset("SELECT l_float,r_float FROM
-//     table_probe JOIN table_hash ON l_float = r_float");
-// }
-
-// TEST_F(CiderArrowRandomNullableJoinTest, loopJoinTest) {
-//     assertJoinQueryRowEqualForArrowFormatAndReset("SELECT l_float,r_float,l_int,r_int
-//     FROM table_probe LEFT JOIN table_hash ON l_float < r_float and l_int > r_int");
-//     assertJoinQueryRowEqualForArrowFormatAndReset("SELECT l_float,r_float FROM
-//     table_probe JOIN table_hash ON l_float = r_float");
-// }
-
 #define NON_EQUAL_JOIN_TEST_UNIT(PROJECT, JOIN_COMPARISON_OPERATOR)                      \
   /*INNER JOIN ON BIGINT*/                                                               \
   assertJoinQueryRowEqualForArrowFormatAndReset(                                         \
