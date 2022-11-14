@@ -59,6 +59,9 @@ class CiderTestBase : public testing::Test {
                         const bool ignore_order = false);
   void assertQueryArrowIgnoreOrder(const std::string& sql,
                                    const std::string& json_file = "");
+  void assertQueryArrow(const std::string& sql,
+                        const std::shared_ptr<CiderBatch> expected_batch,
+                        const bool ignore_order = true);
 
   // a method for test count distinct with multi batch case
   void assertQueryForCountDistinct(
@@ -73,7 +76,6 @@ class CiderTestBase : public testing::Test {
     create_ddl_ = create_ddl;
   }
   void setupInput(std::vector<std::shared_ptr<CiderBatch>>& input) { input_ = input; }
-  void prepareArrowBatch();
 
  protected:
   std::string table_name_;

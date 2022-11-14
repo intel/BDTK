@@ -635,6 +635,68 @@ TEST_F(CiderDuplicateStringTest, MultiGroupKeyTest) {
               expected_batch_2);
 }
 
+class CiderDuplicateStringArrowTest : public CiderTestBase {
+ public:
+  CiderDuplicateStringArrowTest() {
+    table_name_ = "test";
+    create_ddl_ = R"(CREATE TABLE test(col_1 VARCHAR(10), col_2 VARCHAR(10));)";
+
+    std::string str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
+    std::vector<int> offset1{0, 7, 15, 15, 22, 25, 33, 33, 33};
+
+    std::string str2 = "123456";
+    std::vector<int> offset2{0, 1, 2, 3, 4, 5, 6, 7, 8};
+
+    std::tie(schema_, array_) = ArrowArrayBuilder()
+                                    .setRowNum(8)
+                                    .addUTF8Column("col_1", str1, offset1)
+                                    .addUTF8Column("col_2", str2, offset2)
+                                    .build();
+  }
+};
+
+TEST_F(CiderDuplicateStringArrowTest, SingleGroupKeyTest) {
+  std::string res_str = "aaaaaaaaabbccddddd";
+  std::vector<int> res_offset{0, 0, 7, 15, 18};
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(4)
+          .addUTF8Column("res_str", res_str, res_offset)
+          .addColumn<int64_t>("res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {3, 2, 2, 1})
+          .build();
+  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
+      schema, array, std::make_shared<CiderDefaultAllocator>());
+
+  assertQueryArrow("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", res_batch, true);
+}
+
+TEST_F(CiderDuplicateStringArrowTest, MultiGroupKeyTest) {
+  std::string res_str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
+  std::vector<int> res_offset1{0, 0, 7, 15, 15, 22, 25, 33};
+
+  std::string res_str2 = "123456";
+  std::vector<int> res_offset2{0, 1, 2, 3, 4, 5, 6, 7};
+
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(7)
+          .addUTF8Column("res_str1", res_str1, res_offset1)
+          .addColumn<int64_t>(
+              "res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {2, 1, 1, 1, 1, 1, 1})
+          .addUTF8Column("res_str2", res_str2, res_offset2)
+          .build();
+  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
+      schema, array, std::make_shared<CiderDefaultAllocator>());
+  assertQuery(
+      "SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2", res_batch, true);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);

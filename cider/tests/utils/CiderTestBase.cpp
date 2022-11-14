@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "tests/utils/CiderTestBase.h"
 #include "CiderBatchChecker.h"
+#include "tests/utils/CiderTestBase.h"
 
 void CiderTestBase::assertQuery(const std::string& sql,
                                 const std::string& json_file,
@@ -64,7 +64,8 @@ void CiderTestBase::assertQueryArrow(const std::string& sql,
                                      const bool ignore_order) {
   auto cider_res_batch = std::make_shared<CiderBatch>(
       ciderQueryRunner_.runQueryOneBatch(sql, input_[0], true));
-  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(expected_batch, cider_res_batch));
+  EXPECT_TRUE(
+      CiderBatchChecker::checkArrowEq(expected_batch, cider_res_batch, ignore_order));
 }
 
 void CiderTestBase::assertQueryArrowIgnoreOrder(const std::string& sql,
