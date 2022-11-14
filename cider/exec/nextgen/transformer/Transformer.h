@@ -24,7 +24,7 @@
 
 #include "exec/nextgen/operators/OpNode.h"
 
-namespace cider::exec::nextgen {
+namespace cider::exec::nextgen::transformer {
 using namespace cider::exec::nextgen::operators;
 
 /// \brief The Transformer class is responsible for transforming the OpPipeline to a

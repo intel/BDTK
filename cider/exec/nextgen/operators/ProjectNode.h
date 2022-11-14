@@ -36,32 +36,37 @@ class ProjectNode : public OpNode {
 
   ExprPtrVector getExprs() override { return exprs_; }
 
+  TranslatorPtr toTranslator() override;
+
   std::vector<ExprPtr> exprs_;
 };
 
 class ProjectTranslator : public Translator {
  public:
   template <typename T>
-  ProjectTranslator(T&& exprs, std::unique_ptr<Translator> successor) {
+  [[deprecated]] ProjectTranslator(T&& exprs, std::unique_ptr<Translator> successor) {
     node_ = ProjectNode(std::forward<T>(exprs));
     successor_.swap(successor);
   }
   template <typename... T>
-  ProjectTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
+  [[deprecated]] ProjectTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
     node_ = ProjectNode(std::forward<T>(exprs)...);
     successor_.swap(successor);
   }
-  ProjectTranslator(ProjectNode&& node, std::unique_ptr<Translator>&& successor)
+  [[deprecated]] ProjectTranslator(ProjectNode&& node,
+                                   std::unique_ptr<Translator>&& successor)
       : node_(std::move(node)), successor_(std::move(successor)) {}
+
+  ProjectTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+      : Translator(node, succ) {}
 
   void consume(Context& context) override;
 
  private:
   void codegen(Context& context);
 
-  ProjectNode node_;
-  std::unique_ptr<Translator> successor_;
+  [[deprecated]] ProjectNode node_;
+  [[deprecated]] std::unique_ptr<Translator> successor_;
 };
-
 }  // namespace cider::exec::nextgen::operators
 #endif  // NEXTGEN_OPERATORS_PROJECTNODE_H

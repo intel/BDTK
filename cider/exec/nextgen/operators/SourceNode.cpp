@@ -26,4 +26,8 @@
 namespace cider::exec::nextgen::operators {
 SourceNode::SourceNode(const ExprPtrVector& input_cols)
     : OpNode("SourceNode"), input_cols_(input_cols) {}
+
+TranslatorPtr SourceNode::toTranslator() {
+  return createOpTranslator<SourceTranslator>(shared_from_this());
+}
 }  // namespace cider::exec::nextgen::operators

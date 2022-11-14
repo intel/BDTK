@@ -24,6 +24,10 @@
 #include "exec/nextgen/operators/expr.h"
 
 namespace cider::exec::nextgen::operators {
+TranslatorPtr ProjectNode::toTranslator() {
+  return createOpTranslator<ProjectTranslator>(shared_from_this());
+}
+
 void ProjectTranslator::consume(Context& context) {
   codegen(context);
 }

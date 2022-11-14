@@ -36,31 +36,38 @@ class FilterNode : public OpNode {
 
   ExprPtrVector getExprs() override { return exprs_; }
 
+  TranslatorPtr toTranslator() override;
+
   ExprPtrVector exprs_;
 };
 
 class FilterTranslator : public Translator {
  public:
   template <typename T>
-  FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
+  [[deprecated]] FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
     node_ = FilterNode(std::forward<T>(exprs));
     successor_.swap(succ);
   }
+
   template <typename... T>
-  FilterTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
+  [[deprecated]] FilterTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
     node_ = FilterNode(std::forward<T>(exprs)...);
     successor_.swap(successor);
   }
-  FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
+
+  [[deprecated]] FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
       : node_(std::move(node)), successor_(std::move(succ)) {}
+
+  FilterTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+      : Translator(node, succ) {}
 
   void consume(Context& context) override;
 
  private:
   void codegen(Context& context);
 
-  FilterNode node_;
-  std::unique_ptr<Translator> successor_;
+  [[deprecated]] FilterNode node_;
+  [[deprecated]] std::unique_ptr<Translator> successor_;
 };
 
 }  // namespace cider::exec::nextgen::operators

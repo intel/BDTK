@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "exec/nextgen/operators/OpNode.h"
+#include "util/Logger.h"
 
 class InputColDescriptor;
 namespace cider::exec::nextgen::operators {
@@ -34,9 +35,20 @@ class SourceNode : public OpNode {
 
   ExprPtrVector getExprs() override { return input_cols_; }
 
+  TranslatorPtr toTranslator() override;
+
  private:
   ExprPtrVector input_cols_;
 };
-}  // namespace cider::exec::nextgen::operators
 
+class SourceTranslator : public Translator {
+ public:
+  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+      : Translator(node, succ) {
+    CHECK(isa<SourceNode>(node));
+  }
+
+  void consume(Context& context) override { UNREACHABLE(); }
+};
+}  // namespace cider::exec::nextgen::operators
 #endif  // NEXTGEN_OPERATORS_SOURCENODE_H
