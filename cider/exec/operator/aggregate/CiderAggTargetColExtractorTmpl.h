@@ -141,9 +141,9 @@ class SimpleAggExtractor<ST, bool> : public CiderAggTargetColExtractor {
           ++null_count;
         } else {
           if (*reinterpret_cast<const ST*>(rowPtr + offset_)) {
-            CiderBitUtils::setBitAt(&buffer[i / 8], i % 8);
+            CiderBitUtils::setBitAt(buffer, i);
           } else {
-            CiderBitUtils::clearBitAt(&buffer[i / 8], i % 8);
+            CiderBitUtils::clearBitAt(buffer, i);
           }
         }
       }
@@ -152,9 +152,9 @@ class SimpleAggExtractor<ST, bool> : public CiderAggTargetColExtractor {
       for (size_t i = 0; i < rowNum; ++i) {
         const int8_t* rowPtr = rowAddrs[i];
         if (*reinterpret_cast<const ST*>(rowPtr + offset_)) {
-          CiderBitUtils::setBitAt(&buffer[i / 8], i % 8);
+          CiderBitUtils::setBitAt(buffer, i);
         } else {
-          CiderBitUtils::clearBitAt(&buffer[i / 8], i % 8);
+          CiderBitUtils::clearBitAt(buffer, i);
         }
       }
     }
