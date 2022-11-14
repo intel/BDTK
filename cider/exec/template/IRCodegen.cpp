@@ -717,26 +717,59 @@ std::vector<JoinLoop> Executor::buildJoinLoops(
     bool has_remaining_left_join_quals =
         rem_left_join_quals_it != plan_state_->left_join_non_hashtable_quals_.end() &&
         !rem_left_join_quals_it->second.empty();
-    const auto outer_join_condition_remaining_quals_cb =
-        [this, level_idx, &co](const std::vector<llvm::Value*>& prev_iters) {
-          // when we have multiple quals for the left join in the current join level
-          // we first try to build a hashtable by using one of the possible qual,
-          // and deal with remaining quals as extra join conditions
-          FetchCacheAnchor anchor(cgen_state_.get());
-          addJoinLoopIterator(prev_iters, level_idx + 1);
-          llvm::Value* left_join_cond = cgen_state_->llBool(true);
-          CodeGenerator code_generator(this);
-          auto it = plan_state_->left_join_non_hashtable_quals_.find(level_idx);
-          if (it != plan_state_->left_join_non_hashtable_quals_.end()) {
-            for (auto expr : it->second) {
-              left_join_cond = cgen_state_->ir_builder_.CreateAnd(
-                  left_join_cond,
-                  code_generator.toBool(
-                      code_generator.codegen(expr.get(), true, co).front()));
+
+    std::function<llvm::Value*(const std::vector<llvm::Value*>&)>
+        outer_join_condition_remaining_quals_cb;
+    if (co.use_cider_data_format) {
+      outer_join_condition_remaining_quals_cb =
+          [this, level_idx, &co](const std::vector<llvm::Value*>& prev_iters) {
+            // when we have multiple quals for the left join in the current join level
+            // we first try to build a hashtable by using one of the possible qual,
+            // and deal with remaining quals as extra join conditions
+            FetchCacheAnchor anchor(cgen_state_.get());
+            addJoinLoopIterator(prev_iters, level_idx + 1);
+            llvm::Value* left_join_cond = cgen_state_->llBool(true);
+            CodeGenerator code_generator(this);
+            auto it = plan_state_->left_join_non_hashtable_quals_.find(level_idx);
+            if (it != plan_state_->left_join_non_hashtable_quals_.end()) {
+              for (auto expr : it->second) {
+                auto compare_value = code_generator.codegen(expr.get(), co, true);
+                auto compare_value_FixedSize =
+                    dynamic_cast<FixedSizeColValues*>(compare_value.get());
+                auto not_null = cgen_state_->ir_builder_.CreateXor(
+                    cgen_state_->llBool(true),
+                    code_generator.toBool(compare_value_FixedSize->getNull()));
+                auto current_match = cgen_state_->ir_builder_.CreateAnd(
+                    code_generator.toBool(not_null),
+                    code_generator.toBool(compare_value_FixedSize->getValue()));
+                left_join_cond =
+                    cgen_state_->ir_builder_.CreateAnd(left_join_cond, current_match);
+              }
             }
-          }
-          return left_join_cond;
-        };
+            return left_join_cond;
+          };
+    } else {
+      outer_join_condition_remaining_quals_cb =
+          [this, level_idx, &co](const std::vector<llvm::Value*>& prev_iters) {
+            // when we have multiple quals for the left join in the current join level
+            // we first try to build a hashtable by using one of the possible qual,
+            // and deal with remaining quals as extra join conditions
+            FetchCacheAnchor anchor(cgen_state_.get());
+            addJoinLoopIterator(prev_iters, level_idx + 1);
+            llvm::Value* left_join_cond = cgen_state_->llBool(true);
+            CodeGenerator code_generator(this);
+            auto it = plan_state_->left_join_non_hashtable_quals_.find(level_idx);
+            if (it != plan_state_->left_join_non_hashtable_quals_.end()) {
+              for (auto expr : it->second) {
+                left_join_cond = cgen_state_->ir_builder_.CreateAnd(
+                    left_join_cond,
+                    code_generator.toBool(
+                        code_generator.codegen(expr.get(), true, co).front()));
+              }
+            }
+            return left_join_cond;
+          };
+    }
     if (current_level_hash_table) {
       const auto hoisted_filters_cb = buildHoistLeftHandSideFiltersCb(
           ra_exe_unit, level_idx, current_level_hash_table->getInnerTableId(), co);
@@ -831,24 +864,53 @@ std::vector<JoinLoop> Executor::buildJoinLoops(
       // condition.
       VLOG(1) << "Unable to build hash table, falling back to loop join: "
               << fail_reasons_str;
-      const auto outer_join_condition_cb =
-          [this, level_idx, &co, &current_level_join_conditions](
-              const std::vector<llvm::Value*>& prev_iters) {
-            // The values generated for the match path don't dominate all uses
-            // since on the non-match path nulls are generated. Reset the cache
-            // once the condition is generated to avoid incorrect reuse.
-            FetchCacheAnchor anchor(cgen_state_.get());
-            addJoinLoopIterator(prev_iters, level_idx + 1);
-            llvm::Value* left_join_cond = cgen_state_->llBool(true);
-            CodeGenerator code_generator(this);
-            for (auto expr : current_level_join_conditions.quals) {
-              left_join_cond = cgen_state_->ir_builder_.CreateAnd(
-                  left_join_cond,
-                  code_generator.toBool(
-                      code_generator.codegen(expr.get(), true, co).front()));
-            }
-            return left_join_cond;
-          };
+
+      std::function<llvm::Value*(const std::vector<llvm::Value*>&)>
+          outer_join_condition_cb;
+      if (co.use_cider_data_format) {
+        outer_join_condition_cb = [this, level_idx, &co, &current_level_join_conditions](
+                                      const std::vector<llvm::Value*>& prev_iters) {
+          // The values generated for the match path don't dominate all uses
+          // since on the non-match path nulls are generated. Reset the cache
+          // once the condition is generated to avoid incorrect reuse.
+          FetchCacheAnchor anchor(cgen_state_.get());
+          addJoinLoopIterator(prev_iters, level_idx + 1);
+          llvm::Value* left_join_cond = cgen_state_->llBool(true);
+          CodeGenerator code_generator(this);
+          for (auto expr : current_level_join_conditions.quals) {
+            auto compare_value = code_generator.codegen(expr.get(), co, true);
+            auto compare_value_FixedSize =
+                dynamic_cast<FixedSizeColValues*>(compare_value.get());
+            auto not_null = cgen_state_->ir_builder_.CreateXor(
+                cgen_state_->llBool(true),
+                code_generator.toBool(compare_value_FixedSize->getNull()));
+            auto current_match = cgen_state_->ir_builder_.CreateAnd(
+                code_generator.toBool(not_null),
+                code_generator.toBool(compare_value_FixedSize->getValue()));
+            left_join_cond =
+                cgen_state_->ir_builder_.CreateAnd(left_join_cond, current_match);
+          }
+          return left_join_cond;
+        };
+      } else {
+        outer_join_condition_cb = [this, level_idx, &co, &current_level_join_conditions](
+                                      const std::vector<llvm::Value*>& prev_iters) {
+          // The values generated for the match path don't dominate all uses
+          // since on the non-match path nulls are generated. Reset the cache
+          // once the condition is generated to avoid incorrect reuse.
+          FetchCacheAnchor anchor(cgen_state_.get());
+          addJoinLoopIterator(prev_iters, level_idx + 1);
+          llvm::Value* left_join_cond = cgen_state_->llBool(true);
+          CodeGenerator code_generator(this);
+          for (auto expr : current_level_join_conditions.quals) {
+            left_join_cond = cgen_state_->ir_builder_.CreateAnd(
+                left_join_cond,
+                code_generator.toBool(
+                    code_generator.codegen(expr.get(), true, co).front()));
+          }
+          return left_join_cond;
+        };
+      }
       join_loops.emplace_back(
           /*kind=*/JoinLoopKind::UpperBound,
           /*type=*/current_level_join_conditions.type,
