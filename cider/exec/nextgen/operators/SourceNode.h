@@ -35,7 +35,7 @@ class SourceNode : public OpNode {
 
   ExprPtrVector getExprs() override { return input_cols_; }
 
-  TranslatorPtr toTranslator() override;
+  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
  private:
   ExprPtrVector input_cols_;

@@ -22,8 +22,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "exec/nextgen/transformer/Transformer.h"
 #include "exec/nextgen/parsers/Parser.h"
+#include "exec/nextgen/transformer/Transformer.h"
 #include "tests/TestHelpers.h"
 
 TEST(NextgenCompilerTest, FrameworkTest) {

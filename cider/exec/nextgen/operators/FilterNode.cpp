@@ -24,8 +24,8 @@
 
 namespace cider::exec::nextgen::operators {
 
-TranslatorPtr FilterNode::toTranslator() {
-  return createOpTranslator<FilterTranslator>(shared_from_this());
+TranslatorPtr FilterNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<FilterTranslator>(shared_from_this(), succ);
 }
 
 void FilterTranslator::consume(Context& context) {

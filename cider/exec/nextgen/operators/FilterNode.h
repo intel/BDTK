@@ -36,7 +36,7 @@ class FilterNode : public OpNode {
 
   ExprPtrVector getExprs() override { return exprs_; }
 
-  TranslatorPtr toTranslator() override;
+  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
   ExprPtrVector exprs_;
 };

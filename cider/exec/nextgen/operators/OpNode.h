@@ -36,12 +36,11 @@ using OpPipeline = std::vector<OpNodePtr>;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 using ExprPtrVector = std::vector<ExprPtr>;
 using TranslatorPtr = std::shared_ptr<Translator>;
-using TranslatorPtrVector = std::vector<TranslatorPtr>;
 
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
-class OpNode : protected std::enable_shared_from_this<OpNode> {
+class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
   OpNode(const char* name = "None", const OpNodePtr& prev = nullptr)
       : input_(prev), name_(name) {}
@@ -56,7 +55,7 @@ class OpNode : protected std::enable_shared_from_this<OpNode> {
   virtual ExprPtrVector getExprs() = 0;
 
   /// \brief Transform the operator to a translator
-  virtual TranslatorPtr toTranslator() = 0;
+  virtual TranslatorPtr toTranslator(const TranslatorPtr& succ) = 0;
 
  protected:
   OpNodePtr input_;
@@ -75,6 +74,8 @@ class Translator {
 
   virtual void consume(Context& context) = 0;
 
+  OpNodePtr getOpNode() { return op_node_; }
+
   TranslatorPtr setSuccessor(const TranslatorPtr& successor) {
     new_successor_ = successor;
     return new_successor_;
@@ -83,11 +84,6 @@ class Translator {
   TranslatorPtr getSuccessor() const { return new_successor_; }
 
  protected:
-  template <typename T>
-  T* getOpNode() const {
-    return static_cast<T*>(op_node_.get());
-  };
-
   OpNodePtr op_node_;
   TranslatorPtr new_successor_;
 };

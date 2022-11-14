@@ -36,7 +36,7 @@ class ProjectNode : public OpNode {
 
   ExprPtrVector getExprs() override { return exprs_; }
 
-  TranslatorPtr toTranslator() override;
+  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
   std::vector<ExprPtr> exprs_;
 };
