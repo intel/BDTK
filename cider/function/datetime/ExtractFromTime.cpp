@@ -77,7 +77,11 @@ extract_nanosecond(const int64_t lcltime) {
 }
 
 // First day of epoch is Thursday, so + 4 to have Sunday=0.
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_dow(const int64_t lcltime) {
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_dow(const int64_t lcltime,
+                                                            const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   int64_t const days_past_epoch = floor_div(lcltime, kSecsPerDay);
   return unsigned_mod(days_past_epoch + 4, kDaysPerWeek);
 }
@@ -161,12 +165,20 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_dateepoch(const int64_t 
 }
 
 // First day of epoch is Thursday, so + 3 to have Monday=0, then + 1 at the end.
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_isodow(const int64_t timeval) {
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+extract_isodow(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   int64_t const days_past_epoch = floor_div(timeval, kSecsPerDay);
   return unsigned_mod(days_past_epoch + 3, kDaysPerWeek) + 1;
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_day(const int64_t timeval) {
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_day(const int64_t timeval,
+                                                            const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   int64_t const day = floor_div(timeval, kSecsPerDay);
   unsigned const doe = unsigned_mod(day - kEpochAdjustedDays, kDaysPer400Years);
   unsigned const yoe = (doe - doe / 1460 + doe / 36524 - (doe == 146096)) / 365;
@@ -176,7 +188,10 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_day(const int64_t timeva
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_day_of_year(const int64_t timeval) {
+extract_day_of_year(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   int64_t const day = floor_div(timeval, kSecsPerDay);
   unsigned const doe = unsigned_mod(day - kEpochAdjustedDays, kDaysPer400Years);
   unsigned const yoe = (doe - doe / 1460 + doe / 36524 - (doe == 146096)) / 365;
@@ -203,21 +218,34 @@ ALWAYS_INLINE int64_t extract_week(const int64_t timeval) {
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_week_monday(const int64_t timeval) {
+extract_week_monday(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   return extract_week<MONDAY>(timeval);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_week_sunday(const int64_t timeval) {
+extract_week_sunday(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   return extract_week<SUNDAY>(timeval);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-extract_week_saturday(const int64_t timeval) {
+extract_week_saturday(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   return extract_week<SATURDAY>(timeval);
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_month(const int64_t timeval) {
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+extract_month(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   if (timeval >= 0LL && timeval <= UINT32_MAX - kEpochOffsetYear1900) {
     return extract_month_fast(timeval);
   }
@@ -229,7 +257,11 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_month(const int64_t time
   return moy + (moy < 10 ? 3 : -9);
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_quarter(const int64_t timeval) {
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+extract_quarter(const int64_t timeval, const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   if (timeval >= 0LL && timeval <= UINT32_MAX - kEpochOffsetYear1900) {
     return extract_quarter_fast(timeval);
   }
@@ -242,7 +274,11 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_quarter(const int64_t ti
   return quarter[moy];
 }
 
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_year(const int64_t timeval) {
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t extract_year(const int64_t timeval,
+                                                             const bool is_null = false) {
+  if (is_null == true) {
+    return 0;
+  }
   if (timeval >= 0LL && timeval <= UINT32_MAX - kEpochOffsetYear1900) {
     return extract_year_fast(timeval);
   }

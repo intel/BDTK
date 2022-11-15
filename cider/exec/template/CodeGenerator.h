@@ -560,15 +560,20 @@ class CodeGenerator {
                           const SQLTypeInfo&,
                           const CompilationOptions&);
 
-  // Deprecating
+  // TODO: (spevenhe) Deprecate
   llvm::Value* codegenCase(const Analyzer::CaseExpr*,
                            llvm::Type* case_llvm_type,
                            const bool is_real_str,
                            const CompilationOptions&);
 
+  // TODO: (spevenhe) Deprecate
   llvm::Value* codegenExtractHighPrecisionTimestamps(llvm::Value*,
                                                      const SQLTypeInfo&,
                                                      const ExtractField&);
+
+  llvm::Value* codegenExtractHighPrecisionTimestampsFun(llvm::Value*,
+                                                        const SQLTypeInfo&,
+                                                        const ExtractField&);
 
   llvm::Value* codegenDateTruncHighPrecisionTimestamps(llvm::Value*,
                                                        const SQLTypeInfo&,
