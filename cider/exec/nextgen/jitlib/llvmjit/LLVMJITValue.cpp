@@ -49,7 +49,7 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "and", false);
 }
 
@@ -65,7 +65,7 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "or", false);
 }
 
@@ -80,7 +80,7 @@ JITValuePointer LLVMJITValue::notOp() {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "not", false);
 }
 
@@ -105,7 +105,7 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "mod", false);
 }
 
@@ -130,7 +130,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "div", false);
 }
 
@@ -155,7 +155,7 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "mul", false);
 }
 
@@ -180,7 +180,7 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "sub", false);
 }
 
@@ -218,7 +218,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(),
       parent_function_,
       ans,
@@ -253,7 +253,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, value, false);
 }
 
@@ -313,7 +313,7 @@ JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
       getFunctionBuilder(parent_function_)
           .CreateBitCast(load(),
                          getLLVMPtrType(type_tag, parent_function_.getLLVMContext()));
-  return std::make_unique<LLVMJITValue>(
+  return makeJITValuePointer<LLVMJITValue>(
       JITTypeTag::POINTER, parent_function_, new_llvm_value, "cast_ptr", false, type_tag);
 }
 
@@ -323,12 +323,12 @@ JITValuePointer LLVMJITValue::dereference() {
                << getJITTypeName(getValueTypeTag());
   }
 
-  return std::make_unique<LLVMJITValue>(getValueSubTypeTag(),
-                                        parent_function_,
-                                        llvm_value_,
-                                        "dereference_ptr",
-                                        true,
-                                        JITTypeTag::INVALID);
+  return makeJITValuePointer<LLVMJITValue>(getValueSubTypeTag(),
+                                           parent_function_,
+                                           llvm_value_,
+                                           "dereference_ptr",
+                                           true,
+                                           JITTypeTag::INVALID);
 }
 
 JITValuePointer LLVMJITValue::getElemAt(JITValue& index) {

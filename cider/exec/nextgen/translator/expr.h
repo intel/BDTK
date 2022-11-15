@@ -24,8 +24,6 @@
 
 #include <llvm/IR/Value.h>
 
-#include "exec/nextgen/jitlib/base/JITTuple.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/translator/dummy.h"
 #include "type/plan/Analyzer.h"
 

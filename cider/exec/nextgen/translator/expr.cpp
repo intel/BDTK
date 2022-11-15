@@ -22,7 +22,6 @@
 #include <llvm/IR/Value.h>
 #include <utility>
 
-#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/translator/expr.h"
 #include "exec/template/Execute.h"

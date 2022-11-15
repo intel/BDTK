@@ -28,7 +28,6 @@
 #define ANALYZER_H
 
 #include "cider/CiderException.h"
-#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "type/schema/ColumnInfo.h"
