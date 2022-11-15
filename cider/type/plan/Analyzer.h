@@ -1433,17 +1433,16 @@ class TrimStringOper : public StringOper {
     CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
           op_kind == SqlStringOpKind::RTRIM);
     return op_kind;
+    return {"operand_0", "operand_1"};
   }
-};
 
-class SubstringStringOper : public StringOper {
- public:
-  SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
-                      const std::shared_ptr<Analyzer::Expr>& start_pos)
-      : StringOper(SqlStringOpKind::SUBSTRING,
-                   {operand, start_pos},
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
+ private:
+  SqlStringOpKind getConcatOpKind(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+    CHECK_EQ(operands.size(), 2);
+    auto constant_arg0 = dynamic_cast<const Analyzer::Constant*>(operands[0].get());
+    auto constant_arg1 = dynamic_cast<const Analyzer::Constant*>(operands[1].get());
+
                    getArgNames()) {}
 
   SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,

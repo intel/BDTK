@@ -417,6 +417,11 @@ std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
+std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
+  return makeExpr<Analyzer::ConcatStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
 std::shared_ptr<Analyzer::Expr> LowerExpr::deep_copy() const {
   return makeExpr<LowerExpr>(arg->deep_copy());
 }
