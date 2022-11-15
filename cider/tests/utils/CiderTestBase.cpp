@@ -186,8 +186,7 @@ void CiderJoinTestBase::assertJoinQueryRowEqualForArrowFormat(
   } else {
     // only check row_num, column_num since duckdb in will return wrong results in left
     // range join with nulls.
-    EXPECT_TRUE(duck_res_batches[0]->getChildrenNum() ==
-                cider_res_batch->getChildrenNum());
-    EXPECT_TRUE(duck_res_batches[0]->getLength() == cider_res_batch->getLength());
+    EXPECT_EQ(duck_res_batches[0]->getChildrenNum(), cider_res_batch->getChildrenNum());
+    EXPECT_EQ(duck_res_batches[0]->getLength(), cider_res_batch->getLength());
   }
 }
