@@ -80,6 +80,16 @@ extern "C" RUNTIME_EXPORT int32_t string_compress(const int64_t ptr_and_len,
   return string_dict_proxy->getIdOfString(raw_str);
 }
 
+extern "C" RUNTIME_EXPORT int64_t
+write_string_to_cider_hasher(const char* str_ptr,
+                             const int32_t str_len,
+                             const int64_t string_hasher_handle) {
+  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  int64_t id =
+      string_hasher->lookupIdByValue(CiderByteArray(str_len, (const uint8_t*)str_ptr));
+  return id;
+}
+
 extern "C" RUNTIME_EXPORT int32_t
 apply_string_ops_and_encode(const char* str_ptr,
                             const int32_t str_len,
@@ -104,13 +114,9 @@ apply_string_ops_and_encode_cider(const char* str_ptr,
   std::string raw_str(str_ptr, str_len);
   auto string_ops =
       reinterpret_cast<const StringOps_Namespace::StringOps*>(string_ops_handle);
-  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
   const auto result_str = string_ops->operator()(raw_str);
-
-  // add this temp result to cache
-  int64_t id = string_hasher->lookupIdByValue(
-      CiderByteArray(result_str.length(), (const uint8_t*)result_str.c_str()));
-  return id;
+  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  return write_string_to_cider_hasher(str_ptr, str_len, string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT int64_t
@@ -143,6 +149,29 @@ cider_hasher_decode_str_len(const int64_t id, const int64_t string_hasher_handle
   auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
   CiderByteArray res = string_hasher->lookupValueById(id);
   return res.len;
+}
+
+#define DEF_CONVERT_TO_STRING_AND_ENCODE(value_type, value_name)                    \
+  extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t                                   \
+      convert_to_string_and_encode_##value_name(const value_type operand,           \
+                                                const int64_t string_dict_handle) { \
+    int32_t str_len = std::to_string(operand).length();                             \
+    auto str_ptr = std::to_string(operand).c_str();                                 \
+    return write_string_to_cider_hasher(str_ptr, str_len, string_dict_handle);      \
+  }
+DEF_CONVERT_TO_STRING_AND_ENCODE(int8_t, tinyint)
+DEF_CONVERT_TO_STRING_AND_ENCODE(int16_t, smallint)
+DEF_CONVERT_TO_STRING_AND_ENCODE(int32_t, int)
+DEF_CONVERT_TO_STRING_AND_ENCODE(int64_t, bigint)
+DEF_CONVERT_TO_STRING_AND_ENCODE(float, float)
+DEF_CONVERT_TO_STRING_AND_ENCODE(double, double)
+#undef DEF_CONVERT_TO_STRING_AND_ENCODE
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_to_string_and_encode_bool(const int8_t operand,
+                                  const int64_t string_dict_handle) {
+  std::string str = operand == 1 ? "true" : "false";
+  return write_string_to_cider_hasher(str.c_str(), str.length(), string_dict_handle);
 }
 
 extern "C" RUNTIME_EXPORT int32_t lower_encoded(int32_t string_id,
