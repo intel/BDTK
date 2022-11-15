@@ -37,7 +37,8 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
 }
 
 bool isStringFunction(const std::string& function_name) {
-  std::unordered_set<std::string> supportedStrFunctionSet{"substring", "lower", "upper"};
+  std::unordered_set<std::string> supportedStrFunctionSet{
+      "substring", "substr", "lower", "upper"};
   return supportedStrFunctionSet.find(function_name) != supportedStrFunctionSet.end();
 }
 
