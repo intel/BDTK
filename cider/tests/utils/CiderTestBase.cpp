@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "CiderBatchChecker.h"
 #include "tests/utils/CiderTestBase.h"
+#include "CiderBatchChecker.h"
 
 void CiderTestBase::assertQuery(const std::string& sql,
                                 const std::string& json_file,
