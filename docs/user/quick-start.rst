@@ -424,3 +424,36 @@ Run presto_server with parameter point to etc folder
 ::
 
    ./bin/presto_server -etc_dir=./etc
+
+Advanced Settings
+------------------
+
+There have four pattern configurations now in our project:
+
+* LeftDeepJoinPattern
+* CompoundPattern
+* FilterPattern
+* PartialAggPattern
+
+We enable ``CompoundPattern`` and ``FilterPattern`` by default.
+
+If you want to change the default value of these patterns, there have two ways.
+
+1. Write a file firstly, such as pattern.flags.
+    ::
+
+        --PartialAggPattern
+        --CompoundPattern=false
+
+    And then you could use it like this:
+    ::
+
+        ./presto_server --flagfile=/path/to/pattern.flags
+
+2. Just change them on command line.
+    ::
+
+        ./presto_server --PartialAggPattern --CompoundPattern=false
+
+*Note: You also can find the definition of them from file CiderPlanTransformerOptions.cpp.*
+
