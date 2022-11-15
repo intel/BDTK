@@ -492,6 +492,92 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_condition_null.json");
 }
 
+class CiderTrimOpTestArrow : public CiderTestBase {
+ public:
+  CiderTrimOpTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL, col_3 VARCHAR(10)))";
+
+    auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    auto string_vec = std::vector<std::string>{"xxxxxxxxxx",
+                                               "xxxxxxxxxx",
+                                               "   3456789",
+                                               "   3456789",
+                                               "   3456   ",
+                                               "   3456   ",
+                                               "0123456   ",
+                                               "0123456   ",
+                                               "xxx3456   ",
+                                               "xxx3456   ",
+                                               "",
+                                               ""};
+    auto is_null = std::vector<bool>{
+        false, true, false, true, false, true, false, true, false, true, false, true};
+    auto [vc_data, vc_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+
+    std::tie(schema_, array_) =
+        ArrowArrayBuilder()
+            .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
+            .addUTF8Column("col_2", vc_data, vc_offsets)
+            .addUTF8Column("col_3", vc_data, vc_offsets, is_null)
+            .build();
+  }
+};
+
+TEST_F(CiderTrimOpTestArrow, LiteralTrimTest) {
+  // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
+  // basic trim (defaults to trim spaces)
+  assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
+  // trim other characters
+  assertQueryArrow("SELECT TRIM('xxx3456   ', ' x') FROM test",
+                   "stringop_trim_literal_2.json");
+  assertQueryArrow("SELECT LTRIM('xxx3456xxx', 'x') FROM test",
+                   "stringop_ltrim_literal.json");
+  assertQueryArrow("SELECT RTRIM('xxx3456xxx', 'x') FROM test",
+                   "stringop_rtrim_literal.json");
+}
+
+TEST_F(CiderTrimOpTestArrow, ColumnTrimTest) {
+  assertQueryArrow("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
+  assertQueryArrow("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
+                   "stringop_trim_2.json");
+
+  assertQueryArrow("SELECT LTRIM(col_2), LTRIM(col_3) FROM test",
+                   "stringop_ltrim_1.json");
+  assertQueryArrow("SELECT LTRIM(col_2, ' x'), LTRIM(col_3, ' x') FROM test",
+                   "stringop_ltrim_2.json");
+
+  assertQueryArrow("SELECT RTRIM(col_2), RTRIM(col_3) FROM test",
+                   "stringop_rtrim_1.json");
+  assertQueryArrow("SELECT RTRIM(col_2, ' x'), RTRIM(col_3, ' x') FROM test",
+                   "stringop_rtrim_2.json");
+}
+
+TEST_F(CiderTrimOpTestArrow, NestedTrimTest) {
+  assertQueryArrow("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
+                   "stringop_trim_nested_1.json");
+  assertQueryArrow(
+      "SELECT col_2, col_3 FROM test "
+      "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR TRIM(col_3) = 'xxx3456'",
+      "stringop_trim_nested_2.json");
+
+  assertQueryArrow("SELECT LTRIM(UPPER(col_2), ' X'), UPPER(LTRIM(col_3, 'x')) FROM test",
+                   "stringop_ltrim_nested_1.json");
+  assertQueryArrow(
+      "SELECT col_2, col_3 FROM test "
+      "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR LTRIM(col_3) = 'xxx3456'",
+      "stringop_ltrim_nested_2.json");
+
+  assertQueryArrow("SELECT RTRIM(UPPER(col_2), ' X'), UPPER(RTRIM(col_3, 'x')) FROM test",
+                   "stringop_rtrim_nested_1.json");
+  assertQueryArrow(
+      "SELECT col_2, col_3 FROM test "
+      "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR RTRIM(col_3) = 'xxx3456'",
+      "stringop_rtrim_nested_2.json");
+}
+
 class CiderConstantStringTest : public CiderTestBase {
  public:
   CiderConstantStringTest() {

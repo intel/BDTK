@@ -1841,6 +1841,50 @@ class UpperStringOper : public StringOper {
   std::vector<std::string> getArgNames() const override { return {"operand"}; }
 };
 
+class TrimStringOper : public StringOper {
+ public:
+  TrimStringOper(const SqlStringOpKind& op_kind,
+                 const std::shared_ptr<Analyzer::Expr>& input,
+                 const std::shared_ptr<Analyzer::Expr>& characters)
+      : StringOper(checkOpKindValidity(op_kind),
+                   {input, characters},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  TrimStringOper(const SqlStringOpKind& op_kind,
+                 const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(checkOpKindValidity(op_kind),
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  std::vector<std::string> getArgNames() const override {
+    // args[0]: the string to remove characters from
+    // args[1]: the set of characters to remove
+    return {"input", "characters"};
+  }
+
+ private:
+  SqlStringOpKind checkOpKindValidity(const SqlStringOpKind& op_kind) {
+    CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
+          op_kind == SqlStringOpKind::RTRIM);
+    return op_kind;
+  }
+};
+
 class SubstringStringOper : public StringOper {
  public:
   SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
