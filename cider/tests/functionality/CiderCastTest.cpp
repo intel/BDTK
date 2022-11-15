@@ -195,6 +195,7 @@ TEST_F(CastTypeQueryForArrowTest, castTypeTestForArrow) {
   assertQueryArrow("SELECT CAST(col_bool as INTEGER) FROM test");
   assertQueryArrow("SELECT CAST(col_int as VARCHAR(10)) FROM test");
   assertQueryArrow("SELECT CAST(col_bool as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_date as VARCHAR(10)) FROM test");
 }
 
 int main(int argc, char** argv) {

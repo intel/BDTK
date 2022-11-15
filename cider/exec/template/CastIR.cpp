@@ -124,8 +124,19 @@ llvm::Value* CodeGenerator::codegenCastNonStringToString(
     case kDOUBLE:
       fn_call += to_lower(toString(operand_type));
       break;
+    case kTIME:
+      fn_call += "time";
+      break;
+    case kTIMESTAMP:
+      fn_call += "timestamp";
+      operand_lvs.emplace_back(llvm::ConstantInt::get(
+          get_int_type(32, cgen_state_->context_), operand_ti.get_dimension()));
+      break;
+    case kDATE:
+      fn_call += "date";
+      break;
     default:
-      throw std::runtime_error("Unimplemented type for string cast");
+      CIDER_THROW(CiderCompileException, "Unimplemented type for string cast");
   }
   operand_lvs.emplace_back(cider_string_hasher_handle_lv);
   auto str_hashed_lv = cgen_state_->emitExternalCall(
