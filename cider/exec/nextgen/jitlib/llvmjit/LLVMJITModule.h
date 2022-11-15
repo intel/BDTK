@@ -54,8 +54,6 @@ class LLVMJITModule final : public JITModule {
 
   LLVMJITModule(const std::string& name, CompilationOptions co);
 
-  JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
-
   llvm::LLVMContext& getLLVMContext() { return *context_; }
 
   void finish() override;
@@ -72,6 +70,8 @@ class LLVMJITModule final : public JITModule {
   // runtime module
  private:
   void copyRuntimeModule();
+
+  JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
 
   llvm::ValueToValueMapTy vmap_;
   std::unique_ptr<llvm::Module> runtime_module_;
