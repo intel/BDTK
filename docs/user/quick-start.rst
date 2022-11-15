@@ -15,12 +15,16 @@ Environment Preparation
 
 1. Get the Source
 
+Refer to ${path_to_source_of_bdtk}/ci/scripts/build-presto-package.sh
+
 ::
 
    # Clone the Presto source
-   $ git clone https://github.com/Intel-bigdata/presto.git
+   $ git clone https://github.com/prestodb/presto.git
    # Checkout to BDTK branch
-   $ git checkout -b BDTK origin/BDTK
+   $ git checkout -b BDTK ${PRESTO_BDTK_COMMIT_ID}
+   # apply bdtk patch
+   $ git apply ${PATCH_NAME}
 
 2. Setting up BDTK develop envirenmont on Linux Docker
 
