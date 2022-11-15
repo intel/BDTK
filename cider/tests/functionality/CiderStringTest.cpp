@@ -174,6 +174,10 @@ TEST_F(CiderStringToDateTest, DateStrTest) {
               "functions/date/year_cast_string_to_date.json");
 }
 
+TEST_F(CiderStringTest, Substr_Test) {
+  assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ", "substr.json");
+}
+
 TEST_F(CiderStringTest, SubstrTest) {
   // variable source string
   assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
