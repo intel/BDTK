@@ -96,10 +96,12 @@ $ bash ${WORKER_DIR}/BDTK/ci/scripts/integrate-presto-bdtk.sh release
 </div>
 <div class="section" id="run-a-end-to-end-hello-world-demo-on-local-file-system">
 <h3>Run a end-to-end Hello World demo on local file system<a class="headerlink" href="#run-a-end-to-end-hello-world-demo-on-local-file-system" title="Permalink to this headline">¶</a></h3>
-<p><em>Note: The following steps should be done in the docker container</em>
-| <strong>Prerequisite:</strong>
-| Java 8
-| Maven 3.5.x and later version</p>
+<p><em>Note: The following steps should be done in the docker container</em></p>
+<div class="line-block">
+<div class="line"><strong>Prerequisite:</strong></div>
+<div class="line">Java 8</div>
+<div class="line">Maven 3.5.x and later version</div>
+</div>
 <ol class="arabic simple">
 <li>Compile Prestodb</li>
 </ol>
@@ -107,8 +109,10 @@ $ bash ${WORKER_DIR}/BDTK/ci/scripts/integrate-presto-bdtk.sh release
 $ mvn clean install -DskipTests
 </pre></div>
 </div>
-<p>2. Set up in IntelliJ
-Download and install IntellliJ You can also use any other IDE however the instructions in this document will only concern IntelliJ.</p>
+<ol class="arabic simple" start="2">
+<li>Set up in IntelliJ</li>
+</ol>
+<p>Download and install IntellliJ You can also use any other IDE however the instructions in this document will only concern IntelliJ.</p>
 <ol class="loweralpha simple">
 <li>Open IntelliJ and use ‘Open Existing’ to open the presto project: Click File &gt; New &gt; Module From Existing Sources .. &gt; , Then go to presto_cpp/java/presto-native-tests/pom.xml.</li>
 <li>Now lets create the configuration for HiveExternalWorkerQueryRunner. We will need three env variables for this purpose, so copy the following below and replace the text in bold with your specific text.<ol class="lowerroman">
@@ -120,13 +124,14 @@ Download and install IntellliJ You can also use any other IDE however the instru
 </ol>
 <dl class="docutils">
 <dt>NOTE:</dt>
-<dd>HiveExternalWorkerQueryRunner will basically launch a testing presto service using local file system.
-WORKER_COUNT is the number of workers to be launched along with the coordinator. In this case we put 0 as we want to externally launch our own CPP worker.
-Note discovery URI. Something like <a class="reference external" href="http://127.0.0.1:54557">http://127.0.0.1:54557</a>. Use the last discovery URI in the InteliJ logs</dd>
+<dd><p class="first">HiveExternalWorkerQueryRunner will basically launch a testing presto service using local file system.</p>
+<p>WORKER_COUNT is the number of workers to be launched along with the coordinator. In this case we put 0 as we want to externally launch our own CPP worker.</p>
+<p class="last">Note discovery URI. Something like <a class="reference external" href="http://127.0.0.1:54557">http://127.0.0.1:54557</a>. Use the last discovery URI in the InteliJ logs</p>
+</dd>
 </dl>
 <p>Upon running this you should see the Presto service log printing in the console.</p>
 <p>3. Update presto native worker configuration
-The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere your like.</p>
+The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere you like.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir ${path-to-presto}/presto-native-execution/etc
 $ cd etc
 $ vim config.properties
@@ -382,6 +387,42 @@ Generate Prestodb.tar.gz archive</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="advanced-settings">
+<h2>Advanced Settings<a class="headerlink" href="#advanced-settings" title="Permalink to this headline">¶</a></h2>
+<p>There have four pattern configurations now in our project:</p>
+<ul class="simple">
+<li>LeftDeepJoinPattern</li>
+<li>CompoundPattern</li>
+<li>FilterPattern</li>
+<li>PartialAggPattern</li>
+</ul>
+<p>We enable <code class="docutils literal notranslate"><span class="pre">CompoundPattern</span></code> and <code class="docutils literal notranslate"><span class="pre">FilterPattern</span></code> by default.</p>
+<p>If you want to change the default value of these patterns, there have two ways.</p>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Write a file firstly, such as pattern.flags.</dt>
+<dd><div class="first highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">PartialAggPattern</span>
+<span class="o">--</span><span class="n">CompoundPattern</span><span class="o">=</span><span class="n">false</span>
+</pre></div>
+</div>
+<p>And then you could use it like this:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">presto_server</span> <span class="o">--</span><span class="n">flagfile</span><span class="o">=/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">pattern</span><span class="o">.</span><span class="n">flags</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Just change them on command line.</dt>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">presto_server</span> <span class="o">--</span><span class="n">PartialAggPattern</span> <span class="o">--</span><span class="n">CompoundPattern</span><span class="o">=</span><span class="n">false</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ol>
+<p><em>Note: You also can find the definition of them from file CiderPlanTransformerOptions.cpp.</em></p>
+</div>
 </div>
 
 
@@ -403,6 +444,7 @@ Generate Prestodb.tar.gz archive</p>
 </li>
 <li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-dev-environment">How to run simple examples with Prestodb in DEV environment</a></li>
 <li><a class="reference internal" href="#how-to-run-simple-examples-with-prestodb-in-distributed-environment">How to run simple examples with Prestodb in distributed environment</a></li>
+<li><a class="reference internal" href="#advanced-settings">Advanced Settings</a></li>
 </ul>
 </li>
 </ul>
