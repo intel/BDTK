@@ -96,6 +96,76 @@ class SimpleAggExtractor : public CiderAggTargetColExtractor {
 };
 
 template <typename ST>
+class SimpleAggExtractor<ST, bool> : public CiderAggTargetColExtractor {
+ public:
+  SimpleAggExtractor(const std::string& name,
+                     size_t colIndex,
+                     const CiderAggHashTable* hashtable)
+      : CiderAggTargetColExtractor(name, colIndex) {
+    auto& colInfo = hashtable->getColEntryInfo(colIndex);
+    offset_ = colInfo.slot_offset;
+    null_offset_ = colInfo.is_key ? hashtable->getKeyNullVectorOffset()
+                                  : hashtable->getTargetNullVectorOffset();
+    index_in_null_vector_ =
+        colInfo.is_key ? col_index_ : col_index_ - hashtable->getKeyColNum();
+    null_ = !colInfo.sql_type_info.get_notnull();
+  }
+
+  void extract(const std::vector<const int8_t*>& rowAddrs, int8_t* outAddrs) override {
+    size_t rowNum = rowAddrs.size();
+
+    int8_t* targetVector = reinterpret_cast<int8_t*>(outAddrs);
+
+    for (size_t i = 0; i < rowNum; ++i) {
+      const int8_t* rowPtr = rowAddrs[i];
+      targetVector[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+    }
+  }
+
+  void extract(const std::vector<const int8_t*>& rowAddrs, CiderBatch* output) override {
+    size_t rowNum = rowAddrs.size();
+    auto scalarOutput = output->asMutable<ScalarBatch<bool>>();
+
+    CHECK(scalarOutput->resizeBatch(rowNum, true));
+    uint8_t* buffer = scalarOutput->getMutableRawData();
+    uint8_t* nulls = null_ ? scalarOutput->getMutableNulls() : nullptr;
+
+    if (nulls) {
+      int64_t null_count = 0;
+      for (size_t i = 0; i < rowNum; ++i) {
+        const int8_t* rowPtr = rowAddrs[i];
+        if (!CiderBitUtils::isBitSetAt(
+                reinterpret_cast<const uint8_t*>(rowPtr + null_offset_),
+                index_in_null_vector_)) {
+          CiderBitUtils::clearBitAt(nulls, i);
+          ++null_count;
+        } else {
+          if (*reinterpret_cast<const ST*>(rowPtr + offset_)) {
+            CiderBitUtils::setBitAt(buffer, i);
+          } else {
+            CiderBitUtils::clearBitAt(buffer, i);
+          }
+        }
+      }
+      output->setNullCount(null_count);
+    } else {
+      for (size_t i = 0; i < rowNum; ++i) {
+        const int8_t* rowPtr = rowAddrs[i];
+        if (*reinterpret_cast<const ST*>(rowPtr + offset_)) {
+          CiderBitUtils::setBitAt(buffer, i);
+        } else {
+          CiderBitUtils::clearBitAt(buffer, i);
+        }
+      }
+    }
+  }
+
+ private:
+  size_t offset_;
+  size_t index_in_null_vector_;
+};
+
+template <typename ST>
 class SimpleAggExtractor<ST, VarCharPlaceHolder> : public CiderAggTargetColExtractor {
  public:
   SimpleAggExtractor(const std::string& name,
