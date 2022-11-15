@@ -2,8 +2,8 @@
 How to use
 =====================
 
-BDTK mainly acts as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox among the Prestissimo project. 
-In this context and in the following guide, the term **presto_cpp** or **presto native worker** stands for Presto + Velox integrated with BDTK. 
+BDTK mainly acts as a plugin on velox right now, the major way for it to integrate with Presto is to compile with Velox among the Prestissimo project.
+In this context and in the following guide, the term **presto_cpp** or **presto native worker** stands for Presto + Velox integrated with BDTK.
 
 Environment Preparation
 -----------------------------------
@@ -18,7 +18,7 @@ Environment Preparation
 ::
 
    # Clone the Presto source
-   $ git clone https://github.com/Intel-bigdata/presto.git 
+   $ git clone https://github.com/Intel-bigdata/presto.git
    # Checkout to BDTK branch
    $ git checkout -b BDTK origin/BDTK
 
@@ -47,7 +47,7 @@ Run with Prestodb
 -----------------------------------
 Integrate BDTK with Presto
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   
+
 *Note: The following steps should be done in the docker container*
 
 ::
@@ -63,6 +63,7 @@ Now the you can check your executable presto server file in ${WORKER_DIR}/_build
 Run a end-to-end Hello World demo on local file system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 *Note: The following steps should be done in the docker container*
+
 | **Prerequisite:**
 | Java 8
 | Maven 3.5.x and later version
@@ -74,10 +75,11 @@ Run a end-to-end Hello World demo on local file system
    $ cd ${path-to-presto}
    $ mvn clean install -DskipTests
 
-2. Set up in IntelliJ 
+2. Set up in IntelliJ
+
 Download and install IntellliJ You can also use any other IDE however the instructions in this document will only concern IntelliJ.
 
-a. Open IntelliJ and use ‘Open Existing’ to open the presto project: Click File > New > Module From Existing Sources .. > , Then go to presto_cpp/java/presto-native-tests/pom.xml. 
+a. Open IntelliJ and use 'Open Existing' to open the presto project: Click File > New > Module From Existing Sources .. > , Then go to presto_cpp/java/presto-native-tests/pom.xml.
 b. Now lets create the configuration for HiveExternalWorkerQueryRunner. We will need three env variables for this purpose, so copy the following below and replace the text in bold with your specific text.
 
    i. Env Variables: PRESTO_SERVER=<YOUR_PATH_TO_PRESTO_SERVER>;DATA_DIR=/Users/<YOUR_USER_NAME>/Desktop;WORKER_COUNT=0
@@ -86,24 +88,26 @@ b. Now lets create the configuration for HiveExternalWorkerQueryRunner. We will 
 
    iii. Main class: com.facebook.presto.hive.HiveExternalWorkerQueryRunner
 
-   
+
 NOTE:
    HiveExternalWorkerQueryRunner will basically launch a testing presto service using local file system.
+
    WORKER_COUNT is the number of workers to be launched along with the coordinator. In this case we put 0 as we want to externally launch our own CPP worker.
+
    Note discovery URI. Something like http://127.0.0.1:54557. Use the last discovery URI in the InteliJ logs
-   
-Upon running this you should see the Presto service log printing in the console. 
+
+Upon running this you should see the Presto service log printing in the console.
 
 3. Update presto native worker configuration
-The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere your like. 
+The configuration structrue is stricly the same as Presto-java. And you can put the etc directory anywhere you like.
 ::
 
    $ mkdir ${path-to-presto}/presto-native-execution/etc
    $ cd etc
    $ vim config.properties
 
-Add the basic configuration for a presto worker. Use discovery URI from the logs above and update the config.properties. 
-The config.properties file should be like: 
+Add the basic configuration for a presto worker. Use discovery URI from the logs above and update the config.properties.
+The config.properties file should be like:
 ::
 
    task.concurrent-lifespans-per-task=32
@@ -133,7 +137,7 @@ Then you need to modify the configuration for a catalog.
    $ vim hive.properties
 
 Note: You don't have to configure a real hive catalog.
-In the HiveExternalWorkerQueryRunner it'll create a pseudo hive metastore for you. 
+In the HiveExternalWorkerQueryRunner it'll create a pseudo hive metastore for you.
 
 The hive.properties should be like:
 
@@ -142,15 +146,15 @@ The hive.properties should be like:
    connector.name=hive
 
 4. Launch presto native worker
-   
-Go to YOUR_PATH_TO_PRESTO_SERVER: 
+
+Go to YOUR_PATH_TO_PRESTO_SERVER:
 ::
 
    cd ${path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/
    # launch the worker
    ./presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator.
 
 5. Test the queries
 You can sent out queries using your existing presto-cli our go to the presto-cli module you just compiled.
@@ -168,10 +172,10 @@ Run a DEMO using HDFS
 ^^^^^^^^^^^^^^^^^^^^^^
 *Note: The following steps should be done in the docker container*
 | **Prerequisite:**
-| A real Hadoop cluster with a running Hive metastore service. 
+| A real Hadoop cluster with a running Hive metastore service.
 
 1. Install Kerberos
-   You can skip this step if you've Kerberos installed on your env. 
+   You can skip this step if you've Kerberos installed on your env.
    a. Download Kerberos from its website(http://web.mit.edu/kerberos/dist/)
 
 ::
@@ -179,7 +183,7 @@ Run a DEMO using HDFS
    $ wget http://web.mit.edu/kerberos/dist/krb5/1.19/krb5-${krb5-version}.tar.gz
    $ tar zxvf krb5-${krb5-version}.tar
    $ cp ./krb5-${krb5-version}/src/include/krb5/krb5.hin ./krb5-${krb5-version}/src/include/krb5/krb5.h
-   
+
 1. Install the libraries for HDFS/S3
 ::
 
@@ -197,7 +201,7 @@ Run a DEMO using HDFS
    $ make PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON debug
 
 3. Launch a distributed Presto serivce
-a. Launch your coordinator as normal presto-java server. 
+a. Launch your coordinator as normal presto-java server.
 You can find out how to launch a presto-java coorinator from here(https://prestodb.io/docs/current/installation/deployment.html)
 b. Edit the configuration of presto native worker under your etc directory:
 Modify ${path-to-presto-server-etc}/config.properties
@@ -232,31 +236,31 @@ Modify ${path-to-presto-server-etc}/catalog/hive.properties
 
 c. launch the presto native worker
 
-:: 
+::
 
    $ {path-to-presto}/presto-native-execution/_build/release/presto_cpp/main/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator.
 
 
 Run with released package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-From the release note of BDTK: https://github.com/intel/BDTK/releases , you can download the package of presto_server binary file and libraries. 
+From the release note of BDTK: https://github.com/intel/BDTK/releases , you can download the package of presto_server binary file and libraries.
 You can directly run presto native worker with them to skip compiling step.
 
 1. Unzip the package
-   
+
 ::
 
    $ wget https://github.com/intel/BDTK/releases/download/${latest_tag}/bdtk_${latest_version}.tar.gz
    $ cd Prestodb
 
 2. Prepare configuration files
-   You need to prepare the basic configuration files as mentioned above. 
+   You need to prepare the basic configuration files as mentioned above.
 
 3. Launch presto native worker with binary file
 
-:: 
+::
 
    $ # add libraries to include path
    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
@@ -264,7 +268,7 @@ You can directly run presto native worker with them to skip compiling step.
    $ # --v=1 --logtostderr=1 are flags to print log, you can modify it as your wish
    $ ./bin/presto_server --v=1 --logtostderr=1 --etc_dir=${path-to-your-etc-directory}
 
-When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator. 
+When you see "Announcement succeeded: 202" printed to the console, the presto native worker has successfully connected to the coordinator.
 
 How to run simple examples with Prestodb in DEV environment
 -------------------------------------------------------------
@@ -298,7 +302,7 @@ port 9083 (by default).
 ::
 
    hcatalog/sbin/hcat_server.sh start
-   # Output: 
+   # Output:
    # Started metastore server init, testing if initialized correctly...
    # Metastore initialized successfully on port[9083].
 
@@ -371,7 +375,7 @@ nodes in the cluster:
 
    SELECT * FROM system.runtime.nodes;
 
-   presto> create table hive.default.test(a int, b double, c int) WITH (format = 'ORC');   
+   presto> create table hive.default.test(a int, b double, c int) WITH (format = 'ORC');
    presto> INSERT INTO test VALUES (1, 2, 12), (2, 3, 13), (3, 4, 14), (4, 5, 15), (5, 6, 16);
    set session hive.pushdown_filter_enabled=true;
    presto> select * from hive.default.test where c > 12;
@@ -383,10 +387,10 @@ Start the CLI to connect to the server and run SQL queries:
 ::
 
    presto-cli/target/presto-cli-*-executable.jar
-   presto> create table hive.default.test_orc1(a int, b double, c int) WITH (format = 'ORC');   
+   presto> create table hive.default.test_orc1(a int, b double, c int) WITH (format = 'ORC');
    presto> INSERT INTO hive.default.test_orc1 VALUES (1, 2, 12), (2, 3, 13), (3, 4, 14), (4, 5, 15), (5, 6, 16);
    presto> SET SESSION join_distribution_type = 'PARTITIONED';
-   presto> create table hive.default.test_orc2 (a int, b double, c int) WITH (format = 'ORC');   
+   presto> create table hive.default.test_orc2 (a int, b double, c int) WITH (format = 'ORC');
    presto> INSERT INTO hive.default.test_orc2 VALUES (1, 2, 12), (2, 3, 13), (3, 4, 14), (4, 5, 15), (5, 6, 16);
    presto> select * from hive.default.test_orc1 l, hive.default.test_orc2 r where l.a = r.a;
 
@@ -396,7 +400,7 @@ How to run simple examples with Prestodb in distributed environment
 Build presto native execution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Copy ci/build-presto-package.sh to an empty folder and run it. 
+Copy ci/build-presto-package.sh to an empty folder and run it.
 Generate Prestodb.tar.gz archive
 
 Unzip the Prestodb package and enter the unzip package
@@ -418,5 +422,38 @@ Run presto_server with parameter point to etc folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
-   
+
    ./bin/presto_server -etc_dir=./etc
+
+Advanced Settings
+------------------
+
+There have four pattern configurations now in our project:
+
+* LeftDeepJoinPattern
+* CompoundPattern
+* FilterPattern
+* PartialAggPattern
+
+We enable ``CompoundPattern`` and ``FilterPattern`` by default.
+
+If you want to change the default value of these patterns, there have two ways.
+
+1. Write a file firstly, such as pattern.flags.
+    ::
+
+        --PartialAggPattern
+        --CompoundPattern=false
+
+    And then you could use it like this:
+    ::
+
+        ./presto_server --flagfile=/path/to/pattern.flags
+
+2. Just change them on command line.
+    ::
+
+        ./presto_server --PartialAggPattern --CompoundPattern=false
+
+*Note: You also can find the definition of them from file CiderPlanTransformerOptions.cpp.*
+

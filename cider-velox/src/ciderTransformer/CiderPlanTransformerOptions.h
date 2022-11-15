@@ -18,29 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#pragma once
 
-#include "CiderVeloxPluginCtx.h"
-#include "CiderPlanNodeTranslator.h"
-#include "exec/plan/parser/ConverterHelper.h"
+#include <gflags/gflags.h>
 
-namespace facebook::velox::plugin {
-void facebook::velox::plugin::CiderVeloxPluginCtx::init() {
-  registerTranslator();
-  registerVeloxExtensionFunction();
-  ciderTransformerFactory_.registerCiderPattern();
-}
-
-VeloxPlanNodePtr CiderVeloxPluginCtx::transformVeloxPlan(VeloxPlanNodePtr originalPlan) {
-  auto transformer =
-      CiderVeloxPluginCtx::ciderTransformerFactory_.getTransformer(originalPlan);
-  return transformer->transform();
-}
-
-void CiderVeloxPluginCtx::registerTranslator() {
-  exec::Operator::registerOperator(std::make_unique<CiderPlanNodeTranslator>());
-}
-
-void CiderVeloxPluginCtx::registerVeloxExtensionFunction() {
-  generator::registerExtensionFunctions();
-}
-}  // namespace facebook::velox::plugin
+DECLARE_bool(left_deep_join_pattern);
+DECLARE_bool(compound_pattern);
+DECLARE_bool(filter_pattern);
+DECLARE_bool(partial_agg_pattern);
