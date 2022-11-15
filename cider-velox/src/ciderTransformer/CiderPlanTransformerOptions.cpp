@@ -21,7 +21,7 @@
 
 #include "CiderPlanTransformerOptions.h"
 
-DEFINE_bool(LeftDeepJoinPattern, false, "Enable LeftDeepJoinPattern ");
-DEFINE_bool(CompoundPattern, true, "Enable CompoundPattern ");
-DEFINE_bool(FilterPattern, true, "Enable FilterPattern ");
-DEFINE_bool(PartialAggPattern, false, "Enable PartialAggPattern ");
+DEFINE_bool(left_deep_join_pattern, false, "Enable LeftDeepJoinPattern ");
+DEFINE_bool(compound_pattern, true, "Enable CompoundPattern ");
+DEFINE_bool(filter_pattern, true, "Enable FilterPattern ");
+DEFINE_bool(partial_agg_pattern, false, "Enable PartialAggPattern ");

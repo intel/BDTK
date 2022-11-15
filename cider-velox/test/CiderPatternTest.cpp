@@ -40,7 +40,7 @@ using namespace facebook::velox::plugin::plantransformer::test;
 
 class CiderPatternTest : public OperatorTestBase {
   void SetUp() override {
-    FLAGS_PartialAggPattern = true;
+    FLAGS_partial_agg_pattern = true;
     CiderVeloxPluginCtx::init();
   }
 };

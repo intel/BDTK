@@ -22,7 +22,7 @@
 
 #include <gflags/gflags.h>
 
-DECLARE_bool(LeftDeepJoinPattern);
-DECLARE_bool(CompoundPattern);
-DECLARE_bool(FilterPattern);
-DECLARE_bool(PartialAggPattern);
+DECLARE_bool(left_deep_join_pattern);
+DECLARE_bool(compound_pattern);
+DECLARE_bool(filter_pattern);
+DECLARE_bool(partial_agg_pattern);
