@@ -26,3 +26,5 @@ DECLARE_bool(left_deep_join_pattern);
 DECLARE_bool(compound_pattern);
 DECLARE_bool(filter_pattern);
 DECLARE_bool(partial_agg_pattern);
+DECLARE_bool(top_n_pattern);
+DECLARE_bool(order_by_pattern);

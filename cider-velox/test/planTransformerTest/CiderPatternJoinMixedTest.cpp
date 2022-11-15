@@ -24,9 +24,9 @@
 
 namespace facebook::velox::plugin::plantransformer::test {
 using namespace facebook::velox::core;
-class CiderCompoundJoinMixedTest : public PlanTransformerTestBase {
+class CiderPatternJoinMixedTest : public PlanTransformerTestBase {
  public:
-  CiderCompoundJoinMixedTest() {
+  CiderPatternJoinMixedTest() {
     auto transformerFactory =
         PlanTransformerFactory()
             .registerPattern(std::make_shared<plantransformer::CompoundPattern>(),
@@ -34,7 +34,14 @@ class CiderCompoundJoinMixedTest : public PlanTransformerTestBase {
             .registerPattern(std::make_shared<plantransformer::LeftDeepJoinPattern>(),
                              std::make_shared<CiderPatternTestNodeRewriter>())
             .registerPattern(std::make_shared<plantransformer::FilterPattern>(),
+                             std::make_shared<CiderPatternTestNodeRewriter>())
+            .registerPattern(std::make_shared<plantransformer::PartialAggPattern>(),
+                             std::make_shared<CiderPatternTestNodeRewriter>())
+            .registerPattern(std::make_shared<plantransformer::TopNPattern>(),
+                             std::make_shared<CiderPatternTestNodeRewriter>())
+            .registerPattern(std::make_shared<plantransformer::OrderByPattern>(),
                              std::make_shared<CiderPatternTestNodeRewriter>());
+
     setTransformerFactory(transformerFactory);
   }
 
@@ -51,13 +58,26 @@ class CiderCompoundJoinMixedTest : public PlanTransformerTestBase {
   VeloxPlanNodePtr planRight2Ptr_ = getSingleFilterNode(rowType_, filter_);
 };
 
-TEST_F(CiderCompoundJoinMixedTest, filterOnly) {
-  VeloxPlanNodePtr resultPtr =
-      getTransformer(getSingleFilterNode(rowType_, filter_))->transform();
+TEST_F(CiderPatternJoinMixedTest, partialTopN) {
+  VeloxPlanNodePtr planPtr = PlanBuilder()
+                                 .values(generateTestBatch(rowType_, false))
+                                 .topN({"c0"}, 10, true)
+                                 .planNode();
+
+  VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
   EXPECT_TRUE(compareWithExpected(resultPtr, getCiderExpectedPtr(rowType_)));
 }
 
-TEST_F(CiderCompoundJoinMixedTest, filterAgg) {
+TEST_F(CiderPatternJoinMixedTest, partialOderBy) {
+  VeloxPlanNodePtr planPtr = PlanBuilder()
+                                 .values(generateTestBatch(rowType_, false))
+                                 .orderBy({fmt::format("c0 DESC NULLS FIRST")}, true)
+                                 .planNode();
+  VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
+  EXPECT_TRUE(compareWithExpected(resultPtr, getCiderExpectedPtr(rowType_)));
+}
+
+TEST_F(CiderPatternJoinMixedTest, filterAgg) {
   VeloxPlanNodePtr planPtr = PlanBuilder()
                                  .values(generateTestBatch(rowType_, false))
                                  .filter(filter_)
@@ -70,30 +90,22 @@ TEST_F(CiderCompoundJoinMixedTest, filterAgg) {
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
-          .partialAggregation({}, aggs_)
+          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<TestCiderPlanNode>(id, input);
+          })
           .planNode();
   VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 
-TEST_F(CiderCompoundJoinMixedTest, filterProjectAgg) {
-  VeloxPlanNodePtr planPtr = PlanBuilder()
-                                 .values(generateTestBatch(rowType_, false))
-                                 .filter(filter_)
-                                 .project(projections_)
-                                 .partialAggregation({}, aggs_)
-                                 .planNode();
 
-  VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
-  EXPECT_TRUE(compareWithExpected(resultPtr, getCiderExpectedPtr(rowType_)));
-}
 
-TEST_F(CiderCompoundJoinMixedTest, SingleJoinMultiCompoundNodes) {
+TEST_F(CiderPatternJoinMixedTest, SingleJoinMultiCompoundNodes) {
   VeloxPlanNodePtr planRightPtr = PlanBuilder()
                                       .values(generateTestBatch(rowType_, false))
                                       .project({"c0 as u_c0", "c1 as u_c1"})
                                       .filter("u_c0 > 1")
-                                      .project({"u_c0", "u_c1"})
+                                      .topN({"u_c0"}, 10, true)
                                       .planNode();
 
   VeloxPlanNodePtr planLeftPtr =
@@ -110,6 +122,9 @@ TEST_F(CiderCompoundJoinMixedTest, SingleJoinMultiCompoundNodes) {
   VeloxPlanNodePtr expectedRightPtr =
       PlanBuilder()
           .values(generateTestBatch(rowType_, false))
+          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<TestCiderPlanNode>(id, input);
+          })
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
@@ -135,50 +150,45 @@ TEST_F(CiderCompoundJoinMixedTest, SingleJoinMultiCompoundNodes) {
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 
-TEST_F(CiderCompoundJoinMixedTest, DontMergeMultiJoinNodes) {
+TEST_F(CiderPatternJoinMixedTest, JoinWithFilterAgg) {
+  VeloxPlanNodePtr planRightPtr = PlanBuilder()
+                                      .values(generateTestBatch(rowType_, false))
+                                      .project({"c0 as u_c0", "c1 as u_c1"})
+                                      .filter("u_c0 > 1")
+                                      .topN({"u_c0"}, 10, true)
+                                      .planNode();
+
   VeloxPlanNodePtr planLeftPtr =
       PlanBuilder()
           .values(generateTestBatch(rowTypeLeft_, false))
           .filter("c2 > 3")
-          .hashJoin({"c2"}, {"u_c0"}, planRight1Ptr_, "", {"c2", "c3", "u_c1"})
-          .hashJoin({"c2"}, {"c0"}, planRight2Ptr_, "", {"c2", "c3", "c1"})
-          .filter("c1 > 2")
-          .project({"c2", "c3", "c1"})
+          .project({"c2", "c3"})
+          .hashJoin({"c2"}, {"u_c0"}, planRightPtr, "", {"c2", "c3", "u_c1"})
+          .filter("u_c1 > 2")
           .partialAggregation({}, {"SUM(c2)"})
           .planNode();
 
-  VeloxPlanNodeVec joinSrcVec{getCiderExpectedPtr(rowTypeLeft_),
-                              getCiderExpectedPtr(rowType_),
-                              getCiderExpectedPtr(rowType_)};
-
-  VeloxPlanNodePtr resultPtr = getTransformer(planLeftPtr)->transform();
-  EXPECT_FALSE(
-      compareWithExpected(resultPtr, getCiderExpectedPtr(rowTypeLeft_, joinSrcVec)));
-}
-
-TEST_F(CiderCompoundJoinMixedTest, MultiJoinNodes) {
-  VeloxPlanNodePtr planLeftPtr =
+  VeloxPlanNodePtr expectedRightPtr =
       PlanBuilder()
-          .values(generateTestBatch(rowTypeLeft_, false))
-          .filter("c2 > 3")
-          .hashJoin({"c2"}, {"u_c0"}, planRight1Ptr_, "", {"c2", "c3", "u_c1"})
-          .hashJoin({"c2"}, {"c0"}, planRight2Ptr_, "", {"c2", "c3", "c1"})
-          .filter("c1 > 2")
-          .project({"c2", "c3", "c1"})
-          .partialAggregation({}, {"SUM(c2)"})
+          .values(generateTestBatch(rowType_, false))
+          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<TestCiderPlanNode>(id, input);
+          })
+          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<TestCiderPlanNode>(id, input);
+          })
+          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<TestCiderPlanNode>(id, input);
+          })
           .planNode();
 
-  VeloxPlanNodeVec joinSrcVec1{getCiderExpectedPtr(rowTypeLeft_),
-                               getCiderExpectedPtr(rowType_)};
-
-  VeloxPlanNodeVec joinSrcVec2{getCiderExpectedPtr(rowTypeLeft_, joinSrcVec1),
-                               getCiderExpectedPtr(rowType_)};
+  VeloxPlanNodeVec joinSrcVec{getCiderExpectedPtr(rowTypeLeft_), expectedRightPtr};
 
   VeloxPlanNodePtr expectedPtr =
       PlanBuilder()
           .values(generateTestBatch(rowTypeLeft_, false))
           .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, joinSrcVec2);
+            return std::make_shared<TestCiderPlanNode>(id, joinSrcVec);
           })
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
@@ -186,54 +196,6 @@ TEST_F(CiderCompoundJoinMixedTest, MultiJoinNodes) {
           .planNode();
 
   VeloxPlanNodePtr resultPtr = getTransformer(planLeftPtr)->transform();
-  EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
-}
-
-TEST_F(CiderCompoundJoinMixedTest, MultiSeperatedJoinNodes) {
-  VeloxPlanNodePtr planLeftPtr =
-      PlanBuilder()
-          .values(generateTestBatch(rowTypeLeft_, false))
-          .filter("c2 > 3")
-          .hashJoin({"c2"}, {"u_c0"}, planRight1Ptr_, "", {"c2", "c3", "u_c1"})
-          .filter("u_c1 > 4")
-          .project({"c2", "c3", "u_c1"})
-          .hashJoin({"c2"}, {"c0"}, planRight2Ptr_, "", {"c2", "c3", "c1"})
-          .filter("c1 > 2")
-          .project({"c2", "c3", "c1"})
-          .partialAggregation({}, {"SUM(c2)"})
-          .planNode();
-
-  VeloxPlanNodeVec join1SrcVec{getCiderExpectedPtr(rowTypeLeft_),
-                               getCiderExpectedPtr(rowType_)};
-  // hashJoin + filter match LeftDeepJoinPattern and project match CompoundPattern.
-  VeloxPlanNodePtr expectedJoin2Left =
-      PlanBuilder()
-          .values(generateTestBatch(rowTypeLeft_, false))
-          .addNode([&join1SrcVec](std::string id,
-                                  std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, join1SrcVec);
-          })
-          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, input);
-          })
-          .planNode();
-
-  VeloxPlanNodeVec join2SrcVec{expectedJoin2Left, getCiderExpectedPtr(rowType_)};
-
-  VeloxPlanNodePtr expectedPtr =
-      PlanBuilder()
-          .values(generateTestBatch(rowTypeLeft_, false))
-          .addNode([&join2SrcVec](std::string id,
-                                  std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, join2SrcVec);
-          })
-          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, input);
-          })
-          .planNode();
-
-  VeloxPlanNodePtr resultPtr = getTransformer(planLeftPtr)->transform();
-
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 
