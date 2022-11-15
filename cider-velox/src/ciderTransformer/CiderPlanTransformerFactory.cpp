@@ -28,19 +28,19 @@
 namespace facebook::velox::plugin::plantransformer {
 
 void CiderPlanTransformerFactory::registerCiderPattern() {
-  if (FLAGS_CompoundPattern) {
+  if (FLAGS_compound_pattern) {
     ciderTransformerFactory_.registerPattern(std::make_shared<CompoundPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
   }
-  if (FLAGS_FilterPattern) {
+  if (FLAGS_filter_pattern) {
     ciderTransformerFactory_.registerPattern(std::make_shared<FilterPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
   }
-  if (FLAGS_LeftDeepJoinPattern) {
+  if (FLAGS_left_deep_join_pattern) {
     ciderTransformerFactory_.registerPattern(std::make_shared<LeftDeepJoinPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
   }
-  if (FLAGS_PartialAggPattern) {
+  if (FLAGS_partial_agg_pattern) {
     ciderTransformerFactory_.registerPattern(std::make_shared<PartialAggPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
   }
