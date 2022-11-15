@@ -17,5 +17,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(cider_type_plan_source_files Analyzer.cpp)
+set(cider_type_plan_source_files Analyzer.cpp Analyzer2.cpp)
 add_library(cider_type_plan ${cider_type_plan_source_files})

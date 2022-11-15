@@ -28,6 +28,7 @@
 #define ANALYZER_H
 
 #include "cider/CiderException.h"
+#include "exec/nextgen/jitlib/base/JITFunction.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "type/schema/ColumnInfo.h"
@@ -45,6 +46,7 @@
 #include <vector>
 
 namespace Analyzer {
+using namespace cider::jitlib;
 class Expr;
 using ExprPtr = std::shared_ptr<Expr>;
 using ExprPtrRefVector = std::vector<ExprPtr*>;
@@ -211,29 +213,32 @@ class Expr : public std::enable_shared_from_this<Expr> {
    */
   virtual void get_domain(DomainSet& domain_set) const { domain_set.clear(); }
 
+ public:
+  // change this to pure virtual method after all subclasses support codegen.
+  virtual JITExprValue& codegen(JITFunction& func);
+
   // for vector<JITValuePointer>;
   template <typename T>
-  cider::jitlib::JITExprValue& set_expr_value(T&& ptrs, bool is_variadic = false) {
-    expr_var_ =
-        std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs), is_variadic);
+  JITExprValue& set_expr_value(T&& ptrs, bool is_variadic = false) {
+    expr_var_ = std::make_unique<JITExprValue>(std::forward<T>(ptrs), is_variadic);
     return *expr_var_;
   }
 
   // for {JITValuePointer, ...}
   template <typename... T>
-  cider::jitlib::JITExprValue& set_expr_value(T&&... ptrs, bool is_variadic = false) {
-    expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs)...);
+  JITExprValue& set_expr_value(T&&... ptrs, bool is_variadic = false) {
+    expr_var_ = std::make_unique<JITExprValue>(std::forward<T>(ptrs)...);
     return *expr_var_;
   }
 
   // for JITValuePointer
   // used with only value (no len and null, so is_variadic is false)
-  cider::jitlib::JITExprValue& set_expr_value(cider::jitlib::JITValuePointer&& val) {
-    expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::move(val));
+  JITExprValue& set_expr_value(JITValuePointer&& val) {
+    expr_var_ = std::make_unique<JITExprValue>(std::move(val));
     return *expr_var_;
   }
 
-  cider::jitlib::JITExprValue* get_expr_value() const { return expr_var_.get(); }
+  JITExprValue* get_expr_value() const { return expr_var_.get(); }
 
   // TODO (bigPYJ1151): to pure virtual.
   virtual ExprPtrRefVector get_children_reference() {
@@ -242,10 +247,16 @@ class Expr : public std::enable_shared_from_this<Expr> {
   }
 
  protected:
+  JITTypeTag getJITTag(const SQLTypes& st);
+  JITTypeTag getJITTag() { return getJITTag(get_type_info().get_type()); }
+
+ protected:
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
   bool contains_agg;
 
-  std::unique_ptr<cider::jitlib::JITExprValue> expr_var_;
+  std::unique_ptr<JITExprValue> expr_var_;
+  // just for unreachable branch return;
+  JITExprValue fake_val_;
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;
@@ -322,6 +333,9 @@ class ColumnVar : public Expr {
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
+
+ public:
+  JITExprValue& codegen(JITFunction& func) override;
 
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins
@@ -439,6 +453,9 @@ class Constant : public Expr {
   std::shared_ptr<Analyzer::Expr> add_cast(const SQLTypeInfo& new_type_info) override;
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
+
+ public:
+  JITExprValue& codegen(JITFunction& func) override;
 
  protected:
   bool is_null;    // constant is NULL
@@ -613,9 +630,13 @@ class BinOper : public Expr {
       const std::shared_ptr<Analyzer::Expr> cast_operand,
       const std::shared_ptr<Analyzer::Expr> const_operand);
 
+ public:
   ExprPtrRefVector get_children_reference() override {
     return {&left_operand, &right_operand};
   }
+  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs);
+  JITExprValue& codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs);
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.

@@ -22,7 +22,6 @@
 #define EXEC_NEXTGEN_CONTEXT_H
 
 #include "exec/nextgen/jitlib/JITLib.h"
-#include "exec/nextgen/operators/expr.h"
 
 namespace cider::exec::nextgen {
 using namespace cider::jitlib;
@@ -35,4 +34,4 @@ class Context {
 };
 }  // namespace cider::exec::nextgen
 
-#endif // EXEC_NEXTGEN_CONTEXT_H
+#endif  // EXEC_NEXTGEN_CONTEXT_H

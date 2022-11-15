@@ -38,7 +38,7 @@ using ExprPtrVector = std::vector<ExprPtr>;
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
-class OpNode : protected std::enable_shared_from_this<OpNode> {
+class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
   OpNode(const char* name = "None", const OpNodePtr& prev = nullptr)
       : input_(prev), name_(name) {}
