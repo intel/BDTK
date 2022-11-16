@@ -17,21 +17,25 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+# Make sure build-presto-package.sh and presto-bdtk-*.patch are in the same directory
+cd $(dirname $0)
 set -e
 
 PRESTO_CPP_MODE=release
 BDTK_BUILD_MODE=Release
 
 rm -rf presto
-git clone -b BDTK https://github.com/Intel-bigdata/presto.git
+PATCH_NAME=presto-bdtk-9dbb0f9.patch
+PRESTO_BDTK_COMMIT_ID=9dbb0f9bb292ed95e62b4f268ff5bf29138ec72e
+
+git clone https://github.com/prestodb/presto.git
 pushd presto/presto-native-execution
+git checkout -b BDTK ${PRESTO_BDTK_COMMIT_ID}
+git apply ${PATCH_NAME}
 git clone --recursive https://github.com/intel/BDTK.git
 pushd BDTK
 make  ${PRESTO_CPP_MODE}
-if [ $? -ne 0 ]; then
-    echo "compile BDTK failed"
-    exit
-fi
 popd
 
 cp -r ./BDTK/thirdparty/velox .
@@ -49,10 +53,6 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cider/function/libcider_function.a ./presto_c
 sed -i 's/\"planTransformer\/PlanTransformer\.h\"/\"..\/planTransformer\/PlanTransformer\.h\"/' ./BDTK/cider-velox/src/ciderTransformer/CiderPlanTransformerFactory.h
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
-if [ $? -ne 0 ]; then
-    echo "compile presto failed"
-    exit
-fi
 mkdir -p ./_build/${PRESTO_CPP_MODE}/presto_cpp/function
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cider/function/RuntimeFunctions.bc ./_build/${PRESTO_CPP_MODE}/presto_cpp/function/
 popd
