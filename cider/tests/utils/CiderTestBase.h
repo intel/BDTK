@@ -73,7 +73,6 @@ class CiderTestBase : public testing::Test {
     create_ddl_ = create_ddl;
   }
   void setupInput(std::vector<std::shared_ptr<CiderBatch>>& input) { input_ = input; }
-  void prepareArrowBatch();
 
  protected:
   std::string table_name_;
