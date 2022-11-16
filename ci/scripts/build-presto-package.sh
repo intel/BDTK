@@ -32,7 +32,7 @@ PRESTO_BDTK_COMMIT_ID=9dbb0f9bb292ed95e62b4f268ff5bf29138ec72e
 git clone https://github.com/prestodb/presto.git
 pushd presto/presto-native-execution
 git checkout -b BDTK ${PRESTO_BDTK_COMMIT_ID}
-git apply ${PATCH_NAME}
+git apply ../../${PATCH_NAME}
 git clone --recursive https://github.com/intel/BDTK.git
 pushd BDTK
 make  ${PRESTO_CPP_MODE}
