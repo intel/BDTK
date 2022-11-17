@@ -33,35 +33,50 @@ class CiderAggArrowTest : public CiderTestBase {
         "CREATE TABLE test(col_i8 TINYINT, col_i16 SMALLINT, col_i32 INT, col_i64 "
         "BIGINT, col_fp32 FLOAT, col_fp64 DOUBLE, half_null_i8 "
         "TINYINT, half_null_i16 SMALLINT, half_null_i32 INT, half_null_i64 BIGINT, "
-        "half_null_fp32 FLOAT, half_null_fp64 DOUBLE);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
-                                                  10,
-                                                  {"col_i8",
-                                                   "col_i16",
-                                                   "col_i32",
-                                                   "col_i64",
-                                                   "col_fp32",
-                                                   "col_fp64",
-                                                   "half_null_i8",
-                                                   "half_null_i16",
-                                                   "half_null_i32",
-                                                   "half_null_i64",
-                                                   "half_null_fp32",
-                                                   "half_null_fp64"},
-                                                  {CREATE_SUBSTRAIT_TYPE(I8),
-                                                   CREATE_SUBSTRAIT_TYPE(I16),
-                                                   CREATE_SUBSTRAIT_TYPE(I32),
-                                                   CREATE_SUBSTRAIT_TYPE(I64),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
-                                                   CREATE_SUBSTRAIT_TYPE(I8),
-                                                   CREATE_SUBSTRAIT_TYPE(I16),
-                                                   CREATE_SUBSTRAIT_TYPE(I32),
-                                                   CREATE_SUBSTRAIT_TYPE(I64),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
-                                                  {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2});
+        "half_null_fp32 FLOAT, half_null_fp64 DOUBLE, all_null_i8 TINYINT, all_null_i16 "
+        "SMALLINT, all_null_i32 INT, all_null_i64 BIGINT, all_null_fp32 FLOAT, "
+        "all_null_fp64 DOUBLE);";
+    QueryArrowDataGenerator::generateBatchByTypes(
+        schema_,
+        array_,
+        10,
+        {"col_i8",
+         "col_i16",
+         "col_i32",
+         "col_i64",
+         "col_fp32",
+         "col_fp64",
+         "half_null_i8",
+         "half_null_i16",
+         "half_null_i32",
+         "half_null_i64",
+         "half_null_fp32",
+         "half_null_fp64",
+         "all_null_i8",
+         "all_null_i16",
+         "all_null_i32",
+         "all_null_i64",
+         "all_null_fp32",
+         "all_null_fp64"},
+        {CREATE_SUBSTRAIT_TYPE(I8),
+         CREATE_SUBSTRAIT_TYPE(I16),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(I8),
+         CREATE_SUBSTRAIT_TYPE(I16),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(I8),
+         CREATE_SUBSTRAIT_TYPE(I16),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Fp64)},
+        {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1});
   }
 };
 
@@ -116,64 +131,59 @@ TEST_F(CiderAggArrowTest, countTest) {
   assertQueryArrow("SELECT COUNT(1) FROM test");
 
   // COUNT GROUP BY
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(*) FROM test GROUP BY half_null_fp32", "", true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(1) FROM test GROUP BY half_null_fp32", "", true);
-  //   assertQueryArrow("SELECT col_i32, COUNT(col_i32) FROM test GROUP BY col_i32", "",
-  //   true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(*), COUNT(1), half_null_fp32 FROM test GROUP BY "
+      "half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(1) FROM test GROUP BY half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_i32, COUNT(col_i32) FROM test GROUP BY col_i32");
 
   // COUNT FILTER and GROUP BY
-  //   assertQueryArrow(
-  //       "SELECT col_i8, COUNT(*) FROM test WHERE col_i8 <> 4 AND col_i8 <> 5 GROUP BY "
-  //       "col_i8",
-  //       "",
-  //       true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_i8, COUNT(*) FROM test WHERE col_i8 <> 4 AND col_i8 <> 5 GROUP BY "
+      "col_i8");
 
   // COUNT GROUP BY with null
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(*) FROM test GROUP BY half_null_fp32", "", true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(1) FROM test GROUP BY half_null_fp32", "", true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(half_null_fp32) FROM test GROUP BY
-  //       half_null_fp32",
-  //       "",
-  //       true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(*) FROM test GROUP BY half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(1) FROM test GROUP BY half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp64, COUNT(half_null_fp64) FROM test GROUP BY half_null_fp64");
 
   // COUNT(*) FILTER and GROUP BY without NULL
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(*) FROM test WHERE half_null_fp32 IS NOT NULL
-  //       GROUP " "BY half_null_fp32",
-  //       "",
-  //       true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(1) FROM test WHERE half_null_fp32 IS NOT NULL
-  //       GROUP " "BY half_null_fp32",
-  //       "",
-  //       true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS
-  //       " "NOT NULL GROUP BY half_null_fp32",
-  //       "",
-  //       true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(*) FROM test WHERE half_null_fp32 IS NOT NULL GROUP "
+      "BY half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(1) FROM test WHERE half_null_fp32 IS NOT NULL GROUP "
+      "BY half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS "
+      "NOT NULL GROUP BY half_null_fp32");
 
   // COUNT(*) FILTER and GROUP BY with NULL
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(1) FROM test WHERE half_null_fp32 IS NULL GROUP
-  //       BY " "half_null_fp32",
-  //       "",
-  //       true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(*) FROM test WHERE half_null_fp32 IS NULL GROUP
-  //       BY " "half_null_fp32",
-  //       "",
-  //       true);
-  //   assertQueryArrow(
-  //       "SELECT half_null_fp32, COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS
-  //       " "NULL GROUP BY half_null_fp32",
-  //       "",
-  //       true);
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(1) FROM test WHERE half_null_fp32 IS NULL GROUP BY "
+      "half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(*) FROM test WHERE half_null_fp32 IS NULL GROUP BY "
+      "half_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT half_null_fp32, COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS "
+      "NULL GROUP BY half_null_fp32");
+
+  // COUNT(*) FILTER and GROUP BY all NULL
+  assertQueryArrowIgnoreOrder(
+      "SELECT all_null_fp32, COUNT(1) FROM test WHERE all_null_fp32 IS NULL GROUP BY "
+      "all_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT all_null_fp32, COUNT(*) FROM test WHERE all_null_fp32 IS NULL GROUP BY "
+      "all_null_fp32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT all_null_fp32, COUNT(all_null_fp32) FROM test WHERE all_null_fp32 IS "
+      "NULL GROUP BY all_null_fp32");
 
   // COUNT AGG
   assertQueryArrow("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
@@ -181,22 +191,25 @@ TEST_F(CiderAggArrowTest, countTest) {
   assertQueryArrow("SELECT COUNT(col_i8), MAX(col_i8) FROM test");
 
   // COUNT AGG with GROUP BY
-  //   assertQueryArrow(
-  //       "SELECT SUM(col_i32), COUNT(*), SUM(half_null_fp32) FROM test GROUP BY
-  //       col_i32",
-  //       "",
-  //       true);
-  //   assertQueryArrow(
-  //       "SELECT SUM(col_i32), COUNT(1), SUM(half_null_fp32) FROM test GROUP BY
-  //       col_i32",
-  //       "",
-  //       true);
-  //   assertQueryArrow(
-  //       "SELECT SUM(col_i32), COUNT(half_null_fp32), SUM(half_null_fp32) FROM test
-  //       GROUP " "BY col_i32",
-  //       "",
-  //       true);
-
+  assertQueryArrowIgnoreOrder(
+      "SELECT SUM(col_i32), COUNT(*), SUM(half_null_fp32) FROM test GROUP BY col_i32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT SUM(col_i32), COUNT(1), SUM(half_null_fp32) FROM test GROUP BY col_i32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT SUM(col_i32), COUNT(half_null_fp32), SUM(half_null_fp32) FROM test GROUP "
+      "BY col_i32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_i32, SUM(col_i32), COUNT(*), SUM(half_null_fp32) FROM test GROUP BY "
+      "col_i32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT SUM(col_i32), COUNT(*), SUM(half_null_fp32), col_i32 FROM test GROUP BY "
+      "col_i32");
+  assertQueryArrowIgnoreOrder(
+      "SELECT SUM(col_i32), COUNT(*), SUM(half_null_fp32) FROM test GROUP BY col_i32, "
+      "col_i64");
+  assertQueryArrowIgnoreOrder(
+      "SELECT col_i32, col_i64, SUM(col_i32), COUNT(*), SUM(half_null_fp32) FROM test "
+      "GROUP BY col_i32, col_i64");
   // COUNT with column is not supported by substrait-java yet
   // COUNT(INT)
   assertQueryArrow("SELECT COUNT(col_i32) FROM test");
@@ -243,6 +256,32 @@ TEST_F(CiderAggArrowTest, countTest) {
   assertQueryArrow("SELECT COUNT(half_null_i8) FROM test");
   assertQueryArrow("SELECT COUNT(half_null_i8) FROM test WHERE half_null_i8 IS NOT NULL");
   assertQueryArrow("SELECT COUNT(half_null_i8) FROM test WHERE half_null_i8 IS NULL");
+  // COUNT(INT) with all null
+  assertQueryArrow("SELECT COUNT(all_null_i32) FROM test");
+  assertQueryArrow("SELECT COUNT(all_null_i32) FROM test WHERE all_null_i32 IS NOT NULL");
+  assertQueryArrow("SELECT COUNT(all_null_i32) FROM test WHERE all_null_i32 IS NULL");
+  // COUNT(BIGINT) with all null
+  assertQueryArrow("SELECT COUNT(all_null_i64) FROM test");
+  assertQueryArrow("SELECT COUNT(all_null_i64) FROM test WHERE all_null_i64 IS NOT NULL");
+  assertQueryArrow("SELECT COUNT(all_null_i64) FROM test WHERE all_null_i64 IS NULL");
+  // COUNT(FLOAT) with all null
+  assertQueryArrow("SELECT COUNT(all_null_fp32) FROM test");
+  assertQueryArrow(
+      "SELECT COUNT(all_null_fp32) FROM test WHERE all_null_fp32 IS NOT NULL");
+  assertQueryArrow("SELECT COUNT(all_null_fp32) FROM test WHERE all_null_fp32 IS NULL");
+  // COUNT(DOUBLE) with all null
+  assertQueryArrow("SELECT COUNT(all_null_fp64) FROM test");
+  assertQueryArrow(
+      "SELECT COUNT(all_null_fp64) FROM test WHERE all_null_fp64 IS NOT NULL");
+  assertQueryArrow("SELECT COUNT(all_null_fp64) FROM test WHERE all_null_fp64 IS NULL");
+  // COUNT(SMALLINT) with all null
+  assertQueryArrow("SELECT COUNT(all_null_i16) FROM test");
+  assertQueryArrow("SELECT COUNT(all_null_i16) FROM test WHERE all_null_i16 IS NOT NULL");
+  assertQueryArrow("SELECT COUNT(all_null_i16) FROM test WHERE all_null_i16 IS NULL");
+  // COUNT(TINYINT) with all null
+  assertQueryArrow("SELECT COUNT(all_null_i8) FROM test");
+  assertQueryArrow("SELECT COUNT(all_null_i8) FROM test WHERE all_null_i8 IS NOT NULL");
+  assertQueryArrow("SELECT COUNT(all_null_i8) FROM test WHERE all_null_i8 IS NULL");
 
   // TODO: COUNT(decimal)
   // TODO: COUNT(decimal) with half null
