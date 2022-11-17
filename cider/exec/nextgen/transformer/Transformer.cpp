@@ -19,9 +19,9 @@
  * under the License.
  */
 #include "exec/nextgen/transformer/Transformer.h"
-#include <algorithm>
 
 namespace cider::exec::nextgen::transformer {
+using namespace operators;
 
 static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
   CHECK_GT(pipeline.size(), 0);

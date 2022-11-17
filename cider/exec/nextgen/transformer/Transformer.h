@@ -25,13 +25,11 @@
 #include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::transformer {
-using namespace cider::exec::nextgen::operators;
-
 /// \brief The Transformer class is responsible for transforming the OpPipeline to a
 /// translator
 class Transformer {
  public:
-  static TranslatorPtr toTranslator(OpPipeline& pipeline);
+  static operators::TranslatorPtr toTranslator(operators::OpPipeline& pipeline);
 };
 
 }  // namespace cider::exec::nextgen::transformer
