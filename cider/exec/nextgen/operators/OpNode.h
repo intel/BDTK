@@ -52,7 +52,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 
   void setInputOpNode(const OpNodePtr& prev) { input_ = prev; }
 
-  virtual ExprPtrVector getExprs() = 0;
+  virtual ExprPtrVector getOutputExprs() = 0;
 
   /// \brief Transform the operator to a translator
   virtual TranslatorPtr toTranslator(const TranslatorPtr& succ) = 0;

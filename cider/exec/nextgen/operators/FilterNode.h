@@ -34,7 +34,7 @@ class FilterNode : public OpNode {
     (exprs_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
-  ExprPtrVector getExprs() override { return exprs_; }
+  ExprPtrVector getOutputExprs() override { return exprs_; }
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
