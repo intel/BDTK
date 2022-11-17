@@ -810,8 +810,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       //      return makeExpr<Analyzer::ReverseStringOper>(args);
       //    case SqlStringOpKind::REPEAT:
       //      return makeExpr<Analyzer::RepeatStringOper>(args);
-      //    case SqlStringOpKind::CONCAT:
-      //      return makeExpr<Analyzer::ConcatStringOper>(args);
+         case SqlStringOpKind::CONCAT:
+           return makeExpr<Analyzer::ConcatStringOper>(args);
       //    case SqlStringOpKind::LPAD:
       //    case SqlStringOpKind::RPAD: {
       //      return makeExpr<Analyzer::PadStringOper>(string_op_kind, args);
