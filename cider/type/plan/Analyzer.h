@@ -1433,16 +1433,17 @@ class TrimStringOper : public StringOper {
     CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
           op_kind == SqlStringOpKind::RTRIM);
     return op_kind;
-    return {"operand_0", "operand_1"};
   }
+};
 
- private:
-  SqlStringOpKind getConcatOpKind(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-    CHECK_EQ(operands.size(), 2);
-    auto constant_arg0 = dynamic_cast<const Analyzer::Constant*>(operands[0].get());
-    auto constant_arg1 = dynamic_cast<const Analyzer::Constant*>(operands[1].get());
-
+class SubstringStringOper : public StringOper {
+ public:
+  SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
+                      const std::shared_ptr<Analyzer::Expr>& start_pos)
+      : StringOper(SqlStringOpKind::SUBSTRING,
+                   {operand, start_pos},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
                    getArgNames()) {}
 
   SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
@@ -1475,6 +1476,67 @@ class TrimStringOper : public StringOper {
   }
   std::vector<std::string> getArgNames() const override {
     return {"operand", "start position", "substring length"};
+  }
+};
+
+class ConcatStringOper : public StringOper {
+ public:
+  ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(getConcatOpKind(operands),
+                   rearrangeOperands(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  std::vector<std::string> getArgNames() const override {
+    return {"operand_0", "operand_1"};
+  }
+
+ private:
+  SqlStringOpKind getConcatOpKind(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+    CHECK_EQ(operands.size(), 2);
+    auto constant_arg0 = dynamic_cast<const Analyzer::Constant*>(operands[0].get());
+    auto constant_arg1 = dynamic_cast<const Analyzer::Constant*>(operands[1].get());
+
+    if (constant_arg1) {
+      // concat(col, literal) or concat(literal, literal)
+      return SqlStringOpKind::CONCAT;
+    } else if (constant_arg0) {
+      // concat(literal, col)
+      return SqlStringOpKind::RCONCAT;
+    } else {
+      CIDER_THROW(CiderCompileException,
+                  "concat() currently does not support two variable operands.");
+    }
+  }
+
+  std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+    // ensures non-literal operand (if any) is not at arg1
+    // as stringops expect non-literals to be the first arg at runtime
+    CHECK_EQ(operands.size(), 2);
+    auto constant_arg0 = dynamic_cast<const Analyzer::Constant*>(operands[0].get());
+    auto constant_arg1 = dynamic_cast<const Analyzer::Constant*>(operands[1].get());
+
+    if (constant_arg1) {
+      // concat(col, literal) or concat(literal, literal)
+      return {operands[0], operands[1]};
+    } else if (constant_arg0) {
+      // concat(literal, col)
+      return {operands[1], operands[0]};
+    } else {
+      CIDER_THROW(CiderCompileException,
+                  "concat() currently does not support two variable operands.");
+    }
   }
 };
 
