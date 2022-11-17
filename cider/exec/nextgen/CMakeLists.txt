@@ -28,7 +28,9 @@ endif()
 add_subdirectory(jitlib)
 add_subdirectory(operators)
 add_subdirectory(parsers)
+add_subdirectory(context)
 
 add_library(nextgen STATIC $<TARGET_OBJECTS:cider_operators>
+                            $<TARGET_OBJECTS:cider_context>
                            $<TARGET_OBJECTS:cider_parsers>)
 target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib)

@@ -48,6 +48,7 @@ class LLVMJITValue final : public JITValue {
       , is_variable_(is_variable) {}
 
  public:
+  void setName(const std::string& name) override;
   JITValue& assign(JITValue& value) override;
   JITValuePointer getElemAt(JITValue& index) override;
 

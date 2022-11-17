@@ -41,8 +41,8 @@ class JITValue : protected ReferenceCounter {
            JITFunction& parent_function,
            const std::string& name,
            JITTypeTag sub_type_tag)
-      : type_tag_(type_tag)
-      , value_name_(name)
+      : value_name_(name)
+      , type_tag_(type_tag)
       , parent_function_(parent_function)
       , sub_type_tag_(sub_type_tag) {}
 
@@ -68,6 +68,7 @@ class JITValue : protected ReferenceCounter {
   JITValue& operator=(JITValue&& rh) = delete;
 
  public:
+  virtual void setName(const std::string& name) = 0;
   virtual JITValue& assign(JITValue& value) = 0;
   virtual JITValuePointer getElemAt(JITValue& index) = 0;
 
@@ -96,9 +97,11 @@ class JITValue : protected ReferenceCounter {
   virtual JITValuePointer castPointerSubType(JITTypeTag type_tag) = 0;
   virtual JITValuePointer dereference() = 0;
 
+ protected:
+  std::string value_name_;
+
  private:
   JITTypeTag type_tag_;
-  std::string value_name_;
   JITFunction& parent_function_;
   JITTypeTag sub_type_tag_;
 };
@@ -121,16 +124,21 @@ class JITValuePointer {
 
   size_t getRefNum() { return ptr_->getRefNum(); }
 
-  ~JITValuePointer() {
-    if (ptr_) {
-      if (ptr_->getRefNum() == 1) {
-        delete ptr_;
-      }
-      ptr_->decRef();
+  JITValuePointer replace(const JITValuePointer& rh) {
+    if (ptr_ != rh.ptr_) {
+      release();
+      ptr_ = rh.ptr_;
+      ptr_->addRef();
     }
+    return *this;
   }
 
+  ~JITValuePointer() { release(); }
+
  public:
+  // Note: To simplify the usage, copy assignment will be deleted and move assignment will
+  // be overloaded as assignmet of JITValue. If you want to change ptr_ with another
+  // JITValuePointer, please use replace() method.
   JITValuePointer& operator=(const JITValuePointer&) = delete;
 
   JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
@@ -146,6 +154,15 @@ class JITValuePointer {
   JITValuePointer operator[](JITValue& index);
 
  private:
+  void release() {
+    if (ptr_) {
+      if (ptr_->getRefNum() == 1) {
+        delete ptr_;
+      }
+      ptr_->decRef();
+    }
+  }
+
   JITValuePointer(JITValue* value) : ptr_(value) {
     if (ptr_) {
       ptr_->addRef();

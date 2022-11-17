@@ -1468,3 +1468,4 @@ extern "C" ALWAYS_INLINE int32_t extract_str_len_arrow(int8_t* offset_buffer,
 }
 
 #include "function/aggregate/CiderRuntimeFunctions.h"
+#include "exec/nextgen/context/ContextRuntimeFunctions.h"
