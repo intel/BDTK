@@ -104,7 +104,8 @@ class CiderJoinTestBase : public CiderTestBase {
 
   void assertJoinQueryRowEqualForArrowFormat(const std::string& sql,
                                              const std::string& json_file = "",
-                                             const bool ignore_order = true);
+                                             const bool ignore_order = true,
+                                             const bool compare_value = true);
 
   virtual void resetHashTable() {}
 
@@ -124,8 +125,9 @@ class CiderJoinTestBase : public CiderTestBase {
 
   void assertJoinQueryRowEqualForArrowFormatAndReset(const std::string& sql,
                                                      const std::string& json_file = "",
-                                                     const bool ignore_order = true) {
-    assertJoinQueryRowEqualForArrowFormat(sql, json_file, ignore_order);
+                                                     const bool ignore_order = true,
+                                                     const bool compare_value = true) {
+    assertJoinQueryRowEqualForArrowFormat(sql, json_file, ignore_order, compare_value);
     resetHashTable();
   }
 

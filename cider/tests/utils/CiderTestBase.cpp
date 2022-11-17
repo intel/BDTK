@@ -163,7 +163,8 @@ void CiderJoinTestBase::assertJoinQueryRowEqual(const std::string& sql,
 void CiderJoinTestBase::assertJoinQueryRowEqualForArrowFormat(
     const std::string& sql,
     const std::string& json_file,
-    const bool ignore_order) {
+    const bool ignore_order,
+    const bool compare_value) {
   VLOG(4) << sql;
   auto duck_res = duckDbQueryRunner_.runSql(sql);
   auto duck_res_batches =
@@ -174,6 +175,13 @@ void CiderJoinTestBase::assertJoinQueryRowEqualForArrowFormat(
       std::make_shared<CiderBatch>(ciderQueryRunner_.runJoinQueryOneBatchForArrowFormat(
           cider_input, *input_[0], *build_table_));
 
-  EXPECT_TRUE(CiderBatchChecker::checkArrowEq(
-      duck_res_batches[0], cider_res_batch, ignore_order));
+  if (compare_value) {
+    EXPECT_TRUE(CiderBatchChecker::checkArrowEq(
+        duck_res_batches[0], cider_res_batch, ignore_order));
+  } else {
+    // only check row_num, column_num since duckdb in will return wrong results in left
+    // range join with nulls.
+    EXPECT_EQ(duck_res_batches[0]->getChildrenNum(), cider_res_batch->getChildrenNum());
+    EXPECT_EQ(duck_res_batches[0]->getLength(), cider_res_batch->getLength());
+  }
 }
