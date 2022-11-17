@@ -239,7 +239,7 @@ class CodeGenerator {
                                                    const CompilationOptions&);
 
   llvm::Value* codegenCastNonStringToString(llvm::Value* operand_lv,
-                                            llvm::Value* cider_string_hasher_handle_lv,
+                                            llvm::Value* hasher_handle_lv,
                                             const SQLTypeInfo& operand_ti,
                                             const SQLTypeInfo& ti);
 

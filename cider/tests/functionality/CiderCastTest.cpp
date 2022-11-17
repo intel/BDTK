@@ -174,19 +174,26 @@ class CastTypeQueryForArrowTest : public CiderTestBase {
   CastTypeQueryForArrowTest() {
     table_name_ = "test";
     create_ddl_ =
-        "CREATE TABLE test(col_tinyint TINYINT NOT NULL, col_int INTEGER NOT NULL, "
-        "col_varchar VARCHAR(10) NOT NULL, col_bool BOOLEAN NOT NULL, col_date DATE NOT "
-        "NULL);";
-    QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
-        20,
-        {"col_tinyint", "col_int", "col_varchar", "col_bool", "col_date"},
-        {CREATE_SUBSTRAIT_TYPE(I8),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Varchar),
-         CREATE_SUBSTRAIT_TYPE(Bool),
-         CREATE_SUBSTRAIT_TYPE(Date)});
+        "CREATE TABLE test(col_tinyint TINYINT, col_int INTEGER, col_varchar "
+        "VARCHAR(10), col_bool BOOLEAN, col_date DATE, col_float FLOAT, col_double "
+        "DOUBLE);";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  20,
+                                                  {"col_tinyint",
+                                                   "col_int",
+                                                   "col_varchar",
+                                                   "col_bool",
+                                                   "col_date",
+                                                   "col_float",
+                                                   "col_double"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Bool),
+                                                   CREATE_SUBSTRAIT_TYPE(Date),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64)});
   }
 };
 
@@ -194,8 +201,11 @@ TEST_F(CastTypeQueryForArrowTest, castTypeTestForArrow) {
   assertQueryArrow("SELECT CAST(col_bool as TINYINT) FROM test");
   assertQueryArrow("SELECT CAST(col_bool as INTEGER) FROM test");
   assertQueryArrow("SELECT CAST(col_int as VARCHAR(10)) FROM test");
-  assertQueryArrow("SELECT CAST(col_bool as VARCHAR(10)) FROM test");
   assertQueryArrow("SELECT CAST(col_date as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_float as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_double as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT SUBSTRING(CAST(col_date as VARCHAR(10)), 1, 4) FROM test");
+  assertQueryArrow("SELECT CAST(col_bool as VARCHAR(10)) FROM test");
 }
 
 int main(int argc, char** argv) {
