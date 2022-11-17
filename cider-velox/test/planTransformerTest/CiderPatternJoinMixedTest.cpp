@@ -98,8 +98,6 @@ TEST_F(CiderPatternJoinMixedTest, filterAgg) {
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 
-
-
 TEST_F(CiderPatternJoinMixedTest, SingleJoinMultiCompoundNodes) {
   VeloxPlanNodePtr planRightPtr = PlanBuilder()
                                       .values(generateTestBatch(rowType_, false))
