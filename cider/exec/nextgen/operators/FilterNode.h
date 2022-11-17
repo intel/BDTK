@@ -19,17 +19,12 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_FILTER_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_FILTER_H
+#ifndef NEXTGEN_OPERATORS_FILTERNODE_H
+#define NEXTGEN_OPERATORS_FILTERNODE_H
 
-#include <initializer_list>
-#include <memory>
+#include "exec/nextgen/operators/OpNode.h"
 
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/translator/dummy.h"
-#include "type/plan/Analyzer.h"
-
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 class FilterNode : public OpNode {
  public:
   template <typename T, IsVecOf<T, ExprPtr> = true>
@@ -39,23 +34,25 @@ class FilterNode : public OpNode {
     (exprs_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
-  std::vector<ExprPtr> exprs_;
+  ExprPtrVector getExprs() override { return exprs_; }
+
+  ExprPtrVector exprs_;
 };
 
 class FilterTranslator : public Translator {
  public:
   template <typename T>
-  FilterTranslator(T&& exprs, std::unique_ptr<Translator> successor) {
+  FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
     node_ = FilterNode(std::forward<T>(exprs));
-    successor_.swap(successor);
+    successor_.swap(succ);
   }
   template <typename... T>
   FilterTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
     node_ = FilterNode(std::forward<T>(exprs)...);
     successor_.swap(successor);
   }
-  FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& successor)
-      : node_(std::move(node)), successor_(std::move(successor)) {}
+  FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
+      : node_(std::move(node)), successor_(std::move(succ)) {}
 
   void consume(Context& context) override;
 
@@ -66,5 +63,5 @@ class FilterTranslator : public Translator {
   std::unique_ptr<Translator> successor_;
 };
 
-}  // namespace cider::exec::nextgen::translator
-#endif
+}  // namespace cider::exec::nextgen::operators
+#endif  // NEXTGEN_OPERATORS_FILTERNODE_H

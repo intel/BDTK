@@ -18,27 +18,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#ifndef EXEC_NEXTGEN_CONTEXT_H
+#define EXEC_NEXTGEN_CONTEXT_H
 
-#ifndef CIDER_EXEC_NEXTGEN_PARSER_H
-#define CIDER_EXEC_NEXTGEN_PARSER_H
-
-#include <memory>
-
-#include "exec/nextgen/OpPipeline.h"
-#include "exec/template/RelAlgExecutionUnit.h"
+#include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/operators/expr.h"
 
 namespace cider::exec::nextgen {
+using namespace cider::jitlib;
 
-/// \brief A parser convert from the plan fragment to an OpPipeline
-class Parser {
+class Context {
  public:
-  // source--> filter -->sink
-  static std::unique_ptr<OpPipeline> toOpPipeline(const RelAlgExecutionUnit& eu) {
-    auto pipeline = std::make_unique<OpPipeline>();
-    return pipeline;
-  }
+  Context(JITFunction* func_) : query_func_(func_) {}
+  JITFunction* query_func_;
+  std::vector<cider::jitlib::JITExprValue*> expr_outs_;
 };
-
 }  // namespace cider::exec::nextgen
 
-#endif  // CIDER_EXEC_NEXTGEN_PARSER_H
+#endif // EXEC_NEXTGEN_CONTEXT_H

@@ -18,37 +18,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-#ifndef CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
-#define CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
+#ifndef NEXTGEN_OPERATORS_SOURCENODE_H
+#define NEXTGEN_OPERATORS_SOURCENODE_H
 
 #include <vector>
 
-#include "exec/nextgen/OpNode.h"
+#include "exec/nextgen/operators/OpNode.h"
 
-namespace cider::exec::nextgen {
+class InputColDescriptor;
+namespace cider::exec::nextgen::operators {
 
-/// \brief An OpPipeline is a linear sequence of relational operators that operate on
-/// tuple data
-class OpPipeline {
+class SourceNode : public OpNode {
  public:
-  OpPipeline() = default;
+  SourceNode(const ExprPtrVector& col_exprs);
 
-  explicit OpPipeline(const OpNodePtrVector& nodes) : nodes_(nodes) {}
-
-  virtual ~OpPipeline() = default;
-
-  /// \brief Register an operator node in this pipeline
-  ///
-  /// \input opNode The operator node to add to the pipeline
-  void appendOpNode(OpNodePtr node) { nodes_.push_back(node); }
-
-  const OpNodePtrVector& getOpNodes() const { return nodes_; }
+  ExprPtrVector getExprs() override { return input_cols_; }
 
  private:
-  OpNodePtrVector nodes_;
+  ExprPtrVector input_cols_;
 };
+}  // namespace cider::exec::nextgen::operators
 
-}  // namespace cider::exec::nextgen
-
-#endif  // CIDER_EXEC_NEXTGEN_OP_PIPELINE_H
+#endif  // NEXTGEN_OPERATORS_SOURCENODE_H

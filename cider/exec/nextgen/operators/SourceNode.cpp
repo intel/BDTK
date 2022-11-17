@@ -18,24 +18,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "exec/nextgen/operators/SourceNode.h"
 
-#include "exec/nextgen/translator/project.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/translator/dummy.h"
-#include "exec/nextgen/translator/expr.h"
+#include "exec/template/common/descriptors/InputDescriptors.h"
+#include "util/Logger.h"
 
-namespace cider::exec::nextgen::translator {
-void ProjectTranslator::consume(Context& context) {
-  codegen(context);
-}
-
-void ProjectTranslator::codegen(Context& context) {
-  ExprGenerator gen(context.query_func_);
-  for (const auto& expr : node_.exprs_) {
-    context.expr_outs_.push_back(&gen.codegen(expr.get()));
-  }
-  CHECK(successor_);
-  successor_->consume(context);
-}
-
-}  // namespace cider::exec::nextgen::translator
+namespace cider::exec::nextgen::operators {
+SourceNode::SourceNode(const ExprPtrVector& input_cols)
+    : OpNode("SourceNode"), input_cols_(input_cols) {}
+}  // namespace cider::exec::nextgen::operators

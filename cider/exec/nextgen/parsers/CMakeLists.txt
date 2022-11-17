@@ -17,18 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_DEPS cider_util)
+set(PARSERS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/RelAlgEUParser.cpp)
 
-# AddressSanitizer needs to set overcommit_memory as allowed.
-option(ENABLE_ASN "Enable AddressSanitizer for Nextgen Project." OFF)
-if(ENABLE_ASN)
-  list(APPEND NEXTGEN_DEPS -fsanitize=address)
-endif()
-
-add_subdirectory(jitlib)
-add_subdirectory(operators)
-add_subdirectory(parsers)
-
-add_library(nextgen STATIC $<TARGET_OBJECTS:cider_operators>
-                           $<TARGET_OBJECTS:cider_parsers>)
-target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib)
+add_library(cider_parsers OBJECT ${PARSERS_SOURCE})

@@ -18,13 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "exec/nextgen/operators/FilterNode.h"
 
-#include "exec/nextgen/translator/filter.h"
-#include "exec/nextgen/jitlib/base/JITValueOperations.h"
-#include "exec/nextgen/translator/dummy.h"
-#include "exec/nextgen/translator/expr.h"
+#include "exec/nextgen/operators/expr.h"
 
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 void FilterTranslator::consume(Context& context) {
   codegen(context);
 }
@@ -52,4 +50,4 @@ void FilterTranslator::codegen(Context& context) {
       ->build();
 }
 
-}  // namespace cider::exec::nextgen::translator
+}  // namespace cider::exec::nextgen::operators

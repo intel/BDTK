@@ -16,9 +16,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(TRANSLATOR_SOURCE
-    ${CMAKE_CURRENT_LIST_DIR}/expr.cpp ${CMAKE_CURRENT_LIST_DIR}/filter.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/project.cpp)
-include_directories(${CMAKE_SOURCE_DIR}/cider/exec/template)
-add_library(translator STATIC ${TRANSLATOR_SOURCE})
-target_link_libraries(translator ${llvm_libs} ${NEXTGEN_DEPS})
+
+# TODO: Remove it out
+list(APPEND OPERATORS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/expr.cpp)
+
+macro(add_opnode op_node_name)
+  list(APPEND OPERATORS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/${op_node_name}.cpp)
+endmacro(add_opnode)
+
+add_opnode(FilterNode)
+add_opnode(ProjectNode)
+add_opnode(SourceNode)
+
+add_library(cider_operators OBJECT ${OPERATORS_SOURCE})

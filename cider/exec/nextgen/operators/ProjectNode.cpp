@@ -19,23 +19,22 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
-#include <memory>
+#include "exec/nextgen/operators/ProjectNode.h"
 
-#include "exec/nextgen/Transformer.h"
-#include "exec/nextgen/parsers/Parser.h"
-#include "tests/TestHelpers.h"
+#include "exec/nextgen/operators/expr.h"
 
-TEST(NextgenCompilerTest, FrameworkTest) {
-  using namespace cider::exec::nextgen;
-  RelAlgExecutionUnit eu = {};
-  auto pipeline = parsers::toOpPipeline(eu);
-  auto translator = Transformer::toTranslator(pipeline);
+namespace cider::exec::nextgen::operators {
+void ProjectTranslator::consume(Context& context) {
+  codegen(context);
 }
 
-int main(int argc, char** argv) {
-  TestHelpers::init_logger_stderr_only(argc, argv);
-  testing::InitGoogleTest(&argc, argv);
-  int err = RUN_ALL_TESTS();
-  return err;
+void ProjectTranslator::codegen(Context& context) {
+  ExprGenerator gen(context.query_func_);
+  for (const auto& expr : node_.exprs_) {
+    context.expr_outs_.push_back(&gen.codegen(expr.get()));
+  }
+  CHECK(successor_);
+  successor_->consume(context);
 }
+
+}  // namespace cider::exec::nextgen::operators

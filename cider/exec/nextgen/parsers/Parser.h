@@ -19,34 +19,18 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSFORMER_H
-#define CIDER_EXEC_NEXTGEN_TRANSFORMER_H
+#ifndef NEXTGEN_PARSERS_PARSER_H
+#define NEXTGEN_PARSERS_PARSER_H
 
 #include "exec/nextgen/operators/OpNode.h"
+#include "exec/template/RelAlgExecutionUnit.h"
 
-namespace cider::exec::nextgen {
-using namespace cider::exec::nextgen::operators;
+namespace cider::exec::nextgen::parsers {
 
-/// \brief The Transformer class is responsible for transforming the OpPipeline to a
-/// translator
-class Transformer {
- public:
-  static std::shared_ptr<Translator> toTranslator(const OpPipeline& pipeline) {
-    std::shared_ptr<Translator> root = nullptr;
-    std::shared_ptr<Translator> last = nullptr;
-    for (const auto& node : pipeline) {
-      // auto translator = node->toTranslator();
-      if (root == nullptr) {
-        // root = last = translator;
-      } else {
-        // last->setSuccessor(translator);
-        // last = translator;
-      }
-    }
-    return root;
-  }
-};
+/// \brief A parser convert from the plan fragment to an OpPipeline
+// source--> filter -->sink
+operators::OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu);
 
-}  // namespace cider::exec::nextgen
+}  // namespace cider::exec::nextgen::parsers
 
-#endif  // CIDER_EXEC_NEXTGEN_TRANSFORMER_H
+#endif  // NEXTGEN_PARSERS_PARSER_H

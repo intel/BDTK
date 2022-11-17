@@ -19,17 +19,11 @@
  * under the License.
  */
 
-#include <llvm/IR/Value.h>
-#include <utility>
+#include "exec/nextgen/operators/expr.h"
 
-#include "exec/nextgen/jitlib/base/JITValueOperations.h"
-#include "exec/nextgen/translator/expr.h"
 #include "exec/template/Execute.h"
-#include "type/data/sqltypes.h"
-#include "util/Logger.h"
-#include "util/sqldefs.h"
 
-namespace cider::exec::nextgen::translator {
+namespace cider::exec::nextgen::operators {
 // Cider Data Format
 // Generates IR value(s) for the given analyzer expression.
 JITExprValue& ExprGenerator::codegen(Analyzer::Expr* expr) {
@@ -235,4 +229,4 @@ JITExprValue& ExprGenerator::codegenFixedSizeColCmpFun(Analyzer::BinOper* bin_op
   return fake_val_;
 }
 
-}  // namespace cider::exec::nextgen::translator
+}  // namespace cider::exec::nextgen::operators
