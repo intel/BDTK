@@ -414,11 +414,17 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
 
   return cols_info;
 }
+
 // The memory layout of initial_row_data_ is
 // key1 key2 ... key_null_buff target1 target2 ... target_null_buff
 // null buffer uses bit to represent NULL(0) or NOT NULL(1)
+
 //"SELECT col_i32, SUM(col_i32), COUNT(*) FROM test GROUP BY col_i32");
-// The targets null buffer starts at 32nd byte, the index of COUNT(*) in cols_info_ is 2,
+// The targets null buffer starts at 32nd byte:
+// col_i32 | key_null_buff |  SUM  | COUNT | target_null_buff
+//  8bytes | 1byte+7bytes  | 8bytes| 8bytes| 1byte+7bytes
+// The unused 7bytes is to align to int64
+// The index of COUNT(*) in cols_info_ is 2,
 // that in null buffer is 1, because col_i32 is also a groupby key.
 std::vector<int8_t> CiderAggHashTable::fillRowData() {
   std::vector<int8_t> row_data(row_width_, 0);
