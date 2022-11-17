@@ -422,6 +422,54 @@ std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
+bool ConcatStringOper::isLiteralOrCastLiteral(const Analyzer::Expr* operand) {
+  // literals may exist in a CAST op (casted from fixedchar to varchar)
+  auto literal_arg = dynamic_cast<const Analyzer::Constant*>(remove_cast(operand));
+  if (literal_arg) {
+    // is a literal or a casted literal
+    return true;
+  }
+  return false;
+}
+
+SqlStringOpKind ConcatStringOper::getConcatOpKind(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+  CHECK_EQ(operands.size(), 2);
+  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
+  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
+
+  if (is_constant_arg1) {
+    // concat(col, literal) or concat(literal, literal)
+    return SqlStringOpKind::CONCAT;
+  } else if (is_constant_arg0) {
+    // concat(literal, col)
+    return SqlStringOpKind::RCONCAT;
+  } else {
+    CIDER_THROW(CiderCompileException,
+                "concat() currently does not support two variable operands.");
+  }
+}
+
+std::vector<std::shared_ptr<Analyzer::Expr>> ConcatStringOper::rearrangeOperands(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+  // ensures non-literal operand (if any) is not at arg1
+  // as stringops expect non-literals to be the first arg at runtime
+  CHECK_EQ(operands.size(), 2);
+  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
+  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
+
+  if (is_constant_arg1) {
+    // concat(col, literal) or concat(literal, literal)
+    return {operands[0], remove_cast(operands[1].get())->deep_copy()};
+  } else if (is_constant_arg0) {
+    // concat(literal, col)
+    return {operands[1], remove_cast(operands[0].get())->deep_copy()};
+  } else {
+    CIDER_THROW(CiderCompileException,
+                "concat() currently does not support two variable operands.");
+  }
+}
+
 std::shared_ptr<Analyzer::Expr> LowerExpr::deep_copy() const {
   return makeExpr<LowerExpr>(arg->deep_copy());
 }

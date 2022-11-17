@@ -321,7 +321,7 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
   if (func_name == "REPEAT") {
     return SqlStringOpKind::REPEAT;
   }
-  if (func_name == "||") {
+  if (func_name == "||" || func_name == "CONCAT") {
     return SqlStringOpKind::CONCAT;
   }
   if (func_name == "LPAD") {

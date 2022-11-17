@@ -1481,12 +1481,23 @@ class SubstringStringOper : public StringOper {
 
 class ConcatStringOper : public StringOper {
  public:
+  ConcatStringOper(const std::shared_ptr<Analyzer::Expr>& former,
+                   const std::shared_ptr<Analyzer::Expr>& latter)
+      : StringOper(getConcatOpKind({former, latter}),
+                   rearrangeOperands({former, latter}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
   ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(getConcatOpKind(operands),
                    rearrangeOperands(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
+
+  ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
 
@@ -1501,43 +1512,13 @@ class ConcatStringOper : public StringOper {
   }
 
  private:
-  SqlStringOpKind getConcatOpKind(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-    CHECK_EQ(operands.size(), 2);
-    auto constant_arg0 = dynamic_cast<const Analyzer::Constant*>(operands[0].get());
-    auto constant_arg1 = dynamic_cast<const Analyzer::Constant*>(operands[1].get());
+  bool isLiteralOrCastLiteral(const Analyzer::Expr* operand);
 
-    if (constant_arg1) {
-      // concat(col, literal) or concat(literal, literal)
-      return SqlStringOpKind::CONCAT;
-    } else if (constant_arg0) {
-      // concat(literal, col)
-      return SqlStringOpKind::RCONCAT;
-    } else {
-      CIDER_THROW(CiderCompileException,
-                  "concat() currently does not support two variable operands.");
-    }
-  }
+  SqlStringOpKind getConcatOpKind(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
 
   std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-    // ensures non-literal operand (if any) is not at arg1
-    // as stringops expect non-literals to be the first arg at runtime
-    CHECK_EQ(operands.size(), 2);
-    auto constant_arg0 = dynamic_cast<const Analyzer::Constant*>(operands[0].get());
-    auto constant_arg1 = dynamic_cast<const Analyzer::Constant*>(operands[1].get());
-
-    if (constant_arg1) {
-      // concat(col, literal) or concat(literal, literal)
-      return {operands[0], operands[1]};
-    } else if (constant_arg0) {
-      // concat(literal, col)
-      return {operands[1], operands[0]};
-    } else {
-      CIDER_THROW(CiderCompileException,
-                  "concat() currently does not support two variable operands.");
-    }
-  }
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
 };
 
 class TryStringCastOper : public StringOper {

@@ -529,6 +529,22 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_condition_null.json");
 }
 
+TEST_F(CiderStringNullableTestArrow, ConcatTest) {
+  // Isthmus does not support concatenating two literals
+  // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
+
+  assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
+  assertQueryArrow("SELECT 'foobar' || col_2 FROM test;");
+
+  // assertQueryArrow("SELECT 'foo' || 'bar' || col_2 FROM test;");
+  assertQueryArrow("SELECT 'foo' || col_2 || 'bar' FROM test;");
+  assertQueryArrow("SELECT col_2 || 'foo' || 'bar' FROM test;");
+
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
+  // Isthmus does not support this either
+  // assertQueryArrow("SELECT col_2 FROM test WHERE SUBSTRING('yo' || col_2, 3) = col_2;");
+}
+
 class CiderTrimOpTestArrow : public CiderTestBase {
  public:
   CiderTrimOpTestArrow() {
