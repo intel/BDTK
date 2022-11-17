@@ -20,7 +20,6 @@
  */
 
 #include "CiderVeloxPluginCtx.h"
-#include <mutex>
 #include "CiderPlanNodeTranslator.h"
 #include "exec/plan/parser/ConverterHelper.h"
 
@@ -28,6 +27,7 @@ namespace facebook::velox::plugin {
 void facebook::velox::plugin::CiderVeloxPluginCtx::init() {
   registerTranslator();
   registerVeloxExtensionFunction();
+  ciderTransformerFactory_.registerCiderPattern();
 }
 
 VeloxPlanNodePtr CiderVeloxPluginCtx::transformVeloxPlan(VeloxPlanNodePtr originalPlan) {

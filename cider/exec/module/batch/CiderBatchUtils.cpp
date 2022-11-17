@@ -436,14 +436,15 @@ std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index) {
 
 CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
   std::shared_ptr<CiderTableSchema> table_schema = output_batch.schema();
-  auto column_num = table_schema->getColumnCount();
+  auto column_num = table_schema->getFlattenColCount();
   auto arrow_colum_num = output_batch.column_num();
   CHECK_EQ(column_num * 2, arrow_colum_num);
   auto table_row_num = output_batch.row_num();
   ArrowArrayBuilder builder;
   builder = builder.setRowNum(table_row_num);
-  const auto& types = table_schema->getColumnTypes();
-  const auto& names = table_schema->getColumnNames();
+  const auto& types = table_schema->getFlattenColumnTypes();
+  const auto& names = table_schema->getFlattenColNames();
+  CHECK_EQ(types.size(), names.size());
   const int8_t** table_ptr = output_batch.table();
   for (auto i = 0; i < types.size(); ++i) {
     const ::substrait::Type& type = types[i];

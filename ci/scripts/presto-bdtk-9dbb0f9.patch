@@ -1,0 +1,221 @@
+diff --git a/README.md b/README.md
+index 4607bb963a..f530d7585c 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,7 @@
+ # Presto [![Build Status](https://travis-ci.com/prestodb/presto.svg?branch=master)](https://travis-ci.com/prestodb/presto)
+ 
++This Presto is a forked version slightly changed to enable [BDTK](https://github.com/intel/BDTK).
++
+ Presto is a distributed SQL query engine for big data.
+ 
+ See the [User Manual](https://prestodb.github.io/docs/current/) for deployment instructions and end user documentation.
+diff --git a/presto-native-execution/CMakeLists.txt b/presto-native-execution/CMakeLists.txt
+index 4eadf42a7e..6b5972e128 100644
+--- a/presto-native-execution/CMakeLists.txt
++++ b/presto-native-execution/CMakeLists.txt
+@@ -58,6 +58,10 @@ if(PRESTO_ENABLE_PARQUET)
+   add_definitions(-DPRESTO_ENABLE_PARQUET)
+ endif()
+ 
++if(VELOX_ENABLE_HDFS)
++  add_definitions(-DVELOX_ENABLE_HDFS)
++endif()
++
+ set(VELOX_BUILD_TESTING
+     OFF
+     CACHE BOOL "Enable Velox tests")
+diff --git a/presto-native-execution/Makefile b/presto-native-execution/Makefile
+index cd16a50100..02f8f0ffa1 100644
+--- a/presto-native-execution/Makefile
++++ b/presto-native-execution/Makefile
+@@ -21,12 +21,14 @@ CPU_TARGET ?= "avx"
+ CMAKE_PREFIX_PATH ?= "/usr/local"
+ 
+ PRESTO_ENABLE_PARQUET ?= "OFF"
++VELOX_ENABLE_HDFS ?= "OFF"
+ 
+ CMAKE_FLAGS := -DTREAT_WARNINGS_AS_ERRORS=${TREAT_WARNINGS_AS_ERRORS}
+ CMAKE_FLAGS += -DENABLE_ALL_WARNINGS=${ENABLE_WALL}
+ CMAKE_FLAGS += -DCMAKE_PREFIX_PATH=$(CMAKE_PREFIX_PATH)
+ CMAKE_FLAGS += -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)
+ CMAKE_FLAGS += -DPRESTO_ENABLE_PARQUET=$(PRESTO_ENABLE_PARQUET)
++CMAKE_FLAGS += -DVELOX_ENABLE_HDFS=$(VELOX_ENABLE_HDFS)
+ 
+ # Use Ninja if available. If Ninja is used, pass through parallelism control flags.
+ USE_NINJA ?= 1
+@@ -53,7 +55,7 @@ velox-submodule:		#: Check out code for velox submodule
+ 
+ submodules: velox-submodule
+ 
+-cmake: submodules		#: Use CMake to create a Makefile build system
++cmake:           		#: Use CMake to create a Makefile build system
+ 	cmake -B "$(BUILD_BASE_DIR)/$(BUILD_DIR)" $(FORCE_COLOR) $(CMAKE_FLAGS)
+ 
+ build:					#: Build the software based in BUILD_DIR and BUILD_TYPE variables
+diff --git a/presto-native-execution/presto_cpp/main/CMakeLists.txt b/presto-native-execution/presto_cpp/main/CMakeLists.txt
+index bfe482f598..23db4ad076 100644
+--- a/presto-native-execution/presto_cpp/main/CMakeLists.txt
++++ b/presto-native-execution/presto_cpp/main/CMakeLists.txt
+@@ -15,6 +15,8 @@ add_subdirectory(common)
+ add_subdirectory(thrift)
+ add_subdirectory(connectors)
+ 
++link_directories(./lib)
++
+ add_library(
+   presto_server_lib
+   Announcer.cpp
+@@ -28,6 +30,24 @@ add_library(
+   TaskManager.cpp
+   TaskResource.cpp)
+ 
++set(
++  CIDER_VELOX_LIB
++  velox_plugin
++  cider_plan_transformer
++  velox_substrait_convertor
++  velox_substrait_plan_converter
++  velox_duckdb_parser
++  velox_exec_test_util
++  velox_plan_transformer
++  velox_arrow_bridge
++  cider
++  QueryEngine
++  cider_function
++  LLVM
++  yaml-cpp
++  tbb
++)
++
+ add_dependencies(presto_server_lib presto_protocol presto_types
+                  presto_thrift-cpp2 presto_thrift_extra)
+ 
+@@ -60,7 +80,13 @@ target_link_libraries(
+   ${ANTLR4_RUNTIME}
+   ${GLOG}
+   ${GFLAGS_LIBRARIES}
+-  pthread)
++  pthread
++  ${CIDER_VELOX_LIB}
++  )
++
++if(VELOX_ENABLE_HDFS)
++  target_link_libraries(presto_server_lib velox_hdfs)
++endif()
+ 
+ add_executable(presto_server PrestoMain.cpp)
+ 
+@@ -77,6 +103,6 @@ if(PRESTO_ENABLE_PARQUET)
+   target_link_libraries(presto_server velox_dwio_parquet_reader)
+ endif()
+ 
+-if(PRESTO_ENABLE_TESTING)
+-  add_subdirectory(tests)
+-endif()
++# if(PRESTO_ENABLE_TESTING)
++#   add_subdirectory(tests)
++# endif()
+diff --git a/presto-native-execution/presto_cpp/main/PrestoServer.cpp b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
+index 258ebebdc4..bac9a85cbf 100644
+--- a/presto-native-execution/presto_cpp/main/PrestoServer.cpp
++++ b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
+@@ -40,6 +40,7 @@
+ #include "velox/exec/PartitionedOutputBufferManager.h"
+ #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
+ #include "velox/serializers/PrestoSerializer.h"
++#include "BDTK/cider-velox/src/CiderVeloxPluginCtx.h"
+ 
+ #ifdef PRESTO_ENABLE_PARQUET
+ #include "velox/dwio/parquet/RegisterParquetReader.h" // @manual
+@@ -235,6 +236,10 @@ void PrestoServer::run() {
+   velox::parquet::registerParquetReaderFactory();
+ #endif
+ 
++  if (FLAGS_enable_velox_plugin_BDTK) {
++    facebook::velox::plugin::CiderVeloxPluginCtx::init();
++  }
++
+   taskManager_ = std::make_unique<TaskManager>(
+       systemConfig->values(), nodeConfig->values());
+   taskManager_->setBaseUri(fmt::format(kBaseUriFormat, address_, servicePort));
+diff --git a/presto-native-execution/presto_cpp/main/TaskResource.cpp b/presto-native-execution/presto_cpp/main/TaskResource.cpp
+index 05d83ffea0..0767e44664 100644
+--- a/presto-native-execution/presto_cpp/main/TaskResource.cpp
++++ b/presto-native-execution/presto_cpp/main/TaskResource.cpp
+@@ -21,6 +21,9 @@
+ #include "presto_cpp/presto_protocol/presto_protocol.h"
+ #include "velox/common/time/Timer.h"
+ #include "velox/type/tz/TimeZoneMap.h"
++#include "BDTK/cider-velox/src/CiderVeloxPluginCtx.h"
++
++DEFINE_bool(enable_velox_plugin_BDTK, true, "switch to turn on velox plugin using BDTK");
+ 
+ namespace facebook::presto {
+ 
+@@ -232,6 +235,11 @@ proxygen::RequestHandler* TaskResource::createOrUpdateTask(
+             VeloxQueryPlanConverter converter(pool_.get());
+             planFragment = converter.toVeloxQueryPlan(
+                 prestoPlan, taskUpdateRequest.tableWriteInfo, taskId);
++            auto rootNode = planFragment.planNode;
++            LOG(INFO) << "Root node is " << rootNode->name();
++            if (FLAGS_enable_velox_plugin_BDTK) {
++              planFragment.planNode = facebook::velox::plugin::CiderVeloxPluginCtx::transformVeloxPlan(rootNode);
++            }
+           }
+           const auto& session = taskUpdateRequest.session;
+           auto configs = std::unordered_map<std::string, std::string>(
+diff --git a/presto-native-execution/presto_cpp/main/TaskResource.h b/presto-native-execution/presto_cpp/main/TaskResource.h
+index fc1e6cc78e..c1cde3c438 100644
+--- a/presto-native-execution/presto_cpp/main/TaskResource.h
++++ b/presto-native-execution/presto_cpp/main/TaskResource.h
+@@ -17,6 +17,8 @@
+ #include "presto_cpp/main/http/HttpServer.h"
+ #include "velox/common/memory/Memory.h"
+ 
++DECLARE_bool(enable_velox_plugin_BDTK);
++
+ namespace facebook::presto {
+ 
+ class TaskResource {
+diff --git a/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp b/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp
+index 98fcbcc69d..c2031ea54f 100644
+--- a/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp
++++ b/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp
+@@ -18,12 +18,19 @@
+ #include "velox/connectors/hive/storage_adapters/s3fs/S3FileSystem.h" // @manual
+ #endif
+ 
++#ifdef VELOX_ENABLE_HDFS
++#include "velox/connectors/hive/storage_adapters/hdfs/HdfsFileSystem.h" // @manual
++#endif
++
+ namespace facebook::presto {
+ 
+ void registerOptionalHiveStorageAdapters() {
+ #ifdef PRESTO_ENABLE_S3
+   velox::filesystems::registerS3FileSystem();
+ #endif
++#ifdef VELOX_ENABLE_HDFS
++    velox::filesystems::registerHdfsFileSystem();
++#endif
+ }
+ 
+ } // namespace facebook::presto
+diff --git a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
+index 6902620edb..39f3beb6d3 100644
+--- a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
++++ b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
+@@ -575,9 +575,9 @@ std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
+   if (auto hiveLayout =
+           std::dynamic_pointer_cast<const protocol::HiveTableLayoutHandle>(
+               tableHandle.connectorTableLayout)) {
+-    VELOX_CHECK(
+-        hiveLayout->pushdownFilterEnabled,
+-        "Table scan with filter pushdown disabled is not supported");
++    // VELOX_CHECK(
++    //     hiveLayout->pushdownFilterEnabled,
++    //     "Table scan with filter pushdown disabled is not supported");
+ 
+     for (const auto& entry : hiveLayout->partitionColumns) {
+       partitionColumns.emplace(entry.name, toColumnHandle(&entry));

@@ -54,6 +54,9 @@ class CiderTestBase : public testing::Test {
                    const bool ignoreOrder = false);
 
   void assertQueryArrow(const std::string& sql, const std::string& json_file = "");
+  void assertQueryArrow(const std::string& sql,
+                        const std::shared_ptr<CiderBatch> expected_batch,
+                        const bool ignore_order = false);
   void assertQueryArrowIgnoreOrder(const std::string& sql,
                                    const std::string& json_file = "");
 
@@ -70,7 +73,6 @@ class CiderTestBase : public testing::Test {
     create_ddl_ = create_ddl;
   }
   void setupInput(std::vector<std::shared_ptr<CiderBatch>>& input) { input_ = input; }
-  void prepareArrowBatch();
 
  protected:
   std::string table_name_;
@@ -102,7 +104,8 @@ class CiderJoinTestBase : public CiderTestBase {
 
   void assertJoinQueryRowEqualForArrowFormat(const std::string& sql,
                                              const std::string& json_file = "",
-                                             const bool ignore_order = true);
+                                             const bool ignore_order = true,
+                                             const bool compare_value = true);
 
   virtual void resetHashTable() {}
 
@@ -122,8 +125,9 @@ class CiderJoinTestBase : public CiderTestBase {
 
   void assertJoinQueryRowEqualForArrowFormatAndReset(const std::string& sql,
                                                      const std::string& json_file = "",
-                                                     const bool ignore_order = true) {
-    assertJoinQueryRowEqualForArrowFormat(sql, json_file, ignore_order);
+                                                     const bool ignore_order = true,
+                                                     const bool compare_value = true) {
+    assertJoinQueryRowEqualForArrowFormat(sql, json_file, ignore_order, compare_value);
     resetHashTable();
   }
 

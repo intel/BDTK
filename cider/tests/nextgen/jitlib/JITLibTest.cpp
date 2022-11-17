@@ -33,16 +33,17 @@ class JITLibTests : public ::testing::Test {};
 template <JITTypeTag Type, typename NativeType, typename BuilderType>
 void executeSingleParamTest(NativeType input, NativeType output, BuilderType builder) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
-      .ret_type = JITFunctionParam{.type = Type},
-      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
-  });
-  builder(function.get());
-  function->finish();
+
+  JITFunctionPointer func = JITFunctionBuilder()
+                                .setFuncName("test_func")
+                                .registerModule(module)
+                                .addParameter(Type, "x")
+                                .addReturn(Type)
+                                .addProcedureBuilder(builder)
+                                .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<NativeType, NativeType>();
+  auto func_ptr = func->getFunctionPointer<NativeType, NativeType>();
   EXPECT_EQ(func_ptr(input), output);
 }
 
@@ -67,16 +68,16 @@ void executeBinaryOp(T left, T right, T output, OpFunc op) {
 template <JITTypeTag Type, typename NativeType, typename BuilderType>
 void executeCompareSingleParamTest(NativeType input, bool output, BuilderType builder) {
   LLVMJITModule module("TestOperator");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_operator_func",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::BOOL},
-      .params_type = {JITFunctionParam{.name = "x", .type = Type}},
-  });
-  builder(function.get());
-  function->finish();
+  JITFunctionPointer func = JITFunctionBuilder()
+                                .setFuncName("test_operator")
+                                .registerModule(module)
+                                .addParameter(Type, "x")
+                                .addReturn(JITTypeTag::BOOL)
+                                .addProcedureBuilder(builder)
+                                .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<bool, NativeType>();
+  auto func_ptr = func->getFunctionPointer<bool, NativeType>();
   EXPECT_EQ(func_ptr(input), output);
 }
 
@@ -309,307 +310,317 @@ TEST_F(JITLibTests, CompareOpTest) {
 
 TEST_F(JITLibTests, ExternalModuleTest) {
   LLVMJITModule module("Test Module", true);
-
-  JITFunctionPointer function1 = module.createJITFunction(
-      JITFunctionDescriptor{.function_name = "test_externalModule",
-                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
-                            .params_type = {}});
-  {
-    JITValuePointer x = function1->createVariable(JITTypeTag::INT32, "x1");
-    JITValuePointer a = function1->createConstant(JITTypeTag::INT32, 123);
-    JITValuePointer b = function1->createConstant(JITTypeTag::INT32, 876);
-    *x = *function1->emitRuntimeFunctionCall(
-        "external_call_test_sum",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {a.get(), b.get()}});
-    function1->createReturn(*x);
-  }
-
-  function1->finish();
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addReturn(JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunction* function) {
+            JITValuePointer x = function->createVariable(JITTypeTag::INT32, "x1");
+            JITValuePointer a = function->createConstant(JITTypeTag::INT32, 123);
+            JITValuePointer b = function->createConstant(JITTypeTag::INT32, 876);
+            *x = *function->emitRuntimeFunctionCall(
+                "external_call_test_sum",
+                JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                          .params_vector = {a.get(), b.get()}});
+            function->createReturn(*x);
+          })
+          .build();
   module.finish();
 
-  auto ptr = function1->getFunctionPointer<int32_t>();
+  auto ptr = func->getFunctionPointer<int32_t>();
   EXPECT_EQ(ptr(), 999);
 }
 
 TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
-      .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
-                      JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
-  {
-    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-    ret = function->getArgument(0);
-    auto if_builder = function->createIfBuilder();
-    if_builder
-        ->condition([&]() {
-          auto condition = function->getArgument(1);
-          return condition;
-        })
-        ->ifTrue([&]() { ret = ret + 1; })
-        ->build();
-    function->createReturn(ret);
-  }
-  function->finish();
+  JITFunctionPointer func = JITFunctionBuilder()
+                                .setFuncName("test_func")
+                                .registerModule(module)
+                                .addParameter(JITTypeTag::INT32, "x")
+                                .addParameter(JITTypeTag::BOOL, "condition")
+                                .addReturn(JITTypeTag::INT32)
+                                .addProcedureBuilder([](JITFunction* function) {
+                                  JITValuePointer ret =
+                                      function->createVariable(JITTypeTag::INT32, "ret");
+                                  ret = function->getArgument(0);
+                                  auto if_builder = function->createIfBuilder();
+                                  if_builder
+                                      ->condition([&]() {
+                                        auto condition = function->getArgument(1);
+                                        return condition;
+                                      })
+                                      ->ifTrue([&]() { ret = ret + 1; })
+                                      ->build();
+                                  function->createReturn(ret);
+                                })
+                                .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  auto func_ptr = func->getFunctionPointer<int32_t, int32_t, bool>();
   EXPECT_EQ(func_ptr(123, false), 123);
   EXPECT_EQ(func_ptr(123, true), 124);
 }
 
 TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
-      .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
-                      JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
-  {
-    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-    ret = function->getArgument(0);
-    auto if_builder = function->createIfBuilder();
-    if_builder
-        ->condition([&]() {
-          auto condition = function->getArgument(1);
-          return condition;
-        })
-        ->ifTrue([&]() { ret = ret + 1; })
-        ->ifFalse([&]() { ret = ret + 10; })
-        ->build();
-    function->createReturn(ret);
-  }
-  function->finish();
+  JITFunctionPointer func = JITFunctionBuilder()
+                                .setFuncName("test_func")
+                                .registerModule(module)
+                                .addParameter(JITTypeTag::INT32, "x")
+                                .addParameter(JITTypeTag::BOOL, "condition")
+                                .addReturn(JITTypeTag::INT32)
+                                .addProcedureBuilder([](JITFunction* function) {
+                                  JITValuePointer ret =
+                                      function->createVariable(JITTypeTag::INT32, "ret");
+                                  ret = function->getArgument(0);
+                                  auto if_builder = function->createIfBuilder();
+                                  if_builder
+                                      ->condition([&]() {
+                                        auto condition = function->getArgument(1);
+                                        return condition;
+                                      })
+                                      ->ifTrue([&]() { ret = ret + 1; })
+                                      ->ifFalse([&]() { ret = ret + 10; })
+                                      ->build();
+                                  function->createReturn(ret);
+                                })
+                                .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  auto func_ptr = func->getFunctionPointer<int32_t, int32_t, bool>();
   EXPECT_EQ(func_ptr(123, false), 133);
   EXPECT_EQ(func_ptr(123, true), 124);
 }
 
 TEST_F(JITLibTests, NestedIFControlFlowTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
-      .params_type = {JITFunctionParam{.name = "x", .type = JITTypeTag::INT32},
-                      JITFunctionParam{.name = "condition", .type = JITTypeTag::BOOL}}});
-  {
-    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-    ret = function->getArgument(0);
-    auto if_builder = function->createIfBuilder();
-    if_builder
-        ->condition([&]() {
-          auto condition = function->getArgument(1);
-          return condition;
-        })
-        ->ifTrue([&]() {
-          auto if_builder = function->createIfBuilder();
-          if_builder
-              ->condition([&]() {
-                auto condition = function->getArgument(1);
-                return condition;
-              })
-              ->ifTrue([&]() { ret = ret + 10; })
-              ->ifFalse([&]() { ret = ret + 1; })
-              ->build();
-        })
-        ->ifFalse([&]() {
-          auto if_builder = function->createIfBuilder();
-          if_builder
-              ->condition([&]() {
-                auto condition = function->getArgument(1);
-                return condition;
-              })
-              ->ifTrue([&]() { ret = ret + 10; })
-              ->ifFalse([&]() { ret = ret + 1; })
-              ->build();
-        })
-        ->build();
-    function->createReturn(ret);
-  }
-  function->finish();
+  JITFunctionPointer func = JITFunctionBuilder()
+                                .setFuncName("test_func")
+                                .registerModule(module)
+                                .addParameter(JITTypeTag::INT32, "x")
+                                .addParameter(JITTypeTag::BOOL, "condition")
+                                .addReturn(JITTypeTag::INT32)
+                                .addProcedureBuilder([](JITFunction* function) {
+                                  JITValuePointer ret =
+                                      function->createVariable(JITTypeTag::INT32, "ret");
+                                  ret = function->getArgument(0);
+                                  auto if_builder = function->createIfBuilder();
+                                  if_builder
+                                      ->condition([&]() {
+                                        auto condition = function->getArgument(1);
+                                        return condition;
+                                      })
+                                      ->ifTrue([&]() {
+                                        auto if_builder = function->createIfBuilder();
+                                        if_builder
+                                            ->condition([&]() {
+                                              auto condition = function->getArgument(1);
+                                              return condition;
+                                            })
+                                            ->ifTrue([&]() { ret = ret + 10; })
+                                            ->ifFalse([&]() { ret = ret + 1; })
+                                            ->build();
+                                      })
+                                      ->ifFalse([&]() {
+                                        auto if_builder = function->createIfBuilder();
+                                        if_builder
+                                            ->condition([&]() {
+                                              auto condition = function->getArgument(1);
+                                              return condition;
+                                            })
+                                            ->ifTrue([&]() { ret = ret + 10; })
+                                            ->ifFalse([&]() { ret = ret + 1; })
+                                            ->build();
+                                      })
+                                      ->build();
+                                  function->createReturn(ret);
+                                })
+                                .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<int32_t, int32_t, bool>();
+  auto func_ptr = func->getFunctionPointer<int32_t, int32_t, bool>();
   EXPECT_EQ(func_ptr(123, true), 133);
   EXPECT_EQ(func_ptr(123, false), 124);
 }
 
 TEST_F(JITLibTests, BasicForControlFlowTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(
-      JITFunctionDescriptor{.function_name = "test_func",
-                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32}});
-  {
-    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-    ret = function->createConstant(JITTypeTag::INT32, 0);
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addReturn(JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunction* function) {
+            JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+            ret = function->createConstant(JITTypeTag::INT32, 0);
 
-    auto loop_builder = function->createLoopBuilder();
-    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
-    *index = function->createConstant(JITTypeTag::INT32, 9);
+            auto loop_builder = function->createLoopBuilder();
+            JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+            *index = function->createConstant(JITTypeTag::INT32, 9);
 
-    loop_builder->condition([&]() { return index + 0; })
-        ->loop([&]() { ret = ret + index; })
-        ->update([&]() { index = index - 1; })
-        ->build();
+            loop_builder->condition([&]() { return index + 0; })
+                ->loop([&]() { ret = ret + index; })
+                ->update([&]() { index = index - 1; })
+                ->build();
 
-    function->createReturn(ret);
-  }
-  function->finish();
+            function->createReturn(ret);
+          })
+          .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<int32_t>();
+  auto func_ptr = func->getFunctionPointer<int32_t>();
   EXPECT_EQ(func_ptr(), 45);
 }
 
 TEST_F(JITLibTests, NestedForControlFlowTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(
-      JITFunctionDescriptor{.function_name = "test_func",
-                            .ret_type = JITFunctionParam{.type = JITTypeTag::INT32}});
-  {
-    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-    ret = function->createConstant(JITTypeTag::INT32, 0);
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addReturn(JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunction* function) {
+            JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+            ret = function->createConstant(JITTypeTag::INT32, 0);
 
-    int levels = 5;
-    std::function<void()> nested_loop_builder = [&]() {
-      if (0 == levels) {
-        ret = ret + 1;
-        return;
-      }
-      --levels;
+            int levels = 5;
+            std::function<void()> nested_loop_builder = [&]() {
+              if (0 == levels) {
+                ret = ret + 1;
+                return;
+              }
+              --levels;
 
-      auto loop_builder = function->createLoopBuilder();
-      JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
-      *index = function->createConstant(JITTypeTag::INT32, 10);
+              auto loop_builder = function->createLoopBuilder();
+              JITValuePointer index =
+                  function->createVariable(JITTypeTag::INT32, "index");
+              *index = function->createConstant(JITTypeTag::INT32, 10);
 
-      loop_builder->condition([&]() { return index + 0; })
-          ->loop([&]() { nested_loop_builder(); })
-          ->update([&]() { index = index - 1; })
-          ->build();
-    };
-    nested_loop_builder();
+              loop_builder->condition([&]() { return index + 0; })
+                  ->loop([&]() { nested_loop_builder(); })
+                  ->update([&]() { index = index - 1; })
+                  ->build();
+            };
+            nested_loop_builder();
 
-    function->createReturn(ret);
-  }
-  function->finish();
+            function->createReturn(ret);
+          })
+          .build();
   module.finish();
 
-  auto func_ptr = function->getFunctionPointer<int32_t>();
+  auto func_ptr = func->getFunctionPointer<int32_t>();
   EXPECT_EQ(func_ptr(), 100000);
 }
 
-TEST_F(JITLibTests, TupleTest) {
+TEST_F(JITLibTests, PointerCounterTest) {
   LLVMJITModule module("Test Module");
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_pointer")
+          .registerModule(module)
+          .addReturn(JITTypeTag::INT32)
+          .addParameter(JITTypeTag::INT32, "a")
+          .addProcedureBuilder([](JITFunction* function) {
+            JITValuePointer a = function->getArgument(0);
+            JITValuePointer b = function->createConstant(JITTypeTag::INT32, 876);
 
-  JITFunctionPointer function1 = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_Tuple",
-      .ret_type = JITFunctionParam{.type = JITTypeTag::INT32},
-      .params_type = {JITFunctionParam{.name = "a", .type = JITTypeTag::INT32}}});
+            std::vector<JITValuePointer> test_vector1;
+            {
+              std::vector<JITValuePointer> test_vector2;
+              {
+                JITValuePointer res = function->createVariable(JITTypeTag::INT32, "x1");
+                JITValuePointer temp_c = function->createConstant(JITTypeTag::INT32, 111);
 
-  JITValuePointer x_in = function1->createVariable(JITTypeTag::INT32, "x1");
-  JITValuePointer a_in = function1->getArgument(0);
-  JITValuePointer b_in = function1->createConstant(JITTypeTag::INT32, 876);
+                test_vector1.push_back(res);
+                test_vector2.push_back(res);
+                EXPECT_EQ(res.getRefNum(), 3);
 
-  JITTuple layer1 = function1->createJITTuple();
-  JITTuple layer2 = function1->createJITTuple();
-  JITTuple layer3 = function1->createJITTuple();
+                test_vector2.push_back(temp_c);
+                EXPECT_EQ(temp_c.getRefNum(), 2);
+              }
+              EXPECT_EQ(test_vector1[0].getRefNum(), 2);
+            }
+            EXPECT_EQ(test_vector1[0].getRefNum(), 1);
 
-  layer2.append(b_in);
-  layer1.append(x_in);
-  layer1.append(a_in);
-  layer1.insert(layer2, 1);
-  layer1.append(layer3);
-
-  auto& x_out = layer1.getElementAs<JITValue>(0);
-  auto& layer2_out = layer1.getElementAs<JITTuple>(1);
-  auto& a_out = layer1.getElementAs<JITValue>(2);
-  auto& b_out = layer2_out.getElementAs<JITValue>(0);
-
-  x_out = a_out + b_out;
-  function1->createReturn(x_out);
-  function1->finish();
+            test_vector1[0] = a + b;
+            function->createReturn(test_vector1[0]);
+          })
+          .build();
   module.finish();
 
-  auto ptr1 = function1->getFunctionPointer<int32_t, int32_t>();
+  auto ptr1 = func->getFunctionPointer<int32_t, int32_t>();
   EXPECT_EQ(ptr1(123), 999);
 }
 
 TEST_F(JITLibTests, ReadOnlyJITPointerTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
-      .ret_type = JITFunctionParam{.name = "ret", .type = JITTypeTag::INT32},
-      .params_type = {JITFunctionParam{.name = "array",
-                                       .type = JITTypeTag::POINTER,
-                                       .sub_type = JITTypeTag::INT32},
-                      JITFunctionParam{.name = "len", .type = JITTypeTag::INT32}}});
-  {
-    JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-    ret = function->createConstant(JITTypeTag::INT32, 0);
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addParameter(JITTypeTag::POINTER, "array", JITTypeTag::INT32)
+          .addParameter(JITTypeTag::INT32, "len")
+          .addReturn(JITTypeTag::INT32, "ret")
+          .addProcedureBuilder([](JITFunction* function) {
+            JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
+            ret = function->createConstant(JITTypeTag::INT32, 0);
 
-    auto loop_builder = function->createLoopBuilder();
-    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+            auto loop_builder = function->createLoopBuilder();
+            JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
 
-    auto array_ptr = function->getArgument(0);
-    auto array_len = function->getArgument(1);
-    *index = array_len - 1;
+            auto array_ptr = function->getArgument(0);
+            auto array_len = function->getArgument(1);
+            *index = array_len - 1;
 
-    loop_builder->condition([&]() { return index + 0; })
-        ->loop([&]() { ret = ret + array_ptr[index]; })
-        ->update([&]() { index = index - 1; })
-        ->build();
+            loop_builder->condition([&]() { return index + 0; })
+                ->loop([&]() { ret = ret + array_ptr[index]; })
+                ->update([&]() { index = index - 1; })
+                ->build();
 
-    function->createReturn(ret);
-  }
-  function->finish();
+            function->createReturn(ret);
+          })
+          .build();
   module.finish();
 
   int32_t data[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  auto func_ptr = function->getFunctionPointer<int32_t, int32_t*, int32_t>();
+  auto func_ptr = func->getFunctionPointer<int32_t, int32_t*, int32_t>();
   EXPECT_EQ(func_ptr(data, 10), 45);
 }
 
 TEST_F(JITLibTests, ReadAndWriteJITPointerTest) {
   LLVMJITModule module("TestModule");
-  JITFunctionPointer function = module.createJITFunction(JITFunctionDescriptor{
-      .function_name = "test_func",
-      .ret_type =
-          JITFunctionParam{
-              .name = "ret", .type = JITTypeTag::POINTER, .sub_type = JITTypeTag::INT32},
-      .params_type = {JITFunctionParam{.name = "array_in",
-                                       .type = JITTypeTag::POINTER,
-                                       .sub_type = JITTypeTag::INT8},
-                      JITFunctionParam{.name = "array_out",
-                                       .type = JITTypeTag::POINTER,
-                                       .sub_type = JITTypeTag::INT32},
-                      JITFunctionParam{.name = "len", .type = JITTypeTag::INT32}}});
-  {
-    auto loop_builder = function->createLoopBuilder();
-    JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test function name")
+          .registerModule(module)
+          .addParameter(JITTypeTag::POINTER, "array_in", JITTypeTag::INT8)
+          .addParameter(JITTypeTag::POINTER, "array_out", JITTypeTag::INT32)
+          .addParameter(JITTypeTag::INT32, "len")
+          .addReturn(JITTypeTag::POINTER, "return", JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunction* function) {
+            auto loop_builder = function->createLoopBuilder();
+            JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
 
-    auto array_in_ptr = function->getArgument(0);
-    auto array_in_ptr_i32 = array_in_ptr->castPointerSubType(JITTypeTag::INT32);
-    auto array_out_ptr = function->getArgument(1);
-    auto array_len = function->getArgument(2);
-    *index = array_len - 1;
+            auto array_in_ptr = function->getArgument(0);
+            auto array_in_ptr_i32 = array_in_ptr->castPointerSubType(JITTypeTag::INT32);
+            auto array_out_ptr = function->getArgument(1);
+            auto array_len = function->getArgument(2);
+            *index = array_len - 1;
 
-    loop_builder->condition([&]() { return index + 0; })
-        ->loop([&]() { array_out_ptr[index] = array_in_ptr_i32[index]; })
-        ->update([&]() { index = index - 1; })
-        ->build();
+            loop_builder->condition([&]() { return index + 0; })
+                ->loop([&]() { array_out_ptr[index] = array_in_ptr_i32[index]; })
+                ->update([&]() { index = index - 1; })
+                ->build();
 
-    function->createReturn(array_out_ptr);
-  }
-  function->finish();
+            function->createReturn(array_out_ptr);
+          })
+          .build();
   module.finish();
 
   int32_t data_in[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   int32_t data_out[10]{0};
-  auto func_ptr = function->getFunctionPointer<int32_t*, int8_t*, int32_t*, int32_t>();
+  auto func_ptr = func->getFunctionPointer<int32_t*, int8_t*, int32_t*, int32_t>();
   int32_t* out = func_ptr(reinterpret_cast<int8_t*>(data_in), data_out, 10);
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(out[i], data_in[i]);

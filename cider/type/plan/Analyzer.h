@@ -28,6 +28,7 @@
 #define ANALYZER_H
 
 #include "cider/CiderException.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "type/schema/ColumnInfo.h"
 #include "util/Logger.h"
@@ -45,7 +46,9 @@
 
 namespace Analyzer {
 class Expr;
-}
+using ExprPtr = std::shared_ptr<Expr>;
+using ExprPtrRefVector = std::vector<ExprPtr*>;
+}  // namespace Analyzer
 
 template <typename Tp, typename... Args>
 inline typename std::enable_if<std::is_base_of<Analyzer::Expr, Tp>::value,
@@ -208,9 +211,41 @@ class Expr : public std::enable_shared_from_this<Expr> {
    */
   virtual void get_domain(DomainSet& domain_set) const { domain_set.clear(); }
 
+  // for vector<JITValuePointer>;
+  template <typename T>
+  cider::jitlib::JITExprValue& set_expr_value(T&& ptrs, bool is_variadic = false) {
+    expr_var_ =
+        std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs), is_variadic);
+    return *expr_var_;
+  }
+
+  // for {JITValuePointer, ...}
+  template <typename... T>
+  cider::jitlib::JITExprValue& set_expr_value(T&&... ptrs, bool is_variadic = false) {
+    expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::forward<T>(ptrs)...);
+    return *expr_var_;
+  }
+
+  // for JITValuePointer
+  // used with only value (no len and null, so is_variadic is false)
+  cider::jitlib::JITExprValue& set_expr_value(cider::jitlib::JITValuePointer&& val) {
+    expr_var_ = std::make_unique<cider::jitlib::JITExprValue>(std::move(val));
+    return *expr_var_;
+  }
+
+  cider::jitlib::JITExprValue* get_expr_value() const { return expr_var_.get(); }
+
+  // TODO (bigPYJ1151): to pure virtual.
+  virtual ExprPtrRefVector get_children_reference() {
+    UNREACHABLE();
+    return {};
+  }
+
  protected:
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
   bool contains_agg;
+
+  std::unique_ptr<cider::jitlib::JITExprValue> expr_var_;
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;
@@ -577,6 +612,10 @@ class BinOper : public Expr {
   static bool simple_predicate_has_simple_cast(
       const std::shared_ptr<Analyzer::Expr> cast_operand,
       const std::shared_ptr<Analyzer::Expr> const_operand);
+
+  ExprPtrRefVector get_children_reference() override {
+    return {&left_operand, &right_operand};
+  }
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.
@@ -1812,6 +1851,50 @@ class UpperStringOper : public StringOper {
   }
 
   std::vector<std::string> getArgNames() const override { return {"operand"}; }
+};
+
+class TrimStringOper : public StringOper {
+ public:
+  TrimStringOper(const SqlStringOpKind& op_kind,
+                 const std::shared_ptr<Analyzer::Expr>& input,
+                 const std::shared_ptr<Analyzer::Expr>& characters)
+      : StringOper(checkOpKindValidity(op_kind),
+                   {input, characters},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  TrimStringOper(const SqlStringOpKind& op_kind,
+                 const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(checkOpKindValidity(op_kind),
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  std::vector<std::string> getArgNames() const override {
+    // args[0]: the string to remove characters from
+    // args[1]: the set of characters to remove
+    return {"input", "characters"};
+  }
+
+ private:
+  SqlStringOpKind checkOpKindValidity(const SqlStringOpKind& op_kind) {
+    CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
+          op_kind == SqlStringOpKind::RTRIM);
+    return op_kind;
+  }
 };
 
 class SubstringStringOper : public StringOper {

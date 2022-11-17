@@ -26,17 +26,24 @@
 #include "planTransformer/PlanTransformer.h"
 
 namespace facebook::velox::plugin::plantransformer {
-CiderPlanTransformerFactory::CiderPlanTransformerFactory() {
-  ciderTransformerFactory_ =
-      PlanTransformerFactory()
-          .registerPattern(std::make_shared<CompoundPattern>(),
-                           std::make_shared<CiderPlanRewriter>())
-          //.registerPattern(std::make_shared<LeftDeepJoinPattern>(),
-          //                 std::make_shared<CiderPlanRewriter>())
-          .registerPattern(std::make_shared<FilterPattern>(),
-                           std::make_shared<CiderPlanRewriter>())
-          .registerPattern(std::make_shared<PartialAggPattern>(),
-                           std::make_shared<CiderPlanRewriter>());
+
+void CiderPlanTransformerFactory::registerCiderPattern() {
+  if (FLAGS_compound_pattern) {
+    ciderTransformerFactory_.registerPattern(std::make_shared<CompoundPattern>(),
+                                             std::make_shared<CiderPlanRewriter>());
+  }
+  if (FLAGS_filter_pattern) {
+    ciderTransformerFactory_.registerPattern(std::make_shared<FilterPattern>(),
+                                             std::make_shared<CiderPlanRewriter>());
+  }
+  if (FLAGS_left_deep_join_pattern) {
+    ciderTransformerFactory_.registerPattern(std::make_shared<LeftDeepJoinPattern>(),
+                                             std::make_shared<CiderPlanRewriter>());
+  }
+  if (FLAGS_partial_agg_pattern) {
+    ciderTransformerFactory_.registerPattern(std::make_shared<PartialAggPattern>(),
+                                             std::make_shared<CiderPlanRewriter>());
+  }
 }
 
 std::shared_ptr<PlanTransformer> CiderPlanTransformerFactory::getTransformer(

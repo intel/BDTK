@@ -104,10 +104,10 @@ CiderAggTargetColExtractorBuilder::buildSimpleAggExtractor(
       case kBOOLEAN:
         switch (actual_size) {
           case 4:
-            return std::make_unique<SimpleAggExtractor<int32_t, int8_t>>(
+            return std::make_unique<SimpleAggExtractor<int32_t, bool>>(
                 "INT32_BOOL", col_index, hash_table);
           case 8:
-            return std::make_unique<SimpleAggExtractor<int64_t, int8_t>>(
+            return std::make_unique<SimpleAggExtractor<int64_t, bool>>(
                 "INT64_BOOL", col_index, hash_table);
         }
       case kTINYINT:

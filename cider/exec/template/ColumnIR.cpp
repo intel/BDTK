@@ -164,11 +164,11 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
     return grouped_col_lv;
   }
   const int local_col_id = plan_state_->getLocalColumnId(col_var, fetch_column);
-  auto it = cgen_state_->fetch_cache_cider_.find(local_col_id);
-  if (it != cgen_state_->fetch_cache_cider_.end()) {
-    return it->second->copy();
-  }
-
+  // comment out due to not check whether code blocks are connected or not
+  // auto it = cgen_state_->fetch_cache_cider_.find(local_col_id);
+  // if (it != cgen_state_->fetch_cache_cider_.end()) {
+  //   return it->second->copy();
+  // }
   auto input_col_descriptor_ptr = colByteStream(col_var, fetch_column, true);
   std::unique_ptr<CodegenColValues> col_values;
   auto pos_arg = posArg(col_var);
@@ -189,9 +189,9 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenColumnExpr(
       col_values =
           codegenFixedLengthColVar(col_var, input_col_descriptor_ptr, pos_arg, co);
   }
-  cgen_state_->fetch_cache_cider_.insert(
-      std::make_pair(local_col_id, col_values->copy()));
-
+  // comment out due to not check whether code blocks are connected or not
+  // cgen_state_->fetch_cache_cider_.insert(
+  //     std::make_pair(local_col_id, col_values->copy()));
   return col_values;
 }
 

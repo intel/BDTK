@@ -25,9 +25,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "exec/nextgen/jitlib/base/JITControlFlow.h"
-#include "exec/nextgen/jitlib/base/JITTuple.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
 
 namespace cider::jitlib {
 enum JITFunctionParamAttr : uint64_t {};
@@ -73,8 +71,6 @@ class JITFunction {
                                          const std::string& name) = 0;
 
   virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
-
-  virtual JITTuple createJITTuple() = 0;
 
   virtual JITValuePointer getArgument(size_t index) = 0;
 

@@ -26,3 +26,9 @@ if(ENABLE_ASN)
 endif()
 
 add_subdirectory(jitlib)
+add_subdirectory(operators)
+add_subdirectory(parsers)
+
+add_library(nextgen STATIC $<TARGET_OBJECTS:cider_operators>
+                           $<TARGET_OBJECTS:cider_parsers>)
+target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib)

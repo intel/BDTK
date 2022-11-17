@@ -21,65 +21,32 @@
 #ifndef JITLIB_BASE_JITVALUE_H
 #define JITLIB_BASE_JITVALUE_H
 
-#include <memory>
-
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/utils/ReferenceCounter.h"
 
 namespace cider::jitlib {
-class JITValue;
 class JITFunction;
+class JITValuePointer;
 
-class JITBaseValue {
- public:
-  JITBaseValue(JITTypeTag type_tag) : type_tag_(type_tag) {}
-  virtual ~JITBaseValue() = default;
+template <typename ValueType, typename... Args>
+auto makeJITValuePointer(Args&&... args) {
+  return JITValuePointer(new ValueType(std::forward<Args>(args)...));
+}
 
- protected:
-  JITTypeTag type_tag_;
-};
+class JITValue : protected ReferenceCounter {
+  friend JITValuePointer;
 
-class JITValuePointer {
- public:
-  JITValuePointer(std::nullptr_t ptr) : ptr_(ptr) {}
-
-  template <typename T>
-  JITValuePointer(std::unique_ptr<T>&& ptr) : ptr_(ptr.release()) {}
-
-  JITValuePointer(const JITValuePointer&) = delete;
-
-  JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_.release()) {}
-
-  JITValue* get() { return ptr_.get(); }
-
- public:
-  JITValuePointer& operator=(const JITValuePointer&) = delete;
-
-  JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
-
-  JITValue& operator*() { return *ptr_; }
-
-  JITValue* operator->() { return ptr_.get(); }
-
-  operator JITValue&() { return *ptr_; }
-
-  JITValuePointer operator[](JITValue& index);
-
- private:
-  std::unique_ptr<JITValue> ptr_;
-};
-
-class JITValue : public JITBaseValue {
  public:
   JITValue(JITTypeTag type_tag,
            JITFunction& parent_function,
            const std::string& name,
            JITTypeTag sub_type_tag)
-      : JITBaseValue(type_tag)
+      : type_tag_(type_tag)
       , value_name_(name)
       , parent_function_(parent_function)
       , sub_type_tag_(sub_type_tag) {}
 
-  virtual ~JITValue() = default;
+  ~JITValue() override = default;
 
   const std::string& getValueName() const { return value_name_; }
 
@@ -89,8 +56,11 @@ class JITValue : public JITBaseValue {
 
   JITFunction& getParentJITFunction() { return parent_function_; }
 
+  JITTypeTag getTypeTag() { return type_tag_; }
+
   JITValue& operator=(JITValue& rh) { return assign(rh); }
-  JITValuePointer operator[](JITValue& index) { return getElemAt(index); }
+
+  JITValuePointer operator[](JITValue& index);
 
  public:
   JITValue(const JITValue&) = delete;
@@ -127,19 +97,128 @@ class JITValue : public JITBaseValue {
   virtual JITValuePointer dereference() = 0;
 
  private:
+  JITTypeTag type_tag_;
   std::string value_name_;
   JITFunction& parent_function_;
   JITTypeTag sub_type_tag_;
 };
+
+class JITValuePointer {
+  template <typename ValueType, typename... Args>
+  friend auto makeJITValuePointer(Args&&... args);
+
+ public:
+  JITValuePointer(std::nullptr_t ptr_) : ptr_(ptr_) {}
+
+  JITValuePointer(const JITValuePointer& lh) {
+    ptr_ = lh.ptr_;
+    ptr_->addRef();
+  };
+
+  JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_) { rh.ptr_ = nullptr; }
+
+  JITValue* get() { return ptr_; }
+
+  size_t getRefNum() { return ptr_->getRefNum(); }
+
+  ~JITValuePointer() {
+    if (ptr_) {
+      if (ptr_->getRefNum() == 1) {
+        delete ptr_;
+      }
+      ptr_->decRef();
+    }
+  }
+
+ public:
+  JITValuePointer& operator=(const JITValuePointer&) = delete;
+
+  JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
+
+  JITValuePointer& operator=(JITValue& rh) noexcept;
+
+  JITValue& operator*() { return *ptr_; }
+
+  JITValue* operator->() { return ptr_; }
+
+  operator JITValue&() { return *ptr_; }
+
+  JITValuePointer operator[](JITValue& index);
+
+ private:
+  JITValuePointer(JITValue* value) : ptr_(value) {
+    if (ptr_) {
+      ptr_->addRef();
+    }
+  }
+
+  JITValue* ptr_;
+};
+
+inline JITValuePointer JITValue::operator[](JITValue& index) {
+  return getElemAt(index);
+}
 
 inline JITValuePointer& JITValuePointer::operator=(JITValuePointer&& rh) noexcept {
   *ptr_ = *rh;
   return *this;
 }
 
+inline JITValuePointer& JITValuePointer::operator=(JITValue& rh) noexcept {
+  *ptr_ = rh;
+  return *this;
+}
+
 inline JITValuePointer JITValuePointer::operator[](JITValue& index) {
   return (*ptr_)[index];
 }
+
+class JITExprValue {
+ public:
+  JITExprValue() = default;
+  ~JITExprValue() = default;
+  JITExprValue(const JITExprValue&) = delete;
+  JITExprValue(JITExprValue&&) = delete;
+
+  // for vector<JITValuePointer>;
+  template <typename T>
+  JITExprValue(T&& ptrs, bool is_variadic = false)
+      : ptrs_(std::forward<T>(ptrs)), is_variadic_(is_variadic) {}
+
+  // for {JITValuePointer, ...}
+  template <typename... T>
+  JITExprValue(T&&... ptrs, bool is_variadic = false) : is_variadic_(is_variadic) {
+    (ptrs_.emplace_back(std::forward<T>(ptrs)), ...);
+  }
+
+  // for JITValuePointer
+  // convert JITValuePointer to JITExprValue
+  JITExprValue(JITValuePointer&& val) {
+    is_variadic_ = false;
+    ptrs_.push_back(std::move(val));
+  }
+
+  cider::jitlib::JITValue& getValue() {
+    CHECK_GT(ptrs_.size(), 0);
+    return *ptrs_[0];
+  }
+  cider::jitlib::JITValue& getNull() {
+    CHECK_GT(ptrs_.size(), 1);
+    return *ptrs_[1];
+  }
+  cider::jitlib::JITValue& getLen() {
+    CHECK(is_variadic_);
+    CHECK_EQ(ptrs_.size(), 3);
+    return *ptrs_[2];
+  }
+
+ private:
+  // fixed witdth column: value and null
+  // variadic(eg. string): value, null and len
+  std::vector<cider::jitlib::JITValuePointer> ptrs_{};
+  bool is_variadic_ = false;
+};
+
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUE_H

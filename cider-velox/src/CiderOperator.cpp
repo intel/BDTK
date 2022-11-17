@@ -103,7 +103,7 @@ void CiderOperator::addInput(RowVectorPtr input) {
     exportToArrow(input_, *inputArrowArray);
     ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
     exportToArrow(input_, *inputArrowSchema);
-    input_.reset();
+
     auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     auto inBatch =
         CiderBatchUtils::createCiderBatch(allocator, inputArrowSchema, inputArrowArray);

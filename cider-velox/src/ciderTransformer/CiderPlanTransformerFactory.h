@@ -21,12 +21,14 @@
 #pragma once
 
 #include "../planTransformer/PlanTransformer.h"
+#include "CiderPlanTransformerOptions.h"
 
 namespace facebook::velox::plugin::plantransformer {
 class CiderPlanTransformerFactory {
  public:
-  CiderPlanTransformerFactory();
+  CiderPlanTransformerFactory() {}
   std::shared_ptr<PlanTransformer> getTransformer(VeloxPlanNodePtr root);
+  void registerCiderPattern();
 
  private:
   PlanTransformerFactory ciderTransformerFactory_;

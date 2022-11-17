@@ -101,7 +101,7 @@ inline JITValuePointer operator!(JITValue& value) {
   return value.notOp();
 }
 
-JITValuePointer operator+(JITValue& lh, JITValue& rh) {
+inline JITValuePointer operator+(JITValue& lh, JITValue& rh) {
   return lh.add(rh);
 }
 

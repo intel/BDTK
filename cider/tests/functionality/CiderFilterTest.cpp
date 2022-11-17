@@ -443,7 +443,6 @@ TEST_F(CiderProjectAllTestArrow, ArrowFilterProjectAllTest) {
 }
 
 TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
-  // prepareArrowBatch();
   assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
                    "in_int32_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",
@@ -462,7 +461,6 @@ TEST_F(CiderFilterSequenceTestArrow, arrowInTest) {
 }
 
 TEST_F(CiderFilterRandomTestArrow, ArrowInTest) {
-  // prepareArrowBatch();
   assertQueryArrow(
       "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
       "in_int32_array.json");
@@ -671,8 +669,6 @@ TEST_F(CiderFilterRandomTestArrow, DistinctFromTest) {
       "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_1 IS NOT DISTINCT "
       "FROM col_5",
       "mixed_distinct_from.json");
-  // TODO: (yma11) enable this after StringOp supported
-  GTEST_SKIP_("string not supported in arrow");
   // mixed case with string
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_9 IS DISTINCT FROM col_10 OR col_10 IS NOT DISTINCT "

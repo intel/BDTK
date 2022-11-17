@@ -90,6 +90,16 @@ class CiderTableSchema {
 
   int getColumnCount() const { return totalColumnNum_; }
 
+  int getFlattenColCount() const { return flattenColumnTypes_.size(); }
+
+  std::vector<std::string> getFlattenColNames() {
+    std::vector<std::string> flattenColNames;
+    for (auto i = 0; i < totalColumnNum_; i++) {
+      flattenColumnNames(columnTypes_[i], flattenColNames, columnNames_[i]);
+    }
+    return flattenColNames;
+  }
+
   std::vector<ColumnHint> getColHints() const { return col_hints_; }
 
   int GetColumnTypeSize(const int column) const {
@@ -139,6 +149,18 @@ class CiderTableSchema {
       return cur_size;
     } else {
       return cur_size + 1;
+    }
+  }
+
+  void flattenColumnNames(substrait::Type& columnType,
+                          std::vector<std::string>& flattenColNames,
+                          std::string colName) {
+    if (columnType.has_struct_()) {
+      for (auto type : columnType.struct_().types()) {
+        flattenColumnNames(type, flattenColNames, colName);
+      }
+    } else {
+      flattenColNames.push_back(colName);
     }
   }
 

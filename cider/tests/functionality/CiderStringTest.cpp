@@ -174,6 +174,10 @@ TEST_F(CiderStringToDateTest, DateStrTest) {
               "functions/date/year_cast_string_to_date.json");
 }
 
+TEST_F(CiderStringTest, Substr_Test) {
+  assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ", "substr.json");
+}
+
 TEST_F(CiderStringTest, SubstrTest) {
   // variable source string
   assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
@@ -488,6 +492,92 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_upper_condition_null.json");
 }
 
+class CiderTrimOpTestArrow : public CiderTestBase {
+ public:
+  CiderTrimOpTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL, col_3 VARCHAR(10)))";
+
+    auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    auto string_vec = std::vector<std::string>{"xxxxxxxxxx",
+                                               "xxxxxxxxxx",
+                                               "   3456789",
+                                               "   3456789",
+                                               "   3456   ",
+                                               "   3456   ",
+                                               "0123456   ",
+                                               "0123456   ",
+                                               "xxx3456   ",
+                                               "xxx3456   ",
+                                               "",
+                                               ""};
+    auto is_null = std::vector<bool>{
+        false, true, false, true, false, true, false, true, false, true, false, true};
+    auto [vc_data, vc_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+
+    std::tie(schema_, array_) =
+        ArrowArrayBuilder()
+            .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
+            .addUTF8Column("col_2", vc_data, vc_offsets)
+            .addUTF8Column("col_3", vc_data, vc_offsets, is_null)
+            .build();
+  }
+};
+
+TEST_F(CiderTrimOpTestArrow, LiteralTrimTest) {
+  // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
+  // basic trim (defaults to trim spaces)
+  assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
+  // trim other characters
+  assertQueryArrow("SELECT TRIM('xxx3456   ', ' x') FROM test",
+                   "stringop_trim_literal_2.json");
+  assertQueryArrow("SELECT LTRIM('xxx3456xxx', 'x') FROM test",
+                   "stringop_ltrim_literal.json");
+  assertQueryArrow("SELECT RTRIM('xxx3456xxx', 'x') FROM test",
+                   "stringop_rtrim_literal.json");
+}
+
+TEST_F(CiderTrimOpTestArrow, ColumnTrimTest) {
+  assertQueryArrow("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
+  assertQueryArrow("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
+                   "stringop_trim_2.json");
+
+  assertQueryArrow("SELECT LTRIM(col_2), LTRIM(col_3) FROM test",
+                   "stringop_ltrim_1.json");
+  assertQueryArrow("SELECT LTRIM(col_2, ' x'), LTRIM(col_3, ' x') FROM test",
+                   "stringop_ltrim_2.json");
+
+  assertQueryArrow("SELECT RTRIM(col_2), RTRIM(col_3) FROM test",
+                   "stringop_rtrim_1.json");
+  assertQueryArrow("SELECT RTRIM(col_2, ' x'), RTRIM(col_3, ' x') FROM test",
+                   "stringop_rtrim_2.json");
+}
+
+TEST_F(CiderTrimOpTestArrow, NestedTrimTest) {
+  assertQueryArrow("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
+                   "stringop_trim_nested_1.json");
+  assertQueryArrow(
+      "SELECT col_2, col_3 FROM test "
+      "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR TRIM(col_3) = 'xxx3456'",
+      "stringop_trim_nested_2.json");
+
+  assertQueryArrow("SELECT LTRIM(UPPER(col_2), ' X'), UPPER(LTRIM(col_3, 'x')) FROM test",
+                   "stringop_ltrim_nested_1.json");
+  assertQueryArrow(
+      "SELECT col_2, col_3 FROM test "
+      "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR LTRIM(col_3) = 'xxx3456'",
+      "stringop_ltrim_nested_2.json");
+
+  assertQueryArrow("SELECT RTRIM(UPPER(col_2), ' X'), UPPER(RTRIM(col_3, 'x')) FROM test",
+                   "stringop_rtrim_nested_1.json");
+  assertQueryArrow(
+      "SELECT col_2, col_3 FROM test "
+      "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR RTRIM(col_3) = 'xxx3456'",
+      "stringop_rtrim_nested_2.json");
+}
+
 class CiderConstantStringTest : public CiderTestBase {
  public:
   CiderConstantStringTest() {
@@ -633,6 +723,68 @@ TEST_F(CiderDuplicateStringTest, MultiGroupKeyTest) {
           .build());
   assertQuery("SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2",
               expected_batch_2);
+}
+
+class CiderDuplicateStringArrowTest : public CiderTestBase {
+ public:
+  CiderDuplicateStringArrowTest() {
+    table_name_ = "test";
+    create_ddl_ = R"(CREATE TABLE test(col_1 VARCHAR(10), col_2 VARCHAR(10));)";
+
+    std::string str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
+    std::vector<int> offset1{0, 7, 15, 15, 22, 25, 33, 33, 33};
+
+    std::string str2 = "123456";
+    std::vector<int> offset2{0, 1, 2, 3, 4, 5, 6, 7, 8};
+
+    std::tie(schema_, array_) = ArrowArrayBuilder()
+                                    .setRowNum(8)
+                                    .addUTF8Column("col_1", str1, offset1)
+                                    .addUTF8Column("col_2", str2, offset2)
+                                    .build();
+  }
+};
+
+TEST_F(CiderDuplicateStringArrowTest, SingleGroupKeyTest) {
+  std::string res_str = "aaaaaaaaabbccddddd";
+  std::vector<int> res_offset{0, 0, 7, 15, 18};
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(4)
+          .addUTF8Column("res_str", res_str, res_offset)
+          .addColumn<int64_t>("res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {3, 2, 2, 1})
+          .build();
+  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
+      schema, array, std::make_shared<CiderDefaultAllocator>());
+
+  assertQueryArrow("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", res_batch, true);
+}
+
+TEST_F(CiderDuplicateStringArrowTest, MultiGroupKeyTest) {
+  std::string res_str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
+  std::vector<int> res_offset1{0, 0, 7, 15, 15, 22, 25, 33};
+
+  std::string res_str2 = "123456";
+  std::vector<int> res_offset2{0, 1, 2, 3, 4, 5, 6, 7};
+
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(7)
+          .addUTF8Column("res_str1", res_str1, res_offset1)
+          .addColumn<int64_t>(
+              "res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {2, 1, 1, 1, 1, 1, 1})
+          .addUTF8Column("res_str2", res_str2, res_offset2)
+          .build();
+  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
+      schema, array, std::make_shared<CiderDefaultAllocator>());
+  assertQuery(
+      "SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2", res_batch, true);
 }
 
 int main(int argc, char** argv) {
