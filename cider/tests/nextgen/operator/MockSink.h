@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
-#define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_SINK_H
+#ifndef CIDER_EXEC_NEXTGEN_OPERATOR_MOCK_SINK_H
+#define CIDER_EXEC_NEXTGEN_OPERATOR_MOCK_SINK_H
 
 #include "exec/nextgen/Context.h"
 #include "exec/nextgen/operators/OpNode.h"
