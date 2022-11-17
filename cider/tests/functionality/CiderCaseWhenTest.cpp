@@ -591,18 +591,6 @@ STRING_TEST(CiderCaseWhenRandomWithNullTestBase, stringTest);
         "ELSE 0 "                                                                        \
         "END FROM test");                                                                \
     assertQueryArrow(                                                                    \
-        "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
-        "ELSE 0 "                                                                        \
-        "END FROM test");                                                                \
-    assertQueryArrow(                                                                    \
-        "SELECT col_int, CASE WHEN col_str < 'uuu' THEN 10 WHEN col_int > 3 THEN 20 "    \
-        "ELSE 0 END FROM test");                                                         \
-    assertQueryArrow(                                                                    \
-        "SELECT col_str, CASE WHEN col_str like '%mm%' THEN 10 WHEN col_int > 3 THEN "   \
-        "20 "                                                                            \
-        "ELSE 0 "                                                                        \
-        "END FROM test");                                                                \
-    assertQueryArrow(                                                                    \
         "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
@@ -617,8 +605,9 @@ STRING_TEST(CiderCaseWhenRandomWithNullTestBase, stringTest);
         "GROUP BY CASE "                                                                 \
         "WHEN col_str > 'ttt' THEN 4 ELSE 3 END",                                        \
         "");                                                                             \
-    GTEST_SKIP_(                                                                         \
-        "FIXME(haiwei): blocking by TODO of cider/exec/template/CgenState.h:114");       \
+    assertQueryArrow(                                                                    \
+        "SELECT CASE WHEN col_str like '%mmmm%' THEN 'yes' ELSE col_str END FROM test"); \
+    GTEST_SKIP_("FIXME: blocking by TODO of cider/exec/template/CgenState.h:114");       \
     assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
                      "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
                      "FROM test");                                                       \

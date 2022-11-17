@@ -158,11 +158,14 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   std::unique_ptr<CodegenColValues> case_val =
       codegenCaseExpr(case_expr, case_llvm_type, is_real_str, co);
   if (is_real_str) {
-    auto case_expr = dynamic_cast<FixedSizeColValues*>(case_val.get());
-    std::vector<llvm::Value*> ret_vals{case_expr->getValue()};
-    ret_vals.push_back(cgen_state_->emitCall("extract_str_ptr", {case_expr->getValue()}));
-    ret_vals.push_back(cgen_state_->emitCall("extract_str_len", {case_expr->getValue()}));
-    return std::make_unique<MultipleValueColValues>(ret_vals, case_expr->getNull());
+    auto case_expr_result = dynamic_cast<FixedSizeColValues*>(case_val.get());
+    CHECK(case_expr_result);
+    llvm::Value* str_ptr =
+        cgen_state_->emitCall("extract_str_ptr", {case_expr_result->getValue()});
+    llvm::Value* str_len =
+        cgen_state_->emitCall("extract_str_len", {case_expr_result->getValue()});
+    return std::make_unique<TwoValueColValues>(
+        str_ptr, str_len, case_expr_result->getNull());
   } else {
     return case_val;
   }
@@ -211,17 +214,13 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
     cgen_state_->ir_builder_.SetInsertPoint(then_bb);
     const auto then_expr_ptr = codegen(expr_pair.second.get(), co, true);
     if (is_real_str) {
-      auto then_multiple_expr =
-          dynamic_cast<MultipleValueColValues*>(then_expr_ptr.get());
-      CHECK(then_multiple_expr);
-      auto then_bb_lvs = then_multiple_expr->getValues();
-      auto then_bb_null_lv = then_multiple_expr->getNull();
-      if (then_bb_lvs.size() == 3) {
-        then_lvs.push_back(
-            cgen_state_->emitCall("string_pack", {then_bb_lvs[1], then_bb_lvs[2]}));
-      } else {
-        then_lvs.push_back(then_bb_lvs.front());
-      }
+      auto then_two_val_expr = dynamic_cast<TwoValueColValues*>(then_expr_ptr.get());
+      CHECK(then_two_val_expr);
+      auto then_bb_lvs_str_ptr = then_two_val_expr->getValueAt(0);
+      auto then_bb_lvs_str_len = then_two_val_expr->getValueAt(1);
+      auto then_bb_null_lv = then_two_val_expr->getNull();
+      then_lvs.push_back(cgen_state_->emitCall(
+          "string_pack", {then_bb_lvs_str_ptr, then_bb_lvs_str_len}));
       if (then_bb_null_lv) {
         then_null_lvs.push_back(then_bb_null_lv);
       }
@@ -250,15 +249,12 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCaseExpr(
   llvm::Value* else_lv{nullptr};
   llvm::Value* else_null_lv{nullptr};
   if (is_real_str) {
-    auto else_multiple_expr = dynamic_cast<MultipleValueColValues*>(else_expr_ptr.get());
-    CHECK(else_multiple_expr);
-    auto else_lvs = else_multiple_expr->getValues();
-    if (else_lvs.size() == 3) {
-      else_lv = cgen_state_->emitCall("string_pack", {else_lvs[1], else_lvs[2]});
-    } else {
-      else_lv = else_lvs.front();
-    }
-    else_null_lv = else_multiple_expr->getNull();
+    auto else_two_val_expr = dynamic_cast<TwoValueColValues*>(else_expr_ptr.get());
+    CHECK(else_two_val_expr);
+    auto else_lvs_str_ptr = else_two_val_expr->getValueAt(0);
+    auto else_lvs_str_len = else_two_val_expr->getValueAt(1);
+    else_lv = cgen_state_->emitCall("string_pack", {else_lvs_str_ptr, else_lvs_str_len});
+    else_null_lv = else_two_val_expr->getNull();
   } else {
     auto else_expr_v = dynamic_cast<FixedSizeColValues*>(else_expr_ptr.get());
     CHECK(else_expr_v);
