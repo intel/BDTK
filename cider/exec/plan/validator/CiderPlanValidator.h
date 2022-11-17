@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
 #include "substrait/type.pb.h"
@@ -29,7 +30,7 @@ namespace validator {
 
 struct PlanSlice {
   std::vector<substrait::Rel> rel_nodes;
-  std::string from_platform;
+  const generator::FrontendEngine& from_platform;
 };
 
 class CiderPlanValidator {
@@ -37,27 +38,28 @@ class CiderPlanValidator {
   /**
    * @param plan plan with pattern already validated
    * @param from_platform specific frontend framework for future function lookup
-   *
+   * @return whether the plan can be executed by Cider
    **/
-  static bool isSupported(const substrait::Plan& plan, const std::string& from_platform);
+  static bool isSupported(const substrait::Plan& plan,
+                          const generator::FrontendEngine& from_platform);
 
   /**
    * @param plan original plan without any validation
    * @param from_platform specific frontend framework for future function lookup
-   *
+   * @return the longest plan slice that can be executed by Cider
    **/
   static PlanSlice getCiderSupportedSlice(substrait::Plan& plan,
-                                          std::string& from_platform);
+                                          const generator::FrontendEngine& from_platform);
 
  private:
   // Validate plan slice by function lookup and rule based check
   static bool isSupportedSlice(const PlanSlice& plan_slice,
-                               const std::string& from_platform);
+                               const generator::FrontendEngine& from_platform);
 
-  static substrait::Rel getRootRel(const substrait::Plan& plan);
+  static const substrait::Rel& getRootRel(const substrait::Plan& plan);
 
   static PlanSlice constructPlanSlice(const substrait::Plan& plan,
-                                      const std::string& from_platform);
+                                      const generator::FrontendEngine& from_platform);
 
   static void putRelNodesInVec(const substrait::Rel& rel_node,
                                std::vector<substrait::Rel>& rel_vec);

@@ -31,22 +31,24 @@
 namespace validator {
 
 bool CiderPlanValidator::isSupported(const substrait::Plan& plan,
-                                     const std::string& from_platform) {
+                                     const generator::FrontendEngine& from_platform) {
   // Assumed that plan pattern already validated, do function look up first
   // Apply specific rule check on the plan
   return isSupportedSlice(constructPlanSlice(plan, from_platform), from_platform);
 }
 
-PlanSlice CiderPlanValidator::constructPlanSlice(const substrait::Plan& plan,
-                                                 const std::string& from_platform) {
+PlanSlice CiderPlanValidator::constructPlanSlice(
+    const substrait::Plan& plan,
+    const generator::FrontendEngine& from_platform) {
   const substrait::Rel& root_rel = getRootRel(plan);
   std::vector<substrait::Rel> rel_vec;
   putRelNodesInVec(root_rel, rel_vec);
   return PlanSlice{rel_vec, from_platform};
 }
 
-bool CiderPlanValidator::isSupportedSlice(const PlanSlice& plan_slice,
-                                          const std::string& from_platform) {
+bool CiderPlanValidator::isSupportedSlice(
+    const PlanSlice& plan_slice,
+    const generator::FrontendEngine& from_platform) {
   // TODO: (yma11) add function look up and rule based check
   return true;
 }
@@ -85,7 +87,7 @@ void CiderPlanValidator::putRelNodesInVec(const substrait::Rel& rel_node,
   }
 }
 
-substrait::Rel CiderPlanValidator::getRootRel(const substrait::Plan& plan) {
+const substrait::Rel& CiderPlanValidator::getRootRel(const substrait::Plan& plan) {
   if (plan.relations_size() == 0) {
     CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
   }
@@ -95,9 +97,10 @@ substrait::Rel CiderPlanValidator::getRootRel(const substrait::Plan& plan) {
   return plan.relations(0).root().input();
 }
 
-PlanSlice CiderPlanValidator::getCiderSupportedSlice(substrait::Plan& plan,
-                                                     std::string& from_platform) {
-  substrait::Rel root = getRootRel(plan);
+PlanSlice CiderPlanValidator::getCiderSupportedSlice(
+    substrait::Plan& plan,
+    const generator::FrontendEngine& from_platform) {
+  const substrait::Rel& root = getRootRel(plan);
   // Put plan rels in a vector with pair <substrait::Rel, isSupported>
   std::vector<substrait::Rel> rel_vec;
   putRelNodesInVec(root, rel_vec);
@@ -107,9 +110,8 @@ PlanSlice CiderPlanValidator::getCiderSupportedSlice(substrait::Plan& plan,
     if (!SingleNodeValidator::validate(rel_vec[i])) {
       continue;
     }
-    PlanSlice plan_slice{};
+    PlanSlice plan_slice{{}, from_platform};
     plan_slice.rel_nodes.emplace_back(rel_vec[i]);
-    plan_slice.from_platform = from_platform;
     int j = i + 1;
     while (j < rel_vec.size() && SingleNodeValidator::validate(rel_vec[j])) {
       plan_slice.rel_nodes.emplace_back(rel_vec[j]);
@@ -117,7 +119,6 @@ PlanSlice CiderPlanValidator::getCiderSupportedSlice(substrait::Plan& plan,
     }
     slice_candidates.emplace_back(plan_slice);
     i = j;
-    continue;
   }
   // TODO: (yma11) validate the pattern on plan slices
   // Call isSupportedSlice() to do further validation on plan slices
@@ -129,6 +130,8 @@ PlanSlice CiderPlanValidator::getCiderSupportedSlice(substrait::Plan& plan,
       final_slice_index = i;
     }
   }
-  return slice_candidates[final_slice_index];
+  return slice_candidates.size() == 0 ? PlanSlice{{}, from_platform}
+                                      : slice_candidates[final_slice_index];
 }
+
 }  // namespace validator

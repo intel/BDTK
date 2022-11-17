@@ -135,6 +135,12 @@ std::vector<substrait::Type> SingleNodeValidator::getRelOutputTypes(
       // For join, we only support direct mapping so just use input_types
       return input_types;
     }
+    case substrait::Rel::RelTypeCase::kRead: {
+      for (int i = 0; i < rel_node.read().base_schema().struct_().types().size(); i++) {
+        output_types.emplace_back(rel_node.read().base_schema().struct_().types(i));
+      }
+      return output_types;
+    }
     default:
       CIDER_THROW(CiderCompileException,
                   fmt::format("Failed to get output types of rel type {}", rel_type));
@@ -176,7 +182,7 @@ bool SingleNodeValidator::validate(const substrait::Rel& rel_node) {
   const substrait::Rel::RelTypeCase& rel_type = rel_node.rel_type_case();
   switch (rel_type) {
     case substrait::Rel::RelTypeCase::kRead:
-      return true;
+      return validate(rel_node.read());
     case substrait::Rel::RelTypeCase::kFilter: {
       return validate(rel_node.filter()) &&
              isSupportedAllTypes(getRelOutputTypes(rel_node.filter().input()));
@@ -204,7 +210,8 @@ bool SingleNodeValidator::validate(const substrait::Rel& rel_node) {
 }
 
 bool SingleNodeValidator::validate(const substrait::ReadRel& read_rel) {
-  return true;
+  return read_rel.base_schema().names_size() ==
+         read_rel.base_schema().struct_().types_size();
 }
 
 bool SingleNodeValidator::validate(const substrait::FilterRel& filter_rel) {

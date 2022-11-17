@@ -41,9 +41,8 @@ TEST(CiderPlanValidator, InvalidAggAndJoinTest) {
   std::string sub_data = buffer.str();
   ::substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
-  std::string from_platform = "velox";
-  auto plan_slice =
-      validator::CiderPlanValidator::getCiderSupportedSlice(sub_plan, from_platform);
+  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
+      sub_plan, generator::FrontendEngine::VELOX);
   // Agg(invalid phase) <- proj <- filter <- proj <- join(type not supported) <-project
   // <-read
   CHECK_EQ(plan_slice.rel_nodes.size(), 3);
