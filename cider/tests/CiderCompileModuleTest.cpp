@@ -32,17 +32,43 @@ std::string getDataFilesPath() {
   return absolute_path.substr(0, pos) + "/substrait_plan_files/";
 }
 
+CiderBatch buildCiderBatch() {
+  const int col_num = 9;
+  const int row_num = 20;
+
+  //"O_ORDERKEY", "O_CUSTKEY", "O_ORDERSTATUS", "O_TOTALPRICE",
+  //"O_ORDERDATE", "O_ORDERPRIORITY", "O_CLERK", "O_SHIPPRIORITY", "O_COMMENT"
+  std::vector<int8_t*> table_ptr_tmp(col_num, nullptr);
+  // int64_t O_Orderkey, int64_t O_CUSTKEY
+  int64_t* orderKey_buf = new int64_t[row_num];
+  int64_t* custKey_buf = new int64_t[row_num];
+  for (int i = 0; i < row_num; i++) {
+    orderKey_buf[i] = i;
+    custKey_buf[i] = 100 + i;
+  }
+  table_ptr_tmp[0] = (int8_t*)orderKey_buf;
+  table_ptr_tmp[1] = (int8_t*)custKey_buf;
+
+  std::vector<const int8_t*> table_ptr;
+  for (auto column_ptr : table_ptr_tmp) {
+    table_ptr.push_back(static_cast<const int8_t*>(column_ptr));
+  }
+
+  CiderBatch orders_table(row_num, table_ptr);
+  return orders_table;
+}
+
 TEST(CiderCompileModuleTest, FilterProject) {
   std::string file_name = "simple_project_filter.json";
   std::ifstream sub_json(getDataFilesPath() + file_name);
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
   std::string sub_data = buffer.str();
-  substrait::Plan sub_plan;
+  ::substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
-
   auto ciderCompileModule =
       CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
+  ciderCompileModule->feedBuildTable(std::move(buildCiderBatch()));
   auto result = ciderCompileModule->compile(sub_plan);
 }
 

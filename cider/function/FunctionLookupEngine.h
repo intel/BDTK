@@ -29,17 +29,18 @@
 #include <unordered_set>
 #include <vector>
 
+#include "FunctionLookup.h"
+#include "FunctionMapping.h"
+#include "FunctionSignature.h"
+#include "Type.h"
 #include "function/SubstraitFunctionCiderMappings.h"
-#include "function/substrait/SubstraitFunctionLookup.h"
-#include "function/substrait/SubstraitType.h"
-#include "function/substrait/VeloxToSubstraitMappings.h"
 
 enum PlatformType { SubstraitPlatform, PrestoPlatform, SparkPlatform };
 
 struct FunctionSignature {
   std::string func_name;
-  std::vector<cider::function::substrait::SubstraitTypePtr> arguments;
-  cider::function::substrait::SubstraitTypePtr return_type;
+  std::vector<io::substrait::TypePtr> arguments;
+  io::substrait::TypePtr return_type;
   PlatformType from_platform;
 };
 
@@ -51,8 +52,6 @@ struct FunctionDescriptor {
 };
 
 using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
-using SubstraitFunctionLookupPtr =
-    std::shared_ptr<const cider::function::substrait::SubstraitFunctionLookup>;
 
 class FunctionLookupEngine {
  public:
@@ -75,6 +74,11 @@ class FunctionLookupEngine {
 
  private:
   void registerFunctionLookUpContext(const PlatformType from_platform);
+  template <typename T>
+  void loadExtensionYamlAndInitializeFunctionLookup(
+      std::string platform_name,
+      std::string yaml_extension_filename,
+      const io::substrait::ExtensionPtr& cider_internal_function_ptr);
 
   const SQLOps getFunctionScalarOp(const FunctionSignature& function_signature) const;
   const SQLAgg getFunctionAggOp(const FunctionSignature& function_signature) const;
@@ -97,11 +101,11 @@ class FunctionLookupEngine {
       std::make_shared<const SubstraitFunctionCiderMappings>();
 
   // internal scalar function lookup ptr
-  SubstraitFunctionLookupPtr scalar_function_look_up_ptr_;
+  io::substrait::FunctionLookupPtr scalar_function_look_up_ptr_;
   // internal aggregate function lookup ptr
-  SubstraitFunctionLookupPtr aggregate_function_look_up_ptr_;
+  io::substrait::FunctionLookupPtr aggregate_function_look_up_ptr_;
   // extension function lookup ptr
-  SubstraitFunctionLookupPtr extension_function_look_up_ptr_;
+  io::substrait::FunctionLookupPtr extension_function_look_up_ptr_;
 
   const PlatformType from_platform_;
 };

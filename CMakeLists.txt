@@ -62,21 +62,19 @@ option(CIDER_ENABLE_DUCKDB "Build DuckDB for Cider." ON)
 option(CIDER_ENABLE_VELOX "Build Velox Plugin for Cider." ON)
 option(CIDER_ENABLE_SUBSTRAIT "Build Substrait for Cider." ON)
 option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." ON)
-option(CIDER_ENABLE_YAMLCPP "Build yaml-cpp for Cider." ON)
 
-if(${CIDER_ENABLE_VELOX})
+if(CIDER_ENABLE_VELOX)
   # Disable components when enable velox build
   set(CIDER_ENABLE_GOOGLETEST OFF)
   set(CIDER_ENABLE_DUCKDB OFF)
   set(CIDER_ENABLE_SUBSTRAIT OFF)
-  set(CIDER_ENABLE_YAMLCPP OFF)
 endif()
 
 if(CIDER_ENABLE_TESTS)
   enable_testing()
 endif()
 
-if(${CIDER_ENABLE_GOOGLETEST})
+if(CIDER_ENABLE_GOOGLETEST)
   # googletest
   add_subdirectory(thirdparty/googletest)
   include_directories(thirdparty/googletest/googletest/include)
@@ -92,14 +90,14 @@ if(CIDER_ENABLE_BENCHMARK)
   include_directories(thirdparty/benchmark/include)
 endif()
 
-if(${CIDER_ENABLE_DUCKDB})
+if(CIDER_ENABLE_DUCKDB)
   add_subdirectory(thirdparty/duckdb-amalgamation)
   include_directories(${CMAKE_BINARY_DIR}/thirdparty/duckdb-amalgamation)
 else()
   include_directories(thirdparty/velox/velox/external/duckdb)
 endif()
 
-if(${CIDER_ENABLE_SUBSTRAIT})
+if(CIDER_ENABLE_SUBSTRAIT)
   set(substrait_directory ${CMAKE_SOURCE_DIR}/thirdparty/substrait/proto)
   include_directories(thirdparty/substrait/proto)
 else()
@@ -108,19 +106,16 @@ else()
   include_directories(thirdparty/velox/velox/substrait/proto)
 endif()
 
-if(${CIDER_ENABLE_YAMLCPP})
-  add_subdirectory(thirdparty/yaml-cpp)
-  include_directories(thirdparty/yaml-cpp/include)
-else()
-  include_directories(thirdparty/velox/third_party/yaml-cpp/include)
-endif()
-
 # TODO: remove after cleanup public API dependency RapidJSON
 include_directories(thirdparty/rapidjson/include)
 add_definitions(-DRAPIDJSON_HAS_STDSTRING)
 
 # robin-hood-hashing
 include_directories(thirdparty/robin-hood-hashing/src/include)
+
+# substrait-cpp
+include(substrait-cpp)
+include_directories(${SUBSTRAITCPP_INCLUDE_DIR})
 
 #
 # Subdirectories
