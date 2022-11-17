@@ -30,8 +30,8 @@
 
 namespace validator {
 
-bool CiderPlanValidator::isSupported(const substrait::Plan& plan,
-                                     const generator::FrontendEngine& from_platform) {
+bool CiderPlanValidator::validate(const substrait::Plan& plan,
+                                  const generator::FrontendEngine& from_platform) {
   // Assumed that plan pattern already validated, do function look up first
   // Apply specific rule check on the plan
   return isSupportedSlice(constructPlanSlice(plan, from_platform), from_platform);

@@ -40,8 +40,8 @@ class CiderPlanValidator {
    * @param from_platform specific frontend framework for future function lookup
    * @return whether the plan can be executed by Cider
    **/
-  static bool isSupported(const substrait::Plan& plan,
-                          const generator::FrontendEngine& from_platform);
+  static bool validate(const substrait::Plan& plan,
+                       const generator::FrontendEngine& from_platform);
 
   /**
    * @param plan original plan without any validation
