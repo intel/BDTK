@@ -726,7 +726,16 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
       CHECK(rewritten_args[0]->get_type_info().is_string());
       CHECK(
           dynamic_cast<const Analyzer::ColumnVar*>(remove_cast(rewritten_args[0].get())));
-      return rewritten_args[0]->deep_copy();
+      // return rewritten_args[0]->deep_copy();
+      // NOTE: (YBRua) Original return stmt is the line above.
+      // In OmniSci, a chain of nested stringops are folded into chained_string_op_exprs_
+      // and will be batch-processed during codegen to generate a sequence of stringops
+      // Only the input ColumnVar is returned in the inner stringops
+      // because the actual stringops are kept in chained_string_op_exprs_
+      // However, Cider does not handle chained_string_op_exprs_
+      // so we should return the original stringop here
+      // or otherwise the folded stringops will be mistakenly dropped and never processed
+      return makeExpr<Analyzer::StringOper>(kind, return_ti, rewritten_args);
     } else {
       CHECK(!in_string_op_chain_);
       return makeExpr<Analyzer::StringOper>(
