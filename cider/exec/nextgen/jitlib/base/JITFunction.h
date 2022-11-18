@@ -75,7 +75,8 @@ class JITFunction {
   // TODO: Rename as 'createLiterals'.
   virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
 
-  virtual JITValuePointer createLocalJITValue(std::function<JITValuePointer()> builder) = 0;
+  virtual JITValuePointer createLocalJITValue(
+      std::function<JITValuePointer()> builder) = 0;
 
   virtual JITValuePointer getArgument(size_t index) = 0;
 
@@ -107,4 +108,4 @@ class JITFunction {
 using JITFunctionPointer = std::shared_ptr<JITFunction>;
 };  // namespace cider::jitlib
 
-#endif // JITLIB_BASE_JITFUNCTION_H
+#endif  // JITLIB_BASE_JITFUNCTION_H

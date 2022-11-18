@@ -29,7 +29,7 @@
 
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
-    
+
 class ContextTest : public ::testing::Test {};
 
 TEST_F(ContextTest, ContextTest) {
