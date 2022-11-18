@@ -327,29 +327,70 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   CHECK_GE(expr->getArity(), 1UL);
   CHECK(expr->hasNoneEncodedTextArg());
 
-  const auto& expr_ti = expr->get_type_info();
+  const auto& return_ti = expr->get_type_info();
   // Should probably CHECK we have a UOper cast to dict encoded to be consistent
   const auto primary_arg = remove_cast(expr->getArg(0));
 
   auto primary_str = codegen(primary_arg, co, true);  // Twovalue
   auto str_values = dynamic_cast<TwoValueColValues*>(primary_str.get());
   CHECK(str_values);
-
-  const auto string_op_infos = getStringOpInfos(expr);
+  // workaround for old cider format by setting encode type.
+  auto rewrite_expr = const_cast<Analyzer::StringOper*>(expr);
+  if (return_ti.get_type() == kDATE) {
+    rewrite_expr->set_type_info(SQLTypeInfo(
+        SQLTypes::kDATE, return_ti.get_notnull(), EncodingType::kENCODING_DATE_IN_DAYS));
+  }
+  const auto string_op_infos = getStringOpInfos(rewrite_expr);
   CHECK(string_op_infos.size());
   const auto string_ops = getStringOps(string_op_infos);
   const int64_t string_ops_handle = reinterpret_cast<int64_t>(string_ops);
   auto string_ops_handle_lv = cgen_state_->llInt(string_ops_handle);
-  const auto& return_ti = expr->get_type_info();
-  if (!return_ti.is_string()) {
-    CIDER_THROW(
-        CiderCompileException,
-        "For string op, non-string type return values is not supported currently.");
-  }
 
   const int64_t cider_string_hasher_handle =
       reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
   auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
+  if (!return_ti.is_string()) {
+    std::vector<llvm::Value*> string_oper_lvs{
+        str_values->getValueAt(0), str_values->getValueAt(1), string_ops_handle_lv};
+    const auto return_type = return_ti.get_type();
+    std::string fn_call = "apply_numeric_string_ops_";
+    switch (return_type) {
+      case kBOOLEAN: {
+        fn_call += "bool";
+        break;
+      }
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE: {
+        fn_call += to_lower(toString(return_type));
+        break;
+      }
+      case kDATE: {
+        fn_call += "int";
+        break;
+      }
+      case kNUMERIC:
+      case kDECIMAL:
+      case kTIME:
+      case kTIMESTAMP: {
+        fn_call += "bigint";
+        break;
+      }
+      default: {
+        throw std::runtime_error("Unimplemented type for string-to-numeric translation");
+      }
+    }
+    const auto logical_size = get_bit_width(return_ti, co.use_cider_data_format);
+    auto llvm_return_type = return_ti.is_fp()
+                                ? get_fp_type(logical_size, cgen_state_->context_)
+                                : get_int_type(logical_size, cgen_state_->context_);
+    llvm::Value* cast_lv =
+        cgen_state_->emitExternalCall(fn_call, llvm_return_type, string_oper_lvs);
+    return std::make_unique<FixedSizeColValues>(cast_lv, str_values->getNull());
+  }
   std::string func_name = "apply_string_ops_and_encode_cider";
 
   std::vector<llvm::Value*> string_oper_lvs{str_values->getValueAt(0),

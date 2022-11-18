@@ -277,6 +277,14 @@ class QueryArrowDataGenerator {
           offset_data.push_back(offset_data[i] + str_len);
         }
         break;
+      case GeneratePattern::Special_Date_format_String:
+        offset_data.push_back(0);
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
+          col_data += (gen_date_format_string(default_strlen));
+          offset_data.push_back(offset_data[i] + default_strlen);
+        }
+        break;
     }
     return std::make_tuple(null_data, offset_data, col_data);
   }
@@ -307,6 +315,25 @@ class QueryArrowDataGenerator {
     std::string str(length, 0);
     std::generate_n(str.begin(), length, randchar);
     return str;
+  }
+
+  static std::string gen_date_format_string(size_t length) {
+    std::string buf(length, 0);
+    char base = '0';
+    std::mt19937 rng(std::random_device{}());  // NOLINT
+    buf[0] = base + Random::randInt32(1, 2, rng);
+    buf[1] = base + Random::randInt32(0, 9, rng);
+    buf[2] = base + Random::randInt32(0, 9, rng);
+    buf[3] = base + Random::randInt32(0, 9, rng);
+    buf[4] = '-';
+    int month = Random::randInt32(1, 12, rng);
+    buf[5] = base + month / 10;
+    buf[6] = base + month % 10;
+    buf[7] = '-';
+    int day = Random::randInt32(1, 28, rng);
+    buf[8] = base + day / 10;
+    buf[9] = base + day % 10;
+    return buf;
   }
 };
 

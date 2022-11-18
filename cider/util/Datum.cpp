@@ -376,7 +376,11 @@ Datum StringToDatum(const std::string_view s, SQLTypeInfo& ti) {
         d.bigintval = dateTimeParse<kTIMESTAMP>(s, ti.get_dimension());
         break;
       case kDATE:
-        d.bigintval = dateTimeParse<kDATE>(s, ti.get_dimension());
+        if (ti.get_compression() == EncodingType::kENCODING_DATE_IN_DAYS) {
+          d.intval = parseDateInDays(s);
+        } else {
+          d.bigintval = dateTimeParse<kDATE>(s, ti.get_dimension());
+        }
         break;
       default:
         CIDER_THROW(
