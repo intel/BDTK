@@ -232,11 +232,12 @@ class CiderGroupByAvgMixArrowTest : public CiderTestBase {
   CiderGroupByAvgMixArrowTest() {
     table_name_ = "table_test";
     create_ddl_ =
-        "CREATE TABLE table_test(float_not_null_a FLOAT, float_half_null_b FLOAT, "
-        "float_all_null_c FLOAT, double_not_null_d DOUBLE, double_half_null_e DOUBLE, "
-        "double_all_null_f DOUBLE, tinyint_not_null_g TINYINT, tinyint_half_null_h "
-        "TINYINT, tinyint_all_null_i TINYINT, integer_not_null_j INTEGER, "
-        "integer_half_null_k INTEGER, integer_all_null_l INTEGER);";
+        "CREATE TABLE table_test(float_not_null_a FLOAT NOT NULL, float_half_null_b "
+        "FLOAT, float_all_null_c FLOAT, double_not_null_d DOUBLE NOT NULL, "
+        "double_half_null_e DOUBLE, double_all_null_f DOUBLE, tinyint_not_null_g TINYINT "
+        "NOT NULL, tinyint_half_null_h TINYINT, tinyint_all_null_i TINYINT, "
+        "integer_not_null_j INTEGER NOT NULL, integer_half_null_k INTEGER, "
+        "integer_all_null_l INTEGER);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   3,
@@ -536,6 +537,19 @@ TEST_F(CiderGroupByAvgMixArrowTest, avgTest) {
   // AVG(float)
   assertQueryArrowIgnoreOrder(
       "SELECT AVG(float_all_null_c) FROM table_test GROUP BY float_all_null_c");
+
+  // GroupBy & AVG multiple columns
+  assertQueryArrowIgnoreOrder(
+      "SELECT AVG(tinyint_not_null_g), AVG(integer_not_null_j) FROM table_test GROUP BY "
+      "tinyint_not_null_g, integer_not_null_j");
+  assertQueryArrowIgnoreOrder(
+      "SELECT AVG(tinyint_not_null_g), AVG(integer_half_null_k), AVG(integer_not_null_j)"
+      " FROM table_test GROUP BY tinyint_not_null_g, integer_half_null_k, "
+      "integer_not_null_j");
+  assertQueryArrowIgnoreOrder(
+      "SELECT AVG(float_not_null_a), AVG(float_all_null_c), AVG(integer_half_null_k), "
+      "AVG(integer_all_null_l) FROM table_test GROUP BY float_not_null_a, "
+      "float_all_null_c, integer_half_null_k, integer_all_null_l");
 }
 
 NO_CONDITION_GROUP_BY_TEST_UNIT_ARROW(CiderGroupByBigintArrowTest,
@@ -1123,7 +1137,6 @@ TEST_F(CiderGroupByAvgMixTest, avgTest) {
               "",
               true);
 
-  // TODO(yizhong): Support GroupBy & AVG multiple columns
   assertQuery(
       "SELECT AVG(float_not_null_a), AVG(float_half_null_b) FROM table_test GROUP BY "
       "float_not_null_a, float_half_null_b",
