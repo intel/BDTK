@@ -91,7 +91,6 @@
         "SELECT CAST(col_a as DOUBLE)  FROM test where CAST(col_b as INTEGER) > 20 ");   \
     assertQueryArrow(                                                                    \
         "SELECT CAST(col_a as INTEGER) + CAST(col_b as INTEGER) FROM test");             \
-    GTEST_SKIP(); /* FiXME(yizhong): group by with arrow format not supported*/          \
     assertQueryArrowIgnoreOrder(                                                         \
         "SELECT CAST(col_a as INTEGER), count(col_b) FROM test GROUP BY col_a", "");     \
   }

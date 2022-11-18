@@ -97,9 +97,10 @@ apply_string_ops_and_encode(const char* str_ptr,
   return string_dict_proxy->getOrAddTransient(result_str);
 }
 
-inline int64_t write_string_to_cider_hasher(const char* str_ptr,
-                                            const int32_t str_len,
-                                            const int64_t string_hasher_handle) {
+extern "C" RUNTIME_EXPORT int64_t
+look_up_string_id_from_hasher(const char* str_ptr,
+                              const int32_t str_len,
+                              const int64_t string_hasher_handle) {
   auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
   int64_t id =
       string_hasher->lookupIdByValue(CiderByteArray(str_len, (const uint8_t*)str_ptr));
@@ -115,7 +116,7 @@ apply_string_ops_and_encode_cider(const char* str_ptr,
   auto string_ops =
       reinterpret_cast<const StringOps_Namespace::StringOps*>(string_ops_handle);
   const auto result_str = string_ops->operator()(raw_str);
-  return write_string_to_cider_hasher(
+  return look_up_string_id_from_hasher(
       result_str.data(), result_str.length(), string_hasher_handle);
 }
 
@@ -151,12 +152,14 @@ cider_hasher_decode_str_len(const int64_t id, const int64_t string_hasher_handle
   return res.len;
 }
 
-#define DEF_CONVERT_TO_STRING_AND_ENCODE(value_type, value_name)                         \
-  extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t                                        \
-      convert_to_string_and_encode_##value_name(const value_type operand,                \
-                                                const int64_t string_hasher_handle) {    \
-    std::string_view str = fmt::format("{:#}", operand);                                 \
-    return write_string_to_cider_hasher(str.data(), str.length(), string_hasher_handle); \
+#define DEF_CONVERT_TO_STRING_AND_ENCODE(value_type, value_name)                      \
+  extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t                                     \
+      convert_to_string_and_encode_##value_name(const value_type operand,             \
+                                                const int64_t string_hasher_handle) { \
+    std::string_view str =                                                            \
+        fmt::format("{:#}", operand); /* keep trailing zero for floating point type*/ \
+    return look_up_string_id_from_hasher(                                             \
+        str.data(), str.length(), string_hasher_handle);                              \
   }
 DEF_CONVERT_TO_STRING_AND_ENCODE(int8_t, tinyint)
 DEF_CONVERT_TO_STRING_AND_ENCODE(int16_t, smallint)
@@ -170,7 +173,7 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
 convert_to_string_and_encode_bool(const int8_t operand,
                                   const int64_t string_hasher_handle) {
   std::string_view str = (operand == 1) ? "true" : "false";
-  return write_string_to_cider_hasher(str.data(), str.length(), string_hasher_handle);
+  return look_up_string_id_from_hasher(str.data(), str.length(), string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
@@ -179,7 +182,7 @@ convert_to_string_and_encode_time(const int64_t operand,
   constexpr size_t buf_size = 64;
   char buf[buf_size];
   int32_t str_len = shared::formatHMS(buf, buf_size, operand);
-  return write_string_to_cider_hasher(buf, str_len, string_hasher_handle);
+  return look_up_string_id_from_hasher(buf, str_len, string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
@@ -187,18 +190,18 @@ convert_to_string_and_encode_timestamp(const int64_t operand,
                                        const int32_t dimension,
                                        const int64_t string_hasher_handle) {
   constexpr size_t buf_size = 64;
-  char buf[buf_size];  // Hold "2000-03-01 12:34:56.123456789" and large years.
+  char buf[buf_size];
   int32_t str_len = shared::formatDateTime(buf, buf_size, operand, dimension);
-  return write_string_to_cider_hasher(buf, str_len, string_hasher_handle);
+  return look_up_string_id_from_hasher(buf, str_len, string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
 convert_to_string_and_encode_date(const int64_t operand,
                                   const int64_t string_hasher_handle) {
   constexpr size_t buf_size = 64;
-  char buf[buf_size];  // Hold "2000-03-01 12:34:56.123456789" and large years.
+  char buf[buf_size];
   int32_t str_len = shared::formatDays(buf, buf_size, operand);
-  return write_string_to_cider_hasher(buf, str_len, string_hasher_handle);
+  return look_up_string_id_from_hasher(buf, str_len, string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT int32_t lower_encoded(int32_t string_id,
@@ -381,7 +384,6 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   AUTOMATIC_IR_METADATA(cgen_state_);
 
   CHECK_GE(expr->getArity(), 1UL);
-  
   CHECK(expr->hasNoneEncodedTextArg());
   const auto& return_ti = expr->get_type_info();
   const auto primary_arg = expr->getArg(0);
