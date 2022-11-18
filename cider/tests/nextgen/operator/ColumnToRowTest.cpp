@@ -50,11 +50,6 @@ TEST_F(ColumnToRowTest, FilterTest) {
   LLVMJITModule module("TestC2R", true);
 
   auto builder = [](JITFunction* function) {
-    //   if (col_var1 <= 5) {
-    //     res = col_var1 + 5;
-    //   }else{
-    //     return col_var1;
-
     auto col_var1 =
         std::make_shared<Analyzer::ColumnVar>(SQLTypeInfo(SQLTypes::kINT), 100, 1, 0);
     auto col_var2 =

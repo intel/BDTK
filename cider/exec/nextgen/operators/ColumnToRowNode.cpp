@@ -23,7 +23,7 @@
 
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "exec/nextgen/operators/expr.h"
+#include "type/plan/Expr.h"
 
 namespace cider::exec::nextgen::operators {
 void ColumnToRowTranslator::consume(Context& context) {
@@ -31,8 +31,8 @@ void ColumnToRowTranslator::consume(Context& context) {
 }
 
 void ColumnToRowTranslator::codegen(Context& context) {
-  auto func = context.query_func_;
-  auto inputs = node_.getExprs();
+  auto& func = context.query_func_;
+  auto inputs = node_.getOutputExprs();
   // for row loop
   auto arrow_pointer = func->getArgument(0);
   auto index = func->createVariable(JITTypeTag::INT64, "index");
@@ -59,17 +59,16 @@ void ColumnToRowTranslator::codegen(Context& context) {
 void ColumnToRowTranslator::col2RowConvert(ExprPtrVector inputs,
                                            JITFunction* func,
                                            JITValuePointer index) {
-  ExprGenerator gen(func);
   // for column loop
   for (int idx = 0; idx < inputs.size(); ++idx) {
     std::vector<JITValuePointer> vec;
-    JITValue* column_null_data = inputs[idx]->get_null_datas()[0].get();
-    JITValue* column_data = inputs[idx]->get_datas()[0].get();
-    JITTypeTag tag = gen.getJITTag(inputs[idx]->get_type_info().get_type());
+    JITTypeTag tag = inputs[idx]->getJITTag(inputs[idx]->get_type_info().get_type());
     // data buffer decoder
+    JITValue* column_data = inputs[idx]->get_datas()[0].get();
     auto data_pointer = column_data->castPointerSubType(tag);
     auto row_data = data_pointer[index];
     // null buffer decoder
+    JITValue* column_null_data = inputs[idx]->get_null_datas()[0].get();
     auto row_null_data = func->emitRuntimeFunctionCall(
         "check_bit_vector_clear",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::BOOL,

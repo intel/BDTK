@@ -35,7 +35,9 @@ class ColumnToRowNode : public OpNode {
     (exprs_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
-  ExprPtrVector getExprs() override { return exprs_; }
+  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+
+  ExprPtrVector getOutputExprs() override { return exprs_; }
 
   ExprPtrVector exprs_;
 };
@@ -54,8 +56,10 @@ class ColumnToRowTranslator : public Translator {
     successor_.swap(successor);
   }
 
-  ColumnToRowTranslator(ColumnToRowNode&& node, std::unique_ptr<Translator>&& succ)
-      : node_(std::move(node)), successor_(std::move(succ)) {}
+  ColumnToRowTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+      : Translator(node, succ) {
+    CHECK(isa<ColumnToRowNode>(node));
+  }
 
   void consume(Context& context) override;
 

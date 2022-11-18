@@ -29,13 +29,17 @@
 
 namespace cider::exec::nextgen::operators {
 
+TranslatorPtr SourceNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<SourceTranslator>(shared_from_this(), succ);
+}
+
 void SourceTranslator::consume(Context& context) {
   codegen(context);
 }
 
 void SourceTranslator::codegen(Context& context) {
   JITFunction* func = context.query_func_;
-  auto inputs = node_.getExprs();
+  auto inputs = node_.getOutputExprs();
   // get ArrowArray pointer
   auto arrow_pointer = func->getArgument(0);
   for (int64_t index = 0; index < inputs.size(); ++index) {
@@ -62,8 +66,4 @@ void SourceTranslator::codegen(Context& context) {
   successor_->consume(context);
 }
 
-
-TranslatorPtr SourceNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<SourceTranslator>(shared_from_this(), succ);
-}
 }  // namespace cider::exec::nextgen::operators

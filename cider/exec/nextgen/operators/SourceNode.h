@@ -32,17 +32,19 @@ namespace cider::exec::nextgen::operators {
 class SourceNode : public OpNode {
  public:
   template <typename T, IsVecOf<T, ExprPtr> = true>
-  SourceNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  SourceNode(T&& exprs) : input_cols_(std::forward<T>(exprs)) {}
 
   template <typename... T>
   SourceNode(T&&... exprs) {
-    (exprs_.emplace_back(std::forward<T>(exprs)), ...);
+    (input_cols_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
-  ExprPtrVector getExprs() override { return exprs_; }
+  ExprPtrVector getOutputExprs() override { return input_cols_; }
+
+  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
  private:
-  ExprPtrVector exprs_;
+  ExprPtrVector input_cols_;
 };
 
 class SourceTranslator : public Translator {
@@ -59,12 +61,12 @@ class SourceTranslator : public Translator {
     successor_.swap(successor);
   }
 
-  SourceTranslator(SourceNode&& node, std::unique_ptr<Translator>&& succ)
-      : node_(std::move(node)), successor_(std::move(succ)) {}
+  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+      : Translator(node, succ) {
+    CHECK(isa<SourceNode>(node));
+  }
 
-  ExprPtrVector getOutputExprs() override { return exprs_; }
-
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  void consume(Context& context) override;
 
  private:
   void codegen(Context& context);
@@ -73,15 +75,5 @@ class SourceTranslator : public Translator {
   std::unique_ptr<Translator> successor_;
 };
 
-
-class SourceTranslator : public Translator {
- public:
-  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {
-    CHECK(isa<SourceNode>(node));
-  }
-
-  void consume(Context& context) override { UNREACHABLE(); }
-};
 }  // namespace cider::exec::nextgen::operators
 #endif  // NEXTGEN_OPERATORS_SOURCENODE_H
