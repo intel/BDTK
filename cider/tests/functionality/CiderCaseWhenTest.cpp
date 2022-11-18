@@ -89,16 +89,17 @@ class CiderArrowCaseWhenSequenceTestBase : public CiderTestBase {
   CiderArrowCaseWhenSequenceTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER NOT NULL, col_bigint BIGINT NOT NULL, col_double DOUBLE NOT NULL, col_float FLOAT NOT NULL);)";
+        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)});
   }
 };
 
@@ -107,17 +108,18 @@ class CiderArrowCaseWhenSequenceWithNullTestBase : public CiderTestBase {
   CiderArrowCaseWhenSequenceWithNullTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT);)";
+        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {3, 3, 3, 3});
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3});
   }
 };
 
@@ -126,17 +128,18 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   CiderArrowCaseWhenRandomWithNullTestBase() {
     table_name_ = "test";
     create_ddl_ =
-        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT);)";
+        R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         10,
-        {"col_int", "col_bigint", "col_double", "col_float"},
+        {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
          CREATE_SUBSTRAIT_TYPE(I64),
          CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {2, 2, 2, 2},
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
         GeneratePattern::Random,
         2,
         102);
@@ -145,35 +148,37 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
 
 #define COALESCE_FUNCTION_TEST(TEST_CLASS, UNIT_NAME)                                 \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                     \
-    assertQuery("select coalesce(COL_INT, COL_BIGINT, 7) from test",                  \
+    assertQuery("select COALESCE(COL_INT, COL_BIGINT, 7) from test",                  \
                 "functions/conditional/coalesce.json");                               \
-    assertQuery("select coalesce(COL_INT, COL_BIGINT, COL_DOUBLE) from test",         \
+    assertQuery("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test",         \
                 "functions/conditional/coalesce_null.json");                          \
-    assertQuery("select sum(coalesce(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test", \
+    assertQuery("select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test", \
                 "functions/conditional/coalesce_sum.json");                           \
   }
 
-COALESCE_FUNCTION_TEST(CiderCaseWhenSequenceTestBase, coalesceFunctionTest);
-COALESCE_FUNCTION_TEST(CiderCaseWhenSequenceWithNullTestBase, coalesceFunctionTest);
-COALESCE_FUNCTION_TEST(CiderCaseWhenRandomWithNullTestBase, coalesceFunctionTest);
+COALESCE_FUNCTION_TEST(CiderCaseWhenSequenceTestBase, coalesceFunctionNotNullTest);
+COALESCE_FUNCTION_TEST(CiderCaseWhenSequenceWithNullTestBase,
+                       coalesceFunctionSeqNullTest);
+COALESCE_FUNCTION_TEST(CiderCaseWhenRandomWithNullTestBase,
+                       coalesceFunctionRandomNullTest);
 
 #define COALESCE_FUNCTION_ARROW_TEST(TEST_CLASS, UNIT_NAME)                        \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                  \
-    assertQueryArrow("select coalesce(COL_INT, COL_BIGINT, 7) from test",          \
+    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, 7) from test",          \
                      "functions/conditional/coalesce.json");                       \
-    assertQueryArrow("select coalesce(COL_INT, COL_BIGINT, COL_DOUBLE) from test", \
+    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test", \
                      "functions/conditional/coalesce_null.json");                  \
     assertQueryArrow(                                                              \
-        "select sum(coalesce(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test",      \
+        "select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test",      \
         "functions/conditional/coalesce_sum.json");                                \
   }
 
 COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
-                             coalesceFunctionArrowTest);
+                             coalesceFunctionNotNullTestForArrow);
 COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
-                             coalesceFunctionArrowTest);
+                             coalesceFunctionSeqNullTestForArrow);
 COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
-                             coalesceFunctionArrowTest);
+                             coalesceFunctionRandomNullTestForArrow);
 
 // COALESCE expression is a syntactic shortcut for the CASE expression
 // the code COALESCE(expression1,...n) is same as the following CASE expression:
@@ -236,7 +241,6 @@ COALESCE_TEST(CiderCaseWhenRandomWithNullTestBase, coalesceTest);
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not null " \
         "THEN col_bigint "                                                               \
         "WHEN col_double is not null THEN col_double ELSE 777 END from test");           \
-    GTEST_SKIP_("FIXME(haiwei): Cast test case, blocking by [POAE7-2512]");              \
     assertQueryArrow(                                                                    \
         "SELECT COALESCE(col_float) FROM test",                                          \
         "SELECT CASE WHEN col_float is not null THEN col_float ELSE null END "           \
@@ -257,30 +261,32 @@ COALESCE_TEST(CiderCaseWhenRandomWithNullTestBase, coalesceTest);
         "is not null THEN col_float ELSE null END from test");                           \
   }
 
-COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, coalesceArrowTest);
-COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, coalesceArrowTest);
-COALESCE_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, coalesceArrowTest);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, coalesceNotNullTestForArrow);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                    coalesceSeqNullTestForArrow);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                    coalesceRandomNullTestForArrow);
 
 #define COALESCE_WITH_AGG_TEST(TEST_CLASS, UNIT_NAME)                                    \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
-    assertQuery("SELECT sum(COALESCE(col_int, 777)) FROM test",                          \
-                "SELECT sum(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "   \
+    assertQuery("SELECT SUM(COALESCE(col_int, 777)) FROM test",                          \
+                "SELECT SUM(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "   \
                 "from test");                                                            \
-    assertQuery("SELECT sum(COALESCE(col_double)) FROM test",                            \
-                "SELECT sum(CASE WHEN col_double is not null THEN col_double ELSE "      \
+    assertQuery("SELECT SUM(COALESCE(col_double)) FROM test",                            \
+                "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE "      \
                 "null END) from test");                                                  \
     assertQuery("SELECT count(COALESCE(col_double, 777)) FROM test",                     \
                 "SELECT count(CASE WHEN col_double is not null THEN col_double "         \
                 "ELSE 777 END) from test");                                              \
-    assertQuery("SELECT sum(COALESCE(col_double, 777)) FROM test",                       \
-                "SELECT sum(CASE WHEN col_double is not null THEN col_double ELSE "      \
+    assertQuery("SELECT SUM(COALESCE(col_double, 777)) FROM test",                       \
+                "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE "      \
                 "777 END) from test");                                                   \
-    assertQuery("SELECT sum(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",  \
-                "SELECT sum(CASE WHEN col_int is not null THEN col_int WHEN col_bigint " \
+    assertQuery("SELECT SUM(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",  \
+                "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint " \
                 "is not null THEN col_bigint WHEN col_double is not null THEN "          \
                 "col_double ELSE 777 END) from test");                                   \
-    assertQuery("SELECT sum(COALESCE(col_int, col_bigint, col_double)) FROM test",       \
-                "SELECT sum(CASE WHEN col_int is not null THEN col_int WHEN col_bigint " \
+    assertQuery("SELECT SUM(COALESCE(col_int, col_bigint, col_double)) FROM test",       \
+                "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint " \
                 "is not null THEN col_bigint WHEN col_double is not null THEN "          \
                 "col_double ELSE null END) from test");                                  \
   }
@@ -292,37 +298,36 @@ COALESCE_WITH_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, coalescewithAggTest)
 #define COALESCE_WITH_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                              \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
     assertQueryArrow(                                                                    \
-        "SELECT sum(COALESCE(col_int, 777)) FROM test",                                  \
-        "SELECT sum(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "           \
+        "SELECT SUM(COALESCE(col_int, 777)) FROM test",                                  \
+        "SELECT SUM(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "           \
         "from test");                                                                    \
     assertQueryArrow("SELECT count(COALESCE(col_double, 777)) FROM test",                \
                      "SELECT count(CASE WHEN col_double is not null THEN col_double "    \
                      "ELSE 777 END) from test");                                         \
-    assertQueryArrow("SELECT sum(COALESCE(col_double, 777)) FROM test",                  \
-                     "SELECT sum(CASE WHEN col_double is not null THEN col_double ELSE " \
+    assertQueryArrow("SELECT SUM(COALESCE(col_double, 777)) FROM test",                  \
+                     "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE " \
                      "777 END) from test");                                              \
     assertQueryArrow(                                                                    \
-        "SELECT sum(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",          \
-        "SELECT sum(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
+        "SELECT SUM(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",          \
+        "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
         "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
         "col_double ELSE 777 END) from test");                                           \
-    GTEST_SKIP_("FIXME(haiwei): Cast test case, blocking by [POAE7-2512]");              \
-    assertQueryArrow("SELECT sum(COALESCE(col_double)) FROM test",                       \
-                     "SELECT sum(CASE WHEN col_double is not null THEN col_double ELSE " \
+    assertQueryArrow("SELECT SUM(COALESCE(col_double)) FROM test",                       \
+                     "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE " \
                      "null END) from test");                                             \
     assertQueryArrow(                                                                    \
-        "SELECT sum(COALESCE(col_int, col_bigint, col_double)) FROM test",               \
-        "SELECT sum(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
+        "SELECT SUM(COALESCE(col_int, col_bigint, col_double)) FROM test",               \
+        "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
         "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
         "col_double ELSE null END) from test");                                          \
   }
 
 COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
-                             coalescewithAggArrowTest);
+                             coalescewithAggNotNullTestForArrow);
 COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
-                             coalescewithAggArrowTest);
+                             coalescewithAggSeqNullTestForArrow);
 COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
-                             coalescewithAggArrowTest);
+                             coalescewithAggRandomNullTestForArrow);
 
 // The IF function is actually a language construct that is equivalent to the following
 // CASE expression: CASE
@@ -365,9 +370,9 @@ IF_TEST(CiderCaseWhenRandomWithNullTestBase, ifTest);
         "SELECT SUM(CASE WHEN col_double > 20 THEN 5 ELSE col_double END) FROM test");  \
   }
 
-IF_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, ifArrowTest);
-IF_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, ifArrowTest);
-IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifArrowTest);
+IF_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, ifNotNullTestForArrow);
+IF_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, ifSeqNullTestForArrow);
+IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifRandomNullTestForArrow);
 
 #define CASE_WHEN_TEST(TEST_CLASS, UNIT_NAME)                                           \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
@@ -414,12 +419,12 @@ IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifArrowTest);
         "(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END),"                         \
         " SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");                 \
     assertQuery(                                                                       \
-        "SELECT sum(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "   \
+        "SELECT SUM(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "   \
         "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                           \
     assertQuery(                                                                       \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
+        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
         "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",    \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
+        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
         "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",    \
         true);                                                                         \
     assertQuery(                                                                       \
@@ -482,7 +487,7 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
 #define CASE_WHEN_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                 \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     assertQueryArrow(                                                                   \
-        "SELECT sum(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "    \
+        "SELECT SUM(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "    \
         "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                            \
     assertQueryArrow("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test"); \
     assertQueryArrow(                                                                   \
@@ -512,19 +517,23 @@ CASE_WHEN_AGG_TEST(CiderCaseWhenRandomWithNullTestBase, caseWhenAggTest);
         " SUM(CASE WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END)"       \
         " FROM test GROUP BY col_int");                                                 \
     assertQueryArrow(                                                                   \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
+        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
         "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",     \
-        "SELECT sum(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
+        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
         "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)");    \
   }
 
-CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, caseWhenArrowTest);
-CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, caseWhenArrowTest);
-CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, caseWhenArrowTest);
-CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, caseWhenAggArrowTest);
+CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, caseWhenNotNullTestForArrow);
+CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                     caseWhenSeqNullTestForArrow);
+CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                     caseWhenRandomNullTestForArrow);
+CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
+                         caseWhenAggNotNullTestForArrow);
 CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
-                         caseWhenAggArrowTest);
-CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, caseWhenAggArrowTest);
+                         caseWhenAggSeqNullTestForArrow);
+CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                         caseWhenAggRandomNullTestForArrow);
 
 #define STRING_TEST(TEST_CLASS, UNIT_NAME)                                               \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
@@ -544,19 +553,19 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, caseWhenAggAr
         "ELSE 0 "                                                                        \
         "END FROM test");                                                                \
     assertQuery(                                                                         \
-        "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
+        "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
         "",                                                                              \
         true);                                                                           \
     assertQuery(                                                                         \
-        "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
+        "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
         "",                                                                              \
         true);                                                                           \
     assertQuery(                                                                         \
-        "SELECT sum(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
+        "SELECT SUM(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
         "GROUP BY CASE "                                                                 \
         "WHEN col_str > 'ttt' THEN 4 ELSE 3 END",                                        \
         "",                                                                              \
@@ -569,10 +578,6 @@ STRING_TEST(CiderCaseWhenRandomWithNullTestBase, stringTest);
 
 #define STRING_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                         \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
-    GTEST_SKIP_("FIXME(haiwei): [POAE7-2457] ,blocking by [POAE7-2415]");                \
-    assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
-                     "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
-                     "FROM test");                                                       \
     assertQueryArrow(                                                                    \
         "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
         "ELSE 0 "                                                                        \
@@ -586,25 +591,31 @@ STRING_TEST(CiderCaseWhenRandomWithNullTestBase, stringTest);
         "ELSE 0 "                                                                        \
         "END FROM test");                                                                \
     assertQueryArrow(                                                                    \
-        "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
+        "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
         "");                                                                             \
     assertQueryArrow(                                                                    \
-        "SELECT sum(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
+        "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
         "");                                                                             \
     assertQueryArrow(                                                                    \
-        "SELECT sum(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
+        "SELECT SUM(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
         "GROUP BY CASE "                                                                 \
         "WHEN col_str > 'ttt' THEN 4 ELSE 3 END",                                        \
         "");                                                                             \
+    assertQueryArrow(                                                                    \
+        "SELECT CASE WHEN col_str like '%mmmm%' THEN 'yes' ELSE col_str END FROM test"); \
+    GTEST_SKIP_("FIXME: blocking by TODO of cider/exec/template/CgenState.h:114");       \
+    assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
+                     "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
+                     "FROM test");                                                       \
   }
 
-STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringArrowTest);
-STRING_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, stringArrowTest);
-STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, stringArrowTest);
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringNotNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, stringSeqNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, stringRandomNullTestForArrow);
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
