@@ -18,48 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/jitlib/JITLib.h"
-#include "exec/nextgen/jitlib/base/JITFunction.h"
-#include "exec/template/Execute.h"
-#include "type/plan/Analyzer.h"
+#include "BinaryExpr.h"
+#include "exec/template/Execute.h"  // for is_unnest
 
 namespace Analyzer {
 using namespace cider::jitlib;
-
-JITTypeTag Expr::getJITTag(const SQLTypes& st) {
-  switch (st) {
-    case kBOOLEAN:
-      return JITTypeTag::BOOL;
-    case kTINYINT:
-    case kSMALLINT:
-    case kINT:
-    case kBIGINT:
-    case kTIME:
-    case kTIMESTAMP:
-    case kDATE:
-    case kINTERVAL_DAY_TIME:
-    case kINTERVAL_YEAR_MONTH:
-      return JITTypeTag::INT32;
-    case kFLOAT:
-      return JITTypeTag::FLOAT;
-    case kDOUBLE:
-      return JITTypeTag::DOUBLE;
-    case kVARCHAR:
-    case kCHAR:
-    case kTEXT:
-      UNIMPLEMENTED();
-    case kNULLT:
-    default:
-      return JITTypeTag::INVALID;
-  }
-  UNREACHABLE();
-}
-
-// change this to pure virtual method after all subclasses support codegen.
-JITExprValue& Expr::codegen(JITFunction& func) {
-  UNREACHABLE();
-  return fake_val_;
-}
 
 JITExprValue& BinOper::codegen(JITFunction& func) {
   if (auto expr_var = get_expr_value()) {
@@ -163,49 +126,4 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs) {
   return fake_val_;
 }
 
-JITExprValue& ColumnVar::codegen(JITFunction& func) {
-  return *get_expr_value();
-}
-
-JITExprValue& Constant::codegen(JITFunction& func) {
-  if (auto expr_var = get_expr_value()) {
-    return *expr_var;
-  }
-
-  const auto& ti = get_type_info();
-  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
-  switch (type) {
-    case kNULLT:
-      CIDER_THROW(CiderCompileException,
-                  "NULL type literals are not currently supported in this context.");
-    case kBOOLEAN:
-      return set_expr_value(func.createConstant(getJITTag(type), get_constval().boolval));
-    case kTINYINT:
-    case kSMALLINT:
-    case kINT:
-    case kBIGINT:
-    case kTIME:
-    case kTIMESTAMP:
-    case kDATE:
-    case kINTERVAL_DAY_TIME:
-    case kINTERVAL_YEAR_MONTH:
-      return set_expr_value(func.createConstant(getJITTag(type), get_constval().intval));
-    case kFLOAT:
-      return set_expr_value(
-          func.createConstant(getJITTag(type), get_constval().floatval));
-    case kDOUBLE:
-      return set_expr_value(
-          func.createConstant(getJITTag(type), get_constval().doubleval));
-    case kVARCHAR:
-    case kCHAR:
-    case kTEXT: {
-      UNIMPLEMENTED();
-      break;
-    }
-    default:
-      UNIMPLEMENTED();
-  }
-  UNREACHABLE();
-  return fake_val_;
-}
 }  // namespace Analyzer
