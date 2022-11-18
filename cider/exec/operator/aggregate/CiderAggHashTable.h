@@ -302,6 +302,7 @@ class CiderAggHashTable {
 
  private:
   std::vector<CiderAggHashTableEntryInfo> fillColsInfo();
+  std::vector<int8_t> fillRowData();
   int8_t* allocateBufferAt(size_t buffer_id);
   void freeBufferAt(size_t buffer_id);
   size_t getNextRowIndex(const int8_t* buffer_ptr,

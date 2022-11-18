@@ -284,6 +284,7 @@ class QueryMemoryDescriptor {
   // returns the ptr offset of the current column, 64-bit aligned
   size_t getColOnlyOffInBytes(const size_t col_idx) const;
   size_t getRowSize() const;
+  size_t getRowSizeWithoutNullVec() const;
   size_t getColsSize() const;
   size_t getWarpCount() const;
 

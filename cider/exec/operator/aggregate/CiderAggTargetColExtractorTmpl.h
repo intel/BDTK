@@ -385,18 +385,19 @@ class CountAggExtractor : public CiderAggTargetColExtractor {
 
     CHECK(scalarOutput->resizeBatch(rowNum, true));
     TT* buffer = scalarOutput->getMutableRawData();
-    uint8_t* nulls = scalarOutput->getMutableNulls();
-
+    uint8_t* nulls = null_ ? scalarOutput->getMutableNulls() : nullptr;
+    // For COUNT, the initial value of null buffer is always set to NOT NULL
     if (nulls) {
       int64_t null_count = 0;
       for (size_t i = 0; i < rowNum; ++i) {
         const int8_t* rowPtr = rowAddrs[i];
-        auto value = *reinterpret_cast<const ST*>(rowPtr + offset_);
-        if (!value) {
+        if (!CiderBitUtils::isBitSetAt(
+                reinterpret_cast<const uint8_t*>(rowPtr + null_offset_),
+                index_in_null_vector_)) {
           CiderBitUtils::clearBitAt(nulls, i);
           ++null_count;
         } else {
-          buffer[i] = value;
+          buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
         }
       }
       output->setNullCount(null_count);

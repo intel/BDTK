@@ -268,6 +268,10 @@ CiderAggHashTable::CiderAggHashTable(
   buffer_memory_limit_ >>= 3;
   buffer_memory_limit_ <<= 3;
 
+  if (query_mem_desc_->useCiderDataFormat()) {
+    initial_row_data_ = fillRowData();
+  }
+
   fillTargetIndexMap();
 
   // Initialization of initial row data vector.
@@ -409,6 +413,32 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
   buffer_width_ = row_width_ * buffer_entry_num_;
 
   return cols_info;
+}
+
+// The memory layout of initial_row_data_ is
+// key1 key2 ... key_null_buff target1 target2 ... target_null_buff
+// null buffer uses bit to represent NULL(0) or NOT NULL(1)
+
+//"SELECT col_i32, SUM(col_i32), COUNT(*) FROM test GROUP BY col_i32");
+// The targets null buffer starts at 32nd byte:
+// col_i32 | key_null_buff |  SUM  | COUNT | target_null_buff
+//  8bytes | 1byte+7bytes  | 8bytes| 8bytes| 1byte+7bytes
+// The unused 7bytes is to align to int64
+// The index of COUNT(*) in cols_info_ is 2,
+// that in null buffer is 1, because col_i32 is also a groupby key.
+std::vector<int8_t> CiderAggHashTable::fillRowData() {
+  std::vector<int8_t> row_data(row_width_, 0);
+  size_t group_targets_null_vec_index = query_mem_desc_->getRowSizeWithoutNullVec();
+  for (auto i = 0, j = 0; i < cols_info_.size(); i++) {
+    if (cols_info_[i].is_key == false) {
+      if (cols_info_[i].agg_type == kCOUNT) {
+        CiderBitUtils::setBitAt(
+            (uint8_t*)(row_data.data() + group_targets_null_vec_index + (j >> 3)), j % 8);
+      }
+      j++;
+    }
+  }
+  return row_data;
 }
 
 std::vector<SQLTypeInfo> CiderAggHashTable::getKeyTypeInfo() {

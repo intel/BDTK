@@ -735,6 +735,23 @@ size_t QueryMemoryDescriptor::getRowSize() const {
   return align_to_int64(total_bytes);
 }
 
+size_t QueryMemoryDescriptor::getRowSizeWithoutNullVec() const {
+  CHECK(!output_columnar_);
+  size_t total_bytes{0};
+  if (keyless_hash_) {
+    // ignore, there's no group column in the output buffer
+    CHECK(query_desc_type_ == QueryDescriptionType::GroupByPerfectHash);
+  } else {
+    total_bytes += group_col_widths_.size() * getEffectiveKeyWidth();
+
+    // Null vector of group keys.
+    total_bytes += ((group_col_widths_.size() + 7) >> 3);
+    total_bytes = align_to_int64(total_bytes);
+  }
+  total_bytes += getColsSize();
+  return align_to_int64(total_bytes);
+}
+
 size_t QueryMemoryDescriptor::getNullVectorOffsetOfGroupKeys() const {
   CHECK(cider_data_format_);
   return group_col_widths_.size() * getEffectiveKeyWidth();
