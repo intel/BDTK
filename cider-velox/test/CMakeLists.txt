@@ -119,25 +119,6 @@ add_executable(CiderPlanNodeTest CiderPlanNodeTest.cpp)
 target_link_libraries(CiderPlanNodeTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderPlanNodeTest CiderPlanNodeTest ${TEST_ARGS})
 
-add_executable(SubstraitVeloxPlanConverterTest
-               SubstraitVeloxPlanConverterTest.cpp)
-target_link_libraries(SubstraitVeloxPlanConverterTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(SubstraitVeloxPlanConverterTest SubstraitVeloxPlanConverterTest
-         ${TEST_ARGS})
-
-add_executable(SubstraitAggregationConvertorTest SubstraitAggregationTest.cpp)
-target_link_libraries(SubstraitAggregationConvertorTest
-                      ${VELOX_PLUGIN_TEST_LIBS})
-add_test(SubstraitAggregationConvertorTest SubstraitAggregationConvertorTest
-         ${TEST_ARGS})
-
-add_executable(VeloxPlanFragmentSubstraitConverterTest
-               VeloxPlanFragmentSubstraitConverterTest.cpp)
-target_link_libraries(VeloxPlanFragmentSubstraitConverterTest
-                      ${VELOX_PLUGIN_TEST_LIBS})
-add_test(VeloxPlanFragmentSubstraitConverterTest
-         VeloxPlanFragmentSubstraitConverterTest ${TEST_ARGS})
-
 add_executable(CiderDataConvertorTest DataConvertorTest.cpp ArrowUtilsTest.cpp)
 target_link_libraries(CiderDataConvertorTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderDataConvertorTest CiderDataConvertorTest ${TEST_ARGS})
@@ -182,3 +163,4 @@ add_test(CiderOperatorHashJoinTest CiderOperatorHashJoinTest ${TEST_ARGS})
 
 add_subdirectory(expression)
 add_subdirectory(planTransformerTest)
+add_subdirectory(SubstraitTest)
