@@ -681,7 +681,7 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
   }
 };
 
-#define ARROW_LEFT_HASH_JOIN_TEST_UNIT(                                                 \
+#define LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(                                          \
     TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
@@ -700,16 +700,16 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
 // For not null query, if set NOT NULL on column ddl, the final project
 // will go to cider_agg_id_proj_xx() instead of cider_agg_id_proj_xx_nullable(), So the
 // returned null values are incorrect.
-// ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNotNullJoinTest,
+// LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest,
 // ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
-// ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNotNullJoinTest,
+// LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest,
 // ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
-ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableTest, *, int, =)  // NOLINT
-ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
-ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
-ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableTest, *, int, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
 
-#define ARROW_INNER_HASH_JOIN_TEST_UNIT(                                                \
+#define INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(                                         \
     TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
@@ -729,14 +729,14 @@ ARROW_LEFT_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, LeftJo
         " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
   }
 
-ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
-ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
-ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest, *, int, =)  // NOLINT
-ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
-ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
-ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest, *, int, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
 
-#define ARROW_HASH_JOIN_TEST_UNIT(                                                 \
+#define COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(                                  \
     TEST_CLASS, UNIT_NAME, PROJECT, COLUMN, JOIN_COMPARISON_OPERATOR)              \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                  \
     assertJoinQueryRowEqualForArrowFormatAndReset(                                 \
@@ -750,27 +750,24 @@ ARROW_INNER_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, Arrow
         " " #JOIN_COMPARISON_OPERATOR "  r_" #COLUMN "");                          \
   }
 
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, simpleJoinOnBigintTest, *, bigint, =)  // NOLINT
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, simpleJoinOnIntegerTest, *, int, =)  // NOLINT
-
 // agg and join condition on same column
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest,
-                          AggJoinTest1,
-                          sum(l_bigint),
-                          bigint,
-                          =)
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest,
-                          AggJoinTest2,
-                          sum(r_bigint),
-                          bigint,
-                          =)
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                         AggJoinTest1,
+                                         sum(l_bigint),
+                                         bigint,
+                                         =)
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                         AggJoinTest2,
+                                         sum(r_bigint),
+                                         bigint,
+                                         =)
 
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest1, *, bigint, +1 =)  // NOLINT
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest2, *, bigint, = 1 +)  // NOLINT
-ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest3, *, int, -1 = 1 +)  // NOLINT
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest1, *, bigint, +1 =)  // NOLINT
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest2, *, bigint, = 1 +)  // NOLINT
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest3, *, int, -1 = 1 +)  // NOLINT
 
 // using OR to avoid 0 results
-#define ARROW_DOUBLE_JOIN_OR_CONDITION_TEST(TEST_CLASS, UNIT_NAME, PROJECT)             \
+#define DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(TEST_CLASS, UNIT_NAME, PROJECT)      \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     /*INNER JOIN ON INTEGER OR FLOAT*/                                                  \
     assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
@@ -802,18 +799,18 @@ ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRan
   }
 // TODO: (spevenhe) comment due to OR will fail back to loop join
 // while AND is still hash join
-// ARROW_DOUBLE_JOIN_OR_CONDITION_TEST(CiderArrowOneToOneSeqNullableJoinTest,
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest,
 // ORJoinConditionTest1, *)
-// ARROW_DOUBLE_JOIN_OR_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest,
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
 // ORJoinConditionTest2, *)
-// ARROW_DOUBLE_JOIN_OR_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest,
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
 //                               ORJoinConditionWithAggTest1,
 //                               SUM(l_bigint))
-// ARROW_DOUBLE_JOIN_OR_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest,
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
 //                               ORJoinConditionWithAggTest2,
 //                               SUM(r_bigint))
 
-#define ARROW_DOUBLE_JOIN_AND_CONDITION_TEST(TEST_CLASS, UNIT_NAME, PROJECT)             \
+#define DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(TEST_CLASS, UNIT_NAME, PROJECT)      \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
     /*INNER JOIN ON INTEGER OR FLOAT*/                                                   \
     assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
@@ -844,16 +841,16 @@ ARROW_HASH_JOIN_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRan
         "NOT NULL ");                                                                    \
   }
 
-ARROW_DOUBLE_JOIN_AND_CONDITION_TEST(CiderArrowOneToOneSeqNullableJoinTest, ANDJoinConditionTest1, *)  // NOLINT
-ARROW_DOUBLE_JOIN_AND_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest, ANDJoinConditionTest2, *)  // NOLINT
-ARROW_DOUBLE_JOIN_AND_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest,
-                                     ANDJoinConditionWithAggTest1,
-                                     SUM(l_bigint))
-ARROW_DOUBLE_JOIN_AND_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest,
-                                     ANDJoinConditionWithAggTest2,
-                                     SUM(r_bigint))
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ANDJoinConditionTest1, *)  // NOLINT
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ANDJoinConditionTest2, *)  // NOLINT
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                            ANDJoinConditionWithAggTest1,
+                                            SUM(l_bigint))
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                            ANDJoinConditionWithAggTest2,
+                                            SUM(r_bigint))
 
-#define ARROW_HASH_JOIN_WITH_FILTER_TEST_UNIT(TEST_CLASS, UNIT_NAME, PROJECT)         \
+#define HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(TEST_CLASS, UNIT_NAME, PROJECT)  \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                     \
     /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                \
     assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
@@ -907,14 +904,14 @@ ARROW_DOUBLE_JOIN_AND_CONDITION_TEST(CiderArrowOneToManyRandomNullableJoinTest,
         "WHERE r_double IS NOT NULL AND r_double < 10 ");                             \
   }
 
-ARROW_HASH_JOIN_WITH_FILTER_TEST_UNIT(CiderArrowOneToOneSeqNullableJoinTest, HashJoinWithFilterTest1, *)  // NOLINT
-ARROW_HASH_JOIN_WITH_FILTER_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest, HashJoinWithFilterTest2, *)  // NOLINT
-ARROW_HASH_JOIN_WITH_FILTER_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest,
-                                      HashJoinWithFilterAndAggTest1,
-                                      SUM(l_bigint))
-ARROW_HASH_JOIN_WITH_FILTER_TEST_UNIT(CiderArrowOneToManyRandomNullableJoinTest,
-                                      HashJoinWithFilterAndAggTest2,
-                                      SUM(r_bigint))
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, HashJoinWithFilterTest1, *)  // NOLINT
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, HashJoinWithFilterTest2, *)  // NOLINT
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                             HashJoinWithFilterAndAggTest1,
+                                             SUM(l_bigint))
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                             HashJoinWithFilterAndAggTest2,
+                                             SUM(r_bigint))
 
 TEST_F(CiderArrowOneToOneSeqNullableJoinTest, selectTestSingleColumnBoolType) {
   GTEST_SKIP_("This kind of case is not One-To-One Hash Join, open it when supported.");
