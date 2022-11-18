@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 #include "tests/utils/CiderTestBase.h"
 
-// below are arrow format test
+// arrow format test
 class CiderArrowOneToOneSeqNotNullJoinTest : public CiderArrowFormatJoinTestBase {
  public:
   CiderArrowOneToOneSeqNotNullJoinTest() {
@@ -32,11 +32,11 @@ class CiderArrowOneToOneSeqNotNullJoinTest : public CiderArrowFormatJoinTestBase
         "l_double DOUBLE NOT NULL, l_float FLOAT NOT NULL);";
 
     ArrowSchema* actual_schema = nullptr;
-    ArrowArray* actual_bigintrray = nullptr;
+    ArrowArray* actual_array = nullptr;
 
     QueryArrowDataGenerator::generateBatchByTypes(
         actual_schema,
-        actual_bigintrray,
+        actual_array,
         100,
         {"l_bigint", "l_int", "l_double", "l_float"},
         {CREATE_SUBSTRAIT_TYPE(I64),
@@ -46,7 +46,7 @@ class CiderArrowOneToOneSeqNotNullJoinTest : public CiderArrowFormatJoinTestBase
         {0, 0, 0, 0},
         GeneratePattern::Sequence);
     input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
-        actual_schema, actual_bigintrray, std::make_shared<CiderDefaultAllocator>()))};
+        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
 
     build_table_name_ = "table_hash";
     build_table_ddl_ =
@@ -99,11 +99,11 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
         "l_double DOUBLE, l_float FLOAT, l_varchar VARCHAR(10));";
 
     ArrowSchema* actual_schema = nullptr;
-    ArrowArray* actual_bigintrray = nullptr;
+    ArrowArray* actual_array = nullptr;
 
     QueryArrowDataGenerator::generateBatchByTypes(
         actual_schema,
-        actual_bigintrray,
+        actual_array,
         100,
         {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
@@ -114,7 +114,7 @@ class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBas
         {2, 2, 2, 2, 2},
         GeneratePattern::Sequence);
     input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
-        actual_schema, actual_bigintrray, std::make_shared<CiderDefaultAllocator>()))};
+        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
 
     build_table_name_ = "table_hash";
     build_table_ddl_ =
@@ -169,11 +169,11 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         "l_float FLOAT, l_varchar VARCHAR(10));";
 
     ArrowSchema* actual_schema = nullptr;
-    ArrowArray* actual_bigintrray = nullptr;
+    ArrowArray* actual_array = nullptr;
 
     QueryArrowDataGenerator::generateBatchByTypes(
         actual_schema,
-        actual_bigintrray,
+        actual_array,
         100,
         {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
         {CREATE_SUBSTRAIT_TYPE(I64),
@@ -186,7 +186,7 @@ class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTes
         -50,
         50);
     input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
-        actual_schema, actual_bigintrray, std::make_shared<CiderDefaultAllocator>()))};
+        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
 
     build_table_name_ = "table_hash";
     build_table_ddl_ =
@@ -490,6 +490,7 @@ TEST_F(CiderArrowOneToOneSeqNullableJoinTest, innerJoinWithWhereBoolType) {
       "table_hash.r_bool");
 }
 
+// original ciderbatch format test
 class CiderOneToOneRandomJoinTest : public CiderJoinTestBase {
  public:
   CiderOneToOneRandomJoinTest() {
