@@ -66,6 +66,7 @@ add_custom_command(
     string/StringLike.cpp
     aggregate/CiderRuntimeFunctions.h
     aggregate/GroupByRuntime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/context/ContextRuntimeFunctions.h
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
   COMMAND
     ${llvm_clangpp_cmd} ARGS -std=c++17 ${RT_OPT_FLAGS} -c -emit-llvm
