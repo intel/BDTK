@@ -22,14 +22,18 @@
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 
-#include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "tests/TestHelpers.h"
 #include "type/data/sqltypes.h"
 
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
+    
 class ContextTest : public ::testing::Test {};
 
 TEST_F(ContextTest, ContextTest) {
+  cider::exec::nextgen::context::CodegenContext context;
   auto module = cider::jitlib::LLVMJITModule("test", true);
   cider::jitlib::JITFunctionPointer function =
       cider::jitlib::JITFunctionBuilder()
@@ -42,8 +46,8 @@ TEST_F(ContextTest, ContextTest) {
           .addParameter(cider::jitlib::JITTypeTag::POINTER,
                         "input",
                         cider::jitlib::JITTypeTag::INT8)
-          .addProcedureBuilder([](cider::jitlib::JITFunction* func) {
-            cider::exec::nextgen::context::CodegenContext context(func);
+          .addProcedureBuilder([&context](cider::jitlib::JITFunction* func) {
+            context.setJITFunction(func);
             auto output_batch =
                 context.registerBatch(SQLTypeInfo(SQLTypes::kBIGINT), "output");
             auto loop1_batch =
@@ -54,6 +58,12 @@ TEST_F(ContextTest, ContextTest) {
           })
           .build();
   module.finish();
+
+  auto runtime_ctx = context.generateRuntimeCTX(allocator);
+  EXPECT_EQ(runtime_ctx->getContextItemNum(), 3);
+  EXPECT_NE(runtime_ctx->getContextItem(0), nullptr);
+  EXPECT_NE(runtime_ctx->getContextItem(1), nullptr);
+  EXPECT_NE(runtime_ctx->getContextItem(2), nullptr);
 }
 
 int main(int argc, char** argv) {

@@ -33,7 +33,7 @@ auto makeJITValuePointer(Args&&... args) {
   return JITValuePointer(new ValueType(std::forward<Args>(args)...));
 }
 
-class JITValue : protected ReferenceCounter {
+class JITValue : protected exec::nextgen::utils::ReferenceCounter {
   friend JITValuePointer;
 
  public:
