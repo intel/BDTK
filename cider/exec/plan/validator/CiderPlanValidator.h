@@ -54,6 +54,7 @@ class CiderPlanValidator {
  private:
   // Validate plan slice by function lookup and rule based check
   static bool isSupportedSlice(const PlanSlice& plan_slice,
+                               const substrait::Plan& plan,
                                const generator::FrontendEngine& from_platform);
 
   static const substrait::Rel& getRootRel(const substrait::Plan& plan);
@@ -63,5 +64,11 @@ class CiderPlanValidator {
 
   static void putRelNodesInVec(const substrait::Rel& rel_node,
                                std::vector<substrait::Rel>& rel_vec);
+
+  static substrait::Plan constructSubstraitPlan(const PlanSlice& plan_slice,
+                                                const substrait::Plan& plan);
+
+  static substrait::Rel constructReadRel(const std::vector<substrait::Type>& types,
+                                         google::protobuf::Arena& arena);
 };
 }  // namespace validator

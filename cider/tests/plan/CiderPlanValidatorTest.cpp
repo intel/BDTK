@@ -48,6 +48,64 @@ TEST(CiderPlanValidator, InvalidAggAndJoinTest) {
   CHECK_EQ(plan_slice.rel_nodes.size(), 3);
 }
 
+TEST(CiderPlanValidator, InvalidAggTest) {
+  std::ifstream sub_json(getDataFilesPath() + "cider_pv_invalid_agg.json");
+  std::stringstream buffer;
+  buffer << sub_json.rdbuf();
+  std::string sub_data = buffer.str();
+  ::substrait::Plan sub_plan;
+  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
+      sub_plan, generator::FrontendEngine::VELOX);
+  // Agg(invalid phase) <- proj <- filter <- proj <- join <- project <- read
+  // <-read
+  CHECK_EQ(plan_slice.rel_nodes.size(), 6);
+}
+
+TEST(CiderPlanValidator, InvalidJoinTest) {
+  std::ifstream sub_json(getDataFilesPath() + "cider_pv_invalid_join.json");
+  std::stringstream buffer;
+  buffer << sub_json.rdbuf();
+  std::string sub_data = buffer.str();
+  ::substrait::Plan sub_plan;
+  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
+      sub_plan, generator::FrontendEngine::VELOX);
+  // Agg <- proj <- filter <- proj <- join(invalid type) <- project <- read
+  // <-read
+  CHECK_EQ(plan_slice.rel_nodes.size(), 4);
+}
+
+TEST(CiderPlanValidator, InvalidReadTest) {
+  std::ifstream sub_json(getDataFilesPath() + "cider_pv_invalid_read.json");
+  std::stringstream buffer;
+  buffer << sub_json.rdbuf();
+  std::string sub_data = buffer.str();
+  ::substrait::Plan sub_plan;
+  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
+      sub_plan, generator::FrontendEngine::VELOX);
+  // Agg <- proj <- filter <- proj <- join <- project <- read (invalid type)
+  // <-read
+  // read has a decimal type which will fail following nodes except Agg
+  CHECK_EQ(plan_slice.rel_nodes.size(), 1);
+}
+
+TEST(CiderPlanValidator, MultiJoinTest) {
+  std::ifstream sub_json(getDataFilesPath() + "cider_pv_multi_join.json");
+  std::stringstream buffer;
+  buffer << sub_json.rdbuf();
+  std::string sub_data = buffer.str();
+  ::substrait::Plan sub_plan;
+  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
+      sub_plan, generator::FrontendEngine::VELOX);
+  // Agg <- proj <- filter <- proj <- join <- project <- join <- read
+  // <-read
+  // read has a decimal type which will fail following nodes except Agg
+  CHECK_EQ(plan_slice.rel_nodes.size(), 6);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);
