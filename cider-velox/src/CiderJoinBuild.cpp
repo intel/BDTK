@@ -25,18 +25,20 @@
 
 namespace facebook::velox::plugin {
 
-void CiderJoinBridge::setData(CiderBatch& data) {
+void CiderJoinBridge::setData(std::shared_ptr<CiderBatch> data) {
   std::vector<ContinuePromise> promises;
   {
     std::lock_guard<std::mutex> l(mutex_);
     VELOX_CHECK(!data_.has_value(), "setData may be called only once");
     data_ = std::move(data);
+
     promises = std::move(promises_);
   }
   notify(std::move(promises));
 }
 
-std::optional<CiderBatch> CiderJoinBridge::dataOrFuture(ContinueFuture* future) {
+std::optional<std::shared_ptr<CiderBatch>> CiderJoinBridge::dataOrFuture(
+    ContinueFuture* future) {
   std::lock_guard<std::mutex> l(mutex_);
   VELOX_CHECK(!cancelled_, "Getting data after the build side is aborted");
   if (data_.has_value()) {
@@ -105,7 +107,7 @@ void CiderJoinBuild::noMoreInput() {
   auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
       operatorCtx_->driverCtx()->splitGroupId, planNodeId());
   if (auto ciderJoinBridge = std::dynamic_pointer_cast<CiderJoinBridge>(joinBridge)) {
-    ciderJoinBridge->setData(buildBatch);
+    ciderJoinBridge->setData(std::make_shared<CiderBatch>(std::move(buildBatch)));
   }
 }
 

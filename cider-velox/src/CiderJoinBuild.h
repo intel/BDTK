@@ -32,12 +32,12 @@ namespace facebook::velox::plugin {
 // multi-threaded probe pipeline.
 class CiderJoinBridge : public exec::JoinBridge {
  public:
-  void setData(CiderBatch& data);
+  void setData(std::shared_ptr<CiderBatch> data);
 
-  std::optional<CiderBatch> dataOrFuture(ContinueFuture* future);
+  std::optional<std::shared_ptr<CiderBatch>> dataOrFuture(ContinueFuture* future);
 
  private:
-  std::optional<CiderBatch> data_;
+  std::optional<std::shared_ptr<CiderBatch>> data_;
 };
 
 class CiderJoinBuild : public exec::Operator {
