@@ -37,9 +37,18 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
 }
 
 bool isStringFunction(const std::string& function_name) {
-  std::unordered_set<std::string> supportedStrFunctionSet{
-      "substring", "substr", "lower", "upper", "trim", "ltrim", "rtrim", "concat", "||"};
-  return supportedStrFunctionSet.find(function_name) != supportedStrFunctionSet.end();
+  static std::unordered_set<std::string> funcs{"substring",
+                                               "substr",
+                                               "lower",
+                                               "upper",
+                                               "trim",
+                                               "ltrim",
+                                               "rtrim",
+                                               "concat",
+                                               "||",
+                                               "length",
+                                               "char_length"};
+  return funcs.find(function_name) != funcs.end();
 }
 
 std::shared_ptr<Analyzer::ColumnVar> Substrait2AnalyzerExprConverter::makeColumnVar(
@@ -823,6 +832,9 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     }
     case SqlStringOpKind::SUBSTRING: {
       return makeExpr<Analyzer::SubstringStringOper>(args);
+    }
+    case SqlStringOpKind::CHAR_LENGTH: {
+      return makeExpr<Analyzer::CharLengthStringOper>(args);
     }
       //    case SqlStringOpKind::OVERLAY:
       //      return makeExpr<Analyzer::OverlayStringOper>(args);

@@ -392,6 +392,11 @@ void StringOper::check_operand_types(
   }
 }
 
+std::shared_ptr<Analyzer::Expr> CharLengthStringOper::deep_copy() const {
+  return makeExpr<Analyzer::CharLengthStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
 std::shared_ptr<Analyzer::Expr> LowerStringOper::deep_copy() const {
   return makeExpr<Analyzer::LowerStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));

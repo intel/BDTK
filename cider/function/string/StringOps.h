@@ -132,6 +132,17 @@ struct TryStringCast : public StringOp {
   Datum numericEval(const std::string_view str) const override;
 };
 
+struct CharLength : public StringOp {
+ public:
+  CharLength(const std::optional<std::string>& var_str_optional_literal)
+      : StringOp(SqlStringOpKind::CHAR_LENGTH,
+                 SQLTypeInfo(kINT, true),
+                 var_str_optional_literal) {}
+
+  NullableStrType operator()(const std::string& str) const override;
+  Datum numericEval(const std::string_view str) const override;
+};
+
 struct Lower : public StringOp {
   Lower(const std::optional<std::string>& var_str_optional_literal)
       : StringOp(SqlStringOpKind::LOWER, var_str_optional_literal) {}

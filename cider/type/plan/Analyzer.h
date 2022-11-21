@@ -1332,6 +1332,36 @@ class StringOper : public Expr {
   std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
 };
 
+class CharLengthStringOper : public StringOper {
+ public:
+  CharLengthStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::CHAR_LENGTH,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  CharLengthStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::CHAR_LENGTH,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  CharLengthStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+};
+
 class LowerStringOper : public StringOper {
  public:
   LowerStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
