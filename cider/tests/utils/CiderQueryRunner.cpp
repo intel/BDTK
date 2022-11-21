@@ -53,6 +53,9 @@ bool isJsonFile(const std::string& file_or_sql) {
 
 std::string getFileContent(const std::string& file_name) {
   std::ifstream file(getSubstraitPlanFilesPath() + file_name);
+  if (!file.good()) {
+    CIDER_THROW(CiderException, "Substrait JSON file " + file_name + " does not exist.");
+  }
   std::stringstream buffer;
   buffer << file.rdbuf();
   std::string content = buffer.str();
