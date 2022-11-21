@@ -23,7 +23,6 @@
 
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "type/plan/Expr.h"
 
 namespace cider::exec::nextgen::operators {
 

@@ -27,36 +27,6 @@ using namespace cider::jitlib;
 // change this to pure virtual method after all subclasses support codegen.
 JITExprValue& Expr::codegen(JITFunction& func) {
   UNREACHABLE();
-  return fake_val_;
+  return expr_var_;
 }
-
-JITTypeTag Expr::getJITTag(const SQLTypes& st) {
-  switch (st) {
-    case kBOOLEAN:
-      return JITTypeTag::BOOL;
-    case kTINYINT:
-    case kSMALLINT:
-    case kINT:
-    case kBIGINT:
-    case kTIME:
-    case kTIMESTAMP:
-    case kDATE:
-    case kINTERVAL_DAY_TIME:
-    case kINTERVAL_YEAR_MONTH:
-      return JITTypeTag::INT32;
-    case kFLOAT:
-      return JITTypeTag::FLOAT;
-    case kDOUBLE:
-      return JITTypeTag::DOUBLE;
-    case kVARCHAR:
-    case kCHAR:
-    case kTEXT:
-      UNIMPLEMENTED();
-    case kNULLT:
-    default:
-      return JITTypeTag::INVALID;
-  }
-  UNREACHABLE();
-}
-
 }  // namespace Analyzer

@@ -25,8 +25,8 @@ namespace Analyzer {
 using namespace cider::jitlib;
 
 JITExprValue& BinOper::codegen(JITFunction& func) {
-  if (auto expr_var = get_expr_value()) {
-    return *expr_var;
+  if (auto& expr_var = get_expr_value()) {
+    return expr_var;
   }
 
   auto lhs = const_cast<Analyzer::Expr*>(get_left_operand());
@@ -44,8 +44,8 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
                 "Decimal and TimeInterval are not supported in arithmetic codegen now.");
   }
 
-  auto& lhs_val = lhs->codegen(func);
-  auto& rhs_val = rhs->codegen(func);
+  FixSizeJITExprValue lhs_val(lhs->codegen(func));
+  FixSizeJITExprValue rhs_val(rhs->codegen(func));
 
   // auto null = func_->createVariable(getJITTag(lhs), "null");
   TODO("MaJian", "merge null");
@@ -83,7 +83,7 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
       }
   }
   UNREACHABLE();
-  return fake_val_;
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs) {
@@ -102,7 +102,7 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs)
       UNREACHABLE();
   }
 
-  return fake_val_;
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs) {
@@ -123,7 +123,7 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs) {
       UNREACHABLE();
   }
 
-  return fake_val_;
+  return expr_var_;
 }
 
 }  // namespace Analyzer

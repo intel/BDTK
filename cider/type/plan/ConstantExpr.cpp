@@ -23,8 +23,8 @@
 namespace Analyzer {
 
 JITExprValue& Constant::codegen(JITFunction& func) {
-  if (auto expr_var = get_expr_value()) {
-    return *expr_var;
+  if (auto& expr_var = get_expr_value()) {
+    return expr_var;
   }
 
   const auto& ti = get_type_info();
@@ -61,6 +61,6 @@ JITExprValue& Constant::codegen(JITFunction& func) {
       UNIMPLEMENTED();
   }
   UNREACHABLE();
-  return fake_val_;
+  return expr_var_;
 }
 }  // namespace Analyzer

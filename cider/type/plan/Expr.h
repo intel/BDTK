@@ -30,10 +30,13 @@
 #include <vector>
 
 #include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/utils/JITExprValue.h"
+#include "exec/nextgen/utils/TypeUtils.h"
 #include "type/data/sqltypes.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;
+using namespace cider::exec::nextgen::utils;
 
 class Expr;
 class ColumnVar;
@@ -158,28 +161,14 @@ class Expr : public std::enable_shared_from_this<Expr> {
   // change this to pure virtual method after all subclasses support codegen.
   virtual JITExprValue& codegen(JITFunction& func);
 
-  // for vector<JITValuePointer>;
-  template <typename T>
-  JITExprValue& set_expr_value(T&& ptrs, bool is_variadic = false) {
-    expr_var_ = std::make_unique<JITExprValue>(std::forward<T>(ptrs), is_variadic);
-    return *expr_var_;
-  }
-
   // for {JITValuePointer, ...}
-  template <typename... T>
-  JITExprValue& set_expr_value(T&&... ptrs, bool is_variadic = false) {
-    expr_var_ = std::make_unique<JITExprValue>(std::forward<T>(ptrs)...);
-    return *expr_var_;
+  template <JITExprValueType type = JITExprValueType::ROW, typename... T>
+  JITExprValue& set_expr_value(T&&... ptrs) {
+    expr_var_ = JITExprValue(type, std::forward<T>(ptrs)...);
+    return expr_var_;
   }
 
-  // for JITValuePointer
-  // used with only value (no len and null, so is_variadic is false)
-  JITExprValue& set_expr_value(JITValuePointer&& val) {
-    expr_var_ = std::make_unique<JITExprValue>(std::move(val));
-    return *expr_var_;
-  }
-
-  JITExprValue* get_expr_value() const { return expr_var_.get(); }
+  JITExprValue& get_expr_value() { return expr_var_; }
 
   void set_nulls(cider::jitlib::JITValuePointer& val) { nulls_.push_back(val); }
   std::vector<cider::jitlib::JITValuePointer>& get_nulls() { return nulls_; }
@@ -193,18 +182,21 @@ class Expr : public std::enable_shared_from_this<Expr> {
     return {};
   }
 
-  JITTypeTag getJITTag(const SQLTypes& st);
-  JITTypeTag getJITTag() { return getJITTag(get_type_info().get_type()); }
+  void setLocalIndex(size_t index) { local_index_ = index; }
+
+  size_t getLocalIndex() { return local_index_; }
+
+ protected:
+  JITTypeTag getJITTag(const SQLTypes& st) {
+    return cider::exec::nextgen::utils::getJITTypeTag(st);
+  }
 
  protected:
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
   bool contains_agg;
 
-  std::vector<cider::jitlib::JITValuePointer> nulls_;
-  std::vector<cider::jitlib::JITValuePointer> vals_;
-  std::unique_ptr<JITExprValue> expr_var_;
-  // just for unreachable branch return;
-  JITExprValue fake_val_;
+  JITExprValue expr_var_;
+  size_t local_index_;  // 0-based index of input column in CodegenContext.
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;
@@ -220,4 +212,4 @@ makeExpr(Args&&... args) {
   return std::make_shared<Tp>(std::forward<Args>(args)...);
 }
 
-#endif
+#endif  // TYPE_PLAN_EXPR_H

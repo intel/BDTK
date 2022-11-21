@@ -113,6 +113,12 @@ class JITValuePointer {
  public:
   JITValuePointer(std::nullptr_t ptr_) : ptr_(ptr_) {}
 
+  JITValuePointer(JITValue* value = nullptr) : ptr_(value) {
+    if (ptr_) {
+      ptr_->addRef();
+    }
+  }
+
   JITValuePointer(const JITValuePointer& lh) {
     ptr_ = lh.ptr_;
     ptr_->addRef();
@@ -138,8 +144,13 @@ class JITValuePointer {
  public:
   // Note: To simplify the usage, copy assignment will be deleted and move assignment will
   // be overloaded as assignmet of JITValue. If you want to change ptr_ with another
-  // JITValuePointer, please use replace() method.
+  // JITValuePointer, please use replace() method or use lh = rh.get().
   JITValuePointer& operator=(const JITValuePointer&) = delete;
+
+  JITValuePointer& operator=(JITValue* rh) {
+    replace(rh);
+    return *this;
+  }
 
   JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
 
@@ -163,12 +174,6 @@ class JITValuePointer {
     }
   }
 
-  JITValuePointer(JITValue* value) : ptr_(value) {
-    if (ptr_) {
-      ptr_->addRef();
-    }
-  }
-
   JITValue* ptr_;
 };
 
@@ -189,53 +194,6 @@ inline JITValuePointer& JITValuePointer::operator=(JITValue& rh) noexcept {
 inline JITValuePointer JITValuePointer::operator[](JITValue& index) {
   return (*ptr_)[index];
 }
-
-class JITExprValue {
- public:
-  JITExprValue() = default;
-  ~JITExprValue() = default;
-  JITExprValue(const JITExprValue&) = delete;
-  JITExprValue(JITExprValue&&) = delete;
-
-  // for vector<JITValuePointer>;
-  template <typename T>
-  JITExprValue(T&& ptrs, bool is_variadic = false)
-      : ptrs_(std::forward<T>(ptrs)), is_variadic_(is_variadic) {}
-
-  // for {JITValuePointer, ...}
-  template <typename... T>
-  JITExprValue(T&&... ptrs, bool is_variadic = false) : is_variadic_(is_variadic) {
-    (ptrs_.emplace_back(std::forward<T>(ptrs)), ...);
-  }
-
-  // for JITValuePointer
-  // convert JITValuePointer to JITExprValue
-  JITExprValue(JITValuePointer&& val) {
-    is_variadic_ = false;
-    ptrs_.push_back(std::move(val));
-  }
-
-  cider::jitlib::JITValue& getValue() {
-    CHECK_GT(ptrs_.size(), 0);
-    return *ptrs_[0];
-  }
-  cider::jitlib::JITValue& getNull() {
-    CHECK_GT(ptrs_.size(), 1);
-    return *ptrs_[1];
-  }
-  cider::jitlib::JITValue& getLen() {
-    CHECK(is_variadic_);
-    CHECK_EQ(ptrs_.size(), 3);
-    return *ptrs_[2];
-  }
-
- private:
-  // fixed witdth column: value and null
-  // variadic(eg. string): value, null and len
-  std::vector<cider::jitlib::JITValuePointer> ptrs_{};
-  bool is_variadic_ = false;
-};
-
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_BASE_JITVALUE_H
