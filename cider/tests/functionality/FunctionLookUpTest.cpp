@@ -77,7 +77,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest1
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest2) {
   const std::string function_signature_str = "between__3:fp64_fp64_fp64";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -109,7 +110,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test1) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test2) {
   const std::string function_signature_str = "between__3:i8_i8_i8";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -141,7 +143,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test1) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test2) {
   const std::string function_signature_str = "between__3:i16_i16_i16";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -169,7 +172,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest1) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest2) {
   const std::string function_signature_str = "avg:struct<fp64,i64>";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -200,7 +204,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest1) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest2) {
   const std::string function_signature_str = "equal:i32_i32";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
@@ -231,7 +236,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest3) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest4) {
   const std::string function_signature_str = "eq:i32_i32";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
@@ -263,7 +269,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest1) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest2) {
   const std::string function_signature_str = "between_unregisterd:fp64_fp64_fp64";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -295,7 +302,8 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest1) {
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest2) {
   const std::string function_signature_str = "between__3:fp64_fp64_fp64";
   const PlatformType from_platform = PlatformType::SubstraitPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -323,7 +331,8 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest1) {
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest2) {
   const std::string function_signature_str = "avg:struct<fp64,i64>";
   const PlatformType from_platform = PlatformType::SubstraitPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
@@ -354,7 +363,8 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest1)
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest2) {
   const std::string function_signature_str = "equal:i32_i32";
   const PlatformType from_platform = PlatformType::SubstraitPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
@@ -386,7 +396,8 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest1) {
 TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest2) {
   const std::string function_signature_str = "between_unregisterd:fp64_fp64_fp64";
   const PlatformType from_platform = PlatformType::SubstraitPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, from_platform);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);

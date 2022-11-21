@@ -30,13 +30,13 @@
 #include <unordered_map>
 #include "exec/template/AggregatedColRange.h"
 #include "exec/template/ExpressionRewrite.h"
+#include "function/FunctionLookupEngine.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
 #include "substrait/type.pb.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
 #include "util/sqldefs.h"
-#include "function/FunctionLookupEngine.h"
 
 namespace generator {
 const int fake_db_id = 100;
@@ -56,7 +56,8 @@ void registerExtensionFunctions();
  * @param plan: substrait plan
  * @return std::unordered_map: function map <function_id, function_descriptor>
  */
-//std::unordered_map<int, FunctionDescriptor> getFunctionMap(const substrait::Plan& plan);
+// std::unordered_map<int, FunctionDescriptor> getFunctionMap(const substrait::Plan&
+// plan);
 std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan);
 
 /**

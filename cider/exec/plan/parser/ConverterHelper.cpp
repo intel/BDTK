@@ -40,7 +40,8 @@ void registerExtensionFunctions() {
   ExtensionFunctionsWhitelist::add(json_func_sigs);
 }
 
-//std::unordered_map<int, FunctionDescriptor> getFunctionMap(const substrait::Plan& plan) {
+// std::unordered_map<int, FunctionDescriptor> getFunctionMap(const substrait::Plan& plan)
+// {
 std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan) {
   std::unordered_map<int, std::string> function_map;
   for (int i = 0; i < plan.extensions_size(); i++) {
@@ -48,8 +49,9 @@ std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan)
     if (extension.has_extension_function()) {
       const auto& function = extension.extension_function().name();
       auto function_lookup_ptr =
-        std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
-      auto function_descriptor = function_lookup_ptr->lookupFunction(function, PlatformType::PrestoPlatform);
+          std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
+      auto function_descriptor =
+          function_lookup_ptr->lookupFunction(function, PlatformType::PrestoPlatform);
       std::string function_name = function_descriptor.func_sig.func_name;
       // do function lookup verify and function mapping
       // get op type, no need mapping in substraitToAnalyzerExpr

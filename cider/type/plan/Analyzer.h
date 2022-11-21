@@ -89,7 +89,7 @@ enum OpSupportExprType {
   kOFFSET_IN_FRAGMENT = 28,
   kWINDOW_FUNCTION = 29,
   kARRAY_EXPR = 30,
-  kUNDEFINED_EXPR = 31 
+  kUNDEFINED_EXPR = 31
 };
 
 namespace Analyzer {
