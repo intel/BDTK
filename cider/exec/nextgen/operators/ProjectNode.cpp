@@ -32,7 +32,8 @@ void ProjectTranslator::consume(Context& context) {
 
 void ProjectTranslator::codegen(Context& context) {
   auto func = context.query_func_;
-  for (const auto& expr : node_.exprs_) {
+  auto&& [output_type, exprs] = op_node_->getOutputExprs();
+  for (const auto& expr : exprs) {
     context.expr_outs_.push_back(&expr->codegen(*func));
   }
   successor_->consume(context);

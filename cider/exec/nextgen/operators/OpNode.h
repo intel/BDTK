@@ -44,13 +44,13 @@ enum class JITExprValueType { ROW, BATCH };
 /// Note: Each OpNode has zero or one source
 class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
+  template <typename OutputVecT>
   OpNode(const char* name = "None",
-         const OpNodePtr& prev = nullptr,
-         const ExprPtrVector& output_exprs = {},
+         OutputVecT&& output_exprs = {},
          JITExprValueType output_type = JITExprValueType::ROW)
-      : input_(prev)
+      : input_(nullptr)
       , name_(name)
-      , output_exprs_(output_exprs)
+      , output_exprs_(std::forward<OutputVecT>(output_exprs))
       , output_type_(output_type) {}
 
   virtual ~OpNode() = default;
@@ -77,7 +77,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 class Translator {
  public:
   Translator(const OpNodePtr& op_node, const TranslatorPtr& successor = nullptr)
-      : op_node_(op_node), new_successor_(successor) {}
+      : op_node_(op_node), successor_(successor) {}
 
   virtual ~Translator() = default;
 
@@ -86,15 +86,15 @@ class Translator {
   OpNodePtr getOpNode() { return op_node_; }
 
   TranslatorPtr setSuccessor(const TranslatorPtr& successor) {
-    new_successor_ = successor;
-    return new_successor_;
+    successor_ = successor;
+    return successor_;
   }
 
-  TranslatorPtr getSuccessor() const { return new_successor_; }
+  TranslatorPtr getSuccessor() const { return successor_; }
 
  protected:
   OpNodePtr op_node_;
-  TranslatorPtr new_successor_;
+  TranslatorPtr successor_;
 };
 
 template <typename OpNodeT, typename... Args>

@@ -27,31 +27,17 @@
 namespace cider::exec::nextgen::operators {
 class FilterNode : public OpNode {
  public:
-  template <typename T, IsVecOf<T, ExprPtr> = true>
-  FilterNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
-  template <typename... T>
-  FilterNode(T&&... exprs) {
-    (exprs_.emplace_back(std::forward<T>(exprs)), ...);
-  }
+  FilterNode(ExprPtrVector&& output_exprs)
+      : OpNode("FilterNode", std::move(output_exprs), JITExprValueType::ROW) {}
 
-  ExprPtrVector getOutputExprs() override { return exprs_; }
+  FilterNode(const ExprPtrVector& output_exprs)
+      : OpNode("FilterNode", output_exprs, JITExprValueType::ROW) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
-
-  ExprPtrVector exprs_;
 };
 
 class FilterTranslator : public Translator {
  public:
-  template <typename T>
-  [[deprecated]] FilterTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = FilterNode(std::forward<T>(exprs));
-    successor_.swap(succ);
-  }
-
-  [[deprecated]] FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
-      : node_(std::move(node)), successor_(std::move(succ)) {}
-
   FilterTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {}
 
@@ -59,9 +45,6 @@ class FilterTranslator : public Translator {
 
  private:
   void codegen(Context& context);
-
-  [[deprecated]] FilterNode node_;
-  [[deprecated]] std::unique_ptr<Translator> successor_;
 };
 
 }  // namespace cider::exec::nextgen::operators

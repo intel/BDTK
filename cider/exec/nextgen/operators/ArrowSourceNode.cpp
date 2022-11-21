@@ -28,23 +28,21 @@
 #include "util/Logger.h"
 
 namespace cider::exec::nextgen::operators {
-
-TranslatorPtr ArrowSourceNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<ArrowSourceTranslator>(shared_from_this(), succ);
+TranslatorPtr SourceNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<SourceTranslator>(shared_from_this(), succ);
 }
 
 void ArrowSourceTranslator::consume(Context& context) {
   codegen(context);
 }
 
-void ArrowSourceTranslator::codegen(Context& context) {
-  JITFunction* func = context.query_func_;
-  auto inputs = node_.getOutputExprs();
+void SourceTranslator::codegen(Context& context) {
+  auto func = context.query_func_;
+  auto&& [output_type, exprs] = op_node_->getOutputExprs();
   // get ArrowArray pointer
-  // prototype:void func(CodegenContext* context, ArrowArray* in, ArrowArray* out);
-  auto arrow_pointer = func->getArgument(1);
-  for (int64_t index = 0; index < inputs.size(); ++index) {
-    auto jit_index = func->createConstant(JITTypeTag::INT64, index);
+  auto arrow_pointer = func->getArgument(0);
+  for (int index = 0; index < exprs.size(); ++index) {
+    auto jit_index = func->createConstant(JITTypeTag::INT64, (int64_t)index);
     // extract ArrowArray null buffer
     auto null_data = func->emitRuntimeFunctionCall(
         "extract_arrow_array_null",
@@ -61,8 +59,8 @@ void ArrowSourceTranslator::codegen(Context& context) {
             .ret_sub_type = JITTypeTag::VOID,
             .params_vector = {{arrow_pointer.get(), jit_index.get()}}});
 
-    inputs[index]->set_nulls(null_data);
-    inputs[index]->set_datas(data);
+    exprs[index]->set_null_datas(null_data);
+    exprs[index]->set_datas(data);
   }
   successor_->consume(context);
 }

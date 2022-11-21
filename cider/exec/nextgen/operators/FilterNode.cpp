@@ -36,7 +36,8 @@ void FilterTranslator::codegen(Context& context) {
       ->condition([&]() {
         auto bool_init = func->createVariable(JITTypeTag::BOOL, "bool_init");
         bool_init = func->createConstant(JITTypeTag::BOOL, true);
-        for (const auto& expr : node_.exprs_) {
+        auto&& [expr_type, exprs] = op_node_->getOutputExprs();
+        for (const auto& expr : exprs) {
           auto& cond = expr->codegen(*func);
           bool_init = bool_init && cond.getValue();
           TODO("MaJian", "support null in condition");
