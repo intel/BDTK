@@ -18,6 +18,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Make sure build-presto-package.sh and presto-bdtk-*.patch are in the same directory
 cd "$(dirname "$0")"
 set -e
 
