@@ -20,6 +20,7 @@
  */
 
 #include "CiderPlanPatterns.h"
+
 namespace {
 
 using VeloxPlanNodePtr = std::shared_ptr<const facebook::velox::core::PlanNode>;
