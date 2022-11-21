@@ -20,6 +20,8 @@
  */
 
 #include "VeloxPlanFragmentToSubstraitPlan.h"
+#include "VeloxPlanFragmentToSubstraitPlanOptions.h"
+#include "velox/substrait/VeloxToSubstraitMappings.h"
 
 namespace facebook::velox::substrait {
 
@@ -30,7 +32,7 @@ namespace facebook::velox::substrait {
       google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena_);
 
   substraitPlan->MergeFrom(
-      v2SPlanConvertor_.toSubstrait(arena_, constructVeloxPlan(targetNode, sourceNode)));
+      v2SPlanConvertor_->toSubstrait(arena_, constructVeloxPlan(targetNode, sourceNode)));
 
   return *substraitPlan;
 }
@@ -173,6 +175,30 @@ bool VeloxPlanFragmentToSubstraitPlan::shouldAppendValuesNode(
     const PlanNodePtr& sourceNode) const {
   return !std::dynamic_pointer_cast<const core::ValuesNode>(sourceNode) &&
          !std::dynamic_pointer_cast<const core::AbstractJoinNode>(sourceNode);
+}
+
+VeloxPlanFragmentToSubstraitPlan::VeloxPlanFragmentToSubstraitPlan() {
+  if (FLAGS_substrait_yaml_root_path != "" || FLAGS_substrait_yaml_root_path == nullptr) {
+    static const std::vector<std::string> extensionFiles = {
+        "functions_aggregate_approx.yaml",
+        "functions_aggregate_generic.yaml",
+        "functions_arithmetic.yaml",
+        "functions_arithmetic_decimal.yaml",
+        "functions_boolean.yaml",
+        "functions_comparison.yaml",
+        "functions_datetime.yaml",
+        "functions_logarithmic.yaml",
+        "functions_rounding.yaml",
+        "functions_string.yaml",
+        "functions_set.yaml",
+    };
+    auto substraitExtension = SubstraitExtension::loadExtension(FLAGS_substrait_yaml_root_path,extensionFiles);
+    auto functionMappings = VeloxToSubstraitFunctionMappings::make();
+    this->v2SPlanConvertor_ = std::make_shared<VeloxToSubstraitPlanConvertor>(
+        substraitExtension, functionMappings);
+  } else {
+    this->v2SPlanConvertor_ = std::make_shared<VeloxToSubstraitPlanConvertor>();
+  }
 }
 
 }  // namespace facebook::velox::substrait

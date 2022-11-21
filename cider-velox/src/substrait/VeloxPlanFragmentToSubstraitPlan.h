@@ -30,6 +30,8 @@ namespace facebook::velox::substrait {
 
 class VeloxPlanFragmentToSubstraitPlan {
  public:
+  VeloxPlanFragmentToSubstraitPlan();
+
   /// Converts velox plan fragment to substrait plan.
   ::substrait::Plan& toSubstraitPlan(const core::PlanNodePtr& targetNode,
                                      const core::PlanNodePtr& sourceNode);
@@ -60,7 +62,7 @@ class VeloxPlanFragmentToSubstraitPlan {
   /// source node is not a valuesNode.
   std::shared_ptr<const ValuesNode> makeValuesNode(const core::PlanNodePtr& sourceNode);
 
-  VeloxToSubstraitPlanConvertor v2SPlanConvertor_;
+  std::shared_ptr<const VeloxToSubstraitPlanConvertor> v2SPlanConvertor_;
   std::shared_ptr<exec::test::PlanBuilder> planBuilder_;
 
   memory::MemoryPool* pool() const { return pool_.get(); }
