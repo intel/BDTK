@@ -25,10 +25,10 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <tuple>
 
 #include "FunctionLookup.h"
 #include "FunctionMapping.h"
@@ -39,7 +39,7 @@
 namespace io::substrait {
 
 class VeloxFunctionMappings : public FunctionMapping {
-public:
+ public:
   static const std::shared_ptr<VeloxFunctionMappings> make() {
     return std::make_shared<VeloxFunctionMappings>();
   }
@@ -47,14 +47,18 @@ public:
   /// scalar function names in difference between velox and Substrait.
   const FunctionMap scalaMapping() const override {
     static const FunctionMap scalarMappings{
-        {"plus", "add"}, {"minus", "subtract"}, {"mod", "modulus"},
-        {"eq", "equal"}, {"neq", "not_equal"},  {"substr", "substring"},
+        {"plus", "add"},
+        {"minus", "subtract"},
+        {"mod", "modulus"},
+        {"eq", "equal"},
+        {"neq", "not_equal"},
+        {"substr", "substring"},
     };
     return scalarMappings;
   };
 };
 
-} // namespace io::substrait
+}  // namespace io::substrait
 
 using FunctionArgTypeMap = std::unordered_map<std::string, io::substrait::TypeKind>;
 
@@ -94,10 +98,10 @@ class FunctionLookupEngine {
   /// function and execution can not be offloaded.
   const FunctionDescriptor lookupFunction(
       const FunctionSignature& function_signature) const;
-  
+
   // like:vchar_vchar
-  const FunctionDescriptor lookupFunction(
-      const std::string& function_signature_str, const PlatformType& from_platform) const;
+  const FunctionDescriptor lookupFunction(const std::string& function_signature_str,
+                                          const PlatformType& from_platform) const;
 
  private:
   void registerFunctionLookUpContext(const PlatformType from_platform);
@@ -106,20 +110,19 @@ class FunctionLookupEngine {
       std::string platform_name,
       std::string yaml_extension_filename,
       const io::substrait::ExtensionPtr& cider_internal_function_ptr);
-  const FunctionArgTypeMap& functionArgTypeMapping() const;
-  bool getFunctionArgType(const std::string& arg_type_str, io::substrait::TypeKind& type_kind) const;
-  io::substrait::TypePtr getFunctionArgTypePtr(const io::substrait::TypeKind& type_kind) const;
 
-  std::tuple<const SQLOps, const std::string> getFunctionScalarOp(const FunctionSignature& function_signature) const;
-  std::tuple<const SQLAgg, const std::string> getFunctionAggOp(const FunctionSignature& function_signature) const;
+  std::tuple<const SQLOps, const std::string> getFunctionScalarOp(
+      const FunctionSignature& function_signature) const;
+  std::tuple<const SQLAgg, const std::string> getFunctionAggOp(
+      const FunctionSignature& function_signature) const;
   std::tuple<const OpSupportExprType, const std::string> getFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
   std::tuple<const OpSupportExprType, const std::string> getScalarFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
   std::tuple<const OpSupportExprType, const std::string> getAggFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  std::tuple<const OpSupportExprType, const std::string> getExtensionFunctionOpSupportType(
-      const FunctionSignature& function_signature) const;
+  std::tuple<const OpSupportExprType, const std::string>
+  getExtensionFunctionOpSupportType(const FunctionSignature& function_signature) const;
 
   static std::string getDataPath() {
     const std::string absolute_path = __FILE__;
