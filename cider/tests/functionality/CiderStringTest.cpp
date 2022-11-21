@@ -568,6 +568,28 @@ TEST_F(CiderStringNullableTestArrow, ConcatTest) {
                    "stringop_concat_filter_null.json");
 }
 
+TEST_F(CiderStringTestArrow, CharLengthTest) {
+  assertQueryArrow("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
+  assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
+                   "stringop_charlen_project_2.json");
+
+  assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
+                   "stringop_charlen_filter.json");
+}
+
+TEST_F(CiderStringNullableTestArrow, CharLengthTest) {
+  assertQueryArrow("SELECT LENGTH(col_2) FROM test;",
+                   "stringop_charlen_project_1_null.json");
+  assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
+                   "stringop_charlen_project_2_null.json");
+
+  assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
+                   "stringop_charlen_filter_null.json");
+  /// TODO: (YBRua) depends on POAE7-2560 (PR#180)
+  // assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2 || 'boo') = 13;",
+  //                  "stringop_charlen_nested_null.json");
+}
+
 class CiderTrimOpTestArrow : public CiderTestBase {
  public:
   CiderTrimOpTestArrow() {
