@@ -339,7 +339,7 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
   if (func_name == "RTRIM") {
     return SqlStringOpKind::RTRIM;
   }
-  if (func_name == "SUBSTRING" || func_name == "SUBSTR") {
+  if (func_name == "SUBSTRING") {
     return SqlStringOpKind::SUBSTRING;
   }
   if (func_name == "OVERLAY") {

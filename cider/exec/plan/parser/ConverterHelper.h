@@ -36,6 +36,7 @@
 #include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
 #include "util/sqldefs.h"
+#include "function/FunctionLookupEngine.h"
 
 namespace generator {
 const int fake_db_id = 100;
@@ -53,8 +54,9 @@ void registerExtensionFunctions();
 /**
  * generate function map according to substrait plan
  * @param plan: substrait plan
- * @return std::unordered_map: function map <function_id, function_name>
+ * @return std::unordered_map: function map <function_id, function_descriptor>
  */
+//std::unordered_map<int, FunctionDescriptor> getFunctionMap(const substrait::Plan& plan);
 std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan);
 
 /**
@@ -63,7 +65,7 @@ std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan)
  * @param function_reference: function_id
  * @return std::string: function_name
  */
-std::string getFunctionName(const std::unordered_map<int, std::string> function_map,
+std::string getFunctionName(const std::unordered_map<int, std::string>& function_map,
                             int function_reference);
 
 /**
@@ -88,8 +90,8 @@ substrait::Type getSubstraitType(const SQLTypeInfo& type_info);
 /**
  * substrait operation conversion
  */
-SQLOps getCiderSqlOps(const std::string op);
-SQLAgg getCiderAggOp(const std::string op);
+SQLOps getCiderSqlOps(const std::string& op);
+SQLAgg getCiderAggOp(const std::string& op);
 
 /**
  * Verifies whether this `function` is registered as extension function.
