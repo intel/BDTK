@@ -77,7 +77,8 @@ TEST_F(CiderCompoundPatternTest, projectTopN) {
                                  .planNode();
 
   VeloxPlanNodePtr expectedPtr = getCiderExpectedPtr(rowType_);
-
+  // TODO: (Jie) enable this after TopN Node supported by cider-velox and cider.
+  GTEST_SKIP();
   VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }

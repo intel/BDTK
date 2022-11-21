@@ -23,10 +23,11 @@
 namespace {
 
 using VeloxPlanNodePtr = std::shared_ptr<const facebook::velox::core::PlanNode>;
+
 template <typename T>
 bool isPartialNode(VeloxPlanNodePtr nodePtr) {
   if (auto node = std::dynamic_pointer_cast<const T>(nodePtr)) {
-    return node->isPartial() ? true : false;
+    return node->isPartial();
   } else {
     return false;
   }
@@ -61,7 +62,11 @@ StatePtr CompoundStateMachine::Project::accept(const VeloxPlanNodeAddr& nodeAddr
   if (auto aggNode = std::dynamic_pointer_cast<const AggregationNode>(nodePtr)) {
     return std::make_shared<CompoundStateMachine::Aggregate>();
   } else if (isPartialNode<TopNNode>(nodePtr)) {
-    return std::make_shared<CompoundStateMachine::TopN>();
+    // (filter) + project + partial topN pattern.
+    // TODO: (Jie) enable this after TopN Node supported by cider-velox and cider.
+    // Now we just return  AcceptPrev to workaround.
+    // return std::make_shared<CompoundStateMachine::TopN>();
+    return std::make_shared<CompoundStateMachine::AcceptPrev>();
   } else {
     return std::make_shared<CompoundStateMachine::AcceptPrev>();
   }
@@ -232,11 +237,9 @@ StatePtr LeftDeepJoinStateMachine::OneJoin::accept(const VeloxPlanNodeAddr& node
   } else if (auto aggNode =
                  std::dynamic_pointer_cast<const AggregationNode>(nodeAddr.nodePtr)) {
     return std::make_shared<PartialAggStateMachine::Initial>()->accept(nodeAddr);
-
   } else if (auto filterNode =
                  std::dynamic_pointer_cast<const FilterNode>(nodeAddr.nodePtr)) {
     return std::make_shared<FilterStateMachine::Initial>()->accept(nodeAddr);
-
   } else {
     return std::make_shared<CompoundStateMachine::Initial>()->accept(nodeAddr);
   }
