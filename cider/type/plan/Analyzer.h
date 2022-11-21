@@ -1311,7 +1311,7 @@ class StringOper : public Expr {
     CHECK(false);
     return {};
   }
-  virtual std::vector<std::string> getArgNames() const {
+  virtual const std::vector<std::string>& getArgNames() const {
     CHECK(false);
     return {};
   }
@@ -1359,7 +1359,7 @@ class LowerStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override { return {"operand"}; }
 };
 
 class UpperStringOper : public StringOper {
@@ -1389,7 +1389,7 @@ class UpperStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override { return {"operand"}; }
 };
 
 class TrimStringOper : public StringOper {
@@ -1422,7 +1422,7 @@ class TrimStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override {
+  const std::vector<std::string>& getArgNames() const override {
     // args[0]: the string to remove characters from
     // args[1]: the set of characters to remove
     return {"input", "characters"};
@@ -1474,7 +1474,7 @@ class SubstringStringOper : public StringOper {
             OperandTypeFamily::INT_FAMILY,
             OperandTypeFamily::INT_FAMILY};
   }
-  std::vector<std::string> getArgNames() const override {
+  const std::vector<std::string>& getArgNames() const override {
     return {"operand", "start position", "substring length"};
   }
 };
@@ -1507,7 +1507,7 @@ class ConcatStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override {
+  const std::vector<std::string>& getArgNames() const override {
     return {"operand_0", "operand_1"};
   }
 
@@ -1550,7 +1550,7 @@ class TryStringCastOper : public StringOper {
   std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
     return {OperandTypeFamily::STRING_FAMILY};
   }
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override { return {"operand"}; }
 };
 
 class FunctionOper : public Expr {
