@@ -20,7 +20,7 @@
             "extension_function": {
                 "extension_uri_reference": 1,
                 "function_anchor": 1,
-                "name": "substring:vchar_i32_i32"
+                "name": "substr:vchar_i32_i32"
             }
         }
     ],
