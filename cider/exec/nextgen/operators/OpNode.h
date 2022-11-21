@@ -37,13 +37,21 @@ using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 using ExprPtrVector = std::vector<ExprPtr>;
 using TranslatorPtr = std::shared_ptr<Translator>;
 
+enum class JITExprValueType { ROW, BATCH };
+
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
 class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
-  OpNode(const char* name = "None", const OpNodePtr& prev = nullptr)
-      : input_(prev), name_(name) {}
+  OpNode(const char* name = "None",
+         const OpNodePtr& prev = nullptr,
+         const ExprPtrVector& output_exprs = {},
+         JITExprValueType output_type = JITExprValueType::ROW)
+      : input_(prev)
+      , name_(name)
+      , output_exprs_(output_exprs)
+      , output_type_(output_type) {}
 
   virtual ~OpNode() = default;
 
@@ -52,7 +60,9 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 
   void setInputOpNode(const OpNodePtr& prev) { input_ = prev; }
 
-  virtual ExprPtrVector getOutputExprs() = 0;
+  std::pair<JITExprValueType, ExprPtrVector&> getOutputExprs() {
+    return {output_type_, output_exprs_};
+  }
 
   /// \brief Transform the operator to a translator
   virtual TranslatorPtr toTranslator(const TranslatorPtr& succ) = 0;
@@ -60,13 +70,12 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
  protected:
   OpNodePtr input_;
   const char* name_;
-  // schema
+  ExprPtrVector output_exprs_;
+  JITExprValueType output_type_;
 };
 
 class Translator {
  public:
-  [[deprecated]] Translator() : Translator(nullptr, nullptr) {}
-
   Translator(const OpNodePtr& op_node, const TranslatorPtr& successor = nullptr)
       : op_node_(op_node), new_successor_(successor) {}
 
@@ -102,18 +111,6 @@ template <typename OpNodeT>
 bool isa(const OpNodePtr& op) {
   return dynamic_cast<OpNodeT*>(op.get());
 }
-
-template <typename T, typename ST>
-struct is_vector_of {
-  using type = typename std::remove_reference<T>::type;
-  static constexpr bool v = std::is_same_v<type, std::vector<ST>>;
-};
-
-template <typename T, typename ST>
-inline constexpr bool is_vector_of_v = is_vector_of<T, ST>::v;
-
-template <typename T, typename ST>
-using IsVecOf = typename std::enable_if_t<is_vector_of_v<T, ST>, bool>;
 }  // namespace cider::exec::nextgen::operators
 
 #endif  // NEXTGEN_TRANSLATOR_OPNODE_H
