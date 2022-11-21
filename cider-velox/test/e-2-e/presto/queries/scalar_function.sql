@@ -180,7 +180,7 @@ where
 select
         name
 from
-        git s
+        customer
 where
         name like '%00894';
 
