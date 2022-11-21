@@ -113,44 +113,44 @@ where
 select
         name
 from
-        customer_bucketed;
+        customer;
 
 select
         ds,
         name
 from
-        customer_bucketed;
+        customer;
 
 select
         *
 from
-        customer_bucketed;
+        customer;
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name = 'Customer#000000909';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name = 'Customer#000000928';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name <> '0000000000';
 
 select
         ds
 from
-        customer_bucketed
+        customer
 where
         name <> '1111111111';
 
@@ -158,21 +158,21 @@ select
         ds,
         name
 from
-        customer_bucketed
+        customer
 where
         name <> '2222222222';
 
 select
         *
 from
-        customer_bucketed
+        customer
 where
         name <> 'aaaaaaaaaaa';
 
 select
         *
 from
-        customer_bucketed
+        customer
 where
         name <> 'abcdefghijklmn';
 
@@ -180,56 +180,56 @@ where
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '%00894';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like 'Customer#0000002%';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '%Customer#000000299%';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '%123%4';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '22%22';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '_ustomer#0000003%';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '44_%';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like 'Customer#0000003%'
         or name like '%00';
@@ -237,35 +237,35 @@ where
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like 'Customer#0000003%'
         and name like '%00';
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name like '_1111';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name not like '1111_';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name not like '44_4444444';
 
 select
         name
 from
-        customer_bucketed
+        customer
 where
         name not like '44_4%'
         and name not like '%111%';
