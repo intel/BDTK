@@ -123,8 +123,8 @@ struct CgenState {
         if (is_arrow_format) {
           return getOrAddLiteral(constant->get_constval().intval, device_id);
         } else {
-          return getOrAddLiteral(constant->get_constval().bigintval * kSecondsInOneDay,
-                                 device_id);
+          return getOrAddLiteral(
+              (int64_t)constant->get_constval().intval * kSecondsInOneDay, device_id);
         }
       case kTIME:
       case kTIMESTAMP:
