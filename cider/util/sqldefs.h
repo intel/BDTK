@@ -110,7 +110,8 @@ enum class SqlStringOpKind {
   BASE64_ENCODE,
   BASE64_DECODE,
   TRY_STRING_CAST,
-  INVALID
+  INVALID,
+  kUNDEFINED_STRING_OP
 };
 
 enum class SqlWindowFunctionKind {

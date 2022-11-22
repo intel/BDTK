@@ -28,6 +28,7 @@
 
 #include <cstdint>
 #include "ConverterHelper.h"
+#include "function/FunctionLookupEngine.h"
 #include "substrait/algebra.pb.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
@@ -165,6 +166,7 @@ class Substrait2AnalyzerExprConverter {
   std::shared_ptr<Analyzer::Expr> buildStrExpr(
       const substrait::Expression_ScalarFunction& s_scalar_function,
       const std::unordered_map<int, std::string> function_map,
+      std::string function_name,
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 

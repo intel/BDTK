@@ -260,7 +260,7 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
     } else if (arg_str == "fixedbinary" || arg_str == "fbin") {
       arguments_vec.push_back(io::substrait::Type::decode("fixedbinary<L1>"));
     } else if (arg_str == "decimal" || arg_str == "dec") {
-      arguments_vec.push_back(io::substrait::Type::decode("dec<P,S>"));
+      arguments_vec.push_back(io::substrait::Type::decode("decimal<P,S>"));
     } else {
       const auto type_ptr = io::substrait::Type::decode(arg_str);
       arguments_vec.push_back(type_ptr);
@@ -270,4 +270,49 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
   function_signature.return_type = return_type;
   function_descriptor = lookupFunction(function_signature);
   return function_descriptor;
+}
+
+const FunctionDescriptor FunctionLookupEngine::lookupFunction(
+    const std::string& function_signature_str,
+    const std::string& function_return_type_str,
+    const PlatformType& from_platform) const {
+  FunctionDescriptor function_descriptor;
+  auto function_name =
+      function_signature_str.substr(0, function_signature_str.find_first_of(':'));
+  auto function_args = function_signature_str.substr(
+      function_signature_str.find_first_of(':') + 1, function_signature_str.length());
+  std::vector<std::string> function_args_vec = split(function_args, "_");
+  FunctionSignature function_signature;
+  function_signature.from_platform = from_platform;
+  function_signature.func_name = function_name;
+  std::vector<io::substrait::TypePtr> arguments_vec;
+  for (const auto& arg_str : function_args_vec) {
+    if (arg_str == "req" || arg_str == "opt") {
+      continue;
+    }
+    arguments_vec.push_back(getArgueTypePtr(arg_str));
+  }
+  function_signature.arguments = arguments_vec;
+  function_signature.return_type = getArgueTypePtr(function_return_type_str);
+  function_descriptor = lookupFunction(function_signature);
+  return function_descriptor;
+}
+
+const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
+    const std::string& argue_type_str) const {
+  io::substrait::TypePtr result_ptr = nullptr;
+  if (argue_type_str == "varchar" || argue_type_str == "vchar") {
+    result_ptr = io::substrait::Type::decode("varchar<L1>");
+  } else if (argue_type_str == "fixedchar" || argue_type_str == "fchar") {
+    result_ptr = io::substrait::Type::decode("fixedchar<L1>");
+  } else if (argue_type_str == "fixedbinary" || argue_type_str == "fbin") {
+    result_ptr = io::substrait::Type::decode("fixedbinary<L1>");
+  } else if (argue_type_str == "decimal" || argue_type_str == "dec") {
+    result_ptr = io::substrait::Type::decode("decimal<P,S>");
+  } else if (argue_type_str == "struct") {
+    result_ptr = io::substrait::Type::decode("struct<fp64,i64>");
+  } else {
+    result_ptr = io::substrait::Type::decode(argue_type_str);
+  }
+  return result_ptr;
 }

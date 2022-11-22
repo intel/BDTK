@@ -56,7 +56,7 @@ void registerExtensionFunctions();
  * @param plan: substrait plan
  * @return std::unordered_map: function map <function_id, function_descriptor>
  */
-// std::unordered_map<int, FunctionDescriptor> getFunctionMap(const substrait::Plan&
+// std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan&
 // plan);
 std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan);
 
@@ -125,4 +125,6 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr,
 std::unordered_map<int, std::string> getFunctionMap(
     const std::vector<
         substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*> func_infos);
+
+const io::substrait::TypePtr getReturnType(const substrait::Type& type);
 }  // namespace generator
