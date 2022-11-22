@@ -41,7 +41,6 @@ void FilterTranslator::codegen(Context& context) {
           bool_init = bool_init && cond.getValue();
           TODO("MaJian", "support null in condition");
         }
-        TODO("MaJian", "support short circuit logic operation");
         return bool_init;
       })
       ->ifTrue([&]() {
@@ -50,5 +49,4 @@ void FilterTranslator::codegen(Context& context) {
       })
       ->build();
 }
-
 }  // namespace cider::exec::nextgen::operators

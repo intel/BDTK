@@ -24,6 +24,7 @@
 #include <llvm/IR/LegacyPassManager.h>
 
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/Support/CodeGen.h>
 #include <llvm/Transforms/Utils/ValueMapper.h>
 
 #include "exec/nextgen/jitlib/base/JITModule.h"
@@ -41,6 +42,8 @@ enum class OptimizeLevel {
 // compilation config info
 struct CompilationOptions {
   OptimizeLevel optimize_level = OptimizeLevel::DEBUG;
+  llvm::CodeGenOpt::Level codegen_level = llvm::CodeGenOpt::None;
+  bool dump_ir = false;
 };
 
 class LLVMJITModule final : public JITModule {
@@ -57,6 +60,8 @@ class LLVMJITModule final : public JITModule {
   llvm::LLVMContext& getLLVMContext() { return *context_; }
 
   void finish() override;
+
+  llvm::CodeGenOpt::Level getCodeGenLevel() { return co_.codegen_level; }
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);

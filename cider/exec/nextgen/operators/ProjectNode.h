@@ -48,11 +48,6 @@ class ProjectTranslator : public Translator {
     node_ = ProjectNode(std::forward<T>(exprs));
     successor_.swap(successor);
   }
-  template <typename... T>
-  [[deprecated]] ProjectTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
-    node_ = ProjectNode(std::forward<T>(exprs)...);
-    successor_.swap(successor);
-  }
   [[deprecated]] ProjectTranslator(ProjectNode&& node,
                                    std::unique_ptr<Translator>&& successor)
       : node_(std::move(node)), successor_(std::move(successor)) {}

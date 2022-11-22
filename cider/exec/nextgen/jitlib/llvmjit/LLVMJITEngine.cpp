@@ -51,7 +51,7 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
   eb.setMCPU(llvm::sys::getHostCPUName().str())
       .setEngineKind(llvm::EngineKind::JIT)
       .setTargetOptions(buildTargetOptions())
-      .setOptLevel(llvm::CodeGenOpt::None)
+      .setOptLevel(module_.getCodeGenLevel())
       .setErrorStr(&error);
 
   auto engine = std::make_unique<LLVMJITEngine>();

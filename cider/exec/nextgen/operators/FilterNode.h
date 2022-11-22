@@ -49,12 +49,6 @@ class FilterTranslator : public Translator {
     successor_.swap(succ);
   }
 
-  template <typename... T>
-  [[deprecated]] FilterTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
-    node_ = FilterNode(std::forward<T>(exprs)...);
-    successor_.swap(successor);
-  }
-
   [[deprecated]] FilterTranslator(FilterNode&& node, std::unique_ptr<Translator>&& succ)
       : node_(std::move(node)), successor_(std::move(succ)) {}
 
