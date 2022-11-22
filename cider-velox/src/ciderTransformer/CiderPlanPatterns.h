@@ -43,6 +43,10 @@ class CompoundStateMachine : public StateMachine {
    public:
     bool isFinal() override { return true; };
   };
+  class TopN : public CompoundState {
+   public:
+    bool isFinal() override { return true; };
+  };
   class AcceptPrev : public CompoundState {
    public:
     bool isFinal() override { return true; };
@@ -87,7 +91,11 @@ class LeftDeepJoinStateMachine : public StateMachine {
 
  private:
   VeloxPlanNodeAddrList compoundMatchResult_;
+  VeloxPlanNodeAddrList filterMatchResult_;
+  VeloxPlanNodeAddrList partialAggMatchResult_;
   bool inCompoundState();
+  bool inFilterState();
+  bool inPartialAggState();
 };
 
 // PlanPattern for "filter(optional)->proj->agg(optional)"
@@ -150,6 +158,54 @@ class FilterPattern : public SequencePlanPattern {
 class PartialAggPattern : public SequencePlanPattern {
  public:
   PartialAggPattern() { setStateMachine(std::make_shared<PartialAggStateMachine>()); }
+};
+
+class OrderByStateMachine : public StateMachine {
+ public:
+  class Initial : public State {
+   public:
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
+  };
+  class NotAccept : public State {
+   public:
+    bool isFinal() override { return true; };
+  };
+  class OrderBy : public State {
+   public:
+    bool isFinal() override { return true; };
+  };
+  OrderByStateMachine() { setCurState(std::make_shared<Initial>()); }
+  void setInitState() override { setCurState(std::make_shared<Initial>()); };
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
+};
+
+class OrderByPattern : public SequencePlanPattern {
+ public:
+  OrderByPattern() { setStateMachine(std::make_shared<OrderByStateMachine>()); }
+};
+
+class TopNStateMachine : public StateMachine {
+ public:
+  class Initial : public State {
+   public:
+    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
+  };
+  class NotAccept : public State {
+   public:
+    bool isFinal() override { return true; };
+  };
+  class TopN : public State {
+   public:
+    bool isFinal() override { return true; };
+  };
+  TopNStateMachine() { setCurState(std::make_shared<Initial>()); }
+  void setInitState() override { setCurState(std::make_shared<Initial>()); };
+  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
+};
+
+class TopNPattern : public SequencePlanPattern {
+ public:
+  TopNPattern() { setStateMachine(std::make_shared<TopNStateMachine>()); }
 };
 
 }  // namespace facebook::velox::plugin::plantransformer

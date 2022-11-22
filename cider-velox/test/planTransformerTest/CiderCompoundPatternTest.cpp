@@ -69,6 +69,40 @@ TEST_F(CiderCompoundPatternTest, projectAgg) {
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 
+TEST_F(CiderCompoundPatternTest, projectTopN) {
+  VeloxPlanNodePtr planPtr = PlanBuilder()
+                                 .values(generateTestBatch(rowType_, false))
+                                 .project(projections_)
+                                 .topN({"c0"}, 10, true)
+                                 .planNode();
+
+  VeloxPlanNodePtr expectedPtr = getCiderExpectedPtr(rowType_);
+  // TODO: (Jie) enable this after TopN Node supported by cider-velox and cider.
+  GTEST_SKIP();
+  VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
+  EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
+}
+
+TEST_F(CiderCompoundPatternTest, projectNoPartialTopN) {
+  VeloxPlanNodePtr planPtr = PlanBuilder()
+                                 .values(generateTestBatch(rowType_, false))
+                                 .project(projections_)
+                                 .topN({"c0"}, 10, false)
+                                 .planNode();
+
+  VeloxPlanNodePtr expectedPtr =
+      PlanBuilder()
+          .values(generateTestBatch(rowType_, false))
+          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<TestCiderPlanNode>(id, input);
+          })
+          .topN({"c0"}, 10, false)
+          .planNode();
+
+  VeloxPlanNodePtr resultPtr = getTransformer(planPtr)->transform();
+  EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
+}
+
 TEST_F(CiderCompoundPatternTest, filterProject) {
   VeloxPlanNodePtr planPtr = PlanBuilder()
                                  .values(generateTestBatch(rowType_, false))

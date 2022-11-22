@@ -41,6 +41,9 @@ using namespace facebook::velox::plugin::plantransformer::test;
 class CiderPatternTest : public OperatorTestBase {
   void SetUp() override {
     FLAGS_partial_agg_pattern = true;
+    // TODO: Enable this after TopN/OrderBy Node supported by cider-velox and cider.
+    // FLAGS_order_by_pattern = true;
+    // FLAGS_top_n_pattern = true;
     CiderVeloxPluginCtx::init();
   }
 };
@@ -90,6 +93,57 @@ TEST_F(CiderPatternTest, FilterPattern) {
           })
           .planNode();
   EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
+TEST_F(CiderPatternTest, partialTopN) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(20, [](auto row) { return row; })});
+  createDuckDbTable({data});
+
+  VeloxPlanNodePtr veloxPlan =
+      PlanBuilder().values({data}).topN({"c0"}, 10, true).planNode();
+  // TODO : enable this after TopN Node supported by cider-velox and cider.
+  // VeloxPlanNodePtr resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT * from tmp limit 10";
+
+  assertQuery(veloxPlan, duckdbSql);
+  //  assertQuery(resultPtr, duckdbSql);
+  //
+  //  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  //  auto expectedPlan =
+  //      PlanBuilder()
+  //          .values({data})
+  //          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+  //            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+  //                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+  //          })
+  //          .planNode();
+  //  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
+TEST_F(CiderPatternTest, partialOderBy) {
+  auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+  createDuckDbTable({data});
+  VeloxPlanNodePtr veloxPlan = PlanBuilder()
+                                   .values({data})
+                                   .orderBy({fmt::format("c0 DESC NULLS FIRST")}, true)
+                                   .planNode();
+  // TODO : enable this after orderBy Node supported by cider-velox and cider.
+  // VeloxPlanNodePtr resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT * FROM tmp ORDER BY c0 DESC NULLS FIRST";
+
+  assertQuery(veloxPlan, duckdbSql);
+  //  assertQuery(resultPtr, duckdbSql);
+  //
+  //  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  //  auto expectedPlan =
+  //      PlanBuilder()
+  //          .values({data})
+  //          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+  //            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+  //                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+  //          })
+  //          .planNode();
+  //  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
 }
 
 int main(int argc, char** argv) {
