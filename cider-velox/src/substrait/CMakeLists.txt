@@ -17,6 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(VELOX_SUBSTRAIT_CONVERTOR_SOURCES VeloxPlanFragmentToSubstraitPlan.cpp)
+set(VELOX_SUBSTRAIT_CONVERTOR_SOURCES VeloxPlanFragmentToSubstraitPlan.cpp VeloxPlanFragmentToSubstraitPlanOptions.cpp)
 add_library(velox_substrait_convertor ${VELOX_SUBSTRAIT_CONVERTOR_SOURCES})
 target_link_libraries(velox_substrait_convertor velox_substrait_plan_converter)
