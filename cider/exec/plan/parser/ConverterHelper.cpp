@@ -48,14 +48,14 @@ std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan)
     const auto& extension = plan.extensions(i);
     if (extension.has_extension_function()) {
       const auto& function = extension.extension_function().name();
-      auto function_lookup_ptr =
+      /*auto function_lookup_ptr =
           std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
       auto function_descriptor =
           function_lookup_ptr->lookupFunction(function, PlatformType::PrestoPlatform);
-      std::string function_name = function_descriptor.func_sig.func_name;
+      std::string function_name = function_descriptor.func_sig.func_name;*/
       // do function lookup verify and function mapping
       // get op type, no need mapping in substraitToAnalyzerExpr
-      // auto function_name = function.substr(0, function.find_first_of(':'));
+      auto function_name = function.substr(0, function.find_first_of(':'));
       function_map.emplace(extension.extension_function().function_anchor(),
                            std::move(function_name));
     }
@@ -303,9 +303,9 @@ SQLOps getCiderSqlOps(const std::string& op) {
     return SQLOps::kNOT;
   } else if (op == "gt") {
     return SQLOps::kGT;
-  } else if (op == "equal") {
+  } else if (op == "eq" or op == "equal") {
     return SQLOps::kEQ;
-  } else if (op == "not_equal") {
+  } else if (op == "neq" or op == "ne" or op == "not_equal") {
     return SQLOps::kNE;
   } else if (op == "gte") {
     return SQLOps::kGE;
@@ -315,7 +315,7 @@ SQLOps getCiderSqlOps(const std::string& op) {
     return SQLOps::kMULTIPLY;
   } else if (op == "divide") {
     return SQLOps::kDIVIDE;
-  } else if (op == "add") {
+  } else if (op == "plus" || op == "add") {
     return SQLOps::kPLUS;
   } else if (op == "subtract" || op == "minus") {
     return SQLOps::kMINUS;

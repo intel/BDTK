@@ -86,6 +86,7 @@ class SubstraitFunctionCiderMappings {
         {"is_null", SQLOps::kISNULL},
         {"is_not_distinct_from", SQLOps::kBW_EQ},
         {"is_distinct_from", SQLOps::kBW_NE},
+        // todo substring......
     };
     return mapping;
   };

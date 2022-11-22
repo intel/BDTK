@@ -55,9 +55,10 @@ void FunctionLookupEngine::loadExtensionYamlAndInitializeFunctionLookup(
           cider_internal_function_ptr, func_mappings);
   extension_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>(
       extension_function_ptr, func_mappings);
+  function_mapping_ptr_ = func_mappings;
 }
 
-std::tuple<const SQLOps, const std::string> FunctionLookupEngine::getFunctionScalarOp(
+const SQLOps FunctionLookupEngine::getFunctionScalarOp(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -74,13 +75,12 @@ std::tuple<const SQLOps, const std::string> FunctionLookupEngine::getFunctionSca
   const auto& function_variant_ptr =
       scalar_function_look_up_ptr_->lookupFunction({func_name, arguments, return_type});
   if (function_variant_ptr) {
-    return {function_mappings_->getFunctionScalarOp(function_variant_ptr->name),
-            function_variant_ptr->name};
+    return function_mappings_->getFunctionScalarOp(function_variant_ptr->name);
   }
-  return {SQLOps::kUNDEFINED_OP, func_name};
+  return SQLOps::kUNDEFINED_OP;
 }
 
-std::tuple<const SQLAgg, const std::string> FunctionLookupEngine::getFunctionAggOp(
+const SQLAgg FunctionLookupEngine::getFunctionAggOp(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -97,14 +97,12 @@ std::tuple<const SQLAgg, const std::string> FunctionLookupEngine::getFunctionAgg
   const auto& function_variant_ptr = aggregate_function_look_up_ptr_->lookupFunction(
       {func_name, arguments, return_type});
   if (function_variant_ptr) {
-    return {function_mappings_->getFunctionAggOp(function_variant_ptr->name),
-            function_variant_ptr->name};
+    return function_mappings_->getFunctionAggOp(function_variant_ptr->name);
   }
-  return {SQLAgg::kUNDEFINED_AGG, func_name};
+  return SQLAgg::kUNDEFINED_AGG;
 }
 
-std::tuple<const OpSupportExprType, const std::string>
-FunctionLookupEngine::getScalarFunctionOpSupportType(
+const OpSupportExprType FunctionLookupEngine::getScalarFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -121,14 +119,12 @@ FunctionLookupEngine::getScalarFunctionOpSupportType(
   const auto& function_variant_ptr =
       scalar_function_look_up_ptr_->lookupFunction({func_name, arguments, return_type});
   if (function_variant_ptr) {
-    return {function_mappings_->getFunctionOpSupportType(function_variant_ptr->name),
-            function_variant_ptr->name};
+    return function_mappings_->getFunctionOpSupportType(function_variant_ptr->name);
   }
-  return {OpSupportExprType::kUNDEFINED_EXPR, func_name};
+  return OpSupportExprType::kUNDEFINED_EXPR;
 }
 
-std::tuple<const OpSupportExprType, const std::string>
-FunctionLookupEngine::getAggFunctionOpSupportType(
+const OpSupportExprType FunctionLookupEngine::getAggFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -145,14 +141,12 @@ FunctionLookupEngine::getAggFunctionOpSupportType(
   const auto& function_variant_ptr = aggregate_function_look_up_ptr_->lookupFunction(
       {func_name, arguments, return_type});
   if (function_variant_ptr) {
-    return {function_mappings_->getFunctionOpSupportType(function_variant_ptr->name),
-            function_variant_ptr->name};
+    return function_mappings_->getFunctionOpSupportType(function_variant_ptr->name);
   }
-  return {OpSupportExprType::kUNDEFINED_EXPR, func_name};
+  return OpSupportExprType::kUNDEFINED_EXPR;
 }
 
-std::tuple<const OpSupportExprType, const std::string>
-FunctionLookupEngine::getExtensionFunctionOpSupportType(
+const OpSupportExprType FunctionLookupEngine::getExtensionFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -169,30 +163,45 @@ FunctionLookupEngine::getExtensionFunctionOpSupportType(
   const auto& function_variant_ptr = extension_function_look_up_ptr_->lookupFunction(
       {func_name, arguments, return_type});
   if (function_variant_ptr) {
-    return {OpSupportExprType::kFUNCTION_OPER, function_variant_ptr->name};
+    return OpSupportExprType::kFUNCTION_OPER;
   }
-  return {OpSupportExprType::kUNDEFINED_EXPR, func_name};
+  return OpSupportExprType::kUNDEFINED_EXPR;
 }
 
 /// first search extension function, second search internal function
-std::tuple<const OpSupportExprType, const std::string>
-FunctionLookupEngine::getFunctionOpSupportType(
+const OpSupportExprType FunctionLookupEngine::getFunctionOpSupportType(
     const FunctionSignature& function_signature) const {
   auto extension_function_op_support_type_result =
       getExtensionFunctionOpSupportType(function_signature);
-  if (std::get<0>(extension_function_op_support_type_result) !=
-      OpSupportExprType::kUNDEFINED_EXPR) {
+  if (extension_function_op_support_type_result != OpSupportExprType::kUNDEFINED_EXPR) {
     return extension_function_op_support_type_result;
   }
   auto scalar_function_op_support_type_result =
       getScalarFunctionOpSupportType(function_signature);
-  if (std::get<0>(scalar_function_op_support_type_result) !=
-      OpSupportExprType::kUNDEFINED_EXPR) {
+  if (scalar_function_op_support_type_result != OpSupportExprType::kUNDEFINED_EXPR) {
     return scalar_function_op_support_type_result;
   }
   auto agg_function_op_support_type_result =
       getAggFunctionOpSupportType(function_signature);
   return agg_function_op_support_type_result;
+}
+
+const std::string FunctionLookupEngine::getRealFunctionName(
+    const std::string& function_name) const {
+  const auto& scalar_function_mappings = function_mapping_ptr_->scalaMapping();
+  if (scalar_function_mappings.find(function_name) != scalar_function_mappings.end()) {
+    return scalar_function_mappings.at(function_name);
+  }
+  const auto& aggregate_function_mappings = function_mapping_ptr_->aggregateMapping();
+  if (aggregate_function_mappings.find(function_name) !=
+      aggregate_function_mappings.end()) {
+    return aggregate_function_mappings.at(function_name);
+  }
+  const auto& window_function_mappings = function_mapping_ptr_->windowMapping();
+  if (window_function_mappings.find(function_name) != window_function_mappings.end()) {
+    return window_function_mappings.at(function_name);
+  }
+  return function_name;
 }
 
 const FunctionDescriptor FunctionLookupEngine::lookupFunction(
@@ -207,27 +216,29 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
             from_platform,
             from_platform_));
   }
-  function_descriptor.func_sig = function_signature;
+  const std::string& function_name = function_signature.func_name;
+  auto real_function_name = getRealFunctionName(function_name);
+  FunctionSignature function_signature_result = function_signature;
+  function_signature_result.func_name = real_function_name;
+  function_descriptor.func_sig = function_signature_result;
   auto funtion_op_support_type_result = getFunctionOpSupportType(function_signature);
-  function_descriptor.op_support_expr_type = std::get<0>(funtion_op_support_type_result);
-  function_descriptor.func_sig.func_name = std::get<1>(funtion_op_support_type_result);
-  if (std::get<0>(funtion_op_support_type_result) == OpSupportExprType::kFUNCTION_OPER) {
+  function_descriptor.op_support_expr_type = funtion_op_support_type_result;
+  if (funtion_op_support_type_result == OpSupportExprType::kFUNCTION_OPER) {
     return function_descriptor;
   }
   auto funtion_scalar_op_result = getFunctionScalarOp(function_signature);
-  function_descriptor.scalar_op_type = std::get<0>(funtion_scalar_op_result);
-  function_descriptor.func_sig.func_name = std::get<1>(funtion_scalar_op_result);
-  if (std::get<0>(funtion_scalar_op_result) != SQLOps::kUNDEFINED_OP) {
+  function_descriptor.scalar_op_type = funtion_scalar_op_result;
+  if (funtion_scalar_op_result != SQLOps::kUNDEFINED_OP) {
     return function_descriptor;
   }
   auto funtion_agg_op_result = getFunctionAggOp(function_signature);
-  function_descriptor.agg_op_type = std::get<0>(funtion_agg_op_result);
-  function_descriptor.func_sig.func_name = std::get<1>(funtion_agg_op_result);
+  function_descriptor.agg_op_type = funtion_agg_op_result;
   return function_descriptor;
 }
 
 const FunctionDescriptor FunctionLookupEngine::lookupFunction(
     const std::string& function_signature_str,
+    const io::substrait::TypePtr& return_type,
     const PlatformType& from_platform) const {
   FunctionDescriptor function_descriptor;
   auto function_name =
@@ -239,15 +250,21 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
   function_signature.from_platform = from_platform;
   function_signature.func_name = function_name;
   std::vector<io::substrait::TypePtr> arguments_vec;
-  // no need to verify return type
-  io::substrait::TypePtr return_type =
-      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   for (const auto& arg_str : function_args_vec) {
     if (arg_str == "req" || arg_str == "opt") {
       continue;
+    } else if (arg_str == "varchar" || arg_str == "vchar") {
+      arguments_vec.push_back(io::substrait::Type::decode("varchar<L1>"));
+    } else if (arg_str == "fixedchar" || arg_str == "fchar") {
+      arguments_vec.push_back(io::substrait::Type::decode("fixedchar<L1>"));
+    } else if (arg_str == "fixedbinary" || arg_str == "fbin") {
+      arguments_vec.push_back(io::substrait::Type::decode("fixedbinary<L1>"));
+    } else if (arg_str == "decimal" || arg_str == "dec") {
+      arguments_vec.push_back(io::substrait::Type::decode("dec<P,S>"));
+    } else {
+      const auto type_ptr = io::substrait::Type::decode(arg_str);
+      arguments_vec.push_back(type_ptr);
     }
-    const auto type_ptr = io::substrait::Type::decode(arg_str);
-    arguments_vec.push_back(type_ptr);
   }
   function_signature.arguments = arguments_vec;
   function_signature.return_type = return_type;

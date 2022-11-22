@@ -25,7 +25,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -101,6 +100,7 @@ class FunctionLookupEngine {
 
   // like:vchar_vchar
   const FunctionDescriptor lookupFunction(const std::string& function_signature_str,
+                                          const io::substrait::TypePtr& return_type,
                                           const PlatformType& from_platform) const;
 
  private:
@@ -111,18 +111,17 @@ class FunctionLookupEngine {
       std::string yaml_extension_filename,
       const io::substrait::ExtensionPtr& cider_internal_function_ptr);
 
-  std::tuple<const SQLOps, const std::string> getFunctionScalarOp(
+  const SQLOps getFunctionScalarOp(const FunctionSignature& function_signature) const;
+  const SQLAgg getFunctionAggOp(const FunctionSignature& function_signature) const;
+  const OpSupportExprType getFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  std::tuple<const SQLAgg, const std::string> getFunctionAggOp(
+  const OpSupportExprType getScalarFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  std::tuple<const OpSupportExprType, const std::string> getFunctionOpSupportType(
+  const OpSupportExprType getAggFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  std::tuple<const OpSupportExprType, const std::string> getScalarFunctionOpSupportType(
+  const OpSupportExprType getExtensionFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
-  std::tuple<const OpSupportExprType, const std::string> getAggFunctionOpSupportType(
-      const FunctionSignature& function_signature) const;
-  std::tuple<const OpSupportExprType, const std::string>
-  getExtensionFunctionOpSupportType(const FunctionSignature& function_signature) const;
+  const std::string getRealFunctionName(const std::string& function_name) const;
 
   static std::string getDataPath() {
     const std::string absolute_path = __FILE__;
@@ -139,6 +138,8 @@ class FunctionLookupEngine {
   io::substrait::FunctionLookupPtr aggregate_function_look_up_ptr_;
   // extension function lookup ptr
   io::substrait::FunctionLookupPtr extension_function_look_up_ptr_;
+  // function mapping
+  io::substrait::FunctionMappingPtr function_mapping_ptr_;
 
   const PlatformType from_platform_;
 };
