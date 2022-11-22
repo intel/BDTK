@@ -29,13 +29,13 @@
 class InputColDescriptor;
 namespace cider::exec::nextgen::operators {
 
-class SourceNode : public OpNode {
+class ArrowSourceNode : public OpNode {
  public:
   template <typename T, IsVecOf<T, ExprPtr> = true>
-  SourceNode(T&& exprs) : input_cols_(std::forward<T>(exprs)) {}
+  ArrowSourceNode(T&& exprs) : input_cols_(std::forward<T>(exprs)) {}
 
   template <typename... T>
-  SourceNode(T&&... exprs) {
+  ArrowSourceNode(T&&... exprs) {
     (input_cols_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
@@ -43,27 +43,26 @@ class SourceNode : public OpNode {
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
- private:
   ExprPtrVector input_cols_;
 };
 
-class SourceTranslator : public Translator {
+class ArrowSourceTranslator : public Translator {
  public:
   template <typename T>
-  SourceTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = SourceNode(std::forward<T>(exprs));
+  ArrowSourceTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
+    node_ = ArrowSourceNode(std::forward<T>(exprs));
     successor_.swap(succ);
   }
 
   template <typename... T>
-  SourceTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
-    node_ = SourceNode(std::forward<T>(exprs)...);
+  ArrowSourceTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
+    node_ = ArrowSourceNode(std::forward<T>(exprs)...);
     successor_.swap(successor);
   }
 
-  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+  ArrowSourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {
-    CHECK(isa<SourceNode>(node));
+    CHECK(isa<ArrowSourceNode>(node));
   }
 
   void consume(Context& context) override;
@@ -71,7 +70,9 @@ class SourceTranslator : public Translator {
  private:
   void codegen(Context& context);
 
-  SourceNode node_;
+  // source node : ArrowArray
+  ArrowSourceNode node_;
+  // next translator
   std::unique_ptr<Translator> successor_;
 };
 

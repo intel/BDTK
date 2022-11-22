@@ -27,6 +27,7 @@
 #include "tests/TestHelpers.h"
 
 TEST(NextgenCompilerTest, FrameworkTest) {
+  GTEST_SKIP_("will be modified in next integretion pr");
   using namespace cider::exec::nextgen;
   RelAlgExecutionUnit eu = {};
   auto pipeline = parsers::toOpPipeline(eu);

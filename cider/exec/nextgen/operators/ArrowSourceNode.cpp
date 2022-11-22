@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/operators/SourceNode.h"
+#include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/module/batch/ArrowABI.h"
 
 #include "exec/nextgen/jitlib/base/JITFunction.h"
@@ -29,15 +29,15 @@
 
 namespace cider::exec::nextgen::operators {
 
-TranslatorPtr SourceNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<SourceTranslator>(shared_from_this(), succ);
+TranslatorPtr ArrowSourceNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<ArrowSourceTranslator>(shared_from_this(), succ);
 }
 
-void SourceTranslator::consume(Context& context) {
+void ArrowSourceTranslator::consume(Context& context) {
   codegen(context);
 }
 
-void SourceTranslator::codegen(Context& context) {
+void ArrowSourceTranslator::codegen(Context& context) {
   JITFunction* func = context.query_func_;
   auto inputs = node_.getOutputExprs();
   // get ArrowArray pointer
@@ -49,7 +49,7 @@ void SourceTranslator::codegen(Context& context) {
         "extract_arrow_array_null",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
-            .sub_type = JITTypeTag::VOID,
+            .ret_sub_type = JITTypeTag::VOID,
             .params_vector = {{arrow_pointer.get(), jit_index.get()}}});
 
     // extract ArrowArray data buffer
@@ -57,10 +57,10 @@ void SourceTranslator::codegen(Context& context) {
         "extract_arrow_array_data",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
-            .sub_type = JITTypeTag::VOID,
+            .ret_sub_type = JITTypeTag::VOID,
             .params_vector = {{arrow_pointer.get(), jit_index.get()}}});
 
-    inputs[index]->set_null_datas(null_data);
+    inputs[index]->set_nulls(null_data);
     inputs[index]->set_datas(data);
   }
   successor_->consume(context);

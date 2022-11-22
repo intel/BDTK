@@ -21,9 +21,9 @@ set(TEST_ARGS "--gtest_output=xml:../")
 
 file(GLOB jit_translator_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(jit_translator_test_file ${jit_translator_test_files})
-  string(REGEX MATCH "translator/.*" test_relative_path
+  string(REGEX MATCH "operator/.*" test_relative_path
                ${jit_translator_test_file})
-  string(REGEX REPLACE "translator/" "" target_name ${test_relative_path})
+  string(REGEX REPLACE "operator/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${jit_translator_test_file})
   target_link_libraries(${target_name} ${DEP_LIBS})

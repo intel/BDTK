@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_OPERATORS_ColumnToRowNODE_H
-#define NEXTGEN_OPERATORS_ColumnToRowNODE_H
+#ifndef NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
+#define NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
 
@@ -35,9 +35,9 @@ class ColumnToRowNode : public OpNode {
     (exprs_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
-
   ExprPtrVector getOutputExprs() override { return exprs_; }
+
+  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
   ExprPtrVector exprs_;
 };
@@ -68,9 +68,10 @@ class ColumnToRowTranslator : public Translator {
 
   void col2RowConvert(ExprPtrVector inputs, JITFunction* func, JITValuePointer index);
 
+  // to convert column data to row
   ColumnToRowNode node_;
   std::unique_ptr<Translator> successor_;
 };
 
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_ColumnToRowNODE_H
+#endif  // NEXTGEN_OPERATORS_COLUMNTOROWNODE_H

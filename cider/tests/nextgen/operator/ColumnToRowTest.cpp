@@ -23,13 +23,13 @@
 
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/ColumnToRowNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
-#include "exec/nextgen/operators/SourceNode.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/TestHelpers.h"
-#include "tests/nextgen/translator/MockRowToColumn.h"
+#include "tests/nextgen/operator/MockRowToColumn.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 
 using namespace cider::jitlib;
@@ -67,7 +67,7 @@ TEST_F(ColumnToRowTest, FilterTest) {
         SQLTypes::kINT, SQLOps::kPLUS, SQLQualifier::kONE, col_var1, const_var);
 
     // source -> column2row -> filter -> project -> sinkR2C
-    auto source = SourceTranslator(
+    auto source = ArrowSourceTranslator(
         std::vector<ExprPtr>{col_var1, col_var2},
         std::make_unique<ColumnToRowTranslator>(
             std::vector<ExprPtr>{col_var1, col_var2},
@@ -110,6 +110,7 @@ TEST_F(ColumnToRowTest, FilterTest) {
   auto func_ptr = func->getFunctionPointer<void, int8_t*, int32_t*>();
   int32_t* output = new int32_t[5];
   func_ptr(reinterpret_cast<int8_t*>(array), output);
+  // TODO: null vector check
   EXPECT_EQ(output[0], 6);
   EXPECT_EQ(output[1], 7);
   EXPECT_EQ(output[2], 8);

@@ -27,7 +27,7 @@
 
 namespace cider::exec::nextgen::operators {
 
-// Mock R2C sink, will be modified After R2CTranslator ready
+// TODO: Mock R2C sink, will be modified After R2CTranslator ready
 class MockRowToColumnTranslator : public Translator {
  public:
   explicit MockRowToColumnTranslator(size_t pos) : pos_(pos) {}
@@ -39,7 +39,8 @@ class MockRowToColumnTranslator : public Translator {
     auto& func_ = context.query_func_;
     for (int idx = 0; idx < context.expr_outs_.size(); idx++) {
       auto var = func_->getArgument(pos_++);
-      var[*context.index_] = context.expr_outs_[idx]->getValue();
+      //TODO : add null vector sink
+      var[*context.cur_line_idx_] = context.expr_outs_[idx]->getValue();
     }
   }
 

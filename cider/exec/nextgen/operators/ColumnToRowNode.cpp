@@ -26,6 +26,11 @@
 #include "type/plan/Expr.h"
 
 namespace cider::exec::nextgen::operators {
+
+TranslatorPtr ColumnToRowNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<ColumnToRowTranslator>(shared_from_this(), succ);
+}
+
 void ColumnToRowTranslator::consume(Context& context) {
   codegen(context);
 }
@@ -49,7 +54,7 @@ void ColumnToRowTranslator::codegen(Context& context) {
       ->loop([&]() {
         col2RowConvert(inputs, func, index);
         // context record row index
-        context.index_ = index.get();
+        context.cur_line_idx_ = index.get();
         successor_->consume(context);
       })
       ->update([&index]() { index = index + 1l; })
@@ -68,7 +73,7 @@ void ColumnToRowTranslator::col2RowConvert(ExprPtrVector inputs,
     auto data_pointer = column_data->castPointerSubType(tag);
     auto row_data = data_pointer[index];
     // null buffer decoder
-    JITValue* column_null_data = inputs[idx]->get_null_datas()[0].get();
+    JITValue* column_null_data = inputs[idx]->get_nulls()[0].get();
     auto row_null_data = func->emitRuntimeFunctionCall(
         "check_bit_vector_clear",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::BOOL,
