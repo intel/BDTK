@@ -23,6 +23,7 @@ cider/exec/plan/parser/Substrait*
 cider/exec/plan/parser/ConverterHelper.*
 cider/exec/plan/validator/*
 cider/exec/nextgen/*
+cider/type/plan/*Expr.cpp
 cider/function/FunctionLookupEngine.*
 cider/function/SubstraitFunctionCiderMappings.h
 cider/function/substrait/*
