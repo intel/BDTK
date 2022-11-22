@@ -186,7 +186,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
   args.reserve(descriptor.params_vector.size());
   for (auto jit_value : descriptor.params_vector) {
     LLVMJITValue* llvmjit_value = static_cast<LLVMJITValue*>(jit_value);
-    args.push_back(llvmjit_value->llvm_value_);
+    args.push_back(llvmjit_value->load());
   }
 
   llvm::Value* ans = ir_builder_->CreateCall(func, args);

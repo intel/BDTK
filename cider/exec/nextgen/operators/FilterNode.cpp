@@ -44,7 +44,6 @@ void FilterTranslator::codegen(Context& context) {
         return bool_init;
       })
       ->ifTrue([&]() {
-        CHECK(successor_);
         successor_->consume(context);
       })
       ->build();

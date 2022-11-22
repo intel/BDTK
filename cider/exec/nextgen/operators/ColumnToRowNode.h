@@ -18,70 +18,55 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_OPERATORS_SOURCENODE_H
-#define NEXTGEN_OPERATORS_SOURCENODE_H
 
-#include <vector>
+#ifndef NEXTGEN_OPERATORS_ColumnToRowNODE_H
+#define NEXTGEN_OPERATORS_ColumnToRowNODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
-#include "util/Logger.h"
 
-class InputColDescriptor;
 namespace cider::exec::nextgen::operators {
-
-class SourceNode : public OpNode {
+class ColumnToRowNode : public OpNode {
  public:
   template <typename T, IsVecOf<T, ExprPtr> = true>
-  SourceNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  ColumnToRowNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
 
   template <typename... T>
-  SourceNode(T&&... exprs) {
+  ColumnToRowNode(T&&... exprs) {
     (exprs_.emplace_back(std::forward<T>(exprs)), ...);
   }
 
   ExprPtrVector getExprs() override { return exprs_; }
 
- private:
   ExprPtrVector exprs_;
 };
 
-class SourceTranslator : public Translator {
+class ColumnToRowTranslator : public Translator {
  public:
   template <typename T>
-  SourceTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = SourceNode(std::forward<T>(exprs));
+  ColumnToRowTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
+    node_ = ColumnToRowNode(std::forward<T>(exprs));
     successor_.swap(succ);
   }
 
   template <typename... T>
-  SourceTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
-    node_ = SourceNode(std::forward<T>(exprs)...);
+  ColumnToRowTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
+    node_ = ColumnToRowNode(std::forward<T>(exprs)...);
     successor_.swap(successor);
   }
 
-  SourceTranslator(SourceNode&& node, std::unique_ptr<Translator>&& succ)
+  ColumnToRowTranslator(ColumnToRowNode&& node, std::unique_ptr<Translator>&& succ)
       : node_(std::move(node)), successor_(std::move(succ)) {}
 
-  ExprPtrVector getOutputExprs() override { return exprs_; }
-
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  void consume(Context& context) override;
 
  private:
   void codegen(Context& context);
 
-  SourceNode node_;
+  void col2RowConvert(ExprPtrVector inputs, JITFunction* func, JITValuePointer index);
+
+  ColumnToRowNode node_;
   std::unique_ptr<Translator> successor_;
 };
 
-
-class SourceTranslator : public Translator {
- public:
-  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {
-    CHECK(isa<SourceNode>(node));
-  }
-
-  void consume(Context& context) override { UNREACHABLE(); }
-};
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_SOURCENODE_H
+#endif  // NEXTGEN_OPERATORS_ColumnToRowNODE_H

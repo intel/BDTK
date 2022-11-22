@@ -19,23 +19,32 @@
  * under the License.
  */
 
-#include "exec/nextgen/operators/ProjectNode.h"
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_ROWTOCOLUMN_SINK_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_ROWTOCOLUMN_SINK_H
+
+#include "exec/nextgen/Context.h"
+#include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::operators {
-TranslatorPtr ProjectNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<ProjectTranslator>(shared_from_this(), succ);
-}
 
-void ProjectTranslator::consume(Context& context) {
-  codegen(context);
-}
+// Mock R2C sink, will be modified After R2CTranslator ready
+class MockRowToColumnTranslator : public Translator {
+ public:
+  explicit MockRowToColumnTranslator(size_t pos) : pos_(pos) {}
 
-void ProjectTranslator::codegen(Context& context) {
-  auto func = context.query_func_;
-  for (const auto& expr : node_.exprs_) {
-    context.expr_outs_.push_back(&expr->codegen(*func));
+  void consume(Context& context) override { codegen(context); };
+
+ private:
+  void codegen(Context& context) {
+    auto& func_ = context.query_func_;
+    for (int idx = 0; idx < context.expr_outs_.size(); idx++) {
+      auto var = func_->getArgument(pos_++);
+      var[*context.index_] = context.expr_outs_[idx]->getValue();
+    }
   }
-  successor_->consume(context);
-}
+
+  size_t pos_;
+};
 
 }  // namespace cider::exec::nextgen::operators
+#endif
