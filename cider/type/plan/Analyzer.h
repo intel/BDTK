@@ -1359,7 +1359,10 @@ class LowerStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  const std::vector<std::string>& getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class UpperStringOper : public StringOper {
@@ -1389,7 +1392,10 @@ class UpperStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  const std::vector<std::string>& getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class TrimStringOper : public StringOper {
@@ -1425,7 +1431,8 @@ class TrimStringOper : public StringOper {
   const std::vector<std::string>& getArgNames() const override {
     // args[0]: the string to remove characters from
     // args[1]: the set of characters to remove
-    return {"input", "characters"};
+    static std::vector<std::string> names{"input", "characters"};
+    return names;
   }
 
  private:
@@ -1475,7 +1482,8 @@ class SubstringStringOper : public StringOper {
             OperandTypeFamily::INT_FAMILY};
   }
   const std::vector<std::string>& getArgNames() const override {
-    return {"operand", "start position", "substring length"};
+    static std::vector<std::string> names{"operand", "start_pos", "substr_len"};
+    return names;
   }
 };
 
@@ -1508,7 +1516,8 @@ class ConcatStringOper : public StringOper {
   }
 
   const std::vector<std::string>& getArgNames() const override {
-    return {"operand_0", "operand_1"};
+    static std::vector<std::string> names{"operand_0", "operand_1"};
+    return names;
   }
 
  private:
@@ -1550,7 +1559,10 @@ class TryStringCastOper : public StringOper {
   std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
     return {OperandTypeFamily::STRING_FAMILY};
   }
-  const std::vector<std::string>& getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class FunctionOper : public Expr {
