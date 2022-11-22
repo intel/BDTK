@@ -135,15 +135,6 @@ extern "C" ALWAYS_INLINE void cider_agg_id_proj_string_nullable(int8_t* str_data
   }
 }
 
-extern "C" int64_t look_up_string_id_from_hasher(const char* str_ptr,
-                                                 const int32_t str_len,
-                                                 const int64_t string_hasher_handle) {
-  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
-  int64_t id =
-      string_hasher->lookupIdByValue(CiderByteArray(str_len, (const uint8_t*)str_ptr));
-  return id;
-}
-
 DEF_CIDER_SIMPLE_AGG_FUNCS(id, cider_agg_id)
 
 #undef DEF_CIDER_SIMPLE_AGG_FP_NULLABLE

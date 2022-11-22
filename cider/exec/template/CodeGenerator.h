@@ -238,6 +238,11 @@ class CodeGenerator {
   std::unique_ptr<CodegenColValues> codegenCastFun(const Analyzer::UOper*,
                                                    const CompilationOptions&);
 
+  llvm::Value* codegenCastNonStringToString(llvm::Value* operand_lv,
+                                            llvm::Value* hasher_handle_lv,
+                                            const SQLTypeInfo& operand_ti,
+                                            const SQLTypeInfo& ti);
+
   llvm::Value* codegenCast(llvm::Value* operand_lv,
                            const SQLTypeInfo& operand_ti,
                            const SQLTypeInfo& ti,
