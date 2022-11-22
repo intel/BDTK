@@ -32,13 +32,15 @@ class Translator;
 class OpNode;
 
 using OpNodePtr = std::shared_ptr<OpNode>;
+using OpPipeline = std::vector<OpNodePtr>;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 using ExprPtrVector = std::vector<ExprPtr>;
+using TranslatorPtr = std::shared_ptr<Translator>;
 
 /// \brief A OpNode is a relational operation in a plan
 ///
 /// Note: Each OpNode has zero or one source
-class OpNode : protected std::enable_shared_from_this<OpNode> {
+class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
   OpNode(const char* name = "None", const OpNodePtr& prev = nullptr)
       : input_(prev), name_(name) {}
@@ -50,10 +52,10 @@ class OpNode : protected std::enable_shared_from_this<OpNode> {
 
   void setInputOpNode(const OpNodePtr& prev) { input_ = prev; }
 
-  virtual ExprPtrVector getExprs() = 0;
+  virtual ExprPtrVector getOutputExprs() = 0;
 
   /// \brief Transform the operator to a translator
-  // virtual std::shared_ptr<Translator> toTranslator() const = 0;
+  virtual TranslatorPtr toTranslator(const TranslatorPtr& succ) = 0;
 
  protected:
   OpNodePtr input_;
@@ -63,23 +65,37 @@ class OpNode : protected std::enable_shared_from_this<OpNode> {
 
 class Translator {
  public:
-  using ExprPtr = std::shared_ptr<Analyzer::Expr>;
+  [[deprecated]] Translator() : Translator(nullptr, nullptr) {}
 
-  Translator(const OpNodePtr& op_node = nullptr) : op_node_(op_node) {}
+  Translator(const OpNodePtr& op_node, const TranslatorPtr& successor = nullptr)
+      : op_node_(op_node), new_successor_(successor) {}
 
   virtual ~Translator() = default;
 
   virtual void consume(Context& context) = 0;
 
+  OpNodePtr getOpNode() { return op_node_; }
+
+  TranslatorPtr setSuccessor(const TranslatorPtr& successor) {
+    new_successor_ = successor;
+    return new_successor_;
+  }
+
+  TranslatorPtr getSuccessor() const { return new_successor_; }
+
  protected:
   OpNodePtr op_node_;
+  TranslatorPtr new_successor_;
 };
-
-using OpPipeline = std::vector<OpNodePtr>;
 
 template <typename OpNodeT, typename... Args>
 OpNodePtr createOpNode(Args&&... args) {
   return std::make_shared<OpNodeT>(std::forward<Args>(args)...);
+}
+
+template <typename OpTranslatorT, typename... Args>
+TranslatorPtr createOpTranslator(Args&&... args) {
+  return std::make_shared<OpTranslatorT>(std::forward<Args>(args)...);
 }
 
 template <typename OpNodeT>

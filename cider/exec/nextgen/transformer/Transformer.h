@@ -24,29 +24,14 @@
 
 #include "exec/nextgen/operators/OpNode.h"
 
-namespace cider::exec::nextgen {
-using namespace cider::exec::nextgen::operators;
-
+namespace cider::exec::nextgen::transformer {
 /// \brief The Transformer class is responsible for transforming the OpPipeline to a
 /// translator
 class Transformer {
  public:
-  static std::shared_ptr<Translator> toTranslator(const OpPipeline& pipeline) {
-    std::shared_ptr<Translator> root = nullptr;
-    std::shared_ptr<Translator> last = nullptr;
-    for (const auto& node : pipeline) {
-      // auto translator = node->toTranslator();
-      if (root == nullptr) {
-        // root = last = translator;
-      } else {
-        // last->setSuccessor(translator);
-        // last = translator;
-      }
-    }
-    return root;
-  }
+  static operators::TranslatorPtr toTranslator(operators::OpPipeline& pipeline);
 };
 
-}  // namespace cider::exec::nextgen
+}  // namespace cider::exec::nextgen::transformer
 
 #endif  // CIDER_EXEC_NEXTGEN_TRANSFORMER_H

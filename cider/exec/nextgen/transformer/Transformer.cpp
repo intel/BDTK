@@ -18,27 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "exec/nextgen/transformer/Transformer.h"
 
-#include "exec/nextgen/operators/ProjectNode.h"
+namespace cider::exec::nextgen::transformer {
+using namespace operators;
 
-#include "exec/nextgen/operators/expr.h"
+static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
+  CHECK_GT(pipeline.size(), 0);
 
-namespace cider::exec::nextgen::operators {
-TranslatorPtr ProjectNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<ProjectTranslator>(shared_from_this(), succ);
+  OpNodePtr input = nullptr;
+  std::for_each(pipeline.begin(), pipeline.end(), [&input](const OpNodePtr& op) {
+    op->setInputOpNode(input);
+    input = op;
+  });
+
+  TranslatorPtr ptr = nullptr;
+  std::for_each(pipeline.rbegin(), pipeline.rend(), [&ptr](const OpNodePtr& op) {
+    auto translator = op->toTranslator(ptr);
+    ptr = translator;
+  });
+
+  return ptr;
 }
 
-void ProjectTranslator::consume(Context& context) {
-  codegen(context);
+TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
+  // TODO (bigPYJ1151): Insert C2ROp, R2COp
+  return generateTranslators(pipeline);
 }
-
-void ProjectTranslator::codegen(Context& context) {
-  ExprGenerator gen(context.query_func_);
-  for (const auto& expr : node_.exprs_) {
-    context.expr_outs_.push_back(&gen.codegen(expr.get()));
-  }
-  CHECK(successor_);
-  successor_->consume(context);
-}
-
-}  // namespace cider::exec::nextgen::operators
+}  // namespace cider::exec::nextgen::transformer

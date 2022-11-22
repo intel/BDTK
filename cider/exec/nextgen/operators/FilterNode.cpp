@@ -23,6 +23,11 @@
 #include "exec/nextgen/operators/expr.h"
 
 namespace cider::exec::nextgen::operators {
+
+TranslatorPtr FilterNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<FilterTranslator>(shared_from_this(), succ);
+}
+
 void FilterTranslator::consume(Context& context) {
   codegen(context);
 }
