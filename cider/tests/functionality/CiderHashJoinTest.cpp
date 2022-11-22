@@ -22,6 +22,475 @@
 #include <gtest/gtest.h>
 #include "tests/utils/CiderTestBase.h"
 
+// arrow format test
+class CiderArrowOneToOneSeqNotNullJoinTest : public CiderArrowFormatJoinTestBase {
+ public:
+  CiderArrowOneToOneSeqNotNullJoinTest() {
+    table_name_ = "table_probe";
+    create_ddl_ =
+        "CREATE TABLE table_probe(l_bigint BIGINT NOT NULL, l_int INTEGER NOT NULL, "
+        "l_double DOUBLE NOT NULL, l_float FLOAT NOT NULL);";
+
+    ArrowSchema* actual_schema = nullptr;
+    ArrowArray* actual_array = nullptr;
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        actual_schema,
+        actual_array,
+        100,
+        {"l_bigint", "l_int", "l_double", "l_float"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32)},
+        {0, 0, 0, 0},
+        GeneratePattern::Sequence);
+    input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
+        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
+
+    build_table_name_ = "table_hash";
+    build_table_ddl_ =
+        "CREATE TABLE table_hash(r_bigint BIGINT NOT NULL, r_int INTEGER NOT NULL, "
+        "r_double DOUBLE NOT NULL, r_float FLOAT NOT NULL);";
+
+    ArrowSchema* build_schema = nullptr;
+    ArrowArray* build_array = nullptr;
+    QueryArrowDataGenerator::generateBatchByTypes(
+        build_schema,
+        build_array,
+        90,
+        {"r_bigint", "r_int", "r_double", "r_float"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32)},
+        {0, 0, 0, 0});
+    build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
+        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
+  }
+
+  void resetHashTable() override {
+    ArrowArray* build_array = nullptr;
+    ArrowSchema* build_schema = nullptr;
+    QueryArrowDataGenerator::generateBatchByTypes(
+        build_schema,
+        build_array,
+        90,
+        {"r_bigint", "r_int", "r_double", "r_float"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32)},
+        {0, 0, 0, 0});
+
+    build_table_.reset(new CiderBatch(
+        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
+    duckDbQueryRunner_.createTableAndInsertArrowData(
+        build_table_name_, build_table_ddl_, {build_table_});
+  }
+};
+
+class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBase {
+ public:
+  CiderArrowOneToOneSeqNullableJoinTest() {
+    table_name_ = "table_probe";
+    create_ddl_ =
+        "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, "
+        "l_double DOUBLE, l_float FLOAT, l_varchar VARCHAR(10));";
+
+    ArrowSchema* actual_schema = nullptr;
+    ArrowArray* actual_array = nullptr;
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        actual_schema,
+        actual_array,
+        100,
+        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
+        GeneratePattern::Sequence);
+    input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
+        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
+
+    build_table_name_ = "table_hash";
+    build_table_ddl_ =
+        "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, "
+        "r_double DOUBLE, r_float FLOAT, r_varchar VARCHAR(10));";
+
+    ArrowSchema* build_schema = nullptr;
+    ArrowArray* build_array = nullptr;
+    QueryArrowDataGenerator::generateBatchByTypes(
+        build_schema,
+        build_array,
+        80,
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2});
+    build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
+        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
+  }
+
+  void resetHashTable() override {
+    ArrowArray* build_array = nullptr;
+    ArrowSchema* build_schema = nullptr;
+    QueryArrowDataGenerator::generateBatchByTypes(
+        build_schema,
+        build_array,
+        80,
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2});
+
+    build_table_.reset(new CiderBatch(
+        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
+    duckDbQueryRunner_.createTableAndInsertArrowData(
+        build_table_name_, build_table_ddl_, {build_table_});
+  }
+};
+
+class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTestBase {
+ public:
+  CiderArrowOneToManyRandomNullableJoinTest() {
+    table_name_ = "table_probe";
+    create_ddl_ =
+        "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, l_double DOUBLE, "
+        "l_float FLOAT, l_varchar VARCHAR(10));";
+
+    ArrowSchema* actual_schema = nullptr;
+    ArrowArray* actual_array = nullptr;
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        actual_schema,
+        actual_array,
+        100,
+        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {2, 2, 2, 2, 2},
+        GeneratePattern::Random,
+        -50,
+        50);
+    input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
+        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
+
+    build_table_name_ = "table_hash";
+    build_table_ddl_ =
+        "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, r_double DOUBLE, "
+        "r_float FLOAT, r_varchar VARCHAR(10));";
+
+    ArrowSchema* build_schema = nullptr;
+    ArrowArray* build_array = nullptr;
+    QueryArrowDataGenerator::generateBatchByTypes(
+        build_schema,
+        build_array,
+        100,
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3},
+        GeneratePattern::Random,
+        -30,
+        30);
+    build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
+        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
+  }
+
+  void resetHashTable() override {
+    ArrowArray* build_array = nullptr;
+    ArrowSchema* build_schema = nullptr;
+    QueryArrowDataGenerator::generateBatchByTypes(
+        build_schema,
+        build_array,
+        100,
+        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
+        {CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Varchar)},
+        {3, 3, 3, 3, 3},
+        GeneratePattern::Random,
+        -30,
+        30);
+
+    build_table_.reset(new CiderBatch(
+        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
+    duckDbQueryRunner_.createTableAndInsertArrowData(
+        build_table_name_, build_table_ddl_, {build_table_});
+  }
+};
+
+#define LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(                                          \
+    TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
+    /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE l_" #COLUMN_A " >  10 "); \
+    /*FILTER ON BUILD TABLE'S COLUMN WHICH IS ASLO IN JOIN CONDITION*/                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE r_" #COLUMN_A " >  10 "); \
+  }
+
+// For not null query, if set NOT NULL on column ddl, the final project
+// will go to cider_agg_id_proj_xx() instead of cider_agg_id_proj_xx_nullable(), So the
+// returned null values are incorrect.
+// LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest,
+// ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
+// LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest,
+// ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableTest, *, int, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
+LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
+
+#define INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(                                         \
+    TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN_A          \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
+    /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN_A          \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE l_" #COLUMN_A " <  50 "); \
+    /*FILTER ON BUILD TABLE'S COLUMN WHICH IS ASLO IN JOIN CONDITION*/                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN_A          \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE r_" #COLUMN_A " <  50 "); \
+    /*AVOID RECYCLE HASHTABLE*/                                                         \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT " from table_probe INNER JOIN table_hash ON l_" #COLUMN_A    \
+        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
+  }
+
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest, *, int, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
+INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
+
+#define COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(                                  \
+    TEST_CLASS, UNIT_NAME, PROJECT, COLUMN, JOIN_COMPARISON_OPERATOR)              \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                 \
+        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN       \
+        " " #JOIN_COMPARISON_OPERATOR "  r_" #COLUMN "");                          \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                 \
+        "SELECT " #PROJECT " from table_probe INNER JOIN table_hash ON l_" #COLUMN \
+        " " #JOIN_COMPARISON_OPERATOR "  r_" #COLUMN "");                          \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                 \
+        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN  \
+        " " #JOIN_COMPARISON_OPERATOR "  r_" #COLUMN "");                          \
+  }
+
+// agg and join condition on same column
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                         AggJoinTest1,
+                                         sum(l_bigint),
+                                         bigint,
+                                         =)
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                         AggJoinTest2,
+                                         sum(r_bigint),
+                                         bigint,
+                                         =)
+
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest1, *, bigint, +1 =)  // NOLINT
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest2, *, bigint, = 1 +)  // NOLINT
+COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ExprJoinRandomTest3, *, int, -1 = 1 +)  // NOLINT
+
+// using OR to avoid 0 results
+#define DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(TEST_CLASS, UNIT_NAME, PROJECT)      \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
+    /*INNER JOIN ON INTEGER OR FLOAT*/                                                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT                                                              \
+        " from table_probe JOIN table_hash ON l_int = r_int OR l_bigint =  r_bigint "); \
+    /*LEFT JOIN ON BIGINT OR DOUBLE*/                                                   \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT                                                              \
+        " from table_probe LEFT JOIN table_hash ON l_bigint = r_bigint OR l_int = "     \
+        "r_int ");                                                                      \
+    /*INNER JOIN ON INTEGER OR CONSTANT*/                                               \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT                                                              \
+        " from table_probe JOIN table_hash ON l_int = r_int OR l_int = 10 ");           \
+    /*LEFT JOIN ON BIGINT OR CONSTANT*/                                                 \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT                                                              \
+        " from table_probe LEFT JOIN table_hash ON l_bigint = r_bigint OR l_bigint = "  \
+        "10 ");                                                                         \
+    /*INNER JOIN ON INTEGER AND NOT NULL*/                                              \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT                                                              \
+        " from table_probe JOIN table_hash ON l_int = r_int OR l_int IS NOT NULL ");    \
+    /*LEFT JOIN ON BIGINT AND NOT NULL*/                                                \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
+        "SELECT " #PROJECT                                                              \
+        " from table_probe LEFT JOIN table_hash ON l_bigint = r_bigint OR l_bigint IS " \
+        "NOT NULL ");                                                                   \
+  }
+// TODO: (spevenhe) comment due to OR will fail back to loop join
+// while AND is still hash join
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest,
+// ORJoinConditionTest1, *)
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+// ORJoinConditionTest2, *)
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+//                               ORJoinConditionWithAggTest1,
+//                               SUM(l_bigint))
+// DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+//                               ORJoinConditionWithAggTest2,
+//                               SUM(r_bigint))
+
+#define DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(TEST_CLASS, UNIT_NAME, PROJECT)      \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
+    /*INNER JOIN ON INTEGER OR FLOAT*/                                                   \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
+        "SELECT " #PROJECT                                                               \
+        " from table_probe JOIN table_hash ON l_int = r_int AND l_bigint =  r_bigint "); \
+    /*LEFT JOIN ON BIGINT OR DOUBLE*/                                                    \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
+        "SELECT " #PROJECT                                                               \
+        " from table_probe LEFT JOIN table_hash ON l_bigint = r_bigint AND l_int = "     \
+        "r_int ");                                                                       \
+    /*INNER JOIN ON INTEGER OR CONSTANT*/                                                \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
+        "SELECT " #PROJECT                                                               \
+        " from table_probe JOIN table_hash ON l_int = r_int AND l_int = 10 ");           \
+    /*LEFT JOIN ON BIGINT OR CONSTANT*/                                                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
+        "SELECT " #PROJECT                                                               \
+        " from table_probe LEFT JOIN table_hash ON l_bigint = r_bigint AND l_bigint = "  \
+        "10 ");                                                                          \
+    /*INNER JOIN ON INTEGER AND NOT NULL*/                                               \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
+        "SELECT " #PROJECT                                                               \
+        " from table_probe JOIN table_hash ON l_int = r_int AND l_int IS NOT NULL ");    \
+    /*LEFT JOIN ON BIGINT AND NOT NULL*/                                                 \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                       \
+        "SELECT " #PROJECT                                                               \
+        " from table_probe LEFT JOIN table_hash ON l_bigint = r_bigint AND l_bigint IS " \
+        "NOT NULL ");                                                                    \
+  }
+
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ANDJoinConditionTest1, *)  // NOLINT
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ANDJoinConditionTest2, *)  // NOLINT
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                            ANDJoinConditionWithAggTest1,
+                                            SUM(l_bigint))
+DOUBLE_JOIN_AND_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                            ANDJoinConditionWithAggTest2,
+                                            SUM(r_bigint))
+
+#define HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(TEST_CLASS, UNIT_NAME, PROJECT)  \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                     \
+    /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_bigint = r_bigint WHERE l_bigint <  " \
+        "10 ");                                                                       \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_bigint = r_bigint WHERE l_bigint IS " \
+        "NOT NULL ");                                                                 \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_bigint = r_bigint "                   \
+        "WHERE l_bigint IS NOT NULL AND l_bigint < 10 ");                             \
+    /*FILTER ON BUILD TABLE'S COLUMN WHICH IS ASLO IN JOIN CONDITION*/                \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_bigint = r_bigint WHERE r_bigint < "  \
+        "10 ");                                                                       \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_bigint = r_bigint WHERE r_bigint IS " \
+        "NOT NULL ");                                                                 \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_bigint = r_bigint "                   \
+        "WHERE r_bigint IS NOT NULL AND r_bigint < 10 ");                             \
+    /*FILTER ON PROBE TABLE COLUMN*/                                                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_int = r_int WHERE l_double <  10 ");  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_int = r_int WHERE l_double IS NOT "   \
+        "NULL ");                                                                     \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_int = r_int "                         \
+        "WHERE l_double IS NOT NULL AND l_double < 10 ");                             \
+    /*FILTER ON BUILD TABLE COLUMN*/                                                  \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_int = r_int WHERE r_double < 10 ");   \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_int = r_int WHERE r_double IS NOT "   \
+        "NULL ");                                                                     \
+    assertJoinQueryRowEqualForArrowFormatAndReset(                                    \
+        "SELECT " #PROJECT                                                            \
+        " from table_probe JOIN table_hash ON l_int = r_int "                         \
+        "WHERE r_double IS NOT NULL AND r_double < 10 ");                             \
+  }
+
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, HashJoinWithFilterTest1, *)  // NOLINT
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, HashJoinWithFilterTest2, *)  // NOLINT
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                             HashJoinWithFilterAndAggTest1,
+                                             SUM(l_bigint))
+HASH_JOIN_WITH_FILTER_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
+                                             HashJoinWithFilterAndAggTest2,
+                                             SUM(r_bigint))
+
+TEST_F(CiderArrowOneToOneSeqNullableJoinTest, selectTestSingleColumnBoolType) {
+  GTEST_SKIP_("This kind of case is not One-To-One Hash Join, open it when supported.");
+  assertJoinQueryRowEqualForArrowFormatAndReset(
+      "SELECT r_bigint from table_probe JOIN table_hash ON l_bool = r_bool");
+}
+
+TEST_F(CiderArrowOneToOneSeqNullableJoinTest, selectFilterBoolType) {
+  GTEST_SKIP_("This kind of case is not One-To-One Hash Join, open it when supported.");
+  assertJoinQueryRowEqualForArrowFormatAndReset(
+      "SELECT l_bool from table_probe JOIN table_hash ON l_bool = r_bool WHERE l_bool != "
+      "true");
+}
+
+TEST_F(CiderArrowOneToOneSeqNullableJoinTest, innerJoinWithWhereBoolType) {
+  GTEST_SKIP_("This kind of case is not One-To-One Hash Join, open it when supported.");
+  assertJoinQueryRowEqualForArrowFormatAndReset(
+      "SELECT l_bool from table_probe, table_hash WHERE table_probe.l_bool = "
+      "table_hash.r_bool");
+}
+
+// original ciderbatch format test
 class CiderOneToOneRandomJoinTest : public CiderJoinTestBase {
  public:
   CiderOneToOneRandomJoinTest() {
@@ -238,250 +707,6 @@ class CiderOneToManySeqJoinTest : public CiderJoinTestBase {
   }
 };
 
-class CiderArrowOneToOneSeqNoNullJoinTest : public CiderArrowFormatJoinTestBase {
- public:
-  CiderArrowOneToOneSeqNoNullJoinTest() {
-    table_name_ = "table_probe";
-    create_ddl_ =
-        "CREATE TABLE table_probe(l_bigint BIGINT NOT NULL, l_int INTEGER NOT NULL, "
-        "l_double DOUBLE NOT NULL, l_float FLOAT NOT NULL);";
-
-    ArrowSchema* actual_schema = nullptr;
-    ArrowArray* actual_array = nullptr;
-
-    QueryArrowDataGenerator::generateBatchByTypes(
-        actual_schema,
-        actual_array,
-        100,
-        {"l_bigint", "l_int", "l_double", "l_float"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {0, 0, 0, 0},
-        GeneratePattern::Sequence);
-    input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
-        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
-
-    build_table_name_ = "table_hash";
-    build_table_ddl_ =
-        "CREATE TABLE table_hash(r_bigint BIGINT NOT NULL, r_int INTEGER NOT NULL, "
-        "r_double DOUBLE NOT NULL, r_float FLOAT NOT NULL);";
-
-    ArrowSchema* build_schema = nullptr;
-    ArrowArray* build_array = nullptr;
-    QueryArrowDataGenerator::generateBatchByTypes(
-        build_schema,
-        build_array,
-        90,
-        {"r_bigint", "r_int", "r_double", "r_float"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {0, 0, 0, 0});
-    build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
-        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
-  }
-
-  void resetHashTable() override {
-    ArrowArray* build_array = nullptr;
-    ArrowSchema* build_schema = nullptr;
-    QueryArrowDataGenerator::generateBatchByTypes(
-        build_schema,
-        build_array,
-        90,
-        {"r_bigint", "r_int", "r_double", "r_float"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32)},
-        {0, 0, 0, 0});
-
-    build_table_.reset(new CiderBatch(
-        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
-    duckDbQueryRunner_.createTableAndInsertArrowData(
-        build_table_name_, build_table_ddl_, {build_table_});
-  }
-};
-
-class CiderArrowOneToOneSeqNullableJoinTest : public CiderArrowFormatJoinTestBase {
- public:
-  CiderArrowOneToOneSeqNullableJoinTest() {
-    table_name_ = "table_probe";
-    create_ddl_ =
-        "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, "
-        "l_double DOUBLE, l_float FLOAT, l_varchar VARCHAR(10));";
-
-    ArrowSchema* actual_schema = nullptr;
-    ArrowArray* actual_array = nullptr;
-
-    QueryArrowDataGenerator::generateBatchByTypes(
-        actual_schema,
-        actual_array,
-        100,
-        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {2, 2, 2, 2, 2},
-        GeneratePattern::Sequence);
-    input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
-        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
-
-    build_table_name_ = "table_hash";
-    build_table_ddl_ =
-        "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, "
-        "r_double DOUBLE, r_float FLOAT, r_varchar VARCHAR(10));";
-
-    ArrowSchema* build_schema = nullptr;
-    ArrowArray* build_array = nullptr;
-    QueryArrowDataGenerator::generateBatchByTypes(
-        build_schema,
-        build_array,
-        80,
-        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {2, 2, 2, 2, 2});
-    build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
-        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
-  }
-
-  void resetHashTable() override {
-    ArrowArray* build_array = nullptr;
-    ArrowSchema* build_schema = nullptr;
-    QueryArrowDataGenerator::generateBatchByTypes(
-        build_schema,
-        build_array,
-        80,
-        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {2, 2, 2, 2, 2});
-
-    build_table_.reset(new CiderBatch(
-        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
-    duckDbQueryRunner_.createTableAndInsertArrowData(
-        build_table_name_, build_table_ddl_, {build_table_});
-  }
-};
-
-class CiderArrowOneToManyRandomNullableJoinTest : public CiderArrowFormatJoinTestBase {
- public:
-  CiderArrowOneToManyRandomNullableJoinTest() {
-    table_name_ = "table_probe";
-    create_ddl_ =
-        "CREATE TABLE table_probe(l_bigint BIGINT, l_int INTEGER, l_double DOUBLE, "
-        "l_float FLOAT, l_varchar VARCHAR(10));";
-
-    ArrowSchema* actual_schema = nullptr;
-    ArrowArray* actual_array = nullptr;
-
-    QueryArrowDataGenerator::generateBatchByTypes(
-        actual_schema,
-        actual_array,
-        100,
-        {"l_bigint", "l_int", "l_double", "l_float", "l_varchar"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {2, 2, 2, 2, 2},
-        GeneratePattern::Random,
-        -50,
-        50);
-    input_ = {std::shared_ptr<CiderBatch>(new CiderBatch(
-        actual_schema, actual_array, std::make_shared<CiderDefaultAllocator>()))};
-
-    build_table_name_ = "table_hash";
-    build_table_ddl_ =
-        "CREATE TABLE table_hash(r_bigint BIGINT, r_int INTEGER, r_double DOUBLE, "
-        "r_float FLOAT, r_varchar VARCHAR(10));";
-
-    ArrowSchema* build_schema = nullptr;
-    ArrowArray* build_array = nullptr;
-    QueryArrowDataGenerator::generateBatchByTypes(
-        build_schema,
-        build_array,
-        100,
-        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {3, 3, 3, 3, 3},
-        GeneratePattern::Random,
-        -30,
-        30);
-    build_table_ = std::shared_ptr<CiderBatch>(new CiderBatch(
-        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
-  }
-
-  void resetHashTable() override {
-    ArrowArray* build_array = nullptr;
-    ArrowSchema* build_schema = nullptr;
-    QueryArrowDataGenerator::generateBatchByTypes(
-        build_schema,
-        build_array,
-        100,
-        {"r_bigint", "r_int", "r_double", "r_float", "r_varchar"},
-        {CREATE_SUBSTRAIT_TYPE(I64),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Fp64),
-         CREATE_SUBSTRAIT_TYPE(Fp32),
-         CREATE_SUBSTRAIT_TYPE(Varchar)},
-        {3, 3, 3, 3, 3},
-        GeneratePattern::Random,
-        -30,
-        30);
-
-    build_table_.reset(new CiderBatch(
-        build_schema, build_array, std::make_shared<CiderDefaultAllocator>()));
-    duckDbQueryRunner_.createTableAndInsertArrowData(
-        build_table_name_, build_table_ddl_, {build_table_});
-  }
-};
-
-#define LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(                                             \
-    TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
-    /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                  \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE l_" #COLUMN_A " >  10 "); \
-    /*FILTER ON BUILD TABLE'S COLUMN WHICH IS ASLO IN JOIN CONDITION*/                  \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe LEFT JOIN table_hash ON l_" #COLUMN_A     \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE r_" #COLUMN_A " >  10 "); \
-  }
-
-// TODO: (spevenhe) For not null query, the final project will go to
-// cider_agg_id_proj_xx() instead of cider_agg_id_proj_xx_nullable(),
-// So the returned null values are incorrect.
-// LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNoNullJoinTest,
-// ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
-// LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNoNullJoinTest,
-// ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
-
-LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableTest, *, int, =)  // NOLINT
-LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNullableJoinTest, LeftJoinArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
-LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
-LEFT_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToManyRandomNullableJoinTest, LeftJoinArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
-
 TEST_F(CiderOneToOneRandomJoinTest, PostJoinFilterTest) {
   assertJoinQueryRowEqualAndReset(
       "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a WHERE l_a < 10;",
@@ -496,40 +721,6 @@ TEST_F(CiderOneToOneRandomJoinTest, PostJoinFilterTest) {
       "SELECT * FROM table_probe JOIN table_hash ON l_a = r_a AND l_a + r_a < 10;",
       "post_join_filter2.json");
 }
-
-// TODO: (spevenhe) to be deprecated, now some features like left join and is null is not
-// supported yet
-// TODO: (spevenhe) add some corner case which will lead to build baseline join table
-// TODO: (spevenhe) add tests when OR and AND fully supported
-// TODO: (spevenhe) add col_int = col_bigint, col_float < 50 etc when CAST support
-// TODO: (spevenhe) join on string
-// TODO: (spevenhe) join on date
-#define INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(                                            \
-    TEST_CLASS, UNIT_NAME, PROJECT, COLUMN_A, JOIN_COMPARISON_OPERATOR)                 \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN_A          \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
-    /*FILTER ON PROBE TABLE'S COLUMN WHICH IS ALSO IN JOIN CONDITION*/                  \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN_A          \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE l_" #COLUMN_A " <  50 "); \
-    /*FILTER ON BUILD TABLE'S COLUMN WHICH IS ASLO IN JOIN CONDITION*/                  \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe JOIN table_hash ON l_" #COLUMN_A          \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A " WHERE r_" #COLUMN_A " <  50 "); \
-    /*AVOID RECYCLE HASHTABLE*/                                                         \
-    assertJoinQueryRowEqualForArrowFormatAndReset(                                      \
-        "SELECT " #PROJECT " from table_probe INNER JOIN table_hash ON l_" #COLUMN_A    \
-        " " #JOIN_COMPARISON_OPERATOR " r_" #COLUMN_A "");                              \
-  }
-
-INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNoNullJoinTest, ArrowOneToOneSeqNoNullJoinTest, *, int, =)  // NOLINT
-INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNoNullJoinTest, ArrowOneToOneSeqNoNullJoinTest2, *, bigint, =)  // NOLINT
-INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest, *, int, =)  // NOLINT
-INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToOneSeqNullableJoinTest, ArrowOneToOneSeqNoNullableJoinTest2, *, bigint, =)  // NOLINT
-INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest, *, int, =)  // NOLINT
-INNER_HASH_JOIN_TEST_UNIT_FOR_ARROW(CiderArrowOneToManyRandomNullableJoinTest, ArrowOneToManyRandomNullJoinTest2, *, bigint, =)  // NOLINT
 
 #define HASH_JOIN_TEST_UNIT(                                                          \
     TEST_CLASS, UNIT_NAME, PROJECT, COLUMN, JOIN_COMPARISON_OPERATOR)                 \
@@ -742,7 +933,6 @@ TEST_F(CiderInnerJoinUsingTest, usingSyntaxTest) {
   GTEST_SKIP_("Isthmus does not support USING yet");
   assertJoinQuery("SELECT * from table_probe JOIN table_hash USING (col_a)");
 }
-
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

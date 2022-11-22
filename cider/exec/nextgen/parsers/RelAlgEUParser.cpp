@@ -64,7 +64,7 @@ class InputAnalyzer {
     }
 
     for (auto& op : pipeline_) {
-      auto exprs = op->getExprs();
+      auto exprs = op->getOutputExprs();
       for (auto& expr : exprs) {
         traverse(&expr);
       }

@@ -210,6 +210,17 @@ std::optional<int64_t> dateTimeParseOptional<kDATE>(std::string_view str,
   return *date + tz.value_or(0);
 }
 
+int32_t parseDateInDays(std::string_view str) {
+  DateTimeParser parser;
+  // Parse date
+  parser.setFormatType(DateTimeParser::FormatType::Date);
+  std::optional<int64_t> seconds = parser.parse(str, 0);
+  if (!seconds) {
+    CIDER_THROW(CiderCompileException, "Not a valid date string!");
+  }
+  return *seconds / kSecsPerDay;
+}
+
 // Return number of (s,ms,us,ns) since epoch based on dim in (0,3,6,9) resp.
 int64_t DateTimeParser::DateTime::getTime(unsigned const dim) const {
   int64_t const days = daysFromCivil(Y, m, d);

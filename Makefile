@@ -91,6 +91,9 @@ test-cider-velox:
 	@cd build-${BUILD_TYPE}/cider-velox/test && \
 	ctest -j $${CPU_COUNT:-`nproc`} -V
 
+test-with-arrow-format:
+	bash ci/scripts/test_with_arrow_format.sh '${BUILD_TYPE}'
+
 test-debug:
 	@$(MAKE) test-cider BUILD_TYPE=Debug
 	@$(MAKE) test-cider-velox BUILD_TYPE=Debug

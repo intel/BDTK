@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2022 Intel Corporation.
  *
@@ -18,20 +19,44 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_CONTEXT_H
-#define EXEC_NEXTGEN_CONTEXT_H
+#include "Expr.h"
 
-#include "exec/nextgen/jitlib/JITLib.h"
-
-namespace cider::exec::nextgen {
+namespace Analyzer {
 using namespace cider::jitlib;
 
-class Context {
- public:
-  Context(JITFunction* func_) : query_func_(func_) {}
-  JITFunction* query_func_;
-  std::vector<cider::jitlib::JITExprValue*> expr_outs_;
-};
-}  // namespace cider::exec::nextgen
+// change this to pure virtual method after all subclasses support codegen.
+JITExprValue& Expr::codegen(JITFunction& func) {
+  UNREACHABLE();
+  return fake_val_;
+}
 
-#endif  // EXEC_NEXTGEN_CONTEXT_H
+JITTypeTag Expr::getJITTag(const SQLTypes& st) {
+  switch (st) {
+    case kBOOLEAN:
+      return JITTypeTag::BOOL;
+    case kTINYINT:
+    case kSMALLINT:
+    case kINT:
+    case kBIGINT:
+    case kTIME:
+    case kTIMESTAMP:
+    case kDATE:
+    case kINTERVAL_DAY_TIME:
+    case kINTERVAL_YEAR_MONTH:
+      return JITTypeTag::INT32;
+    case kFLOAT:
+      return JITTypeTag::FLOAT;
+    case kDOUBLE:
+      return JITTypeTag::DOUBLE;
+    case kVARCHAR:
+    case kCHAR:
+    case kTEXT:
+      UNIMPLEMENTED();
+    case kNULLT:
+    default:
+      return JITTypeTag::INVALID;
+  }
+  UNREACHABLE();
+}
+
+}  // namespace Analyzer

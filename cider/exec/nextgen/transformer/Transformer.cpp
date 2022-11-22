@@ -18,20 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_CONTEXT_H
-#define EXEC_NEXTGEN_CONTEXT_H
+#include "exec/nextgen/transformer/Transformer.h"
 
-#include "exec/nextgen/jitlib/JITLib.h"
+namespace cider::exec::nextgen::transformer {
+using namespace operators;
 
-namespace cider::exec::nextgen {
-using namespace cider::jitlib;
+static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
+  CHECK_GT(pipeline.size(), 0);
 
-class Context {
- public:
-  Context(JITFunction* func_) : query_func_(func_) {}
-  JITFunction* query_func_;
-  std::vector<cider::jitlib::JITExprValue*> expr_outs_;
-};
-}  // namespace cider::exec::nextgen
+  OpNodePtr input = nullptr;
+  std::for_each(pipeline.begin(), pipeline.end(), [&input](const OpNodePtr& op) {
+    op->setInputOpNode(input);
+    input = op;
+  });
 
-#endif  // EXEC_NEXTGEN_CONTEXT_H
+  TranslatorPtr ptr = nullptr;
+  std::for_each(pipeline.rbegin(), pipeline.rend(), [&ptr](const OpNodePtr& op) {
+    auto translator = op->toTranslator(ptr);
+    ptr = translator;
+  });
+
+  return ptr;
+}
+
+TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
+  // TODO (bigPYJ1151): Insert C2ROp, R2COp
+  return generateTranslators(pipeline);
+}
+}  // namespace cider::exec::nextgen::transformer

@@ -307,7 +307,7 @@ CiderAggHashTable::~CiderAggHashTable() {
 std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
   std::vector<CiderAggHashTableEntryInfo> cols_info(columns_num_);
 
-  size_t offset = 0, col_slot_context_index = 0;
+  size_t offset = 0, avg_offset = 0, col_slot_context_index = 0;
   bool is_key = true;
   auto groupby_expr_iter = rel_alg_exec_unit_->groupby_exprs.begin();
   auto target_expr_iter = rel_alg_exec_unit_->target_exprs.begin();
@@ -319,14 +319,14 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
 
   for (size_t i = 0; i < columns_num_; ++i) {
     cols_info[i].count_distinct_desc =
-        i < key_columns_num_
-            ? CountDistinctDescriptor{CountDistinctImplType::Invalid,
-                                      SQLTypes::kNULLT,
-                                      0,
-                                      0,
-                                      false,
-                                      0}
-            : query_mem_desc_->getCountDistinctDescriptor(i - key_columns_num_);
+        i < key_columns_num_ ? CountDistinctDescriptor{CountDistinctImplType::Invalid,
+                                                       SQLTypes::kNULLT,
+                                                       0,
+                                                       0,
+                                                       false,
+                                                       0}
+                             : query_mem_desc_->getCountDistinctDescriptor(
+                                   i - key_columns_num_ - avg_offset);
     cols_info[i].is_key = is_key;
     cols_info[i].slot_offset = offset;
 
@@ -378,6 +378,7 @@ std::vector<CiderAggHashTableEntryInfo> CiderAggHashTable::fillColsInfo() {
           cols_info[i].sql_type_info =
               cols_info[i].arg_type_info;  // Reference to get_target_info()
           ++i;
+          ++avg_offset;
           ++col_slot_context_index;
           ++init_vals_vec_iter;
           CHECK_LT(i, columns_num_);

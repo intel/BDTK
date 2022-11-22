@@ -17,6 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(cider_type_plan_source_files Analyzer.cpp Expr.cpp BinaryExpr.cpp
-                                 ColumnExpr.cpp ConstantExpr.cpp)
-add_library(cider_type_plan ${cider_type_plan_source_files})
+set(DEP_LIBS ${EXECUTE_TEST_LIBS} cider_plan_validator)
+
+set(TEST_ARGS "--gtest_output=xml:../")
+
+add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
+target_link_libraries(CiderPlanValidatorTest ${DEP_LIBS})
+add_test(CiderPlanValidatorTest
+         ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})

@@ -18,20 +18,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_CONTEXT_H
-#define EXEC_NEXTGEN_CONTEXT_H
+#include "ColumnExpr.h"
 
-#include "exec/nextgen/jitlib/JITLib.h"
-
-namespace cider::exec::nextgen {
+namespace Analyzer {
 using namespace cider::jitlib;
 
-class Context {
- public:
-  Context(JITFunction* func_) : query_func_(func_) {}
-  JITFunction* query_func_;
-  std::vector<cider::jitlib::JITExprValue*> expr_outs_;
-};
-}  // namespace cider::exec::nextgen
+JITExprValue& ColumnVar::codegen(JITFunction& func) {
+  return *get_expr_value();
+}
 
-#endif  // EXEC_NEXTGEN_CONTEXT_H
+}  // namespace Analyzer

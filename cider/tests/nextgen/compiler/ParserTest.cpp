@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 
 #include "exec/nextgen/parsers/Parser.h"
+#include "exec/nextgen/transformer/Transformer.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "tests/TestHelpers.h"
 #include "tests/utils/Utils.h"
@@ -39,6 +40,19 @@ class NextGenParserTest : public ::testing::Test {
 
     auto pipeline = cider::exec::nextgen::parsers::toOpPipeline(eu);
     EXPECT_EQ(pipeline.size(), 3);
+
+    cider::exec::nextgen::transformer::Transformer transformer;
+    auto translators = transformer.toTranslator(pipeline);
+    EXPECT_NE(translators, nullptr);
+
+    translators = translators->getSuccessor();
+    EXPECT_NE(translators, nullptr);
+
+    translators = translators->getSuccessor();
+    EXPECT_NE(translators, nullptr);
+
+    translators = translators->getSuccessor();
+    EXPECT_EQ(translators, nullptr);
   }
 
  private:

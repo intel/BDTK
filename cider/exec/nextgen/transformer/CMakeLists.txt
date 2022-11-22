@@ -16,7 +16,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+set(TRANSFORMER_SOURCE ${CMAKE_CURRENT_LIST_DIR}/Transformer.cpp)
 
-set(cider_type_plan_source_files Analyzer.cpp Expr.cpp BinaryExpr.cpp
-                                 ColumnExpr.cpp ConstantExpr.cpp)
-add_library(cider_type_plan ${cider_type_plan_source_files})
+add_library(cider_transformer OBJECT ${TRANSFORMER_SOURCE})
