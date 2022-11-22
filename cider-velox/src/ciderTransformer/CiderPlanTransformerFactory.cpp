@@ -44,6 +44,14 @@ void CiderPlanTransformerFactory::registerCiderPattern() {
     ciderTransformerFactory_.registerPattern(std::make_shared<PartialAggPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
   }
+  if (FLAGS_order_by_pattern) {
+    ciderTransformerFactory_.registerPattern(std::make_shared<OrderByPattern>(),
+                                             std::make_shared<CiderPlanRewriter>());
+  }
+  if (FLAGS_top_n_pattern) {
+    ciderTransformerFactory_.registerPattern(std::make_shared<TopNPattern>(),
+                                             std::make_shared<CiderPlanRewriter>());
+  }
 }
 
 std::shared_ptr<PlanTransformer> CiderPlanTransformerFactory::getTransformer(
