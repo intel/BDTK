@@ -178,7 +178,7 @@ bool VeloxPlanFragmentToSubstraitPlan::shouldAppendValuesNode(
 }
 
 VeloxPlanFragmentToSubstraitPlan::VeloxPlanFragmentToSubstraitPlan() {
-  if (FLAGS_substrait_yaml_root_path != "" || FLAGS_substrait_yaml_root_path == nullptr) {
+  if (FLAGS_substrait_yaml_root_path != "") {
     static const std::vector<std::string> extensionFiles = {
         "functions_aggregate_approx.yaml",
         "functions_aggregate_generic.yaml",
@@ -192,7 +192,8 @@ VeloxPlanFragmentToSubstraitPlan::VeloxPlanFragmentToSubstraitPlan() {
         "functions_string.yaml",
         "functions_set.yaml",
     };
-    auto substraitExtension = SubstraitExtension::loadExtension(FLAGS_substrait_yaml_root_path,extensionFiles);
+    auto substraitExtension =
+        SubstraitExtension::loadExtension(FLAGS_substrait_yaml_root_path, extensionFiles);
     auto functionMappings = VeloxToSubstraitFunctionMappings::make();
     this->v2SPlanConvertor_ = std::make_shared<VeloxToSubstraitPlanConvertor>(
         substraitExtension, functionMappings);
