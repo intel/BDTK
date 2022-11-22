@@ -41,7 +41,8 @@ void ArrowSourceTranslator::codegen(Context& context) {
   JITFunction* func = context.query_func_;
   auto inputs = node_.getOutputExprs();
   // get ArrowArray pointer
-  auto arrow_pointer = func->getArgument(0);
+  // prototype:void func(CodegenContext* context, ArrowArray* in, ArrowArray* out);
+  auto arrow_pointer = func->getArgument(1);
   for (int64_t index = 0; index < inputs.size(); ++index) {
     auto jit_index = func->createConstant(JITTypeTag::INT64, index);
     // extract ArrowArray null buffer

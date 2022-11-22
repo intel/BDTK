@@ -27,9 +27,10 @@ namespace cider::exec::nextgen::context {
 using namespace cider::jitlib;
 
 JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
-                                              const std::string& name) {
+                                              const std::string& name,
+                                              bool arrow_array_output) {
   int64_t id = acquireContextID();
-  JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
+  JITValuePointer ret = jit_func_->createLocalJITValue([this, id, arrow_array_output]() {
     auto index = this->jit_func_->createConstant(JITTypeTag::INT64, id);
     auto pointer = this->jit_func_->emitRuntimeFunctionCall(
         "get_query_context_ptr",
@@ -37,6 +38,13 @@ JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,
             .params_vector = {this->jit_func_->getArgument(0).get(), index.get()}});
+    if (arrow_array_output) {
+      return this->jit_func_->emitRuntimeFunctionCall(
+          "get_arrow_array_ptr",
+          JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                    .ret_sub_type = JITTypeTag::INT8,
+                                    .params_vector = {pointer.get()}});
+    }
     return pointer;
   });
   ret->setName(name);

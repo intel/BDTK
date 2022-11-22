@@ -44,7 +44,8 @@ class CodegenContext {
 
  public:
   jitlib::JITValuePointer registerBatch(const SQLTypeInfo& type,
-                                        const std::string& name = "");
+                                        const std::string& name = "",
+                                        bool arrow_array_output = true);
 
   // TBD: HashTable (GroupBy, Join), other objects registration.
 

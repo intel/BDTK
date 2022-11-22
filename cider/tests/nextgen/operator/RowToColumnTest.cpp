@@ -22,14 +22,17 @@
 #include <gtest/gtest.h>
 
 #include "exec/module/batch/ArrowABI.h"
+#include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/context/RuntimeContext.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/ColumnToRowNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
+#include "exec/nextgen/operators/RowToColumnNode.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/TestHelpers.h"
-#include "tests/nextgen/operator/MockRowToColumn.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 
 using namespace cider::jitlib;
@@ -38,7 +41,10 @@ using namespace cider::exec::nextgen::operators;
 
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 
-class ColumnToRowTest : public ::testing::Test {};
+static const std::shared_ptr<CiderAllocator> allocator =
+    std::make_shared<CiderDefaultAllocator>();
+
+class RowToColumnTest : public ::testing::Test {};
 
 ExprPtr makeConstant(int32_t val) {
   Datum d;
@@ -46,10 +52,10 @@ ExprPtr makeConstant(int32_t val) {
   return std::make_shared<Analyzer::Constant>(kINT, false, d);
 }
 
-TEST_F(ColumnToRowTest, FilterTest) {
-  LLVMJITModule module("TestC2R", true);
-
-  auto builder = [](JITFunction* function) {
+TEST_F(RowToColumnTest, basicTest) {
+  LLVMJITModule module("TestR2C", true);
+  Context context;
+  auto builder = [&context](JITFunction* function) {
     auto col_var1 =
         std::make_shared<Analyzer::ColumnVar>(SQLTypeInfo(SQLTypes::kINT), 100, 1, 0);
     auto col_var2 =
@@ -74,9 +80,10 @@ TEST_F(ColumnToRowTest, FilterTest) {
             std::make_unique<FilterTranslator>(
                 cmp_expr,
                 std::make_unique<ProjectTranslator>(
-                    add_expr, std::make_unique<MockRowToColumnTranslator>(2)))));
-
-    Context context(function);
+                    add_expr,
+                    std::make_unique<RowToColumnTranslator>(col_var1, nullptr)))));
+    context.set_function(function);
+    context.codegen_context_.setJITFunction(function);
     source.consume(context);
 
     function->createReturn();
@@ -84,12 +91,11 @@ TEST_F(ColumnToRowTest, FilterTest) {
 
   JITFunctionPointer func =
       JITFunctionBuilder()
-          .setFuncName("test_C2R_translator")
+          .setFuncName("test_R2C_translator")
           .registerModule(module)
           .addReturn(JITTypeTag::VOID)
           .addParameter(JITTypeTag::POINTER, "context", JITTypeTag::INT8)
-          .addParameter(JITTypeTag::POINTER, "in", JITTypeTag::INT8)
-          .addParameter(JITTypeTag::POINTER, "out", JITTypeTag::INT32)
+          .addParameter(JITTypeTag::POINTER, "out", JITTypeTag::INT8)
           .addProcedureBuilder(builder)
           .build();
 
@@ -108,16 +114,21 @@ TEST_F(ColumnToRowTest, FilterTest) {
           .addColumn<double>("col2", CREATE_SUBSTRAIT_TYPE(Fp64), vec2, vec_null)
           .build();
 
-  auto func_ptr = func->getFunctionPointer<void, int8_t*, int8_t*, int32_t*>();
-  int32_t* output = new int32_t[5];
-  func_ptr(nullptr, reinterpret_cast<int8_t*>(array), output);
-  // TODO: null vector check
-  EXPECT_EQ(output[0], 6);
-  EXPECT_EQ(output[1], 7);
-  EXPECT_EQ(output[2], 8);
-  EXPECT_EQ(output[3], 9);
-  EXPECT_EQ(output[4], 10);
-  delete[] output;
+  auto runtime_ctx = context.codegen_context_.generateRuntimeCTX(allocator);
+
+  auto func_ptr = func->getFunctionPointer<void, int8_t*, int8_t*>();
+  func_ptr(reinterpret_cast<int8_t*>(runtime_ctx.get()),
+           reinterpret_cast<int8_t*>(array));
+
+  auto output =
+      reinterpret_cast<context::Batch*>(runtime_ctx->getContextItem(0))->getArray();
+  EXPECT_NE(runtime_ctx->getContextItem(0), nullptr);
+  // TODO : null vector check
+  EXPECT_EQ(*((int32_t*)(output->children[0]->buffers[1])), 6);
+  EXPECT_EQ(*((int32_t*)(output->children[0]->buffers[1]) + 1), 7);
+  EXPECT_EQ(*((int32_t*)(output->children[0]->buffers[1]) + 2), 8);
+  EXPECT_EQ(*((int32_t*)(output->children[0]->buffers[1]) + 3), 9);
+  EXPECT_EQ(*((int32_t*)(output->children[0]->buffers[1]) + 4), 10);
 }
 
 int main(int argc, char** argv) {
