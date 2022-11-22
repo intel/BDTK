@@ -17,7 +17,6 @@ class JITExprValue {
       : ptrs_(0), value_type_(type) {
     ptrs_.reserve(size);
   }
-  ~JITExprValue() = default;
 
   // for {JITValuePointer, ...}
   template <typename... T>

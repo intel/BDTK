@@ -24,6 +24,7 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/utils/TypeUtils.h"
 #include "util/Logger.h"
 
@@ -80,6 +81,10 @@ class ColumnDecoder {
   ExprPtr& expr_;
   JITValuePointer& index_;
 };
+
+TranslatorPtr ColumnToRowNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<ColumnToRowTranslator>(shared_from_this());
+}
 
 void ColumnToRowTranslator::consume(context::CodegenContext& context) {
   codegen(context);

@@ -38,7 +38,7 @@ class ColumnToRowNode : public OpNode {
 
 class ColumnToRowTranslator : public Translator {
  public:
-  ColumnToRowTranslator(const OpNodePtr& node, const TranslatorPtr& succ)
+  ColumnToRowTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {}
 
   void consume(context::CodegenContext& context) override;

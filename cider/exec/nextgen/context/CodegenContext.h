@@ -96,10 +96,10 @@ namespace codegen_utils {
 jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array);
 
 jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
-                                            size_t index);
+                                            int64_t index);
 
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
-                                           size_t index);
+                                           int64_t index);
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context
 

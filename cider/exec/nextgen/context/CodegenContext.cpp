@@ -66,10 +66,10 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
   return runtime_ctx;
 }
 
-namespace codegen_ctx_utils {
+namespace codegen_utils {
 jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array) {
-  CHECK_EQ(arrow_array->getValueTypeTag(), JITTypeTag::POINTER);
-  CHECK_EQ(arrow_array->getValueSubTypeTag(), JITTypeTag::INT8);
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
   return func.emitRuntimeFunctionCall(
@@ -80,8 +80,8 @@ jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array
 
 jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
                                             int64_t index) {
-  CHECK_EQ(arrow_array->getValueTypeTag(), JITTypeTag::POINTER);
-  CHECK_EQ(arrow_array->getValueSubTypeTag(), JITTypeTag::INT8);
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
   auto jit_index = func.createConstant(JITTypeTag::INT64, index);
@@ -92,9 +92,9 @@ jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array
 }
 
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
-                                           size_t index) {
-  CHECK_EQ(arrow_array->getValueTypeTag(), JITTypeTag::POINTER);
-  CHECK_EQ(arrow_array->getValueSubTypeTag(), JITTypeTag::INT8);
+                                           int64_t index) {
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
   auto jit_index = func.createConstant(JITTypeTag::INT64, index);
