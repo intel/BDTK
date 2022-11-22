@@ -39,10 +39,12 @@ TEST(CiderPlanValidator, InvalidAggAndJoinTest) {
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
   std::string sub_data = buffer.str();
-  ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(sub_data, sub_plan);
   auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      sub_plan, generator::FrontendEngine::VELOX);
+      *sub_plan, generator::FrontendEngine::VELOX);
   // Agg(invalid phase) <- proj <- filter <- proj <- join(type not supported) <-project
   // <-read
   CHECK_EQ(plan_slice.rel_nodes.size(), 3);
@@ -53,10 +55,12 @@ TEST(CiderPlanValidator, InvalidAggTest) {
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
   std::string sub_data = buffer.str();
-  ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(sub_data, sub_plan);
   auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      sub_plan, generator::FrontendEngine::VELOX);
+      *sub_plan, generator::FrontendEngine::VELOX);
   // Agg(invalid phase) <- proj <- filter <- proj <- join <- project <- read
   // <-read
   CHECK_EQ(plan_slice.rel_nodes.size(), 6);
@@ -67,10 +71,12 @@ TEST(CiderPlanValidator, InvalidJoinTest) {
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
   std::string sub_data = buffer.str();
-  ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(sub_data, sub_plan);
   auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      sub_plan, generator::FrontendEngine::VELOX);
+      *sub_plan, generator::FrontendEngine::VELOX);
   // Agg <- proj <- filter <- proj <- join(invalid type) <- project <- read
   // <-read
   CHECK_EQ(plan_slice.rel_nodes.size(), 4);
@@ -81,10 +87,12 @@ TEST(CiderPlanValidator, InvalidReadTest) {
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
   std::string sub_data = buffer.str();
-  ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(sub_data, sub_plan);
   auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      sub_plan, generator::FrontendEngine::VELOX);
+      *sub_plan, generator::FrontendEngine::VELOX);
   // Agg <- proj <- filter <- proj <- join <- project <- read (invalid type)
   // <-read
   // read has a decimal type which will fail following nodes except Agg
@@ -96,10 +104,12 @@ TEST(CiderPlanValidator, MultiJoinTest) {
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
   std::string sub_data = buffer.str();
-  ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(sub_data, sub_plan);
   auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      sub_plan, generator::FrontendEngine::VELOX);
+      *sub_plan, generator::FrontendEngine::VELOX);
   // Agg <- proj <- filter <- proj <- join <- project <- join <- read
   // <-read
   // read has a decimal type which will fail following nodes except Agg
