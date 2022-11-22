@@ -139,6 +139,7 @@ enum ViewRefreshOption { kMANUAL = 0, kAUTO = 1, kIMMEDIATE = 2 };
 enum class JoinType { INNER, LEFT, SEMI, ANTI, INVALID };
 
 #include <string>
+#include <unordered_map>
 #include "util/Logger.h"
 
 inline std::string toString(const JoinType& join_type) {
@@ -306,74 +307,40 @@ inline std::ostream& operator<<(std::ostream& os, const SqlStringOpKind kind) {
 }
 
 inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
-  if (func_name == "LOWER") {
-    return SqlStringOpKind::LOWER;
+  const static std::unordered_map<std::string, SqlStringOpKind> name_to_string_map{
+      {"LOWER", SqlStringOpKind::LOWER},
+      {"UPPER", SqlStringOpKind::UPPER},
+      {"INITCAP", SqlStringOpKind::INITCAP},
+      {"REVERSE", SqlStringOpKind::REVERSE},
+      {"REPEAT", SqlStringOpKind::REPEAT},
+      {"||", SqlStringOpKind::CONCAT},
+      {"CONCAT", SqlStringOpKind::CONCAT},
+      {"LPAD", SqlStringOpKind::LPAD},
+      {"RPAD", SqlStringOpKind::RPAD},
+      {"TRIM", SqlStringOpKind::TRIM},
+      {"LTRIM", SqlStringOpKind::LTRIM},
+      {"RTRIM", SqlStringOpKind::RTRIM},
+      {"SUBSTRING", SqlStringOpKind::SUBSTRING},
+      {"SUBSTR", SqlStringOpKind::SUBSTRING},
+      {"OVERLAY", SqlStringOpKind::OVERLAY},
+      {"REPLACE", SqlStringOpKind::REPLACE},
+      {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
+      {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
+      {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
+      {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},
+      {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
+      {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
+      {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
+      {"TRY_CAST", SqlStringOpKind::TRY_STRING_CAST}};
+
+  auto op_kind_entry = name_to_string_map.find(func_name);
+
+  if (op_kind_entry == name_to_string_map.end()) {
+    LOG(FATAL) << "Invalid string function " << func_name << ".";
+    return SqlStringOpKind::INVALID;
   }
-  if (func_name == "UPPER") {
-    return SqlStringOpKind::UPPER;
-  }
-  if (func_name == "INITCAP") {
-    return SqlStringOpKind::INITCAP;
-  }
-  if (func_name == "REVERSE") {
-    return SqlStringOpKind::REVERSE;
-  }
-  if (func_name == "REPEAT") {
-    return SqlStringOpKind::REPEAT;
-  }
-  if (func_name == "||" || func_name == "CONCAT") {
-    return SqlStringOpKind::CONCAT;
-  }
-  if (func_name == "LPAD") {
-    return SqlStringOpKind::LPAD;
-  }
-  if (func_name == "RPAD") {
-    return SqlStringOpKind::RPAD;
-  }
-  if (func_name == "TRIM") {
-    return SqlStringOpKind::TRIM;
-  }
-  if (func_name == "LTRIM") {
-    return SqlStringOpKind::LTRIM;
-  }
-  if (func_name == "RTRIM") {
-    return SqlStringOpKind::RTRIM;
-  }
-  if (func_name == "SUBSTRING" || func_name == "SUBSTR") {
-    return SqlStringOpKind::SUBSTRING;
-  }
-  if (func_name == "OVERLAY") {
-    return SqlStringOpKind::OVERLAY;
-  }
-  if (func_name == "REPLACE") {
-    return SqlStringOpKind::REPLACE;
-  }
-  if (func_name == "SPLIT_PART") {
-    return SqlStringOpKind::SPLIT_PART;
-  }
-  if (func_name == "REGEXP_REPLACE") {
-    return SqlStringOpKind::REGEXP_REPLACE;
-  }
-  if (func_name == "REGEXP_SUBSTR") {
-    return SqlStringOpKind::REGEXP_SUBSTR;
-  }
-  if (func_name == "REGEXP_MATCH") {
-    return SqlStringOpKind::REGEXP_SUBSTR;
-  }
-  if (func_name == "JSON_VALUE") {
-    return SqlStringOpKind::JSON_VALUE;
-  }
-  if (func_name == "BASE64_ENCODE") {
-    return SqlStringOpKind::BASE64_ENCODE;
-  }
-  if (func_name == "BASE64_DECODE") {
-    return SqlStringOpKind::BASE64_DECODE;
-  }
-  if (func_name == "TRY_CAST") {
-    return SqlStringOpKind::TRY_STRING_CAST;
-  }
-  LOG(FATAL) << "Invalid string function " << func_name << ".";
-  return SqlStringOpKind::INVALID;
+
+  return op_kind_entry->second;
 }
 
 inline std::string toString(const SqlStringOpKind& kind) {
