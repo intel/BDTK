@@ -41,10 +41,10 @@ class FilterTranslator : public Translator {
   FilterTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {}
 
-  void consume(Context& context) override;
+  void consume(context::CodegenContext& context) override;
 
  private:
-  void codegen(Context& context);
+  void codegen(context::CodegenContext& context);
 };
 
 }  // namespace cider::exec::nextgen::operators

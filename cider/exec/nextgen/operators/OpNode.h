@@ -19,15 +19,17 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_TRANSLATOR_OPNODE_H
-#define NEXTGEN_TRANSLATOR_OPNODE_H
+#ifndef NEXTGEN_OPERATORS_OPNODE_H
+#define NEXTGEN_OPERATORS_OPNODE_H
 
 #include <type_traits>
 
-#include "exec/nextgen/Context.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::operators {
+using utils::JITExprValueType;
+
 class Translator;
 class OpNode;
 
@@ -36,8 +38,6 @@ using OpPipeline = std::vector<OpNodePtr>;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 using ExprPtrVector = std::vector<ExprPtr>;
 using TranslatorPtr = std::shared_ptr<Translator>;
-
-enum class JITExprValueType { ROW, BATCH };
 
 /// \brief A OpNode is a relational operation in a plan
 ///
@@ -81,7 +81,7 @@ class Translator {
 
   virtual ~Translator() = default;
 
-  virtual void consume(Context& context) = 0;
+  virtual void consume(context::CodegenContext& context) = 0;
 
   OpNodePtr getOpNode() { return op_node_; }
 
@@ -113,4 +113,4 @@ bool isa(const OpNodePtr& op) {
 }
 }  // namespace cider::exec::nextgen::operators
 
-#endif  // NEXTGEN_TRANSLATOR_OPNODE_H
+#endif  // NEXTGEN_OPERATORS_OPNODE_H

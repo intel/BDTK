@@ -64,7 +64,7 @@ class InputAnalyzer {
     }
 
     for (auto& op : pipeline_) {
-      auto exprs = op->getOutputExprs();
+      auto&& [type, exprs] = op->getOutputExprs();
       for (auto& expr : exprs) {
         traverse(&expr);
       }
@@ -74,6 +74,8 @@ class InputAnalyzer {
       if (nullptr == input_exprs_[i]) {
         LOG(FATAL) << "Input column expr missed. Column descriptor = "
                    << input_desc_[i].toString();
+      } else {
+        input_exprs_[i]->setLocalIndex(i);
       }
     }
 

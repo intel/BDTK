@@ -26,15 +26,15 @@ TranslatorPtr ProjectNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<ProjectTranslator>(shared_from_this(), succ);
 }
 
-void ProjectTranslator::consume(Context& context) {
+void ProjectTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void ProjectTranslator::codegen(Context& context) {
-  auto func = context.query_func_;
+void ProjectTranslator::codegen(context::CodegenContext& context) {
+  auto func = context.getJITFunction();
   auto&& [output_type, exprs] = op_node_->getOutputExprs();
-  for (const auto& expr : exprs) {
-    context.expr_outs_.push_back(&expr->codegen(*func));
+  for (auto& expr : exprs) {
+    expr->codegen(*func);
   }
   successor_->consume(context);
 }

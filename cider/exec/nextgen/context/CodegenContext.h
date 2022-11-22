@@ -22,6 +22,7 @@
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/utils/JITExprValue.h"
 #include "include/cider/CiderAllocator.h"
 #include "type/data/sqltypes.h"
 
@@ -40,6 +41,20 @@ class CodegenContext {
   void setJITFunction(jitlib::JITFunction* jit_func) {
     CHECK(nullptr == jit_func_);
     jit_func_ = jit_func;
+  }
+
+  jitlib::JITFunction* getJITFunction() { return jit_func_; }
+
+  std::pair<jitlib::JITValuePointer, utils::JITExprValue>& getArrowArrayValues(
+      size_t local_offset) {
+    return arrow_array_values_[local_offset];
+  }
+
+  template <typename ValuesT>
+  size_t appendArrowArrayValues(jitlib::JITValuePointer& arrow_array, ValuesT&& values) {
+    size_t local_offset = arrow_array_values_.size();
+    arrow_array_values_.emplace_back(arrow_array.get(), std::forward<ValuesT>(values));
+    return local_offset;
   }
 
  public:
@@ -67,12 +82,25 @@ class CodegenContext {
   int64_t getNextContextID() const { return id_counter; }
 
  private:
-  std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>> batch_descriptors_;
+  std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
+      batch_descriptors_{};
+  std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
+      arrow_array_values_{};
 
  private:
   jitlib::JITFunction* jit_func_;
   int64_t id_counter{0};
 };
+
+namespace codegen_utils {
+jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array);
+
+jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
+                                            size_t index);
+
+jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                                           size_t index);
+}  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context
 
 #endif  // NEXTGEN_CONTEXT_CODEGENCONTEXT_H

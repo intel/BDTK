@@ -65,4 +65,43 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
   runtime_ctx->instantiate(allocator);
   return runtime_ctx;
 }
+
+namespace codegen_ctx_utils {
+jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array) {
+  CHECK_EQ(arrow_array->getValueTypeTag(), JITTypeTag::POINTER);
+  CHECK_EQ(arrow_array->getValueSubTypeTag(), JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  return func.emitRuntimeFunctionCall(
+      "extract_arrow_array_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {arrow_array.get()}});
+}
+
+jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
+                                            int64_t index) {
+  CHECK_EQ(arrow_array->getValueTypeTag(), JITTypeTag::POINTER);
+  CHECK_EQ(arrow_array->getValueSubTypeTag(), JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  auto jit_index = func.createConstant(JITTypeTag::INT64, index);
+  return func.emitRuntimeFunctionCall(
+      "extract_arrow_array_buffer",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {arrow_array.get(), jit_index.get()}});
+}
+
+jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                                           size_t index) {
+  CHECK_EQ(arrow_array->getValueTypeTag(), JITTypeTag::POINTER);
+  CHECK_EQ(arrow_array->getValueSubTypeTag(), JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  auto jit_index = func.createConstant(JITTypeTag::INT64, index);
+  return func.emitRuntimeFunctionCall(
+      "extract_arrow_array_child",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {arrow_array.get(), jit_index.get()}});
+}
+}  // namespace codegen_ctx_utils
 }  // namespace cider::exec::nextgen::context

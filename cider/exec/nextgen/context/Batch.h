@@ -61,7 +61,8 @@ class Batch {
 
   bool isMoved() const { return schema_.release; }
 
-  ArrowArray* getArray() { return &array_; };
+  ArrowArray* getArray() { return &array_; }
+  ArrowSchema* getSchema() { return &schema_; }
 
  private:
   ArrowSchema schema_;
@@ -70,7 +71,7 @@ class Batch {
 
 using BatchPtr = std::unique_ptr<Batch>;
 
-namespace utils {
+namespace batch_runtime_utils {
 // void resizeBatch(Batch* batch, size_t size);
 }
 }  // namespace cider::exec::nextgen::context
