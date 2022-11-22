@@ -116,7 +116,7 @@ from
         customer;
 
 select
-        ds,
+        address,
         name
 from
         customer;
@@ -148,14 +148,14 @@ where
         name <> '0000000000';
 
 select
-        ds
+        address
 from
         customer
 where
         name <> '1111111111';
 
 select
-        ds,
+        address,
         name
 from
         customer
