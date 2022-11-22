@@ -110,7 +110,8 @@ enum class SqlStringOpKind {
   BASE64_ENCODE,
   BASE64_DECODE,
   TRY_STRING_CAST,
-  INVALID
+  INVALID,
+  kUNDEFINED_STRING_OP
 };
 
 enum class SqlWindowFunctionKind {
@@ -339,7 +340,7 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
   if (func_name == "RTRIM") {
     return SqlStringOpKind::RTRIM;
   }
-  if (func_name == "SUBSTRING" || func_name == "SUBSTR") {
+  if (func_name == "SUBSTRING") {
     return SqlStringOpKind::SUBSTRING;
   }
   if (func_name == "OVERLAY") {

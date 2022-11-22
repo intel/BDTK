@@ -104,16 +104,19 @@ void AggRelVisitor::visit(TargetContext* target_context) {
   for (int i = 0; i < rel_node_.measures_size(); i++) {
     // Add the agg expressions in target_exprs
     auto s_expr = rel_node_.measures(i).measure();
-    auto function = getFunctionName(function_map_, s_expr.function_reference());
+    auto function_sig = getFunctionName(function_map_, s_expr.function_reference());
+    auto function_name = function_sig.substr(0, function_sig.find_first_of(':'));
+    auto function_args =
+        function_sig.substr(function_sig.find_first_of(':'), function_sig.length());
     // Need special handle for partial avg
-    if (function == "avg" &&
+    if (function_name == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {
       if (substrait::Type::kStruct != s_expr.output_type().kind_case()) {
         CIDER_THROW(CiderCompileException, "partial avg should have a struct type.");
       }
       col_hint_records_ptr->push_back(std::make_pair(ColumnHint::PartialAVG, 2));
       std::unordered_map<int, std::string> function_map_fake(function_map_);
-      function_map_fake[s_expr.function_reference()] = "sum";
+      function_map_fake[s_expr.function_reference()] = "sum" + function_args;
       auto sum_target_expr = toAnalyzerExprConverter_->updateOutputTypeOfAVGPartial(
           toAnalyzerExprConverter_->toAnalyzerExpr(
               s_expr,
@@ -123,7 +126,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
       target_exprs_ptr->push_back(sum_target_expr);
       expr_map_ptr->insert(std::pair(count, sum_target_expr));
       ++count;
-      function_map_fake[s_expr.function_reference()] = "count";
+      function_map_fake[s_expr.function_reference()] = "count" + function_args;
       auto count_target_expr = toAnalyzerExprConverter_->updateOutputTypeOfAVGPartial(
           toAnalyzerExprConverter_->toAnalyzerExpr(
               s_expr,
@@ -178,7 +181,8 @@ void AggRelVisitor::visit(GroupbyContext* groupby_context) {
 
   for (int i = 0; i < rel_node_.measures_size(); i++) {
     auto s_expr = rel_node_.measures(i).measure();
-    auto function = getFunctionName(function_map_, s_expr.function_reference());
+    auto function_sig = getFunctionName(function_map_, s_expr.function_reference());
+    auto function = function_sig.substr(0, function_sig.find_first_of(':'));
     if (function == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {
       if (substrait::Type::kStruct != s_expr.output_type().kind_case()) {

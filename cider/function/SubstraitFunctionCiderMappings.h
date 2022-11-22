@@ -22,6 +22,7 @@
 #ifndef CIDER_FUNCTION_SUBSTRAITFUNCTIONMAPPINGS_H
 #define CIDER_FUNCTION_SUBSTRAITFUNCTIONMAPPINGS_H
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,7 @@
 #include "util/sqldefs.h"
 
 using FunctionSQLScalarOpsMappings = std::unordered_map<std::string, SQLOps>;
+using FunctionSQLStringOpsMappings = std::unordered_map<std::string, SqlStringOpKind>;
 using FunctionSQLAggOpsMappings = std::unordered_map<std::string, SQLAgg>;
 using FunctionSQLOpSupportTypeMappings =
     std::unordered_map<std::string, OpSupportExprType>;
@@ -40,6 +42,17 @@ class SubstraitFunctionCiderMappings {
     auto iter = scalar_op_map.find(function_name);
     if (iter == scalar_op_map.end()) {
       return SQLOps::kUNDEFINED_OP;
+    }
+    return iter->second;
+  }
+
+  const SqlStringOpKind getFunctionStringOp(std::string function_name) const {
+    std::transform(
+        function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
+    const auto& string_op_map = stringMappings();
+    auto iter = string_op_map.find(function_name);
+    if (iter == string_op_map.end()) {
+      return SqlStringOpKind::kUNDEFINED_STRING_OP;
     }
     return iter->second;
   }
@@ -86,7 +99,35 @@ class SubstraitFunctionCiderMappings {
         {"is_null", SQLOps::kISNULL},
         {"is_not_distinct_from", SQLOps::kBW_EQ},
         {"is_distinct_from", SQLOps::kBW_NE},
-        // todo substring......
+    };
+    return mapping;
+  };
+
+  // string function name and sql-ops mapping.
+  virtual const FunctionSQLStringOpsMappings& stringMappings() const {
+    static const FunctionSQLStringOpsMappings mapping{
+        {"LOWER", SqlStringOpKind::LOWER},
+        {"UPPER", SqlStringOpKind::UPPER},
+        {"INITCAP", SqlStringOpKind::INITCAP},
+        {"REVERSE", SqlStringOpKind::REVERSE},
+        {"REPEAT", SqlStringOpKind::REPEAT},
+        {"||", SqlStringOpKind::CONCAT},
+        {"LPAD", SqlStringOpKind::LPAD},
+        {"RPAD", SqlStringOpKind::RPAD},
+        {"TRIM", SqlStringOpKind::TRIM},
+        {"LTRIM", SqlStringOpKind::LTRIM},
+        {"RTRIM", SqlStringOpKind::RTRIM},
+        {"SUBSTRING", SqlStringOpKind::SUBSTRING},
+        {"OVERLAY", SqlStringOpKind::OVERLAY},
+        {"REPLACE", SqlStringOpKind::REPLACE},
+        {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
+        {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
+        {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
+        {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},
+        {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
+        {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
+        {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
+        {"TRY_CAST", SqlStringOpKind::TRY_STRING_CAST},
     };
     return mapping;
   };

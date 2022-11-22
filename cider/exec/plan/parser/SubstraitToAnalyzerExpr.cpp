@@ -38,7 +38,7 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
 
 bool isStringFunction(const std::string& function_name) {
   std::unordered_set<std::string> supportedStrFunctionSet{
-      "substring", "substr", "lower", "upper", "trim", "ltrim", "rtrim"};
+      "substring", "lower", "upper", "trim", "ltrim", "rtrim"};
   return supportedStrFunctionSet.find(function_name) != supportedStrFunctionSet.end();
 }
 
@@ -787,6 +787,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildLikeExpr(
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     const substrait::Expression_ScalarFunction& s_scalar_function,
     const std::unordered_map<int, std::string> function_map,
+    std::string function_name,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
   std::vector<std::shared_ptr<Analyzer::Expr>> args;
@@ -794,8 +795,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     auto value = s_scalar_function.arguments(i).value();
     args.push_back(toAnalyzerExpr(value, function_map, expr_map_ptr));
   }
-  auto function_name =
-      getFunctionName(function_map, s_scalar_function.function_reference());
+  /*auto function_name =
+      getFunctionName(function_map, s_scalar_function.function_reference());*/
   std::transform(
       function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
   auto string_op_kind = name_to_string_op_kind(function_name);
@@ -880,7 +881,14 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  auto function = getFunctionName(function_map, s_scalar_function.function_reference());
+  auto function_sig =
+      getFunctionName(function_map, s_scalar_function.function_reference());
+  auto function_lookup_ptr =
+      std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
+  auto return_type_ptr = getReturnType(s_scalar_function.output_type());
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_sig, return_type_ptr, PlatformType::PrestoPlatform);
+  auto function = function_descriptor.func_sig.func_name;
   // If it's an InValues expr, like "in (1, 2, 3)" or "in cast(vector)", build
   // Analyzer::InValues and return
   if (function == "in") {
@@ -897,7 +905,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     return buildCoalesceExpr(s_scalar_function, function_map, expr_map_ptr);
   }
   if (isStringFunction(function)) {
-    return buildStrExpr(s_scalar_function, function_map, expr_map_ptr);
+    return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
   }
   std::vector<std::shared_ptr<Analyzer::Expr>> args;
   for (size_t i = 0; i < s_scalar_function.arguments_size(); i++) {
@@ -1060,7 +1068,13 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  auto function = getFunctionName(function_map, s_expr.function_reference());
+  auto function_sig = getFunctionName(function_map, s_expr.function_reference());
+  auto function_lookup_ptr =
+      std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
+  auto return_type_ptr = getReturnType(s_expr.output_type());
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_sig, return_type_ptr, PlatformType::PrestoPlatform);
+  auto function = function_descriptor.func_sig.func_name;
   SQLAgg agg_kind = getCiderAggOp(function);
   std::shared_ptr<Analyzer::Constant> arg1;  // 2nd aggregate parameter
   std::shared_ptr<Analyzer::Expr> arg_expr;

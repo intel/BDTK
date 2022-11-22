@@ -73,6 +73,7 @@ struct FunctionSignature {
 struct FunctionDescriptor {
   FunctionSignature func_sig;
   SQLOps scalar_op_type = SQLOps::kUNDEFINED_OP;
+  SqlStringOpKind string_op_type = SqlStringOpKind::kUNDEFINED_STRING_OP;
   SQLAgg agg_op_type = SQLAgg::kUNDEFINED_AGG;
   OpSupportExprType op_support_expr_type = OpSupportExprType::kUNDEFINED_EXPR;
 };
@@ -103,6 +104,10 @@ class FunctionLookupEngine {
                                           const io::substrait::TypePtr& return_type,
                                           const PlatformType& from_platform) const;
 
+  const FunctionDescriptor lookupFunction(const std::string& function_signature_str,
+                                          const std::string& function_return_type_str,
+                                          const PlatformType& from_platform) const;
+
  private:
   void registerFunctionLookUpContext(const PlatformType from_platform);
   template <typename T>
@@ -122,6 +127,7 @@ class FunctionLookupEngine {
   const OpSupportExprType getExtensionFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
   const std::string getRealFunctionName(const std::string& function_name) const;
+  const io::substrait::TypePtr getArgueTypePtr(const std::string& argue_type_str) const;
 
   static std::string getDataPath() {
     const std::string absolute_path = __FILE__;
