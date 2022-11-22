@@ -36,7 +36,7 @@ void ProjectTranslator::codegen(context::CodegenContext& context) {
   for (auto& expr : exprs) {
     expr->codegen(*func);
   }
-  successor_->consume(context);
+  // successor_->consume(context);
 }
 
 }  // namespace cider::exec::nextgen::operators

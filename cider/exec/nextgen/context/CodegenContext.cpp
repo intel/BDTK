@@ -72,10 +72,12 @@ jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array
   CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
-  return func.emitRuntimeFunctionCall(
+  auto ret = func.emitRuntimeFunctionCall(
       "extract_arrow_array_len",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
                                 .params_vector = {arrow_array.get()}});
+  ret->setName("array_len");
+  return ret;
 }
 
 jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
@@ -85,10 +87,13 @@ jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array
 
   auto& func = arrow_array->getParentJITFunction();
   auto jit_index = func.createConstant(JITTypeTag::INT64, index);
-  return func.emitRuntimeFunctionCall(
+  auto ret = func.emitRuntimeFunctionCall(
       "extract_arrow_array_buffer",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {arrow_array.get(), jit_index.get()}});
+  ret->setName("array_buffer");
+  return ret;
 }
 
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
@@ -98,10 +103,14 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
 
   auto& func = arrow_array->getParentJITFunction();
   auto jit_index = func.createConstant(JITTypeTag::INT64, index);
-  return func.emitRuntimeFunctionCall(
+  auto ret = func.emitRuntimeFunctionCall(
       "extract_arrow_array_child",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {arrow_array.get(), jit_index.get()}});
+
+  ret->setName("child_array");
+  return ret;
 }
-}  // namespace codegen_ctx_utils
+}  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context

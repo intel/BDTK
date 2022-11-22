@@ -87,17 +87,18 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
 }
 
 JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs) {
+  // TODO: Null Process
   switch (get_optype()) {
     case kMINUS:
-      return set_expr_value(lhs - rhs);
+      return set_expr_value(nullptr, lhs - rhs);
     case kPLUS:
-      return set_expr_value(lhs + rhs);
+      return set_expr_value(nullptr, lhs + rhs);
     case kMULTIPLY:
-      return set_expr_value(lhs * rhs);
+      return set_expr_value(nullptr, lhs * rhs);
     case kDIVIDE:
-      return set_expr_value(lhs / rhs);
+      return set_expr_value(nullptr, lhs / rhs);
     case kMODULO:
-      return set_expr_value(lhs % rhs);
+      return set_expr_value(nullptr, lhs % rhs);
     default:
       UNREACHABLE();
   }
@@ -106,19 +107,20 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs)
 }
 
 JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs) {
+  // TODO: Null Process
   switch (get_optype()) {
     case kEQ:
-      return set_expr_value(lhs == rhs);
+      return set_expr_value(nullptr, lhs == rhs);
     case kNE:
-      return set_expr_value(lhs != rhs);
+      return set_expr_value(nullptr, lhs != rhs);
     case kLT:
-      return set_expr_value(lhs < rhs);
+      return set_expr_value(nullptr, lhs < rhs);
     case kGT:
-      return set_expr_value(lhs > rhs);
+      return set_expr_value(nullptr, lhs > rhs);
     case kLE:
-      return set_expr_value(lhs <= rhs);
+      return set_expr_value(nullptr, lhs <= rhs);
     case kGE:
-      return set_expr_value(lhs >= rhs);
+      return set_expr_value(nullptr, lhs >= rhs);
     default:
       UNREACHABLE();
   }

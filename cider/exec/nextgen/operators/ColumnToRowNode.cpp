@@ -43,6 +43,7 @@ class ColumnDecoder {
       case kINT:
       case kBIGINT:
         decodeFixSizedType();
+        break;
       default:
         LOG(FATAL) << "Unsupported data type in ColumnDecoder: "
                    << expr_->get_type_info().get_type_name();
@@ -83,7 +84,7 @@ class ColumnDecoder {
 };
 
 TranslatorPtr ColumnToRowNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<ColumnToRowTranslator>(shared_from_this());
+  return createOpTranslator<ColumnToRowTranslator>(shared_from_this(), succ);
 }
 
 void ColumnToRowTranslator::consume(context::CodegenContext& context) {
