@@ -99,7 +99,7 @@ class TypeUtils {
   static std::string getStringType(const ::substrait::Type& type) {
     switch (type.kind_case()) {
       case substrait::Type::kBool:
-        return "bool";
+        return "boolean";
       case substrait::Type::kI8:
         return "i8";
       case substrait::Type::kI16:
@@ -143,9 +143,10 @@ class TypeUtils {
       case substrait::Type::kList:
         return "list";
       case substrait::Type::kMap:
-        return "map" default
-            : CIDER_THROW(CiderCompileException,
-                          "Failed to get arg type when trying to make func");
+        return "map";
+      default:
+        CIDER_THROW(CiderCompileException,
+                    "Failed to get arg type when trying to make func");
     }
   }
 

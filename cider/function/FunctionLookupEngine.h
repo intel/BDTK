@@ -76,15 +76,18 @@ struct FunctionDescriptor {
   SqlStringOpKind string_op_type = SqlStringOpKind::kUNDEFINED_STRING_OP;
   SQLAgg agg_op_type = SQLAgg::kUNDEFINED_AGG;
   OpSupportExprType op_support_expr_type = OpSupportExprType::kUNDEFINED_EXPR;
+  bool is_cider_support_function = false;
 };
 
 using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
 
+class FunctionLookupEngine;
+using FunctionLookupEnginePtrMap =
+    std::unordered_map<const PlatformType, const FunctionLookupEngine*>;
+
 class FunctionLookupEngine {
  public:
-  FunctionLookupEngine(const PlatformType from_platform) : from_platform_(from_platform) {
-    registerFunctionLookUpContext(from_platform);
-  }
+  static const FunctionLookupEngine* getInstance(const PlatformType from_platform);
 
   /// lookup function descriptor by given function Signature.
   /// a) If sql_op is not kUNDEFINED_OP, means cider runtime function is selected for
@@ -99,16 +102,15 @@ class FunctionLookupEngine {
   const FunctionDescriptor lookupFunction(
       const FunctionSignature& function_signature) const;
 
-  // like:vchar_vchar
-  const FunctionDescriptor lookupFunction(const std::string& function_signature_str,
-                                          const io::substrait::TypePtr& return_type,
-                                          const PlatformType& from_platform) const;
-
+  // like:vchar<L1>_vchar<L1>, boolean
   const FunctionDescriptor lookupFunction(const std::string& function_signature_str,
                                           const std::string& function_return_type_str,
                                           const PlatformType& from_platform) const;
 
  private:
+  FunctionLookupEngine(const PlatformType from_platform) : from_platform_(from_platform) {
+    registerFunctionLookUpContext(from_platform);
+  }
   void registerFunctionLookUpContext(const PlatformType from_platform);
   template <typename T>
   void loadExtensionYamlAndInitializeFunctionLookup(
@@ -117,6 +119,8 @@ class FunctionLookupEngine {
       const io::substrait::ExtensionPtr& cider_internal_function_ptr);
 
   const SQLOps getFunctionScalarOp(const FunctionSignature& function_signature) const;
+  const SqlStringOpKind getFunctionStringOp(
+      const FunctionSignature& function_signature) const;
   const SQLAgg getFunctionAggOp(const FunctionSignature& function_signature) const;
   const OpSupportExprType getFunctionOpSupportType(
       const FunctionSignature& function_signature) const;
@@ -148,6 +152,7 @@ class FunctionLookupEngine {
   io::substrait::FunctionMappingPtr function_mapping_ptr_;
 
   const PlatformType from_platform_;
+  static FunctionLookupEnginePtrMap function_lookup_engine_ptr_map_;
 };
 
 using FunctionLookupEnginePtr = std::shared_ptr<const FunctionLookupEngine>;

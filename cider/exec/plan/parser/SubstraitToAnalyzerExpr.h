@@ -44,8 +44,10 @@ enum ContextUpdateType {
 
 class Substrait2AnalyzerExprConverter {
  public:
-  explicit Substrait2AnalyzerExprConverter()
-      : cols_update_stat_{}, cur_table_id_{fake_table_id} {}
+  explicit Substrait2AnalyzerExprConverter(PlatformType from_platform)
+      : cols_update_stat_{}
+      , cur_table_id_{fake_table_id}
+      , from_platform_{from_platform} {}
   std::shared_ptr<Analyzer::Expr> toAnalyzerExpr(
       const substrait::Expression& s_expr,
       const std::unordered_map<int, std::string> function_map,
@@ -187,5 +189,7 @@ class Substrait2AnalyzerExprConverter {
   // what's the current table id
   // TODO: remove it to assure expression convertor is stateless
   int cur_table_id_;
+
+  PlatformType from_platform_;
 };
 }  // namespace generator

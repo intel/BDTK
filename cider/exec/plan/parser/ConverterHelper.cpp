@@ -46,16 +46,8 @@ std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan)
     const auto& extension = plan.extensions(i);
     if (extension.has_extension_function()) {
       const auto& function = extension.extension_function().name();
-      /*auto function_lookup_ptr =
-          std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
-      auto function_descriptor =
-          function_lookup_ptr->lookupFunction(function, PlatformType::PrestoPlatform);
-      std::string function_name = function_descriptor.func_sig.func_name;*/
       // do function lookup verify and function mapping
       // get op type, no need mapping in substraitToAnalyzerExpr
-      /*auto function_name = function.substr(0, function.find_first_of(':'));
-      function_map.emplace(extension.extension_function().function_anchor(),
-                           std::move(function_name));*/
       function_map.emplace(extension.extension_function().function_anchor(), function);
     }
   }
@@ -302,9 +294,9 @@ SQLOps getCiderSqlOps(const std::string& op) {
     return SQLOps::kNOT;
   } else if (op == "gt") {
     return SQLOps::kGT;
-  } else if (op == "eq" or op == "equal") {
+  } else if (op == "equal") {
     return SQLOps::kEQ;
-  } else if (op == "neq" or op == "ne" or op == "not_equal") {
+  } else if (op == "not_equal") {
     return SQLOps::kNE;
   } else if (op == "gte") {
     return SQLOps::kGE;
@@ -314,9 +306,9 @@ SQLOps getCiderSqlOps(const std::string& op) {
     return SQLOps::kMULTIPLY;
   } else if (op == "divide") {
     return SQLOps::kDIVIDE;
-  } else if (op == "plus" || op == "add") {
+  } else if (op == "add") {
     return SQLOps::kPLUS;
-  } else if (op == "subtract" || op == "minus") {
+  } else if (op == "subtract") {
     return SQLOps::kMINUS;
   } else if (op == "modulus") {
     return SQLOps::kMODULO;
@@ -556,74 +548,6 @@ std::unordered_map<int, std::string> getFunctionMap(
     function_map.emplace(function->function_anchor(), func_name);
   }
   return function_map;
-}
-
-const io::substrait::TypePtr getReturnType(const substrait::Type& type) {
-  switch (type.kind_case()) {
-    case substrait::Type::kBool:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
-    case substrait::Type::kI8:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kI8>>();
-    case substrait::Type::kI16:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kI16>>();
-    case substrait::Type::kI32:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>();
-    case substrait::Type::kI64:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kI64>>();
-    case substrait::Type::kFp32:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kFp32>>();
-    case substrait::Type::kFp64:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>();
-    case substrait::Type::kString:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kString>>();
-    case substrait::Type::kBinary:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kBinary>>();
-    case substrait::Type::kTimestamp:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kTimestamp>>();
-    case substrait::Type::kDate:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kDate>>();
-    case substrait::Type::kTime:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kTime>>();
-    case substrait::Type::kIntervalYear:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kIntervalYear>>();
-    case substrait::Type::kIntervalDay:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kIntervalDay>>();
-    case substrait::Type::kTimestampTz:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kTimestampTz>>();
-    case substrait::Type::kUuid:
-      return std::make_shared<
-          const io::substrait::ScalarType<io::substrait::TypeKind::kUuid>>();
-    case substrait::Type::kFixedChar:
-      return io::substrait::Type::decode("fixedchar<L1>");
-    case substrait::Type::kVarchar:
-      return io::substrait::Type::decode("varchar<L1>");
-    case substrait::Type::kFixedBinary:
-      return io::substrait::Type::decode("fixedbinary<L1>");
-    case substrait::Type::kDecimal:
-      return io::substrait::Type::decode("decimal<P,S>");
-    case substrait::Type::kStruct:
-      return io::substrait::Type::decode("struct<fp64,i64>");
-    case substrait::Type::kList:
-    case substrait::Type::kMap:
-    default:
-      CIDER_THROW(CiderCompileException,
-                  fmt::format("Unsupported substrait return type {}", type.kind_case()));
-  }
 }
 
 }  // namespace generator

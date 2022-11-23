@@ -22,6 +22,25 @@
 #include "function/FunctionLookupEngine.h"
 #include "cider/CiderException.h"
 
+FunctionLookupEnginePtrMap FunctionLookupEngine::function_lookup_engine_ptr_map_ = {};
+
+const FunctionLookupEngine* FunctionLookupEngine::getInstance(
+    const PlatformType from_platform) {
+  if (from_platform == PlatformType::SubstraitPlatform ||
+      from_platform == PlatformType::PrestoPlatform) {
+    if (function_lookup_engine_ptr_map_.find(from_platform) ==
+        function_lookup_engine_ptr_map_.end()) {
+      function_lookup_engine_ptr_map_.insert(
+          std::pair(from_platform, new FunctionLookupEngine(from_platform)));
+    }
+    return function_lookup_engine_ptr_map_[from_platform];
+  } else {
+    CIDER_THROW(CiderCompileException,
+                fmt::format("Function lookup unsupported platform {}", from_platform));
+  }
+  return nullptr;
+}
+
 void FunctionLookupEngine::registerFunctionLookUpContext(
     const PlatformType from_platform) {
   // Load cider support function default yaml files first.
@@ -78,6 +97,28 @@ const SQLOps FunctionLookupEngine::getFunctionScalarOp(
     return function_mappings_->getFunctionScalarOp(function_variant_ptr->name);
   }
   return SQLOps::kUNDEFINED_OP;
+}
+
+const SqlStringOpKind FunctionLookupEngine::getFunctionStringOp(
+    const FunctionSignature& function_signature) const {
+  const PlatformType& from_platform = function_signature.from_platform;
+  if (from_platform != from_platform_) {
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Platform of target function is {}, mismatched with registered platform {}",
+            from_platform,
+            from_platform_));
+  }
+  const std::string& func_name = function_signature.func_name;
+  const std::vector<io::substrait::TypePtr>& arguments = function_signature.arguments;
+  const io::substrait::TypePtr& return_type = function_signature.return_type;
+  const auto& function_variant_ptr =
+      scalar_function_look_up_ptr_->lookupFunction({func_name, arguments, return_type});
+  if (function_variant_ptr) {
+    return function_mappings_->getFunctionStringOp(function_variant_ptr->name);
+  }
+  return SqlStringOpKind::kUNDEFINED_STRING_OP;
 }
 
 const SQLAgg FunctionLookupEngine::getFunctionAggOp(
@@ -223,52 +264,30 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
   function_descriptor.func_sig = function_signature_result;
   auto funtion_op_support_type_result = getFunctionOpSupportType(function_signature);
   function_descriptor.op_support_expr_type = funtion_op_support_type_result;
+  if (funtion_op_support_type_result != OpSupportExprType::kUNDEFINED_EXPR) {
+    function_descriptor.is_cider_support_function = true;
+  }
+  // extension function, no need to look up internal scalar and agg
   if (funtion_op_support_type_result == OpSupportExprType::kFUNCTION_OPER) {
     return function_descriptor;
   }
   auto funtion_scalar_op_result = getFunctionScalarOp(function_signature);
   function_descriptor.scalar_op_type = funtion_scalar_op_result;
   if (funtion_scalar_op_result != SQLOps::kUNDEFINED_OP) {
+    function_descriptor.is_cider_support_function = true;
+    return function_descriptor;
+  }
+  auto funtion_string_op_result = getFunctionStringOp(function_signature);
+  function_descriptor.string_op_type = funtion_string_op_result;
+  if (funtion_string_op_result != SqlStringOpKind::kUNDEFINED_STRING_OP) {
+    function_descriptor.is_cider_support_function = true;
     return function_descriptor;
   }
   auto funtion_agg_op_result = getFunctionAggOp(function_signature);
   function_descriptor.agg_op_type = funtion_agg_op_result;
-  return function_descriptor;
-}
-
-const FunctionDescriptor FunctionLookupEngine::lookupFunction(
-    const std::string& function_signature_str,
-    const io::substrait::TypePtr& return_type,
-    const PlatformType& from_platform) const {
-  FunctionDescriptor function_descriptor;
-  auto function_name =
-      function_signature_str.substr(0, function_signature_str.find_first_of(':'));
-  auto function_args = function_signature_str.substr(
-      function_signature_str.find_first_of(':') + 1, function_signature_str.length());
-  std::vector<std::string> function_args_vec = split(function_args, "_");
-  FunctionSignature function_signature;
-  function_signature.from_platform = from_platform;
-  function_signature.func_name = function_name;
-  std::vector<io::substrait::TypePtr> arguments_vec;
-  for (const auto& arg_str : function_args_vec) {
-    if (arg_str == "req" || arg_str == "opt") {
-      continue;
-    } else if (arg_str == "varchar" || arg_str == "vchar") {
-      arguments_vec.push_back(io::substrait::Type::decode("varchar<L1>"));
-    } else if (arg_str == "fixedchar" || arg_str == "fchar") {
-      arguments_vec.push_back(io::substrait::Type::decode("fixedchar<L1>"));
-    } else if (arg_str == "fixedbinary" || arg_str == "fbin") {
-      arguments_vec.push_back(io::substrait::Type::decode("fixedbinary<L1>"));
-    } else if (arg_str == "decimal" || arg_str == "dec") {
-      arguments_vec.push_back(io::substrait::Type::decode("decimal<P,S>"));
-    } else {
-      const auto type_ptr = io::substrait::Type::decode(arg_str);
-      arguments_vec.push_back(type_ptr);
-    }
+  if (funtion_agg_op_result != SQLAgg::kUNDEFINED_AGG) {
+    function_descriptor.is_cider_support_function = true;
   }
-  function_signature.arguments = arguments_vec;
-  function_signature.return_type = return_type;
-  function_descriptor = lookupFunction(function_signature);
   return function_descriptor;
 }
 
