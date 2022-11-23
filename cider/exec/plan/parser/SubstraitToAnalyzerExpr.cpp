@@ -796,8 +796,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     auto value = s_scalar_function.arguments(i).value();
     args.push_back(toAnalyzerExpr(value, function_map, expr_map_ptr));
   }
-  /*auto function_name =
-      getFunctionName(function_map, s_scalar_function.function_reference());*/
   std::transform(
       function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
   auto string_op_kind = name_to_string_op_kind(function_name);
