@@ -538,7 +538,7 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
 }
 
 TEST_F(CiderStringTestArrow, ConcatTest) {
-  // Isthmus does not support concatenating two literals
+  // Skipped because Isthmus does not support concatenating two literals
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
   assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
