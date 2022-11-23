@@ -69,22 +69,31 @@ void* LLVMJITFunction::getFunctionPointer() {
   return module_.getFunctionPtrImpl(*this);
 }
 
-JITValuePointer LLVMJITFunction::createVariable(JITTypeTag type_tag,
-                                                const std::string& name) {
-  auto llvm_type = getLLVMType(type_tag, getLLVMContext());
-
+JITValuePointer LLVMJITFunction::createLocalJITValue(
+    std::function<JITValuePointer()> builder) {
   auto current_block = ir_builder_->GetInsertBlock();
   auto& local_var_block = current_block->getParent()->getEntryBlock();
   auto iter = local_var_block.end();
   ir_builder_->SetInsertPoint(&local_var_block, --iter);
 
-  llvm::AllocaInst* variable_memory = ir_builder_->CreateAlloca(llvm_type);
-  variable_memory->setName(name);
-  variable_memory->setAlignment(getJITTypeSize(type_tag));
+  JITValuePointer ret(builder());
 
   ir_builder_->SetInsertPoint(current_block);
 
-  return makeJITValuePointer<LLVMJITValue>(type_tag, *this, variable_memory, name, true);
+  return ret;
+}
+
+JITValuePointer LLVMJITFunction::createVariable(JITTypeTag type_tag,
+                                                const std::string& name) {
+  return createLocalJITValue([type_tag, &name, this] {
+    auto llvm_type = getLLVMType(type_tag, getLLVMContext());
+    llvm::AllocaInst* variable_memory = ir_builder_->CreateAlloca(llvm_type);
+    variable_memory->setName(name);
+    variable_memory->setAlignment(getJITTypeSize(type_tag));
+
+    return makeJITValuePointer<LLVMJITValue>(
+        type_tag, *this, variable_memory, name, true);
+  });
 }
 
 void LLVMJITFunction::createReturn() {
@@ -181,7 +190,8 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
   }
 
   llvm::Value* ans = ir_builder_->CreateCall(func, args);
-  return makeJITValuePointer<LLVMJITValue>(descriptor.ret_type, *this, ans, "ret", false);
+  return makeJITValuePointer<LLVMJITValue>(
+      descriptor.ret_type, *this, ans, "ret", false, descriptor.ret_sub_type);
 }
 
 void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {

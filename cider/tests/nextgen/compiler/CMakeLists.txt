@@ -26,3 +26,7 @@ add_executable(ParserTest ParserTest.cpp)
 target_link_libraries(ParserTest ${EXECUTE_TEST_LIBS} nextgen test_utils
                       cider_plan_parser)
 add_test(ParserTest ${EXECUTABLE_OUTPUT_PATH}/ParserTest ${TEST_ARGS})
+
+add_executable(ContextTest ContextTest.cpp)
+target_link_libraries(ContextTest ${EXECUTE_TEST_LIBS} nextgen)
+add_test(ContextTest ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})

@@ -47,6 +47,7 @@ struct JITFunctionDescriptor {
 struct JITFunctionEmitDescriptor {
   static constexpr size_t DefaultParamsNum = 8;
   JITTypeTag ret_type;
+  JITTypeTag ret_sub_type = JITTypeTag::INVALID;
   boost::container::small_vector<JITValue*, DefaultParamsNum> params_vector;
 };
 
@@ -67,10 +68,15 @@ class JITFunction {
     }
   }
 
+  // TODO: Support initial value.
   virtual JITValuePointer createVariable(JITTypeTag type_tag,
                                          const std::string& name) = 0;
 
+  // TODO: Rename as 'createLiterals'.
   virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
+
+  virtual JITValuePointer createLocalJITValue(
+      std::function<JITValuePointer()> builder) = 0;
 
   virtual JITValuePointer getArgument(size_t index) = 0;
 

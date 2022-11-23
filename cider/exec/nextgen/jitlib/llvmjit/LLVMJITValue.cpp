@@ -342,4 +342,9 @@ JITValuePointer LLVMJITValue::getElemAt(JITValue& index) {
   return llvm_element_ptr.dereference();
 }
 
+void LLVMJITValue::setName(const std::string& name) {
+  value_name_ = name;
+  llvm_value_->setName(name);
+}
+
 };  // namespace cider::jitlib

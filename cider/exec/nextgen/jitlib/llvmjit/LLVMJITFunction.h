@@ -45,6 +45,8 @@ class LLVMJITFunction final : public JITFunction {
 
   JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
 
+  JITValuePointer createLocalJITValue(std::function<JITValuePointer()> builder) override;
+
   JITValuePointer getArgument(size_t index) override;
 
   IfBuilderPointer createIfBuilder() override;
