@@ -397,12 +397,11 @@ TEST_F(CiderOperatorTest, partial_avg) {
   assertQuery(resultPtr, duckdbSql);
 
   const ::substrait::Plan substraitPlan = ::substrait::Plan();
-  auto expectedPlan =
-      PlanBuilder()
-          .values({data})
-          .project({"c0"})
-          .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
-          .planNode();
+  auto expectedPlan = PlanBuilder()
+                          .values({data})
+                          .project({"c0"})
+                          .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
+                          .planNode();
 
   EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
 }
