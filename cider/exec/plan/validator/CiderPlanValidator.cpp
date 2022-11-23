@@ -31,25 +31,26 @@
 namespace validator {
 
 bool CiderPlanValidator::validate(const substrait::Plan& plan,
-                                  const generator::FrontendEngine& from_platform) {
+                                  const generator::FrontendEngine& frontend_engine) {
   // Assumed that plan pattern already validated, do function look up first
   // Apply specific rule check on the plan
-  return isSupportedSlice(constructPlanSlice(plan, from_platform), plan, from_platform);
+  return isSupportedSlice(
+      constructPlanSlice(plan, frontend_engine), plan, frontend_engine);
 }
 
 PlanSlice CiderPlanValidator::constructPlanSlice(
     const substrait::Plan& plan,
-    const generator::FrontendEngine& from_platform) {
+    const generator::FrontendEngine& frontend_engine) {
   const substrait::Rel& root_rel = getRootRel(plan);
   std::vector<substrait::Rel> rel_vec;
   putRelNodesInVec(root_rel, rel_vec);
-  return PlanSlice{rel_vec, from_platform};
+  return PlanSlice{rel_vec, frontend_engine};
 }
 
 bool CiderPlanValidator::isSupportedSlice(
     const PlanSlice& plan_slice,
     const substrait::Plan& plan,
-    const generator::FrontendEngine& from_platform) {
+    const generator::FrontendEngine& frontend_engine) {
   try {
     auto c_plan = constructSubstraitPlan(plan_slice, plan);
     auto translator = std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(c_plan);
@@ -196,7 +197,7 @@ const substrait::Rel& CiderPlanValidator::getRootRel(const substrait::Plan& plan
 
 PlanSlice CiderPlanValidator::getCiderSupportedSlice(
     substrait::Plan& plan,
-    const generator::FrontendEngine& from_platform) {
+    const generator::FrontendEngine& frontend_engine) {
   const substrait::Rel& root = getRootRel(plan);
   // Put plan rels in a vector with pair <substrait::Rel, isSupported>
   std::vector<substrait::Rel> rel_vec;
@@ -209,7 +210,7 @@ PlanSlice CiderPlanValidator::getCiderSupportedSlice(
       i++;
       continue;
     }
-    PlanSlice plan_slice{{}, from_platform};
+    PlanSlice plan_slice{{}, frontend_engine};
     plan_slice.rel_nodes.emplace_back(rel_vec[i]);
     has_join = rel_vec[i].has_join() ? true : false;
     int j = i + 1;
@@ -230,7 +231,7 @@ PlanSlice CiderPlanValidator::getCiderSupportedSlice(
   std::vector<PlanSlice> final_candidates;
   final_candidates.reserve(slice_candidates.size());
   for (int i = 0; i < slice_candidates.size(); i++) {
-    if (isSupportedSlice(slice_candidates[i], plan, from_platform)) {
+    if (isSupportedSlice(slice_candidates[i], plan, frontend_engine)) {
       final_candidates.emplace_back(slice_candidates[i]);
     }
   }
@@ -242,7 +243,7 @@ PlanSlice CiderPlanValidator::getCiderSupportedSlice(
       final_slice_index = i;
     }
   }
-  return slice_candidates.size() == 0 ? PlanSlice{{}, from_platform}
+  return slice_candidates.size() == 0 ? PlanSlice{{}, frontend_engine}
                                       : slice_candidates[final_slice_index];
 }
 
