@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/operators/SourceNode.h"
+#include "exec/nextgen/operators/ArrowSourceNode.h"
 
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/jitlib/JITLib.h"
@@ -28,15 +28,15 @@
 namespace cider::exec::nextgen::operators {
 using namespace jitlib;
 
-TranslatorPtr SourceNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<SourceTranslator>(shared_from_this(), succ);
+TranslatorPtr ArrowSourceNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<ArrowSourceTranslator>(shared_from_this(), succ);
 }
 
-void SourceTranslator::consume(context::CodegenContext& context) {
+void ArrowSourceTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void SourceTranslator::codegen(context::CodegenContext& context) {
+void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
   auto&& [output_type, exprs] = op_node_->getOutputExprs();
 

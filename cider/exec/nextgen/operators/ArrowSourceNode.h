@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_OPERATORS_SOURCENODE_H
-#define NEXTGEN_OPERATORS_SOURCENODE_H
+#ifndef NEXTGEN_OPERATORS_ARROWSOURCENODE_H
+#define NEXTGEN_OPERATORS_ARROWSOURCENODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
 #include "util/Logger.h"
@@ -29,10 +29,10 @@ namespace cider::exec::nextgen::operators {
 
 class ArrowSourceNode : public OpNode {
  public:
-  SourceNode(ExprPtrVector&& output_exprs)
+  ArrowSourceNode(ExprPtrVector&& output_exprs)
       : OpNode("SourceNode", std::move(output_exprs), JITExprValueType::BATCH) {}
 
-  SourceNode(const ExprPtrVector& output_exprs)
+  ArrowSourceNode(const ExprPtrVector& output_exprs)
       : OpNode("SourceNode", output_exprs, JITExprValueType::BATCH) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
@@ -40,7 +40,7 @@ class ArrowSourceNode : public OpNode {
 
 class ArrowSourceTranslator : public Translator {
  public:
-  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
+  ArrowSourceTranslator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
       : Translator(node, successor) {}
 
   void consume(context::CodegenContext& context) override;
@@ -49,4 +49,4 @@ class ArrowSourceTranslator : public Translator {
   void codegen(context::CodegenContext& context);
 };
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_SOURCENODE_H
+#endif // NEXTGEN_OPERATORS_ARROWSOURCENODE_H
