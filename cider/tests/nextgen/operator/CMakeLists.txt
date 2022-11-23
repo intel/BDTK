@@ -17,10 +17,15 @@
 # specific language governing permissions and limitations
 # under the License.
 set(DEP_LIBS ${EXECUTE_TEST_LIBS} nextgen)
-
 set(TEST_ARGS "--gtest_output=xml:../")
 
-add_executable(FilterProjectTest FilterProjectTest.cpp)
-target_link_libraries(FilterProjectTest ${DEP_LIBS})
-add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
-         ${TEST_ARGS})
+file(GLOB jit_translator_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+foreach(jit_translator_test_file ${jit_translator_test_files})
+  string(REGEX MATCH "operator/.*" test_relative_path
+               ${jit_translator_test_file})
+  string(REGEX REPLACE "operator/" "" target_name ${test_relative_path})
+  string(REGEX REPLACE ".cpp" "" target_name ${target_name})
+  add_executable(${target_name} ${jit_translator_test_file})
+  target_link_libraries(${target_name} ${DEP_LIBS})
+  add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name} ${TEST_ARGS})
+endforeach()

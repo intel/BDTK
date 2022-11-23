@@ -23,6 +23,7 @@ endmacro(add_opnode)
 
 add_opnode(FilterNode)
 add_opnode(ProjectNode)
-add_opnode(SourceNode)
+add_opnode(ArrowSourceNode)
+add_opnode(ColumnToRowNode)
 
 add_library(cider_operators OBJECT ${OPERATORS_SOURCE})

@@ -31,6 +31,7 @@ class Context {
   Context(JITFunction* func_) : query_func_(func_) {}
   JITFunction* query_func_;
   std::vector<cider::jitlib::JITExprValue*> expr_outs_;
+  JITValue* cur_line_idx_;
 };
 }  // namespace cider::exec::nextgen
 

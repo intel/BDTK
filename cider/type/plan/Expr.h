@@ -181,13 +181,18 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   JITExprValue* get_expr_value() const { return expr_var_.get(); }
 
+  void set_nulls(cider::jitlib::JITValuePointer& val) { nulls_.push_back(val); }
+  std::vector<cider::jitlib::JITValuePointer>& get_nulls() { return nulls_; }
+
+  void set_datas(cider::jitlib::JITValuePointer& val) { vals_.push_back(val); }
+  std::vector<cider::jitlib::JITValuePointer>& get_datas() { return vals_; }
+
   // TODO (bigPYJ1151): to pure virtual.
   virtual ExprPtrRefVector get_children_reference() {
     UNREACHABLE();
     return {};
   }
 
- protected:
   JITTypeTag getJITTag(const SQLTypes& st);
   JITTypeTag getJITTag() { return getJITTag(get_type_info().get_type()); }
 
@@ -195,6 +200,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
   bool contains_agg;
 
+  std::vector<cider::jitlib::JITValuePointer> nulls_;
+  std::vector<cider::jitlib::JITValuePointer> vals_;
   std::unique_ptr<JITExprValue> expr_var_;
   // just for unreachable branch return;
   JITExprValue fake_val_;

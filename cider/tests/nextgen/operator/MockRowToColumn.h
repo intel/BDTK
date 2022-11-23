@@ -18,37 +18,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_OPERATORS_SOURCENODE_H
-#define NEXTGEN_OPERATORS_SOURCENODE_H
 
-#include <vector>
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_ROWTOCOLUMN_SINK_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_ROWTOCOLUMN_SINK_H
 
+#include "exec/nextgen/Context.h"
 #include "exec/nextgen/operators/OpNode.h"
-#include "util/Logger.h"
 
-class InputColDescriptor;
 namespace cider::exec::nextgen::operators {
 
-class SourceNode : public OpNode {
+// TODO: Mock R2C sink, will be modified After R2CTranslator ready
+class MockRowToColumnTranslator : public Translator {
  public:
-  SourceNode(const ExprPtrVector& col_exprs);
+  explicit MockRowToColumnTranslator(size_t pos) : pos_(pos) {}
 
-  ExprPtrVector getOutputExprs() override { return input_cols_; }
-
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  void consume(Context& context) override { codegen(context); };
 
  private:
-  ExprPtrVector input_cols_;
-};
-
-class SourceTranslator : public Translator {
- public:
-  SourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {
-    CHECK(isa<SourceNode>(node));
+  void codegen(Context& context) {
+    auto& func_ = context.query_func_;
+    for (int idx = 0; idx < context.expr_outs_.size(); idx++) {
+      auto var = func_->getArgument(pos_++);
+      //TODO : add null vector sink
+      var[*context.cur_line_idx_] = context.expr_outs_[idx]->getValue();
+    }
   }
 
-  void consume(Context& context) override { UNREACHABLE(); }
+  size_t pos_;
 };
+
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_SOURCENODE_H
+#endif

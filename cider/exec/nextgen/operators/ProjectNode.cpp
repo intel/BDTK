@@ -35,7 +35,6 @@ void ProjectTranslator::codegen(Context& context) {
   for (const auto& expr : node_.exprs_) {
     context.expr_outs_.push_back(&expr->codegen(*func));
   }
-  CHECK(successor_);
   successor_->consume(context);
 }
 
