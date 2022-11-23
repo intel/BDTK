@@ -43,6 +43,11 @@ StatePtr CompoundStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr
   if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(nodePtr)) {
     return std::make_shared<CompoundStateMachine::Filter>();
   } else if (auto projNode = std::dynamic_pointer_cast<const ProjectNode>(nodePtr)) {
+#if 1
+    if (projNode->sources()[0]->outputType()->equivalent(*(projNode->outputType()))) {
+      return std::make_shared<CompoundStateMachine::NotAccept>();
+    }
+#endif
     return std::make_shared<CompoundStateMachine::Project>();
   } else {
     return std::make_shared<CompoundStateMachine::NotAccept>();
