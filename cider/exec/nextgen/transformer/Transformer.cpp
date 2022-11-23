@@ -18,25 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_OPERATORS_SOURCENODE_H
-#define NEXTGEN_OPERATORS_SOURCENODE_H
+#include "exec/nextgen/transformer/Transformer.h"
 
-#include <vector>
+namespace cider::exec::nextgen::transformer {
+using namespace operators;
 
-#include "exec/nextgen/operators/OpNode.h"
+static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
+  CHECK_GT(pipeline.size(), 0);
 
-class InputColDescriptor;
-namespace cider::exec::nextgen::operators {
+  OpNodePtr input = nullptr;
+  std::for_each(pipeline.begin(), pipeline.end(), [&input](const OpNodePtr& op) {
+    op->setInputOpNode(input);
+    input = op;
+  });
 
-class SourceNode : public OpNode {
- public:
-  SourceNode(const ExprPtrVector& col_exprs);
+  TranslatorPtr ptr = nullptr;
+  std::for_each(pipeline.rbegin(), pipeline.rend(), [&ptr](const OpNodePtr& op) {
+    auto translator = op->toTranslator(ptr);
+    ptr = translator;
+  });
 
-  ExprPtrVector getExprs() override { return input_cols_; }
+  return ptr;
+}
 
- private:
-  ExprPtrVector input_cols_;
-};
-}  // namespace cider::exec::nextgen::operators
-
-#endif  // NEXTGEN_OPERATORS_SOURCENODE_H
+TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
+  // TODO (bigPYJ1151): Insert C2ROp, R2COp
+  return generateTranslators(pipeline);
+}
+}  // namespace cider::exec::nextgen::transformer

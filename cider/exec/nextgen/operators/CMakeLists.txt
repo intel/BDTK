@@ -17,15 +17,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# TODO: Remove it out
-list(APPEND OPERATORS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/expr.cpp)
-
 macro(add_opnode op_node_name)
   list(APPEND OPERATORS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/${op_node_name}.cpp)
 endmacro(add_opnode)
 
 add_opnode(FilterNode)
 add_opnode(ProjectNode)
-add_opnode(SourceNode)
+add_opnode(ArrowSourceNode)
+add_opnode(ColumnToRowNode)
 
 add_library(cider_operators OBJECT ${OPERATORS_SOURCE})

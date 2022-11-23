@@ -16,6 +16,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+add_subdirectory(benchmark)
+
 add_subdirectory(jitlib)
 add_subdirectory(compiler)
-add_subdirectory(translator)
+add_subdirectory(operator)

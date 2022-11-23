@@ -91,7 +91,6 @@
         "SELECT CAST(col_a as DOUBLE)  FROM test where CAST(col_b as INTEGER) > 20 ");   \
     assertQueryArrow(                                                                    \
         "SELECT CAST(col_a as INTEGER) + CAST(col_b as INTEGER) FROM test");             \
-    GTEST_SKIP(); /* FiXME(yizhong): group by with arrow format not supported*/          \
     assertQueryArrowIgnoreOrder(                                                         \
         "SELECT CAST(col_a as INTEGER), count(col_b) FROM test GROUP BY col_a", "");     \
   }
@@ -174,27 +173,38 @@ class CastTypeQueryForArrowTest : public CiderTestBase {
   CastTypeQueryForArrowTest() {
     table_name_ = "test";
     create_ddl_ =
-        "CREATE TABLE test(col_1 TINYINT NOT NULL, col_2 INTEGER NOT NULL, col_3 "
-        "VARCHAR(10) NOT NULL, col_4 "
-        "BOOLEAN NOT NULL, col_5 DATE NOT NULL);";
-    QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
-        20,
-        {"col_1", "col_2", "col_3", "col_4", "col_5"},
-        {CREATE_SUBSTRAIT_TYPE(I8),
-         CREATE_SUBSTRAIT_TYPE(I32),
-         CREATE_SUBSTRAIT_TYPE(Varchar),
-         CREATE_SUBSTRAIT_TYPE(Bool),
-         CREATE_SUBSTRAIT_TYPE(Date)});
+        "CREATE TABLE test(col_tinyint TINYINT, col_int INTEGER, col_varchar "
+        "VARCHAR(10), col_bool BOOLEAN, col_date DATE, col_float FLOAT, col_double "
+        "DOUBLE);";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  20,
+                                                  {"col_tinyint",
+                                                   "col_int",
+                                                   "col_varchar",
+                                                   "col_bool",
+                                                   "col_date",
+                                                   "col_float",
+                                                   "col_double"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Bool),
+                                                   CREATE_SUBSTRAIT_TYPE(Date),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64)});
   }
 };
 
 TEST_F(CastTypeQueryForArrowTest, castTypeTestForArrow) {
-  assertQueryArrow("SELECT CAST(col_4 as TINYINT) FROM test");
-  assertQueryArrow("SELECT CAST(col_4 as INTEGER) FROM test");
-  // TODO: cast numeric type to string type now not supported.
-  // assertQueryArrow("SELECT CAST(col_2 as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_bool as TINYINT) FROM test");
+  assertQueryArrow("SELECT CAST(col_bool as INTEGER) FROM test");
+  assertQueryArrow("SELECT CAST(col_int as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_date as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_float as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT CAST(col_double as VARCHAR(10)) FROM test");
+  assertQueryArrow("SELECT SUBSTRING(CAST(col_date as VARCHAR(10)), 1, 4) FROM test");
+  assertQueryArrow("SELECT CAST(col_bool as VARCHAR(10)) FROM test");
 }
 
 int main(int argc, char** argv) {

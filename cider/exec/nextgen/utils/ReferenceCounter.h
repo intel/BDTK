@@ -23,6 +23,7 @@
 
 #include <cstddef>
 
+namespace cider::exec::nextgen::utils {
 class ReferenceCounter {
  protected:
   ReferenceCounter() : ref_count_(0) {}
@@ -37,5 +38,6 @@ class ReferenceCounter {
 
   size_t ref_count_;
 };
+}  // namespace cider::exec::nextgen::utils
 
 #endif

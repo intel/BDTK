@@ -68,7 +68,24 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   CHECK(operand_fixedsize);
   auto operand_lv = operand_fixedsize->getValue();
   llvm::Value* target_lv = nullptr;
-  if (operand_lv->getType()->isIntegerTy()) {
+  if (ti.is_string()) {
+    const int64_t string_hasher =
+        reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
+    auto hasher_handle_lv = cgen_state_->llInt(string_hasher);
+    target_lv =
+        codegenCastNonStringToString(operand_lv, hasher_handle_lv, operand_ti, ti);
+    llvm::Value* str_ptr_lv =
+        cgen_state_->emitExternalCall("cider_hasher_decode_str_ptr",
+                                      get_int_ptr_type(8, cgen_state_->context_),
+                                      {target_lv, hasher_handle_lv});
+    llvm::Value* str_len_lv =
+        cgen_state_->emitExternalCall("cider_hasher_decode_str_len",
+                                      get_int_type(32, cgen_state_->context_),
+                                      {target_lv, hasher_handle_lv});
+    return std::make_unique<TwoValueColValues>(
+        str_ptr_lv, str_len_lv, operand_fixedsize->getNull());
+
+  } else if (operand_lv->getType()->isIntegerTy()) {
     if (operand_ti.get_type() == kTIMESTAMP && ti.get_type() == kTIMESTAMP) {
       target_lv = codegenCastBetweenTimes(operand_lv, operand_ti, ti);
     } else if (operand_ti.get_type() == kDATE || ti.get_type() == kDATE) {
@@ -84,6 +101,46 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   }
   CHECK(target_lv);
   return std::make_unique<FixedSizeColValues>(target_lv, operand_fixedsize->getNull());
+}
+
+llvm::Value* CodeGenerator::codegenCastNonStringToString(llvm::Value* operand_lv,
+                                                         llvm::Value* hasher_handle_lv,
+                                                         const SQLTypeInfo& operand_ti,
+                                                         const SQLTypeInfo& ti) {
+  AUTOMATIC_IR_METADATA(cgen_state_);
+  std::string fn_call{"convert_to_string_and_encode_"};
+  const auto operand_type = operand_ti.get_type();
+  std::vector<llvm::Value*> operand_lvs{operand_lv};
+  switch (operand_type) {
+    case kBOOLEAN:
+      fn_call += "bool";
+      break;
+    case kTINYINT:
+    case kSMALLINT:
+    case kINT:
+    case kBIGINT:
+    case kFLOAT:
+    case kDOUBLE:
+      fn_call += to_lower(toString(operand_type));
+      break;
+    case kTIME:
+      fn_call += "time";
+      break;
+    case kTIMESTAMP:
+      fn_call += "timestamp";
+      operand_lvs.emplace_back(llvm::ConstantInt::get(
+          get_int_type(32, cgen_state_->context_), operand_ti.get_dimension()));
+      break;
+    case kDATE:
+      fn_call += "date";
+      break;
+    default:
+      CIDER_THROW(CiderCompileException, "Unimplemented type for string cast");
+  }
+  operand_lvs.emplace_back(hasher_handle_lv);
+  auto str_hashed_lv = cgen_state_->emitExternalCall(
+      fn_call, get_int_type(64, cgen_state_->context_), operand_lvs);
+  return str_hashed_lv;
 }
 
 namespace {

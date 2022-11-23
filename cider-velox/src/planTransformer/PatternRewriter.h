@@ -43,6 +43,10 @@ class PatternRewriter {
       return std::make_shared<FilterPattern>();
     } else if (std::dynamic_pointer_cast<PartialAggPattern>(ptr) != nullptr) {
       return std::make_shared<PartialAggPattern>();
+    } else if (std::dynamic_pointer_cast<OrderByPattern>(ptr) != nullptr) {
+      return std::make_shared<OrderByPattern>();
+    } else if (std::dynamic_pointer_cast<TopNPattern>(ptr) != nullptr) {
+      return std::make_shared<TopNPattern>();
     }
     return nullptr;
   }

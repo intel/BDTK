@@ -25,6 +25,7 @@
 
 #include "exec/plan/parser/ParserNode.h"
 #include "type/data/funcannotations.h"
+#include "util/misc.h"
 #include "util/sqldefs.h"
 #ifdef ENABLE_VELOX_FUNCTION
 #include "../Cider/VeloxTypeConvertUtil.h"
@@ -97,6 +98,16 @@ apply_string_ops_and_encode(const char* str_ptr,
 }
 
 extern "C" RUNTIME_EXPORT int64_t
+look_up_string_id_from_hasher(const char* str_ptr,
+                              const int32_t str_len,
+                              const int64_t string_hasher_handle) {
+  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
+  int64_t id =
+      string_hasher->lookupIdByValue(CiderByteArray(str_len, (const uint8_t*)str_ptr));
+  return id;
+}
+
+extern "C" RUNTIME_EXPORT int64_t
 apply_string_ops_and_encode_cider(const char* str_ptr,
                                   const int32_t str_len,
                                   const int64_t string_ops_handle,
@@ -104,13 +115,9 @@ apply_string_ops_and_encode_cider(const char* str_ptr,
   std::string raw_str(str_ptr, str_len);
   auto string_ops =
       reinterpret_cast<const StringOps_Namespace::StringOps*>(string_ops_handle);
-  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
   const auto result_str = string_ops->operator()(raw_str);
-
-  // add this temp result to cache
-  int64_t id = string_hasher->lookupIdByValue(
-      CiderByteArray(result_str.length(), (const uint8_t*)result_str.c_str()));
-  return id;
+  return look_up_string_id_from_hasher(
+      result_str.data(), result_str.length(), string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT int64_t
@@ -143,6 +150,58 @@ cider_hasher_decode_str_len(const int64_t id, const int64_t string_hasher_handle
   auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
   CiderByteArray res = string_hasher->lookupValueById(id);
   return res.len;
+}
+
+#define DEF_CONVERT_TO_STRING_AND_ENCODE(value_type, value_name)                      \
+  extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t                                     \
+      convert_to_string_and_encode_##value_name(const value_type operand,             \
+                                                const int64_t string_hasher_handle) { \
+    std::string_view str =                                                            \
+        fmt::format("{:#}", operand); /* keep trailing zero for floating point type*/ \
+    return look_up_string_id_from_hasher(                                             \
+        str.data(), str.length(), string_hasher_handle);                              \
+  }
+DEF_CONVERT_TO_STRING_AND_ENCODE(int8_t, tinyint)
+DEF_CONVERT_TO_STRING_AND_ENCODE(int16_t, smallint)
+DEF_CONVERT_TO_STRING_AND_ENCODE(int32_t, int)
+DEF_CONVERT_TO_STRING_AND_ENCODE(int64_t, bigint)
+DEF_CONVERT_TO_STRING_AND_ENCODE(float, float)
+DEF_CONVERT_TO_STRING_AND_ENCODE(double, double)
+#undef DEF_CONVERT_TO_STRING_AND_ENCODE
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_to_string_and_encode_bool(const int8_t operand,
+                                  const int64_t string_hasher_handle) {
+  std::string_view str = (operand == 1) ? "true" : "false";
+  return look_up_string_id_from_hasher(str.data(), str.length(), string_hasher_handle);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_to_string_and_encode_time(const int64_t operand,
+                                  const int64_t string_hasher_handle) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatHMS(buf, buf_size, operand);
+  return look_up_string_id_from_hasher(buf, str_len, string_hasher_handle);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_to_string_and_encode_timestamp(const int64_t operand,
+                                       const int32_t dimension,
+                                       const int64_t string_hasher_handle) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatDateTime(buf, buf_size, operand, dimension);
+  return look_up_string_id_from_hasher(buf, str_len, string_hasher_handle);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_to_string_and_encode_date(const int64_t operand,
+                                  const int64_t string_hasher_handle) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatDays(buf, buf_size, operand);
+  return look_up_string_id_from_hasher(buf, str_len, string_hasher_handle);
 }
 
 extern "C" RUNTIME_EXPORT int32_t lower_encoded(int32_t string_id,
@@ -326,30 +385,69 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
 
   CHECK_GE(expr->getArity(), 1UL);
   CHECK(expr->hasNoneEncodedTextArg());
-
-  const auto& expr_ti = expr->get_type_info();
-  // Should probably CHECK we have a UOper cast to dict encoded to be consistent
-  const auto primary_arg = remove_cast(expr->getArg(0));
+  const auto& return_ti = expr->get_type_info();
+  const auto primary_arg = expr->getArg(0);
 
   auto primary_str = codegen(primary_arg, co, true);  // Twovalue
   auto str_values = dynamic_cast<TwoValueColValues*>(primary_str.get());
   CHECK(str_values);
-
-  const auto string_op_infos = getStringOpInfos(expr);
+  // workaround for old cider format by setting encode type.
+  auto rewrite_expr = const_cast<Analyzer::StringOper*>(expr);
+  if (return_ti.get_type() == kDATE) {
+    rewrite_expr->set_type_info(SQLTypeInfo(
+        SQLTypes::kDATE, return_ti.get_notnull(), EncodingType::kENCODING_DATE_IN_DAYS));
+  }
+  const auto string_op_infos = getStringOpInfos(rewrite_expr);
   CHECK(string_op_infos.size());
   const auto string_ops = getStringOps(string_op_infos);
   const int64_t string_ops_handle = reinterpret_cast<int64_t>(string_ops);
   auto string_ops_handle_lv = cgen_state_->llInt(string_ops_handle);
-  const auto& return_ti = expr->get_type_info();
-  if (!return_ti.is_string()) {
-    CIDER_THROW(
-        CiderCompileException,
-        "For string op, non-string type return values is not supported currently.");
-  }
 
   const int64_t cider_string_hasher_handle =
       reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
   auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
+  if (!return_ti.is_string()) {
+    std::vector<llvm::Value*> string_oper_lvs{
+        str_values->getValueAt(0), str_values->getValueAt(1), string_ops_handle_lv};
+    const auto return_type = return_ti.get_type();
+    std::string fn_call = "apply_numeric_string_ops_";
+    switch (return_type) {
+      case kBOOLEAN: {
+        fn_call += "bool";
+        break;
+      }
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE: {
+        fn_call += to_lower(toString(return_type));
+        break;
+      }
+      case kDATE: {
+        fn_call += "int";
+        break;
+      }
+      case kNUMERIC:
+      case kDECIMAL:
+      case kTIME:
+      case kTIMESTAMP: {
+        fn_call += "bigint";
+        break;
+      }
+      default: {
+        throw std::runtime_error("Unimplemented type for string-to-numeric translation");
+      }
+    }
+    const auto logical_size = get_bit_width(return_ti, co.use_cider_data_format);
+    auto llvm_return_type = return_ti.is_fp()
+                                ? get_fp_type(logical_size, cgen_state_->context_)
+                                : get_int_type(logical_size, cgen_state_->context_);
+    llvm::Value* cast_lv =
+        cgen_state_->emitExternalCall(fn_call, llvm_return_type, string_oper_lvs);
+    return std::make_unique<FixedSizeColValues>(cast_lv, str_values->getNull());
+  }
   std::string func_name = "apply_string_ops_and_encode_cider";
 
   std::vector<llvm::Value*> string_oper_lvs{str_values->getValueAt(0),

@@ -19,34 +19,33 @@
  * under the License.
  */
 
-#ifndef CIDER_EXEC_NEXTGEN_TRANSFORMER_H
-#define CIDER_EXEC_NEXTGEN_TRANSFORMER_H
+#ifndef CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_ROWTOCOLUMN_SINK_H
+#define CIDER_EXEC_NEXTGEN_TRANSLATOR_MOCK_ROWTOCOLUMN_SINK_H
 
+#include "exec/nextgen/Context.h"
 #include "exec/nextgen/operators/OpNode.h"
 
-namespace cider::exec::nextgen {
-using namespace cider::exec::nextgen::operators;
+namespace cider::exec::nextgen::operators {
 
-/// \brief The Transformer class is responsible for transforming the OpPipeline to a
-/// translator
-class Transformer {
+// TODO: Mock R2C sink, will be modified After R2CTranslator ready
+class MockRowToColumnTranslator : public Translator {
  public:
-  static std::shared_ptr<Translator> toTranslator(const OpPipeline& pipeline) {
-    std::shared_ptr<Translator> root = nullptr;
-    std::shared_ptr<Translator> last = nullptr;
-    for (const auto& node : pipeline) {
-      // auto translator = node->toTranslator();
-      if (root == nullptr) {
-        // root = last = translator;
-      } else {
-        // last->setSuccessor(translator);
-        // last = translator;
-      }
+  explicit MockRowToColumnTranslator(size_t pos) : pos_(pos) {}
+
+  void consume(Context& context) override { codegen(context); };
+
+ private:
+  void codegen(Context& context) {
+    auto& func_ = context.query_func_;
+    for (int idx = 0; idx < context.expr_outs_.size(); idx++) {
+      auto var = func_->getArgument(pos_++);
+      //TODO : add null vector sink
+      var[*context.cur_line_idx_] = context.expr_outs_[idx]->getValue();
     }
-    return root;
   }
+
+  size_t pos_;
 };
 
-}  // namespace cider::exec::nextgen
-
-#endif  // CIDER_EXEC_NEXTGEN_TRANSFORMER_H
+}  // namespace cider::exec::nextgen::operators
+#endif

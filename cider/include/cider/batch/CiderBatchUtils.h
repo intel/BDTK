@@ -19,11 +19,10 @@
  * under the License.
  */
 
-#ifndef CIDER_CIDERBATCHUTILS_H
-#define CIDER_CIDERBATCHUTILS_H
+#ifndef CIDER_BATCH_CIDERBATCHUTILS_H
+#define CIDER_BATCH_CIDERBATCHUTILS_H
 
 #include "cider/CiderAllocator.h"
-#include "substrait/type.pb.h"
 #include "type/data/sqltypes.h"
 
 class CiderBatch;
@@ -31,6 +30,10 @@ class CiderTableSchema;
 
 struct ArrowSchema;
 struct ArrowArray;
+
+namespace substrait {
+class Type;
+}
 
 namespace CiderBatchUtils {
 
@@ -75,4 +78,4 @@ CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch);
 
 };  // namespace CiderBatchUtils
 
-#endif
+#endif  // CIDER_BATCH_CIDERBATCHUTILS_H

@@ -40,6 +40,8 @@
 
 namespace generator {
 
+enum FrontendEngine { PRESTO, VELOX };
+
 enum ExprType { FilterExpr, ProjectExpr, AggregationExpr };
 static const std::string enum_str[] = {"FilterExpr", "ProjectExpr", "AggregationExpr"};
 

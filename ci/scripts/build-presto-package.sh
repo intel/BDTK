@@ -19,11 +19,29 @@
 # under the License.
 
 # Make sure build-presto-package.sh and presto-bdtk-*.patch are in the same directory
-cd $(dirname $0)
+cd "$(dirname "$0")"
 set -e
 
-PRESTO_CPP_MODE=release
+PRESTO_CPP_MODE=release     # -a
+
+while getopts :a: options;
+do
+    case $options in
+        a)
+            PRESTO_CPP_MODE=${OPTARG}
+        ;;
+        ?)
+            echo "Unknown parameter !"
+            exit 1
+        ;;
+    esac
+done
+
 BDTK_BUILD_MODE=Release
+if [ "$PRESTO_CPP_MODE" = "debug" ]
+then
+    BDTK_BUILD_MODE=Debug
+fi
 
 rm -rf presto
 PATCH_NAME=presto-bdtk-9dbb0f9.patch
@@ -63,6 +81,7 @@ rm -rf ${package_name} ${package_name}.tar.gz
 mkdir -p ${package_name}/lib
 mkdir -p ${package_name}/function
 mkdir -p ${package_name}/bin
+cp -r ./presto/presto-native-execution/BDTK/build-${BDTK_BUILD_MODE}/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/third_party/substrait/extensions ${package_name}
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/main/presto_server ./${package_name}/bin
 

@@ -21,19 +21,20 @@
 
 #include "exec/nextgen/operators/ProjectNode.h"
 
-#include "exec/nextgen/operators/expr.h"
-
 namespace cider::exec::nextgen::operators {
+TranslatorPtr ProjectNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<ProjectTranslator>(shared_from_this(), succ);
+}
+
 void ProjectTranslator::consume(Context& context) {
   codegen(context);
 }
 
 void ProjectTranslator::codegen(Context& context) {
-  ExprGenerator gen(context.query_func_);
+  auto func = context.query_func_;
   for (const auto& expr : node_.exprs_) {
-    context.expr_outs_.push_back(&gen.codegen(expr.get()));
+    context.expr_outs_.push_back(&expr->codegen(*func));
   }
-  CHECK(successor_);
   successor_->consume(context);
 }
 

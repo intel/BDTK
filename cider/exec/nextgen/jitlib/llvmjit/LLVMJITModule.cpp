@@ -126,7 +126,9 @@ JITFunctionPointer LLVMJITModule::createJITFunction(
 
 void LLVMJITModule::finish() {
   // TODO (bigPYJ1151): Refactor Debug information.
-  llvm::outs() << *module_;
+  if (co_.dump_ir) {
+    llvm::outs() << *module_;
+  }
 
   LLVMJITEngineBuilder builder(*this);
 

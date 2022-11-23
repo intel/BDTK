@@ -164,6 +164,8 @@ size_t formatDateTime(char* buf,
 // Write unixtime in seconds since epoch as "HH:MM:SS" format.
 size_t formatHMS(char* buf, size_t const max, int64_t const unixtime);
 
+size_t formatDays(char* buf, size_t const max, int32_t const day);
+
 // Result of division where quot is floored and rem is unsigned.
 struct DivUMod {
   int64_t quot;

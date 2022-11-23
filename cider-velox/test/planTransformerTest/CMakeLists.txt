@@ -53,3 +53,8 @@ add_executable(CiderLeftDeepJoinPatternTest CiderLeftDeepJoinPatternTest.cpp)
 target_link_libraries(CiderLeftDeepJoinPatternTest
                       ${VELOX_PLAN_TRANSFORMER_TEST_LIBS})
 add_test(CiderLeftDeepJoinPatternTest CiderLeftDeepJoinPatternTest ${TEST_ARGS})
+
+add_executable(CiderPatternJoinMixedTest CiderPatternJoinMixedTest.cpp)
+target_link_libraries(CiderPatternJoinMixedTest
+                      ${VELOX_PLAN_TRANSFORMER_TEST_LIBS})
+add_test(CiderPatternJoinMixedTest CiderPatternJoinMixedTest ${TEST_ARGS})

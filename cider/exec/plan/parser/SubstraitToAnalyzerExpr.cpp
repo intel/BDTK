@@ -1028,7 +1028,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       // Default is none encoding
       // sqlTypeInfo.set_compression(EncodingType::kENCODING_NONE);
       Datum v;
-      v.bigintval = dateToInt64(s_cast_expr.input().literal().fixed_char());
+      v.intval = parseDateInDays(s_cast_expr.input().literal().fixed_char());
       return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
     } else if (isColumnVar(s_cast_expr.input().selection())) {
       int col_id =

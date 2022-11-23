@@ -198,6 +198,25 @@ DEF_SAFE_INF_DIV_NULLABLE(double, double, safe_inf_div)
 #undef DEF_ARITH_NULLABLE
 #undef DEF_SAFE_INF_DIV_NULLABLE
 
+extern "C" ALWAYS_INLINE void* extract_arrow_array_null(int8_t* arrow_pointer,
+                                                        int64_t index) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  auto null_data = array->children[index]->buffers[0];
+  return const_cast<void*>(null_data);
+}
+
+extern "C" ALWAYS_INLINE void* extract_arrow_array_data(int8_t* arrow_pointer,
+                                                        int64_t index) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  auto data = array->children[index]->buffers[1];
+  return const_cast<void*>(data);
+}
+
+extern "C" ALWAYS_INLINE int64_t extract_arrow_array_len(int8_t* arrow_pointer) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  return array->length;
+}
+
 extern "C" ALWAYS_INLINE int32_t external_call_test_sum(int32_t a, int32_t b) {
   return a + b;
 }
@@ -1467,4 +1486,5 @@ extern "C" ALWAYS_INLINE int32_t extract_str_len_arrow(int8_t* offset_buffer,
   return offset[pos + 1] - offset[pos];
 }
 
+#include "exec/nextgen/context/ContextRuntimeFunctions.h"
 #include "function/aggregate/CiderRuntimeFunctions.h"

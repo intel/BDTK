@@ -96,4 +96,21 @@ size_t formatHMS(char* buf, size_t const max, int64_t const unixtime) {
   return 0;
 }
 
+size_t formatDays(char* buf, size_t const max, int32_t const day) {
+  DivUMod const div_era = divUMod(day - 11017, 146097);
+  unsigned const doe = static_cast<unsigned>(div_era.rem);
+  unsigned const yoe = (doe - doe / 1460 + doe / 36524 - (doe == 146096)) / 365;
+  unsigned const doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+  unsigned const moy = (5 * doy + 2) / 153;
+  static_assert(8 <= sizeof(long long));  // long long needed for snprintf()
+  long long const y = 2000 + div_era.quot * 400 + yoe + (9 < moy);
+  unsigned const m = moy + (9 < moy ? -9 : 3);
+  unsigned const d = doy - (153 * moy + 2) / 5 + 1;
+  int const len = snprintf(buf, max, "%04lld-%02u-%02u", y, m, d);
+  if (0 <= len && static_cast<size_t>(len) < max) {
+    return static_cast<size_t>(len);
+  }
+  return 0;
+}
+
 }  // namespace shared

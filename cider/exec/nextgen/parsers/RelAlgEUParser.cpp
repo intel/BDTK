@@ -21,9 +21,9 @@
 
 #include "exec/nextgen/parsers/Parser.h"
 
+#include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
-#include "exec/nextgen/operators/SourceNode.h"
 #include "util/Logger.h"
 
 namespace cider::exec::nextgen::parsers {
@@ -64,7 +64,7 @@ class InputAnalyzer {
     }
 
     for (auto& op : pipeline_) {
-      auto exprs = op->getExprs();
+      auto exprs = op->getOutputExprs();
       for (auto& expr : exprs) {
         traverse(&expr);
       }
@@ -77,7 +77,7 @@ class InputAnalyzer {
       }
     }
 
-    pipeline_.insert(pipeline_.begin(), createOpNode<SourceNode>(input_exprs_));
+    pipeline_.insert(pipeline_.begin(), createOpNode<ArrowSourceNode>(input_exprs_));
   }
 
  private:

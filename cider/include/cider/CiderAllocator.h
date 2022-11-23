@@ -45,6 +45,8 @@ class CiderAllocator {
   virtual size_t getMemoryUsage() { return 0; }
 };
 
+using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
+
 // use std::allocator<int8_t> as default allocator
 class CiderDefaultAllocator : public CiderAllocator {
  public:

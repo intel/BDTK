@@ -24,7 +24,7 @@
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "tests/TestHelpers.h"
-#include "tests/nextgen/translator/MockSink.h"
+#include "tests/nextgen/operator/MockSink.h"
 
 using namespace cider::jitlib;
 using namespace cider::exec::nextgen;

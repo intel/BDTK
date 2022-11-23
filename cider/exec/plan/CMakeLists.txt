@@ -17,3 +17,4 @@
 # specific language governing permissions and limitations
 # under the License.
 add_subdirectory(parser)
+add_subdirectory(validator)

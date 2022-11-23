@@ -18,12 +18,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/operators/SourceNode.h"
+#ifndef NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
+#define NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
 
-#include "exec/template/common/descriptors/InputDescriptors.h"
-#include "util/Logger.h"
+#include "exec/nextgen/context/RuntimeContext.h"
+#include "type/data/funcannotations.h"
 
-namespace cider::exec::nextgen::operators {
-SourceNode::SourceNode(const ExprPtrVector& input_cols)
-    : OpNode("SourceNode"), input_cols_(input_cols) {}
-}  // namespace cider::exec::nextgen::operators
+extern "C" ALWAYS_INLINE int8_t* get_query_context_ptr(int8_t* context, size_t id) {
+  auto context_ptr =
+      reinterpret_cast<cider::exec::nextgen::context::RuntimeContext*>(context);
+  return reinterpret_cast<int8_t*>(context_ptr->getContextItem(id));
+}
+
+#endif  // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H

@@ -61,7 +61,8 @@ struct CgenState {
   size_t getOrAddLiteral(const Analyzer::Constant* constant,
                          const EncodingType enc_type,
                          const int dict_id,
-                         const int device_id) {
+                         const int device_id,
+                         const bool is_arrow_format) {
     const auto& ti = constant->get_type_info();
     const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
     switch (type) {
@@ -118,9 +119,15 @@ struct CgenState {
                                                                              // null
         }
         return getOrAddLiteral(*constant->get_constval().stringval, device_id);
+      case kDATE:
+        if (is_arrow_format) {
+          return getOrAddLiteral(constant->get_constval().intval, device_id);
+        } else {
+          return getOrAddLiteral(
+              (int64_t)constant->get_constval().intval * kSecondsInOneDay, device_id);
+        }
       case kTIME:
       case kTIMESTAMP:
-      case kDATE:
       case kINTERVAL_DAY_TIME:
       case kINTERVAL_YEAR_MONTH:
         // TODO(alex): support null

@@ -78,7 +78,7 @@ RelAlgExecutionUnit buildFakeAggRelAlgEU() {
   std::shared_ptr<Analyzer::Expr> leftExpr =
       std::make_shared<Analyzer::UOper>(date_col_info, false, SQLOps::kCAST, col1);
   Datum d;
-  d.bigintval = 757382400;
+  d.intval = 8766;
   std::shared_ptr<Analyzer::Expr> rightExpr =
       std::make_shared<Analyzer::Constant>(dateSqlType, false, d);
   std::shared_ptr<Analyzer::Expr> simple_qual_0 = std::make_shared<Analyzer::BinOper>(

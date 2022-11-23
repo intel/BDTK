@@ -51,6 +51,8 @@ int64_t dateTimeParse(std::string_view const s, unsigned const dim) {
   }
 }
 
+int32_t parseDateInDays(std::string_view);
+
 /**
  * Set format_type_ and parse date/time/timestamp strings into (s,ms,us,ns) since the
  * epoch based on given dim in (0,3,6,9) respectively.  Basic idea is to parse given

@@ -20,9 +20,12 @@
  */
 #include "exec/nextgen/operators/FilterNode.h"
 
-#include "exec/nextgen/operators/expr.h"
-
 namespace cider::exec::nextgen::operators {
+
+TranslatorPtr FilterNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<FilterTranslator>(shared_from_this(), succ);
+}
+
 void FilterTranslator::consume(Context& context) {
   codegen(context);
 }
@@ -31,23 +34,18 @@ void FilterTranslator::codegen(Context& context) {
   auto func = context.query_func_;
   func->createIfBuilder()
       ->condition([&]() {
-        ExprGenerator gen(func);
-
         auto bool_init = func->createVariable(JITTypeTag::BOOL, "bool_init");
         bool_init = func->createConstant(JITTypeTag::BOOL, true);
         for (const auto& expr : node_.exprs_) {
-          auto& cond = gen.codegen(expr.get());
+          auto& cond = expr->codegen(*func);
           bool_init = bool_init && cond.getValue();
           TODO("MaJian", "support null in condition");
         }
-        TODO("MaJian", "support short circuit logic operation");
         return bool_init;
       })
       ->ifTrue([&]() {
-        CHECK(successor_);
         successor_->consume(context);
       })
       ->build();
 }
-
 }  // namespace cider::exec::nextgen::operators
