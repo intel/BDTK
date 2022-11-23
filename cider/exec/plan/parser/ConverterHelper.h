@@ -54,10 +54,8 @@ void registerExtensionFunctions();
 /**
  * generate function map according to substrait plan
  * @param plan: substrait plan
- * @return std::unordered_map: function map <function_id, function_descriptor>
+ * @return std::unordered_map: function map <function_id, function_signature>
  */
-// std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan&
-// plan);
 std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan);
 
 /**
