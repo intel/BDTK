@@ -39,6 +39,10 @@ Users can reuse implemented operators/functions to build a full-featured SQL eng
  
 Building blocks utilizing compression codec (based on IAA, QAT) can be used directly to Hadoop/Spark for compression acceleration.
 
+Below comes the view from personas for this project.
+
+![BDTK-Personas](docs/images/Personas.PNG)
+
 # Introduction
 The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator, QATCodec - compression codec wrapper based on Intel QAT accelerator. 
 
