@@ -25,6 +25,7 @@
  **/
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include <cstdint>
+#include "TypeUtils.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DateTimeTranslator.h"
@@ -883,11 +884,17 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
         expr_map_ptr) {
   auto function_sig =
       getFunctionName(function_map, s_scalar_function.function_reference());
-  auto function_lookup_ptr =
-      std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
-  auto return_type_ptr = getReturnType(s_scalar_function.output_type());
+  auto funtion_return_type = TypeUtils::getStringType(s_scalar_function.output_type());
+  const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
   auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_sig, return_type_ptr, PlatformType::PrestoPlatform);
+      function_sig, funtion_return_type, from_platform_);
+  // TODO(haiwei): substrait-java generate substrait-json's function return type is diff
+  // with substrait's yaml file, need substrait-cpp support cider's yaml file.
+  /*if (!function_descriptor.is_cider_support_function) {
+    CIDER_THROW(CiderCompileException,
+            fmt::format("Not cider support scalar function, function_sig: {},
+  funtion_return_type: {}", function_sig, funtion_return_type));
+  }*/
   auto function = function_descriptor.func_sig.func_name;
   // If it's an InValues expr, like "in (1, 2, 3)" or "in cast(vector)", build
   // Analyzer::InValues and return
@@ -1069,11 +1076,17 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
   auto function_sig = getFunctionName(function_map, s_expr.function_reference());
-  auto function_lookup_ptr =
-      std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
-  auto return_type_ptr = getReturnType(s_expr.output_type());
+  auto funtion_return_type = TypeUtils::getStringType(s_expr.output_type());
+  const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
   auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_sig, return_type_ptr, PlatformType::PrestoPlatform);
+      function_sig, funtion_return_type, from_platform_);
+  // TODO(haiwei): substrait-java generate substrait-json's function return type is diff
+  // with substrait's yaml file, need substrait-cpp support cider's yaml file.
+  /*if (!function_descriptor.is_cider_support_function) {
+    CIDER_THROW(CiderCompileException,
+            fmt::format("Not cider support agg function, function_sig: {},
+  funtion_return_type: {}", function_sig, funtion_return_type));
+  }*/
   auto function = function_descriptor.func_sig.func_name;
   SQLAgg agg_kind = getCiderAggOp(function);
   std::shared_ptr<Analyzer::Constant> arg1;  // 2nd aggregate parameter

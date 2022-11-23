@@ -126,5 +126,4 @@ std::unordered_map<int, std::string> getFunctionMap(
     const std::vector<
         substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*> func_infos);
 
-const io::substrait::TypePtr getReturnType(const substrait::Type& type);
 }  // namespace generator

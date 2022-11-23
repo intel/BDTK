@@ -34,6 +34,7 @@
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include "exec/template/RelAlgExecutionUnit.h"
+#include "function/FunctionLookupEngine.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
 
@@ -46,15 +47,18 @@ static const std::string enum_str[] = {"FilterExpr", "ProjectExpr", "Aggregation
 
 class SubstraitToRelAlgExecutionUnit {
  public:
-  explicit SubstraitToRelAlgExecutionUnit(const substrait::Plan& plan)
-      : toAnalyzerExprConverter_()
+  explicit SubstraitToRelAlgExecutionUnit(
+      const substrait::Plan& plan,
+      const PlatformType from_platform = PlatformType::PrestoPlatform)
+      : toAnalyzerExprConverter_(from_platform)
       , ctx_{nullptr}
       , input_table_schemas_{}
       , plan_(plan)
       , output_cider_table_schema_(nullptr) {}
 
-  explicit SubstraitToRelAlgExecutionUnit()
-      : toAnalyzerExprConverter_()
+  explicit SubstraitToRelAlgExecutionUnit(
+      const PlatformType from_platform = PlatformType::PrestoPlatform)
+      : toAnalyzerExprConverter_(from_platform)
       , ctx_{nullptr}
       , input_table_schemas_{}
       , plan_(substrait::Plan())
