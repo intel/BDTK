@@ -27,8 +27,8 @@
 #include "CiderOperatorTestBase.h"
 #include "CiderPlanNodeTranslator.h"
 #include "CiderVeloxPluginCtx.h"
-#include "velox/parse/PlanNodeIdGenerator.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
+#include "velox/parse/PlanNodeIdGenerator.h"
 #include "velox/substrait/SubstraitToVeloxPlan.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 
