@@ -35,10 +35,10 @@ using facebook::velox::test::BatchMaker;
 class CiderOperatorTestBase : public OperatorTestBase {
  protected:
   void SetUp() override {
+    FLAGS_left_deep_join_pattern = true;
     FLAGS_partial_agg_pattern = true;
     // TODO: Enable this after feature fully supported. So that we could enable all
     // supported patterns in our tests.
-    // FLAGS_left_deep_join_pattern = true;
     // FLAGS_top_n_pattern = true;
     // FLAGS_order_by_pattern = true;
     CiderVeloxPluginCtx::init();

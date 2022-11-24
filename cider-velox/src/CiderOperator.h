@@ -61,12 +61,10 @@ class CiderOperator : public exec::Operator {
   std::shared_ptr<DataConvertor> dataConvertor_;
   std::chrono::microseconds convertorInternalCounter;
 
-  // these properties are used for join with w/o agg case
-  std::optional<CiderBatch> buildData_;
   bool buildSideEmpty_{false};
   bool buildTableFed_{false};
   bool finished_{false};
-  bool is_using_arrow_format_;
+  bool is_using_arrow_format_{false};
 
   // TODO: will be changed After refactor with arrow format
   // In order to preserve the lifecycle of unique_ptr<>
