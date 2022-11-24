@@ -106,6 +106,7 @@ SubstraitExprBuilder::makeFunc(SubstraitExprBuilder* builder,
     if (arg->has_scalar_function()) {
       func_sig =
           func_sig + "_" + TypeUtils::getStringType(arg->scalar_function().output_type());
+      continue;
     }
     if (arg->has_selection()) {
       // need names/types or schema availble
@@ -122,10 +123,9 @@ SubstraitExprBuilder::makeFunc(SubstraitExprBuilder* builder,
       }
     }
   }
-  func->set_name(func_sig + "_" + TypeUtils::getStringType(*output_type));
+  func->set_name(func_sig);
   func->set_function_anchor(builder->func_anchor_);
   builder->func_anchor_ += 1;
-  // TODO: Lookup the function in yaml file based on func_sig
   func->set_extension_uri_reference(2);
   builder->funcs_info_.push_back(func);
   return func;

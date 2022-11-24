@@ -58,7 +58,8 @@ class Substrait2AnalyzerExprConverter {
       const substrait::AggregateFunction& s_expr,
       const std::unordered_map<int, std::string> function_map,
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-          expr_map_ptr = nullptr);
+          expr_map_ptr = nullptr,
+      std::string return_type = "");
 
   // new_table_id is used when updating a ColumnVar to new index in join node
   std::shared_ptr<Analyzer::Expr> updateAnalyzerExpr(

@@ -44,8 +44,30 @@ const FunctionLookupEngine* FunctionLookupEngine::getInstance(
 void FunctionLookupEngine::registerFunctionLookUpContext(
     const PlatformType from_platform) {
   // Load cider support function default yaml files first.
+  /*io::substrait::ExtensionPtr cider_internal_function_ptr =
+      io::substrait::Extension::load();*/
+  const std::vector<std::string> internal_files = {
+      "functions_aggregate_approx.yaml",
+      "functions_aggregate_generic.yaml",
+      "functions_arithmetic.yaml",
+      "functions_arithmetic_decimal.yaml",
+      "functions_boolean.yaml",
+      "functions_comparison.yaml",
+      "functions_datetime.yaml",
+      "functions_logarithmic.yaml",
+      "functions_rounding.yaml",
+      "functions_string.yaml",
+      "functions_set.yaml",
+      "unknown.yaml",
+  };
+  std::vector<std::string> internal_files_path_vec;
+  internal_files_path_vec.reserve(internal_files.size());
+  for (const auto& internal_file : internal_files) {
+    internal_files_path_vec.push_back(
+        fmt::format("{}/{}/{}", getDataPath(), "internals", internal_file));
+  }
   io::substrait::ExtensionPtr cider_internal_function_ptr =
-      io::substrait::Extension::load();
+      io::substrait::Extension::load(internal_files_path_vec);
   // Load engine's extension function yaml files second.
   if (from_platform == PlatformType::SubstraitPlatform) {
     loadExtensionYamlAndInitializeFunctionLookup<io::substrait::FunctionMapping>(
@@ -64,8 +86,12 @@ void FunctionLookupEngine::loadExtensionYamlAndInitializeFunctionLookup(
     std::string platform_name,
     std::string yaml_extension_filename,
     const io::substrait::ExtensionPtr& cider_internal_function_ptr) {
-  io::substrait::ExtensionPtr extension_function_ptr = io::substrait::Extension::load(
-      {fmt::format("{}/{}/{}", getDataPath(), platform_name, yaml_extension_filename)});
+  io::substrait::ExtensionPtr extension_function_ptr =
+      io::substrait::Extension::load({fmt::format("{}/{}/{}/{}",
+                                                  getDataPath(),
+                                                  "extensions",
+                                                  platform_name,
+                                                  yaml_extension_filename)});
   io::substrait::FunctionMappingPtr func_mappings = std::make_shared<const T>();
   scalar_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>(
       cider_internal_function_ptr, func_mappings);
@@ -330,6 +356,18 @@ const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
     result_ptr = io::substrait::Type::decode("decimal<P,S>");
   } else if (argue_type_str == "struct") {
     result_ptr = io::substrait::Type::decode("struct<fp64,i64>");
+  } else if (argue_type_str == "bool") {
+    result_ptr = io::substrait::Type::decode("boolean");
+  } else if (argue_type_str == "int8") {
+    result_ptr = io::substrait::Type::decode("i8");
+  } else if (argue_type_str == "int16") {
+    result_ptr = io::substrait::Type::decode("i16");
+  } else if (argue_type_str == "int32") {
+    result_ptr = io::substrait::Type::decode("i32");
+  } else if (argue_type_str == "int64") {
+    result_ptr = io::substrait::Type::decode("i64");
+  } else if (argue_type_str == "year") {
+    result_ptr = io::substrait::Type::decode("interval_year");
   } else {
     result_ptr = io::substrait::Type::decode(argue_type_str);
   }

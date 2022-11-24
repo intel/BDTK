@@ -136,7 +136,7 @@ class FunctionLookupEngine {
   static std::string getDataPath() {
     const std::string absolute_path = __FILE__;
     auto const pos = absolute_path.find_last_of('/');
-    return absolute_path.substr(0, pos) + "/extensions";
+    return absolute_path.substr(0, pos);
   }
 
   SubstraitFunctionCiderMappingsPtr function_mappings_ =

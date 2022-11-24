@@ -544,8 +544,7 @@ std::unordered_map<int, std::string> getFunctionMap(
   std::unordered_map<int, std::string> function_map;
   for (auto function : func_infos) {
     auto ext_func_name = function->name();
-    auto func_name = ext_func_name.substr(0, ext_func_name.find_first_of(':'));
-    function_map.emplace(function->function_anchor(), func_name);
+    function_map.emplace(function->function_anchor(), ext_func_name);
   }
   return function_map;
 }
