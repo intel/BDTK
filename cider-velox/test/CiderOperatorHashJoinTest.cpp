@@ -28,6 +28,7 @@
 #include "CiderPlanNodeTranslator.h"
 #include "CiderVeloxPluginCtx.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
+#include "velox/parse/PlanNodeIdGenerator.h"
 #include "velox/substrait/SubstraitToVeloxPlan.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 
@@ -78,7 +79,7 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
     auto rightBatch = std::dynamic_pointer_cast<RowVector>(
         BatchMaker::createBatch(rightType, rightSize, *pool_));
 
-    auto planNodeIdGenerator = std::make_shared<PlanNodeIdGenerator>();
+    auto planNodeIdGenerator = std::make_shared<core::PlanNodeIdGenerator>();
 
     auto planNode = PlanBuilder(planNodeIdGenerator)
                         .values({leftBatch})
@@ -108,7 +109,7 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
       std::make_shared<VeloxToSubstraitPlanConvertor>();
 
   std::shared_ptr<SubstraitVeloxPlanConverter> substraitConverter_ =
-      std::make_shared<SubstraitVeloxPlanConverter>();
+      std::make_shared<SubstraitVeloxPlanConverter>(pool_.get());
 };
 
 TEST_F(CiderOperatorHashJoinTest, innerJoin_allTypes) {

@@ -86,7 +86,7 @@ class VeloxPlanFragmentSubstraitConverterTest : public OperatorTestBase {
     std::shared_ptr<::substrait::Plan> sPlan = std::make_shared<::substrait::Plan>(
         v2SPlanFragmentConvertor_->toSubstraitPlan(targetNode, sourceNode));
     // Convert Substrait Plan to the same Velox Plan fragment.
-    auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+    auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
     // sPlan->PrintDebugString();
     // samePlan->toString(true,true);
 
@@ -97,7 +97,7 @@ class VeloxPlanFragmentSubstraitConverterTest : public OperatorTestBase {
 
   std::shared_ptr<VeloxPlanFragmentToSubstraitPlan> v2SPlanFragmentConvertor_;
   std::shared_ptr<SubstraitVeloxPlanConverter> substraitConverter_ =
-      std::make_shared<SubstraitVeloxPlanConverter>();
+      std::make_shared<SubstraitVeloxPlanConverter>(pool_.get());
 };
 
 TEST_F(VeloxPlanFragmentSubstraitConverterTest, avg_on_col_single) {
@@ -122,7 +122,7 @@ TEST_F(VeloxPlanFragmentSubstraitConverterTest, avg_on_col_single) {
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           veloxPlan, veloxPlan->sources()[0]->sources()[0]->sources()[0]));
   // Convert Substrait Plan to the same Velox Plan fragment.
-  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
 
   // Assert velox again.
   assertQuery(samePlan, duckdbSql);
@@ -171,7 +171,7 @@ TEST_F(VeloxPlanFragmentSubstraitConverterTest, avg_on_col_final) {
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           veloxPlan, veloxPlan->sources()[0]->sources()[0]->sources()[0]->sources()[0]));
   // Convert Substrait Plan to the same Velox Plan fragment.
-  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
 
   // Assert velox again.
   assertQuery(samePlan, duckdbSql);
@@ -232,7 +232,7 @@ TEST_F(VeloxPlanFragmentSubstraitConverterTest, ProjectFullPlan) {
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           vPlan, vPlan->sources()[0]->sources()[0]));
   // Convert Substrait Plan to the same Velox Plan fragment.
-  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
 
   // Assert velox again.
   assertQuery(samePlan, "SELECT c0, c1, c0 / c1 FROM tmp WHERE c1 > 0");
@@ -258,7 +258,7 @@ TEST_F(VeloxPlanFragmentSubstraitConverterTest, filter) {
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           vPlan->sources()[0], vPlan->sources()[0]->sources()[0]));
   // Convert Substrait Plan to the same Velox Plan fragment.
-  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
 
   // Assert velox again.
   assertQuery(samePlan, "SELECT * FROM tmp WHERE c1 > 0");
@@ -466,7 +466,7 @@ TEST_F(VeloxPlanFragmentSubstraitConverterTest, having_simple_FullPlan) {
       std::make_shared<::substrait::Plan>(v2SPlanFragmentConvertor_->toSubstraitPlan(
           vPlan, vPlan->sources()[0]->sources()[0]->sources()[0]->sources()[0]));
   // Convert Substrait Plan to the same Velox Plan fragment.
-  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
 
   // Assert velox again.
   assertQuery(
@@ -499,7 +499,7 @@ TEST_F(VeloxPlanFragmentSubstraitConverterTest, having_agg_FullPlan) {
           vPlan,
           vPlan->sources()[0]->sources()[0]->sources()[0]->sources()[0]->sources()[0]));
   // Convert Substrait Plan to the same Velox Plan fragment.
-  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan, pool_.get());
+  auto samePlan = substraitConverter_->toVeloxPlan(*sPlan);
 
   // Assert velox again.
   assertQuery(samePlan,

@@ -29,7 +29,7 @@
 #include "velox/type/IntervalDayTime.h"
 #include "velox/type/Type.h"
 #include "velox/vector/VectorStream.h"
-#include "velox/vector/tests/VectorMaker.h"
+#include "velox/vector/tests/utils/VectorMaker.h"
 
 using namespace facebook::velox;
 using facebook::velox::test::VectorMaker;

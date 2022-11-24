@@ -57,7 +57,6 @@ set(FOLLY ${FOLLY_LIBRARIES})
 set(VELOX_BENCHMARKS_DEPENDENCIES
     velox_aggregates
     velox_exec
-    velox_exec_test_util
     velox_dwio_common
     velox_dwio_common_exception
     velox_dwio_parquet_reader
