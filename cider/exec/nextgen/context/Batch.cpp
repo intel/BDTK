@@ -34,7 +34,7 @@ void Batch::reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator) {
   schema_ = *schema;
   CiderBatchUtils::freeArrowSchema(schema);
 
-  // TODO (bigPYJ1151): replace std::function with template wapper 
+  // TODO (bigPYJ1151): replace std::function with template wapper
   std::function<void(ArrowSchema*, ArrowArray*)> builder =
       [&allocator, &builder](ArrowSchema* schema, ArrowArray* array) {
         array->length = 0;

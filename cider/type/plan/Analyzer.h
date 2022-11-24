@@ -1846,4 +1846,4 @@ bool expr_list_match(const std::vector<std::shared_ptr<Analyzer::Expr>>& lhs,
 std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr);
 const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr);
 
-#endif // TYPE_PLAN_ANALYZER_H
+#endif  // TYPE_PLAN_ANALYZER_H

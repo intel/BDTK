@@ -170,12 +170,6 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   JITExprValue& get_expr_value() { return expr_var_; }
 
-  void set_nulls(cider::jitlib::JITValuePointer& val) { nulls_.push_back(val); }
-  std::vector<cider::jitlib::JITValuePointer>& get_nulls() { return nulls_; }
-
-  void set_datas(cider::jitlib::JITValuePointer& val) { vals_.push_back(val); }
-  std::vector<cider::jitlib::JITValuePointer>& get_datas() { return vals_; }
-
   // TODO (bigPYJ1151): to pure virtual.
   virtual ExprPtrRefVector get_children_reference() {
     UNREACHABLE();

@@ -17,7 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# TODO: Temporarily disable benchmark target until we finish nextgen test framework and integrate the target with the new framework.
+# TODO: Temporarily disable benchmark target until we finish nextgen test
+# framework and integrate the target with the new framework.
 # add_subdirectory(benchmark)
 add_subdirectory(jitlib)
 add_subdirectory(compiler)

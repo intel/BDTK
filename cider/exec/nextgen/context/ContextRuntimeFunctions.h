@@ -25,11 +25,6 @@
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "type/data/funcannotations.h"
 
-extern "C" ALWAYS_INLINE int8_t* get_arrow_array_ptr(int8_t* batch) {
-  auto batch_ptr = reinterpret_cast<cider::exec::nextgen::context::Batch*>(batch);
-  return reinterpret_cast<int8_t*>(batch_ptr->getArray());
-}
-
 extern "C" ALWAYS_INLINE int8_t* get_query_context_ptr(int8_t* context, size_t id) {
   auto context_ptr =
       reinterpret_cast<cider::exec::nextgen::context::RuntimeContext*>(context);
@@ -72,4 +67,4 @@ extern "C" ALWAYS_INLINE void allocate_arrow_array_buffer(int8_t* array,
   holder->allocBuffer(buffer_index, bytes);
 }
 
-#endif // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
+#endif  // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H

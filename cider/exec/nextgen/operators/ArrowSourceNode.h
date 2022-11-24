@@ -49,4 +49,4 @@ class ArrowSourceTranslator : public Translator {
   void codegen(context::CodegenContext& context);
 };
 }  // namespace cider::exec::nextgen::operators
-#endif // NEXTGEN_OPERATORS_ARROWSOURCENODE_H
+#endif  // NEXTGEN_OPERATORS_ARROWSOURCENODE_H
