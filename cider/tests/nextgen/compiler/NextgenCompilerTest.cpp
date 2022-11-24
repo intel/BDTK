@@ -86,6 +86,21 @@ class NextgenCompilerTest : public ::testing::Test {
             .build();
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
+
+    auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
+    EXPECT_EQ(output_batch_array->length, 5);
+
+    auto check_array = [](ArrowArray* array, size_t expect_len) {
+      EXPECT_EQ(array->length, expect_len);
+      int64_t* data_buffer = (int64_t*)array->buffers[1];
+      for (size_t i = 0; i < expect_len; ++i) {
+        std::cout << data_buffer[i] << " ";
+      }
+      std::cout << std::endl;
+    };
+
+    check_array(output_batch_array->children[0], 5);
+    check_array(output_batch_array->children[1], 5);
   }
 
  private:
