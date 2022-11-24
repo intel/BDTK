@@ -310,7 +310,7 @@ SQLOps getCiderSqlOps(const std::string op) {
     return SQLOps::kPLUS;
   } else if (op == "subtract" || op == "minus") {
     return SQLOps::kMINUS;
-  } else if (op == "modulus") {
+  } else if (op == "modulus" || op == "mod") {
     return SQLOps::kMODULO;
   } else if (op == "is_not_null") {
     return SQLOps::kISNOTNULL;

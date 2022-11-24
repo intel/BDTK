@@ -67,7 +67,10 @@ struct MinMaxRange {
 
 template <TypeKind kind,
           typename NativeT = typename TypeTraits<kind>::NativeType,
-          typename std::enable_if_t<!std::is_trivial_v<NativeT>, bool> = true>
+          typename std::enable_if_t<(kind == TypeKind::SHORT_DECIMAL ||
+                                     kind == TypeKind::LONG_DECIMAL) ||
+                                        !std::is_trivial_v<NativeT>,
+                                    bool> = true>
 static void generateRangedVector(const std::shared_ptr<const Type>& type,
                                  BaseVector* vec,
                                  uint64_t capacity,
@@ -79,7 +82,10 @@ static void generateRangedVector(const std::shared_ptr<const Type>& type,
 
 template <TypeKind kind,
           typename NativeT = typename TypeTraits<kind>::NativeType,
-          typename std::enable_if_t<std::is_trivial_v<NativeT>, bool> = true>
+          typename std::enable_if_t<(kind != TypeKind::SHORT_DECIMAL &&
+                                     kind != TypeKind::LONG_DECIMAL) &&
+                                        std::is_trivial_v<NativeT>,
+                                    bool> = true>
 static void generateRangedVector(const std::shared_ptr<const Type>& type,
                                  BaseVector* vec,
                                  uint64_t capacity,
