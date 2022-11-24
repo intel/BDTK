@@ -21,9 +21,7 @@
 #ifndef NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
 #define NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
 
-#include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
-#include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "type/data/funcannotations.h"
 
@@ -60,4 +58,18 @@ extern "C" ALWAYS_INLINE int64_t extract_arrow_array_len(int8_t* arrow_pointer) 
   return array->length;
 }
 
-#endif  // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
+extern "C" ALWAYS_INLINE void set_arrow_array_len(int8_t* arrow_pointer, int64_t len) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  array->length = len;
+}
+
+extern "C" ALWAYS_INLINE void allocate_arrow_array_buffer(int8_t* array,
+                                                          int64_t buffer_index,
+                                                          int64_t bytes) {
+  auto array_pointer = reinterpret_cast<ArrowArray*>(array);
+  auto holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(array_pointer->private_data);
+  holder->allocBuffer(buffer_index, bytes);
+}
+
+#endif // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H

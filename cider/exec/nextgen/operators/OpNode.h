@@ -74,6 +74,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   JITExprValueType output_type_;
 };
 
+// TBD: Combine OpNode and Translator
 class Translator {
  public:
   Translator(const OpNodePtr& op_node, const TranslatorPtr& successor = nullptr)

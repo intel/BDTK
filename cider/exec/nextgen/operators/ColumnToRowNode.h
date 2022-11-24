@@ -34,6 +34,26 @@ class ColumnToRowNode : public OpNode {
       : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+
+  jitlib::JITValuePointer getColumnRowNum() { return column_row_num_; }
+
+  void setColumnRowNum(jitlib::JITValuePointer& row_num) {
+    CHECK(column_row_num_.get() == nullptr);
+    column_row_num_.replace(row_num);
+  }
+
+  using DeferFunc = void (*)(void*);
+
+  template <typename FuncT>
+  void registerDeferFunc(FuncT&& func) {
+    defer_func_list_.emplace_back(func);
+  }
+
+  std::vector<std::function<void()>>& getDeferFunctions() { return defer_func_list_; }
+
+ private:
+  jitlib::JITValuePointer column_row_num_;
+  std::vector<std::function<void()>> defer_func_list_;
 };
 
 class ColumnToRowTranslator : public Translator {

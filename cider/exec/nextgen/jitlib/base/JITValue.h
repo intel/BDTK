@@ -121,7 +121,9 @@ class JITValuePointer {
 
   JITValuePointer(const JITValuePointer& lh) {
     ptr_ = lh.ptr_;
-    ptr_->addRef();
+    if (ptr_) {
+      ptr_->addRef();
+    }
   };
 
   JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_) { rh.ptr_ = nullptr; }
@@ -130,11 +132,13 @@ class JITValuePointer {
 
   size_t getRefNum() { return ptr_->getRefNum(); }
 
-  JITValuePointer replace(const JITValuePointer& rh) {
+  JITValuePointer& replace(const JITValuePointer& rh) {
     if (ptr_ != rh.ptr_) {
       release();
       ptr_ = rh.ptr_;
-      ptr_->addRef();
+      if (ptr_) {
+        ptr_->addRef();
+      }
     }
     return *this;
   }

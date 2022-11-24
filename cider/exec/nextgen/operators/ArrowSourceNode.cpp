@@ -47,16 +47,25 @@ void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
   for (int64_t index = 0; index < exprs.size(); ++index) {
     auto col_var_expr = dynamic_cast<Analyzer::ColumnVar*>(exprs[index].get());
     CHECK(col_var_expr);
-    auto child_array = context::codegen_utils::getArrowArrayChild(arrow_pointer, index);
+    auto child_array = func->createLocalJITValue([&arrow_pointer, index]() {
+      return context::codegen_utils::getArrowArrayChild(arrow_pointer, index);
+    });
 
     int64_t buffer_num = utils::getBufferNum(col_var_expr->get_type_info().get_type());
     utils::JITExprValue buffer_values(buffer_num, JITExprValueType::BATCH);
 
     for (int64_t i = 0; i < buffer_num; ++i) {
-      auto buffer = context::codegen_utils::getArrowArrayBuffer(child_array, i);
+      auto buffer = func->createLocalJITValue([&child_array, i]() {
+        return context::codegen_utils::getArrowArrayBuffer(child_array, i);
+      });
       buffer_values.append(buffer);
     }
-    context.appendArrowArrayValues(child_array, std::move(buffer_values));
+
+    // All ArrowArray related JITValues will be saved in CodegenContext, and associate
+    // with exprs with local_offset.
+    size_t local_offset =
+        context.appendArrowArrayValues(child_array, std::move(buffer_values));
+    exprs[index]->setLocalIndex(local_offset);
   }
   successor_->consume(context);
 }

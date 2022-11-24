@@ -196,7 +196,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   bool contains_agg;
 
   JITExprValue expr_var_;
-  size_t local_index_;  // 0-based index of input column in CodegenContext.
+  size_t local_index_{0};  // 1-based index of input column in CodegenContext.
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;

@@ -47,14 +47,13 @@ class CodegenContext {
 
   std::pair<jitlib::JITValuePointer, utils::JITExprValue>& getArrowArrayValues(
       size_t local_offset) {
-    return arrow_array_values_[local_offset];
+    return arrow_array_values_[local_offset - 1];
   }
 
   template <typename ValuesT>
   size_t appendArrowArrayValues(jitlib::JITValuePointer& arrow_array, ValuesT&& values) {
-    size_t local_offset = arrow_array_values_.size();
     arrow_array_values_.emplace_back(arrow_array.get(), std::forward<ValuesT>(values));
-    return local_offset;
+    return arrow_array_values_.size();
   }
 
  public:
@@ -95,11 +94,18 @@ class CodegenContext {
 namespace codegen_utils {
 jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array);
 
+void setArrowArrayLength(jitlib::JITValuePointer& arrow_array,
+                         jitlib::JITValuePointer& len);
+
 jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
                                             int64_t index);
 
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
                                            int64_t index);
+
+jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
+                                                 int64_t index,
+                                                 jitlib::JITValuePointer& bytes);
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context
 

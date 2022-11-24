@@ -21,9 +21,7 @@
 
 #include "exec/nextgen/operators/ColumnToRowNode.h"
 
-#include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/utils/TypeUtils.h"
 #include "util/Logger.h"
@@ -31,27 +29,27 @@
 namespace cider::exec::nextgen::operators {
 using namespace cider::jitlib;
 
-class ColumnDecoder {
+class ColumnReader {
  public:
-  ColumnDecoder(context::CodegenContext& ctx, ExprPtr& expr, JITValuePointer& index)
+  ColumnReader(context::CodegenContext& ctx, ExprPtr& expr, JITValuePointer& index)
       : context_(ctx), expr_(expr), index_(index) {}
 
-  void decode() {
+  void read() {
     switch (expr_->get_type_info().get_type()) {
       case kTINYINT:
       case kSMALLINT:
       case kINT:
       case kBIGINT:
-        decodeFixSizedType();
+        readFixSizedTypeCol();
         break;
       default:
-        LOG(FATAL) << "Unsupported data type in ColumnDecoder: "
+        LOG(FATAL) << "Unsupported data type in ColumnReader: "
                    << expr_->get_type_info().get_type_name();
     }
   }
 
  private:
-  void decodeFixSizedType() {
+  void readFixSizedTypeCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::FixSizeJITExprValue fixsize_values(buffers);
 
@@ -65,8 +63,7 @@ class ColumnDecoder {
       expr_->set_expr_value<JITExprValueType::ROW>(nullptr, row_data);
     } else {
       // null buffer decoder
-      // TODO: Difference between input array and intermediate array.
-      // bool is_input_array = dynamic_cast<Analyzer::ColumnVar*>(expr_.get());
+      // TBD: Null representation, bit-array or bool-array.
       auto row_null_data = func.emitRuntimeFunctionCall(
           "check_bit_vector_clear",
           JITFunctionEmitDescriptor{
@@ -102,19 +99,28 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   auto index = func->createVariable(JITTypeTag::INT64, "index");
   index = func->createConstant(JITTypeTag::INT64, 0l);
 
-  // len means rows length
-  auto len = context::codegen_utils::getArrowArrayLength(
-      context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
+  // input column rows num.
+  auto len = func->createLocalJITValue([&context, &inputs]() {
+    return context::codegen_utils::getArrowArrayLength(
+        context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
+  });
+  static_cast<ColumnToRowNode*>(op_node_.get())->setColumnRowNum(len);
 
   func->createLoopBuilder()
       ->condition([&index, &len]() { return index < len; })
       ->loop([&]() {
         for (auto& input : inputs) {
-          ColumnDecoder(context, input, index).decode();
+          ColumnReader(context, input, index).read();
         }
         successor_->consume(context);
       })
       ->update([&index]() { index = index + 1l; })
       ->build();
+
+  // Execute defer build functions.
+  auto c2r_node = static_cast<ColumnToRowNode*>(op_node_.get());
+  for (auto& defer_func : c2r_node->getDeferFunctions()) {
+    defer_func();
+  }
 }
 }  // namespace cider::exec::nextgen::operators
