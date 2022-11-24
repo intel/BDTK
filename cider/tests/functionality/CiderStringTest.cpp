@@ -498,6 +498,14 @@ TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
                    "stringop_upper_condition.json");
 
+  // nested stringops
+  assertQueryArrow(
+      "SELECT col_2 FROM test "
+      "WHERE UPPER(SUBSTRING(col_2, 1, 4)) = LOWER(SUBSTRING(col_2, 1, 4));",
+      "stringop_upper_nested_1.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(LOWER(col_2)) = col_2;",
+                   "stringop_upper_nested_2.json");
+
   /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
   /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
   ///    DuckDb produces only 1 row, while Cider produces input_row_num rows.
@@ -527,6 +535,37 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
                    "stringop_lower_condition_null.json");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
                    "stringop_upper_condition_null.json");
+}
+
+TEST_F(CiderStringTestArrow, ConcatTest) {
+  // Skipped because Isthmus does not support concatenating two literals
+  // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
+
+  assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
+  assertQueryArrow("SELECT 'foobar' || col_2 FROM test;");
+
+  // assertQueryArrow("SELECT 'foo' || 'bar' || col_2 FROM test;");
+  assertQueryArrow("SELECT 'foo' || col_2 || 'bar' FROM test;");
+  assertQueryArrow("SELECT col_2 || 'foo' || 'bar' FROM test;");
+
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
+                   "stringop_concat_filter.json");
+}
+
+TEST_F(CiderStringNullableTestArrow, ConcatTest) {
+  // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
+
+  assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
+  assertQueryArrow("SELECT 'foobar' || col_2 FROM test;");
+
+  // assertQueryArrow("SELECT 'foo' || 'bar' || col_2 FROM test;");
+  assertQueryArrow("SELECT 'foo' || col_2 || 'bar' FROM test;");
+  assertQueryArrow("SELECT col_2 || 'foo' || 'bar' FROM test;");
+
+  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
+  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2 || 'yo') <> col_2;",
+                   "stringop_concat_filter_null.json");
 }
 
 class CiderTrimOpTestArrow : public CiderTestBase {
@@ -613,6 +652,9 @@ TEST_F(CiderTrimOpTestArrow, NestedTrimTest) {
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR RTRIM(col_3) = 'xxx3456'",
       "stringop_rtrim_nested_2.json");
+
+  assertQueryArrow("SELECT col_3 FROM test WHERE TRIM(TRIM(col_3, ' '), 'x') = '3456'",
+                   "stringop_trim_nested_3.json");
 }
 
 class CiderConstantStringTest : public CiderTestBase {

@@ -1311,7 +1311,7 @@ class StringOper : public Expr {
     CHECK(false);
     return {};
   }
-  virtual std::vector<std::string> getArgNames() const {
+  virtual const std::vector<std::string>& getArgNames() const {
     CHECK(false);
     return {};
   }
@@ -1359,7 +1359,10 @@ class LowerStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class UpperStringOper : public StringOper {
@@ -1389,7 +1392,10 @@ class UpperStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class TrimStringOper : public StringOper {
@@ -1422,10 +1428,11 @@ class TrimStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override {
+  const std::vector<std::string>& getArgNames() const override {
     // args[0]: the string to remove characters from
     // args[1]: the set of characters to remove
-    return {"input", "characters"};
+    static std::vector<std::string> names{"input", "characters"};
+    return names;
   }
 
  private:
@@ -1474,9 +1481,53 @@ class SubstringStringOper : public StringOper {
             OperandTypeFamily::INT_FAMILY,
             OperandTypeFamily::INT_FAMILY};
   }
-  std::vector<std::string> getArgNames() const override {
-    return {"operand", "start position", "substring length"};
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand", "start_pos", "substr_len"};
+    return names;
   }
+};
+
+class ConcatStringOper : public StringOper {
+ public:
+  ConcatStringOper(const std::shared_ptr<Analyzer::Expr>& former,
+                   const std::shared_ptr<Analyzer::Expr>& latter)
+      : StringOper(getConcatOpKind({former, latter}),
+                   rearrangeOperands({former, latter}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(getConcatOpKind(operands),
+                   rearrangeOperands(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand_0", "operand_1"};
+    return names;
+  }
+
+ private:
+  bool isLiteralOrCastLiteral(const Analyzer::Expr* operand);
+
+  SqlStringOpKind getConcatOpKind(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
+
+  std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
 };
 
 class TryStringCastOper : public StringOper {
@@ -1508,7 +1559,10 @@ class TryStringCastOper : public StringOper {
   std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
     return {OperandTypeFamily::STRING_FAMILY};
   }
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class FunctionOper : public Expr {
