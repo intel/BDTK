@@ -120,9 +120,7 @@ TEST_F(CiderPatternJoinMixedTest, SingleJoinMultiCompoundNodes) {
   VeloxPlanNodePtr expectedRightPtr =
       PlanBuilder()
           .values(generateTestBatch(rowType_, false))
-          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, input);
-          })
+          .project({"c0 as u_c0", "c1 as u_c1"})
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
@@ -139,12 +137,14 @@ TEST_F(CiderPatternJoinMixedTest, SingleJoinMultiCompoundNodes) {
           .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, joinSrcVec);
           })
+          .project({"c2", "c3"})
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
           .planNode();
 
   VeloxPlanNodePtr resultPtr = getTransformer(planLeftPtr)->transform();
+
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 
@@ -169,9 +169,7 @@ TEST_F(CiderPatternJoinMixedTest, JoinWithFilterAgg) {
   VeloxPlanNodePtr expectedRightPtr =
       PlanBuilder()
           .values(generateTestBatch(rowType_, false))
-          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, input);
-          })
+          .project({"c0", "c1"})
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
@@ -194,6 +192,7 @@ TEST_F(CiderPatternJoinMixedTest, JoinWithFilterAgg) {
           .planNode();
 
   VeloxPlanNodePtr resultPtr = getTransformer(planLeftPtr)->transform();
+
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedPtr));
 }
 

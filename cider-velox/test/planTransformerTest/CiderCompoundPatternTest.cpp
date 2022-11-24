@@ -199,9 +199,10 @@ TEST_F(CiderCompoundPatternTest, MultiBranchesMultiCompoundNodes) {
   VeloxPlanNodePtr expectedRightPtr =
       PlanBuilder()
           .values(generateTestBatch(rowType_, false))
-          .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<TestCiderPlanNode>(id, input);
-          })
+          .project({"c0 as u_c0", "c1 as u_c1"})
+          // .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
+          //   return std::make_shared<TestCiderPlanNode>(id, input);
+          // })
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
@@ -213,12 +214,14 @@ TEST_F(CiderCompoundPatternTest, MultiBranchesMultiCompoundNodes) {
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
-          .hashJoin({"c2"}, {"c0"}, expectedRightPtr, "", {"c2", "c3", "c1"})
+          .hashJoin({"c2"}, {"u_c0"}, expectedRightPtr, "", {"c2", "c3", "u_c1"})
           .addNode([](std::string id, std::shared_ptr<const core::PlanNode> input) {
             return std::make_shared<TestCiderPlanNode>(id, input);
           })
           .planNode();
+
   VeloxPlanNodePtr resultPtr = getTransformer(planLeftPtr)->transform();
+
   EXPECT_TRUE(compareWithExpected(resultPtr, expectedLeftPtr));
 }
 
