@@ -888,11 +888,13 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       function_sig, funtion_return_type, from_platform_);
   // TODO(haiwei): substrait-java generate substrait-json's function return type is diff
   // with substrait's yaml file, need substrait-cpp support cider's yaml file.
-  /*if (!function_descriptor.is_cider_support_function) {
+  if (!function_descriptor.is_cider_support_function) {
     CIDER_THROW(CiderCompileException,
-            fmt::format("Not cider support scalar function, function_sig: {},
-  funtion_return_type: {}", function_sig, funtion_return_type));
-  }*/
+                fmt::format("Not cider support scalar function, function_sig: {}, "
+                            "funtion_return_type: {}",
+                            function_sig,
+                            funtion_return_type));
+  }
   auto function = function_descriptor.func_sig.func_name;
   // If it's an InValues expr, like "in (1, 2, 3)" or "in cast(vector)", build
   // Analyzer::InValues and return
@@ -1072,21 +1074,28 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const substrait::AggregateFunction& s_expr,
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-        expr_map_ptr) {
+        expr_map_ptr,
+    std::string return_type) {
   auto function_sig = getFunctionName(function_map, s_expr.function_reference());
-  auto funtion_return_type = TypeUtils::getStringType(s_expr.output_type());
+  if (return_type.empty()) {
+    return_type = TypeUtils::getStringType(s_expr.output_type());
+  }
   const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
-  auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_sig, funtion_return_type, from_platform_);
-  // TODO(haiwei): substrait-java generate substrait-json's function return type is diff
-  // with substrait's yaml file, need substrait-cpp support cider's yaml file.
-  /*if (!function_descriptor.is_cider_support_function) {
-    CIDER_THROW(CiderCompileException,
-            fmt::format("Not cider support agg function, function_sig: {},
-  funtion_return_type: {}", function_sig, funtion_return_type));
-  }*/
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_sig, return_type, from_platform_);
+  if (!function_descriptor.is_cider_support_function ||
+      function_descriptor.agg_op_type == SQLAgg::kUNDEFINED_AGG) {
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Not cider support agg function, function_sig: {}, funtion_return_type: {}",
+            function_sig,
+            return_type));
+  }
   auto function = function_descriptor.func_sig.func_name;
-  SQLAgg agg_kind = getCiderAggOp(function);
+  SQLAgg agg_kind = function_descriptor.agg_op_type;
+
+  // SQLAgg agg_kind = getCiderAggOp(function);
   std::shared_ptr<Analyzer::Constant> arg1;  // 2nd aggregate parameter
   std::shared_ptr<Analyzer::Expr> arg_expr;
   // Aggregate functions like count(*)/count(1) have no arguments, thus arg_expr is

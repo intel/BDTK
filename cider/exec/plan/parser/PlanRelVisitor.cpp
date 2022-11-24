@@ -25,6 +25,7 @@
  **/
 
 #include "PlanRelVisitor.h"
+#include "TypeUtils.h"
 #include "cider/CiderException.h"
 
 namespace generator {
@@ -116,22 +117,26 @@ void AggRelVisitor::visit(TargetContext* target_context) {
       }
       col_hint_records_ptr->push_back(std::make_pair(ColumnHint::PartialAVG, 2));
       std::unordered_map<int, std::string> function_map_fake(function_map_);
-      function_map_fake[s_expr.function_reference()] = "sum" + function_args;
+      function_map_fake[s_expr.function_reference()] =
+          "sum:" + TypeUtils::getStringType(s_expr.output_type().struct_().types(0));
       auto sum_target_expr = toAnalyzerExprConverter_->updateOutputTypeOfAVGPartial(
           toAnalyzerExprConverter_->toAnalyzerExpr(
               s_expr,
               function_map_fake,
-              variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_)),
+              variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_),
+              TypeUtils::getStringType(s_expr.output_type().struct_().types(0))),
           s_expr.output_type().struct_().types(0));
       target_exprs_ptr->push_back(sum_target_expr);
       expr_map_ptr->insert(std::pair(count, sum_target_expr));
       ++count;
-      function_map_fake[s_expr.function_reference()] = "count" + function_args;
+      function_map_fake[s_expr.function_reference()] =
+          "count:" + TypeUtils::getStringType(s_expr.output_type().struct_().types(1));
       auto count_target_expr = toAnalyzerExprConverter_->updateOutputTypeOfAVGPartial(
           toAnalyzerExprConverter_->toAnalyzerExpr(
               s_expr,
               function_map_fake,
-              variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_)),
+              variable_context_shared_ptr_->getExprMapPtr(is_join_right_node_),
+              TypeUtils::getStringType(s_expr.output_type().struct_().types(1))),
           s_expr.output_type().struct_().types(1));
       target_exprs_ptr->push_back(count_target_expr);
       expr_map_ptr->insert(std::pair(count, count_target_expr));

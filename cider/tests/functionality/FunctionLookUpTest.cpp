@@ -152,7 +152,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test1) {
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test2) {
-  const std::string function_signature_str = "between__3:i16_i16_i16";
+  const std::string function_signature_str = "between:i64_i64_i64";
   const std::string return_type = "boolean";
   const PlatformType from_platform = PlatformType::PrestoPlatform;
   auto function_descriptor = function_lookup_ptr->lookupFunction(
@@ -164,7 +164,7 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test2) {
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
   ASSERT_EQ(function_descriptor.is_cider_support_function, true);
-  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between");
 }
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest1) {
