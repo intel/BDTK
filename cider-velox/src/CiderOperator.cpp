@@ -128,9 +128,8 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
     if (!buildData.has_value()) {
       return exec::BlockingReason::kWaitForJoinBuild;
     }
-    buildData_ = std::move(buildData);
 
-    if (buildData_.value()->table() == nullptr) {
+    if (buildData.value()->table() == nullptr) {
       // Build side is empty. Return empty set of rows and terminate the pipeline
       // early.
       buildSideEmpty_ = true;
@@ -139,7 +138,7 @@ exec::BlockingReason CiderOperator::isBlocked(ContinueFuture* future) {
     auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
     ciderCompileModule_ = CiderCompileModule::Make(allocator);
 
-    ciderCompileModule_->feedBuildTable(std::move(*buildData_.value()));
+    ciderCompileModule_->feedBuildTable(std::move(*buildData.value()));
     auto compileResult = ciderCompileModule_->compile(planNode_->getSubstraitPlan());
 
     auto compile_option = CiderCompilationOption::defaults();
@@ -158,7 +157,6 @@ bool CiderOperator::isFinished() {
 }
 
 void CiderOperator::close() {
-  buildData_.reset();
   Operator::close();
 }
 

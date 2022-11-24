@@ -61,8 +61,6 @@ class CiderOperator : public exec::Operator {
   std::shared_ptr<DataConvertor> dataConvertor_;
   std::chrono::microseconds convertorInternalCounter;
 
-  // these properties are used for join with w/o agg case
-  std::optional<std::shared_ptr<CiderBatch>> buildData_;
   bool buildSideEmpty_{false};
   bool buildTableFed_{false};
   bool finished_{false};
