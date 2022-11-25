@@ -686,6 +686,93 @@ TEST_F(CiderTrimOpTestArrow, NestedTrimTest) {
                    "stringop_trim_nested_3.json");
 }
 
+class CiderRegexpTestArrow : public CiderTestBase {
+ public:
+  CiderRegexpTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(15) NOT NULL, col_3 VARCHAR(15)))";
+
+    auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    auto string_vec = std::vector<std::string>{"hello",
+                                               "hello",
+                                               "helloworldddodo",
+                                               "helloworldddodo",
+                                               "foo@example.com",
+                                               "foo@example.com",
+                                               "112@example.com",
+                                               "112@example.com",
+                                               "123qwerty123",
+                                               "123qwerty123",
+                                               "",
+                                               ""};
+    auto is_null = std::vector<bool>{
+        false, true, false, true, false, true, false, true, false, true, false, true};
+    auto [vc_data, vc_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+
+    std::tie(schema_, array_) =
+        ArrowArrayBuilder()
+            .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
+            .addUTF8Column("col_2", vc_data, vc_offsets)
+            .addUTF8Column("col_3", vc_data, vc_offsets, is_null)
+            .build();
+  }
+};
+
+TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
+  // in duckdb, regexp_replace only supports replacing the FIRST or ALL occurrences
+  // the behaviour is specified by an optional 'g' argument
+
+  // replace first
+  assertQueryArrow(
+      "SELECT "
+      "REGEXP_REPLACE(col_2, '[wert]', 'yo'), "
+      "REGEXP_REPLACE(col_3, '[wert]', 'yo') "
+      "FROM test;",
+      "stringop_regexp_replace_first.json");
+  // replace all
+  assertQueryArrow(
+      "SELECT "
+      "REGEXP_REPLACE(col_2, '[wert]', 'yo', 'g'), "
+      "REGEXP_REPLACE(col_3, '[wert]', 'yo', 'g') "
+      "FROM test;",
+      "stringop_regexp_replace_all.json");
+
+  const auto is_null = std::vector<bool>{
+      false, true, false, true, false, true, false, true, false, true, false, true};
+
+  // replace second
+  // REGEXP_REPLACE(col, '[0-9]+', '<digits>');
+  auto replace_second = std::vector<std::string>{"hello",
+                                                 "hello",
+                                                 "helloworldddodo",
+                                                 "helloworldddodo",
+                                                 "foo@example.com",
+                                                 "foo@example.com",
+                                                 "112@example.com",
+                                                 "112@example.com",
+                                                 "123qwerty<digits>",
+                                                 "123qwerty<digits>",
+                                                 "",
+                                                 ""};
+  const auto [replace_second_data, replace_second_offsets] =
+      ArrowBuilderUtils::createDataAndOffsetFromStrVector(replace_second);
+  auto replace_second_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder()
+          .addUTF8Column("col_2", replace_second_data, replace_second_offsets)
+          .addUTF8Column("col_3", replace_second_data, replace_second_offsets, is_null)
+          .build());
+  assertQueryArrow("stringop_regexp_replace_second.json", replace_second_expected);
+}
+
+TEST_F(CiderRegexpTestArrow, RegexpReplaceExtendedTest) {
+  /// NOTE: (YBRua) substrait requires occurrence >= 0 & position > 0
+  /// but currently implementation also handled cases where occurence < 0 or position < 0
+  /// these cases are also tested here for completeness
+  /// although strictly speaking these substrait plans are invalid
+}
+
 class CiderConstantStringTest : public CiderTestBase {
  public:
   CiderConstantStringTest() {
