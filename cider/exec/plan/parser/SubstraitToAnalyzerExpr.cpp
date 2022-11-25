@@ -47,7 +47,8 @@ bool isStringFunction(const std::string& function_name) {
                                                "concat",
                                                "||",
                                                "length",
-                                               "char_length"};
+                                               "char_length",
+                                               "regexp_replace"};
   return funcs.find(function_name) != funcs.end();
 }
 
@@ -842,8 +843,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       //      return makeExpr<Analyzer::ReplaceStringOper>(args);
       //    case SqlStringOpKind::SPLIT_PART:
       //      return makeExpr<Analyzer::SplitPartStringOper>(args);
-      //    case SqlStringOpKind::REGEXP_REPLACE:
-      //      return makeExpr<Analyzer::RegexpReplaceStringOper>(args);
+    case SqlStringOpKind::REGEXP_REPLACE:
+      return makeExpr<Analyzer::RegexpReplaceStringOper>(args);
       //    case SqlStringOpKind::REGEXP_SUBSTR:
       //      return makeExpr<Analyzer::RegexpSubstrStringOper>(args);
       //    case SqlStringOpKind::JSON_VALUE:
