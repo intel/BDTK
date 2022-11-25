@@ -36,10 +36,11 @@ void ColumnToRowTranslator::consume(Context& context) {
 }
 
 void ColumnToRowTranslator::codegen(Context& context) {
-  auto& func = context.query_func_;
-  auto inputs = node_.getOutputExprs();
+  auto func = context.query_func_;
+  auto&& inputs = node_.getOutputExprs();
   // for row loop
-  auto arrow_pointer = func->getArgument(0);
+  // prototype:void func(CodegenContext* context, ArrowArray* in, ArrowArray* out);
+  auto arrow_pointer = func->getArgument(1);
   auto index = func->createVariable(JITTypeTag::INT64, "index");
   index = func->createConstant(JITTypeTag::INT64, 0l);
   auto len = func->createVariable(JITTypeTag::INT64, "len");

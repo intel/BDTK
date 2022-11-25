@@ -61,6 +61,8 @@ class Batch {
 
   bool isMoved() const { return schema_.release; }
 
+  ArrowArray* getArray() { return &array_; };
+
  private:
   ArrowSchema schema_;
   ArrowArray array_;
