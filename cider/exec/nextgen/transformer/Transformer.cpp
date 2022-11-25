@@ -20,6 +20,8 @@
  */
 #include "exec/nextgen/transformer/Transformer.h"
 
+#include "exec/nextgen/operators/RowToColumnNode.h"
+
 namespace cider::exec::nextgen::transformer {
 using namespace operators;
 
@@ -42,7 +44,17 @@ static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
 }
 
 TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
-  // TODO (bigPYJ1151): Insert C2ROp, R2COp
+  // TBD: Currently, we only insert a pair of C2R and R2C at start point and end point of
+  // whole pipeline. Should be designed more properly.
+  auto c2r_node =
+      createOpNode<ColumnToRowNode>(pipeline.front()->getOutputExprs().second);
+  pipeline.insert(pipeline.begin() + 1, c2r_node);
+
+  auto r2c_node =
+      createOpNode<RowToColumnNode>(pipeline.back()->getOutputExprs().second,
+                                    static_cast<ColumnToRowNode*>(c2r_node.get()));
+  pipeline.emplace_back(r2c_node);
+
   return generateTranslators(pipeline);
 }
 }  // namespace cider::exec::nextgen::transformer

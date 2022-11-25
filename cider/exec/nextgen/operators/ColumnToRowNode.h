@@ -27,50 +27,44 @@
 namespace cider::exec::nextgen::operators {
 class ColumnToRowNode : public OpNode {
  public:
-  template <typename T, IsVecOf<T, ExprPtr> = true>
-  ColumnToRowNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  ColumnToRowNode(ExprPtrVector&& output_exprs)
+      : OpNode("ColumnToRowNode", std::move(output_exprs), JITExprValueType::ROW) {}
 
-  template <typename... T>
-  ColumnToRowNode(T&&... exprs) {
-    (exprs_.emplace_back(std::forward<T>(exprs)), ...);
-  }
-
-  ExprPtrVector getOutputExprs() override { return exprs_; }
+  ColumnToRowNode(const ExprPtrVector& output_exprs)
+      : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
-  ExprPtrVector exprs_;
+  jitlib::JITValuePointer getColumnRowNum() { return column_row_num_; }
+
+  void setColumnRowNum(jitlib::JITValuePointer& row_num) {
+    CHECK(column_row_num_.get() == nullptr);
+    column_row_num_.replace(row_num);
+  }
+
+  using DeferFunc = void (*)(void*);
+
+  template <typename FuncT>
+  void registerDeferFunc(FuncT&& func) {
+    defer_func_list_.emplace_back(func);
+  }
+
+  std::vector<std::function<void()>>& getDeferFunctions() { return defer_func_list_; }
+
+ private:
+  jitlib::JITValuePointer column_row_num_;
+  std::vector<std::function<void()>> defer_func_list_;
 };
 
 class ColumnToRowTranslator : public Translator {
  public:
-  template <typename T>
-  ColumnToRowTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = ColumnToRowNode(std::forward<T>(exprs));
-    successor_.swap(succ);
-  }
-
-  template <typename... T>
-  ColumnToRowTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
-    node_ = ColumnToRowNode(std::forward<T>(exprs)...);
-    successor_.swap(successor);
-  }
-
   ColumnToRowTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {
-    CHECK(isa<ColumnToRowNode>(node));
-  }
+      : Translator(node, succ) {}
 
-  void consume(Context& context) override;
+  void consume(context::CodegenContext& context) override;
 
  private:
-  void codegen(Context& context);
-
-  void col2RowConvert(ExprPtrVector inputs, JITFunction* func, JITValuePointer index);
-
-  // to convert column data to row
-  ColumnToRowNode node_;
-  std::unique_ptr<Translator> successor_;
+  void codegen(context::CodegenContext& context);
 };
 
 }  // namespace cider::exec::nextgen::operators

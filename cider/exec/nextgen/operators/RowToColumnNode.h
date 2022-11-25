@@ -22,57 +22,36 @@
 #ifndef NEXTGEN_OPERATORS_ROWTOCOLUMNNODE_H
 #define NEXTGEN_OPERATORS_ROWTOCOLUMNNODE_H
 
-#include "exec/nextgen/operators/OpNode.h"
-
-#include "exec/module/batch/ArrowABI.h"
-#include "exec/nextgen/context/CodegenContext.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "type/plan/Expr.h"
+#include "exec/nextgen/operators/ColumnToRowNode.h"
 
 namespace cider::exec::nextgen::operators {
-
 class RowToColumnNode : public OpNode {
  public:
-  template <typename T, IsVecOf<T, ExprPtr> = true>
-  RowToColumnNode(T&& exprs) : exprs_(std::forward<T>(exprs)) {}
+  RowToColumnNode(ExprPtrVector&& output_exprs, ColumnToRowNode* prev_c2r)
+      : OpNode("RowToColumnNode", std::move(output_exprs), JITExprValueType::BATCH)
+      , prev_c2r_node_(prev_c2r) {}
 
-  template <typename... T>
-  RowToColumnNode(T&&... exprs) {
-    (exprs_.emplace_back(std::forward<T>(exprs)), ...);
-  }
-
-  ExprPtrVector getOutputExprs() override { return exprs_; }
+  RowToColumnNode(const ExprPtrVector& output_exprs, ColumnToRowNode* prev_c2r)
+      : OpNode("RowToColumnNode", output_exprs, JITExprValueType::BATCH)
+      , prev_c2r_node_(prev_c2r) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
-  ExprPtrVector exprs_;
+  ColumnToRowNode* getColumnToRowNode() { return prev_c2r_node_; }
+
+ private:
+  ColumnToRowNode* prev_c2r_node_;
 };
 
 class RowToColumnTranslator : public Translator {
  public:
-  template <typename T>
-  RowToColumnTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = RowToColumnNode(std::forward<T>(exprs));
-    successor_.swap(succ);
-  }
-
-  template <typename... T>
-  RowToColumnTranslator(T&&... exprs, std::unique_ptr<Translator>&& succ) {
-    node_ = RowToColumnNode(std::forward<T>(exprs)...);
-    successor_.swap(succ);
-  }
-
   RowToColumnTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {}
 
-  void consume(Context& context) override;
+  void consume(context::CodegenContext& context) override;
 
  private:
-  void codegen(Context& context);
-
-  // Row to ArrowArray sink
-  RowToColumnNode node_;
-  std::unique_ptr<Translator> successor_;
+  void codegen(context::CodegenContext& context);
 };
 
 }  // namespace cider::exec::nextgen::operators

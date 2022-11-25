@@ -18,29 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_CONTEXT_H
-#define EXEC_NEXTGEN_CONTEXT_H
+#ifndef EXEC_NEXTGEN_NEXTGEN_H
+#define EXEC_NEXTGEN_NEXTGEN_H
 
-#include "exec/nextgen/context/CodegenContext.h"
-#include "exec/nextgen/jitlib/JITLib.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "type/plan/Expr.h"
+#include "exec/nextgen/context/RuntimeContext.h"
+#include "exec/nextgen/parsers/Parser.h"
+#include "exec/nextgen/transformer/Transformer.h"
 
-namespace cider::exec::nextgen {
-using namespace cider::jitlib;
-
-class Context {
- public:
-  void set_function(JITFunction* func) { query_func_ = func; };
-
-  Context(JITFunction* func_ = nullptr) : query_func_(func_) {}
-  JITFunction* query_func_;
-  std::vector<cider::jitlib::JITExprValue*> expr_outs_;
-  JITValue* cur_line_idx_;
-
-  // TODO(Jiang) : the Context will be replaced by CodegenContext, to support previous OP
-  context::CodegenContext codegen_context_;
-};
-}  // namespace cider::exec::nextgen
-
-#endif  // EXEC_NEXTGEN_CONTEXT_H
+#endif  // EXEC_NEXTGEN_NEXTGEN_H

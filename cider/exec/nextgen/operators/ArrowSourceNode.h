@@ -18,10 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_OPERATORS_SOURCENODE_H
-#define NEXTGEN_OPERATORS_SOURCENODE_H
-
-#include <vector>
+#ifndef NEXTGEN_OPERATORS_ARROWSOURCENODE_H
+#define NEXTGEN_OPERATORS_ARROWSOURCENODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
 #include "util/Logger.h"
@@ -31,50 +29,24 @@ namespace cider::exec::nextgen::operators {
 
 class ArrowSourceNode : public OpNode {
  public:
-  template <typename T, IsVecOf<T, ExprPtr> = true>
-  ArrowSourceNode(T&& exprs) : input_cols_(std::forward<T>(exprs)) {}
+  ArrowSourceNode(ExprPtrVector&& output_exprs)
+      : OpNode("SourceNode", std::move(output_exprs), JITExprValueType::BATCH) {}
 
-  template <typename... T>
-  ArrowSourceNode(T&&... exprs) {
-    (input_cols_.emplace_back(std::forward<T>(exprs)), ...);
-  }
-
-  ExprPtrVector getOutputExprs() override { return input_cols_; }
+  ArrowSourceNode(const ExprPtrVector& output_exprs)
+      : OpNode("SourceNode", output_exprs, JITExprValueType::BATCH) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
-
-  ExprPtrVector input_cols_;
 };
 
 class ArrowSourceTranslator : public Translator {
  public:
-  template <typename T>
-  ArrowSourceTranslator(T&& exprs, std::unique_ptr<Translator> succ) {
-    node_ = ArrowSourceNode(std::forward<T>(exprs));
-    successor_.swap(succ);
-  }
+  ArrowSourceTranslator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
+      : Translator(node, successor) {}
 
-  template <typename... T>
-  ArrowSourceTranslator(T&&... exprs, std::unique_ptr<Translator> successor) {
-    node_ = ArrowSourceNode(std::forward<T>(exprs)...);
-    successor_.swap(successor);
-  }
-
-  ArrowSourceTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {
-    CHECK(isa<ArrowSourceNode>(node));
-  }
-
-  void consume(Context& context) override;
+  void consume(context::CodegenContext& context) override;
 
  private:
-  void codegen(Context& context);
-
-  // source node : ArrowArray
-  ArrowSourceNode node_;
-  // next translator
-  std::unique_ptr<Translator> successor_;
+  void codegen(context::CodegenContext& context);
 };
-
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_SOURCENODE_H
+#endif  // NEXTGEN_OPERATORS_ARROWSOURCENODE_H

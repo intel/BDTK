@@ -21,16 +21,9 @@
 #ifndef NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
 #define NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H
 
-#include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
-#include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "type/data/funcannotations.h"
-
-extern "C" ALWAYS_INLINE int8_t* get_arrow_array_ptr(int8_t* batch) {
-  auto batch_ptr = reinterpret_cast<cider::exec::nextgen::context::Batch*>(batch);
-  return reinterpret_cast<int8_t*>(batch_ptr->getArray());
-}
 
 extern "C" ALWAYS_INLINE int8_t* get_query_context_ptr(int8_t* context, size_t id) {
   auto context_ptr =
@@ -38,23 +31,40 @@ extern "C" ALWAYS_INLINE int8_t* get_query_context_ptr(int8_t* context, size_t i
   return reinterpret_cast<int8_t*>(context_ptr->getContextItem(id));
 }
 
-extern "C" ALWAYS_INLINE void allocate_arrow_buffer(int8_t* array, int64_t index) {
-  auto array_pointer = reinterpret_cast<ArrowArray*>(array);
-  auto holder =
-      reinterpret_cast<CiderArrowArrayBufferHolder*>(array_pointer->private_data);
-  holder->allocBuffer(index, 1000);
+extern "C" ALWAYS_INLINE int8_t* get_arrow_array_ptr(int8_t* batch) {
+  auto batch_ptr = reinterpret_cast<cider::exec::nextgen::context::Batch*>(batch);
+  return reinterpret_cast<int8_t*>(batch_ptr->getArray());
 }
 
-extern "C" ALWAYS_INLINE int32_t* extract_arrow_array_buffer(int8_t* arrow_pointer,
-                                                             int64_t index) {
+extern "C" ALWAYS_INLINE void* extract_arrow_array_buffer(int8_t* arrow_pointer,
+                                                          int64_t index) {
   ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
-  return reinterpret_cast<int32_t*>(const_cast<void*>(array->buffers[index]));
+  return const_cast<void*>(array->buffers[index]);
 }
 
 extern "C" ALWAYS_INLINE void* extract_arrow_array_child(int8_t* arrow_pointer,
                                                          int64_t index) {
   ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
   return reinterpret_cast<void*>(array->children[index]);
+}
+
+extern "C" ALWAYS_INLINE int64_t extract_arrow_array_len(int8_t* arrow_pointer) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  return array->length;
+}
+
+extern "C" ALWAYS_INLINE void set_arrow_array_len(int8_t* arrow_pointer, int64_t len) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  array->length = len;
+}
+
+extern "C" ALWAYS_INLINE void allocate_arrow_array_buffer(int8_t* array,
+                                                          int64_t buffer_index,
+                                                          int64_t bytes) {
+  auto array_pointer = reinterpret_cast<ArrowArray*>(array);
+  auto holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(array_pointer->private_data);
+  holder->allocBuffer(buffer_index, bytes);
 }
 
 #endif  // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H

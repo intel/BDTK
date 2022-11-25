@@ -21,69 +21,106 @@
 
 #include "exec/nextgen/operators/ColumnToRowNode.h"
 
-#include "exec/module/batch/ArrowABI.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "type/plan/Expr.h"
+#include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/operators/OpNode.h"
+#include "exec/nextgen/utils/TypeUtils.h"
+#include "util/Logger.h"
 
 namespace cider::exec::nextgen::operators {
+using namespace cider::jitlib;
+
+class ColumnReader {
+ public:
+  ColumnReader(context::CodegenContext& ctx, ExprPtr& expr, JITValuePointer& index)
+      : context_(ctx), expr_(expr), index_(index) {}
+
+  void read() {
+    switch (expr_->get_type_info().get_type()) {
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+        readFixSizedTypeCol();
+        break;
+      default:
+        LOG(FATAL) << "Unsupported data type in ColumnReader: "
+                   << expr_->get_type_info().get_type_name();
+    }
+  }
+
+ private:
+  void readFixSizedTypeCol() {
+    auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
+    utils::FixSizeJITExprValue fixsize_values(buffers);
+
+    auto& func = batch->getParentJITFunction();
+    JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
+    // data buffer decoder
+    auto data_pointer = fixsize_values.getValue()->castPointerSubType(tag);
+    auto row_data = data_pointer[index_];
+
+    if (expr_->get_type_info().get_notnull()) {
+      expr_->set_expr_value<JITExprValueType::ROW>(nullptr, row_data);
+    } else {
+      // null buffer decoder
+      // TBD: Null representation, bit-array or bool-array.
+      auto row_null_data = func.emitRuntimeFunctionCall(
+          "check_bit_vector_clear",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::BOOL,
+              .params_vector = {{fixsize_values.getNull().get(), index_.get()}}});
+
+      expr_->set_expr_value<JITExprValueType::ROW>(row_null_data, row_data);
+    }
+  }
+
+ private:
+  context::CodegenContext& context_;
+  ExprPtr& expr_;
+  JITValuePointer& index_;
+};
 
 TranslatorPtr ColumnToRowNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<ColumnToRowTranslator>(shared_from_this(), succ);
 }
 
-void ColumnToRowTranslator::consume(Context& context) {
+void ColumnToRowTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void ColumnToRowTranslator::codegen(Context& context) {
-  auto func = context.query_func_;
-  auto&& inputs = node_.getOutputExprs();
+void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
+  auto func = context.getJITFunction();
+  auto&& [type, exprs] = op_node_->getOutputExprs();
+  ExprPtrVector& inputs = exprs;
+
   // for row loop
   // prototype:void func(CodegenContext* context, ArrowArray* in, ArrowArray* out);
   auto arrow_pointer = func->getArgument(1);
   auto index = func->createVariable(JITTypeTag::INT64, "index");
   index = func->createConstant(JITTypeTag::INT64, 0l);
-  auto len = func->createVariable(JITTypeTag::INT64, "len");
-  // len means rows length
-  len = func->emitRuntimeFunctionCall(
-      "extract_arrow_array_len",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                .params_vector = {arrow_pointer.get()}});
+
+  // input column rows num.
+  auto len = func->createLocalJITValue([&context, &inputs]() {
+    return context::codegen_utils::getArrowArrayLength(
+        context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
+  });
+  static_cast<ColumnToRowNode*>(op_node_.get())->setColumnRowNum(len);
 
   func->createLoopBuilder()
       ->condition([&index, &len]() { return index < len; })
       ->loop([&]() {
-        col2RowConvert(inputs, func, index);
-        // context record row index
-        context.cur_line_idx_ = index.get();
+        for (auto& input : inputs) {
+          ColumnReader(context, input, index).read();
+        }
         successor_->consume(context);
       })
       ->update([&index]() { index = index + 1l; })
       ->build();
-}
 
-void ColumnToRowTranslator::col2RowConvert(ExprPtrVector inputs,
-                                           JITFunction* func,
-                                           JITValuePointer index) {
-  // for column loop
-  for (int idx = 0; idx < inputs.size(); ++idx) {
-    std::vector<JITValuePointer> vec;
-    JITTypeTag tag = inputs[idx]->getJITTag(inputs[idx]->get_type_info().get_type());
-    // data buffer decoder
-    JITValue* column_data = inputs[idx]->get_datas()[0].get();
-    auto data_pointer = column_data->castPointerSubType(tag);
-    auto row_data = data_pointer[index];
-    // null buffer decoder
-    JITValue* column_null_data = inputs[idx]->get_nulls()[0].get();
-    auto row_null_data = func->emitRuntimeFunctionCall(
-        "check_bit_vector_clear",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::BOOL,
-                                  .params_vector = {{column_null_data, index.get()}}});
-
-    vec.emplace_back(row_data);
-    vec.emplace_back(row_null_data);
-    inputs[idx]->set_expr_value(vec);
+  // Execute defer build functions.
+  auto c2r_node = static_cast<ColumnToRowNode*>(op_node_.get());
+  for (auto& defer_func : c2r_node->getDeferFunctions()) {
+    defer_func();
   }
 }
-
 }  // namespace cider::exec::nextgen::operators
