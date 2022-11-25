@@ -1359,7 +1359,10 @@ class CharLengthStringOper : public StringOper {
     return {OperandTypeFamily::STRING_FAMILY};
   }
 
-  std::vector<std::string> getArgNames() const override { return {"operand"}; }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
 };
 
 class LowerStringOper : public StringOper {
