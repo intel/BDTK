@@ -577,7 +577,7 @@ TEST_F(CiderStringTestArrow, CharLengthTest) {
                    "stringop_charlen_filter.json");
 
   assertQueryArrow(
-      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test"
+      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
       "WHERE LENGTH(col_2 || 'boo') = 13;",
       "stringop_charlen_nested.json");
 }
@@ -592,7 +592,7 @@ TEST_F(CiderStringNullableTestArrow, CharLengthTest) {
                    "stringop_charlen_filter_null.json");
 
   assertQueryArrow(
-      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test"
+      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
       "WHERE LENGTH(col_2 || 'boo') = 13;",
       "stringop_charlen_nested_null.json");
 }
