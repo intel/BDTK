@@ -87,7 +87,7 @@ NullableStrType TryStringCast::operator()(const std::string& str) const {
   return NullableStrType();
 }
 
-Datum TryStringCast::numericEval(const std::string_view str) const {
+Datum TryStringCast::numericEval(const std::string_view& str) const {
   if (str.empty()) {
     return NullDatum(return_ti_);
   }
@@ -104,7 +104,7 @@ NullableStrType CharLength::operator()(const std::string& str) const {
   CIDER_THROW(CiderCompileException, "invalid call to operator() for CharLength");
 }
 
-Datum CharLength::numericEval(const std::string_view str) const {
+Datum CharLength::numericEval(const std::string_view& str) const {
   Datum res_datum;
   res_datum.bigintval = static_cast<int64_t>(str.length());
   return res_datum;
@@ -486,7 +486,7 @@ std::string_view StringOps::operator()(const std::string_view sv,
   return sv_storage;
 }
 
-Datum StringOps::numericEval(const std::string_view str) const {
+Datum StringOps::numericEval(const std::string_view& str) const {
   NullableStrType modified_str(str);
   const auto num_string_producing_ops = string_ops_.size() - 1;
   for (size_t string_op_idx = 0; string_op_idx < num_string_producing_ops;
