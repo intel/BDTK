@@ -288,7 +288,7 @@ TEST(ArrowArrayBuilderTest, CiderBatchConstructorTest) {
 
   CiderBatch* batch =
       new CiderBatch(schema, array, std::make_shared<CiderDefaultAllocator>());
-  EXPECT_EQ(0, batch->getBufferNum());
+  EXPECT_EQ(1, batch->getBufferNum());
   EXPECT_EQ(4, batch->getChildrenNum());
 
   EXPECT_EQ(SQLTypes::kSTRUCT, batch->getCiderType());

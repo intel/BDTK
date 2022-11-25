@@ -33,40 +33,41 @@
 
 namespace CiderBatchUtils {
 
-#define GENERATE_AND_ADD_BOOL_COLUMN(C_TYPE)                                \
-  {                                                                         \
-    std::vector<C_TYPE> col_data;                                           \
-    std::vector<bool> null_data;                                            \
-    col_data.reserve(table_row_num);                                        \
-    null_data.reserve(table_row_num);                                       \
-    C_TYPE* buf = (C_TYPE*)table_ptr[i];                                    \
-    uint8_t* null_buf = (uint8_t*)table_ptr[i + column_num];                \
-    for (auto j = 0; j < table_row_num; ++j) {                              \
-      C_TYPE value = buf[j];                                                \
-      bool is_not_null = null_buf[j];                                       \
-      col_data.push_back(value);                                            \
-      null_data.push_back(!is_not_null);                                    \
-    }                                                                       \
-    builder = builder.addBoolColumn<C_TYPE>(names[i], col_data, null_data); \
-    break;                                                                  \
+#define GENERATE_AND_ADD_BOOL_COLUMN(C_TYPE)                                            \
+  {                                                                                     \
+    std::vector<C_TYPE> col_data;                                                       \
+    std::vector<bool> null_data;                                                        \
+    col_data.reserve(table_row_num);                                                    \
+    null_data.reserve(table_row_num);                                                   \
+    C_TYPE* buf = (C_TYPE*)table_ptr[table_ptr_idx];                                    \
+    uint8_t* null_buf = (uint8_t*)table_ptr[table_ptr_idx + column_num];                \
+    for (auto j = 0; j < table_row_num; ++j) {                                          \
+      C_TYPE value = buf[j];                                                            \
+      bool is_not_null = null_buf[j];                                                   \
+      col_data.push_back(value);                                                        \
+      null_data.push_back(!is_not_null);                                                \
+    }                                                                                   \
+    builder = builder.addBoolColumn<C_TYPE>(names[table_ptr_idx], col_data, null_data); \
+    break;                                                                              \
   }
 
-#define GENERATE_AND_ADD_COLUMN(C_TYPE)                                       \
-  {                                                                           \
-    std::vector<C_TYPE> col_data;                                             \
-    std::vector<bool> null_data;                                              \
-    col_data.reserve(table_row_num);                                          \
-    null_data.reserve(table_row_num);                                         \
-    C_TYPE* buf = (C_TYPE*)table_ptr[i];                                      \
-    uint8_t* null_buf = (uint8_t*)table_ptr[i + column_num];                  \
-    for (auto j = 0; j < table_row_num; ++j) {                                \
-      C_TYPE value = buf[j];                                                  \
-      bool is_null = (null_buf[j] == 0);                                      \
-      col_data.push_back(value);                                              \
-      null_data.push_back(is_null);                                           \
-    }                                                                         \
-    builder = builder.addColumn<C_TYPE>(names[i], type, col_data, null_data); \
-    break;                                                                    \
+#define GENERATE_AND_ADD_COLUMN(C_TYPE)                                             \
+  {                                                                                 \
+    std::vector<C_TYPE> col_data;                                                   \
+    std::vector<bool> null_data;                                                    \
+    col_data.reserve(table_row_num);                                                \
+    null_data.reserve(table_row_num);                                               \
+    C_TYPE* buf = (C_TYPE*)table_ptr[table_ptr_idx];                                \
+    uint8_t* null_buf = (uint8_t*)table_ptr[table_ptr_idx + column_num];            \
+    for (auto j = 0; j < table_row_num; ++j) {                                      \
+      C_TYPE value = buf[j];                                                        \
+      bool is_null = (null_buf[j] == 0);                                            \
+      col_data.push_back(value);                                                    \
+      null_data.push_back(is_null);                                                 \
+    }                                                                               \
+    builder =                                                                       \
+        builder.addColumn<C_TYPE>(names[table_ptr_idx], type, col_data, null_data); \
+    break;                                                                          \
   }
 
 void freeArrowArray(ArrowArray* ptr) {
@@ -434,20 +435,14 @@ std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index) {
   return std::string(res);
 }
 
-CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
-  std::shared_ptr<CiderTableSchema> table_schema = output_batch.schema();
-  auto column_num = table_schema->getFlattenColCount();
-  auto arrow_colum_num = output_batch.column_num();
-  CHECK_EQ(column_num * 2, arrow_colum_num);
-  auto table_row_num = output_batch.row_num();
-  ArrowArrayBuilder builder;
-  builder = builder.setRowNum(table_row_num);
-  const auto& types = table_schema->getFlattenColumnTypes();
-  const auto& names = table_schema->getFlattenColNames();
-  CHECK_EQ(types.size(), names.size());
-  const int8_t** table_ptr = output_batch.table();
-  for (auto i = 0; i < types.size(); ++i) {
-    const ::substrait::Type& type = types[i];
+int convertToStructArrow(ArrowArrayBuilder& builder,
+                         const ::substrait::Type type,
+                         const int8_t** table_ptr,
+                         int table_ptr_idx,
+                         int table_row_num,
+                         int column_num,
+                         std::vector<std::string> names) {
+  if (!type.has_struct_()) {
     switch (type.kind_case()) {
       case ::substrait::Type::KindCase::kBool:
         GENERATE_AND_ADD_BOOL_COLUMN(bool)
@@ -466,6 +461,36 @@ CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
       default:
         CIDER_THROW(CiderCompileException, "Type arrow convert not supported.");
     }
+    return 1;
+  }
+
+  ArrowArrayBuilder subBuilder;
+  int table_ptr_num = 0;
+  for (auto subType : type.struct_().types()) {
+    table_ptr_num += convertToStructArrow(
+        subBuilder, subType, table_ptr, table_ptr_idx, table_row_num, column_num, names);
+    table_ptr_idx += table_ptr_num;
+  }
+  auto schema_and_array = subBuilder.build();
+  builder.addStructColumn(std::get<0>(schema_and_array), std::get<1>(schema_and_array));
+  return table_ptr_num;
+}
+
+CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
+  std::shared_ptr<CiderTableSchema> table_schema = output_batch.schema();
+  auto column_num = table_schema->getFlattenColCount();
+  auto arrow_colum_num = output_batch.column_num();
+  CHECK_EQ(column_num * 2, arrow_colum_num);
+  auto table_row_num = output_batch.row_num();
+  ArrowArrayBuilder builder;
+  builder = builder.setRowNum(table_row_num);
+  const auto& types = table_schema->getColumnTypes();
+  const auto& names = table_schema->getFlattenColNames();
+  const int8_t** table_ptr = output_batch.table();
+  int table_ptr_idx = 0;
+  for (auto type : types) {
+    table_ptr_idx += convertToStructArrow(
+        builder, type, table_ptr, table_ptr_idx, table_row_num, column_num, names);
   }
   auto schema_and_array = builder.build();
   CiderBatch result(std::get<0>(schema_and_array),
