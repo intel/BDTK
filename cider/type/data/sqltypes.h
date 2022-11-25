@@ -220,6 +220,16 @@ constexpr auto is_datetime(SQLTypes type) {
 // length, precision, scale, etc.
 class SQLTypeInfo {
  public:
+  SQLTypeInfo(SQLTypes t, bool n, std::vector<SQLTypeInfo>&& c)
+      : type(t)
+      , subtype(kNULLT)
+      , dimension(0)
+      , scale(0)
+      , notnull(n)
+      , compression(kENCODING_NONE)
+      , comp_param(0)
+      , size(get_storage_size())
+      , children(std::move(c)) {}
   SQLTypeInfo(SQLTypes t, bool n, const std::vector<SQLTypeInfo>& c)
       : type(t)
       , subtype(kNULLT)

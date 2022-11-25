@@ -28,7 +28,6 @@
 namespace validator {
 
 const std::unordered_set<int> supported_types{substrait::Type::kBool,
-                                              substrait::Type::kDecimal,
                                               substrait::Type::kFp32,
                                               substrait::Type::kFp64,
                                               substrait::Type::kI8,
@@ -46,9 +45,10 @@ class SingleNodeValidator {
  public:
   static bool validate(const substrait::Rel& rel_node);
 
- private:
   // get outputTypes of a rel node
   static std::vector<substrait::Type> getRelOutputTypes(const substrait::Rel& rel_node);
+
+ private:
   static std::vector<substrait::Type> getRelOutputTypes(
       const substrait::Rel& rel_node,
       const std::vector<substrait::Type>& input_types);

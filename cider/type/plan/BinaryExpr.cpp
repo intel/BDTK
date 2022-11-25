@@ -25,8 +25,8 @@ namespace Analyzer {
 using namespace cider::jitlib;
 
 JITExprValue& BinOper::codegen(JITFunction& func) {
-  if (auto expr_var = get_expr_value()) {
-    return *expr_var;
+  if (auto& expr_var = get_expr_value()) {
+    return expr_var;
   }
 
   auto lhs = const_cast<Analyzer::Expr*>(get_left_operand());
@@ -44,8 +44,8 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
                 "Decimal and TimeInterval are not supported in arithmetic codegen now.");
   }
 
-  auto& lhs_val = lhs->codegen(func);
-  auto& rhs_val = rhs->codegen(func);
+  FixSizeJITExprValue lhs_val(lhs->codegen(func));
+  FixSizeJITExprValue rhs_val(rhs->codegen(func));
 
   // auto null = func_->createVariable(getJITTag(lhs), "null");
   TODO("MaJian", "merge null");
@@ -83,47 +83,49 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
       }
   }
   UNREACHABLE();
-  return fake_val_;
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs) {
+  // TODO: Null Process
   switch (get_optype()) {
     case kMINUS:
-      return set_expr_value(lhs - rhs);
+      return set_expr_value(nullptr, lhs - rhs);
     case kPLUS:
-      return set_expr_value(lhs + rhs);
+      return set_expr_value(nullptr, lhs + rhs);
     case kMULTIPLY:
-      return set_expr_value(lhs * rhs);
+      return set_expr_value(nullptr, lhs * rhs);
     case kDIVIDE:
-      return set_expr_value(lhs / rhs);
+      return set_expr_value(nullptr, lhs / rhs);
     case kMODULO:
-      return set_expr_value(lhs % rhs);
+      return set_expr_value(nullptr, lhs % rhs);
     default:
       UNREACHABLE();
   }
 
-  return fake_val_;
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs) {
+  // TODO: Null Process
   switch (get_optype()) {
     case kEQ:
-      return set_expr_value(lhs == rhs);
+      return set_expr_value(nullptr, lhs == rhs);
     case kNE:
-      return set_expr_value(lhs != rhs);
+      return set_expr_value(nullptr, lhs != rhs);
     case kLT:
-      return set_expr_value(lhs < rhs);
+      return set_expr_value(nullptr, lhs < rhs);
     case kGT:
-      return set_expr_value(lhs > rhs);
+      return set_expr_value(nullptr, lhs > rhs);
     case kLE:
-      return set_expr_value(lhs <= rhs);
+      return set_expr_value(nullptr, lhs <= rhs);
     case kGE:
-      return set_expr_value(lhs >= rhs);
+      return set_expr_value(nullptr, lhs >= rhs);
     default:
       UNREACHABLE();
   }
 
-  return fake_val_;
+  return expr_var_;
 }
 
 }  // namespace Analyzer

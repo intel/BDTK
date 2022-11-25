@@ -19,15 +19,17 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_TRANSLATOR_OPNODE_H
-#define NEXTGEN_TRANSLATOR_OPNODE_H
+#ifndef NEXTGEN_OPERATORS_OPNODE_H
+#define NEXTGEN_OPERATORS_OPNODE_H
 
 #include <type_traits>
 
-#include "exec/nextgen/Context.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "type/plan/Analyzer.h"
 
 namespace cider::exec::nextgen::operators {
+using utils::JITExprValueType;
+
 class Translator;
 class OpNode;
 
@@ -42,8 +44,14 @@ using TranslatorPtr = std::shared_ptr<Translator>;
 /// Note: Each OpNode has zero or one source
 class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
-  OpNode(const char* name = "None", const OpNodePtr& prev = nullptr)
-      : input_(prev), name_(name) {}
+  template <typename OutputVecT>
+  OpNode(const char* name = "None",
+         OutputVecT&& output_exprs = {},
+         JITExprValueType output_type = JITExprValueType::ROW)
+      : input_(nullptr)
+      , name_(name)
+      , output_exprs_(std::forward<OutputVecT>(output_exprs))
+      , output_type_(output_type) {}
 
   virtual ~OpNode() = default;
 
@@ -52,7 +60,9 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 
   void setInputOpNode(const OpNodePtr& prev) { input_ = prev; }
 
-  virtual ExprPtrVector getOutputExprs() = 0;
+  std::pair<JITExprValueType, ExprPtrVector&> getOutputExprs() {
+    return {output_type_, output_exprs_};
+  }
 
   /// \brief Transform the operator to a translator
   virtual TranslatorPtr toTranslator(const TranslatorPtr& succ) = 0;
@@ -60,32 +70,32 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
  protected:
   OpNodePtr input_;
   const char* name_;
-  // schema
+  ExprPtrVector output_exprs_;
+  JITExprValueType output_type_;
 };
 
+// TBD: Combine OpNode and Translator
 class Translator {
  public:
-  [[deprecated]] Translator() : Translator(nullptr, nullptr) {}
-
   Translator(const OpNodePtr& op_node, const TranslatorPtr& successor = nullptr)
-      : op_node_(op_node), new_successor_(successor) {}
+      : op_node_(op_node), successor_(successor) {}
 
   virtual ~Translator() = default;
 
-  virtual void consume(Context& context) = 0;
+  virtual void consume(context::CodegenContext& context) = 0;
 
   OpNodePtr getOpNode() { return op_node_; }
 
   TranslatorPtr setSuccessor(const TranslatorPtr& successor) {
-    new_successor_ = successor;
-    return new_successor_;
+    successor_ = successor;
+    return successor_;
   }
 
-  TranslatorPtr getSuccessor() const { return new_successor_; }
+  TranslatorPtr getSuccessor() const { return successor_; }
 
  protected:
   OpNodePtr op_node_;
-  TranslatorPtr new_successor_;
+  TranslatorPtr successor_;
 };
 
 template <typename OpNodeT, typename... Args>
@@ -102,18 +112,6 @@ template <typename OpNodeT>
 bool isa(const OpNodePtr& op) {
   return dynamic_cast<OpNodeT*>(op.get());
 }
-
-template <typename T, typename ST>
-struct is_vector_of {
-  using type = typename std::remove_reference<T>::type;
-  static constexpr bool v = std::is_same_v<type, std::vector<ST>>;
-};
-
-template <typename T, typename ST>
-inline constexpr bool is_vector_of_v = is_vector_of<T, ST>::v;
-
-template <typename T, typename ST>
-using IsVecOf = typename std::enable_if_t<is_vector_of_v<T, ST>, bool>;
 }  // namespace cider::exec::nextgen::operators
 
-#endif  // NEXTGEN_TRANSLATOR_OPNODE_H
+#endif  // NEXTGEN_OPERATORS_OPNODE_H

@@ -20,32 +20,34 @@
  */
 #include "exec/nextgen/operators/FilterNode.h"
 
+#include "exec/nextgen/jitlib/JITLib.h"
+
 namespace cider::exec::nextgen::operators {
+using namespace jitlib;
 
 TranslatorPtr FilterNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<FilterTranslator>(shared_from_this(), succ);
 }
 
-void FilterTranslator::consume(Context& context) {
+void FilterTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void FilterTranslator::codegen(Context& context) {
-  auto func = context.query_func_;
+void FilterTranslator::codegen(context::CodegenContext& context) {
+  auto func = context.getJITFunction();
   func->createIfBuilder()
       ->condition([&]() {
         auto bool_init = func->createVariable(JITTypeTag::BOOL, "bool_init");
         bool_init = func->createConstant(JITTypeTag::BOOL, true);
-        for (const auto& expr : node_.exprs_) {
-          auto& cond = expr->codegen(*func);
+        auto&& [expr_type, exprs] = op_node_->getOutputExprs();
+        for (const auto& expr : exprs) {
+          utils::FixSizeJITExprValue cond(expr->codegen(*func));
           bool_init = bool_init && cond.getValue();
           TODO("MaJian", "support null in condition");
         }
         return bool_init;
       })
-      ->ifTrue([&]() {
-        successor_->consume(context);
-      })
+      ->ifTrue([&]() { successor_->consume(context); })
       ->build();
 }
 }  // namespace cider::exec::nextgen::operators

@@ -31,7 +31,6 @@ class Transformer {
  public:
   static operators::TranslatorPtr toTranslator(operators::OpPipeline& pipeline);
 };
-
 }  // namespace cider::exec::nextgen::transformer
 
 #endif  // CIDER_EXEC_NEXTGEN_TRANSFORMER_H

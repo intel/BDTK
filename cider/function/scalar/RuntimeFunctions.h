@@ -35,8 +35,6 @@ extern "C" void* extract_arrow_array_null(int8_t* arrow_pointer, int64_t index);
 
 extern "C" void* extract_arrow_array_data(int8_t* arrow_pointer, int64_t index);
 
-extern "C" int64_t extract_arrow_array_len(int8_t* arrow_pointer);
-
 extern "C" int32_t external_call_test_sum(int32_t a, int32_t b);
 
 extern "C" int64_t agg_sum(int64_t* agg, const int64_t val);

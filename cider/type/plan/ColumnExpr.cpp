@@ -24,7 +24,7 @@ namespace Analyzer {
 using namespace cider::jitlib;
 
 JITExprValue& ColumnVar::codegen(JITFunction& func) {
-  return *get_expr_value();
+  return get_expr_value();
 }
 
 }  // namespace Analyzer

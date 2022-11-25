@@ -19,26 +19,33 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_OPERATORS_FILTERNODE_H
-#define NEXTGEN_OPERATORS_FILTERNODE_H
+#ifndef NEXTGEN_OPERATORS_ROWTOCOLUMNNODE_H
+#define NEXTGEN_OPERATORS_ROWTOCOLUMNNODE_H
 
-#include "exec/nextgen/operators/OpNode.h"
+#include "exec/nextgen/operators/ColumnToRowNode.h"
 
 namespace cider::exec::nextgen::operators {
-class FilterNode : public OpNode {
+class RowToColumnNode : public OpNode {
  public:
-  FilterNode(ExprPtrVector&& output_exprs)
-      : OpNode("FilterNode", std::move(output_exprs), JITExprValueType::ROW) {}
+  RowToColumnNode(ExprPtrVector&& output_exprs, ColumnToRowNode* prev_c2r)
+      : OpNode("RowToColumnNode", std::move(output_exprs), JITExprValueType::BATCH)
+      , prev_c2r_node_(prev_c2r) {}
 
-  FilterNode(const ExprPtrVector& output_exprs)
-      : OpNode("FilterNode", output_exprs, JITExprValueType::ROW) {}
+  RowToColumnNode(const ExprPtrVector& output_exprs, ColumnToRowNode* prev_c2r)
+      : OpNode("RowToColumnNode", output_exprs, JITExprValueType::BATCH)
+      , prev_c2r_node_(prev_c2r) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+
+  ColumnToRowNode* getColumnToRowNode() { return prev_c2r_node_; }
+
+ private:
+  ColumnToRowNode* prev_c2r_node_;
 };
 
-class FilterTranslator : public Translator {
+class RowToColumnTranslator : public Translator {
  public:
-  FilterTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+  RowToColumnTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {}
 
   void consume(context::CodegenContext& context) override;
@@ -48,4 +55,4 @@ class FilterTranslator : public Translator {
 };
 
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_FILTERNODE_H
+#endif  // NEXTGEN_OPERATORS_ROWTOCOLUMNNODE_H

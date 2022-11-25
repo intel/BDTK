@@ -24,8 +24,8 @@
  * @file    Analyzer.h
  * @brief   Defines data structures for the semantic analysis phase of query processing
  **/
-#ifndef ANALYZER_H
-#define ANALYZER_H
+#ifndef TYPE_PLAN_ANALYZER_H
+#define TYPE_PLAN_ANALYZER_H
 
 #include <cstdint>
 #include <iostream>
@@ -1846,4 +1846,4 @@ bool expr_list_match(const std::vector<std::shared_ptr<Analyzer::Expr>>& lhs,
 std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr);
 const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr);
 
-#endif  // ANALYZER_H
+#endif  // TYPE_PLAN_ANALYZER_H

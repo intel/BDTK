@@ -115,10 +115,11 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
 TEST_F(CiderOperatorHashJoinTest, innerJoin_allTypes) {
   std::vector<TypePtr> types{BIGINT(), INTEGER()};
   for (const auto& type : types) {
-    testJoin({type},
+    testJoin({type, type},
              200,
              150,
-             "SELECT t_k0, t_data, u_k0, u_data FROM  t join u on t_k0 = u_k0");
+             "SELECT t_k0, t_k1, t_data, u_k0, u_k1, u_data FROM"
+             " t join u on t_k0 = u_k0 AND t_k1 = u_k1");
   }
 }
 
@@ -127,7 +128,7 @@ TEST_F(CiderOperatorHashJoinTest, innerJoin_normalizedKey) {
            16000,
            15000,
            "SELECT t_k0, t_k1, t_data, u_k0, u_k1, u_data FROM "
-           "  t join u on t_k0 = u_k0 AND t_k1 = u_k1");
+           " t join u on t_k0 = u_k0 AND t_k1 = u_k1");
 }
 
 int main(int argc, char** argv) {

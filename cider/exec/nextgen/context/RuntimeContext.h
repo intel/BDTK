@@ -37,6 +37,14 @@ class RuntimeContext {
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
+  // TBD: Currently, last batch would be output batch under all known scenarios.
+  Batch* getOutputBatch() {
+    if (batch_holder_.empty()) {
+      return nullptr;
+    }
+    return batch_holder_.back().second.get();
+  }
+
  private:
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;

@@ -19,49 +19,53 @@
  * under the License.
  */
 #include "exec/nextgen/operators/ArrowSourceNode.h"
-#include "exec/module/batch/ArrowABI.h"
 
-#include "exec/nextgen/jitlib/base/JITFunction.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/module/batch/ArrowABI.h"
+#include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
 #include "util/Logger.h"
 
 namespace cider::exec::nextgen::operators {
+using namespace jitlib;
 
 TranslatorPtr ArrowSourceNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<ArrowSourceTranslator>(shared_from_this(), succ);
 }
 
-void ArrowSourceTranslator::consume(Context& context) {
+void ArrowSourceTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void ArrowSourceTranslator::codegen(Context& context) {
-  JITFunction* func = context.query_func_;
-  auto inputs = node_.getOutputExprs();
-  // get ArrowArray pointer
-  auto arrow_pointer = func->getArgument(0);
-  for (int64_t index = 0; index < inputs.size(); ++index) {
-    auto jit_index = func->createConstant(JITTypeTag::INT64, index);
-    // extract ArrowArray null buffer
-    auto null_data = func->emitRuntimeFunctionCall(
-        "extract_arrow_array_null",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .ret_sub_type = JITTypeTag::VOID,
-            .params_vector = {{arrow_pointer.get(), jit_index.get()}}});
+void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
+  auto func = context.getJITFunction();
+  auto&& [output_type, exprs] = op_node_->getOutputExprs();
 
-    // extract ArrowArray data buffer
-    auto data = func->emitRuntimeFunctionCall(
-        "extract_arrow_array_data",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .ret_sub_type = JITTypeTag::VOID,
-            .params_vector = {{arrow_pointer.get(), jit_index.get()}}});
+  // get input ArrowArray pointer, generated query function signature likes void
+  // query_func(RuntimeContext* ctx, ArrowArray* input).
+  auto arrow_pointer = func->getArgument(1);
 
-    inputs[index]->set_nulls(null_data);
-    inputs[index]->set_datas(data);
+  for (int64_t index = 0; index < exprs.size(); ++index) {
+    auto col_var_expr = dynamic_cast<Analyzer::ColumnVar*>(exprs[index].get());
+    CHECK(col_var_expr);
+    auto child_array = func->createLocalJITValue([&arrow_pointer, index]() {
+      return context::codegen_utils::getArrowArrayChild(arrow_pointer, index);
+    });
+
+    int64_t buffer_num = utils::getBufferNum(col_var_expr->get_type_info().get_type());
+    utils::JITExprValue buffer_values(buffer_num, JITExprValueType::BATCH);
+
+    for (int64_t i = 0; i < buffer_num; ++i) {
+      auto buffer = func->createLocalJITValue([&child_array, i]() {
+        return context::codegen_utils::getArrowArrayBuffer(child_array, i);
+      });
+      buffer_values.append(buffer);
+    }
+
+    // All ArrowArray related JITValues will be saved in CodegenContext, and associate
+    // with exprs with local_offset.
+    size_t local_offset =
+        context.appendArrowArrayValues(child_array, std::move(buffer_values));
+    exprs[index]->setLocalIndex(local_offset);
   }
   successor_->consume(context);
 }
