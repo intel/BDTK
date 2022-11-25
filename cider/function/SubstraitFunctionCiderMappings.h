@@ -198,6 +198,8 @@ class SubstraitFunctionCiderMappings {
         {"trim", OpSupportExprType::kTRIM_STRING_OPER},
         {"ltrim", OpSupportExprType::kTRIM_STRING_OPER},
         {"rtrim", OpSupportExprType::kTRIM_STRING_OPER},
+        {"concat", OpSupportExprType::kCONCAT_STRING_OPER},
+        {"||", OpSupportExprType::kCONCAT_STRING_OPER},
         {"like", OpSupportExprType::kLIKE_EXPR},
     };
     return mapping;

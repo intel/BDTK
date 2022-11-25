@@ -214,3 +214,29 @@ scalar_functions:
         variadic:
           min: 2
         return: any1
+  -   
+    name: "is_distinct_from"
+    description: >-
+      Whether the `expression` is distinct from value.
+    impls:
+      - args:
+          - value: any
+            name: expression
+            description: The expression to test for is distinct from value.
+          - value: any
+            name: value
+            description: The distinct from value.
+        return: BOOLEAN
+  -   
+    name: "is_not_distinct_from"
+    description: >-
+      Whether the `expression` is not distinct from value.
+    impls:
+      - args:
+          - value: any
+            name: expression
+            description: The expression to test for is not distinct from value.
+          - value: any
+            name: value
+            description: The not distinct from value.
+        return: BOOLEAN

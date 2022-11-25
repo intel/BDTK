@@ -39,7 +39,7 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
 
 bool isStringFunction(const std::string& function_name) {
   std::unordered_set<std::string> supportedStrFunctionSet{
-      "substring", "substr", "lower", "upper", "trim", "ltrim", "rtrim", "concat", "||"};
+      "substring", "lower", "upper", "trim", "ltrim", "rtrim", "concat", "||"};
   return supportedStrFunctionSet.find(function_name) != supportedStrFunctionSet.end();
 }
 
@@ -912,6 +912,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case OpSupportExprType::kUPPER_STRING_OPER:
     case OpSupportExprType::kTRIM_STRING_OPER:
     case OpSupportExprType::kSUBSTRING_STRING_OPER:
+    case OpSupportExprType::kCONCAT_STRING_OPER:
       return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
     case OpSupportExprType::kLIKE_EXPR:
       return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);

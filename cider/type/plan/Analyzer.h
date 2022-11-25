@@ -81,7 +81,8 @@ enum OpSupportExprType {
   kSUBSTRING_STRING_OPER = 31,
   kUPPER_STRING_OPER = 32,
   kTRIM_STRING_OPER = 33,
-  kUNDEFINED_EXPR = 34,
+  kCONCAT_STRING_OPER = 34,
+  kUNDEFINED_EXPR = 35,
 };
 
 namespace Analyzer {

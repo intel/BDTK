@@ -324,7 +324,6 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"LTRIM", SqlStringOpKind::LTRIM},
       {"RTRIM", SqlStringOpKind::RTRIM},
       {"SUBSTRING", SqlStringOpKind::SUBSTRING},
-      {"SUBSTR", SqlStringOpKind::SUBSTRING},
       {"OVERLAY", SqlStringOpKind::OVERLAY},
       {"REPLACE", SqlStringOpKind::REPLACE},
       {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
