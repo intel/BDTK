@@ -79,6 +79,18 @@ scalar_functions:
           - name: y
             value: interval_year
         return: date
+      - args:
+          - name: x
+            value: date
+          - name: y
+            value: interval_day
+        return: date
+      - args:
+          - name: x
+            value: timestamp
+          - name: y
+            value: interval_year
+        return: timestamp
   -
     name: "add_intervals"
     description: Add two intervals together.
@@ -271,3 +283,73 @@ scalar_functions:
           - name: y
             value: interval_year
         return: boolean
+  - 
+    name: "year"
+    description: >-
+      Cast the year `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64
+  - 
+    name: "week"
+    description: >-
+      Cast the week `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64
+  - 
+    name: "quarter"
+    description: >-
+      Cast the date `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64
+  - 
+    name: "month"
+    description: >-
+      Get the month `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64
+  - 
+    name: "day"
+    description: >-
+      Get the day `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64
+  - 
+    name: "day_of_week"
+    description: >-
+      Get the date of week `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64
+  - 
+    name: "day_of_year"
+    description: >-
+      Get the date of year `expression` to i64.
+    impls:
+      - args:
+          - value: date
+            name: expression
+            description: The expression to cast i64.
+        return: i64

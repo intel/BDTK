@@ -368,6 +368,10 @@ const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
     result_ptr = io::substrait::Type::decode("i64");
   } else if (argue_type_str == "year") {
     result_ptr = io::substrait::Type::decode("interval_year");
+  } else if (argue_type_str == "day") {
+    result_ptr = io::substrait::Type::decode("interval_day");
+  } else if (argue_type_str == "ts") {
+    result_ptr = io::substrait::Type::decode("timestamp");
   } else {
     result_ptr = io::substrait::Type::decode(argue_type_str);
   }

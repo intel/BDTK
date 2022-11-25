@@ -762,6 +762,84 @@ scalar_functions:
           - value: i64
             name: "n"
         return: i64
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i8
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i8
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i16
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i16
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i32
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i32
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i64
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i64
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: fp32
+            name: expression
+            description: The expression to test for in the value list.
+          - value: fp32
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: fp64
+            name: expression
+            description: The expression to test for in the value list.
+          - value: fp64
+            name: list
+            description: The value list.
+        return: BOOLEAN
 
 aggregate_functions:
   - name: "sum"
