@@ -84,6 +84,8 @@ std::vector<substrait::Type> SingleNodeValidator::getRelOutputTypes(
               output_types.emplace_back(getExprOutputType(s_expr, input_types));
             } else {
               CHECK(s_expr.has_selection());
+              auto type = input_types
+                  [s_expr.selection().direct_reference().struct_field().field()];
               output_types.emplace_back(
                   input_types
                       [s_expr.selection().direct_reference().struct_field().field()]);
@@ -182,7 +184,8 @@ bool SingleNodeValidator::validate(const substrait::Rel& rel_node) {
   const substrait::Rel::RelTypeCase& rel_type = rel_node.rel_type_case();
   switch (rel_type) {
     case substrait::Rel::RelTypeCase::kRead:
-      return validate(rel_node.read());
+      return validate(rel_node.read()) &&
+             isSupportedAllTypes(getRelOutputTypes(rel_node));
     case substrait::Rel::RelTypeCase::kFilter: {
       return validate(rel_node.filter()) &&
              isSupportedAllTypes(getRelOutputTypes(rel_node.filter().input()));

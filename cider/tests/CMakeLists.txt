@@ -98,3 +98,4 @@ if(DEFINED ENV{ISTHMUS_EXEC})
 endif()
 
 add_subdirectory(nextgen)
+add_subdirectory(plan)
