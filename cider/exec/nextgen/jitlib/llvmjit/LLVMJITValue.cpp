@@ -317,6 +317,45 @@ JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
       JITTypeTag::POINTER, parent_function_, new_llvm_value, "cast_ptr", false, type_tag);
 }
 
+JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_tag,
+                                                        bool is_signed) {
+  llvm::Type* source_type =
+      getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
+  llvm::Type* target_type =
+      getLLVMType(target_jit_tag, parent_function_.getLLVMContext());
+  llvm::Value* source_lv = load();
+  llvm::Value* target_lv = nullptr;
+  if (source_type->isIntegerTy() && target_type->isIntegerTy()) {
+    target_lv = getFunctionBuilder(parent_function_)
+                    .CreateIntCast(source_lv, target_type, is_signed);
+  } else if (source_type->isIntegerTy() && target_type->isFloatingPointTy()) {
+    if (is_signed) {
+      target_lv =
+          getFunctionBuilder(parent_function_).CreateSIToFP(source_lv, target_type);
+    } else {
+      target_lv =
+          getFunctionBuilder(parent_function_).CreateUIToFP(source_lv, target_type);
+    }
+  } else if (source_type->isFloatingPointTy() && target_type->isIntegerTy()) {
+    if (is_signed) {
+      target_lv =
+          getFunctionBuilder(parent_function_).CreateFPToSI(source_lv, target_type);
+    } else {
+      target_lv =
+          getFunctionBuilder(parent_function_).CreateFPToUI(source_lv, target_type);
+    }
+  } else if (source_type->isFloatingPointTy() && target_type->isFloatingPointTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateFPCast(source_lv, target_type);
+  }
+
+  return makeJITValuePointer<LLVMJITValue>(target_jit_tag,
+                                           parent_function_,
+                                           target_lv,
+                                           "cast_val",
+                                           false,
+                                           JITTypeTag::INVALID);
+}
+
 JITValuePointer LLVMJITValue::dereference() {
   if (JITTypeTag::POINTER != getValueTypeTag()) {
     LOG(FATAL) << "Invalid operation to dereference of a non-POINTER JITValue. Type="

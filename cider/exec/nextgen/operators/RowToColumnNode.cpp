@@ -49,6 +49,8 @@ class ColumnWriter {
       case kSMALLINT:
       case kINT:
       case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE:
         writeFixSizedTypeCol();
         break;
       default:

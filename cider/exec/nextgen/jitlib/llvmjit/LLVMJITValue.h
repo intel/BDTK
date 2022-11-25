@@ -70,6 +70,8 @@ class LLVMJITValue final : public JITValue {
   JITValuePointer ge(JITValue& rh) override;
 
   JITValuePointer castPointerSubType(JITTypeTag sub_type) override;
+  JITValuePointer castJITValuePrimitiveType(JITTypeTag target_jit_tag,
+                                            bool is_signed = true) override;
   JITValuePointer dereference() override;
 
  private:

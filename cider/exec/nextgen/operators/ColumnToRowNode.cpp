@@ -40,6 +40,8 @@ class ColumnReader {
       case kSMALLINT:
       case kINT:
       case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE:
         readFixSizedTypeCol();
         break;
       default:
