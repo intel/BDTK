@@ -1,15 +1,3 @@
-diff --git a/README.md b/README.md
-index 4607bb963a..f530d7585c 100644
---- a/README.md
-+++ b/README.md
-@@ -1,5 +1,7 @@
- # Presto [![Build Status](https://travis-ci.com/prestodb/presto.svg?branch=master)](https://travis-ci.com/prestodb/presto)
- 
-+This Presto is a forked version slightly changed to enable [BDTK](https://github.com/intel/BDTK).
-+
- Presto is a distributed SQL query engine for big data.
- 
- See the [User Manual](https://prestodb.github.io/docs/current/) for deployment instructions and end user documentation.
 diff --git a/presto-native-execution/CMakeLists.txt b/presto-native-execution/CMakeLists.txt
 index 4eadf42a7e..6b5972e128 100644
 --- a/presto-native-execution/CMakeLists.txt
@@ -26,7 +14,7 @@ index 4eadf42a7e..6b5972e128 100644
      OFF
      CACHE BOOL "Enable Velox tests")
 diff --git a/presto-native-execution/Makefile b/presto-native-execution/Makefile
-index cd16a50100..02f8f0ffa1 100644
+index be98b34c54..e5580ae10b 100644
 --- a/presto-native-execution/Makefile
 +++ b/presto-native-execution/Makefile
 @@ -21,12 +21,14 @@ CPU_TARGET ?= "avx"
@@ -54,10 +42,10 @@ index cd16a50100..02f8f0ffa1 100644
  
  build:					#: Build the software based in BUILD_DIR and BUILD_TYPE variables
 diff --git a/presto-native-execution/presto_cpp/main/CMakeLists.txt b/presto-native-execution/presto_cpp/main/CMakeLists.txt
-index bfe482f598..23db4ad076 100644
+index 1ade5b20e4..dcfb4f04e8 100644
 --- a/presto-native-execution/presto_cpp/main/CMakeLists.txt
 +++ b/presto-native-execution/presto_cpp/main/CMakeLists.txt
-@@ -15,6 +15,8 @@ add_subdirectory(common)
+@@ -16,6 +16,8 @@ add_subdirectory(common)
  add_subdirectory(thrift)
  add_subdirectory(connectors)
  
@@ -66,7 +54,7 @@ index bfe482f598..23db4ad076 100644
  add_library(
    presto_server_lib
    Announcer.cpp
-@@ -28,6 +30,24 @@ add_library(
+@@ -29,6 +31,24 @@ add_library(
    TaskManager.cpp
    TaskResource.cpp)
  
@@ -77,7 +65,7 @@ index bfe482f598..23db4ad076 100644
 +  velox_substrait_convertor
 +  velox_substrait_plan_converter
 +  velox_duckdb_parser
-+  velox_exec_test_util
++  velox_exec_test_lib
 +  velox_plan_transformer
 +  velox_arrow_bridge
 +  cider
@@ -91,7 +79,7 @@ index bfe482f598..23db4ad076 100644
  add_dependencies(presto_server_lib presto_protocol presto_types
                   presto_thrift-cpp2 presto_thrift_extra)
  
-@@ -60,7 +80,13 @@ target_link_libraries(
+@@ -61,7 +81,13 @@ target_link_libraries(
    ${ANTLR4_RUNTIME}
    ${GLOG}
    ${GFLAGS_LIBRARIES}
@@ -106,7 +94,7 @@ index bfe482f598..23db4ad076 100644
  
  add_executable(presto_server PrestoMain.cpp)
  
-@@ -77,6 +103,6 @@ if(PRESTO_ENABLE_PARQUET)
+@@ -79,6 +105,6 @@ if(PRESTO_ENABLE_PARQUET)
    target_link_libraries(presto_server velox_dwio_parquet_reader)
  endif()
  
@@ -117,7 +105,7 @@ index bfe482f598..23db4ad076 100644
 +#   add_subdirectory(tests)
 +# endif()
 diff --git a/presto-native-execution/presto_cpp/main/PrestoServer.cpp b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
-index 258ebebdc4..bac9a85cbf 100644
+index 8433765d7d..25979ae069 100644
 --- a/presto-native-execution/presto_cpp/main/PrestoServer.cpp
 +++ b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
 @@ -40,6 +40,7 @@
@@ -128,7 +116,7 @@ index 258ebebdc4..bac9a85cbf 100644
  
  #ifdef PRESTO_ENABLE_PARQUET
  #include "velox/dwio/parquet/RegisterParquetReader.h" // @manual
-@@ -235,6 +236,10 @@ void PrestoServer::run() {
+@@ -238,6 +239,10 @@ void PrestoServer::run() {
    velox::parquet::registerParquetReaderFactory();
  #endif
  
@@ -203,10 +191,10 @@ index 98fcbcc69d..c2031ea54f 100644
  
  } // namespace facebook::presto
 diff --git a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
-index 6902620edb..39f3beb6d3 100644
+index ac43dd58da..c8c480f32c 100644
 --- a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
 +++ b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
-@@ -575,9 +575,9 @@ std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
+@@ -582,9 +582,9 @@ std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
    if (auto hiveLayout =
            std::dynamic_pointer_cast<const protocol::HiveTableLayoutHandle>(
                tableHandle.connectorTableLayout)) {
