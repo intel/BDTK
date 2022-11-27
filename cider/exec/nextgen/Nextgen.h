@@ -25,4 +25,11 @@
 #include "exec/nextgen/parsers/Parser.h"
 #include "exec/nextgen/transformer/Transformer.h"
 
+namespace cider::exec::nextgen {
+
+std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
+                                                 jitlib::CompilationOptions co);
+
+}  // namespace cider::exec::nextgen
+
 #endif  // EXEC_NEXTGEN_NEXTGEN_H

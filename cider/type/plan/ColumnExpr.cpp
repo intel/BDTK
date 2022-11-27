@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "ColumnExpr.h"
+#include "type/plan/ColumnExpr.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;

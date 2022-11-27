@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "BinaryExpr.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/template/Execute.h"  // for is_unnest
+#include "type/plan/BinaryExpr.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;

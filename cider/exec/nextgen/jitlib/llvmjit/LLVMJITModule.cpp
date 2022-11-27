@@ -53,8 +53,10 @@ static llvm::MemoryBuffer* getRuntimeBuffer() {
   return runtime_function_buffer.get();
 }
 
-LLVMJITModule::LLVMJITModule(const std::string& name, bool should_copy_runtime_module)
-    : context_(std::make_unique<llvm::LLVMContext>()), engine_(nullptr) {
+LLVMJITModule::LLVMJITModule(const std::string& name,
+                             bool should_copy_runtime_module,
+                             CompilationOptions co)
+    : context_(std::make_unique<llvm::LLVMContext>()), engine_(nullptr), co_(co) {
   if (should_copy_runtime_module) {
     auto expected_res =
         llvm::parseBitcodeFile(getRuntimeBuffer()->getMemBufferRef(), *context_);

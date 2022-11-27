@@ -22,26 +22,24 @@
 #define NEXTGEN_OPERATORS_ARROWSOURCENODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
-#include "util/Logger.h"
+#include "exec/template/common/descriptors/InputDescriptors.h"
 
-class InputColDescriptor;
 namespace cider::exec::nextgen::operators {
 
 class ArrowSourceNode : public OpNode {
  public:
   ArrowSourceNode(ExprPtrVector&& output_exprs)
-      : OpNode("SourceNode", std::move(output_exprs), JITExprValueType::BATCH) {}
+      : OpNode("ArrowSourceNode", std::move(output_exprs), JITExprValueType::BATCH) {}
 
   ArrowSourceNode(const ExprPtrVector& output_exprs)
-      : OpNode("SourceNode", output_exprs, JITExprValueType::BATCH) {}
+      : OpNode("ArrowSourceNode", output_exprs, JITExprValueType::BATCH) {}
 
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 };
 
 class ArrowSourceTranslator : public Translator {
  public:
-  ArrowSourceTranslator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
-      : Translator(node, successor) {}
+  using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
 

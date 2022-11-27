@@ -45,6 +45,7 @@ struct CompilationOptions {
   bool use_default_col_range{false};
   bool use_cider_data_format{false};
   bool needs_error_check{false};
+  bool use_nextgen_compiler{false};
 
   static CompilationOptions defaults() {
     return CompilationOptions{true,

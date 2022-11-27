@@ -31,6 +31,7 @@ add_library(cider SHARED ${SRC_FILE})
 target_link_libraries(
   cider
   QueryEngine
+  nextgen
   memory
   cider_plan_parser
   ${Boost_LIBRARIES}

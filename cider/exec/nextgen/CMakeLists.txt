@@ -33,6 +33,6 @@ add_subdirectory(transformer)
 
 add_library(
   nextgen STATIC
-  $<TARGET_OBJECTS:cider_operators> $<TARGET_OBJECTS:cider_context>
+  Nextgen.cpp $<TARGET_OBJECTS:cider_operators> $<TARGET_OBJECTS:cider_context>
   $<TARGET_OBJECTS:cider_parsers> $<TARGET_OBJECTS:cider_transformer>)
-target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib cider)
+target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib)

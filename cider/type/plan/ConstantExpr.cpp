@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "ConstantExpr.h"
+#include "type/plan/ConstantExpr.h"
 
 namespace Analyzer {
 

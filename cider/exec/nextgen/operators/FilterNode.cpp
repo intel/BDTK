@@ -39,7 +39,7 @@ void FilterTranslator::codegen(context::CodegenContext& context) {
       ->condition([&]() {
         auto bool_init = func->createVariable(JITTypeTag::BOOL, "bool_init");
         bool_init = func->createConstant(JITTypeTag::BOOL, true);
-        auto&& [expr_type, exprs] = op_node_->getOutputExprs();
+        auto&& [expr_type, exprs] = node_->getOutputExprs();
         for (const auto& expr : exprs) {
           utils::FixSizeJITExprValue cond(expr->codegen(*func));
           bool_init = bool_init && cond.getValue();

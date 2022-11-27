@@ -33,13 +33,12 @@ class ProjectNode : public OpNode {
   ProjectNode(const ExprPtrVector& output_exprs)
       : OpNode("ProjectNode", output_exprs, JITExprValueType::ROW) {}
 
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 };
 
 class ProjectTranslator : public Translator {
  public:
-  ProjectTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {}
+  using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
 

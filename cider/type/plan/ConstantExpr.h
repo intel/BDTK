@@ -28,8 +28,8 @@
 #include <string>
 #include <vector>
 
-#include "Expr.h"
 #include "type/data/sqltypes.h"
+#include "type/plan/Expr.h"
 
 namespace Analyzer {
 
@@ -76,10 +76,11 @@ class Constant : public Expr {
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
 
- public:
   JITExprValue& codegen(JITFunction& func) override;
 
- protected:
+  ExprPtrRefVector get_children_reference() override { return {}; }
+
+ private:
   bool is_null;    // constant is NULL
   Datum constval;  // the constant value
   const std::list<std::shared_ptr<Analyzer::Expr>> value_list;
