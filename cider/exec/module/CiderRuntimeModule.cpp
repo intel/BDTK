@@ -777,8 +777,9 @@ void CiderRuntimeModule::initCiderAggTargetColExtractors() {
     group_by_agg_extractors_[i] =
         CiderAggTargetColExtractorBuilder::buildCiderAggTargetColExtractor(
             group_by_agg_hashtable_.get(), target_col_index, is_partial_avg_sum[i]);
-
-    if (kAVG == col_info.agg_type) {
+    if (is_partial_avg_sum[i] && kSUM == col_info.agg_type) {
+      children.emplace_back(kDOUBLE);
+    } else if (kAVG == col_info.agg_type) {
       children.emplace_back(kDOUBLE, col_info.arg_type_info.get_notnull());
       ++i;
     } else {

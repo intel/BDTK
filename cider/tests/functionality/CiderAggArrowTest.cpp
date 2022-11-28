@@ -955,6 +955,88 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedPartialAVG) {
   assertQueryArrow("multi_fp_avg_partial.json", expect_batch);
 }
 
+TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
+  std::vector<double> groupby_key({11.11, 22.22, 33.33});
+  std::vector<double> expect_sum1({11.11, 22.22, 33.33});
+  std::vector<double> expect_sum2({1.5, 4.6, 7.4});
+  std::vector<double> expect_sum3({0, 4.6, 7.4});
+  std::vector<double> expect_sum4({0, 0, 0});
+  std::vector<int64_t> expect_count1({1, 1, 1});
+  std::vector<int64_t> expect_count2({1, 1, 1});
+  std::vector<int64_t> expect_count3({0, 1, 1});
+  std::vector<int64_t> expect_count4({0, 0, 0});
+
+  ArrowSchema* expect_schema;
+  ArrowArray* expect_array;
+
+  std::tie(expect_schema, expect_array) =
+      ArrowArrayBuilder()
+          .setRowNum(3)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), groupby_key)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum1)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count1)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum2)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count2)
+          .addColumn<double>(
+              "", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum3, {true, false, false})
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count3)
+          .addColumn<double>(
+              "", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum4, {true, true, true})
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count4)
+          .build();
+
+  auto expect_batch = std::make_shared<CiderBatch>(
+      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+
+  std::string type_json = R"(
+    {
+        "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+        }
+    }
+    )";
+  ::substrait::Type col_type;
+  google::protobuf::util::JsonStringToMessage(type_json, &col_type);
+
+  std::string groupby_type_json = R"(
+    {
+      "fp64": {
+         "typeVariationReference": 0,
+         "nullability": "NULLABILITY_REQUIRED"
+      }
+    }
+  )";
+  ::substrait::Type groupby_type;
+  google::protobuf::util::JsonStringToMessage(groupby_type_json, &groupby_type);
+  std::vector<::substrait::Type> col_types;
+  col_types.push_back(groupby_type);
+  col_types.push_back(col_type);
+  col_types.push_back(col_type);
+  col_types.push_back(col_type);
+  col_types.push_back(col_type);
+  std::vector<std::string> col_names{"a0", "a1", "a2", "a3", "a4"};
+  auto schema = std::make_shared<CiderTableSchema>(col_names, col_types);
+  expect_batch->set_schema(schema);
+  // select col_fp64, avg(col_fp64), avg(col_fp32), avg(col_fp32_with_null),
+  // avg(col_fp32_all_null) group by col_fp64
+  assertQueryArrow("multi_fp_groupby_avg_partial.json", expect_batch, true);
+}
+
 class CiderCountDistinctConstantTest : public CiderTestBase {
  public:
   CiderCountDistinctConstantTest() {
