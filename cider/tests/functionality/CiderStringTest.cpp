@@ -1089,6 +1089,43 @@ TEST_F(CiderDuplicateStringArrowTest, MultiGroupKeyTest) {
       "SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2", res_batch, true);
 }
 
+class CiderSplitPartTestArrow : public CiderTestBase {
+ public:
+  CiderSplitPartTestArrow() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(12) NOT NULL, col_3 VARCHAR(12)))";
+
+    auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5};
+    auto string_vec = std::vector<std::string>{
+        "foobar,boo", "foobar,boo", "foo,bar,boo", "foo,bar,boo", ",", ","};
+    auto is_null = std::vector<bool>{false, true, false, true, false, true};
+    auto [data, offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+
+    std::tie(schema_, array_) =
+        ArrowArrayBuilder()
+            .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
+            .addUTF8Column("col_2", data, offsets)
+            .addUTF8Column("col_3", data, offsets, is_null)
+            .build();
+  }
+};
+
+TEST_F(CiderSplitPartTestArrow, SplitAndIndexingTest) {
+  // note that duckdb array indexing is one-based, so [2] references the second element
+  assertQueryArrow(
+      "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
+      "stringop_splitpart_indexing.json");
+  assertQueryArrow("SELECT col_2 FROM test WHERE STRING_SPLIT(col_2, ',')[1] = 'foo';",
+                   "stringop_splitpart_filter.json");
+  assertQueryArrow("SELECT col_3 FROM test WHERE STRING_SPLIT(col_3, ',')[1] = 'foo';",
+                   "stringop_splitpart_filter_null.json");
+  assertQueryArrow(
+      "SELECT STRING_SPLIT(col_2, ',')[-1], STRING_SPLIT(col_3, ',')[-1] FROM test;",
+      "stringop_splitpart_indexing_reversed.json");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);
