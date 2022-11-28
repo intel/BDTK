@@ -436,7 +436,7 @@ std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-std::vector<std::shared_ptr<Analyzer::Expr>> RegexpReplaceStringOper::foldLiteralStrCasts(
+std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
     const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
     int start_idx) {
   std::vector<std::shared_ptr<Analyzer::Expr>> folded_operands;
@@ -444,7 +444,14 @@ std::vector<std::shared_ptr<Analyzer::Expr>> RegexpReplaceStringOper::foldLitera
     if (i < start_idx) {
       folded_operands.push_back(operands[i]);
     } else {
-      folded_operands.push_back(remove_cast(operands[i].get())->deep_copy());
+      auto literal_arg =
+          dynamic_cast<const Analyzer::Constant*>(remove_cast(operands[i].get()));
+      if (literal_arg && literal_arg->get_type_info().is_string()) {
+        // only fold str casts
+        folded_operands.push_back(literal_arg->deep_copy());
+      } else {
+        folded_operands.push_back(operands[i]);
+      }
     }
   }
   return folded_operands;

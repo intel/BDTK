@@ -1316,6 +1316,11 @@ class StringOper : public Expr {
     return {};
   }
 
+ protected:
+  std::vector<std::shared_ptr<Analyzer::Expr>> foldLiteralStrCasts(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
+      int start_idx = 1);
+
  private:
   static SQLTypeInfo get_return_type(
       const SqlStringOpKind kind,
@@ -1603,11 +1608,6 @@ class RegexpReplaceStringOper : public StringOper {
         "input", "pattern", "replacement", "position", "occurrence"};
     return names;
   }
-
- private:
-  std::vector<std::shared_ptr<Analyzer::Expr>> foldLiteralStrCasts(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
-      int start_idx = 1);
 };
 
 class TryStringCastOper : public StringOper {
