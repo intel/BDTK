@@ -696,12 +696,12 @@ class CiderRegexpTestArrow : public CiderTestBase {
     auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     auto string_vec = std::vector<std::string>{"hello",
                                                "hello",
-                                               "helloworldddodo",
-                                               "helloworldddodo",
-                                               "foo@example.com",
-                                               "foo@example.com",
-                                               "112@example.com",
-                                               "112@example.com",
+                                               "helloworldhello",
+                                               "helloworldhello",
+                                               "pqrsttsrqp",
+                                               "pqrsttsrqp",
+                                               "112@mail123.com",
+                                               "112@mail123.com",
                                                "123qwerty123",
                                                "123qwerty123",
                                                "",
@@ -721,9 +721,6 @@ class CiderRegexpTestArrow : public CiderTestBase {
 };
 
 TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
-  // in duckdb, regexp_replace only supports replacing the FIRST or ALL occurrences
-  // the behaviour is specified by an optional 'g' argument
-
   // replace first
   assertQueryArrow(
       "SELECT "
@@ -732,6 +729,8 @@ TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
       "FROM test;",
       "stringop_regexp_replace_first.json");
   // replace all
+  // in duckdb, regexp_replace only supports replacing the FIRST or ALL occurrences
+  // the behaviour is controlled by an optional 'g' argument
   assertQueryArrow(
       "SELECT "
       "REGEXP_REPLACE(col_2, '[wert]', 'yo', 'g'), "
@@ -742,35 +741,111 @@ TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
 
-  // replace second
-  // REGEXP_REPLACE(col, '[0-9]+', '<digits>');
-  auto replace_second = std::vector<std::string>{"hello",
-                                                 "hello",
-                                                 "helloworldddodo",
-                                                 "helloworldddodo",
-                                                 "foo@example.com",
-                                                 "foo@example.com",
-                                                 "112@example.com",
-                                                 "112@example.com",
-                                                 "123qwerty<digits>",
-                                                 "123qwerty<digits>",
-                                                 "",
-                                                 ""};
-  const auto [replace_second_data, replace_second_offsets] =
-      ArrowBuilderUtils::createDataAndOffsetFromStrVector(replace_second);
-  auto replace_second_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
-      ArrowArrayBuilder()
-          .addUTF8Column("col_2", replace_second_data, replace_second_offsets)
-          .addUTF8Column("col_3", replace_second_data, replace_second_offsets, is_null)
-          .build());
-  assertQueryArrow("stringop_regexp_replace_second.json", replace_second_expected);
+  {
+    // replace second
+    // REGEXP_REPLACE(col, '[0-9]+', '<digits>');
+    auto replaced = std::vector<std::string>{"hello",
+                                             "hello",
+                                             "helloworldhello",
+                                             "helloworldhello",
+                                             "pqrsttsrqp",
+                                             "pqrsttsrqp",
+                                             "112@mail<digits>.com",
+                                             "112@mail<digits>.com",
+                                             "123qwerty<digits>",
+                                             "123qwerty<digits>",
+                                             "",
+                                             ""};
+    const auto [replaced_data, replaced_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", replaced_data, replaced_offsets)
+            .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_replace_second.json", replace_expected);
+  }
+  {
+    // replace with starting position
+    // REGEXP_REPLACE(col, '[l]{2}', <two-l>, position=10)
+    auto replaced = std::vector<std::string>{"hello",
+                                             "hello",
+                                             "helloworldhe<two-l>o",
+                                             "helloworldhe<two-l>o",
+                                             "pqrsttsrqp",
+                                             "pqrsttsrqp",
+                                             "112@mail123.com",
+                                             "112@mail123.com",
+                                             "123qwerty123",
+                                             "123qwerty123",
+                                             "",
+                                             ""};
+    const auto [replaced_data, replaced_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", replaced_data, replaced_offsets)
+            .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_replace_position.json", replace_expected);
+  }
 }
 
 TEST_F(CiderRegexpTestArrow, RegexpReplaceExtendedTest) {
   /// NOTE: (YBRua) substrait requires occurrence >= 0 & position > 0
   /// but currently implementation also handled cases where occurence < 0 or position < 0
   /// these cases are also tested here for completeness
-  /// although strictly speaking these substrait plans are invalid
+  /// but note that, strictly speaking, these substrait plans are invalid
+  const auto is_null = std::vector<bool>{
+      false, true, false, true, false, true, false, true, false, true, false, true};
+  {
+    // negative occurrence: replace the last second occurrence
+    // REGEXP_REPLACE(col, [0-9]+, <digits>, occurrence=-2);
+    auto replaced = std::vector<std::string>{"hello",
+                                             "hello",
+                                             "helloworldhello",
+                                             "helloworldhello",
+                                             "pqrsttsrqp",
+                                             "pqrsttsrqp",
+                                             "<digits>@mail123.com",
+                                             "<digits>@mail123.com",
+                                             "<digits>qwerty123",
+                                             "<digits>qwerty123",
+                                             "",
+                                             ""};
+    const auto [replaced_data, replaced_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", replaced_data, replaced_offsets)
+            .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_replace_neg_occ.json", replace_expected);
+  }
+  {
+    // negative position: start search from the last 5 characters
+    // REGEXP_REPLACE(col, [0-9]+, <digits>, position=-5);
+    auto replaced = std::vector<std::string>{"he<two-l>o",
+                                             "he<two-l>o",
+                                             "helloworldhe<two-l>o",
+                                             "helloworldhe<two-l>o",
+                                             "pqrsttsrqp",
+                                             "pqrsttsrqp",
+                                             "112@mail123.com",
+                                             "112@mail123.com",
+                                             "123qwerty123",
+                                             "123qwerty123",
+                                             "",
+                                             ""};
+    const auto [replaced_data, replaced_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", replaced_data, replaced_offsets)
+            .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_replace_neg_pos.json", replace_expected);
+  }
 }
 
 class CiderConstantStringTest : public CiderTestBase {
