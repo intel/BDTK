@@ -38,6 +38,8 @@ void CiderPipelineOperator::addInput(facebook::velox::RowVectorPtr input) {
 
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(
     facebook::velox::ContinueFuture* future) {
+
+  // TODO: return BlockingReason from BatchProcessor::getState
   return CiderOperator::isBlocked(future);
 }
 
@@ -46,6 +48,7 @@ bool CiderPipelineOperator::isFinished() {
 }
 
 facebook::velox::RowVectorPtr CiderPipelineOperator::getOutput() {
+  //TODO: need to refactor when integrate with StatefulProcessor
   if (!input_) {
     if (noMoreInput_) {
       finished_ = true;

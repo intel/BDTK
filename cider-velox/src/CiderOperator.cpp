@@ -21,7 +21,6 @@
 
 #include "CiderOperator.h"
 
-#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -36,6 +35,8 @@
 #include "CiderStatefulOperator.h"
 #include "CiderStatelessOperator.h"
 #include "DataConvertor.h"
+#include "CiderVeloxOptions.h"
+#include "CiderPipelineOperator.h"
 
 namespace facebook::velox::plugin {
 
@@ -66,18 +67,24 @@ CiderOperator::CiderOperator(int32_t operatorId,
   }
   // hardcode, init a DataConvertor here.
   dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT);
+
 }
 
 std::unique_ptr<CiderOperator> CiderOperator::Make(
     int32_t operatorId,
     exec::DriverCtx* driverCtx,
     const std::shared_ptr<const CiderPlanNode>& ciderPlanNode) {
-  bool isStateful = ciderPlanNode->isKindOf(CiderPlanNodeKind::kAggregation);
-  if (isStateful) {
-    return std::make_unique<CiderStatefulOperator>(operatorId, driverCtx, ciderPlanNode);
+  if (FLAGS_use_next_gen_compiler) {
+    return std::make_unique<CiderPipelineOperator>(operatorId, driverCtx, ciderPlanNode);
   } else {
-    return std::make_unique<CiderStatelessOperator>(operatorId, driverCtx, ciderPlanNode);
+    bool isStateful = ciderPlanNode->isKindOf(CiderPlanNodeKind::kAggregation);
+    if (isStateful) {
+      return std::make_unique<CiderStatefulOperator>(operatorId, driverCtx, ciderPlanNode);
+    } else {
+      return std::make_unique<CiderStatelessOperator>(operatorId, driverCtx, ciderPlanNode);
+    }
   }
+
 }
 
 bool CiderOperator::needsInput() const {
