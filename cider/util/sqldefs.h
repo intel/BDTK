@@ -328,6 +328,8 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"OVERLAY", SqlStringOpKind::OVERLAY},
       {"REPLACE", SqlStringOpKind::REPLACE},
       {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
+      // temporary workaround because split(str) -> array<string> is not supported
+      {"STRING_SPLIT", SqlStringOpKind::SPLIT_PART},
       {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
       {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
       {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},

@@ -1429,6 +1429,42 @@ class TrimStringOper : public StringOper {
   }
 };
 
+class SplitPartStringOper : public StringOper {
+ public:
+  SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
+                      const std::shared_ptr<Analyzer::Expr>& delimiter,
+                      const std::shared_ptr<Analyzer::Expr>& split_part)
+      : StringOper(SqlStringOpKind::SPLIT_PART,
+                   {operand, delimiter, split_part},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  SplitPartStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::SPLIT_PART,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  SplitPartStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 3UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand", "delimiter", "split_part"};
+    return names;
+  }
+};
+
 class SubstringStringOper : public StringOper {
  public:
   SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
