@@ -17,9 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# TODO: Temporarily disable benchmark target until we finish nextgen test
-# framework and integrate the target with the new framework.
-# add_subdirectory(benchmark)
-add_subdirectory(jitlib)
-add_subdirectory(compiler)
-add_subdirectory(functional)
+set(NEXTGEN_TEST_DEPS nextgen test_utils cider_plan_parser)
+
+add_executable(CiderUOperNextgenTest CiderUOperNextgenTest.cpp)
+target_link_libraries(CiderUOperNextgenTest ${EXECUTE_TEST_LIBS}
+                      ${NEXTGEN_TEST_DEPS})
+add_test(CiderUOperNextgenTest ${EXECUTABLE_OUTPUT_PATH}/CiderUOperNextgenTest
+         ${TEST_ARGS})

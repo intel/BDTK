@@ -41,6 +41,7 @@
 #include "ColumnExpr.h"
 #include "ConstantExpr.h"
 #include "Expr.h"
+#include "UnaryExpr.h"
 #include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
@@ -104,64 +105,6 @@ class ExpressionTuple : public Expr {
 
  private:
   const std::vector<std::shared_ptr<Analyzer::Expr>> tuple_;
-};
-
-/*
- * @type UOper
- * @brief represents unary operator expressions.  operator types include
- * kUMINUS, kISNULL, kEXISTS, kCAST
- */
-class UOper : public Expr {
- public:
-  UOper(const SQLTypeInfo& ti, bool has_agg, SQLOps o, std::shared_ptr<Analyzer::Expr> p)
-      : Expr(ti, has_agg), optype(o), operand(p) {}
-  UOper(SQLTypes t, SQLOps o, std::shared_ptr<Analyzer::Expr> p)
-      : Expr(t, o == kISNULL ? true : p->get_type_info().get_notnull())
-      , optype(o)
-      , operand(p) {}
-  SQLOps get_optype() const { return optype; }
-  const Expr* get_operand() const { return operand.get(); }
-  std::shared_ptr<Analyzer::Expr> get_non_const_own_operand() const { return operand; }
-  const std::shared_ptr<Analyzer::Expr> get_own_operand() const { return operand; }
-  void check_group_by(
-      const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const override;
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-  void group_predicates(std::list<const Expr*>& scan_predicates,
-                        std::list<const Expr*>& join_predicates,
-                        std::list<const Expr*>& const_predicates) const override;
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override {
-    operand->collect_rte_idx(rte_idx_set);
-  }
-  void collect_column_var(
-      std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
-          colvar_set,
-      bool include_agg) const override {
-    operand->collect_column_var(colvar_set, include_agg);
-  }
-  std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
-    return makeExpr<UOper>(
-        type_info, contains_agg, optype, operand->rewrite_with_targetlist(tlist));
-  }
-  std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
-    return makeExpr<UOper>(
-        type_info, contains_agg, optype, operand->rewrite_with_child_targetlist(tlist));
-  }
-  std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
-    return makeExpr<UOper>(
-        type_info, contains_agg, optype, operand->rewrite_agg_to_var(tlist));
-  }
-  bool operator==(const Expr& rhs) const override;
-  std::string toString() const override;
-  void find_expr(bool (*f)(const Expr*),
-                 std::list<const Expr*>& expr_list) const override;
-  std::shared_ptr<Analyzer::Expr> add_cast(const SQLTypeInfo& new_type_info) override;
-
- protected:
-  SQLOps optype;  // operator type, e.g., kUMINUS, kISNULL, kEXISTS
-  std::shared_ptr<Analyzer::Expr> operand;  // operand expression
 };
 
 /**
