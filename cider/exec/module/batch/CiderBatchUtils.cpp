@@ -435,7 +435,7 @@ std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index) {
   return std::string(res);
 }
 
-int convertToStructArrow(ArrowArrayBuilder& builder,
+int convertToArrowStruct(ArrowArrayBuilder& builder,
                          const ::substrait::Type type,
                          const int8_t** table_ptr,
                          int table_ptr_idx,
@@ -467,7 +467,7 @@ int convertToStructArrow(ArrowArrayBuilder& builder,
   ArrowArrayBuilder subBuilder;
   int table_ptr_num = 0;
   for (auto subType : type.struct_().types()) {
-    table_ptr_num += convertToStructArrow(
+    table_ptr_num += convertToArrowStruct(
         subBuilder, subType, table_ptr, table_ptr_idx, table_row_num, column_num, names);
     table_ptr_idx += table_ptr_num;
   }
@@ -476,7 +476,7 @@ int convertToStructArrow(ArrowArrayBuilder& builder,
   return table_ptr_num;
 }
 
-CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
+CiderBatch convertToArrow(const CiderBatch& output_batch) {
   std::shared_ptr<CiderTableSchema> table_schema = output_batch.schema();
   auto column_num = table_schema->getFlattenColCount();
   auto arrow_colum_num = output_batch.column_num();
@@ -489,7 +489,7 @@ CiderBatch convertToArrowRepresentation(const CiderBatch& output_batch) {
   const int8_t** table_ptr = output_batch.table();
   int table_ptr_idx = 0;
   for (auto type : types) {
-    table_ptr_idx += convertToStructArrow(
+    table_ptr_idx += convertToArrowStruct(
         builder, type, table_ptr, table_ptr_idx, table_row_num, column_num, names);
   }
   auto schema_and_array = builder.build();
