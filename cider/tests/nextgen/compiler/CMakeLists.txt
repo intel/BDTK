@@ -20,7 +20,12 @@
 set(NEXTGEN_TEST_DEPS nextgen test_utils cider_plan_parser)
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
+add_executable(FilterProjectTest FilterProjectTest.cpp)
 target_link_libraries(NextgenCompilerTest ${EXECUTE_TEST_LIBS}
                       ${NEXTGEN_TEST_DEPS})
+target_link_libraries(FilterProjectTest ${EXECUTE_TEST_LIBS}
+                      ${NEXTGEN_TEST_DEPS})
 add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
+         ${TEST_ARGS})
+add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
          ${TEST_ARGS})
