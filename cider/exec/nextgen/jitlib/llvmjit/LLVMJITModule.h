@@ -54,9 +54,7 @@ class LLVMJITModule final : public JITModule {
  public:
   explicit LLVMJITModule(const std::string& name,
                          bool should_copy_runtime_module = false,
-                         CompilationOptions co = CompilationOptions{});
-
-  LLVMJITModule(const std::string& name, CompilationOptions co);
+                         const CompilationOptions& co = CompilationOptions{});
 
   llvm::LLVMContext& getLLVMContext() { return *context_; }
 

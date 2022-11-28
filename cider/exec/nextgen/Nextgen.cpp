@@ -24,7 +24,7 @@
 namespace cider::exec::nextgen {
 
 std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
-                                                 jitlib::CompilationOptions co) {
+                                                 const jitlib::CompilationOptions& co) {
   auto context = std::make_unique<context::CodegenContext>();
   jitlib::LLVMJITModule module("codegen", true, co);
 

@@ -55,7 +55,7 @@ static llvm::MemoryBuffer* getRuntimeBuffer() {
 
 LLVMJITModule::LLVMJITModule(const std::string& name,
                              bool should_copy_runtime_module,
-                             CompilationOptions co)
+                             const CompilationOptions& co)
     : context_(std::make_unique<llvm::LLVMContext>()), engine_(nullptr), co_(co) {
   if (should_copy_runtime_module) {
     auto expected_res =
@@ -69,15 +69,6 @@ LLVMJITModule::LLVMJITModule(const std::string& name,
   } else {
     module_ = std::make_unique<llvm::Module>(name, *context_);
   }
-  CHECK(module_);
-}
-
-LLVMJITModule::LLVMJITModule(const std::string& name, CompilationOptions co)
-    : context_(std::make_unique<llvm::LLVMContext>())
-    , module_(std::make_unique<llvm::Module>(name, *context_))
-    , engine_(nullptr)
-    , co_(co) {
-  CHECK(context_);
   CHECK(module_);
 }
 

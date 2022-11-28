@@ -28,7 +28,7 @@
 namespace cider::exec::nextgen {
 
 std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
-                                                 jitlib::CompilationOptions co);
+                                                 const jitlib::CompilationOptions& co);
 
 }  // namespace cider::exec::nextgen
 
