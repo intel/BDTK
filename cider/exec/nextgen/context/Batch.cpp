@@ -24,6 +24,7 @@
 
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
+#include "exec/nextgen/utils/FunctorUtils.h"
 
 namespace cider::exec::nextgen::context {
 
@@ -34,9 +35,8 @@ void Batch::reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator) {
   schema_ = *schema;
   CiderBatchUtils::freeArrowSchema(schema);
 
-  // TODO (bigPYJ1151): replace std::function with template wapper
-  std::function<void(ArrowSchema*, ArrowArray*)> builder =
-      [&allocator, &builder](ArrowSchema* schema, ArrowArray* array) {
+  auto builder = utils::RecursiveFunctor{
+      [&allocator](auto&& builder, ArrowSchema* schema, ArrowArray* array) -> void {
         array->length = 0;
         array->null_count = 0;
         array->offset = 0;
@@ -54,7 +54,7 @@ void Batch::reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator) {
         for (size_t i = 0; i < schema->n_children; ++i) {
           builder(schema->children[i], array->children[i]);
         }
-      };
+      }};
 
   builder(&schema_, &array_);
 }
