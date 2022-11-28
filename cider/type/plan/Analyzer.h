@@ -1582,11 +1582,12 @@ class RegexpReplaceStringOper : public StringOper {
                           const std::shared_ptr<Analyzer::Expr>& replacement,
                           const std::shared_ptr<Analyzer::Expr>& position,
                           const std::shared_ptr<Analyzer::Expr>& occurrence)
-      : StringOper(SqlStringOpKind::REGEXP_REPLACE,
-                   {input, pattern, replacement, position, occurrence},
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
+      : StringOper(
+            SqlStringOpKind::REGEXP_REPLACE,
+            foldLiteralStrCasts({input, pattern, replacement, position, occurrence}),
+            getMinArgs(),
+            getExpectedTypeFamilies(),
+            getArgNames()) {}
 
   RegexpReplaceStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
