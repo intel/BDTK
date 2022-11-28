@@ -96,6 +96,15 @@ class CiderUOperNextgenTest : public ::testing::Test {
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
     EXPECT_EQ(output_batch_array->length, expected_length);
+    auto check_array = [](ArrowArray* array, size_t expect_len) {
+      EXPECT_EQ(array->length, expect_len);
+      int32_t* data_buffer = (int32_t*)array->buffers[1];
+      for (size_t i = 0; i < expect_len; ++i) {
+        std::cout << data_buffer[i] << " ";
+      }
+      std::cout << std::endl;
+    };
+    check_array(output_batch_array->children[0], expected_length);
   }
 };
 
