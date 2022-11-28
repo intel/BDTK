@@ -20,6 +20,7 @@
  */
 
 #include "CiderPipelineOperator.h"
+#include "Allocator.h"
 #include "velox/vector/arrow/Abi.h"
 #include "velox/vector/arrow/Bridge.h"
 
@@ -31,9 +32,24 @@ bool CiderPipelineOperator::needsInput() const {
 
 void CiderPipelineOperator::addInput(facebook::velox::RowVectorPtr input) {
   this->input_ = std::move(input);
-  auto inBatch = dataConvertor_->convertToCider(
-      input_, input_->size(), &convertorInternalCounter, operatorCtx_->pool());
-  ciderRuntimeModule_->processNextBatch(inBatch);
+  if (is_using_arrow_format_) {
+    for (size_t i = 0; i < input_->childrenSize(); i++) {
+      input_->childAt(i)->mutableRawNulls();
+    }
+    ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
+    exportToArrow(input_, *inputArrowArray);
+    ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
+    exportToArrow(input_, *inputArrowSchema);
+
+    auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
+    auto inBatch =
+        CiderBatchUtils::createCiderBatch(allocator, inputArrowSchema, inputArrowArray);
+    batchProcessor_->processNextBatch(std::move(inBatch));
+  } else {
+    auto inBatch = dataConvertor_->convertToCider(
+        input_, input_->size(), &convertorInternalCounter, operatorCtx_->pool());
+    batchProcessor_->processNextBatch(std::make_shared<CiderBatch>(inBatch));
+  }
 }
 
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(
@@ -57,8 +73,6 @@ facebook::velox::RowVectorPtr CiderPipelineOperator::getOutput() {
   input_ = nullptr;
 
   // TODO: will be changed After refactor with arrow format
-  // In order to preserve the lifecycle of unique_ptr<>
-  CiderRuntimeModule::ReturnCode ret;
   auto output_ = batchProcessor_->getResult();
 
   if (is_using_arrow_format_) {
