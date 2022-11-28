@@ -23,12 +23,12 @@
 #include "StatefulProcessor.h"
 #include "StatelessProcessor.h"
 
-namespace cider::exec::processor {
+namespace cider::processor {
 
 namespace substrait_plan {
 
-bool hasAggregateRel(const ::substrait::Plan* plan) {
-  for (auto& rel : plan->relations()) {
+bool hasAggregateRel(const ::substrait::Plan& plan) {
+  for (auto& rel : plan.relations()) {
     if (rel.has_root() && rel.root().has_input()) {
       return rel.root().input().has_aggregate();
     }
@@ -36,8 +36,8 @@ bool hasAggregateRel(const ::substrait::Plan* plan) {
   return false;
 }
 
-bool hasJoinRel(const ::substrait::Plan* plan) {
-  for (auto& rel : plan->relations()) {
+bool hasJoinRel(const ::substrait::Plan& plan) {
+  for (auto& rel : plan.relations()) {
     if (rel.has_root() && rel.root().has_input()) {
       return rel.root().input().has_join();
     }
@@ -47,16 +47,16 @@ bool hasJoinRel(const ::substrait::Plan* plan) {
 
 }  // namespace substrait_plan
 
-BatchProcessor::BatchProcessor(const ::substrait::Plan* plan,
-                               const ProcessorContextPtr& context)
+BatchProcessor::BatchProcessor(const ::substrait::Plan& plan,
+                               const BatchProcessorContextPtr& context)
     : plan_(plan), context_(context) {
   // TODO: construct ciderCompileModule and runtime module
 }
 
-std::shared_ptr<BatchProcessor> BatchProcessor::makeProcessor(
-    const ::substrait::Plan* plan,
-    const ProcessorContextPtr& context) {
-  bool isStatefulPipeline = substrait_plan::isStatefulPipeline(plan);
+std::shared_ptr<BatchProcessor> BatchProcessor::make(
+    const ::substrait::Plan& plan,
+    const BatchProcessorContextPtr& context) {
+  bool isStatefulPipeline = substrait_plan::hasAggregateRel(plan);
   if (isStatefulPipeline) {
     return std::make_shared<StatefulProcessor>(plan, context);
   } else {
@@ -72,8 +72,8 @@ std::shared_ptr<CiderBatch> BatchProcessor::getResult() {
   return std::move(this->inputBatch_);
 }
 
-ProcessorState BatchProcessor::getState() {
-  return ProcessorState::kRunning;
+BatchProcessorState BatchProcessor::getState() {
+  return BatchProcessorState::kRunning;
 }
 
-}  // namespace cider::exec::processor
+}  // namespace cider::processor

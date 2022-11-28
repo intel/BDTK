@@ -54,9 +54,9 @@ class BatchProcessor {
                                               const BatchProcessorContextPtr& context);
 
  protected:
-  BatchProcessor(const ::substrait::Plan* plan, const BatchProcessorContextPtr& context);
+  BatchProcessor(const ::substrait::Plan& plan, const BatchProcessorContextPtr& context);
 
-  const ::substrait::Plan* plan_;
+  const ::substrait::Plan plan_;
 
   const BatchProcessorContextPtr context_;
 

@@ -92,8 +92,8 @@ CiderPipelineOperator::CiderPipelineOperator(
     const std::shared_ptr<const CiderPlanNode>& ciderPlanNode)
     : CiderOperator(operatorId, driverCtx, ciderPlanNode) {
   auto context = std::make_shared<cider::processor::BatchProcessorContext>();
-  const auto& substraitPlan = ciderPlanNode->getSubstraitPlan();
-  batchProcessor_ = cider::processor::BatchProcessor::make(substraitPlan, context);
+  batchProcessor_ =
+      cider::processor::BatchProcessor::make(ciderPlanNode->getSubstraitPlan(), context);
 }
 
 }  // namespace facebook::velox::plugin
