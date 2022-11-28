@@ -366,12 +366,16 @@ const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
     result_ptr = io::substrait::Type::decode("i32");
   } else if (argue_type_str == "int64") {
     result_ptr = io::substrait::Type::decode("i64");
-  } else if (argue_type_str == "year") {
+  } else if (argue_type_str == "str") {
+    result_ptr = io::substrait::Type::decode("string");
+  } else if (argue_type_str == "year" || argue_type_str == "iyear") {
     result_ptr = io::substrait::Type::decode("interval_year");
-  } else if (argue_type_str == "day") {
+  } else if (argue_type_str == "day" || argue_type_str == "iday") {
     result_ptr = io::substrait::Type::decode("interval_day");
   } else if (argue_type_str == "ts") {
     result_ptr = io::substrait::Type::decode("timestamp");
+  } else if (argue_type_str == "tstz") {
+    result_ptr = io::substrait::Type::decode("timestamp_tz");
   } else {
     result_ptr = io::substrait::Type::decode(argue_type_str);
   }
