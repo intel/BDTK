@@ -67,7 +67,6 @@ CiderOperator::CiderOperator(int32_t operatorId,
   }
   // hardcode, init a DataConvertor here.
   dataConvertor_ = DataConvertor::create(CONVERT_TYPE::DIRECT);
-
 }
 
 std::unique_ptr<CiderOperator> CiderOperator::Make(
