@@ -19,7 +19,8 @@
  * under the License.
  */
 
-#pragma once
+#ifndef CIDER_BATCH_PROCESSOR_H
+#define CIDER_BATCH_PROCESSOR_H
 
 #include "BatchProcessorContext.h"
 #include "cider/CiderBatch.h"
@@ -50,7 +51,7 @@ class BatchProcessor {
   virtual bool isFinished() { return kFinished == state_; }
 
   static std::shared_ptr<BatchProcessor> make(const substrait::Plan& plan,
-      const BatchProcessorContextPtr& context);
+                                              const BatchProcessorContextPtr& context);
 
  protected:
   BatchProcessor(const ::substrait::Plan* plan, const BatchProcessorContextPtr& context);
@@ -67,3 +68,5 @@ class BatchProcessor {
 using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
 
 }  // namespace cider::processor
+
+#endif  // CIDER_BATCH_PROCESSOR_H

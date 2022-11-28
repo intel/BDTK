@@ -19,7 +19,8 @@
  * under the License.
  */
 
-#pragma once
+#ifndef CIDER_STATELESS_PROCESSOR_H
+#define CIDER_STATELESS_PROCESSOR_H
 
 #include "cider/processor/BatchProcessor.h"
 
@@ -27,7 +28,8 @@ namespace cider::processor {
 
 class StatelessProcessor : public BatchProcessor {
  public:
-  StatelessProcessor(const ::substrait::Plan* plan, const BatchProcessorContextPtr& context);
+  StatelessProcessor(const ::substrait::Plan* plan,
+                     const BatchProcessorContextPtr& context);
 
   void processNextBatch(std::shared_ptr<CiderBatch> batch) override;
 
@@ -36,4 +38,6 @@ class StatelessProcessor : public BatchProcessor {
   BatchProcessorState getState() override;
 };
 
-}  // namespace cider::exec::processor
+}  // namespace cider::processor
+
+#endif  // CIDER_STATELESS_PROCESSOR_H

@@ -19,7 +19,8 @@
  * under the License.
  */
 
-#pragma once
+#ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
+#define CIDER_BATCH_PROCESSOR_CONTEXT_H
 
 #include <memory>
 
@@ -30,3 +31,5 @@ class BatchProcessorContext {};
 using BatchProcessorContextPtr = std::shared_ptr<const BatchProcessorContext>;
 
 }  // namespace cider::processor
+
+#endif  // CIDER_BATCH_PROCESSOR_CONTEXT_H

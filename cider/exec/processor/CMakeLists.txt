@@ -17,10 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-set(PROCESSOR_SOURCE
-        BatchProcessor.cpp
-        StatelessProcessor.cpp
-        StatefulProcessor.cpp)
+set(PROCESSOR_SOURCE BatchProcessor.cpp StatelessProcessor.cpp
+                     StatefulProcessor.cpp)
 
 add_library(cider_processor STATIC ${PROCESSOR_SOURCE})

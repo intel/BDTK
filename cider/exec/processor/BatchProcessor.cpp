@@ -19,9 +19,9 @@
  * under the License.
  */
 
+#include "include/cider/processor/BatchProcessor.h"
 #include "StatefulProcessor.h"
 #include "StatelessProcessor.h"
-#include "include/cider/processor/BatchProcessor.h"
 
 namespace cider::exec::processor {
 

@@ -32,11 +32,11 @@
 #include "velox/vector/arrow/Bridge.h"
 
 #include "CiderJoinBuild.h"
+#include "CiderPipelineOperator.h"
 #include "CiderStatefulOperator.h"
 #include "CiderStatelessOperator.h"
-#include "DataConvertor.h"
 #include "CiderVeloxOptions.h"
-#include "CiderPipelineOperator.h"
+#include "DataConvertor.h"
 
 namespace facebook::velox::plugin {
 
@@ -78,12 +78,13 @@ std::unique_ptr<CiderOperator> CiderOperator::Make(
   } else {
     bool isStateful = ciderPlanNode->isKindOf(CiderPlanNodeKind::kAggregation);
     if (isStateful) {
-      return std::make_unique<CiderStatefulOperator>(operatorId, driverCtx, ciderPlanNode);
+      return std::make_unique<CiderStatefulOperator>(
+          operatorId, driverCtx, ciderPlanNode);
     } else {
-      return std::make_unique<CiderStatelessOperator>(operatorId, driverCtx, ciderPlanNode);
+      return std::make_unique<CiderStatelessOperator>(
+          operatorId, driverCtx, ciderPlanNode);
     }
   }
-
 }
 
 bool CiderOperator::needsInput() const {
