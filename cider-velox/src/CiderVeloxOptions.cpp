@@ -21,4 +21,4 @@
 
 #include "CiderVeloxOptions.h"
 
-DEFINE_bool(use_next_gen_compiler, false, "Use next generation compiler");
+DEFINE_bool(use_next_gen_compiler, false, "Use next generation compiler");\

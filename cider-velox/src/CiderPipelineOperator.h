@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include "CiderPipelineOperator.h"
 #include "CiderOperator.h"
+#include "CiderPipelineOperator.h"
 #include "cider/processor/BatchProcessor.h"
 
 namespace facebook::velox::plugin {
@@ -30,8 +30,8 @@ namespace facebook::velox::plugin {
 class CiderPipelineOperator : public CiderOperator {
  public:
   CiderPipelineOperator(int32_t operatorId,
-                exec::DriverCtx* driverCtx,
-                const std::shared_ptr<const CiderPlanNode>& ciderPlanNode);
+                        exec::DriverCtx* driverCtx,
+                        const std::shared_ptr<const CiderPlanNode>& ciderPlanNode);
 
   bool needsInput() const override;
 
@@ -46,4 +46,4 @@ class CiderPipelineOperator : public CiderOperator {
  private:
   cider::processor::BatchProcessorPtr batchProcessor_;
 };
-}
+}  // namespace facebook::velox::plugin
