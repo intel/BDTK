@@ -469,8 +469,8 @@ int convertToArrowStruct(ArrowArrayBuilder& builder,
   for (auto subType : type.struct_().types()) {
     auto struct_col_num = convertToArrowStruct(
         subBuilder, subType, table_ptr, table_ptr_idx, table_row_num, column_num, names);
-    table_ptr_idx+=struct_col_num;
-    table_ptr_num+=struct_col_num;
+    table_ptr_idx += struct_col_num;
+    table_ptr_num += struct_col_num;
   }
   auto schema_and_array = subBuilder.build();
   builder.addStructColumn(std::get<0>(schema_and_array), std::get<1>(schema_and_array));
@@ -489,6 +489,9 @@ CiderBatch convertToArrow(const CiderBatch& output_batch) {
   const auto& names = table_schema->getFlattenColNames();
   const int8_t** table_ptr = output_batch.table();
   int table_ptr_idx = 0;
+  // Every scalar column is flatten stored in table_ptr, while some types in schema are
+  // nested. The loop below will enter the struct type and construct ArrowArray
+  // recursively.
   for (auto type : types) {
     table_ptr_idx += convertToArrowStruct(
         builder, type, table_ptr, table_ptr_idx, table_row_num, column_num, names);
