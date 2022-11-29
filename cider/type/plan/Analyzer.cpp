@@ -299,6 +299,10 @@ SQLTypeInfo StringOper::get_return_type(
     const std::vector<std::shared_ptr<Analyzer::Expr>>& args) {
   CHECK_NE(kind, SqlStringOpKind::TRY_STRING_CAST)
       << "get_return_type for TRY_STRING_CAST disallowed.";
+  if (kind == SqlStringOpKind::CHAR_LENGTH) {
+    // ret-type of char_length should be int64
+    return SQLTypeInfo(kBIGINT, args[0]->get_type_info().get_notnull());
+  }
   if (args.empty()) {
     return SQLTypeInfo(kNULLT);
   } else if (dynamic_cast<const Analyzer::Constant*>(args[0].get())) {
@@ -390,6 +394,11 @@ void StringOper::check_operand_types(
       }
     }
   }
+}
+
+std::shared_ptr<Analyzer::Expr> CharLengthStringOper::deep_copy() const {
+  return makeExpr<Analyzer::CharLengthStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
 std::shared_ptr<Analyzer::Expr> LowerStringOper::deep_copy() const {

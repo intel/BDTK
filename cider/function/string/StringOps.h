@@ -75,7 +75,7 @@ struct StringOp {
                              ? NullableStrType()
                              : NullableStrType(var_str_optional_literal.value())) {}
 
-  virtual Datum numericEval(const std::string_view str) const {
+  virtual Datum numericEval(const std::string_view& str) const {
     UNREACHABLE() << "numericEval not allowed for this method";
     // Make compiler happy
     return NullDatum(SQLTypeInfo());
@@ -129,7 +129,18 @@ struct TryStringCast : public StringOp {
       : StringOp(SqlStringOpKind::TRY_STRING_CAST, return_ti, var_str_optional_literal) {}
 
   NullableStrType operator()(const std::string& str) const override;
-  Datum numericEval(const std::string_view str) const override;
+  Datum numericEval(const std::string_view& str) const override;
+};
+
+struct CharLength : public StringOp {
+ public:
+  CharLength(const std::optional<std::string>& var_str_optional_literal)
+      : StringOp(SqlStringOpKind::CHAR_LENGTH,
+                 SQLTypeInfo(kINT, true),
+                 var_str_optional_literal) {}
+
+  NullableStrType operator()(const std::string& str) const override;
+  Datum numericEval(const std::string_view& str) const override;
 };
 
 struct Lower : public StringOp {
@@ -441,7 +452,7 @@ class StringOps {
       : string_ops_(genStringOpsFromOpInfos(string_op_infos))
       , num_ops_(string_op_infos.size()) {}
 
-  Datum numericEval(const std::string_view str) const;
+  Datum numericEval(const std::string_view& str) const;
 
   std::string operator()(const std::string& str) const;
 
