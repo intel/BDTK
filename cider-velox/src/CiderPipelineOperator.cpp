@@ -54,8 +54,11 @@ void CiderPipelineOperator::addInput(facebook::velox::RowVectorPtr input) {
 
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(
     facebook::velox::ContinueFuture* future) {
-  // TODO: return BlockingReason from BatchProcessor::getState
-  return CiderOperator::isBlocked(future);
+  auto batchProcessState = batchProcessor_->getState();
+  if (cider::processor::BatchProcessorState::kWaitForJoinBuild == batchProcessState) {
+    return exec::BlockingReason::kWaitForJoinBuild;
+  }
+  return exec::BlockingReason::kNotBlocked;
 }
 
 bool CiderPipelineOperator::isFinished() {
