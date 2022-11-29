@@ -70,12 +70,11 @@ class InputAnalyzer {
       }
     }
 
-    for (size_t i = 0; i < input_exprs_.size(); ++i) {
-      if (nullptr == input_exprs_[i]) {
-        LOG(FATAL) << "Input column expr missed. Column descriptor = "
-                   << input_desc_[i].toString();
-      }
-    }
+    input_exprs_.erase(
+        std::remove_if(input_exprs_.begin(),
+                       input_exprs_.end(),
+                       [](const ExprPtr& input_expr) { return input_expr == nullptr; }),
+        input_exprs_.end());
 
     pipeline_.insert(pipeline_.begin(), createOpNode<ArrowSourceNode>(input_exprs_));
   }
@@ -129,6 +128,9 @@ OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
   OpPipeline ops;
 
   ExprPtrVector filters;
+  for (auto& filter_expr : eu.simple_quals) {
+    filters.push_back(filter_expr);
+  }
   for (auto& filter_expr : eu.quals) {
     filters.push_back(filter_expr);
   }

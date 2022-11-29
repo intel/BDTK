@@ -43,7 +43,7 @@ class ColumnWriter {
       , arrow_array_len_(arrow_array_len) {}
 
   void write() {
-    CHECK(0 == expr_->getLocalIndex());
+    // CHECK(0 == expr_->getLocalIndex());
     switch (expr_->get_type_info().get_type()) {
       case kTINYINT:
       case kSMALLINT:

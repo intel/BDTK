@@ -83,10 +83,6 @@ std::shared_ptr<Analyzer::Expr> Constant::deep_copy() const {
   return makeExpr<Constant>(type_info, is_null, d);
 }
 
-std::shared_ptr<Analyzer::Expr> UOper::deep_copy() const {
-  return makeExpr<UOper>(type_info, contains_agg, optype, operand->deep_copy());
-}
-
 std::shared_ptr<Analyzer::Expr> BinOper::deep_copy() const {
   return makeExpr<BinOper>(type_info,
                            contains_agg,
@@ -1662,25 +1658,6 @@ std::shared_ptr<Analyzer::Expr> Constant::add_cast(const SQLTypeInfo& new_type_i
   return shared_from_this();
 }
 
-std::shared_ptr<Analyzer::Expr> UOper::add_cast(const SQLTypeInfo& new_type_info) {
-  if (optype != kCAST) {
-    return Expr::add_cast(new_type_info);
-  }
-  if (type_info.is_string() && new_type_info.is_string() &&
-      new_type_info.get_compression() == kENCODING_DICT &&
-      type_info.get_compression() == kENCODING_NONE) {
-    const SQLTypeInfo oti = operand->get_type_info();
-    if (oti.is_string() && oti.get_compression() == kENCODING_DICT &&
-        (oti.get_comp_param() == new_type_info.get_comp_param() ||
-         oti.get_comp_param() == TRANSIENT_DICT(new_type_info.get_comp_param()))) {
-      auto result = operand;
-      operand = nullptr;
-      return result;
-    }
-  }
-  return Expr::add_cast(new_type_info);
-}
-
 std::shared_ptr<Analyzer::Expr> CaseExpr::add_cast(const SQLTypeInfo& new_type_info) {
   SQLTypeInfo ti = new_type_info;
   if (new_type_info.is_string() && new_type_info.get_compression() == kENCODING_DICT &&
@@ -1737,11 +1714,6 @@ void Var::check_group_by(
     CIDER_THROW(CiderCompileException,
                 "Internal error: invalid VAR in GROUP BY or HAVING.");
   }
-}
-
-void UOper::check_group_by(
-    const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
-  operand->check_group_by(groupby);
 }
 
 void BinOper::check_group_by(
@@ -1831,20 +1803,6 @@ void ColumnVar::group_predicates(std::list<const Expr*>& scan_predicates,
                                  std::list<const Expr*>& const_predicates) const {
   if (type_info.get_type() == kBOOLEAN) {
     scan_predicates.push_back(this);
-  }
-}
-
-void UOper::group_predicates(std::list<const Expr*>& scan_predicates,
-                             std::list<const Expr*>& join_predicates,
-                             std::list<const Expr*>& const_predicates) const {
-  std::set<int> rte_idx_set;
-  operand->collect_rte_idx(rte_idx_set);
-  if (rte_idx_set.size() > 1) {
-    join_predicates.push_back(this);
-  } else if (rte_idx_set.size() == 1) {
-    scan_predicates.push_back(this);
-  } else {
-    const_predicates.push_back(this);
   }
 }
 
@@ -2493,14 +2451,6 @@ bool Constant::operator==(const Expr& rhs) const {
   return Datum_equal(type_info, constval, rhs_c.get_constval());
 }
 
-bool UOper::operator==(const Expr& rhs) const {
-  if (typeid(rhs) != typeid(UOper)) {
-    return false;
-  }
-  const UOper& rhs_uo = dynamic_cast<const UOper&>(rhs);
-  return optype == rhs_uo.get_optype() && *operand == *rhs_uo.get_operand();
-}
-
 bool BinOper::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(BinOper)) {
     return false;
@@ -2814,37 +2764,6 @@ std::string Constant::toString() const {
   }
   str += ") ";
   return str;
-}
-
-std::string UOper::toString() const {
-  std::string op;
-  switch (optype) {
-    case kNOT:
-      op = "NOT ";
-      break;
-    case kUMINUS:
-      op = "- ";
-      break;
-    case kISNULL:
-      op = "IS NULL ";
-      break;
-    case kEXISTS:
-      op = "EXISTS ";
-      break;
-    case kCAST:
-      op = "CAST " + type_info.get_type_name() + "(" +
-           std::to_string(type_info.get_precision()) + "," +
-           std::to_string(type_info.get_scale()) + ") " +
-           type_info.get_compression_name() + "(" +
-           std::to_string(type_info.get_comp_param()) + ") ";
-      break;
-    case kUNNEST:
-      op = "UNNEST ";
-      break;
-    default:
-      break;
-  }
-  return "(" + op + operand->toString() + ") ";
 }
 
 std::string BinOper::toString() const {
@@ -3195,14 +3114,6 @@ void BinOper::find_expr(bool (*f)(const Expr*), std::list<const Expr*>& expr_lis
   }
   left_operand->find_expr(f, expr_list);
   right_operand->find_expr(f, expr_list);
-}
-
-void UOper::find_expr(bool (*f)(const Expr*), std::list<const Expr*>& expr_list) const {
-  if (f(this)) {
-    add_unique(expr_list);
-    return;
-  }
-  operand->find_expr(f, expr_list);
 }
 
 void InValues::find_expr(bool (*f)(const Expr*),
