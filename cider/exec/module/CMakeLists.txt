@@ -30,7 +30,6 @@ set(SRC_FILE
 add_library(cider SHARED ${SRC_FILE})
 target_link_libraries(
   cider
-  cider_processor
   QueryEngine
   memory
   cider_plan_parser

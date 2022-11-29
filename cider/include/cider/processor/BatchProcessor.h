@@ -36,6 +36,8 @@ enum BatchProcessorState {
 
 class BatchProcessor {
  public:
+  virtual ~BatchProcessor() = default;
+
   BatchProcessorContextPtr getContext() const { return context_; }
 
   virtual void processNextBatch(std::shared_ptr<CiderBatch> batch);

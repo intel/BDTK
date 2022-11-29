@@ -73,9 +73,6 @@ std::unique_ptr<CiderOperator> CiderOperator::Make(
     int32_t operatorId,
     exec::DriverCtx* driverCtx,
     const std::shared_ptr<const CiderPlanNode>& ciderPlanNode) {
-  if (FLAGS_use_next_gen_compiler) {
-    return std::make_unique<CiderPipelineOperator>(operatorId, driverCtx, ciderPlanNode);
-  } else {
     bool isStateful = ciderPlanNode->isKindOf(CiderPlanNodeKind::kAggregation);
     if (isStateful) {
       return std::make_unique<CiderStatefulOperator>(
@@ -84,7 +81,6 @@ std::unique_ptr<CiderOperator> CiderOperator::Make(
       return std::make_unique<CiderStatelessOperator>(
           operatorId, driverCtx, ciderPlanNode);
     }
-  }
 }
 
 bool CiderOperator::needsInput() const {
