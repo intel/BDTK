@@ -440,6 +440,7 @@ std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
     const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
     int start_idx) {
   std::vector<std::shared_ptr<Analyzer::Expr>> folded_operands;
+  folded_operands.reserve(operands.size());
   for (int i = 0; i < operands.size(); ++i) {
     if (i < start_idx) {
       folded_operands.push_back(operands[i]);
