@@ -485,11 +485,20 @@ std::string RegexpSubstr::get_sub_match(const std::smatch& match,
 std::pair<bool, int64_t> RegexpSubstr::set_sub_match_info(
     const std::string& regex_pattern,
     const int64_t sub_match_group_idx) {
-  if (regex_pattern.find("e", 0UL) == std::string::npos) {
-    return std::make_pair(false, 0UL);
+  // in OmnisciDb, whether to return submatches is controlled by an optional 'e' parameter
+  // <https://github.com/heavyai/heavydb/blob/master/Tests/StringFunctionsTest.cpp#L1353>
+  // but in regexp_extract, it should automatically return capturing groups
+  // whenever the parameter sub_match_group_idx > 0
+
+  // if (regex_pattern.find("e", 0UL) == std::string::npos) {
+  //   return std::make_pair(false, 0UL);
+  // }
+  if (sub_match_group_idx < 0) {
+    CIDER_THROW(CiderCompileException, "sub_match_group_idx must be non-negative");
   }
-  return std::make_pair(
-      true, sub_match_group_idx > 0L ? sub_match_group_idx - 1 : sub_match_group_idx);
+  bool do_sub_match = sub_match_group_idx > 0L;
+  return std::make_pair(do_sub_match,
+                        do_sub_match ? sub_match_group_idx - 1 : sub_match_group_idx);
 }
 
 std::string StringOps::operator()(const std::string& str) const {

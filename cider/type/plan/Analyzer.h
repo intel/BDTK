@@ -1317,6 +1317,11 @@ class RegexpExtractStringOper : public StringOper {
             OperandTypeFamily::STRING_FAMILY,
             OperandTypeFamily::INT_FAMILY};
   }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"input", "pattern", "group"};
+    return names;
+  }
 };
 
 class RegexpSubstrStringOper : public StringOper {
