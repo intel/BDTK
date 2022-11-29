@@ -789,6 +789,32 @@ TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
             .build());
     assertQueryArrow("stringop_regexp_replace_position.json", replace_expected);
   }
+  {
+    // replace with capturing groups
+    // substrait specification states that the replacement can refer to capturing groups
+    // the n-th capturing group can be refererenced by $n in the replacement
+    // REGEXP_REPLACE(col, '(h)([a-z])', 'Ha$2', occurrence=0)
+    auto replaced = std::vector<std::string>{"Haello",
+                                             "Haello",
+                                             "HaelloworldHaello",
+                                             "HaelloworldHaello",
+                                             "pqrsttsrqp",
+                                             "pqrsttsrqp",
+                                             "112@mail123.com",
+                                             "112@mail123.com",
+                                             "123qwerty123",
+                                             "123qwerty123",
+                                             "",
+                                             ""};
+    const auto [replaced_data, replaced_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", replaced_data, replaced_offsets)
+            .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_replace_capture.json", replace_expected);
+  }
 }
 
 TEST_F(CiderRegexpTestArrow, RegexpReplaceExtendedTest) {
