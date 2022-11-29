@@ -335,7 +335,7 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"SPLIT", SqlStringOpKind::STRING_SPLIT},
       {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
       {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
-      {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},
+      {"REGEXP_MATCH_SUBSTRING", SqlStringOpKind::REGEXP_SUBSTR},
       {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
       {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
       {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},

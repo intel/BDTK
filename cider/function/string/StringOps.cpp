@@ -697,13 +697,19 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
                                                    regex_params_literal);
     }
     case SqlStringOpKind::REGEXP_SUBSTR: {
-      CHECK_GE(num_non_variable_literals, 5UL);
-      CHECK_LE(num_non_variable_literals, 5UL);
+      // 3 required parameters and 3 options, although options are not supported for now
+      CHECK_GE(num_non_variable_literals, 3UL);
+      CHECK_LE(num_non_variable_literals, 6UL);
       const auto pattern_literal = string_op_info.getStringLiteral(1);
       const auto start_pos_literal = string_op_info.getIntLiteral(2);
       const auto occurrence_literal = string_op_info.getIntLiteral(3);
-      const auto regex_params_literal = string_op_info.getStringLiteral(4);
-      const auto sub_match_idx_literal = string_op_info.getIntLiteral(5);
+      // const auto case_sensitivitiy_literal = string_op_info.getStringLiteral(4);
+      // const auto multiline_literal = string_op_info.getIntLiteral(5);
+      // const auto dotall_literal = stringop_info.getIntLiteral(6);
+
+      std::string regex_params_literal = "c";  // case sensitive
+      int64_t sub_match_idx_literal = 0;       // return the entire match
+
       return std::make_unique<const RegexpSubstr>(var_string_optional_literal,
                                                   pattern_literal,
                                                   start_pos_literal,
