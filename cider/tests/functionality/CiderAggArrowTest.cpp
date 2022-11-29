@@ -631,8 +631,15 @@ TEST_F(CiderPartialAVGIntegerTest, singlePartialAVG) {
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
           .build();
 
-  auto expect_batch = std::make_shared<CiderBatch>(
-      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+  auto schema_and_array = ArrowArrayBuilder()
+                              .setRowNum(1)
+                              .addStructColumn(expect_schema, expect_array)
+                              .build();
+
+  auto expect_batch =
+      std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
+                                   std::get<1>(schema_and_array),
+                                   std::make_shared<CiderDefaultAllocator>());
 
   std::string type_json = R"(
     {
@@ -683,8 +690,15 @@ TEST_F(CiderPartialAVGIntegerTest, withNullPartialAVG) {
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
           .build();
 
-  auto expect_batch = std::make_shared<CiderBatch>(
-      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+  auto schema_and_array = ArrowArrayBuilder()
+                              .setRowNum(1)
+                              .addStructColumn(expect_schema, expect_array)
+                              .build();
+
+  auto expect_batch =
+      std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
+                                   std::get<1>(schema_and_array),
+                                   std::make_shared<CiderDefaultAllocator>());
 
   std::string type_json = R"(
     {
@@ -735,8 +749,15 @@ TEST_F(CiderPartialAVGIntegerTest, allNullPartialAVG) {
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
           .build();
 
-  auto expect_batch = std::make_shared<CiderBatch>(
-      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+  auto schema_and_array = ArrowArrayBuilder()
+                              .setRowNum(1)
+                              .addStructColumn(expect_schema, expect_array)
+                              .build();
+
+  auto expect_batch =
+      std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
+                                   std::get<1>(schema_and_array),
+                                   std::make_shared<CiderDefaultAllocator>());
 
   std::string type_json = R"(
     {
@@ -787,13 +808,20 @@ TEST_F(CiderPartialAVGIntegerTest, mixedPartialAVG) {
           .setRowNum(1)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum)
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
-          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_sum_bigint)
-          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum)
-          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count)
           .build();
 
-  auto expect_batch = std::make_shared<CiderBatch>(
-      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+  auto schema_and_array =
+      ArrowArrayBuilder()
+          .setRowNum(1)
+          .addStructColumn(expect_schema, expect_array)
+          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_sum_bigint)
+          .addStructColumn(expect_schema, expect_array)
+          .build();
+
+  auto expect_batch =
+      std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
+                                   std::get<1>(schema_and_array),
+                                   std::make_shared<CiderDefaultAllocator>());
 
   std::string type_json = R"(
     {
@@ -900,24 +928,49 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedPartialAVG) {
   std::vector<int64_t> expect_count4;
   expect_count4.push_back(0);
 
-  ArrowSchema* expect_schema;
-  ArrowArray* expect_array;
+  ArrowSchema** expect_schemas = (ArrowSchema**)malloc(4 * sizeof(ArrowSchema*));
+  ArrowArray** expect_arrays = (ArrowArray**)malloc(4 * sizeof(ArrowArray*));
 
-  std::tie(expect_schema, expect_array) =
+  std::tie(expect_schemas[0], expect_arrays[0]) =
       ArrowArrayBuilder()
           .setRowNum(1)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum1)
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count1)
+          .build();
+
+  std::tie(expect_schemas[1], expect_arrays[1]) =
+      ArrowArrayBuilder()
+          .setRowNum(1)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum2)
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count2)
+          .build();
+
+  std::tie(expect_schemas[2], expect_arrays[2]) =
+      ArrowArrayBuilder()
+          .setRowNum(1)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum3)
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count3)
+          .build();
+
+  std::tie(expect_schemas[3], expect_arrays[3]) =
+      ArrowArrayBuilder()
+          .setRowNum(1)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum4, {true})
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count4)
           .build();
 
-  auto expect_batch = std::make_shared<CiderBatch>(
-      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+  auto schema_and_array = ArrowArrayBuilder()
+                              .setRowNum(1)
+                              .addStructColumn(expect_schemas[0], expect_arrays[0])
+                              .addStructColumn(expect_schemas[1], expect_arrays[1])
+                              .addStructColumn(expect_schemas[2], expect_arrays[2])
+                              .addStructColumn(expect_schemas[3], expect_arrays[3])
+                              .build();
+
+  auto expect_batch =
+      std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
+                                   std::get<1>(schema_and_array),
+                                   std::make_shared<CiderDefaultAllocator>());
 
   std::string type_json = R"(
     {

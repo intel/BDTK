@@ -630,7 +630,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
     // reset need to be done after data consumed, like bitmap for count(distinct)
     resetAggVal();
     if (ciderCompilationOption_.use_cider_data_format) {
-      auto arrow_out_batch = CiderBatchUtils::convertToArrowRepresentation(out_batch);
+      auto arrow_out_batch = CiderBatchUtils::convertToArrow(out_batch);
       return std::make_pair(
           kNoMoreOutput,
           std::move(std::make_unique<CiderBatch>(std::move(arrow_out_batch))));
