@@ -21,3 +21,4 @@ set(PROCESSOR_SOURCE BatchProcessor.cpp StatelessProcessor.cpp
                      StatefulProcessor.cpp)
 
 add_library(cider_processor STATIC ${PROCESSOR_SOURCE})
+target_link_libraries(cider_processor substrait)
