@@ -118,7 +118,7 @@ class CiderCompileModule::Impl {
     if (co.use_nextgen_compiler) {
       cider::jitlib::CompilationOptions co;
       co.dump_ir = true;
-      codegen_ctx = cider::exec::nextgen::compile(*ra_exe_unit_, co);
+      codegen_ctx_ = cider::exec::nextgen::compile(*ra_exe_unit_, co);
     }
 
     // if this is a join query and don't feed a valid build table, throw exception
@@ -508,7 +508,7 @@ class CiderCompileModule::Impl {
   std::shared_ptr<generator::SubstraitToRelAlgExecutionUnit> translator_;
   CiderBatch build_table_;
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
-  std::unique_ptr<cider::exec::nextgen::context::CodegenContext> codegen_ctx;
+  std::unique_ptr<cider::exec::nextgen::context::CodegenContext> codegen_ctx_;
 
   std::vector<InputTableInfo> buildInputTableInfo(
       const std::vector<CiderTableSchema>& tableSchemas,

@@ -117,13 +117,13 @@ class CiderNextgenCompilerTestBase : public CiderTestBase {
  public:
   CiderNextgenCompilerTestBase() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_1 BIGINT NOT NULL, col_2 BIGINT NOT NULL)";
+    create_ddl_ = "CREATE TABLE test(col_1 BIGINT NOT NULL, col_2 BIGINT NOT NULL, col_3 BIGINT NOT NULL)";
     QueryArrowDataGenerator::generateBatchByTypes(
         schema_,
         array_,
         99,
-        {"col_1", "col_2"},
-        {CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(I64)});
+        {"col_1", "col_2", "col_3"},
+        {CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(I64)});
   }
 };
 
