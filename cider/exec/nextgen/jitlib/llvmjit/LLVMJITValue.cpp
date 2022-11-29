@@ -268,7 +268,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
   }
 
   return makeJITValuePointer<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, value, false);
+      JITTypeTag::BOOL, parent_function_, ans, value, false);
 }
 
 JITValuePointer LLVMJITValue::eq(JITValue& rh) {

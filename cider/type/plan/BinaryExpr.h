@@ -150,6 +150,7 @@ class BinOper : public Expr {
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
                                           JITValue& rhs);
+  JITValuePointer codegenFixedSizeLogicalFun(JITValue& lhs, JITValue& rhs);
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.
