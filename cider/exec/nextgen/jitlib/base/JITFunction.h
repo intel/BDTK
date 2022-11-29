@@ -72,8 +72,17 @@ class JITFunction {
   virtual JITValuePointer createVariable(JITTypeTag type_tag,
                                          const std::string& name) = 0;
 
-  // TODO: Rename as 'createLiterals'.
-  virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
+  [[deprecated("Use createLiteral.")]] JITValuePointer createConstant(
+      JITTypeTag type_tag,
+      const std::any& value) {
+    return createLiteralImpl(type_tag, value);
+  }
+
+  template <typename T>
+  JITValuePointer createLiteral(JITTypeTag type_tag, T value) {
+    std::any casted_value = castConstant(type_tag, value);
+    return createLiteralImpl(type_tag, casted_value);
+  }
 
   virtual JITValuePointer createLocalJITValue(
       std::function<JITValuePointer()> builder) = 0;
@@ -103,6 +112,9 @@ class JITFunction {
 
  private:
   virtual void* getFunctionPointer() = 0;
+
+  virtual JITValuePointer createLiteralImpl(JITTypeTag type_tag,
+                                            const std::any& value) = 0;
 };
 
 using JITFunctionPointer = std::shared_ptr<JITFunction>;

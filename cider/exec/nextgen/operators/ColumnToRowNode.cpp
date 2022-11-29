@@ -97,7 +97,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   // prototype:void func(CodegenContext* context, ArrowArray* in, ArrowArray* out);
   auto arrow_pointer = func->getArgument(1);
   auto index = func->createVariable(JITTypeTag::INT64, "index");
-  index = func->createConstant(JITTypeTag::INT64, 0l);
+  index = func->createLiteral(JITTypeTag::INT64, 0l);
 
   // input column rows num.
   auto len = func->createLocalJITValue([&context, &inputs]() {

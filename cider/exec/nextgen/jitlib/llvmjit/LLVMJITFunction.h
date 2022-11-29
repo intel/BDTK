@@ -43,8 +43,6 @@ class LLVMJITFunction final : public JITFunction {
 
   JITValuePointer createVariable(JITTypeTag type_tag, const std::string& name) override;
 
-  JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
-
   JITValuePointer createLocalJITValue(std::function<JITValuePointer()> builder) override;
 
   JITValuePointer getArgument(size_t index) override;
@@ -72,6 +70,8 @@ class LLVMJITFunction final : public JITFunction {
 
  private:
   void* getFunctionPointer() override;
+
+  JITValuePointer createLiteralImpl(JITTypeTag type_tag, const std::any& value) override;
 
   void cloneFunctionRecursive(llvm::Function* fn);
 

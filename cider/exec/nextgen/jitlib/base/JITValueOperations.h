@@ -23,8 +23,7 @@
 
 #include <type_traits>
 
-#include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
+#include "exec/nextgen/jitlib/base/JITFunction.h"
 
 namespace cider::jitlib {
 template <typename T>
@@ -40,31 +39,6 @@ template <typename T>
 using IsJITValueConvertable =
     typename std::enable_if_t<is_jitvalue_convertable_v<T>, bool>;
 
-namespace op_utils {
-template <typename T>
-inline std::any castConstant(JITTypeTag target_type, T value) {
-  std::any ret;
-  switch (target_type) {
-    case JITTypeTag::BOOL:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::BOOL>::NativeType>(value);
-    case JITTypeTag::INT8:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT8>::NativeType>(value);
-    case JITTypeTag::INT16:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT16>::NativeType>(value);
-    case JITTypeTag::INT32:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT32>::NativeType>(value);
-    case JITTypeTag::INT64:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT64>::NativeType>(value);
-    case JITTypeTag::FLOAT:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::FLOAT>::NativeType>(value);
-    case JITTypeTag::DOUBLE:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::DOUBLE>::NativeType>(value);
-    default:
-      return ret;
-  }
-}
-};  // namespace op_utils
-
 inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
   return lh.andOp(rh);
 }
@@ -74,8 +48,7 @@ template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator&&(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh && *rh_pointer;
 }
 
@@ -95,7 +68,7 @@ inline JITValuePointer operator||(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh || *rh_pointer;
 }
 
@@ -118,7 +91,7 @@ inline JITValuePointer operator+(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh + *rh_pointer;
 }
 
@@ -136,7 +109,7 @@ inline JITValuePointer operator-(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh - *rh_pointer;
 }
 
@@ -145,7 +118,7 @@ inline JITValuePointer operator-(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer - rh;
 }
 
@@ -158,7 +131,7 @@ inline JITValuePointer operator*(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh * *rh_pointer;
 }
 
@@ -176,7 +149,7 @@ inline JITValuePointer operator/(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh / *rh_pointer;
 }
 
@@ -185,7 +158,7 @@ inline JITValuePointer operator/(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer / rh;
 }
 
@@ -198,7 +171,7 @@ inline JITValuePointer operator%(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh % *rh_pointer;
 }
 
@@ -207,7 +180,7 @@ inline JITValuePointer operator%(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer % rh;
 }
 
@@ -220,7 +193,7 @@ inline JITValuePointer operator==(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh == *rh_pointer;
 }
 
@@ -238,7 +211,7 @@ inline JITValuePointer operator!=(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh != *rh_pointer;
 }
 
@@ -256,7 +229,7 @@ inline JITValuePointer operator<(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh < *rh_pointer;
 }
 
@@ -265,7 +238,7 @@ inline JITValuePointer operator<(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer < rh;
 }
 
@@ -278,7 +251,7 @@ inline JITValuePointer operator<=(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh <= *rh_pointer;
 }
 
@@ -287,7 +260,7 @@ inline JITValuePointer operator<=(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer <= rh;
 }
 
@@ -300,7 +273,7 @@ inline JITValuePointer operator>(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh > *rh_pointer;
 }
 
@@ -309,7 +282,7 @@ inline JITValuePointer operator>(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer > rh;
 }
 
@@ -322,7 +295,7 @@ inline JITValuePointer operator>=(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
   JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
+      parent_func.createLiteral(type, rh);
   return lh >= *rh_pointer;
 }
 
@@ -331,7 +304,7 @@ inline JITValuePointer operator>=(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
   JITValuePointer lh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, lh));
+      parent_func.createLiteral(type, lh);
   return *lh_pointer >= rh;
 }
 
@@ -340,4 +313,4 @@ inline JITValuePointer operator*(JITValue& value) {
 }
 };  // namespace cider::jitlib
 
-#endif  // JITLIB_BASE_JITVALUEOPERATIONS_H
+#endif // JITLIB_BASE_JITVALUEOPERATIONS_H
