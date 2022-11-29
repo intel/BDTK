@@ -30,14 +30,12 @@ namespace cider::processor {
 
 enum BatchProcessorState {
   kRunning,
-  kWaiting,
+  kWaitForJoinBuild,
   kFinished,
 };
 
 class BatchProcessor {
  public:
-  ~BatchProcessor() = default;
-
   BatchProcessorContextPtr getContext() const { return context_; }
 
   virtual void processNextBatch(std::shared_ptr<CiderBatch> batch);
@@ -50,7 +48,7 @@ class BatchProcessor {
 
   virtual bool isFinished() { return kFinished == state_; }
 
-  static std::shared_ptr<BatchProcessor> make(const substrait::Plan& plan,
+  static std::shared_ptr<BatchProcessor> make(const ::substrait::Plan& plan,
                                               const BatchProcessorContextPtr& context);
 
  protected:
