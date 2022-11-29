@@ -467,9 +467,10 @@ int convertToArrowStruct(ArrowArrayBuilder& builder,
   ArrowArrayBuilder subBuilder;
   int table_ptr_num = 0;
   for (auto subType : type.struct_().types()) {
-    table_ptr_num += convertToArrowStruct(
+    auto struct_col_num = convertToArrowStruct(
         subBuilder, subType, table_ptr, table_ptr_idx, table_row_num, column_num, names);
-    table_ptr_idx += table_ptr_num;
+    table_ptr_idx+=struct_col_num;
+    table_ptr_num+=struct_col_num;
   }
   auto schema_and_array = subBuilder.build();
   builder.addStructColumn(std::get<0>(schema_and_array), std::get<1>(schema_and_array));

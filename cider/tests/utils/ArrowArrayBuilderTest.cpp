@@ -302,6 +302,56 @@ TEST(ArrowArrayBuilderTest, CiderBatchConstructorTest) {
   // EXPECT_EQ(true, batch->isMoved());
 }
 
+TEST(ArrowArrayBuilderTest, NestedArrowArrayTest) {
+  std::vector<int> vec1{1, 2, 3, 4, 5};
+  std::vector<bool> vec2{true, false, true, false, true};
+  std::vector<float> vec3{1.1, 2.2, 3.3, 4.4, 5.5};
+  std::vector<double> vec4{1.1, 2.2, 3.3, 4.4, 5.5};
+
+  ArrowArray* sub_array = nullptr;
+  ArrowSchema* sub_schema = nullptr;
+  std::tie(sub_schema, sub_array) =
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addColumn<int>("col1", CREATE_SUBSTRAIT_TYPE(I32), vec1)
+          .addBoolColumn("col2", vec2)
+          .addColumn<float>("col3", CREATE_SUBSTRAIT_TYPE(Fp32), vec3)
+          .addColumn<double>("col4", CREATE_SUBSTRAIT_TYPE(Fp64), vec4)
+          .build();
+
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  std::tie(schema, array) = ArrowArrayBuilder()
+                                .setRowNum(5)
+                                .addStructColumn(sub_schema, sub_array)
+                                .addStructColumn(sub_schema, sub_array)
+                                .addStructColumn(sub_schema, sub_array)
+                                .build();
+
+  CiderBatch* batch =
+      new CiderBatch(schema, array, std::make_shared<CiderDefaultAllocator>());
+  EXPECT_EQ(1, batch->getBufferNum());
+  EXPECT_EQ(3, batch->getChildrenNum());
+  EXPECT_EQ(5, batch->getLength());
+
+  EXPECT_EQ(SQLTypes::kSTRUCT, batch->getCiderType());
+  EXPECT_EQ(SQLTypes::kSTRUCT, batch->getChildAt(0)->getCiderType());
+  EXPECT_EQ(SQLTypes::kSTRUCT, batch->getChildAt(1)->getCiderType());
+  EXPECT_EQ(SQLTypes::kSTRUCT, batch->getChildAt(2)->getCiderType());
+
+  EXPECT_EQ(SQLTypes::kINT, batch->getChildAt(0)->getChildAt(0)->getCiderType());
+  EXPECT_EQ(SQLTypes::kBOOLEAN, batch->getChildAt(1)->getChildAt(1)->getCiderType());
+  EXPECT_EQ(SQLTypes::kFLOAT, batch->getChildAt(2)->getChildAt(2)->getCiderType());
+  EXPECT_EQ(SQLTypes::kDOUBLE, batch->getChildAt(0)->getChildAt(3)->getCiderType());
+
+  EXPECT_EQ(4, batch->getChildAt(0)->getChildrenNum());
+  EXPECT_EQ(5, batch->getChildAt(1)->getLength());
+  EXPECT_EQ(1, batch->getChildAt(2)->getBufferNum());
+  EXPECT_EQ(2, batch->getChildAt(0)->getChildAt(0)->getBufferNum());
+
+  EXPECT_EQ(true, batch->isRootOwner());
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
