@@ -105,9 +105,9 @@ enum class SqlStringOpKind {
   REPLACE,
   SPLIT_PART,
   STRING_SPLIT,
-  /* 6 args */
-  REGEXP_REPLACE,
+  REGEXP_EXTRACT,
   REGEXP_SUBSTR,
+  REGEXP_REPLACE,
   JSON_VALUE,
   BASE64_ENCODE,
   BASE64_DECODE,
@@ -293,6 +293,8 @@ inline std::ostream& operator<<(std::ostream& os, const SqlStringOpKind kind) {
       return os << "REGEXP_REPLACE";
     case SqlStringOpKind::REGEXP_SUBSTR:
       return os << "REGEXP_SUBSTR";
+    case SqlStringOpKind::REGEXP_EXTRACT:
+      return os << "REGEXP_EXTRACT";
     case SqlStringOpKind::JSON_VALUE:
       return os << "JSON_VALUE";
     case SqlStringOpKind::BASE64_ENCODE:
@@ -336,6 +338,7 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
       {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
       {"REGEXP_MATCH_SUBSTRING", SqlStringOpKind::REGEXP_SUBSTR},
+      {"REGEXP_EXTRACT", SqlStringOpKind::REGEXP_EXTRACT},
       {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
       {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
       {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
@@ -390,6 +393,8 @@ inline std::string toString(const SqlStringOpKind& kind) {
       return "REGEXP_REPLACE";
     case SqlStringOpKind::REGEXP_SUBSTR:
       return "REGEXP_SUBSTR";
+    case SqlStringOpKind::REGEXP_EXTRACT:
+      return "REGEXP_EXTRACT";
     case SqlStringOpKind::JSON_VALUE:
       return "JSON_VALUE";
     case SqlStringOpKind::BASE64_ENCODE:

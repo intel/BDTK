@@ -893,6 +893,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       return makeExpr<Analyzer::RegexpReplaceStringOper>(args);
     case SqlStringOpKind::REGEXP_SUBSTR:
       return makeExpr<Analyzer::RegexpSubstrStringOper>(args);
+    case SqlStringOpKind::REGEXP_EXTRACT:
+      return makeExpr<Analyzer::RegexpExtractStringOper>(args);
       //    case SqlStringOpKind::JSON_VALUE:
       //      return makeExpr<Analyzer::JsonValueStringOper>(args);
       //    case SqlStringOpKind::BASE64_ENCODE:

@@ -717,6 +717,25 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
                                                   regex_params_literal,
                                                   sub_match_idx_literal);
     }
+    case SqlStringOpKind::REGEXP_EXTRACT: {
+      // PrestoDb extension function, reuses exising functionalities in RegexpSubstr
+      CHECK_GE(num_non_variable_literals, 2UL);
+      CHECK_LE(num_non_variable_literals, 2UL);
+      const auto pattern_literal = string_op_info.getStringLiteral(1);
+      // id of caputuring group to be returned, 0 means returning entire match
+      const auto sub_match_idx_literal = string_op_info.getIntLiteral(2);
+
+      std::string regex_params_literal = "c";
+      int64_t start_pos_literal = 1;   // start from beginning
+      int64_t occurrence_literal = 1;  // returns the first match
+
+      return std::make_unique<const RegexpSubstr>(var_string_optional_literal,
+                                                  pattern_literal,
+                                                  start_pos_literal,
+                                                  occurrence_literal,
+                                                  regex_params_literal,
+                                                  sub_match_idx_literal);
+    }
     case SqlStringOpKind::TRY_STRING_CAST: {
       CHECK_EQ(num_non_variable_literals, 0UL);
       return std::make_unique<const TryStringCast>(return_ti,

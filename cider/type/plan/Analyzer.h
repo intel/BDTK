@@ -1287,12 +1287,44 @@ class StringOper : public Expr {
   std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
 };
 
+class RegexpExtractStringOper : public StringOper {
+ public:
+  RegexpExtractStringOper(const std::shared_ptr<Analyzer::Expr>& input,
+                          const std::shared_ptr<Analyzer::Expr>& pattern,
+                          const std::shared_ptr<Analyzer::Expr>& group)
+      : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
+                   {input, pattern, group},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  RegexpExtractStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  RegexpExtractStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 3UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+};
+
 class RegexpSubstrStringOper : public StringOper {
  public:
-  RegexpSubstrStringOper(const std::shared_ptr<Analyzer::Expr> input,
-                         const std::shared_ptr<Analyzer::Expr> pattern,
-                         const std::shared_ptr<Analyzer::Expr> position,
-                         const std::shared_ptr<Analyzer::Expr> occurrence)
+  RegexpSubstrStringOper(const std::shared_ptr<Analyzer::Expr>& input,
+                         const std::shared_ptr<Analyzer::Expr>& pattern,
+                         const std::shared_ptr<Analyzer::Expr>& position,
+                         const std::shared_ptr<Analyzer::Expr>& occurrence)
       : StringOper(SqlStringOpKind::REGEXP_SUBSTR,
                    {input, pattern, position, occurrence},
                    getMinArgs(),
