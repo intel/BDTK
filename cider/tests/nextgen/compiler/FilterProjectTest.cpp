@@ -104,6 +104,8 @@ class FilterProjectTest : public ::testing::Test {
 
     check_array(output_batch_array->children[0], 4);
     check_array(output_batch_array->children[1], 4);
+    check_array(output_batch_array->children[2], 4);
+    check_array(output_batch_array->children[3], 4);
   }
 
  private:
@@ -111,7 +113,8 @@ class FilterProjectTest : public ::testing::Test {
 };
 
 TEST_F(FilterProjectTest, FrameworkTest) {
-  executeTest("select a + b, a - b from test where a < b");
+  // nullable + not null, not null + nullable, nullable + nullable, not null + not null
+  executeTest("select a + b, b + a, a + a, b + b from test where a < b");
 }
 
 int main(int argc, char** argv) {
