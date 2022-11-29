@@ -23,7 +23,7 @@
 
 namespace cider::processor {
 
-StatelessProcessor::StatelessProcessor(const ::substrait::Plan* plan,
+StatelessProcessor::StatelessProcessor(const ::substrait::Plan& plan,
                                        const BatchProcessorContextPtr& context)
     : BatchProcessor(plan, context) {}
 

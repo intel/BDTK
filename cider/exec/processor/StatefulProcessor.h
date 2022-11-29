@@ -28,7 +28,7 @@ namespace cider::processor {
 
 class StatefulProcessor : public BatchProcessor {
  public:
-  StatefulProcessor(const ::substrait::Plan* plan,
+  StatefulProcessor(const ::substrait::Plan& plan,
                     const BatchProcessorContextPtr& context);
 
   void processNextBatch(std::shared_ptr<CiderBatch> batch) override;
