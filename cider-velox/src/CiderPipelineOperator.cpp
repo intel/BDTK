@@ -91,7 +91,7 @@ CiderPipelineOperator::CiderPipelineOperator(
     exec::DriverCtx* driverCtx,
     const std::shared_ptr<const CiderPlanNode>& ciderPlanNode)
     : CiderOperator(operatorId, driverCtx, ciderPlanNode) {
-  auto context = std::make_shared<cider::processor::BatchProcessorContext>();
+  auto context = std::make_shared<const cider::processor::BatchProcessorContext>();
   batchProcessor_ =
       cider::processor::BatchProcessor::make(ciderPlanNode->getSubstraitPlan(), context);
 }
