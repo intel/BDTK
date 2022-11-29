@@ -30,7 +30,7 @@ bool CiderPipelineOperator::needsInput() const {
   return !noMoreInput_ && !input_;
 }
 
-void CiderPipelineOperator::addInput(facebook::velox::RowVectorPtr input) {
+void CiderPipelineOperator::addInput(RowVectorPtr input) {
   this->input_ = std::move(input);
   if (is_using_arrow_format_) {
     for (size_t i = 0; i < input_->childrenSize(); i++) {
@@ -94,7 +94,7 @@ CiderPipelineOperator::CiderPipelineOperator(
     exec::DriverCtx* driverCtx,
     const std::shared_ptr<const CiderPlanNode>& ciderPlanNode)
     : CiderOperator(operatorId, driverCtx, ciderPlanNode) {
-  auto context = std::make_shared<const cider::processor::BatchProcessorContext>();
+  auto context = std::make_shared<cider::processor::BatchProcessorContext>();
   batchProcessor_ =
       cider::processor::BatchProcessor::make(ciderPlanNode->getSubstraitPlan(), context);
 }

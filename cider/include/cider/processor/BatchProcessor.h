@@ -28,7 +28,7 @@
 
 namespace cider::processor {
 
-enum BatchProcessorState {
+enum class BatchProcessorState {
   kRunning,
   kWaitForJoinBuild,
   kFinished,
@@ -48,7 +48,7 @@ class BatchProcessor {
 
   virtual BatchProcessorState getState();
 
-  virtual bool isFinished() { return kFinished == state_; }
+  virtual bool isFinished() { return BatchProcessorState::kFinished == state_; }
 
   static std::shared_ptr<BatchProcessor> make(const ::substrait::Plan& plan,
                                               const BatchProcessorContextPtr& context);
@@ -60,7 +60,7 @@ class BatchProcessor {
 
   const BatchProcessorContextPtr context_;
 
-  BatchProcessorState state_{kRunning};
+  BatchProcessorState state_{BatchProcessorState::kRunning};
 
   std::shared_ptr<CiderBatch> inputBatch_;
 };

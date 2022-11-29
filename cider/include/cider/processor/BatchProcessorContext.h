@@ -28,7 +28,7 @@ namespace cider::processor {
 
 class BatchProcessorContext {};
 
-using BatchProcessorContextPtr = std::shared_ptr<const BatchProcessorContext>;
+using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;
 
 }  // namespace cider::processor
 
