@@ -32,10 +32,8 @@
 #include "velox/vector/arrow/Bridge.h"
 
 #include "CiderJoinBuild.h"
-#include "CiderPipelineOperator.h"
 #include "CiderStatefulOperator.h"
 #include "CiderStatelessOperator.h"
-#include "CiderVeloxOptions.h"
 #include "DataConvertor.h"
 
 namespace facebook::velox::plugin {
