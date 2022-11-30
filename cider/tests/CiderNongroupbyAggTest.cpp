@@ -121,7 +121,7 @@ MockTable* CiderNongroupbyAggArrowFormatTest::MockTableForTest = nullptr;
 
 void testScalarTypeSingleKey(MockTable* table,
                              const std::string& col_name,
-                             AggResult expect_result,
+                             AggArrowResult expect_result,
                              bool all_null) {
   // select COUNT(), COUNT(col), SUM(col), MIN(col), MAX(col), AVG(col) from table
   CHECK(table);
@@ -170,174 +170,203 @@ void testScalarTypeSingleKey(MockTable* table,
                               SortInfo{},
                               0});
 
+  std::vector<substrait::Type> column_types;
+  std::vector<std::string> col_names;
+  for (size_t i_target = 0; i_target < ra_exe_unit_ptr->target_exprs.size(); i_target++) {
+    col_names.push_back(std::to_string(i_target));
+    column_types.push_back(generator::getSubstraitType(
+        ra_exe_unit_ptr->target_exprs[i_target]->get_type_info()));
+  }
+  std::vector<ColumnHint> col_hints = {
+      Normal, Normal, Normal, Normal, Normal, PartialAVG};
+  auto schema =
+      std::make_shared<CiderTableSchema>(col_names, column_types, "", col_hints);
+
   std::vector<CiderBitUtils::CiderBitVector<>> null_vectors(
       2, CiderBitUtils::CiderBitVector<>(allocator, 5, 0xFF));
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 1);
   CiderBitUtils::clearBitAt(null_vectors[0].as<uint8_t>(), 4);
 
-  runTest(std::string("SingleKeyScalarTypeTest-" + col_name),
-          table,
-          ra_exe_unit_ptr,
-          {col_name},
-          expect_result,
-          all_null,
-          false,
-          16384,
-          0,
-          null_vectors);
+  runArrowTest(std::string("SingleKeyScalarTypeTest-" + col_name),
+               table,
+               ra_exe_unit_ptr,
+               schema,
+               {col_name},
+               expect_result,
+               all_null,
+               false,
+               16384,
+               0,
+               null_vectors);
 }
 
 TEST_F(CiderNongroupbyAggArrowFormatTest, SingleKeyScalarTypeTest) {
-  GTEST_SKIP_("FIXME(haiwei): [POAE7-2511] Update verify test case of Non Groupby Agg");
-  AggResult tinyint_agg_result_not_null = {.count_one = 5,
-                                           .count_column = 5,
-                                           .sum_int64 = -630,
-                                           .max_int64 = -124,
-                                           .min_int64 = -128,
-                                           .null = 1};
+  AggArrowResult tinyint_agg_result_not_null = {.count_one = 5,
+                                                .count_column = 5,
+                                                .sum_int64 = -118,
+                                                .max_int64 = -124,
+                                                .min_int64 = -128,
+                                                .avg_double = 0.0,
+                                                .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "tinyint_notnull", tinyint_agg_result_not_null, false);
-  AggResult tinyint_agg_result_with_null = {.count_one = 5,
-                                            .count_column = 3,
-                                            .sum_int64 = -379,
-                                            .max_int64 = -125,
-                                            .min_int64 = -128,
-                                            .null = 1};
+  AggArrowResult tinyint_agg_result_with_null = {.count_one = 5,
+                                                 .count_column = 3,
+                                                 .sum_int64 = -123,
+                                                 .max_int64 = -125,
+                                                 .min_int64 = -128,
+                                                 .avg_double = 0.0,
+                                                 .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "tinyint_null", tinyint_agg_result_with_null, false);
-  AggResult tinyint_agg_result_all_null = {
-      .count_one = 5,
-      .count_column = 0,
-      .sum_int64 = 0,
-      .max_int64 = std::numeric_limits<int64_t>::min(),
-      .min_int64 = std::numeric_limits<int64_t>::max(),
-      .null = 0};
+  AggArrowResult tinyint_agg_result_all_null = {.count_one = 5,
+                                                .count_column = 0,
+                                                .sum_int64 = 0,
+                                                .max_int64 = 0,
+                                                .min_int64 = -1,
+                                                .avg_double = 0.0,
+                                                .null = 1};
   testScalarTypeSingleKey(
       MockTableForTest, "tinyint_null", tinyint_agg_result_all_null, true);
 
-  AggResult smallint_agg_result_not_null = {.count_one = 5,
-                                            .count_column = 5,
-                                            .sum_int64 = 32763,
-                                            .max_int64 = 32767,
-                                            .min_int64 = -32768,
-                                            .null = 1};
+  AggArrowResult smallint_agg_result_not_null = {.count_one = 5,
+                                                 .count_column = 5,
+                                                 .sum_int64 = 32763,
+                                                 .max_int64 = 32767,
+                                                 .min_int64 = -32768,
+                                                 .avg_double = 0.0,
+                                                 .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "smallint_notnull", smallint_agg_result_not_null, false);
-  AggResult smallint_agg_result_with_null = {.count_one = 5,
-                                             .count_column = 3,
-                                             .sum_int64 = 32764,
-                                             .max_int64 = 32767,
-                                             .min_int64 = -32768,
-                                             .null = 1};
+  AggArrowResult smallint_agg_result_with_null = {.count_one = 5,
+                                                  .count_column = 3,
+                                                  .sum_int64 = 32764,
+                                                  .max_int64 = 32767,
+                                                  .min_int64 = -32768,
+                                                  .avg_double = 0.0,
+                                                  .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "smallint_null", smallint_agg_result_with_null, false);
-  AggResult smallint_agg_result_all_null = {
-      .count_one = 5,
-      .count_column = 0,
-      .sum_int64 = 0,
-      .max_int64 = std::numeric_limits<int64_t>::min(),
-      .min_int64 = std::numeric_limits<int64_t>::max(),
-      .null = 0};
+  AggArrowResult smallint_agg_result_all_null = {.count_one = 5,
+                                                 .count_column = 0,
+                                                 .sum_int64 = 0,
+                                                 .max_int64 = 0,
+                                                 .min_int64 = -1,
+                                                 .avg_double = 0.0,
+                                                 .null = 1};
   testScalarTypeSingleKey(
       MockTableForTest, "smallint_null", smallint_agg_result_all_null, true);
 
-  AggResult int_agg_result_not_null = {.count_one = 5,
-                                       .count_column = 5,
-                                       .sum_int64 = -6172839440,
-                                       .max_int64 = -1234567886,
-                                       .min_int64 = -1234567890,
-                                       .null = 1};
+  AggArrowResult int_agg_result_not_null = {.count_one = 5,
+                                            .count_column = 5,
+                                            .sum_int64 = -1877872144,
+                                            .max_int64 = -1234567886,
+                                            .min_int64 = -1234567890,
+                                            .avg_double = 0.0,
+                                            .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "int_notnull", int_agg_result_not_null, false);
-  AggResult int_agg_result_with_null = {.count_one = 5,
-                                        .count_column = 3,
-                                        .sum_int64 = -3703703665,
-                                        .max_int64 = -1234567887,
-                                        .min_int64 = -1234567890,
-                                        .null = 1};
+  AggArrowResult int_agg_result_with_null = {.count_one = 5,
+                                             .count_column = 3,
+                                             .sum_int64 = 591263631,
+                                             .max_int64 = -1234567887,
+                                             .min_int64 = -1234567890,
+                                             .avg_double = 0.0,
+                                             .null = 0};
   testScalarTypeSingleKey(MockTableForTest, "int_null", int_agg_result_with_null, false);
-  AggResult int_agg_result_all_null = {.count_one = 5,
-                                       .count_column = 0,
-                                       .sum_int64 = 0,
-                                       .max_int64 = std::numeric_limits<int64_t>::min(),
-                                       .min_int64 = std::numeric_limits<int64_t>::max(),
-                                       .null = 0};
+  AggArrowResult int_agg_result_all_null = {.count_one = 5,
+                                            .count_column = 0,
+                                            .sum_int64 = 0,
+                                            .max_int64 = 0,
+                                            .min_int64 = -1,
+                                            .avg_double = 0.0,
+                                            .null = 1};
   testScalarTypeSingleKey(MockTableForTest, "int_null", int_agg_result_all_null, true);
 
-  AggResult bigint_agg_result_not_null = {.count_one = 5,
-                                          .count_column = 5,
-                                          .sum_int64 = 49382716060,
-                                          .max_int64 = 9876543214,
-                                          .min_int64 = 9876543210,
-                                          .null = 1};
+  AggArrowResult bigint_agg_result_not_null = {.count_one = 5,
+                                               .count_column = 5,
+                                               .sum_int64 = 49382716060,
+                                               .max_int64 = 9876543214,
+                                               .min_int64 = 9876543210,
+                                               .avg_double = 0.0,
+                                               .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "bigint_notnull", bigint_agg_result_not_null, false);
-  AggResult bigint_agg_result_with_null = {.count_one = 5,
-                                           .count_column = 3,
-                                           .sum_int64 = 29629629635,
-                                           .max_int64 = 9876543213,
-                                           .min_int64 = 9876543210,
-                                           .null = 1};
+  AggArrowResult bigint_agg_result_with_null = {.count_one = 5,
+                                                .count_column = 3,
+                                                .sum_int64 = 29629629635,
+                                                .max_int64 = 9876543213,
+                                                .min_int64 = 9876543210,
+                                                .avg_double = 0.0,
+                                                .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "bigint_null", bigint_agg_result_with_null, false);
-  AggResult bigint_agg_result_all_null = {
+  AggArrowResult bigint_agg_result_all_null = {
       .count_one = 5,
       .count_column = 0,
       .sum_int64 = 0,
       .max_int64 = std::numeric_limits<int64_t>::min(),
       .min_int64 = std::numeric_limits<int64_t>::max(),
-      .null = 0};
+      .avg_double = 0.0,
+      .null = 1};
   testScalarTypeSingleKey(
       MockTableForTest, "bigint_null", bigint_agg_result_all_null, true);
 
-  AggResult float_agg_result_not_null = {.count_one = 5,
-                                         .count_column = 5,
-                                         .sum_float = 617290.61728f,
-                                         .max_float = 123460.123456f,
-                                         .min_float = 123456.123456f,
-                                         .null = 1};
+  AggArrowResult float_agg_result_not_null = {.count_one = 5,
+                                              .count_column = 5,
+                                              .sum_float = 617290.61728f,
+                                              .max_float = 123460.123456f,
+                                              .min_float = 123456.123456f,
+                                              .avg_double = 0.0,
+                                              .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "float_notnull", float_agg_result_not_null, false);
-  AggResult float_agg_result_with_null = {.count_one = 5,
-                                          .count_column = 3,
-                                          .sum_float = 370373.370368f,
-                                          .max_float = 123459.123456f,
-                                          .min_float = 123456.123456f,
-                                          .null = 1};
+  AggArrowResult float_agg_result_with_null = {.count_one = 5,
+                                               .count_column = 3,
+                                               .sum_float = 370373.370368f,
+                                               .max_float = 123459.123456f,
+                                               .min_float = 123456.123456f,
+                                               .avg_double = 0.0,
+                                               .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "float_null", float_agg_result_with_null, false);
-  AggResult float_agg_result_all_null = {.count_one = 5,
-                                         .count_column = 0,
-                                         .sum_float = 0.0f,
-                                         .max_float = -std::numeric_limits<float>::max(),
-                                         .min_float = std::numeric_limits<float>::max(),
-                                         .null = 0};
+  AggArrowResult float_agg_result_all_null = {
+      .count_one = 5,
+      .count_column = 0,
+      .sum_float = 0.0f,
+      .max_float = -std::numeric_limits<float>::max(),
+      .min_float = std::numeric_limits<float>::max(),
+      .avg_double = 0.0,
+      .null = 1};
   testScalarTypeSingleKey(
       MockTableForTest, "float_null", float_agg_result_all_null, true);
 
-  AggResult double_agg_result_not_null = {.count_one = 5,
-                                          .count_column = 5,
-                                          .sum_double = 617283955.61728394,
-                                          .max_double = 123456793.123456789,
-                                          .min_double = 123456789.123456789,
-                                          .null = 1};
+  AggArrowResult double_agg_result_not_null = {.count_one = 5,
+                                               .count_column = 5,
+                                               .sum_double = 617283955.61728394,
+                                               .max_double = 123456793.123456789,
+                                               .min_double = 123456789.123456789,
+                                               .avg_double = 617283955.61728394,
+                                               .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "double_notnull", double_agg_result_not_null, false);
-  AggResult double_agg_result_with_null = {.count_one = 5,
-                                           .count_column = 3,
-                                           .sum_double = 370370372.370370367,
-                                           .max_double = 123456792.123456789,
-                                           .min_double = 123456789.123456789,
-                                           .null = 1};
+  AggArrowResult double_agg_result_with_null = {.count_one = 5,
+                                                .count_column = 3,
+                                                .sum_double = 370370372.370370367,
+                                                .max_double = 123456792.123456789,
+                                                .min_double = 123456789.123456789,
+                                                .avg_double = 370370372.370370367,
+                                                .null = 0};
   testScalarTypeSingleKey(
       MockTableForTest, "double_null", double_agg_result_with_null, false);
-  AggResult double_agg_result_all_null = {
+  AggArrowResult double_agg_result_all_null = {
       .count_one = 5,
       .count_column = 0,
       .sum_double = 0.0,
       .max_double = -std::numeric_limits<double>::max(),
       .min_double = std::numeric_limits<double>::max(),
-      .null = 0};
+      .avg_double = 0.0,
+      .null = 1};
   testScalarTypeSingleKey(
       MockTableForTest, "double_null", double_agg_result_all_null, true);
 }
