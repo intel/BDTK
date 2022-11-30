@@ -43,7 +43,9 @@ void FilterTranslator::codegen(context::CodegenContext& context) {
         for (const auto& expr : exprs) {
           utils::FixSizeJITExprValue cond(expr->codegen(*func));
           bool_init = bool_init && cond.getValue();
-          TODO("MaJian", "support null in condition");
+          if (cond.isNullable()) {
+            bool_init = bool_init && !cond.getNull();
+          }
         }
         return bool_init;
       })

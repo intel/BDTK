@@ -34,7 +34,8 @@ JITExprValue& Constant::codegen(JITFunction& func) {
       CIDER_THROW(CiderCompileException,
                   "NULL type literals are not currently supported in this context.");
     case kBOOLEAN:
-      return set_expr_value(func.createConstant(getJITTag(type), get_constval().boolval));
+      return set_expr_value(nullptr,
+                            func.createConstant(getJITTag(type), get_constval().boolval));
     case kTINYINT:
     case kSMALLINT:
     case kINT:
@@ -44,13 +45,14 @@ JITExprValue& Constant::codegen(JITFunction& func) {
     case kDATE:
     case kINTERVAL_DAY_TIME:
     case kINTERVAL_YEAR_MONTH:
-      return set_expr_value(func.createConstant(getJITTag(type), get_constval().intval));
+      return set_expr_value(nullptr,
+                            func.createConstant(getJITTag(type), get_constval().intval));
     case kFLOAT:
       return set_expr_value(
-          func.createConstant(getJITTag(type), get_constval().floatval));
+          nullptr, func.createConstant(getJITTag(type), get_constval().floatval));
     case kDOUBLE:
       return set_expr_value(
-          func.createConstant(getJITTag(type), get_constval().doubleval));
+          nullptr, func.createConstant(getJITTag(type), get_constval().doubleval));
     case kVARCHAR:
     case kCHAR:
     case kTEXT: {

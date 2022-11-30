@@ -151,11 +151,6 @@ class JITValuePointer {
   // JITValuePointer, please use replace() method or use lh = rh.get().
   JITValuePointer& operator=(const JITValuePointer&) = delete;
 
-  JITValuePointer& operator=(JITValue* rh) {
-    replace(rh);
-    return *this;
-  }
-
   JITValuePointer& operator=(JITValuePointer&& rh) noexcept;
 
   JITValuePointer& operator=(JITValue& rh) noexcept;
