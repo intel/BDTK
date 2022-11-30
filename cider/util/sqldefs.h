@@ -89,6 +89,7 @@ enum class SqlStringOpKind {
   UPPER,
   INITCAP,
   REVERSE,
+  CHAR_LENGTH,
   /* Binary */
   REPEAT,
   CONCAT,
@@ -333,7 +334,9 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
       {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
       {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
-      {"TRY_CAST", SqlStringOpKind::TRY_STRING_CAST}};
+      {"TRY_CAST", SqlStringOpKind::TRY_STRING_CAST},
+      {"LENGTH", SqlStringOpKind::CHAR_LENGTH},
+      {"CHAR_LENGTH", SqlStringOpKind::CHAR_LENGTH}};
 
   auto op_kind_entry = name_to_string_map.find(func_name);
 

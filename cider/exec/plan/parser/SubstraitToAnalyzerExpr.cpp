@@ -834,6 +834,9 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     case SqlStringOpKind::SUBSTRING: {
       return makeExpr<Analyzer::SubstringStringOper>(args);
     }
+    case SqlStringOpKind::CHAR_LENGTH: {
+      return makeExpr<Analyzer::CharLengthStringOper>(args);
+    }
       //    case SqlStringOpKind::OVERLAY:
       //      return makeExpr<Analyzer::OverlayStringOper>(args);
       //    case SqlStringOpKind::REPLACE:

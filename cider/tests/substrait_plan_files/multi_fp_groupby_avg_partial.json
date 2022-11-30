@@ -1,0 +1,269 @@
+{
+ "extension_uris": [
+  {
+   "extension_uri_anchor": 1,
+   "uri": "/workspace/velox-plugin/velox/substrait/extensions/functions_comparison.yaml"
+  },
+  {
+   "extension_uri_anchor": 2,
+   "uri": "/workspace/velox-plugin/velox/substrait/extensions/functions_arithmetic.yaml"
+  }
+ ],
+ "extensions": [
+  {
+   "extension_function": {
+    "extension_uri_reference": 2,
+    "function_anchor": 0,
+    "name": "avg:any1"
+   }
+  }, {
+    "extensionFunction": {
+      "extensionUriReference": 2,
+      "functionAnchor": 1,
+      "name": "sum:opt_i64"
+    }
+  }
+ ],
+ "relations": [
+  {
+   "root": {
+    "input": {
+     "aggregate": {
+      "common": {
+       "direct": {}
+      },
+      "input": {
+       "read": {
+        "common": {
+         "direct": {}
+        },
+        "base_schema": {
+         "names": [
+          "col_fp64",
+          "col_fp32",
+          "col_fp32_with_null",
+          "col_fp32_all_null"
+         ],
+         "struct": {
+          "types": [
+           {
+            "fp64": {
+             "type_variation_reference": 0,
+             "nullability": "NULLABILITY_REQUIRED"
+            }
+           },
+           {
+            "fp32": {
+             "type_variation_reference": 0,
+             "nullability": "NULLABILITY_REQUIRED"
+            }
+           },
+           {
+            "fp32": {
+             "type_variation_reference": 0,
+             "nullability": "NULLABILITY_NULLABLE"
+            }
+           },
+           {
+            "fp32": {
+             "type_variation_reference": 0,
+             "nullability": "NULLABILITY_NULLABLE"
+            }
+           }
+          ],
+          "type_variation_reference": 0,
+          "nullability": "NULLABILITY_REQUIRED"
+         }
+        }
+       }
+      },
+      "groupings": [
+       {
+        "grouping_expressions": [{
+          "selection": {
+            "directReference": {
+              "structField": {
+                "field": 0
+              }
+            },
+            "rootReference": {
+            }
+          }
+        }]
+       }
+      ],
+      "measures": [
+       {
+        "measure": {
+         "function_reference": 0,
+         "arguments": [
+          { "value": {
+           "selection": {
+            "direct_reference": {
+             "struct_field": {
+              "field": 0
+             }
+            },
+            "root_reference": {}
+           }
+          }}
+         ],
+         "sorts": [],
+         "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+         "output_type": {
+          "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+          }
+         }
+        },
+        "filter": {}
+       },{
+        "measure": {
+         "function_reference": 0,
+         "arguments": [
+          { "value": {
+           "selection": {
+            "direct_reference": {
+             "struct_field": {
+              "field": 1
+             }
+            },
+            "root_reference": {}
+           }
+          }}
+         ],
+         "sorts": [],
+         "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+         "output_type": {
+          "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+          }
+         }
+        },
+        "filter": {}
+       },
+       {
+        "measure": {
+         "function_reference": 0,
+         "arguments": [
+          { "value": {
+           "selection": {
+            "direct_reference": {
+             "struct_field": {
+              "field": 2
+             }
+            },
+            "root_reference": {}
+           }
+          }}
+         ],
+         "sorts": [],
+         "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+         "output_type": {
+          "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+          }
+         }
+        },
+        "filter": {}
+       },
+       {
+        "measure": {
+         "function_reference": 0,
+         "arguments": [
+          { "value": {
+           "selection": {
+            "direct_reference": {
+             "struct_field": {
+              "field": 3
+             }
+            },
+            "root_reference": {}
+           }
+          }}
+         ],
+         "sorts": [],
+         "phase": "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE",
+         "output_type": {
+          "struct": {
+           "types": [
+            {
+             "fp64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            },
+            {
+             "i64": {
+              "type_variation_reference": 0,
+              "nullability": "NULLABILITY_REQUIRED"
+             }
+            }
+           ],
+           "type_variation_reference": 0,
+           "nullability": "NULLABILITY_REQUIRED"
+          }
+         }
+        },
+        "filter": {}
+       }
+      ]
+     }
+    },
+    "names": [
+     "a0",
+     "a1",
+     "a2",
+     "a3",
+     "a4"
+    ]
+   }
+  }
+ ],
+ "expected_type_urls": []
+}

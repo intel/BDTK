@@ -78,14 +78,24 @@ class SimpleAggExtractor : public CiderAggTargetColExtractor {
           CiderBitUtils::clearBitAt(nulls, i);
           ++null_count;
         } else {
-          buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+          if (this->getName() == "FLOAT_DOUBLE") {
+            buffer[i] =
+                std::stod(std::to_string(*reinterpret_cast<const ST*>(rowPtr + offset_)));
+          } else {
+            buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+          }
         }
       }
       output->setNullCount(null_count);
     } else {
       for (size_t i = 0; i < rowNum; ++i) {
         const int8_t* rowPtr = rowAddrs[i];
-        buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+        if (this->getName() == "FLOAT_DOUBLE") {
+          buffer[i] =
+              std::stod(std::to_string(*reinterpret_cast<const ST*>(rowPtr + offset_)));
+        } else {
+          buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+        }
       }
     }
   }

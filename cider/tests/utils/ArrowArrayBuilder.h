@@ -43,7 +43,7 @@ class ArrowArrayBuilder {
 
     array_->buffers = (const void**)allocator_->allocate(sizeof(void*));
     array_->buffers[0] = nullptr;
-    array_->n_buffers = 0;
+    array_->n_buffers = 1;
     array_->length = 0;
     array_->offset = 0;
     array_->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
@@ -199,6 +199,12 @@ class ArrowArrayBuilder {
       array_list_.push_back(current_array);
       schema_list_.push_back(current_schema);
     }
+    return *this;
+  }
+
+  ArrowArrayBuilder& addStructColumn(ArrowSchema* schema, ArrowArray* array) {
+    array_list_.push_back(array);
+    schema_list_.push_back(schema);
     return *this;
   }
 

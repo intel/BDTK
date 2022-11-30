@@ -22,3 +22,4 @@
 # add_subdirectory(benchmark)
 add_subdirectory(jitlib)
 add_subdirectory(compiler)
+add_subdirectory(functional)

@@ -19,6 +19,7 @@
  * under the License.
  */
 #include "BinaryExpr.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/template/Execute.h"  // for is_unnest
 
 namespace Analyzer {
@@ -47,22 +48,14 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
   FixSizeJITExprValue lhs_val(lhs->codegen(func));
   FixSizeJITExprValue rhs_val(rhs->codegen(func));
 
-  // auto null = func_->createVariable(getJITTag(lhs), "null");
-  TODO("MaJian", "merge null");
-  // auto lhs_nullable = dynamic_cast<NullableColValues*>(lhs_lv.get());
-  // auto rhs_nullable = dynamic_cast<NullableColValues*>(rhs_lv.get());
-  // if (lhs_nullable && rhs_nullable) {
-  //   if (lhs_nullable->getNull() && rhs_nullable->getNull()) {
-  //     // null = cgen_state_->ir_builder_.CreateOr(lhs_nullable->getNull(),
-  //     //                                          rhs_nullable->getNull());
-  //     null = lhs->getNull() || rhs_nullable->getNull();
-  //   } else {
-  //     null = lhs_nullable->getNull() ? lhs_nullable->getNull() :
-  //     rhs_nullable->getNull();
-  //   }
-  // } else if (lhs_nullable || rhs_nullable) {
-  //   null = lhs_nullable ? lhs_nullable->getNull() : rhs_nullable->getNull();
-  // }
+  JITValuePointer null(nullptr);
+  bool lhs_nullable = lhs_val.isNullable();
+  bool rhs_nullable = rhs_val.isNullable();
+  if (lhs_nullable && rhs_nullable) {
+    null.replace(lhs_val.getNull() || rhs_val.getNull());
+  } else if (lhs_nullable || rhs_nullable) {
+    null.replace(lhs_nullable ? lhs_val.getNull() : rhs_val.getNull());
+  }
 
   switch (lhs_ti.get_type()) {
     case kVARCHAR:
@@ -73,10 +66,10 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
     default:
       const auto optype = get_optype();
       if (IS_ARITHMETIC(optype)) {
-        return codegenFixedSizeColArithFun(lhs_val.getValue(), rhs_val.getValue());
+        return codegenFixedSizeColArithFun(null, lhs_val.getValue(), rhs_val.getValue());
       } else if (IS_COMPARISON(optype)) {
         // return codegenCmpFun(bin_oper);
-        return codegenFixedSizeColCmpFun(lhs_val.getValue(), rhs_val.getValue());
+        return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
       } else if (IS_LOGIC(optype)) {
         // return codegenLogicalFun(bin_oper, co);
         UNIMPLEMENTED();
@@ -86,19 +79,21 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
   return expr_var_;
 }
 
-JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs) {
+JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValuePointer& null,
+                                                   JITValue& lhs,
+                                                   JITValue& rhs) {
   // TODO: Null Process
   switch (get_optype()) {
     case kMINUS:
-      return set_expr_value(nullptr, lhs - rhs);
+      return set_expr_value(null, lhs - rhs);
     case kPLUS:
-      return set_expr_value(nullptr, lhs + rhs);
+      return set_expr_value(null, lhs + rhs);
     case kMULTIPLY:
-      return set_expr_value(nullptr, lhs * rhs);
+      return set_expr_value(null, lhs * rhs);
     case kDIVIDE:
-      return set_expr_value(nullptr, lhs / rhs);
+      return set_expr_value(null, lhs / rhs);
     case kMODULO:
-      return set_expr_value(nullptr, lhs % rhs);
+      return set_expr_value(null, lhs % rhs);
     default:
       UNREACHABLE();
   }
@@ -106,21 +101,23 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs)
   return expr_var_;
 }
 
-JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs) {
+JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
+                                                 JITValue& lhs,
+                                                 JITValue& rhs) {
   // TODO: Null Process
   switch (get_optype()) {
     case kEQ:
-      return set_expr_value(nullptr, lhs == rhs);
+      return set_expr_value(null, lhs == rhs);
     case kNE:
-      return set_expr_value(nullptr, lhs != rhs);
+      return set_expr_value(null, lhs != rhs);
     case kLT:
-      return set_expr_value(nullptr, lhs < rhs);
+      return set_expr_value(null, lhs < rhs);
     case kGT:
-      return set_expr_value(nullptr, lhs > rhs);
+      return set_expr_value(null, lhs > rhs);
     case kLE:
-      return set_expr_value(nullptr, lhs <= rhs);
+      return set_expr_value(null, lhs <= rhs);
     case kGE:
-      return set_expr_value(nullptr, lhs >= rhs);
+      return set_expr_value(null, lhs >= rhs);
     default:
       UNREACHABLE();
   }

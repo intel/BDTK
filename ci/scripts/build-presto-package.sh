@@ -44,12 +44,12 @@ then
 fi
 
 rm -rf presto
-PATCH_NAME=presto-bdtk-9dbb0f9.patch
-PRESTO_BDTK_COMMIT_ID=9dbb0f9bb292ed95e62b4f268ff5bf29138ec72e
+PATCH_NAME=presto-bdtk-67b3bf.patch
+PRESTO_BDTK_COMMIT_ID=67b3bf5251f81131328dbd183685fb50e5a7ac2c
 
 git clone https://github.com/prestodb/presto.git
 pushd presto/presto-native-execution
-git checkout -b BDTK ${PRESTO_BDTK_COMMIT_ID}
+git checkout -b WW43 ${PRESTO_BDTK_COMMIT_ID}
 git apply ../../${PATCH_NAME}
 git clone --recursive https://github.com/intel/BDTK.git
 pushd BDTK
@@ -81,7 +81,6 @@ rm -rf ${package_name} ${package_name}.tar.gz
 mkdir -p ${package_name}/lib
 mkdir -p ${package_name}/function
 mkdir -p ${package_name}/bin
-cp -r ./presto/presto-native-execution/BDTK/build-${BDTK_BUILD_MODE}/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/third_party/substrait/extensions ${package_name}
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/main/presto_server ./${package_name}/bin
 

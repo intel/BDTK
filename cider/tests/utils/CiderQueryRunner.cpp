@@ -53,6 +53,9 @@ bool isJsonFile(const std::string& file_or_sql) {
 
 std::string getFileContent(const std::string& file_name) {
   std::ifstream file(getSubstraitPlanFilesPath() + file_name);
+  if (!file.good()) {
+    CIDER_THROW(CiderException, "Substrait JSON file " + file_name + " does not exist.");
+  }
   std::stringstream buffer;
   buffer << file.rdbuf();
   std::string content = buffer.str();
@@ -230,11 +233,6 @@ std::vector<CiderBatch> CiderQueryRunner::handleRes(
   std::vector<CiderBatch> res;
   auto has_more_output = CiderRuntimeModule::ReturnCode::kMoreOutput;
   while (has_more_output == CiderRuntimeModule::ReturnCode::kMoreOutput) {
-    std::vector<const int8_t*> out_col_buffers(column_num);
-    for (size_t i = 0; i < column_num; ++i) {
-      size_t type_bytes = schema->GetColumnTypeSize(i);
-      out_col_buffers[i] = new int8_t[type_bytes * max_output_row_num];
-    }
     std::unique_ptr<CiderBatch> out_batch = nullptr;
     std::tie(has_more_output, out_batch) =
         cider_runtime_module->fetchResults(max_output_row_num);
