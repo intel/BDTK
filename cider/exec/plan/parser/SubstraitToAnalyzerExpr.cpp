@@ -37,6 +37,21 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
   return map.find(expr) == map.end() || !map.find(expr)->second;
 }
 
+bool isStringFunction(const std::string& function_name) {
+  static std::unordered_set<std::string> funcs{"substring",
+                                               "substr",
+                                               "lower",
+                                               "upper",
+                                               "trim",
+                                               "ltrim",
+                                               "rtrim",
+                                               "concat",
+                                               "||",
+                                               "length",
+                                               "char_length"};
+  return funcs.find(function_name) != funcs.end();
+}
+
 std::shared_ptr<Analyzer::ColumnVar> Substrait2AnalyzerExprConverter::makeColumnVar(
     const SQLTypeInfo& ti,
     int table_id,
