@@ -55,8 +55,7 @@ void executeBinaryOp(T left, T right, T output, OpFunc op) {
       static_cast<NativeType>(left),
       static_cast<NativeType>(output),
       [&, right = static_cast<NativeType>(right)](JITFunction* func) {
-        auto left = func->createVariable(Type, "left");
-        *left = func->getArgument(0);
+        auto left = func->createVariable(Type, "left", func->getArgument(0));
 
         auto right_const = func->createLiteral(Type, right);
         auto ans = op(left, right_const);
@@ -88,8 +87,7 @@ void executeCompareOp(T left, T right, bool output, OpFunc op) {
       static_cast<NativeType>(left),
       output,
       [&, right = static_cast<NativeType>(right)](JITFunction* func) {
-        auto left = func->createVariable(Type, "left");
-        *left = func->getArgument(0);
+        auto left = func->createVariable(Type, "left", func->getArgument(0));
 
         auto right_const = func->createLiteral(Type, right);
         auto ans = op(left, right_const);
@@ -341,9 +339,8 @@ TEST_F(JITLibTests, BasicIFControlFlowWithoutElseTest) {
                                 .addParameter(JITTypeTag::BOOL, "condition")
                                 .addReturn(JITTypeTag::INT32)
                                 .addProcedureBuilder([](JITFunction* function) {
-                                  JITValuePointer ret =
-                                      function->createVariable(JITTypeTag::INT32, "ret");
-                                  ret = function->getArgument(0);
+                                  JITValuePointer ret = function->createVariable(
+                                      JITTypeTag::INT32, "ret", function->getArgument(0));
                                   auto if_builder = function->createIfBuilder();
                                   if_builder
                                       ->condition([&]() {
@@ -371,9 +368,8 @@ TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
                                 .addParameter(JITTypeTag::BOOL, "condition")
                                 .addReturn(JITTypeTag::INT32)
                                 .addProcedureBuilder([](JITFunction* function) {
-                                  JITValuePointer ret =
-                                      function->createVariable(JITTypeTag::INT32, "ret");
-                                  ret = function->getArgument(0);
+                                  JITValuePointer ret = function->createVariable(
+                                      JITTypeTag::INT32, "ret", function->getArgument(0));
                                   auto if_builder = function->createIfBuilder();
                                   if_builder
                                       ->condition([&]() {
@@ -402,9 +398,8 @@ TEST_F(JITLibTests, NestedIFControlFlowTest) {
                                 .addParameter(JITTypeTag::BOOL, "condition")
                                 .addReturn(JITTypeTag::INT32)
                                 .addProcedureBuilder([](JITFunction* function) {
-                                  JITValuePointer ret =
-                                      function->createVariable(JITTypeTag::INT32, "ret");
-                                  ret = function->getArgument(0);
+                                  JITValuePointer ret = function->createVariable(
+                                      JITTypeTag::INT32, "ret", function->getArgument(0));
                                   auto if_builder = function->createIfBuilder();
                                   if_builder
                                       ->condition([&]() {
@@ -453,11 +448,10 @@ TEST_F(JITLibTests, BasicForControlFlowTest) {
           .addReturn(JITTypeTag::INT32)
           .addProcedureBuilder([](JITFunction* function) {
             JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-            ret = function->createLiteral(JITTypeTag::INT32, 0);
 
             auto loop_builder = function->createLoopBuilder();
-            JITValuePointer index = function->createVariable(JITTypeTag::INT32, "index");
-            *index = function->createLiteral(JITTypeTag::INT32, 9l);
+            JITValuePointer index =
+                function->createVariable(JITTypeTag::INT32, "index", 9);
 
             loop_builder->condition([&]() { return index + 0; })
                 ->loop([&]() { ret = ret + index; })
@@ -482,7 +476,6 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
           .addReturn(JITTypeTag::INT32)
           .addProcedureBuilder([](JITFunction* function) {
             JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret");
-            ret = function->createLiteral(JITTypeTag::INT32, 0);
 
             int levels = 5;
             std::function<void()> nested_loop_builder = [&]() {

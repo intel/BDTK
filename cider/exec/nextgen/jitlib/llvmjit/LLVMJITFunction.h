@@ -41,9 +41,6 @@ class LLVMJITFunction final : public JITFunction {
 
   operator llvm::IRBuilder<>&() const { return *ir_builder_; }
 
-  JITValuePointer createVariable(JITTypeTag type_tag, const std::string& name) override;
-
-
   JITValuePointer getArgument(size_t index) override;
 
   IfBuilderPointer createIfBuilder() override;
@@ -68,6 +65,10 @@ class LLVMJITFunction final : public JITFunction {
   llvm::LLVMContext& getLLVMContext();
 
  private:
+  JITValuePointer createVariableImpl(JITTypeTag type_tag,
+                                     const std::string& name,
+                                     JITValuePointer& init_val) override;
+
   JITValuePointer createLocalJITValueImpl(LocalJITValueBuilderEmitter emitter,
                                           void* builder) override;
 

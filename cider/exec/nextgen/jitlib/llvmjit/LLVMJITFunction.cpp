@@ -86,16 +86,20 @@ JITValuePointer LLVMJITFunction::createLocalJITValueImpl(
   return ret;
 }
 
-JITValuePointer LLVMJITFunction::createVariable(JITTypeTag type_tag,
-                                                const std::string& name) {
-  return createLocalJITValue([type_tag, &name, this] {
+JITValuePointer LLVMJITFunction::createVariableImpl(JITTypeTag type_tag,
+                                                    const std::string& name,
+                                                    JITValuePointer& init_val) {
+  return createLocalJITValue([type_tag, &name, &init_val, this] {
     auto llvm_type = getLLVMType(type_tag, getLLVMContext());
     llvm::AllocaInst* variable_memory = ir_builder_->CreateAlloca(llvm_type);
     variable_memory->setName(name);
     variable_memory->setAlignment(getJITTypeSize(type_tag));
 
-    return makeJITValuePointer<LLVMJITValue>(
-        type_tag, *this, variable_memory, name, true);
+    auto value =
+        makeJITValuePointer<LLVMJITValue>(type_tag, *this, variable_memory, name, true);
+    *value = init_val;
+
+    return value;
   });
 }
 
@@ -268,4 +272,4 @@ LoopBuilderPointer LLVMJITFunction::createLoopBuilder() {
 }
 };  // namespace cider::jitlib
 
-#endif // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+#endif  // JITLIB_LLVMJIT_LLVMJITFUNCTION_H

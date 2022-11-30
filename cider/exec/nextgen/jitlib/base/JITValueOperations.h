@@ -67,8 +67,7 @@ template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator||(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh || *rh_pointer;
 }
 
@@ -90,8 +89,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator+(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh + *rh_pointer;
 }
 
@@ -108,8 +106,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator-(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh - *rh_pointer;
 }
 
@@ -117,8 +114,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator-(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer - rh;
 }
 
@@ -130,8 +126,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator*(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh * *rh_pointer;
 }
 
@@ -148,8 +143,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator/(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh / *rh_pointer;
 }
 
@@ -157,8 +151,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator/(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer / rh;
 }
 
@@ -170,8 +163,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator%(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh % *rh_pointer;
 }
 
@@ -179,8 +171,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator%(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer % rh;
 }
 
@@ -192,8 +183,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator==(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh == *rh_pointer;
 }
 
@@ -210,8 +200,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator!=(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh != *rh_pointer;
 }
 
@@ -228,8 +217,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator<(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh < *rh_pointer;
 }
 
@@ -237,8 +225,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator<(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer < rh;
 }
 
@@ -250,8 +237,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator<=(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh <= *rh_pointer;
 }
 
@@ -259,8 +245,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator<=(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer <= rh;
 }
 
@@ -272,8 +257,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator>(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh > *rh_pointer;
 }
 
@@ -281,8 +265,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator>(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer > rh;
 }
 
@@ -294,8 +277,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator>=(JITValue& lh, T rh) {
   auto& parent_func = lh.getParentJITFunction();
   auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createLiteral(type, rh);
+  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
   return lh >= *rh_pointer;
 }
 
@@ -303,8 +285,7 @@ template <typename T, IsJITValueConvertable<T> = true>
 inline JITValuePointer operator>=(T lh, JITValue& rh) {
   auto& parent_func = rh.getParentJITFunction();
   auto type = rh.getValueTypeTag();
-  JITValuePointer lh_pointer =
-      parent_func.createLiteral(type, lh);
+  JITValuePointer lh_pointer = parent_func.createLiteral(type, lh);
   return *lh_pointer >= rh;
 }
 
@@ -313,4 +294,4 @@ inline JITValuePointer operator*(JITValue& value) {
 }
 };  // namespace cider::jitlib
 
-#endif // JITLIB_BASE_JITVALUEOPERATIONS_H
+#endif  // JITLIB_BASE_JITVALUEOPERATIONS_H

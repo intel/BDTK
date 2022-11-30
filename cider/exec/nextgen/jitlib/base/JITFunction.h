@@ -68,9 +68,18 @@ class JITFunction {
     }
   }
 
-  // TODO: Support initial value.
-  virtual JITValuePointer createVariable(JITTypeTag type_tag,
-                                         const std::string& name) = 0;
+  template <typename T = int32_t>
+  JITValuePointer createVariable(JITTypeTag type_tag,
+                                 const std::string& name = "var",
+                                 T&& init_val = 0) {
+    if constexpr (std::is_same_v<std::decay_t<T>, JITValuePointer> ||
+                  std::is_same_v<std::decay_t<T>, JITValue>) {
+      return createVariableImpl(type_tag, name, init_val);
+    } else {
+      auto init_jit_value = createLiteral(type_tag, init_val);
+      return createVariableImpl(type_tag, name, init_jit_value);
+    }
+  }
 
   [[deprecated("Use createLiteral.")]] JITValuePointer createConstant(
       JITTypeTag type_tag,
@@ -129,6 +138,10 @@ class JITFunction {
 
   virtual JITValuePointer createLocalJITValueImpl(LocalJITValueBuilderEmitter emitter,
                                                   void* builder) = 0;
+
+  virtual JITValuePointer createVariableImpl(JITTypeTag type_tag,
+                                             const std::string& name,
+                                             JITValuePointer& init_val) = 0;
 };
 
 using JITFunctionPointer = std::shared_ptr<JITFunction>;
