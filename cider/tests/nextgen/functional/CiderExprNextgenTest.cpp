@@ -141,11 +141,9 @@ TEST_F(CiderExprNextgenTest, isNullTest) {
 }
 
 TEST_F(CiderExprNextgenTest, isDistinctFromTest) {
-  // TODO: (yma11) null is not properly handled in FilterNode
-  // For is_distinct_from case, the expected length should be 2
   executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
               "is_distinct_from.json",
-              4,
+              2,
               true);
   executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
               "is_not_distinct_from.json",

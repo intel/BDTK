@@ -250,6 +250,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
 
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
+    case JITTypeTag::BOOL:
     case JITTypeTag::INT8:
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
