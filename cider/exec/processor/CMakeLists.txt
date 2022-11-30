@@ -16,8 +16,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-add_subdirectory(module)
-add_subdirectory(plan)
-add_subdirectory(template)
-add_subdirectory(nextgen)
-add_subdirectory(processor)
+
+set(PROCESSOR_SOURCE BatchProcessor.cpp StatelessProcessor.cpp
+                     StatefulProcessor.cpp)
+
+add_library(cider_processor STATIC ${PROCESSOR_SOURCE})
+target_link_libraries(cider_processor substrait)
