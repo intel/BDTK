@@ -72,13 +72,15 @@ void* LLVMJITFunction::getFunctionPointer() {
 JITValuePointer LLVMJITFunction::createLocalJITValue(
     std::function<JITValuePointer()> builder) {
   auto current_block = ir_builder_->GetInsertBlock();
+  auto current_insert_iter = ir_builder_->GetInsertPoint();
+
   auto& local_var_block = current_block->getParent()->getEntryBlock();
-  auto iter = local_var_block.end();
-  ir_builder_->SetInsertPoint(&local_var_block, --iter);
+  auto local_var_inst_iter = local_var_block.end();
+  ir_builder_->SetInsertPoint(&local_var_block, --local_var_inst_iter);
 
   JITValuePointer ret(builder());
 
-  ir_builder_->SetInsertPoint(current_block);
+  ir_builder_->SetInsertPoint(current_block, current_insert_iter);
 
   return ret;
 }
@@ -265,4 +267,4 @@ LoopBuilderPointer LLVMJITFunction::createLoopBuilder() {
 }
 };  // namespace cider::jitlib
 
-#endif  // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+#endif // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
