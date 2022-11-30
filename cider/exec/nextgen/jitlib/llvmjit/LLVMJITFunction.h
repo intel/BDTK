@@ -43,7 +43,6 @@ class LLVMJITFunction final : public JITFunction {
 
   JITValuePointer createVariable(JITTypeTag type_tag, const std::string& name) override;
 
-  JITValuePointer createLocalJITValue(std::function<JITValuePointer()> builder) override;
 
   JITValuePointer getArgument(size_t index) override;
 
@@ -69,6 +68,9 @@ class LLVMJITFunction final : public JITFunction {
   llvm::LLVMContext& getLLVMContext();
 
  private:
+  JITValuePointer createLocalJITValueImpl(LocalJITValueBuilderEmitter emitter,
+                                          void* builder) override;
+
   void* getFunctionPointer() override;
 
   JITValuePointer createLiteralImpl(JITTypeTag type_tag, const std::any& value) override;

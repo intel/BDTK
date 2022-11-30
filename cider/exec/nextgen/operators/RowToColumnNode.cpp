@@ -140,8 +140,8 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context) {
       true);
 
   // TODO (bigPYJ1151): Refactor after JITLib Refactor.
-  auto output_index = func->createVariable(JITTypeTag::INT64, "output_index");
-  output_index = func->createLocalJITValue([func, &output_index]() {
+  auto output_index = func->createLocalJITValue([func]() {
+    auto output_index = func->createVariable(JITTypeTag::INT64, "output_index");
     output_index = func->createLiteral(JITTypeTag::INT64, 0l);
     return output_index;
   });

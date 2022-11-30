@@ -84,8 +84,19 @@ class JITFunction {
     return createLiteralImpl(type_tag, casted_value);
   }
 
-  virtual JITValuePointer createLocalJITValue(
-      std::function<JITValuePointer()> builder) = 0;
+  using LocalJITValueBuilderEmitter = JITValuePointer(void*);
+
+  template <
+      typename T,
+      typename std::enable_if_t<std::is_invocable_r_v<JITValuePointer, T>, bool> = true>
+  JITValuePointer createLocalJITValue(T&& builder) {
+    auto builder_wrapper = [](void* builder_ptr) -> JITValuePointer {
+      auto actual_builder = reinterpret_cast<T*>(builder_ptr);
+      return (*actual_builder)();
+    };
+
+    return createLocalJITValueImpl(builder_wrapper, (void*)&builder);
+  }
 
   virtual JITValuePointer getArgument(size_t index) = 0;
 
@@ -115,6 +126,9 @@ class JITFunction {
 
   virtual JITValuePointer createLiteralImpl(JITTypeTag type_tag,
                                             const std::any& value) = 0;
+
+  virtual JITValuePointer createLocalJITValueImpl(LocalJITValueBuilderEmitter emitter,
+                                                  void* builder) = 0;
 };
 
 using JITFunctionPointer = std::shared_ptr<JITFunction>;

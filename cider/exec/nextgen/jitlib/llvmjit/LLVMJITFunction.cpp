@@ -69,8 +69,9 @@ void* LLVMJITFunction::getFunctionPointer() {
   return module_.getFunctionPtrImpl(*this);
 }
 
-JITValuePointer LLVMJITFunction::createLocalJITValue(
-    std::function<JITValuePointer()> builder) {
+JITValuePointer LLVMJITFunction::createLocalJITValueImpl(
+    LocalJITValueBuilderEmitter emitter,
+    void* builder) {
   auto current_block = ir_builder_->GetInsertBlock();
   auto current_insert_iter = ir_builder_->GetInsertPoint();
 
@@ -78,7 +79,7 @@ JITValuePointer LLVMJITFunction::createLocalJITValue(
   auto local_var_inst_iter = local_var_block.end();
   ir_builder_->SetInsertPoint(&local_var_block, --local_var_inst_iter);
 
-  JITValuePointer ret(builder());
+  JITValuePointer ret(emitter(builder));
 
   ir_builder_->SetInsertPoint(current_block, current_insert_iter);
 
