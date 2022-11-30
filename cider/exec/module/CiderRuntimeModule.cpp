@@ -630,7 +630,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
     // reset need to be done after data consumed, like bitmap for count(distinct)
     resetAggVal();
     if (ciderCompilationOption_.use_cider_data_format) {
-      auto arrow_out_batch = CiderBatchUtils::convertToArrowRepresentation(out_batch);
+      auto arrow_out_batch = CiderBatchUtils::convertToArrow(out_batch);
       return std::make_pair(
           kNoMoreOutput,
           std::move(std::make_unique<CiderBatch>(std::move(arrow_out_batch))));
@@ -777,8 +777,9 @@ void CiderRuntimeModule::initCiderAggTargetColExtractors() {
     group_by_agg_extractors_[i] =
         CiderAggTargetColExtractorBuilder::buildCiderAggTargetColExtractor(
             group_by_agg_hashtable_.get(), target_col_index, is_partial_avg_sum[i]);
-
-    if (kAVG == col_info.agg_type) {
+    if (is_partial_avg_sum[i] && kSUM == col_info.agg_type) {
+      children.emplace_back(kDOUBLE);
+    } else if (kAVG == col_info.agg_type) {
       children.emplace_back(kDOUBLE, col_info.arg_type_info.get_notnull());
       ++i;
     } else {

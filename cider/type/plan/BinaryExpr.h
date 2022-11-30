@@ -30,6 +30,7 @@
 
 #include "Expr.h"
 #include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "util/sqldefs.h"
 
@@ -143,8 +144,12 @@ class BinOper : public Expr {
     return {&left_operand, &right_operand};
   }
   JITExprValue& codegen(JITFunction& func) override;
-  JITExprValue& codegenFixedSizeColArithFun(JITValue& lhs, JITValue& rhs);
-  JITExprValue& codegenFixedSizeColCmpFun(JITValue& lhs, JITValue& rhs);
+  JITExprValue& codegenFixedSizeColArithFun(JITValuePointer& null,
+                                            JITValue& lhs,
+                                            JITValue& rhs);
+  JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
+                                          JITValue& lhs,
+                                          JITValue& rhs);
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.
