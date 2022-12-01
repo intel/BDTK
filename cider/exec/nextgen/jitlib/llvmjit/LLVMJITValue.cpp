@@ -317,6 +317,35 @@ JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
       JITTypeTag::POINTER, parent_function_, new_llvm_value, "cast_ptr", false, type_tag);
 }
 
+JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_tag) {
+  llvm::Type* source_type =
+      getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
+  llvm::Type* target_type =
+      getLLVMType(target_jit_tag, parent_function_.getLLVMContext());
+  CHECK(source_type && target_type);
+  llvm::Value* source_lv = load();
+  llvm::Value* target_lv = nullptr;
+  if (source_type->isIntegerTy() && target_type->isIntegerTy()) {
+    target_lv =
+        getFunctionBuilder(parent_function_).CreateIntCast(source_lv, target_type, true);
+  } else if (source_type->isIntegerTy() && target_type->isFloatingPointTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateSIToFP(source_lv, target_type);
+  } else if (source_type->isFloatingPointTy() && target_type->isIntegerTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateFPToSI(source_lv, target_type);
+  } else if (source_type->isFloatingPointTy() && target_type->isFloatingPointTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateFPCast(source_lv, target_type);
+  }
+  CHECK(target_lv) << "error when cast JITValue type from:"
+                   << getJITTypeName(getValueTypeTag())
+                   << " into type:" << getJITTypeName(target_jit_tag);
+  return makeJITValuePointer<LLVMJITValue>(target_jit_tag,
+                                           parent_function_,
+                                           target_lv,
+                                           "cast_val",
+                                           false,
+                                           JITTypeTag::INVALID);
+}
+
 JITValuePointer LLVMJITValue::dereference() {
   if (JITTypeTag::POINTER != getValueTypeTag()) {
     LOG(FATAL) << "Invalid operation to dereference of a non-POINTER JITValue. Type="

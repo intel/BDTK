@@ -58,9 +58,42 @@ JITExprValue& UOper::codegen(JITFunction& func) {
       CHECK(operand_val.getNull().get());
       return set_expr_value(operand_val.getNull(), operand_val.getValue()->notOp());
     }
+    case kCAST: {
+      return set_expr_value(operand_val.getNull(),
+                            codegenCastFunc(func, operand_val.getValue()));
+    }
     default:
       UNIMPLEMENTED();
   }
+}
+
+JITValuePointer UOper::codegenCastFunc(JITFunction& func, JITValue& operand_val) {
+  const auto& ti = this->get_type_info();
+  const auto& operand_ti = this->get_operand()->get_type_info();
+  JITTypeTag ti_jit_tag = getJITTypeTag(ti.get_type());
+  if (operand_ti.is_string() || ti.is_string()) {
+    UNIMPLEMENTED();
+  } else if (operand_ti.is_time() || ti.is_time()) {
+    UNIMPLEMENTED();
+  } else if (operand_ti.is_integer()) {
+    if (ti.is_fp() || ti.is_integer()) {
+      return operand_val.castJITValuePrimitiveType(ti_jit_tag);
+    }
+  } else if (operand_ti.is_fp()) {
+    // Round by adding/subtracting 0.5 before fptosi.
+    if (ti.is_integer()) {
+      func.createIfBuilder()
+          ->condition([&]() { return operand_val < 0; })
+          ->ifTrue([&]() { operand_val = operand_val - 0.5; })
+          ->ifFalse([&]() { operand_val = operand_val + 0.5; })
+          ->build();
+    }
+    return operand_val.castJITValuePrimitiveType(ti_jit_tag);
+  }
+  CIDER_THROW(CiderCompileException,
+              fmt::format("cast type:{} into type:{} not support yet",
+                          operand_ti.get_type_name(),
+                          ti.get_type_name()));
 }
 
 std::shared_ptr<Analyzer::Expr> UOper::deep_copy() const {
