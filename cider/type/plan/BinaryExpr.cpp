@@ -67,7 +67,7 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
         return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
       } else if (IS_LOGIC(optype)) {
         // return codegenLogicalFun(bin_oper, co);
-        return codegenFixedSizeLogicalFun(null, lhs_val.getValue(), rhs_val.getValue());
+        UNIMPLEMENTED();
       }
   }
   UNREACHABLE();
@@ -118,50 +118,26 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
   }
 }
 
-JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITValuePointer& null,
-                                                  JITValue& lhs,
-                                                  JITValue& rhs) {
-  switch (get_optype()) {
-    case kAND:
-      return set_expr_value(null, lhs && rhs);
-    case kOR:
-      return set_expr_value(null, lhs || rhs);
-    default:
-      UNREACHABLE();
-  }
-}
-
 JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,
                                                     FixSizeJITExprValue& lhs_val,
                                                     FixSizeJITExprValue& rhs_val) {
+  JITValuePointer value = func.createVariable(JITTypeTag::BOOL, "bw_cmp");
+  if (lhs_val.isNullable() && rhs_val.isNullable()) {
+    // both not null and value not equal
+    value = (!lhs_val.getNull() && !rhs_val.getNull() &&
+             lhs_val.getValue() != rhs_val.getValue()) ||
+            (lhs_val.getNull() != rhs_val.getNull());
+  } else if (lhs_val.isNullable()) {
+    value = lhs_val.getValue() != rhs_val.getValue() || lhs_val.getNull();
+  } else if (rhs_val.isNullable()) {
+    value = lhs_val.getValue() != rhs_val.getValue() || rhs_val.getNull();
+  }
   switch (get_optype()) {
     case kBW_NE: {
-      JITValuePointer value = func.createVariable(JITTypeTag::BOOL, "bw_ne");
-      if (lhs_val.isNullable() && rhs_val.isNullable()) {
-        // both not null and value not equal
-        value = (!lhs_val.getNull() && !rhs_val.getNull() &&
-                 lhs_val.getValue() != rhs_val.getValue()) ||
-                (lhs_val.getNull() != rhs_val.getNull());
-      } else if (lhs_val.isNullable()) {
-        value = lhs_val.getValue() != rhs_val.getValue() || lhs_val.getNull();
-      } else if (rhs_val.isNullable()) {
-        value = lhs_val.getValue() != rhs_val.getValue() || rhs_val.getNull();
-      }
       return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
     }
     case kBW_EQ: {
-      JITValuePointer value = func.createVariable(JITTypeTag::BOOL, "bw_eq");
-      if (lhs_val.isNullable() && rhs_val.isNullable()) {
-        // both are null or both are not null and value equal
-        value = (lhs_val.getNull() && rhs_val.getNull()) ||
-                ((lhs_val.getValue() == rhs_val.getValue()) && !lhs_val.getNull() &&
-                 !rhs_val.getNull());
-      } else if (lhs_val.isNullable()) {
-        value = lhs_val.getValue() == rhs_val.getValue() && !lhs_val.getNull();
-      } else if (rhs_val.isNullable()) {
-        value = lhs_val.getValue() == rhs_val.getValue() && !rhs_val.getNull();
-      }
-      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
+      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), !value);
     }
     default:
       UNREACHABLE();
