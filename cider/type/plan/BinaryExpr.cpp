@@ -48,14 +48,7 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
   FixSizeJITExprValue lhs_val(lhs->codegen(func));
   FixSizeJITExprValue rhs_val(rhs->codegen(func));
 
-  JITValuePointer null(nullptr);
-  bool lhs_nullable = lhs_val.isNullable();
-  bool rhs_nullable = rhs_val.isNullable();
-  if (lhs_nullable && rhs_nullable) {
-    null.replace(lhs_val.getNull() || rhs_val.getNull());
-  } else if (lhs_nullable || rhs_nullable) {
-    null.replace(lhs_nullable ? lhs_val.getNull() : rhs_val.getNull());
-  }
+  auto null = lhs_val.getNull() || rhs_val.getNull();
 
   switch (lhs_ti.get_type()) {
     case kVARCHAR:

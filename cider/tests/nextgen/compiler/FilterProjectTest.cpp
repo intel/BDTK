@@ -93,19 +93,29 @@ class FilterProjectTest : public ::testing::Test {
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
     EXPECT_EQ(output_batch_array->length, 4);
 
-    auto check_array = [](ArrowArray* array, size_t expect_len) {
-      EXPECT_EQ(array->length, expect_len);
-      int64_t* data_buffer = (int64_t*)array->buffers[1];
-      for (size_t i = 0; i < expect_len; ++i) {
-        std::cout << data_buffer[i] << " ";
-      }
-      std::cout << std::endl;
-    };
+    auto check_array =
+        [](ArrowArray* array, size_t expect_len, std::vector<int64_t>& expect_res) {
+          EXPECT_EQ(array->length, expect_len);
+          int64_t* data_buffer = (int64_t*)array->buffers[1];
+          for (size_t i = 0; i < expect_len; ++i) {
+            EXPECT_EQ(data_buffer[i], expect_res[i]);
+          }
+        };
 
-    check_array(output_batch_array->children[0], 4);
-    check_array(output_batch_array->children[1], 4);
-    check_array(output_batch_array->children[2], 4);
-    check_array(output_batch_array->children[3], 4);
+    // a   1 2 3 4
+    // b   2 3 4 5
+    // a+b 3 5 7 9
+    // b+a 3 5 7 9
+    // a+a 2 4 6 8
+    // b+b 4 6 8 10
+    std::vector<int64_t> expect_res = {3, 5, 7, 9};
+    check_array(output_batch_array->children[0], 4, expect_res);
+    expect_res = {3, 5, 7, 9};
+    check_array(output_batch_array->children[1], 4, expect_res);
+    expect_res = {2, 4, 6, 8};
+    check_array(output_batch_array->children[2], 4, expect_res);
+    expect_res = {4, 6, 8, 10};
+    check_array(output_batch_array->children[3], 4, expect_res);
   }
 
  private:
