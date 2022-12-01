@@ -28,10 +28,10 @@
 #include <string>
 #include <vector>
 
-#include "Expr.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
+#include "type/plan/Expr.h"
 #include "util/sqldefs.h"
 
 namespace Analyzer {

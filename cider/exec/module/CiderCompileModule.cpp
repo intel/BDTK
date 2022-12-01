@@ -22,6 +22,7 @@
 #include "cider/CiderCompileModule.h"
 #include "CiderCompilationResultImpl.h"
 #include "cider/batch/ScalarBatch.h"
+#include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/template/Execute.h"
 #include "type/schema/CiderSchemaProvider.h"
@@ -41,6 +42,7 @@ CompilationOptions CiderCompilationOptionToCo(CiderCompilationOption& cco) {
   co.use_default_col_range = cco.use_default_col_range;
   co.use_cider_data_format = cco.use_cider_data_format;
   co.needs_error_check = cco.needs_error_check;
+  co.use_nextgen_compiler = cco.use_nextgen_compiler;
 
   return co;
 }
@@ -112,6 +114,12 @@ class CiderCompileModule::Impl {
     translator_ = std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan);
     ra_exe_unit_ =
         std::make_shared<RelAlgExecutionUnit>(translator_->createRelAlgExecutionUnit());
+
+    if (co.use_nextgen_compiler) {
+      cider::jitlib::CompilationOptions co;
+      co.dump_ir = true;
+      codegen_ctx_ = cider::exec::nextgen::compile(*ra_exe_unit_, co);
+    }
 
     // if this is a join query and don't feed a valid build table, throw exception
     if (!ra_exe_unit_->join_quals.empty()) {
@@ -500,6 +508,7 @@ class CiderCompileModule::Impl {
   std::shared_ptr<generator::SubstraitToRelAlgExecutionUnit> translator_;
   CiderBatch build_table_;
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
+  std::unique_ptr<cider::exec::nextgen::context::CodegenContext> codegen_ctx_;
 
   std::vector<InputTableInfo> buildInputTableInfo(
       const std::vector<CiderTableSchema>& tableSchemas,

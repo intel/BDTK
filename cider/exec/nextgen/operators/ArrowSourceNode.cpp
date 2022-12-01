@@ -38,7 +38,7 @@ void ArrowSourceTranslator::consume(context::CodegenContext& context) {
 
 void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
-  auto&& [output_type, exprs] = op_node_->getOutputExprs();
+  auto&& [output_type, exprs] = node_->getOutputExprs();
 
   // get input ArrowArray pointer, generated query function signature likes void
   // query_func(RuntimeContext* ctx, ArrowArray* input).

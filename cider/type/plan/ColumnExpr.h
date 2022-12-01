@@ -28,8 +28,8 @@
 #include <string>
 #include <vector>
 
-#include "Expr.h"
 #include "type/data/sqltypes.h"
+#include "type/plan/Expr.h"
 #include "type/schema/ColumnInfo.h"
 
 namespace Analyzer {

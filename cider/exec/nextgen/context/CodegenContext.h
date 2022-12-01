@@ -26,11 +26,8 @@
 #include "include/cider/CiderAllocator.h"
 #include "type/data/sqltypes.h"
 
-namespace cider::jitlib {
-class JITFunction;
-}
-
 namespace cider::exec::nextgen::context {
+
 class RuntimeContext;
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
 

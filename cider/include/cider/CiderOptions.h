@@ -37,6 +37,7 @@ DECLARE_bool(use_cider_groupby_hash);
 DECLARE_bool(use_default_col_range);
 DECLARE_bool(use_cider_data_format);
 DECLARE_bool(needs_error_check);
+DECLARE_bool(use_nextgen_compiler);
 
 DECLARE_bool(output_columnar_hint);
 DECLARE_bool(allow_multifrag);
@@ -68,6 +69,7 @@ struct CiderCompilationOption {
   bool use_default_col_range;
   bool use_cider_data_format;
   bool needs_error_check;
+  bool use_nextgen_compiler;
 
   static CiderCompilationOption defaults() {
     return CiderCompilationOption{FLAGS_hoist_literals,
@@ -80,7 +82,8 @@ struct CiderCompilationOption {
                                   FLAGS_use_cider_groupby_hash,
                                   FLAGS_use_default_col_range,
                                   FLAGS_use_cider_data_format,
-                                  FLAGS_needs_error_check};
+                                  FLAGS_needs_error_check,
+                                  FLAGS_use_nextgen_compiler};
   }
 };
 

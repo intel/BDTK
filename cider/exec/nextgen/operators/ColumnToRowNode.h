@@ -33,7 +33,7 @@ class ColumnToRowNode : public OpNode {
   ColumnToRowNode(const ExprPtrVector& output_exprs)
       : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW) {}
 
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
   jitlib::JITValuePointer getColumnRowNum() { return column_row_num_; }
 
@@ -58,8 +58,7 @@ class ColumnToRowNode : public OpNode {
 
 class ColumnToRowTranslator : public Translator {
  public:
-  ColumnToRowTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {}
+  using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
 

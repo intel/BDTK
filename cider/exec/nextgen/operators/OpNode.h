@@ -22,8 +22,6 @@
 #ifndef NEXTGEN_OPERATORS_OPNODE_H
 #define NEXTGEN_OPERATORS_OPNODE_H
 
-#include <type_traits>
-
 #include "exec/nextgen/context/CodegenContext.h"
 #include "type/plan/Analyzer.h"
 
@@ -41,7 +39,7 @@ using TranslatorPtr = std::shared_ptr<Translator>;
 
 /// \brief A OpNode is a relational operation in a plan
 ///
-/// Note: Each OpNode has zero or one source
+/// Note: Each OpNode has zero or one input
 class OpNode : public std::enable_shared_from_this<OpNode> {
  public:
   template <typename OutputVecT>
@@ -58,14 +56,14 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   /// \brief The name of the operator node
   const char* name() const { return name_; }
 
-  void setInputOpNode(const OpNodePtr& prev) { input_ = prev; }
+  void setInputOpNode(const OpNodePtr& input) { input_ = input; }
 
   std::pair<JITExprValueType, ExprPtrVector&> getOutputExprs() {
     return {output_type_, output_exprs_};
   }
 
   /// \brief Transform the operator to a translator
-  virtual TranslatorPtr toTranslator(const TranslatorPtr& succ) = 0;
+  virtual TranslatorPtr toTranslator(const TranslatorPtr& successor) = 0;
 
  protected:
   OpNodePtr input_;
@@ -77,14 +75,14 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 // TBD: Combine OpNode and Translator
 class Translator {
  public:
-  Translator(const OpNodePtr& op_node, const TranslatorPtr& successor = nullptr)
-      : op_node_(op_node), successor_(successor) {}
+  Translator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
+      : node_(node), successor_(successor) {}
 
   virtual ~Translator() = default;
 
   virtual void consume(context::CodegenContext& context) = 0;
 
-  OpNodePtr getOpNode() { return op_node_; }
+  OpNodePtr getOpNode() { return node_; }
 
   TranslatorPtr setSuccessor(const TranslatorPtr& successor) {
     successor_ = successor;
@@ -94,17 +92,21 @@ class Translator {
   TranslatorPtr getSuccessor() const { return successor_; }
 
  protected:
-  OpNodePtr op_node_;
+  OpNodePtr node_;
   TranslatorPtr successor_;
 };
 
 template <typename OpNodeT, typename... Args>
-OpNodePtr createOpNode(Args&&... args) {
+inline typename std::enable_if_t<std::is_base_of<OpNode, OpNodeT>::value,
+                                 std::shared_ptr<OpNodeT>>
+createOpNode(Args&&... args) {
   return std::make_shared<OpNodeT>(std::forward<Args>(args)...);
 }
 
 template <typename OpTranslatorT, typename... Args>
-TranslatorPtr createOpTranslator(Args&&... args) {
+inline typename std::enable_if_t<std::is_base_of<Translator, OpTranslatorT>::value,
+                                 std::shared_ptr<Translator>>
+createOpTranslator(Args&&... args) {
   return std::make_shared<OpTranslatorT>(std::forward<Args>(args)...);
 }
 
@@ -112,6 +114,7 @@ template <typename OpNodeT>
 bool isa(const OpNodePtr& op) {
   return dynamic_cast<OpNodeT*>(op.get());
 }
+
 }  // namespace cider::exec::nextgen::operators
 
 #endif  // NEXTGEN_OPERATORS_OPNODE_H
