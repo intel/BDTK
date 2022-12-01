@@ -367,6 +367,23 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest9) {
   ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
 }
 
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest10) {
+  const std::string function_signature_str = "substr:str_i64_i64";
+  const std::string return_type = "str";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::SUBSTRING);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kSUBSTRING_STRING_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
+}
+
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
