@@ -330,15 +330,27 @@ NullableStrType SplitPart::operator()(const std::string& str) const {
 
   do {
     last_delimiter_pos = delimiter_pos;
-    delimiter_pos = reverse_ ? str.rfind(delimiter_, delimiter_pos - 1UL)
-                             : str.find(delimiter_, delimiter_pos + delimiter_length_);
+    delimiter_pos =
+        reverse_ ? str.rfind(delimiter_, delimiter_pos - 1UL)
+                 : str.find(delimiter_,
+                            // shouldn't skip delimiter length on first search attempt
+                            delimiter_pos == 0 ? 0 : delimiter_pos + delimiter_length_);
+    // do ++limit_counter in the loop to prevent bugs caused by shortcut execution
+    ++limit_counter;
+    // however, we still keep ++delimiter_idx in while condition check to ensure
+    // the property that delimiter_idx == 0 iff delimiter does not exist in input string
   } while (delimiter_pos != std::string::npos && ++delimiter_idx < split_part_ &&
-           (limit_ == 0 || ++limit_counter < limit_));
+           (limit_ == 0 || limit_counter < limit_));
 
   if (limit_ && limit_counter == limit_) {
     // split has reached maximum split limit
     // treat whatever remains as a whole by extending delimiter_pos to end-of-string
     delimiter_pos = std::string::npos;
+  }
+
+  if (delimiter_idx == 0 && split_part_ == 1) {
+    // delimiter does not exist, but the first split is requested, return the entire str
+    return str;
   }
 
   if (delimiter_pos == std::string::npos &&

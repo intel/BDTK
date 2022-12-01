@@ -1116,14 +1116,82 @@ TEST_F(CiderSplitPartTestArrow, SplitAndIndexingTest) {
   // note that duckdb array indexing is one-based, so [2] references the second element
   assertQueryArrow(
       "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
-      "stringop_splitpart_indexing.json");
-  assertQueryArrow("SELECT col_2 FROM test WHERE STRING_SPLIT(col_2, ',')[1] = 'foo';",
-                   "stringop_splitpart_filter.json");
-  assertQueryArrow("SELECT col_3 FROM test WHERE STRING_SPLIT(col_3, ',')[1] = 'foo';",
-                   "stringop_splitpart_filter_null.json");
+      "stringop_split_index_indexing.json");
   assertQueryArrow(
       "SELECT STRING_SPLIT(col_2, ',')[-1], STRING_SPLIT(col_3, ',')[-1] FROM test;",
-      "stringop_splitpart_indexing_reversed.json");
+      "stringop_split_index_indexing_reversed.json");
+
+  // filter
+  assertQueryArrow("SELECT col_2 FROM test WHERE STRING_SPLIT(col_2, ',')[1] = 'foo';",
+                   "stringop_split_index_filter.json");
+  assertQueryArrow("SELECT col_3 FROM test WHERE STRING_SPLIT(col_3, ',')[1] = 'foo';",
+                   "stringop_split_index_filter_null.json");
+
+  // out-of-range
+  // duckdb returns null ("null") but cider returns empty string ("")
+  // assertQueryArrow(
+  //     "SELECT STRING_SPLIT(col_2, ',')[5], STRING_SPLIT(col_3, ',')[5] FROM test",
+  //     "stringop_split_index_oob.json");
+
+  // multi-char
+  assertQueryArrow(
+      "SELECT STRING_SPLIT(col_2, 'oo')[1], STRING_SPLIT(col_3, 'oo')[1] FROM test;",
+      "stringop_split_index_multi.json");
+
+  // not found
+  assertQueryArrow(
+      "SELECT STRING_SPLIT(col_2, 'z')[1], STRING_SPLIT(col_3, 'z')[1] FROM test;",
+      "stringop_split_index_not_found.json");
+}
+
+TEST_F(CiderSplitPartTestArrow, SplitWithLimitTest) {
+  // test for prestodb extension split(input, delimiter, limit)
+  auto is_null = std::vector<bool>{false, true, false, true, false, true};
+  {
+    // split(input, delimiter, 1)[1]
+    auto string_vec = std::vector<std::string>{
+        "foobar,boo", "foobar,boo", "foo,bar,boo", "foo,bar,boo", ",", ","};
+    auto [data, offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", data, offsets)
+            .addUTF8Column("col_3", data, offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_split_index_limit_1.json", expected_batch);
+  }
+  {
+    // split(input, delimiter, 2)[2]
+    auto string_vec =
+        std::vector<std::string>{"boo", "boo", "bar,boo", "bar,boo", "", ""};
+    auto [data, offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", data, offsets)
+            .addUTF8Column("col_3", data, offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_split_index_limit_2.json", expected_batch);
+  }
+}
+
+TEST_F(CiderSplitPartTestArrow, SplitPartTest) {
+  // test for prestodb extension split_part(input, delimiter, part)
+  // the underlying codegen and runtime function are the same as split-with-index
+  // so a basic test for verifying runnability should suffice for now
+  auto is_null = std::vector<bool>{false, true, false, true, false, true};
+  {
+    // split_part(input, 'bar', 1)
+    auto string_vec = std::vector<std::string>{"foo", "foo", "foo,", "foo,", ",", ","};
+    auto [data, offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", data, offsets)
+            .addUTF8Column("col_3", data, offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_split_part.json", expected_batch);
+  }
 }
 
 int main(int argc, char** argv) {

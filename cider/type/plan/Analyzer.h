@@ -1439,7 +1439,7 @@ class SplitPartStringOper : public StringOper {
                       const std::shared_ptr<Analyzer::Expr>& delimiter,
                       const std::shared_ptr<Analyzer::Expr>& split_part)
       : StringOper(SqlStringOpKind::SPLIT_PART,
-                   {operand, delimiter, split_part},
+                   foldLiteralStrCasts({operand, delimiter, split_part}),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
@@ -1454,14 +1454,14 @@ class SplitPartStringOper : public StringOper {
                       const std::shared_ptr<Analyzer::Expr>& limit,
                       const std::shared_ptr<Analyzer::Expr>& split_part)
       : StringOper(SqlStringOpKind::SPLIT_PART,
-                   {operand, delimiter, limit, split_part},
+                   foldLiteralStrCasts({operand, delimiter, limit, split_part}),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
   SplitPartStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::SPLIT_PART,
-                   operands,
+                   foldLiteralStrCasts(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
