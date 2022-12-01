@@ -29,6 +29,7 @@
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DateTimeTranslator.h"
+#include "function/FunctionLookupEngine.h"
 #include "util/DateTimeParser.h"
 
 namespace generator {
@@ -894,7 +895,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
   auto function_sig =
-      getFunctionName(function_map, s_scalar_function.function_reference());
+      getFunctionSignature(function_map, s_scalar_function.function_reference());
   auto funtion_return_type = TypeUtils::getStringType(s_scalar_function.output_type());
   const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
   auto function_descriptor = function_lookup_ptr->lookupFunction(
@@ -925,6 +926,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case OpSupportExprType::kTRIM_STRING_OPER:
     case OpSupportExprType::kSUBSTRING_STRING_OPER:
     case OpSupportExprType::kCONCAT_STRING_OPER:
+    case OpSupportExprType::kCHAR_LENGTH_OPER:
       return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
     case OpSupportExprType::kLIKE_EXPR:
       return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);
@@ -1090,7 +1092,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr,
     std::string return_type) {
-  auto function_sig = getFunctionName(function_map, s_expr.function_reference());
+  auto function_sig = getFunctionSignature(function_map, s_expr.function_reference());
   if (return_type.empty()) {
     return_type = TypeUtils::getStringType(s_expr.output_type());
   }

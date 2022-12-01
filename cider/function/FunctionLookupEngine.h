@@ -34,6 +34,7 @@
 #include "FunctionSignature.h"
 #include "Type.h"
 #include "function/SubstraitFunctionCiderMappings.h"
+#include "include/cider/CiderSupportPlatType.h"
 
 namespace io::substrait {
 
@@ -60,8 +61,6 @@ class VeloxFunctionMappings : public FunctionMapping {
 }  // namespace io::substrait
 
 using FunctionArgTypeMap = std::unordered_map<std::string, io::substrait::TypeKind>;
-
-enum PlatformType { SubstraitPlatform, PrestoPlatform, SparkPlatform };
 
 struct FunctionSignature {
   std::string func_name;

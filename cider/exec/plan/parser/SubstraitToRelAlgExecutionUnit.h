@@ -34,7 +34,7 @@
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include "exec/template/RelAlgExecutionUnit.h"
-#include "function/FunctionLookupEngine.h"
+#include "include/cider/CiderSupportPlatType.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
 

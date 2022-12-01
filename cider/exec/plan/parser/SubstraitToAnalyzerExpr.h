@@ -28,7 +28,7 @@
 
 #include <cstdint>
 #include "ConverterHelper.h"
-#include "function/FunctionLookupEngine.h"
+#include "include/cider/CiderSupportPlatType.h"
 #include "substrait/algebra.pb.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"

@@ -316,6 +316,23 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest6) {
   ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
 }
 
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest7) {
+  const std::string function_signature_str = "char_length:vchar";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::CHAR_LENGTH);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kCHAR_LENGTH_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "char_length");
+}
+
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest8) {
   const std::string function_signature_str = "substr:varchar<L1>_i32_i32";
   const std::string return_type = "varchar<L1>";

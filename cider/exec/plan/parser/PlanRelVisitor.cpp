@@ -105,7 +105,7 @@ void AggRelVisitor::visit(TargetContext* target_context) {
   for (int i = 0; i < rel_node_.measures_size(); i++) {
     // Add the agg expressions in target_exprs
     auto s_expr = rel_node_.measures(i).measure();
-    auto function_sig = getFunctionName(function_map_, s_expr.function_reference());
+    auto function_sig = getFunctionSignature(function_map_, s_expr.function_reference());
     auto function_name = function_sig.substr(0, function_sig.find_first_of(':'));
     auto function_args =
         function_sig.substr(function_sig.find_first_of(':'), function_sig.length());
@@ -186,7 +186,7 @@ void AggRelVisitor::visit(GroupbyContext* groupby_context) {
 
   for (int i = 0; i < rel_node_.measures_size(); i++) {
     auto s_expr = rel_node_.measures(i).measure();
-    auto function_sig = getFunctionName(function_map_, s_expr.function_reference());
+    auto function_sig = getFunctionSignature(function_map_, s_expr.function_reference());
     auto function = function_sig.substr(0, function_sig.find_first_of(':'));
     if (function == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {

@@ -30,7 +30,6 @@
 #include <unordered_map>
 #include "exec/template/AggregatedColRange.h"
 #include "exec/template/ExpressionRewrite.h"
-#include "function/FunctionLookupEngine.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
 #include "substrait/type.pb.h"
@@ -60,12 +59,12 @@ std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan)
 
 /**
  * function lookup
- * @param function_map: function map <function_id, function_name>
+ * @param function_map: function map <function_id, function_signature_str>
  * @param function_reference: function_id
- * @return std::string: function_name
+ * @return std::string: function_signature_str
  */
-std::string getFunctionName(const std::unordered_map<int, std::string>& function_map,
-                            int function_reference);
+std::string getFunctionSignature(const std::unordered_map<int, std::string>& function_map,
+                                 int function_reference);
 
 /**
  * convert substrait type to cider SQLTypeInfo(SQLTypes t, int d/p, int s,

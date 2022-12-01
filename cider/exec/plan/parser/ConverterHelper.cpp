@@ -54,8 +54,8 @@ std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan)
   return std::move(function_map);
 }
 
-std::string getFunctionName(const std::unordered_map<int, std::string>& function_map,
-                            int function_reference) {
+std::string getFunctionSignature(const std::unordered_map<int, std::string>& function_map,
+                                 int function_reference) {
   auto function = function_map.find(function_reference);
   if (function == function_map.end()) {
     CIDER_THROW(
@@ -284,61 +284,47 @@ substrait::Type getSubstraitType(const SQLTypeInfo& type_info) {
 }
 
 SQLOps getCiderSqlOps(const std::string& op) {
-  if (op == "lt") {
-    return SQLOps::kLT;
-  } else if (op == "and") {
-    return SQLOps::kAND;
-  } else if (op == "or") {
-    return SQLOps::kOR;
-  } else if (op == "not") {
-    return SQLOps::kNOT;
-  } else if (op == "gt") {
-    return SQLOps::kGT;
-  } else if (op == "equal") {
-    return SQLOps::kEQ;
-  } else if (op == "not_equal") {
-    return SQLOps::kNE;
-  } else if (op == "gte") {
-    return SQLOps::kGE;
-  } else if (op == "lte") {
-    return SQLOps::kLE;
-  } else if (op == "multiply") {
-    return SQLOps::kMULTIPLY;
-  } else if (op == "divide") {
-    return SQLOps::kDIVIDE;
-  } else if (op == "add") {
-    return SQLOps::kPLUS;
-  } else if (op == "subtract") {
-    return SQLOps::kMINUS;
-  } else if (op == "modulus" || op == "mod") {
-    return SQLOps::kMODULO;
-  } else if (op == "is_not_null") {
-    return SQLOps::kISNOTNULL;
-  } else if (op == "is_null") {
-    return SQLOps::kISNULL;
-  } else if (op == "is_not_distinct_from") {
-    return SQLOps::kBW_EQ;
-  } else if (op == "is_distinct_from") {
-    return SQLOps::kBW_NE;
-  } else {
-    CIDER_THROW(CiderCompileException, op + " is not yet supported");
+  static const std::unordered_map<std::string, SQLOps> scalar_op_map = {
+      {"lt", SQLOps::kLT},
+      {"and", SQLOps::kAND},
+      {"or", SQLOps::kOR},
+      {"not", SQLOps::kNOT},
+      {"gt", SQLOps::kGT},
+      {"equal", SQLOps::kEQ},
+      {"not_equal", SQLOps::kNE},
+      {"gte", SQLOps::kGE},
+      {"lte", SQLOps::kLE},
+      {"multiply", SQLOps::kMULTIPLY},
+      {"divide", SQLOps::kDIVIDE},
+      {"add", SQLOps::kPLUS},
+      {"subtract", SQLOps::kMINUS},
+      {"modulus", SQLOps::kMODULO},
+      {"mod", SQLOps::kMODULO},
+      {"is_not_null", SQLOps::kISNOTNULL},
+      {"is_null", SQLOps::kISNULL},
+      {"is_not_distinct_from", SQLOps::kBW_EQ},
+      {"is_distinct_from", SQLOps::kBW_NE},
+  };
+  auto iter = scalar_op_map.find(op);
+  if (iter != scalar_op_map.end()) {
+    return iter->second;
   }
+  CIDER_THROW(CiderCompileException, op + " is not yet supported");
 }
 
 SQLAgg getCiderAggOp(const std::string& op) {
-  if (op == "sum") {
-    return SQLAgg::kSUM;
-  } else if (op == "min") {
-    return SQLAgg::kMIN;
-  } else if (op == "max") {
-    return SQLAgg::kMAX;
-  } else if (op == "avg") {
-    return SQLAgg::kAVG;
-  } else if (op == "count") {
-    return SQLAgg::kCOUNT;
-  } else {
-    CIDER_THROW(CiderCompileException, op + " is not yet supported");
+  static const std::unordered_map<std::string, SQLAgg> agg_op_map = {
+      {"sum", SQLAgg::kSUM},
+      {"min", SQLAgg::kMIN},
+      {"max", SQLAgg::kMAX},
+      {"avg", SQLAgg::kAVG},
+      {"count", SQLAgg::kCOUNT},
+  };
+  auto iter = agg_op_map.find(op);
+  if (iter != agg_op_map.end()) {
+    return iter->second;
   }
+  CIDER_THROW(CiderCompileException, op + " is not yet supported");
 }
 
 bool isExtensionFunction(const std::string& function,

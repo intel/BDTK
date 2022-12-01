@@ -128,6 +128,7 @@ class SubstraitFunctionCiderMappings {
         {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
         {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
         {"TRY_CAST", SqlStringOpKind::TRY_STRING_CAST},
+        {"CHAR_LENGTH", SqlStringOpKind::CHAR_LENGTH},
     };
     return mapping;
   };
@@ -200,6 +201,7 @@ class SubstraitFunctionCiderMappings {
         {"rtrim", OpSupportExprType::kTRIM_STRING_OPER},
         {"concat", OpSupportExprType::kCONCAT_STRING_OPER},
         {"||", OpSupportExprType::kCONCAT_STRING_OPER},
+        {"char_length", OpSupportExprType::kCHAR_LENGTH_OPER},
         {"like", OpSupportExprType::kLIKE_EXPR},
     };
     return mapping;

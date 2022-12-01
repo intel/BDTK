@@ -57,7 +57,7 @@ enum OpSupportExprType {
   kSUBQUERY = 6,
   kIN_VALUES = 7,
   kIN_INTEGER_SET = 8,
-  kCHAR_LENGTH_EXPR = 9,
+  kCHAR_LENGTH_OPER = 9,
   kKEY_FOR_STRING_EXPR = 10,
   kSAMPLE_RATIO_EXPR = 11,
   kLOWER_EXPR = 12,
@@ -83,7 +83,7 @@ enum OpSupportExprType {
   kUPPER_STRING_OPER = 32,
   kTRIM_STRING_OPER = 33,
   kCONCAT_STRING_OPER = 34,
-  kUNDEFINED_EXPR = 35,
+  kUNDEFINED_EXPR = -1,
 };
 
 namespace Analyzer {
