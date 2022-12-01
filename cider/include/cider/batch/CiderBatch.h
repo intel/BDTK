@@ -115,6 +115,12 @@ class CiderBatch {
 
   std::string toStringForArrow() const;
 
+  ArrowSchema* getArrowSchema() const { return arrow_schema_; }
+
+  ArrowArray* getArrowArray() const { return arrow_array_; }
+
+  void removeOwnerShip() { this->ownership_ = false; }
+
  protected:
   using SchemaReleaser = void (*)(struct ArrowSchema*);
   using ArrayReleaser = void (*)(struct ArrowArray*);
@@ -129,10 +135,6 @@ class CiderBatch {
   virtual size_t getNullVectorIndex() const { return 0; }
 
   bool permitBufferAllocate() const { return reallocate_; }
-
-  ArrowSchema* getArrowSchema() const { return arrow_schema_; }
-
-  ArrowArray* getArrowArray() const { return arrow_array_; }
 
   SchemaReleaser getSchemaReleaser() const;
   ArrayReleaser getArrayReleaser() const;

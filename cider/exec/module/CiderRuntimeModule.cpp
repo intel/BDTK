@@ -34,6 +34,7 @@
 #include "exec/plan/parser/TypeUtils.h"
 #include "exec/template/CountDistinct.h"
 #include "exec/template/OutputBufferInitialization.h"
+#include "tests/utils/ArrowArrayBuilder.h"
 
 using agg_query = void (*)(const int8_t***,  // col_buffers
                            const uint64_t*,  // num_fragments
@@ -887,6 +888,45 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           }
         }
       }
+    }
+  }
+  if (ciderCompilationOption_.use_cider_data_format && is_group_by_) {
+    auto colHints = schema->getColHints();
+    auto partialAVGCount =
+        std::count_if(colHints.begin(), colHints.end(), [](const ColumnHint i) {
+          return i == ColumnHint::PartialAVG;
+        });
+    if (partialAVGCount > 0) {
+      ArrowArrayBuilder builder;
+      auto row_num = output_batch->getLength();
+      builder.setRowNum(row_num);
+      for (auto i = 0; i < schema->getColumnTypes().size(); i++) {
+        auto flatten_index = schema->getFlattenColIndex(i);
+        if (colHints[i] == ColumnHint::PartialAVG) {
+          auto schema_and_array =
+              ArrowArrayBuilder()
+                  .setRowNum(row_num)
+                  .addStructColumn(
+                      output_batch->getArrowSchema()->children[flatten_index],
+                      output_batch->getArrowArray()->children[flatten_index])
+                  .addStructColumn(
+                      output_batch->getArrowSchema()->children[flatten_index + 1],
+                      output_batch->getArrowArray()->children[flatten_index + 1])
+                  .build();
+          builder.addStructColumn(std::get<0>(schema_and_array),
+                                  std::get<1>(schema_and_array));
+        } else {
+          builder.addStructColumn(output_batch->getArrowSchema()->children[flatten_index],
+                                  output_batch->getArrowArray()->children[flatten_index]);
+        }
+      }
+      auto schema_and_array = builder.build();
+      auto result_batch =
+          std::make_unique<CiderBatch>(std::get<0>(schema_and_array),
+                                       std::get<1>(schema_and_array),
+                                       std::make_shared<CiderDefaultAllocator>());
+      output_batch->removeOwnerShip();
+      return std::move(*result_batch);
     }
   }
   return std::move(*output_batch);
