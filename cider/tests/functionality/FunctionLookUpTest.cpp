@@ -201,6 +201,54 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest2) {
   ASSERT_EQ(function_descriptor.func_sig.func_name, "avg");
 }
 
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest3) {
+  const std::string function_signature_str = "count:i64";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kCOUNT);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "count");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest4) {
+  const std::string function_signature_str = "count:opt";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kCOUNT);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "count");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest5) {
+  const std::string function_signature_str = "count";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kCOUNT);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "count");
+}
+
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;

@@ -322,11 +322,19 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
     const std::string& function_return_type_str,
     const PlatformType& from_platform) const {
   FunctionDescriptor function_descriptor;
+  std::string function_name;
   auto pos = function_signature_str.find_first_of(':');
   if (pos == std::string::npos) {
-    CIDER_THROW(CiderCompileException, "Invalid function_sig: " + function_signature_str);
+    // count(*)/count(1), front end maybe just give count as function_signature_str
+    if (function_signature_str == "count") {
+      function_name = function_signature_str;
+    } else {
+      CIDER_THROW(CiderCompileException,
+                  "Invalid function_sig: " + function_signature_str);
+    }
+  } else {
+    function_name = function_signature_str.substr(0, pos);
   }
-  auto function_name = function_signature_str.substr(0, pos);
   auto function_args =
       function_signature_str.substr(pos + 1, function_signature_str.length());
   std::vector<std::string> function_args_vec = split(function_args, "_");

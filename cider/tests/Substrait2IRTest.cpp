@@ -255,6 +255,8 @@ TEST(Substrait2IR, AggregateTest) {
   relAlgExecutionUnitCreateAndCompile("groupby_only.json");
   // select count(*)/count(1) from lineitem
   relAlgExecutionUnitCreateAndCompile("count_asterisk_or_1.json");
+  // select count(*)/count(1) from lineitem
+  relAlgExecutionUnitCreateAndCompile("count_asterisk_or_2.json");
   // select count(l_linenumber) from lineitem
   // Substarit cannot generate json for count(col)
   relAlgExecutionUnitCreateAndCompile("count_col_fake.json");
