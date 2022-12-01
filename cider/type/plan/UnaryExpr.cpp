@@ -80,6 +80,7 @@ JITValuePointer UOper::codegenCastFunc(JITFunction& func, JITValue& operand_val)
       return operand_val.castJITValuePrimitiveType(ti_jit_tag);
     }
   } else if (operand_ti.is_fp()) {
+    // Round by adding/subtracting 0.5 before fptosi.
     if (ti.is_integer()) {
       func.createIfBuilder()
           ->condition([&]() { return operand_val < 0; })

@@ -97,8 +97,7 @@ class JITValue : protected exec::nextgen::utils::ReferenceCounter {
   virtual JITValuePointer castPointerSubType(JITTypeTag type_tag) = 0;
   virtual JITValuePointer dereference() = 0;
 
-  virtual JITValuePointer castJITValuePrimitiveType(JITTypeTag type_tag,
-                                                    bool is_signed = true) = 0;
+  virtual JITValuePointer castJITValuePrimitiveType(JITTypeTag type_tag) = 0;
 
  protected:
   std::string value_name_;
