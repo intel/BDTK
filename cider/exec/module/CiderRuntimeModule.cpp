@@ -891,6 +891,7 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
     }
   }
   if (ciderCompilationOption_.use_cider_data_format && is_group_by_) {
+    // For group by partial avg, the column needs to be nested
     auto colHints = schema->getColHints();
     auto partialAVGCount =
         std::count_if(colHints.begin(), colHints.end(), [](const ColumnHint i) {
@@ -925,6 +926,8 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           std::make_unique<CiderBatch>(std::get<0>(schema_and_array),
                                        std::get<1>(schema_and_array),
                                        std::make_shared<CiderDefaultAllocator>());
+      result_batch->set_schema(schema);
+      // otherwise, the original output_batch will be released
       output_batch->removeOwnerShip();
       return std::move(*result_batch);
     }

@@ -119,6 +119,8 @@ class CiderBatch {
 
   ArrowArray* getArrowArray() const { return arrow_array_; }
 
+  // This function makes arrow_schema and arrow_array 
+  // not be released even the CiderBatch has been deconstructed.
   void removeOwnerShip() { this->ownership_ = false; }
 
  protected:
