@@ -1476,6 +1476,7 @@ class SplitPartStringOper : public StringOper {
   std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
     return {OperandTypeFamily::STRING_FAMILY,
             OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY,
             OperandTypeFamily::INT_FAMILY};
   }
   const std::vector<std::string>& getArgNames() const override {
