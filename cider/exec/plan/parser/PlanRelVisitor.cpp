@@ -106,9 +106,11 @@ void AggRelVisitor::visit(TargetContext* target_context) {
     // Add the agg expressions in target_exprs
     auto s_expr = rel_node_.measures(i).measure();
     auto function_sig = getFunctionSignature(function_map_, s_expr.function_reference());
-    auto function_name = function_sig.substr(0, function_sig.find_first_of(':'));
-    auto function_args =
-        function_sig.substr(function_sig.find_first_of(':'), function_sig.length());
+    auto pos = function_sig.find_first_of(':');
+    if (pos == std::string::npos) {
+      CIDER_THROW(CiderCompileException, "Invalid function_sig: " + function_sig);
+    }
+    auto function_name = function_sig.substr(0, pos);
     // Need special handle for partial avg
     if (function_name == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {
@@ -187,7 +189,11 @@ void AggRelVisitor::visit(GroupbyContext* groupby_context) {
   for (int i = 0; i < rel_node_.measures_size(); i++) {
     auto s_expr = rel_node_.measures(i).measure();
     auto function_sig = getFunctionSignature(function_map_, s_expr.function_reference());
-    auto function = function_sig.substr(0, function_sig.find_first_of(':'));
+    auto pos = function_sig.find_first_of(':');
+    if (pos == std::string::npos) {
+      CIDER_THROW(CiderCompileException, "Invalid function_sig: " + function_sig);
+    }
+    auto function = function_sig.substr(0, pos);
     if (function == "avg" &&
         s_expr.phase() == ::substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE) {
       if (substrait::Type::kStruct != s_expr.output_type().kind_case()) {
