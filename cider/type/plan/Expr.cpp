@@ -19,7 +19,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "Expr.h"
+#include "type/plan/Expr.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;

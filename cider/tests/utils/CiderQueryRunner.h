@@ -44,7 +44,8 @@ class CiderQueryRunner {
 
   CiderBatch runQueryOneBatch(const std::string& file_or_sql,
                               const std::shared_ptr<CiderBatch>& input_batch,
-                              bool is_arrow_format = false);
+                              bool is_arrow_format = false,
+                              bool is_nextgen_compiler = false);
 
   std::vector<CiderBatch> runQueryMultiBatches(
       const std::string& file_or_sql,

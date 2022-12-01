@@ -17,15 +17,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_TEST_DEPS nextgen test_utils cider_plan_parser)
+set(NEXTGEN_COMPILER_TEST_LIBS gtest cider_util test_utils duckdb substrait
+                               cider)
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
-add_executable(FilterProjectTest FilterProjectTest.cpp)
-target_link_libraries(NextgenCompilerTest ${EXECUTE_TEST_LIBS}
-                      ${NEXTGEN_TEST_DEPS})
-target_link_libraries(FilterProjectTest ${EXECUTE_TEST_LIBS}
-                      ${NEXTGEN_TEST_DEPS})
+target_link_libraries(NextgenCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
-         ${TEST_ARGS})
+         --use_nextgen_compiler)
+
+add_executable(FilterProjectTest FilterProjectTest.cpp)
+target_link_libraries(FilterProjectTest ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
          ${TEST_ARGS})

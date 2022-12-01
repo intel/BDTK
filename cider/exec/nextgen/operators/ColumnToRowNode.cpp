@@ -90,7 +90,7 @@ void ColumnToRowTranslator::consume(context::CodegenContext& context) {
 
 void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
-  auto&& [type, exprs] = op_node_->getOutputExprs();
+  auto&& [type, exprs] = node_->getOutputExprs();
   ExprPtrVector& inputs = exprs;
 
   // for row loop
@@ -104,7 +104,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
     return context::codegen_utils::getArrowArrayLength(
         context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
   });
-  static_cast<ColumnToRowNode*>(op_node_.get())->setColumnRowNum(len);
+  static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
 
   func->createLoopBuilder()
       ->condition([&index, &len]() { return index < len; })
@@ -118,7 +118,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
       ->build();
 
   // Execute defer build functions.
-  auto c2r_node = static_cast<ColumnToRowNode*>(op_node_.get());
+  auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
   for (auto& defer_func : c2r_node->getDeferFunctions()) {
     defer_func();
   }

@@ -19,31 +19,17 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_OPERATORS_PROJECTNODE_H
-#define NEXTGEN_OPERATORS_PROJECTNODE_H
+#ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
+#define CIDER_BATCH_PROCESSOR_CONTEXT_H
 
-#include "exec/nextgen/operators/OpNode.h"
+#include <memory>
 
-namespace cider::exec::nextgen::operators {
-class ProjectNode : public OpNode {
- public:
-  ProjectNode(ExprPtrVector&& output_exprs)
-      : OpNode("ProjectNode", std::move(output_exprs), JITExprValueType::ROW) {}
+namespace cider::processor {
 
-  ProjectNode(const ExprPtrVector& output_exprs)
-      : OpNode("ProjectNode", output_exprs, JITExprValueType::ROW) {}
+class BatchProcessorContext {};
 
-  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
-};
+using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;
 
-class ProjectTranslator : public Translator {
- public:
-  using Translator::Translator;
+}  // namespace cider::processor
 
-  void consume(context::CodegenContext& context) override;
-
- private:
-  void codegen(context::CodegenContext& context);
-};
-}  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_PROJECTNODE_H
+#endif  // CIDER_BATCH_PROCESSOR_CONTEXT_H

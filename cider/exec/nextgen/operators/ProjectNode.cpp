@@ -32,7 +32,7 @@ void ProjectTranslator::consume(context::CodegenContext& context) {
 
 void ProjectTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
-  auto&& [output_type, exprs] = op_node_->getOutputExprs();
+  auto&& [output_type, exprs] = node_->getOutputExprs();
   for (auto& expr : exprs) {
     expr->codegen(*func);
   }

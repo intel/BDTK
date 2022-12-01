@@ -121,7 +121,7 @@ void RowToColumnTranslator::consume(context::CodegenContext& context) {
 
 void RowToColumnTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
-  auto&& [type, exprs] = op_node_->getOutputExprs();
+  auto&& [type, exprs] = node_->getOutputExprs();
   ExprPtrVector& output_exprs = exprs;
 
   // construct output Batch
@@ -147,8 +147,7 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context) {
   });
 
   // Get input ArrowArray length from previous C2RNode
-  auto prev_c2r_node =
-      static_cast<RowToColumnNode*>(op_node_.get())->getColumnToRowNode();
+  auto prev_c2r_node = static_cast<RowToColumnNode*>(node_.get())->getColumnToRowNode();
   auto input_array_len = prev_c2r_node->getColumnRowNum();
 
   for (int64_t i = 0; i < exprs.size(); ++i) {

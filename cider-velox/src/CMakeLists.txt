@@ -31,7 +31,8 @@ set(VELOX_PLUGIN_SOURCES
     ArrowConvertorUtils.cpp
     CiderVeloxPluginCtx.cpp
     CiderStatefulOperator.cpp
-    CiderStatelessOperator.cpp)
+    CiderStatelessOperator.cpp
+    CiderPipelineOperator.cpp)
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 

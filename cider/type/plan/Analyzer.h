@@ -37,13 +37,13 @@
 #include <utility>
 #include <vector>
 
-#include "BinaryExpr.h"
-#include "ColumnExpr.h"
-#include "ConstantExpr.h"
-#include "Expr.h"
-#include "UnaryExpr.h"
 #include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
+#include "type/plan/BinaryExpr.h"
+#include "type/plan/ColumnExpr.h"
+#include "type/plan/ConstantExpr.h"
+#include "type/plan/Expr.h"
+#include "type/plan/UnaryExpr.h"
 #include "util/Logger.h"
 #include "util/sqldefs.h"
 

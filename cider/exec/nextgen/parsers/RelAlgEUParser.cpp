@@ -27,6 +27,7 @@
 #include "util/Logger.h"
 
 namespace cider::exec::nextgen::parsers {
+
 using namespace cider::exec::nextgen::operators;
 
 static bool isParseable(const RelAlgExecutionUnit& eu) {
@@ -81,7 +82,7 @@ class InputAnalyzer {
 
  private:
   void traverse(ExprPtr* curr) {
-    if (auto col_var_ptr = dynamic_cast<Analyzer::ColumnVar*>(curr->get()); col_var_ptr) {
+    if (auto col_var_ptr = dynamic_cast<Analyzer::ColumnVar*>(curr->get())) {
       auto iter = input_desc_to_index_.find(
           InputColDescriptor(col_var_ptr->get_column_info(), col_var_ptr->get_rte_idx()));
       CHECK(iter != input_desc_to_index_.end());
@@ -146,4 +147,5 @@ OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
 
   return ops;
 }
+
 }  // namespace cider::exec::nextgen::parsers

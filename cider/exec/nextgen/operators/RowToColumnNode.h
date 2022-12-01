@@ -35,7 +35,7 @@ class RowToColumnNode : public OpNode {
       : OpNode("RowToColumnNode", output_exprs, JITExprValueType::BATCH)
       , prev_c2r_node_(prev_c2r) {}
 
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
   ColumnToRowNode* getColumnToRowNode() { return prev_c2r_node_; }
 
@@ -45,8 +45,7 @@ class RowToColumnNode : public OpNode {
 
 class RowToColumnTranslator : public Translator {
  public:
-  RowToColumnTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {}
+  using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
 

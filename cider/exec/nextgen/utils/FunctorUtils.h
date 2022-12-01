@@ -18,32 +18,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#ifndef NEXTGEN_UTILS_FUNCTORUTILS_H
+#define NEXTGEN_UTILS_FUNCTORUTILS_H
 
-#ifndef NEXTGEN_OPERATORS_PROJECTNODE_H
-#define NEXTGEN_OPERATORS_PROJECTNODE_H
+#include <utility>
 
-#include "exec/nextgen/operators/OpNode.h"
+namespace cider::exec::nextgen::utils {
+template <typename FuncT>
+struct RecursiveFunctor {
+  template <typename... Args>
+  decltype(auto) operator()(Args&&... args) const {
+    return func(*this, std::forward<Args>(args)...);
+  }
 
-namespace cider::exec::nextgen::operators {
-class ProjectNode : public OpNode {
- public:
-  ProjectNode(ExprPtrVector&& output_exprs)
-      : OpNode("ProjectNode", std::move(output_exprs), JITExprValueType::ROW) {}
-
-  ProjectNode(const ExprPtrVector& output_exprs)
-      : OpNode("ProjectNode", output_exprs, JITExprValueType::ROW) {}
-
-  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
+  FuncT func;
 };
 
-class ProjectTranslator : public Translator {
- public:
-  using Translator::Translator;
+// Deduction guidance for usage likes RecursiveFunctor{[](){}};
+template <typename FuncT>
+RecursiveFunctor(FuncT)->RecursiveFunctor<FuncT>;
+}  // namespace cider::exec::nextgen::utils
 
-  void consume(context::CodegenContext& context) override;
-
- private:
-  void codegen(context::CodegenContext& context);
-};
-}  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_PROJECTNODE_H
+#endif  // NEXTGEN_UTILS_FUNCTORUTILS_H

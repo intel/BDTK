@@ -19,31 +19,24 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_OPERATORS_PROJECTNODE_H
-#define NEXTGEN_OPERATORS_PROJECTNODE_H
+#include "StatelessProcessor.h"
 
-#include "exec/nextgen/operators/OpNode.h"
+namespace cider::processor {
 
-namespace cider::exec::nextgen::operators {
-class ProjectNode : public OpNode {
- public:
-  ProjectNode(ExprPtrVector&& output_exprs)
-      : OpNode("ProjectNode", std::move(output_exprs), JITExprValueType::ROW) {}
+StatelessProcessor::StatelessProcessor(const ::substrait::Plan& plan,
+                                       const BatchProcessorContextPtr& context)
+    : BatchProcessor(plan, context) {}
 
-  ProjectNode(const ExprPtrVector& output_exprs)
-      : OpNode("ProjectNode", output_exprs, JITExprValueType::ROW) {}
+void StatelessProcessor::processNextBatch(std::shared_ptr<CiderBatch> batch) {
+  // TODO: process batch through jitLib API
+}
 
-  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
-};
+std::shared_ptr<CiderBatch> StatelessProcessor::getResult() {
+  return nullptr;
+}
 
-class ProjectTranslator : public Translator {
- public:
-  using Translator::Translator;
+BatchProcessorState StatelessProcessor::getState() {
+  return state_;
+}
 
-  void consume(context::CodegenContext& context) override;
-
- private:
-  void codegen(context::CodegenContext& context);
-};
-}  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_PROJECTNODE_H
+}  // namespace cider::processor

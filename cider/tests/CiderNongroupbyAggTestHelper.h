@@ -27,9 +27,13 @@
 #include "exec/template/InputMetadata.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
 
+#include "cider/CiderAllocator.h"
+#include "cider/CiderBatch.h"
 #include "cider/CiderRuntimeModule.h"
+#include "cider/CiderTableSchema.h"
 #include "cider/batch/ScalarBatch.h"
 #include "cider/batch/StructBatch.h"
+#include "exec/plan/parser/TypeUtils.h"
 
 const int db_id = 100;
 
@@ -211,6 +215,28 @@ struct AggResult {
   int64_t null;
 };
 
+struct AggArrowResult {
+  int64_t count_one;
+  int64_t count_column;
+  union {
+    int64_t sum_int64;
+    float sum_float;
+    double sum_double;
+  };
+  union {
+    int64_t max_int64;
+    float max_float;
+    double max_double;
+  };
+  union {
+    int64_t min_int64;
+    float min_float;
+    double min_double;
+  };
+  double avg_double;
+  int64_t null;
+};
+
 static void verifyResult(SQLTypes type, CiderBatch* out_batch, AggResult& expect_result) {
   switch (type) {
     case kFLOAT: {
@@ -262,6 +288,147 @@ static void verifyResult(SQLTypes type, CiderBatch* out_batch, AggResult& expect
       EXPECT_EQ(*(int64_t*)out_batch->column(10), expect_result.null);
       EXPECT_EQ(*(int64_t*)out_batch->column(11), expect_result.null);
       EXPECT_EQ(*(int64_t*)out_batch->column(12), expect_result.null);
+      break;
+    }
+    case kBOOLEAN: {
+      break;
+    }
+    default:
+      LOG(ERROR) << "Unsupported type: ";
+  }
+}
+
+static void verifyArrowResult(SQLTypes type,
+                              CiderBatch* out_batch,
+                              AggArrowResult& expect_result) {
+  switch (type) {
+    case kFLOAT: {
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_one);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(1)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_column);
+      EXPECT_FLOAT_EQ(
+          (float)out_batch->getChildAt(2)->as<ScalarBatch<float>>()->getRawData()[0],
+          expect_result.sum_float);
+      EXPECT_FLOAT_EQ(
+          (float)out_batch->getChildAt(3)->as<ScalarBatch<float>>()->getRawData()[0],
+          expect_result.max_float);
+      EXPECT_FLOAT_EQ(
+          (float)out_batch->getChildAt(4)->as<ScalarBatch<float>>()->getRawData()[0],
+          expect_result.min_float);
+      EXPECT_FLOAT_EQ(
+          (double)out_batch->getChildAt(5)->as<ScalarBatch<double>>()->getRawData()[0],
+          expect_result.avg_double);
+      EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
+                    out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
+                expect_result.null);
+      break;
+    }
+    case kDOUBLE: {
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_one);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(1)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_column);
+      EXPECT_DOUBLE_EQ(
+          (double)out_batch->getChildAt(2)->as<ScalarBatch<double>>()->getRawData()[0],
+          expect_result.sum_double);
+      EXPECT_DOUBLE_EQ(
+          (double)out_batch->getChildAt(3)->as<ScalarBatch<double>>()->getRawData()[0],
+          expect_result.max_double);
+      EXPECT_DOUBLE_EQ(
+          (double)out_batch->getChildAt(4)->as<ScalarBatch<double>>()->getRawData()[0],
+          expect_result.min_double);
+      EXPECT_DOUBLE_EQ(
+          (double)out_batch->getChildAt(5)->as<ScalarBatch<double>>()->getRawData()[0],
+          expect_result.avg_double);
+      EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
+                    out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
+                expect_result.null);
+      break;
+    }
+    case kTINYINT:
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_one);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(1)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_column);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(2)->as<ScalarBatch<int8_t>>()->getRawData()[0],
+          expect_result.sum_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(3)->as<ScalarBatch<int8_t>>()->getRawData()[0],
+          expect_result.max_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(4)->as<ScalarBatch<int8_t>>()->getRawData()[0],
+          expect_result.min_int64);
+      EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
+                    out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
+                expect_result.null);
+      break;
+    case kSMALLINT:
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_one);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(1)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_column);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(2)->as<ScalarBatch<int16_t>>()->getRawData()[0],
+          expect_result.sum_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(3)->as<ScalarBatch<int16_t>>()->getRawData()[0],
+          expect_result.max_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(4)->as<ScalarBatch<int16_t>>()->getRawData()[0],
+          expect_result.min_int64);
+      EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
+                    out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
+                expect_result.null);
+      break;
+    case kINT:
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_one);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(1)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_column);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(2)->as<ScalarBatch<int32_t>>()->getRawData()[0],
+          expect_result.sum_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(3)->as<ScalarBatch<int32_t>>()->getRawData()[0],
+          expect_result.max_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(4)->as<ScalarBatch<int32_t>>()->getRawData()[0],
+          expect_result.min_int64);
+      EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
+                    out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
+                expect_result.null);
+      break;
+    case kBIGINT: {
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_one);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(1)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.count_column);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(2)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.sum_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(3)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.max_int64);
+      EXPECT_EQ(
+          (int64_t)out_batch->getChildAt(4)->as<ScalarBatch<int64_t>>()->getRawData()[0],
+          expect_result.min_int64);
+      EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
+                    out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
+                expect_result.null);
       break;
     }
     case kBOOLEAN: {
@@ -387,4 +554,150 @@ void runTest(const std::string& test_name,
   verifyResult(ra_exe_unit_ptr->target_exprs[2]->get_type_info().get_type(),
                out_batch.get(),
                expect_result);
+}
+
+void runArrowTest(const std::string& test_name,
+                  const MockTable* table_ptr,
+                  std::shared_ptr<RelAlgExecutionUnit> ra_exe_unit_ptr,
+                  std::shared_ptr<CiderTableSchema> schema,
+                  const std::vector<std::string>& input_cols_name,
+                  AggArrowResult expect_result,
+                  bool all_null = false,
+                  bool is_columnar_layout = false,
+                  size_t buffer_entry_num = 16384,
+                  size_t spilled_entry_num = 0,
+                  const std::vector<CiderBitUtils::CiderBitVector<>>& nulls = {}) {
+  LOG(DEBUG1) << "----------------------Test case: " + test_name +
+                     " --------------------------------------";
+
+  auto cider_compile_module =
+      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
+  auto exe_option = CiderExecutionOption::defaults();
+  auto compile_option = CiderCompilationOption::defaults();
+
+  exe_option.output_columnar_hint = is_columnar_layout;
+  compile_option.max_groups_buffer_entry_guess = buffer_entry_num;
+  compile_option.use_cider_groupby_hash = true;
+  compile_option.use_default_col_range = true;
+  compile_option.use_cider_data_format = true;
+
+  std::vector<InputTableInfo> table_infos = {table_ptr->getInputTableInfo()};
+
+  auto compile_result = cider_compile_module->compile(
+      ra_exe_unit_ptr.get(), &table_infos, schema, compile_option, exe_option);
+
+  CiderRuntimeModule cider_runtime_module(compile_result, compile_option, exe_option);
+
+  LOG(DEBUG1) << "EU:\n" << *ra_exe_unit_ptr;
+  LOG(DEBUG1) << "MemInfo\n" << cider_runtime_module.convertQueryMemDescToString();
+  LOG(DEBUG1) << "HashTable:\n"
+              << cider_runtime_module.convertGroupByAggHashTableToString();
+
+  std::unique_ptr<CiderBatch> input_batch =
+      table_ptr->generateStructBatch(input_cols_name);
+  for (size_t i = 0; i < input_batch->getChildrenNum(); ++i) {
+    auto child = input_batch->getChildAt(i);
+    const uint8_t* given_nulls = nulls[i].as<uint8_t>();
+    uint8_t* child_nulls = child->getMutableNulls();
+    int64_t null_count = 0;
+    for (size_t j = 0; j < child->getLength(); ++j) {
+      if (!all_null && CiderBitUtils::isBitSetAt(given_nulls, j)) {
+        CiderBitUtils::setBitAt(child_nulls, j);
+      } else {
+        CiderBitUtils::clearBitAt(child_nulls, j);
+        ++null_count;
+      }
+      child->setNullCount(null_count);
+    }
+  }
+
+  cider_runtime_module.processNextBatch(*input_batch);
+
+  LOG(DEBUG1) << "---------------------------Execution "
+                 "Success-----------------------------------";
+
+  std::vector<SQLTypes> types(ra_exe_unit_ptr->target_exprs.size());
+  for (size_t i = 0; i < types.size(); ++i) {
+    auto type_info = ra_exe_unit_ptr->target_exprs[i]->get_type_info();
+    types[i] = type_info.get_type();
+  }
+  auto [_, out_batch] = cider_runtime_module.fetchResults();
+  std::stringstream ss;
+
+  auto print_data = [&ss](auto child, size_t i) {
+    auto ptr = child->getRawData();
+    auto nulls = child->getNulls();
+    if (nulls && !CiderBitUtils::isBitSetAt(nulls, i)) {
+      ss << 'n';
+    } else {
+      if constexpr (std::is_same_v<std::remove_pointer_t<decltype(ptr)>, const bool>) {
+        const uint8_t* uint8_ptr = reinterpret_cast<const uint8_t*>(ptr);
+        if (CiderBitUtils::isBitSetAt(uint8_ptr, i)) {
+          ss << 't';
+        } else {
+          ss << 'f';
+        }
+      } else if constexpr (std::is_integral_v<std::remove_pointer_t<decltype(ptr)>>) {
+        ss << (int64_t)ptr[i];
+      } else {
+        ss << ptr[i];
+      }
+    }
+  };
+
+  for (size_t i = 0; i < out_batch->getLength(); ++i) {
+    for (size_t j = 0; j < types.size(); ++j) {
+      switch (types[j]) {
+        case kFLOAT: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<float>>(), i);
+          break;
+        }
+        case kDOUBLE: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<double>>(), i);
+          break;
+        }
+        case kTINYINT: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<int8_t>>(), i);
+          break;
+        }
+        case kSMALLINT: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<int16_t>>(), i);
+          break;
+        }
+        case kTEXT:
+        case kVARCHAR:
+        case kCHAR:
+        case kINT: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<int32_t>>(), i);
+          break;
+        }
+        case kDECIMAL:
+        case kBIGINT:
+        case kDATE: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<int64_t>>(), i);
+          break;
+        }
+        case kBOOLEAN: {
+          auto child = out_batch->getChildAt(j);
+          print_data(child->as<ScalarBatch<bool>>(), i);
+          break;
+        }
+        default:
+          LOG(ERROR) << "Unsupported type: " << types[j];
+      }
+      ss << " ";
+    }
+    ss << "\n";
+  }
+
+  LOG(DEBUG1) << ss.str();
+  verifyArrowResult(ra_exe_unit_ptr->target_exprs[2]->get_type_info().get_type(),
+                    out_batch.get(),
+                    expect_result);
 }

@@ -33,6 +33,7 @@ DEFINE_bool(use_cider_groupby_hash, true, "use cider groupby hash");
 DEFINE_bool(use_default_col_range, true, "use default col range");
 DEFINE_bool(use_cider_data_format, false, "use cider data format");
 DEFINE_bool(needs_error_check, false, "needs error check");
+DEFINE_bool(use_nextgen_compiler, false, "use nextgen compiler");
 
 // Execution Options
 DEFINE_bool(output_columnar_hint, false, "output columnar hint");

@@ -21,7 +21,6 @@
 
 #include "CiderOperator.h"
 
-#include <cstdint>
 #include <memory>
 #include <vector>
 

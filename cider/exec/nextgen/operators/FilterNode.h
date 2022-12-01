@@ -33,13 +33,12 @@ class FilterNode : public OpNode {
   FilterNode(const ExprPtrVector& output_exprs)
       : OpNode("FilterNode", output_exprs, JITExprValueType::ROW) {}
 
-  TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 };
 
 class FilterTranslator : public Translator {
  public:
-  FilterTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
-      : Translator(node, succ) {}
+  using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
 

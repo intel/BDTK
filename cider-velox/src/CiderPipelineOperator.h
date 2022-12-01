@@ -19,31 +19,31 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_OPERATORS_PROJECTNODE_H
-#define NEXTGEN_OPERATORS_PROJECTNODE_H
+#pragma once
 
-#include "exec/nextgen/operators/OpNode.h"
+#include "CiderOperator.h"
+#include "CiderPipelineOperator.h"
+#include "cider/processor/BatchProcessor.h"
 
-namespace cider::exec::nextgen::operators {
-class ProjectNode : public OpNode {
+namespace facebook::velox::plugin {
+
+class CiderPipelineOperator : public CiderOperator {
  public:
-  ProjectNode(ExprPtrVector&& output_exprs)
-      : OpNode("ProjectNode", std::move(output_exprs), JITExprValueType::ROW) {}
+  CiderPipelineOperator(int32_t operatorId,
+                        exec::DriverCtx* driverCtx,
+                        const std::shared_ptr<const CiderPlanNode>& ciderPlanNode);
 
-  ProjectNode(const ExprPtrVector& output_exprs)
-      : OpNode("ProjectNode", output_exprs, JITExprValueType::ROW) {}
+  bool needsInput() const override;
 
-  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
-};
+  void addInput(RowVectorPtr input) override;
 
-class ProjectTranslator : public Translator {
- public:
-  using Translator::Translator;
+  exec::BlockingReason isBlocked(ContinueFuture* future) override;
 
-  void consume(context::CodegenContext& context) override;
+  bool isFinished() override;
+
+  RowVectorPtr getOutput() override;
 
  private:
-  void codegen(context::CodegenContext& context);
+  cider::processor::BatchProcessorPtr batchProcessor_;
 };
-}  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_PROJECTNODE_H
+}  // namespace facebook::velox::plugin
