@@ -23,20 +23,25 @@
 
 namespace cider::processor {
 
-StatelessProcessor::StatelessProcessor(const ::substrait::Plan& plan,
+StatelessProcessor::StatelessProcessor(const plan::SubstraitPlanPtr& plan,
                                        const BatchProcessorContextPtr& context)
-    : BatchProcessor(plan, context) {}
-
-void StatelessProcessor::processNextBatch(std::shared_ptr<CiderBatch> batch) {
-  // TODO: process batch through jitLib API
-}
+    : DefaultBatchProcessor(plan, context) {}
 
 std::shared_ptr<CiderBatch> StatelessProcessor::getResult() {
+  if (!inputBatch_) {
+    if (noMoreBatch_) {
+      setState(BatchProcessorState::kFinished);
+    }
+    return nullptr;
+  }
+  inputBatch_ = nullptr;
+
+  // TODO: getResult through nextGen runtime api
   return nullptr;
 }
 
-BatchProcessorState StatelessProcessor::getState() {
-  return state_;
+bool StatelessProcessor::acceptBatch() const {
+  return !inputBatch_;
 }
 
 }  // namespace cider::processor

@@ -22,6 +22,7 @@
 #ifndef CIDER_BATCH_PROCESSOR_H
 #define CIDER_BATCH_PROCESSOR_H
 
+#include <memory>
 #include "BatchProcessorContext.h"
 #include "cider/CiderBatch.h"
 #include "substrait/plan.pb.h"
@@ -36,36 +37,37 @@ enum class BatchProcessorState {
 
 class BatchProcessor {
  public:
-  virtual ~BatchProcessor() = default;
+  virtual BatchProcessorContextPtr getContext() const = 0;
 
-  BatchProcessorContextPtr getContext() const { return context_; }
+  /// Returns true if and only if this batchProcessor can accept a batch.
+  virtual bool acceptBatch() const = 0;
 
-  virtual void processNextBatch(std::shared_ptr<CiderBatch> batch);
+  /// Adds an input batch to the batchProcessor.  This method will only be called if
+  ///  acceptBatch() returns true.
+  virtual void processNextBatch(std::shared_ptr<CiderBatch> batch) = 0;
 
-  virtual std::shared_ptr<CiderBatch> getResult();
+  /// Gets an output batch from the batchProcessor.  return null If no output data.
+  virtual std::shared_ptr<CiderBatch> getResult() = 0;
 
-  virtual void finish(){};
+  /// Notifies the batchProcessor that no more batch will be added and the
+  /// batchProcessor should finish processing and flush results.
+  virtual void finish() = 0;
 
-  virtual BatchProcessorState getState();
+  virtual BatchProcessorState getState() = 0;
 
-  virtual bool isFinished() { return BatchProcessorState::kFinished == state_; }
-
-  static std::shared_ptr<BatchProcessor> make(const ::substrait::Plan& plan,
-                                              const BatchProcessorContextPtr& context);
-
- protected:
-  BatchProcessor(const ::substrait::Plan& plan, const BatchProcessorContextPtr& context);
-
-  const ::substrait::Plan plan_;
-
-  const BatchProcessorContextPtr context_;
-
-  BatchProcessorState state_{BatchProcessorState::kRunning};
-
-  std::shared_ptr<CiderBatch> inputBatch_;
+  /// Is this batchProcessor completely finished processing and no more
+  /// output batch will be produced.
+  virtual bool isFinished() = 0;
 };
 
 using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
+
+/// Factory method to create a batchProcessor instance, if there is no aggregation rel
+/// contain in substrait pipeline, return instance of StatelessProcessor, otherwise
+/// return instance of StatefulProcessor.
+std::shared_ptr<BatchProcessor> makeBatchProcessor(
+    const ::substrait::Plan& plan,
+    const BatchProcessorContextPtr& context);
 
 }  // namespace cider::processor
 

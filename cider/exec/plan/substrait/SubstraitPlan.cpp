@@ -19,23 +19,36 @@
  * under the License.
  */
 
-#ifndef CIDER_STATELESS_PROCESSOR_H
-#define CIDER_STATELESS_PROCESSOR_H
+#include "SubstraitPlan.h"
 
-#include "DefaultBatchProcessor.h"
+namespace cider::plan {
 
-namespace cider::processor {
+SubstraitPlan::SubstraitPlan(const substrait::Plan& plan) : plan_(plan) {}
 
-class StatelessProcessor : public DefaultBatchProcessor {
- public:
-  StatelessProcessor(const plan::SubstraitPlanPtr& plan,
-                     const BatchProcessorContextPtr& context);
+bool SubstraitPlan::hasAggregateRel() const {
+  for (auto& rel : plan_.relations()) {
+    if (rel.has_root() && rel.root().has_input()) {
+      if (rel.root().input().has_aggregate()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
-  bool acceptBatch() const override;
+bool SubstraitPlan::hasJoinRel() const {
+  for (auto& rel : plan_.relations()) {
+    if (rel.has_root() && rel.root().has_input()) {
+      if (rel.root().input().has_join()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
-  std::shared_ptr<CiderBatch> getResult() override;
-};
+const ::substrait::JoinRel& SubstraitPlan::joinRel() {
+  return plan_.relations(0).root().input().join();
+}
 
-}  // namespace cider::processor
-
-#endif  // CIDER_STATELESS_PROCESSOR_H
+}  // namespace cider::plan

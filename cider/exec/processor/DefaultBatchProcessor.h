@@ -19,34 +19,45 @@
  * under the License.
  */
 
-#pragma once
+#ifndef CIDER_DEFAULT_BATCH_PROCESSOR_H
+#define CIDER_DEFAULT_BATCH_PROCESSOR_H
 
-#include "CiderOperator.h"
-#include "CiderPipelineOperator.h"
 #include "cider/processor/BatchProcessor.h"
+#include "exec/plan/substrait/SubstraitPlan.h"
 
-namespace facebook::velox::plugin {
+namespace cider::processor {
 
-class CiderPipelineOperator : public CiderOperator {
+class DefaultBatchProcessor : public BatchProcessor {
  public:
-  CiderPipelineOperator(int32_t operatorId,
-                        exec::DriverCtx* driverCtx,
-                        const std::shared_ptr<const CiderPlanNode>& ciderPlanNode);
+  ~DefaultBatchProcessor() = default;
 
-  bool needsInput() const override;
+  BatchProcessorContextPtr getContext() const override { return context_; }
 
-  void addInput(RowVectorPtr input) override;
+  void processNextBatch(std::shared_ptr<CiderBatch> batch) override;
 
-  exec::BlockingReason isBlocked(ContinueFuture* future) override;
+  void finish() override;
 
   bool isFinished() override;
 
-  RowVectorPtr getOutput() override;
+  BatchProcessorState getState() override;
 
-  void noMoreInput() override;
+  void setState(BatchProcessorState state);
 
- private:
-  cider::processor::BatchProcessorPtr batchProcessor_;
+ protected:
+  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
+                        const BatchProcessorContextPtr& context);
+
+  const plan::SubstraitPlanPtr plan_;
+
+  const BatchProcessorContextPtr context_;
+
+  BatchProcessorState state_{BatchProcessorState::kRunning};
+
+  std::shared_ptr<CiderBatch> inputBatch_;
+
+  bool noMoreBatch_{false};
 };
 
-}  // namespace facebook::velox::plugin
+}  // namespace cider::processor
+
+#endif  // CIDER_DEFAULT_BATCH_PROCESSOR_H

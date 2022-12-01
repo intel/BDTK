@@ -23,10 +23,20 @@
 #define CIDER_BATCH_PROCESSOR_CONTEXT_H
 
 #include <memory>
+#include "cider/CiderAllocator.h"
 
 namespace cider::processor {
 
-class BatchProcessorContext {};
+class BatchProcessorContext {
+ public:
+  BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
+      : allocator_(allocator){};
+
+  std::shared_ptr<CiderAllocator> getAllocator() { return allocator_; }
+
+ private:
+  const std::shared_ptr<CiderAllocator> allocator_;
+};
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;
 
