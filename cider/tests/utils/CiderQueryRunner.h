@@ -70,6 +70,7 @@ class CiderQueryRunner {
  protected:
   std::string create_ddl_;
   std::shared_ptr<CiderCompileModule> ciderCompileModule_;
+  std::shared_ptr<CiderRuntimeModule> cider_runtime_module_;
   CiderExecutionOption exe_option;
   CiderCompilationOption compile_option;
 

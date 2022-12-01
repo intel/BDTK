@@ -103,7 +103,6 @@ class CiderCompileModule {
 
   class Impl;
   std::unique_ptr<Impl> impl_;
-  std::shared_ptr<CiderAllocator> allocator_;
 };
 
 #endif  // CIDER_CIDERCOMPILEMODULE_H

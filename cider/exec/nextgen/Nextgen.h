@@ -24,11 +24,17 @@
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/parsers/Parser.h"
 #include "exec/nextgen/transformer/Transformer.h"
+#include "jitlib/llvmjit/LLVMJITModule.h"
 
 namespace cider::exec::nextgen {
 
-std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
-                                                 const jitlib::CompilationOptions& co);
+using QueryFunc = void (*)(int8_t*, int8_t*);
+
+std::pair<std::unique_ptr<context::RuntimeContext>,
+          std::unique_ptr<context::CodegenContext>>
+compile(const RelAlgExecutionUnit& eu,
+        const CiderAllocatorPtr& allocator,
+        const jitlib::CompilationOptions& co = jitlib::CompilationOptions{});
 
 }  // namespace cider::exec::nextgen
 

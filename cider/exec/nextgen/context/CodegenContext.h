@@ -22,6 +22,7 @@
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "include/cider/CiderAllocator.h"
 #include "type/data/sqltypes.h"
@@ -35,12 +36,12 @@ class CodegenContext {
  public:
   CodegenContext() : jit_func_(nullptr) {}
 
-  void setJITFunction(jitlib::JITFunction* jit_func) {
+  void setJITFunction(jitlib::JITFunctionPointer jit_func) {
     CHECK(nullptr == jit_func_);
     jit_func_ = jit_func;
   }
 
-  jitlib::JITFunction* getJITFunction() { return jit_func_; }
+  jitlib::JITFunctionPointer getJITFunction() { return jit_func_; }
 
   std::pair<jitlib::JITValuePointer, utils::JITExprValue>& getArrowArrayValues(
       size_t local_offset) {
@@ -53,7 +54,6 @@ class CodegenContext {
     return arrow_array_values_.size();
   }
 
- public:
   jitlib::JITValuePointer registerBatch(const SQLTypeInfo& type,
                                         const std::string& name = "",
                                         bool arrow_array_output = true);
@@ -71,11 +71,11 @@ class CodegenContext {
         : ctx_id(id), name(n), type(t) {}
   };
 
-  using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
+  void setJITModule(std::unique_ptr<jitlib::LLVMJITModule> jit_module) {
+    jit_module_ = std::move(jit_module);
+  }
 
- private:
-  int64_t acquireContextID() { return id_counter++; }
-  int64_t getNextContextID() const { return id_counter; }
+  using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
 
  private:
   std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
@@ -83,9 +83,12 @@ class CodegenContext {
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
 
- private:
-  jitlib::JITFunction* jit_func_;
-  int64_t id_counter{0};
+  jitlib::JITFunctionPointer jit_func_;
+  int64_t id_counter_{0};
+  std::unique_ptr<jitlib::LLVMJITModule> jit_module_;
+
+  int64_t acquireContextID() { return id_counter_++; }
+  int64_t getNextContextID() const { return id_counter_; }
 };
 
 namespace codegen_utils {

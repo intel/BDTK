@@ -54,7 +54,9 @@ class NextgenCompilerTest : public ::testing::Test {
 
     // Codegen
     context::CodegenContext codegen_ctx;
-    auto module = cider::jitlib::LLVMJITModule("test", true);
+    cider::jitlib::CompilationOptions co;
+    co.dump_ir = true;
+    auto module = cider::jitlib::LLVMJITModule("test", true, co);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
             .registerModule(module)
@@ -67,7 +69,7 @@ class NextgenCompilerTest : public ::testing::Test {
                           "input",
                           cider::jitlib::JITTypeTag::INT8)
             .addProcedureBuilder(
-                [&codegen_ctx, &translators](cider::jitlib::JITFunction* func) {
+                [&codegen_ctx, &translators](cider::jitlib::JITFunctionPointer func) {
                   codegen_ctx.setJITFunction(func);
                   translators->consume(codegen_ctx);
                   func->createReturn();
@@ -109,10 +111,6 @@ class NextgenCompilerTest : public ::testing::Test {
   std::string create_ddl_ = "CREATE TABLE test(a BIGINT NOT NULL, b BIGINT NOT NULL);";
 };
 
-TEST_F(NextgenCompilerTest, FrameworkTest) {
-  executeTest("select a + b, a - b from test where a < b");
-}
-
 class CiderNextgenCompilerTestBase : public CiderTestBase {
  public:
   CiderNextgenCompilerTestBase() {
@@ -131,7 +129,7 @@ class CiderNextgenCompilerTestBase : public CiderTestBase {
 };
 
 TEST_F(CiderNextgenCompilerTestBase, integerFilterTest) {
-  assertQueryArrow("SELECT col_1 + col_2 FROM test WHERE col_1 < col_2");
+  assertQueryArrow("SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2");
 }
 
 int main(int argc, char** argv) {

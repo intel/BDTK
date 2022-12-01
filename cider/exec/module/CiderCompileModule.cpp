@@ -20,6 +20,7 @@
  */
 
 #include "cider/CiderCompileModule.h"
+#include <memory>
 #include "CiderCompilationResultImpl.h"
 #include "cider/batch/ScalarBatch.h"
 #include "exec/nextgen/Nextgen.h"
@@ -97,7 +98,7 @@ QueryType CiderCompilationResult::getQueryType() const {
 
 class CiderCompileModule::Impl {
  public:
-  explicit Impl(std::shared_ptr<CiderAllocator> allocator) {
+  explicit Impl(std::shared_ptr<CiderAllocator> allocator) : allocator_(allocator) {
     id_ = std::hash<std::thread::id>{}(std::this_thread::get_id());
     executor_ = Executor::getExecutor(id_, nullptr, nullptr);
     ciderStringDictionaryProxy_ = initStringDictionaryProxy(allocator);
@@ -115,10 +116,19 @@ class CiderCompileModule::Impl {
     ra_exe_unit_ =
         std::make_shared<RelAlgExecutionUnit>(translator_->createRelAlgExecutionUnit());
 
+    auto ciderCompilationResult = std::make_shared<CiderCompilationResult>();
+    ciderCompilationResult->impl_->co = co;
+    ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
+    ciderCompilationResult->impl_->outputSchema_ =
+        translator_->getOutputCiderTableSchema();
+
     if (co.use_nextgen_compiler) {
       cider::jitlib::CompilationOptions co;
       co.dump_ir = true;
-      codegen_ctx_ = cider::exec::nextgen::compile(*ra_exe_unit_, co);
+      std::tie(ciderCompilationResult->impl_->runtime_ctx_,
+               ciderCompilationResult->impl_->codegen_ctx_) =
+          cider::exec::nextgen::compile(*ra_exe_unit_, allocator_, co);
+      return ciderCompilationResult;
     }
 
     // if this is a join query and don't feed a valid build table, throw exception
@@ -162,15 +172,11 @@ class CiderCompileModule::Impl {
                                    has_cardinality_estimation,
                                    ciderDataProvider,
                                    column_cache);
-    auto ciderCompilationResult = std::make_shared<CiderCompilationResult>();
     ciderCompilationResult->impl_->compilation_result_ = compilation_result;
     ciderCompilationResult->impl_->query_mem_desc_ = std::move(query_mem_desc);
     ciderCompilationResult->impl_->hoist_literals_ = co.hoist_literals;
     ciderCompilationResult->impl_->hoist_buf =
         executor_->serializeLiterals(compilation_result.literal_values, 0);
-    ciderCompilationResult->impl_->outputSchema_ =
-        translator_->getOutputCiderTableSchema();
-    ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
     ciderCompilationResult->impl_->build_table_ = std::move(build_table_);
     ciderCompilationResult->impl_->ciderStringDictionaryProxy_ =
         ciderStringDictionaryProxy_;
@@ -508,7 +514,7 @@ class CiderCompileModule::Impl {
   std::shared_ptr<generator::SubstraitToRelAlgExecutionUnit> translator_;
   CiderBatch build_table_;
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
-  std::unique_ptr<cider::exec::nextgen::context::CodegenContext> codegen_ctx_;
+  std::shared_ptr<CiderAllocator> allocator_;
 
   std::vector<InputTableInfo> buildInputTableInfo(
       const std::vector<CiderTableSchema>& tableSchemas,
@@ -579,9 +585,7 @@ CiderCompileModule::~CiderCompileModule() {}
 
 std::shared_ptr<CiderCompileModule> CiderCompileModule::Make(
     std::shared_ptr<CiderAllocator> allocator) {
-  auto ciderCompileModule =
-      std::shared_ptr<CiderCompileModule>(new CiderCompileModule(allocator));
-  return ciderCompileModule;
+  return std::make_shared<CiderCompileModule>(allocator);
 }
 
 std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
