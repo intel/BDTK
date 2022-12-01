@@ -18,3 +18,4 @@
 # under the License.
 add_subdirectory(parser)
 add_subdirectory(validator)
+add_subdirectory(substrait)

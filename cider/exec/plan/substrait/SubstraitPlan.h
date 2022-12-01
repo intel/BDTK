@@ -19,22 +19,33 @@
  * under the License.
  */
 
-#ifndef CIDER_STATEFUL_PROCESSOR_H
-#define CIDER_STATEFUL_PROCESSOR_H
+#ifndef CIDER_SUBSTRAIT_PLAN_H
+#define CIDER_SUBSTRAIT_PLAN_H
 
-#include "DefaultBatchProcessor.h"
-#include "exec/plan/substrait/SubstraitPlan.h"
+#include "substrait/plan.pb.h"
 
-namespace cider::processor {
+namespace cider::plan {
 
-class StatefulProcessor : public DefaultBatchProcessor {
+/// A utility class for substrait plan by wrapped the substrait plan and provide some
+/// useful methods for batch processor.
+class SubstraitPlan {
  public:
-  StatefulProcessor(const plan::SubstraitPlanPtr& plan,
-                    const BatchProcessorContextPtr& context);
+  SubstraitPlan(const ::substrait::Plan& plan);
 
-  std::shared_ptr<CiderBatch> getResult() override;
+  bool hasAggregateRel() const;
+
+  bool hasJoinRel() const;
+
+  const substrait::Plan& getPlan() const { return plan_; }
+
+  const std::optional<std::shared_ptr<::substrait::JoinRel>> getJoinRel();
+
+ private:
+  ::substrait::Plan plan_;
 };
 
-}  // namespace cider::processor
+using SubstraitPlanPtr = std::shared_ptr<const SubstraitPlan>;
 
-#endif  // CIDER_STATEFUL_PROCESSOR_H
+}  // namespace cider::plan
+
+#endif  // CIDER_SUBSTRAIT_PLAN_H

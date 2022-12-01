@@ -22,14 +22,46 @@
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #define CIDER_BATCH_PROCESSOR_CONTEXT_H
 
+#include <functional>
 #include <memory>
+#include <optional>
+#include <vector>
+#include "cider/CiderAllocator.h"
 
 namespace cider::processor {
 
-class BatchProcessorContext {};
+class JoinHashTable {
+ public:
+  virtual std::unique_ptr<JoinHashTable> merge(
+      std::vector<std::unique_ptr<JoinHashTable>> otherTables) = 0;
+};
+
+struct HashBuildResult {
+  HashBuildResult(std::shared_ptr<JoinHashTable> _table) : table(std::move(_table)) {}
+  std::shared_ptr<JoinHashTable> table;
+};
+
+using HashBuildTableSupplier = std::function<std::optional<HashBuildResult>()>;
+
+class BatchProcessorContext {
+ public:
+  BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
+      : allocator_(allocator){};
+
+  std::shared_ptr<CiderAllocator> allocator() { return allocator_; }
+
+  void setHashBuildTableSupplier(const HashBuildTableSupplier& hashBuildTableSupplier) {
+    this->buildTableSupplier_ = hashBuildTableSupplier;
+  }
+
+  HashBuildTableSupplier getHashBuildTableSupplier() { return buildTableSupplier_; }
+
+ private:
+  const std::shared_ptr<CiderAllocator> allocator_;
+  HashBuildTableSupplier buildTableSupplier_;
+};
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;
-
 }  // namespace cider::processor
 
 #endif  // CIDER_BATCH_PROCESSOR_CONTEXT_H

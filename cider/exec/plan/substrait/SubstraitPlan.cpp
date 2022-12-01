@@ -19,25 +19,40 @@
  * under the License.
  */
 
-#include "StatelessProcessor.h"
+#include "SubstraitPlan.h"
 
-namespace cider::processor {
+namespace cider::plan {
 
-StatelessProcessor::StatelessProcessor(const plan::SubstraitPlanPtr& plan,
-                                       const BatchProcessorContextPtr& context)
-    : DefaultBatchProcessor(plan, context) {}
+SubstraitPlan::SubstraitPlan(const substrait::Plan& plan) : plan_(plan) {}
 
-std::shared_ptr<CiderBatch> StatelessProcessor::getResult() {
-  if (!inputBatch_) {
-    if (noMoreBatch_) {
-      // set state as finish if last batch has been processed and no more batch
-      state_ = BatchProcessorState::kFinished;
+bool SubstraitPlan::hasAggregateRel() const {
+  for (auto& rel : plan_.relations()) {
+    if (rel.has_root() && rel.root().has_input()) {
+      if (rel.root().input().has_aggregate()) {
+        return true;
+      }
     }
-    return nullptr;
   }
-  inputBatch_ = nullptr;
-  // TODO: getResult through nextGen runtime api
-  return nullptr;
+  return false;
 }
 
-}  // namespace cider::processor
+bool SubstraitPlan::hasJoinRel() const {
+  for (auto& rel : plan_.relations()) {
+    if (rel.has_root() && rel.root().has_input()) {
+      if (rel.root().input().has_join()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+const std::optional<std::shared_ptr<::substrait::JoinRel>> SubstraitPlan::getJoinRel() {
+  if (hasJoinRel()) {
+    return std::make_shared<::substrait::JoinRel>(
+        plan_.relations(0).root().input().join());
+  }
+  return std::nullopt;
+}
+
+}  // namespace cider::plan

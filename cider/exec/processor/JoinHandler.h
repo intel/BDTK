@@ -19,22 +19,41 @@
  * under the License.
  */
 
-#ifndef CIDER_STATEFUL_PROCESSOR_H
-#define CIDER_STATEFUL_PROCESSOR_H
+#ifndef CIDER_JOINHANDLER_H
+#define CIDER_JOINHANDLER_H
 
-#include "DefaultBatchProcessor.h"
-#include "exec/plan/substrait/SubstraitPlan.h"
+#include <memory>
+#include "cider/processor/BatchProcessor.h"
 
 namespace cider::processor {
 
-class StatefulProcessor : public DefaultBatchProcessor {
+class JoinHandler {
  public:
-  StatefulProcessor(const plan::SubstraitPlanPtr& plan,
-                    const BatchProcessorContextPtr& context);
+  virtual ~JoinHandler() = default;
 
-  std::shared_ptr<CiderBatch> getResult() override;
+  virtual std::shared_ptr<CiderBatch> onProcessBatch(
+      std::shared_ptr<CiderBatch> batch) = 0;
+
+  virtual void onState(BatchProcessorState state) = 0;
+
+  virtual void onFinish(){};
+};
+
+using JoinHandlerPtr = std::shared_ptr<JoinHandler>;
+
+class HashProbeHandler : public JoinHandler {
+ public:
+  HashProbeHandler(const BatchProcessorPtr& batchProcessor)
+      : batchProcessor_(batchProcessor){};
+
+  std::shared_ptr<CiderBatch> onProcessBatch(std::shared_ptr<CiderBatch> batch) override;
+
+  void onState(BatchProcessorState state) override;
+
+ private:
+  BatchProcessorPtr batchProcessor_;
 };
 
 }  // namespace cider::processor
 
-#endif  // CIDER_STATEFUL_PROCESSOR_H
+#endif  // CIDER_JOINHANDLER_H
