@@ -335,7 +335,7 @@ NullableStrType SplitPart::operator()(const std::string& str) const {
   } while (delimiter_pos != std::string::npos && ++delimiter_idx < split_part_ &&
            (limit_ == 0 || ++limit_counter < limit_));
 
-  if (limit_counter == limit_) {
+  if (limit_ && limit_counter == limit_) {
     // split has reached maximum split limit
     // treat whatever remains as a whole by extending delimiter_pos to end-of-string
     delimiter_pos = std::string::npos;
