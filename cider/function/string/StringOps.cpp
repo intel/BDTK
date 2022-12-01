@@ -307,21 +307,39 @@ NullableStrType Replace::operator()(const std::string& str) const {
 NullableStrType SplitPart::operator()(const std::string& str) const {
   // If split_part_ is negative then it is taken as the number
   // of split parts from the end of the string
+  // if limit_ is zero then no limit is specified
 
   if (delimiter_ == "") {
     return str;
+  }
+
+  if (limit_ == 1) {
+    // should return a list with only 1 string (which should not be splitted)
+    if (split_part_ == 1) {
+      return str;
+    } else {
+      return NullableStrType();  // out of range
+    }
   }
 
   const size_t str_len = str.size();
   size_t delimiter_pos = reverse_ ? str_len : 0UL;
   size_t last_delimiter_pos;
   size_t delimiter_idx = 0UL;
+  size_t limit_counter = 0UL;
 
   do {
     last_delimiter_pos = delimiter_pos;
     delimiter_pos = reverse_ ? str.rfind(delimiter_, delimiter_pos - 1UL)
                              : str.find(delimiter_, delimiter_pos + delimiter_length_);
-  } while (delimiter_pos != std::string::npos && ++delimiter_idx < split_part_);
+  } while (delimiter_pos != std::string::npos && ++delimiter_idx < split_part_ &&
+           (limit_ == 0 || ++limit_counter < limit_));
+
+  if (limit_counter == limit_) {
+    // split has reached maximum split limit
+    // treat whatever remains as a whole by extending delimiter_pos to end-of-string
+    delimiter_pos = std::string::npos;
+  }
 
   if (delimiter_pos == std::string::npos &&
       (delimiter_idx < split_part_ - 1UL || delimiter_idx < 1UL)) {
@@ -626,11 +644,23 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
     }
     case SqlStringOpKind::SPLIT_PART: {
       CHECK_GE(num_non_variable_literals, 2UL);
-      CHECK_LE(num_non_variable_literals, 2UL);
+      CHECK_LE(num_non_variable_literals, 3UL);
       const auto delimiter_literal = string_op_info.getStringLiteral(1);
-      const auto split_part_literal = string_op_info.getIntLiteral(2);
-      return std::make_unique<const SplitPart>(
-          var_string_optional_literal, delimiter_literal, split_part_literal);
+      const bool has_limit = string_op_info.intLiteralArgAtIdxExists(3);
+      if (has_limit) {
+        // split(input, delimiter, limit)[split_part]
+        const auto limit_literal = string_op_info.getIntLiteral(2);
+        const auto split_part_literal = string_op_info.getIntLiteral(3);
+        return std::make_unique<const SplitPart>(var_string_optional_literal,
+                                                 delimiter_literal,
+                                                 limit_literal,
+                                                 split_part_literal);
+      } else {
+        // split(input, delimiter)[split_part] / split_part(input, delimiter, index)
+        const auto split_part_literal = string_op_info.getIntLiteral(2);
+        return std::make_unique<const SplitPart>(
+            var_string_optional_literal, delimiter_literal, split_part_literal);
+      }
     }
     case SqlStringOpKind::REGEXP_REPLACE: {
       // 4 mandatory literals + up to 3 optional arguments

@@ -593,6 +593,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
   // temporary workaround for SPLIT(str, delimiter)[idx] patterns
+  // list[idx] is a selection clause so this pattern is handled here
   if (s_selection_expr.has_direct_reference() && s_selection_expr.has_expression()) {
     if (s_selection_expr.expression().rex_type_case() ==
         substrait::Expression::RexTypeCase::kScalarFunction) {
@@ -799,25 +800,29 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  // must be a SPLIT(col, delimiter) call
+  /// TODO: (YBRua) dedicated as a workaround to handling split(col, delimiter)[idx]
+  /// split() with indexing is treated as a SPLIT_PART StringOper
+  /// but the actual return type of split() should be a list
+  /// this method should be deprecated after list types are supported
   auto function_name =
       getFunctionName(function_map, s_scalar_function.function_reference());
   std::transform(
       function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
-  // substrait signature for split is string_split
-  CHECK_EQ(function_name, "STRING_SPLIT");
+  /// FIXME: (YBRua) unify function_name to STRING_SPLIT after PR#207 (2592) get merged
+  CHECK(function_name == "STRING_SPLIT" || function_name == "SPLIT");
   auto string_op_kind = name_to_string_op_kind(function_name);
-  CHECK_EQ(string_op_kind, SqlStringOpKind::SPLIT_PART);
+  CHECK_EQ(string_op_kind, SqlStringOpKind::STRING_SPLIT);
 
   std::vector<std::shared_ptr<Analyzer::Expr>> args;
   for (int i = 0; i < s_scalar_function.arguments_size(); i++) {
     auto value = s_scalar_function.arguments(i).value();
     args.push_back(toAnalyzerExpr(value, function_map, expr_map_ptr));
   }
-  // an extra dummy arg split_part (int), required in split_part stringop codegen
+
+  // add an extra arg split_part (int), required in split_part stringop codegen
   Datum const_val;
-  // substrait list index is zero-based but the runtime function in OmniSci is 1-based
-  // so we use a manual increment here to align indices
+  // substrait list index is zero-based but the split_part runtime function in OmniSci is
+  // 1-based so we use a manual increment here to align indices
   const_val.intval = list_ref_offset > 0 ? (list_ref_offset + 1) : list_ref_offset;
   args.push_back(std::make_shared<Analyzer::Constant>(
       SQLTypeInfo(SQLTypes::kINT, true), false, const_val));
@@ -871,10 +876,14 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       //      return makeExpr<Analyzer::OverlayStringOper>(args);
       //    case SqlStringOpKind::REPLACE:
       //      return makeExpr<Analyzer::ReplaceStringOper>(args);
+    case SqlStringOpKind::STRING_SPLIT:
+      // string_split is handled with a workaround that only supports split()[idx]
+      // this is done in toAnalyzerExpr(s_selection_expr) so we shouldn't be here
+      CIDER_THROW(
+          CiderUnsupportedException,
+          "string_split without an subsequent index access is not supported for now");
     case SqlStringOpKind::SPLIT_PART:
-      // SPLIT() is currently handled as a special case with workaround
-      // return makeExpr<Analyzer::SplitPartStringOper>(args);
-      CIDER_THROW(CiderCompileException, "Shouldn't be here");
+      return makeExpr<Analyzer::SplitPartStringOper>(args);
     case SqlStringOpKind::REGEXP_REPLACE:
       return makeExpr<Analyzer::RegexpReplaceStringOper>(args);
       //    case SqlStringOpKind::REGEXP_SUBSTR:

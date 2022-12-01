@@ -1431,11 +1431,30 @@ class TrimStringOper : public StringOper {
 
 class SplitPartStringOper : public StringOper {
  public:
+  /**
+   * split(input, delimiter)[split_part]
+   * split_part(input, delimiter, split_part)
+   */
   SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
                       const std::shared_ptr<Analyzer::Expr>& delimiter,
                       const std::shared_ptr<Analyzer::Expr>& split_part)
       : StringOper(SqlStringOpKind::SPLIT_PART,
                    {operand, delimiter, split_part},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  /**
+   * split(input, delimiter, limit)[split_part]
+   * returns a list of size at most `limit`, the last element always contains everything
+   * left in the string
+   */
+  SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
+                      const std::shared_ptr<Analyzer::Expr>& delimiter,
+                      const std::shared_ptr<Analyzer::Expr>& limit,
+                      const std::shared_ptr<Analyzer::Expr>& split_part)
+      : StringOper(SqlStringOpKind::SPLIT_PART,
+                   {operand, delimiter, limit, split_part},
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}

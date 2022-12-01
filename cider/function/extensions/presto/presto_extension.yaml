@@ -41,3 +41,57 @@ scalar_functions:
             name: high
             description: The value to check if less than or equal to.
         return: BOOLEAN
+  -
+    name: split_part
+    description: >-
+      Split string on delimiter and returns an array
+    impls:
+      - args:
+          - value: "varchar<L1>"
+            name: "string"
+            description: The input string.
+          - value: "varchar<L2>"
+            name: "delimiter"
+            description: A character used for splitting the string.
+          - value: "i64"
+            name: "index"
+            description: Field index to be returned. Index starts from 1. If the index is larger than the number of fields, a null string is returned.
+        return: "varchar<L1>"
+      - args:
+          - value: "string"
+            name: "string"
+            description: The input string.
+          - value: "string"
+            name: "delimiter"
+            description: A character used for splitting the string.
+          - value: "i64"
+            name: "index"
+            description: Field index to be returned. Index starts from 1. If the index is larger than the number of fields, a null string is returned.
+        return: "string"
+  -
+    name: split
+    description: >-
+      Split string on delimiter and returns an array
+    impls:
+      - args:
+          - value: "varchar<L1>"
+            name: "string"
+            description: The input string.
+          - value: "varchar<L2>"
+            name: "delimiter"
+            description: A character used for splitting the string.
+          - value: "i64"
+            name: "limit"
+            description: Must be positive. Returns an array of size at most 'limit', and the last element in array contains everything left in the string.
+        return: "List<varchar<L1>>"
+      - args:
+          - value: "string"
+            name: "string"
+            description: The input string.
+          - value: "string"
+            name: "delimiter"
+            description: A character used for splitting the string.
+          - value: "i64"
+            name: "limit"
+            description: Must be positive. Returns an array of size at most 'limit', and the last element in array contains everything left in the string.
+        return: "List<string>"
