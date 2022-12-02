@@ -75,8 +75,6 @@ class JITExprValueAdaptor {
 
   void setNull(jitlib::JITValuePointer& rh) { values_[0].replace(rh); }
 
-  bool isNullable() { return values_[0].get() != nullptr; }
-
  protected:
   JITExprValue& values_;
 };
