@@ -130,7 +130,7 @@
                     {
                       "value": {
                         "literal": {
-                          "i64": 1,
+                          "i64": -1,
                           "nullable": false,
                           "typeVariationReference": 0
                         }
@@ -196,7 +196,7 @@
                     {
                       "value": {
                         "literal": {
-                          "i64": 1,
+                          "i64": -1,
                           "nullable": false,
                           "typeVariationReference": 0
                         }

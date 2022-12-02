@@ -109,7 +109,7 @@
                           },
                           "input": {
                             "literal": {
-                              "fixedChar": "[0-9]+",
+                              "fixedChar": "[a-z]{2}",
                               "nullable": false,
                               "typeVariationReference": 0
                             }
@@ -121,7 +121,7 @@
                     {
                       "value": {
                         "literal": {
-                          "i64": 1,
+                          "i64": 5,
                           "nullable": false,
                           "typeVariationReference": 0
                         }
@@ -175,7 +175,7 @@
                           },
                           "input": {
                             "literal": {
-                              "fixedChar": "[0-9]+",
+                              "fixedChar": "[a-z]{2}",
                               "nullable": false,
                               "typeVariationReference": 0
                             }
@@ -187,7 +187,7 @@
                     {
                       "value": {
                         "literal": {
-                          "i64": 1,
+                          "i64": 5,
                           "nullable": false,
                           "typeVariationReference": 0
                         }

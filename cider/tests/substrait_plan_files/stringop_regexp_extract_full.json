@@ -10,7 +10,7 @@
       "extensionFunction": {
         "extensionUriReference": 1,
         "functionAnchor": 0,
-        "name": "regexp_match_substring:opt_opt_opt_vchar_vchar_i64_i64"
+        "name": "regexp_extract:vchar_vchar_i64"
       }
     }
   ],
@@ -109,7 +109,7 @@
                           },
                           "input": {
                             "literal": {
-                              "fixedChar": "[0-9]+",
+                              "fixedChar": "([0-9]*)([a-z]+)",
                               "nullable": false,
                               "typeVariationReference": 0
                             }
@@ -121,16 +121,7 @@
                     {
                       "value": {
                         "literal": {
-                          "i64": 1,
-                          "nullable": false,
-                          "typeVariationReference": 0
-                        }
-                      }
-                    },
-                    {
-                      "value": {
-                        "literal": {
-                          "i64": 1,
+                          "i64": 0,
                           "nullable": false,
                           "typeVariationReference": 0
                         }
@@ -175,7 +166,7 @@
                           },
                           "input": {
                             "literal": {
-                              "fixedChar": "[0-9]+",
+                              "fixedChar": "([0-9]*)([a-z]+)",
                               "nullable": false,
                               "typeVariationReference": 0
                             }
@@ -187,16 +178,7 @@
                     {
                       "value": {
                         "literal": {
-                          "i64": 1,
-                          "nullable": false,
-                          "typeVariationReference": 0
-                        }
-                      }
-                    },
-                    {
-                      "value": {
-                        "literal": {
-                          "i64": 1,
+                          "i64": 0,
                           "nullable": false,
                           "typeVariationReference": 0
                         }
