@@ -116,22 +116,17 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
     default:
       UNREACHABLE();
   }
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,
                                                     FixSizeJITExprValue& lhs_val,
                                                     FixSizeJITExprValue& rhs_val) {
   JITValuePointer value = func.createVariable(JITTypeTag::BOOL, "bw_cmp");
-  if (lhs_val.isNullable() && rhs_val.isNullable()) {
-    // both not null and value not equal
-    value = (!lhs_val.getNull() && !rhs_val.getNull() &&
-             lhs_val.getValue() != rhs_val.getValue()) ||
-            (lhs_val.getNull() != rhs_val.getNull());
-  } else if (lhs_val.isNullable()) {
-    value = lhs_val.getValue() != rhs_val.getValue() || lhs_val.getNull();
-  } else if (rhs_val.isNullable()) {
-    value = lhs_val.getValue() != rhs_val.getValue() || rhs_val.getNull();
-  }
+  // both not null and value not equal, or have different null property
+  value = (!lhs_val.getNull() && !rhs_val.getNull() &&
+           lhs_val.getValue() != rhs_val.getValue()) ||
+          (lhs_val.getNull() != rhs_val.getNull());
   switch (get_optype()) {
     case kBW_NE: {
       return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
