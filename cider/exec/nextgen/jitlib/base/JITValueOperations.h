@@ -24,6 +24,7 @@
 #include <type_traits>
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
 
 namespace cider::jitlib {
@@ -72,11 +73,11 @@ inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
 // disable pointer to bool implicit cast
 template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator&&(JITValue& lh, T rh) {
-  auto& parent_func = lh.getParentJITFunction();
-  auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
-  return lh && *rh_pointer;
+  if (rh) {
+    return &lh;
+  }
+  auto& func = lh.getParentJITFunction();
+  return func.createConstant(JITTypeTag::BOOL, false);
 }
 
 // disable pointer to bool implicit cast
@@ -92,11 +93,11 @@ inline JITValuePointer operator||(JITValue& lh, JITValue& rh) {
 // disable pointer to bool implicit cast
 template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator||(JITValue& lh, T rh) {
-  auto& parent_func = lh.getParentJITFunction();
-  auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer =
-      parent_func.createConstant(type, op_utils::castConstant(type, rh));
-  return lh || *rh_pointer;
+  if (!rh) {
+    return &lh;
+  }
+  auto& func = lh.getParentJITFunction();
+  return func.createConstant(JITTypeTag::BOOL, true);
 }
 
 // disable pointer to bool implicit cast
