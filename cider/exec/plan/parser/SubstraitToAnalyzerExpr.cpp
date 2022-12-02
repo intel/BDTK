@@ -823,7 +823,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
   Datum const_val;
   // substrait list index is zero-based but the split_part runtime function in OmniSci is
   // 1-based so we use a manual increment here to align indices
-  const_val.intval = list_ref_offset > 0 ? (list_ref_offset + 1) : list_ref_offset;
+  const_val.intval = list_ref_offset >= 0 ? (list_ref_offset + 1) : list_ref_offset;
   args.push_back(std::make_shared<Analyzer::Constant>(
       SQLTypeInfo(SQLTypes::kINT, true), false, const_val));
 

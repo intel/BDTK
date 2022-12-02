@@ -1480,7 +1480,8 @@ class SplitPartStringOper : public StringOper {
             OperandTypeFamily::INT_FAMILY};
   }
   const std::vector<std::string>& getArgNames() const override {
-    static std::vector<std::string> names{"operand", "delimiter", "split_part"};
+    static std::vector<std::string> names{
+        "operand", "delimiter", "limit_or_splitpart", "splitpart"};
     return names;
   }
 };
