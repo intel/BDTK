@@ -50,6 +50,8 @@ class ColumnWriter {
       case kSMALLINT:
       case kINT:
       case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE:
         writeFixSizedTypeCol();
         break;
       default:
@@ -66,6 +68,9 @@ class ColumnWriter {
     // Allocate buffer.
     auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue(
         [this]() { return allocateRawDataBuffer(1, expr_->get_type_info().get_type()); });
+    // the null_buffer, raw_data_buffer not used anymore.
+    // so it doesn't matter whether null_buffer is nullptr
+    // or constant false.
     auto null_buffer = JITValuePointer(nullptr);
 
     // Write value

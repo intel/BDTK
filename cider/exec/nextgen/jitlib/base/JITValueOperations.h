@@ -46,10 +46,11 @@ inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
 // disable pointer to bool implicit cast
 template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator&&(JITValue& lh, T rh) {
-  auto& parent_func = lh.getParentJITFunction();
-  auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
-  return lh && *rh_pointer;
+  if (rh) {
+    return &lh;
+  }
+  auto& func = lh.getParentJITFunction();
+  return func.createLiteral(JITTypeTag::BOOL, false);
 }
 
 // disable pointer to bool implicit cast
@@ -65,10 +66,11 @@ inline JITValuePointer operator||(JITValue& lh, JITValue& rh) {
 // disable pointer to bool implicit cast
 template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator||(JITValue& lh, T rh) {
-  auto& parent_func = lh.getParentJITFunction();
-  auto type = lh.getValueTypeTag();
-  JITValuePointer rh_pointer = parent_func.createLiteral(type, rh);
-  return lh || *rh_pointer;
+  if (!rh) {
+    return &lh;
+  }
+  auto& func = lh.getParentJITFunction();
+  return func.createLiteral(JITTypeTag::BOOL, true);
 }
 
 // disable pointer to bool implicit cast

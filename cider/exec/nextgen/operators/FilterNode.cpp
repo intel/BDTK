@@ -42,10 +42,7 @@ void FilterTranslator::codegen(context::CodegenContext& context) {
         auto&& [expr_type, exprs] = node_->getOutputExprs();
         for (const auto& expr : exprs) {
           utils::FixSizeJITExprValue cond(expr->codegen(*func));
-          bool_init = bool_init && cond.getValue();
-          if (cond.isNullable()) {
-            bool_init = bool_init && !cond.getNull();
-          }
+          bool_init = bool_init && cond.getValue() && !cond.getNull();
         }
         return bool_init;
       })
