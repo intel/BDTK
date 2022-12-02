@@ -900,6 +900,54 @@ class CiderConstantStringTest : public CiderTestBase {
   }
 };
 
+TEST_F(CiderRegexpTestArrow, SubstrRunnabilityTest) {
+  const auto is_null = std::vector<bool>{
+      false, true, false, true, false, true, false, true, false, true, false, true};
+  {
+    // extract first match
+    // SELECT REGEXP_SUBSTR(col, '[0-9]+', occurrence=1) FROM test;
+    auto substr = std::vector<std::string>{
+        "", "", "", "", "", "", "112", "112", "123", "123", "", ""};
+    const auto [substr_data, susbtr_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", substr_data, susbtr_offsets)
+            .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_substr_first.json", replace_expected);
+  }
+}
+
+TEST_F(CiderRegexpTestArrow, ExtractRunnabilityTest) {
+  const auto is_null = std::vector<bool>{
+      false, true, false, true, false, true, false, true, false, true, false, true};
+  {
+    // extract first match
+    // SELECT REGEXP_EXTRACT(col, '([0-9]*)([a-z]+)', group=2) FROM test;
+    auto substr = std::vector<std::string>{"hello",
+                                           "hello",
+                                           "helloworldhello",
+                                           "helloworldhello",
+                                           "pqrsttsrqp",
+                                           "pqrsttsrqp",
+                                           "mail",
+                                           "mail",
+                                           "qwerty",
+                                           "qwerty",
+                                           "",
+                                           ""};
+    const auto [substr_data, susbtr_offsets] =
+        ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
+    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+        ArrowArrayBuilder()
+            .addUTF8Column("col_2", substr_data, susbtr_offsets)
+            .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
+            .build());
+    assertQueryArrow("stringop_regexp_extract_group.json", replace_expected);
+  }
+}
+
 TEST_F(CiderConstantStringTest, likeStringTest) {
   std::vector<CiderByteArray> expected_vec;
   expected_vec.push_back(CiderByteArray(7, reinterpret_cast<const uint8_t*>("aaaaaaa")));

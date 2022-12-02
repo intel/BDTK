@@ -1293,14 +1293,14 @@ class RegexpExtractStringOper : public StringOper {
                           const std::shared_ptr<Analyzer::Expr>& pattern,
                           const std::shared_ptr<Analyzer::Expr>& group)
       : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
-                   {input, pattern, group},
+                   foldLiteralStrCasts({input, pattern, group}),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
   RegexpExtractStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
-                   operands,
+                   foldLiteralStrCasts(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
@@ -1331,14 +1331,14 @@ class RegexpSubstrStringOper : public StringOper {
                          const std::shared_ptr<Analyzer::Expr>& position,
                          const std::shared_ptr<Analyzer::Expr>& occurrence)
       : StringOper(SqlStringOpKind::REGEXP_SUBSTR,
-                   {input, pattern, position, occurrence},
+                   foldLiteralStrCasts({input, pattern, position, occurrence}),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
   RegexpSubstrStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::REGEXP_SUBSTR,
-                   operands,
+                   foldLiteralStrCasts(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
