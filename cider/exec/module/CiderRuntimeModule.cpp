@@ -907,18 +907,17 @@ CiderBatch CiderRuntimeModule::setSchemaAndUpdateAggResIfNeed(
           auto schema_and_array =
               ArrowArrayBuilder()
                   .setRowNum(row_num)
+                  .addStructColumn(output_batch->getArrowSchema().children[flatten_index],
+                                   output_batch->getArrowArray().children[flatten_index])
                   .addStructColumn(
-                      output_batch->getArrowSchema()->children[flatten_index],
-                      output_batch->getArrowArray()->children[flatten_index])
-                  .addStructColumn(
-                      output_batch->getArrowSchema()->children[flatten_index + 1],
-                      output_batch->getArrowArray()->children[flatten_index + 1])
+                      output_batch->getArrowSchema().children[flatten_index + 1],
+                      output_batch->getArrowArray().children[flatten_index + 1])
                   .build();
           builder.addStructColumn(std::get<0>(schema_and_array),
                                   std::get<1>(schema_and_array));
         } else {
-          builder.addStructColumn(output_batch->getArrowSchema()->children[flatten_index],
-                                  output_batch->getArrowArray()->children[flatten_index]);
+          builder.addStructColumn(output_batch->getArrowSchema().children[flatten_index],
+                                  output_batch->getArrowArray().children[flatten_index]);
         }
       }
       auto schema_and_array = builder.build();

@@ -1006,6 +1006,8 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedPartialAVG) {
   expect_batch->set_schema(schema);
   // select avg(col_fp64), avg(col_fp32), avg(col_fp32_with_null), avg(col_fp32_all_null)
   assertQueryArrow("multi_fp_avg_partial.json", expect_batch);
+  delete[] expect_arrays;
+  delete[] expect_schemas;
 }
 
 TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
@@ -1114,6 +1116,8 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
   // select col_fp64, avg(col_fp64), avg(col_fp32), avg(col_fp32_with_null),
   // avg(col_fp32_all_null) group by col_fp64
   assertQueryArrow("multi_fp_groupby_avg_partial.json", expect_batch, true);
+  delete[] expect_arrays;
+  delete[] expect_schemas;
 }
 
 class CiderCountDistinctConstantTest : public CiderTestBase {
