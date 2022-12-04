@@ -47,11 +47,12 @@ inline jitlib::JITTypeTag getJITTypeTag(const SQLTypes& st) {
     case kTEXT:
       return jitlib::JITTypeTag::VARCHAR;
     case kTIME:
+    case kTIMESTAMP:
     case kINTERVAL_YEAR_MONTH:
     case kINTERVAL_DAY_TIME:
-    case kTIMESTAMP:
+      return jitlib::JITTypeTag::INT64;
     case kDATE:
-      UNIMPLEMENTED();
+      return jitlib::JITTypeTag::INT32;
     case kNULLT:
     default:
       return jitlib::JITTypeTag::INVALID;
@@ -96,9 +97,12 @@ inline int64_t getTypeBytes(SQLTypes type) {
       return 2;
     case kINT:
     case kFLOAT:
+    case kDATE:
       return 4;
     case kBIGINT:
     case kDOUBLE:
+    case kTIMESTAMP:
+    case kTIME:
       return 8;
     default:
       UNIMPLEMENTED();

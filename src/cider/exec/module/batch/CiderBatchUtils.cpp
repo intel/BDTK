@@ -270,6 +270,14 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
     case kCHAR:
     case kTEXT:
       return "u";
+    case kDATE:
+      return "tdD";
+    // time64 [microseconds]
+    case kTIME:
+      return "ttu";
+    // timestamp [microseconds]
+    case kTIMESTAMP:
+      return "tsu";
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported to convert type ") + toString(type) +
