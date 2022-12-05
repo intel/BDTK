@@ -73,7 +73,7 @@ void FunctionLookupEngine::registerFunctionLookUpContext(
     loadExtensionYamlAndInitializeFunctionLookup<io::substrait::FunctionMapping>(
         "substrait", "substrait_extension.yaml", cider_internal_function_ptr);
   } else if (from_platform == PlatformType::PrestoPlatform) {
-    loadExtensionYamlAndInitializeFunctionLookup<io::substrait::VeloxFunctionMappings>(
+    loadExtensionYamlAndInitializeFunctionLookup<io::substrait::PrestoFunctionMappings>(
         "presto", "presto_extension.yaml", cider_internal_function_ptr);
   } else {
     CIDER_THROW(CiderCompileException,

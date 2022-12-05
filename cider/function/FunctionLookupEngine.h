@@ -38,13 +38,13 @@
 
 namespace io::substrait {
 
-class VeloxFunctionMappings : public FunctionMapping {
+class PrestoFunctionMappings : public FunctionMapping {
  public:
-  static const std::shared_ptr<VeloxFunctionMappings> make() {
-    return std::make_shared<VeloxFunctionMappings>();
+  static const std::shared_ptr<PrestoFunctionMappings> make() {
+    return std::make_shared<PrestoFunctionMappings>();
   }
 
-  /// scalar function names in difference between velox and Substrait.
+  /// scalar function names in difference between presto and Substrait.
   const FunctionMap scalaMapping() const override {
     static const FunctionMap scalarMappings{
         {"plus", "add"},
