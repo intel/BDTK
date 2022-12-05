@@ -38,22 +38,6 @@ bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> 
   return map.find(expr) == map.end() || !map.find(expr)->second;
 }
 
-bool isStringFunction(const std::string& function_name) {
-  static std::unordered_set<std::string> funcs{"substring",
-                                               "substr",
-                                               "lower",
-                                               "upper",
-                                               "trim",
-                                               "ltrim",
-                                               "rtrim",
-                                               "concat",
-                                               "||",
-                                               "length",
-                                               "char_length",
-                                               "regexp_replace"};
-  return funcs.find(function_name) != funcs.end();
-}
-
 std::shared_ptr<Analyzer::ColumnVar> Substrait2AnalyzerExprConverter::makeColumnVar(
     const SQLTypeInfo& ti,
     int table_id,
@@ -928,6 +912,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case OpSupportExprType::kSUBSTRING_STRING_OPER:
     case OpSupportExprType::kCONCAT_STRING_OPER:
     case OpSupportExprType::kCHAR_LENGTH_OPER:
+    case OpSupportExprType::kREGEXP_REPLACE_OPER:
       return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
     case OpSupportExprType::kLIKE_EXPR:
       return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);

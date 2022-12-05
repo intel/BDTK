@@ -202,6 +202,7 @@ class SubstraitFunctionCiderMappings {
         {"concat", OpSupportExprType::kCONCAT_STRING_OPER},
         {"||", OpSupportExprType::kCONCAT_STRING_OPER},
         {"char_length", OpSupportExprType::kCHAR_LENGTH_OPER},
+        {"regexp_replace", OpSupportExprType::kREGEXP_REPLACE_OPER},
         {"like", OpSupportExprType::kLIKE_EXPR},
     };
     return mapping;

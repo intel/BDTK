@@ -83,6 +83,7 @@ enum OpSupportExprType {
   kUPPER_STRING_OPER = 32,
   kTRIM_STRING_OPER = 33,
   kCONCAT_STRING_OPER = 34,
+  kREGEXP_REPLACE_OPER = 35,
   kUNDEFINED_EXPR = -1,
 };
 
