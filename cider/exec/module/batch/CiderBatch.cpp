@@ -140,7 +140,7 @@ SQLTypes CiderBatch::getCiderType() const {
 }
 
 const char* CiderBatch::getArrowFormatString() const {
-  return getArrowSchema()->format;
+  return getArrowSchema().format;
 }
 
 // TODO: Dictionary support is TBD.
@@ -198,12 +198,12 @@ bool CiderBatch::resizeNulls(int64_t size, bool default_not_null) {
     return false;
   }
 
-  ArrowArray* array = getArrowArray();
-  auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(array->private_data);
+  ArrowArray array = getArrowArray();
+  auto array_holder = reinterpret_cast<CiderArrowArrayBufferHolder*>(array.private_data);
 
   size_t bytes = ((size + 7) >> 3);
   size_t null_index = getNullVectorIndex();
-  bool first_time = !array->buffers[null_index];
+  bool first_time = !array.buffers[null_index];
 
   array_holder->allocBuffer(null_index, bytes);
   uint8_t* null_vector = array_holder->getBufferAs<uint8_t>(null_index);
@@ -227,12 +227,12 @@ bool CiderBatch::resizeNulls(int64_t size, bool default_not_null) {
 
 uint8_t* CiderBatch::getMutableNulls() {
   CHECK(!isMoved());
-  ArrowArray* array = getArrowArray();
-  const void* nulls = array->buffers[getNullVectorIndex()];
+  ArrowArray array = getArrowArray();
+  const void* nulls = array.buffers[getNullVectorIndex()];
   if (!nulls) {
     if (resizeNulls(getLength(), true)) {
       return reinterpret_cast<uint8_t*>(
-          const_cast<void*>(array->buffers[getNullVectorIndex()]));
+          const_cast<void*>(array.buffers[getNullVectorIndex()]));
     }
   }
   return nullptr;
@@ -240,14 +240,14 @@ uint8_t* CiderBatch::getMutableNulls() {
 
 const uint8_t* CiderBatch::getNulls() const {
   CHECK(!isMoved());
-  ArrowArray* array = getArrowArray();
+  ArrowArray array = getArrowArray();
 
-  if (!array->buffers) {
+  if (!array.buffers) {
     // usually should not happen, but just in case
     CIDER_THROW(CiderRuntimeException, "Arrow Array has no buffer.");
   }
 
-  return reinterpret_cast<const uint8_t*>(array->buffers[getNullVectorIndex()]);
+  return reinterpret_cast<const uint8_t*>(array.buffers[getNullVectorIndex()]);
 }
 
 void CiderBatch::releaseArrowEntries() {

@@ -1006,6 +1006,8 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedPartialAVG) {
   expect_batch->set_schema(schema);
   // select avg(col_fp64), avg(col_fp32), avg(col_fp32_with_null), avg(col_fp32_all_null)
   assertQueryArrow("multi_fp_avg_partial.json", expect_batch);
+  delete[] expect_arrays;
+  delete[] expect_schemas;
 }
 
 TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
@@ -1019,27 +1021,53 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
   std::vector<int64_t> expect_count3({0, 1, 1});
   std::vector<int64_t> expect_count4({0, 0, 0});
 
-  ArrowSchema* expect_schema;
-  ArrowArray* expect_array;
+  ArrowSchema** expect_schemas = (ArrowSchema**)malloc(4 * sizeof(ArrowSchema*));
+  ArrowArray** expect_arrays = (ArrowArray**)malloc(4 * sizeof(ArrowArray*));
 
-  std::tie(expect_schema, expect_array) =
+  std::tie(expect_schemas[0], expect_arrays[0]) =
       ArrowArrayBuilder()
           .setRowNum(3)
-          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), groupby_key)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum1)
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count1)
+          .build();
+
+  std::tie(expect_schemas[1], expect_arrays[1]) =
+      ArrowArrayBuilder()
+          .setRowNum(3)
           .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum2)
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count2)
+          .build();
+
+  std::tie(expect_schemas[2], expect_arrays[2]) =
+      ArrowArrayBuilder()
+          .setRowNum(3)
           .addColumn<double>(
               "", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum3, {true, false, false})
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count3)
+          .build();
+
+  std::tie(expect_schemas[3], expect_arrays[3]) =
+      ArrowArrayBuilder()
+          .setRowNum(3)
           .addColumn<double>(
               "", CREATE_SUBSTRAIT_TYPE(Fp64), expect_sum4, {true, true, true})
           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_count4)
           .build();
 
-  auto expect_batch = std::make_shared<CiderBatch>(
-      expect_schema, expect_array, std::make_shared<CiderDefaultAllocator>());
+  auto schema_and_array =
+      ArrowArrayBuilder()
+          .setRowNum(3)
+          .addColumn<double>("", CREATE_SUBSTRAIT_TYPE(Fp64), groupby_key)
+          .addStructColumn(expect_schemas[0], expect_arrays[0])
+          .addStructColumn(expect_schemas[1], expect_arrays[1])
+          .addStructColumn(expect_schemas[2], expect_arrays[2])
+          .addStructColumn(expect_schemas[3], expect_arrays[3])
+          .build();
+
+  auto expect_batch =
+      std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
+                                   std::get<1>(schema_and_array),
+                                   std::make_shared<CiderDefaultAllocator>());
 
   std::string type_json = R"(
     {
@@ -1088,6 +1116,8 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
   // select col_fp64, avg(col_fp64), avg(col_fp32), avg(col_fp32_with_null),
   // avg(col_fp32_all_null) group by col_fp64
   assertQueryArrow("multi_fp_groupby_avg_partial.json", expect_batch, true);
+  delete[] expect_arrays;
+  delete[] expect_schemas;
 }
 
 class CiderCountDistinctConstantTest : public CiderTestBase {
