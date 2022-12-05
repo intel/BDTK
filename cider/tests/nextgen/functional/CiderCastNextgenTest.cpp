@@ -34,11 +34,15 @@ using namespace cider::exec::nextgen;
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
-class FilterProjectTest : public ::testing::Test {
+class CiderCastNextgenTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& sql) {
+  void executeTest(ArrowArray* array,
+                   const std::string& create_ddl,
+                   const std::string& sql,
+                   std::vector<size_t> check_bytes,
+                   std::vector<int8_t*> check_vecs) {
     // SQL Parsing
-    auto json = RunIsthmus::processSql(sql, create_ddl_);
+    auto json = RunIsthmus::processSql(sql, create_ddl);
     ::substrait::Plan plan;
     google::protobuf::util::JsonStringToMessage(json, &plan);
 
@@ -76,55 +80,77 @@ class FilterProjectTest : public ::testing::Test {
 
     // Execution
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
-    auto input_builder = ArrowArrayBuilder();
-    auto&& [schema, array] =
-        input_builder.setRowNum(10)
-            .addColumn<int64_t>(
-                "a",
-                CREATE_SUBSTRAIT_TYPE(I64),
-                {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-                {true, false, false, false, false, true, false, false, false, false})
-            .addColumn<int64_t>(
-                "b", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
-            .build();
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
-    EXPECT_EQ(output_batch_array->length, 4);
-
-    auto check_array =
-        [](ArrowArray* array, size_t expect_len, std::vector<int64_t>& expect_res) {
-          EXPECT_EQ(array->length, expect_len);
-          int64_t* data_buffer = (int64_t*)array->buffers[1];
-          for (size_t i = 0; i < expect_len; ++i) {
-            EXPECT_EQ(data_buffer[i], expect_res[i]);
-          }
-        };
-
-    // a   1 2 3 4
-    // b   2 3 4 5
-    // a+b 3 5 7 9
-    // b+a 3 5 7 9
-    // a+a 2 4 6 8
-    // b+b 4 6 8 10
-    std::vector<int64_t> expect_res = {3, 5, 7, 9};
-    check_array(output_batch_array->children[0], 4, expect_res);
-    expect_res = {3, 5, 7, 9};
-    check_array(output_batch_array->children[1], 4, expect_res);
-    expect_res = {2, 4, 6, 8};
-    check_array(output_batch_array->children[2], 4, expect_res);
-    expect_res = {4, 6, 8, 10};
-    check_array(output_batch_array->children[3], 4, expect_res);
+    // check value only
+    for (int i = 0; i < check_vecs.size(); i++) {
+      const int8_t* out_buf =
+          reinterpret_cast<const int8_t*>(output_batch_array->children[i]->buffers[1]);
+      EXPECT_EQ(0, memcmp(check_vecs[i], out_buf, check_bytes[i]));
+    }
   }
-
- private:
-  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);";
 };
 
-TEST_F(FilterProjectTest, FrameworkTest) {
-  // nullable + not null, not null + nullable, nullable + nullable, not null + not null
-  executeTest("select a + b, b + a, a + a, b + b from test where a < b");
+TEST_F(CiderCastNextgenTest, castFloatTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  std::vector<float> col_float{1.1, 2.1, 3.1, 4.1, 5.1};
+  std::vector<double> col_double{1.1, 1.9, 2.8, 3.7, 4.9};
+  std::vector<int32_t> col_int{1, 2, 3, 4, 5};
+  const int32_t row_num = 5;
+  std::vector<bool> vec_null(row_num, false);
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(row_num)
+          .addColumn<float>("col_float", CREATE_SUBSTRAIT_TYPE(Fp32), col_float, vec_null)
+          .addColumn<double>(
+              "col_double", CREATE_SUBSTRAIT_TYPE(Fp64), col_double, vec_null)
+          .addColumn<int32_t>("col_int", CREATE_SUBSTRAIT_TYPE(I32), col_int, vec_null)
+          .build();
+
+  std::string ddl =
+      "CREATE TABLE test(col_float FLOAT, col_double DOUBLE, col_int INTEGER);";
+
+  executeTest(array,
+              ddl,
+              "select cast(col_float as int), cast(col_double as int) from test",
+              {row_num * sizeof(int32_t), row_num * sizeof(int32_t)},
+              {reinterpret_cast<int8_t*>(col_int.data()),
+               reinterpret_cast<int8_t*>(col_int.data())});
+}
+
+TEST_F(CiderCastNextgenTest, castIntegerTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  std::vector<int8_t> col_tinyint{1, 2, 3, 4, 5};
+  std::vector<int64_t> col_bigint{1, 2, 3, 4, 5};
+  std::vector<int32_t> col_int{1, 2, 3, 4, 5};
+  const int32_t row_num = 5;
+  std::vector<bool> vec_null(row_num, false);
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(row_num)
+          .addColumn<int8_t>(
+              "col_tinyint", CREATE_SUBSTRAIT_TYPE(I8), col_tinyint, vec_null)
+          .addColumn<int64_t>(
+              "col_bigint", CREATE_SUBSTRAIT_TYPE(I64), col_bigint, vec_null)
+          .addColumn<int32_t>("col_int", CREATE_SUBSTRAIT_TYPE(I32), col_int, vec_null)
+          .build();
+
+  std::string ddl =
+      "CREATE TABLE test(col_tinyint TINYINT, col_bigint BIGINT, col_int INTEGER);";
+
+  executeTest(
+      array,
+      ddl,
+      "select cast(col_tinyint as int), cast(col_bigint as int), cast(col_int as bigint) "
+      "from test",
+      {row_num * sizeof(int32_t), row_num * sizeof(int32_t), row_num * sizeof(int64_t)},
+      {reinterpret_cast<int8_t*>(col_int.data()),
+       reinterpret_cast<int8_t*>(col_int.data()),
+       reinterpret_cast<int8_t*>(col_bigint.data())});
 }
 
 int main(int argc, char** argv) {

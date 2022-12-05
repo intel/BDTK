@@ -90,6 +90,7 @@ class UOper : public Expr {
  public:
   ExprPtrRefVector get_children_reference() override { return {&operand}; }
   JITExprValue& codegen(JITFunction& func) override;
+  JITValuePointer codegenCastFunc(JITFunction& func, JITValue& lhs);
 
  protected:
   SQLOps optype;  // operator type, e.g., kUMINUS, kISNULL, kEXISTS

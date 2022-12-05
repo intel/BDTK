@@ -23,6 +23,7 @@
 
 #include <llvm/IR/Value.h>
 
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "util/Logger.h"
 
@@ -41,9 +42,13 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case JITTypeTag::BOOL:
+    case JITTypeTag::BOOL: {
+      if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_rh.llvm_value_)) {
+        return const_bool->isOne() ? this : &rh;
+      }
       ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
       break;
+    }
     default:
       LOG(FATAL) << "Invalid JITValue type for and operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -57,9 +62,13 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case JITTypeTag::BOOL:
+    case JITTypeTag::BOOL: {
+      if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_rh.llvm_value_)) {
+        return const_bool->isOne() ? &rh : this;
+      }
       ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
       break;
+    }
     default:
       LOG(FATAL) << "Invalid JITValue type for or operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -72,9 +81,14 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
 JITValuePointer LLVMJITValue::notOp() {
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case JITTypeTag::BOOL:
+    case JITTypeTag::BOOL: {
+      if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_value_)) {
+        bool literal = const_bool->isOne() ? false : true;
+        return parent_function_.createConstant(JITTypeTag::BOOL, literal);
+      }
       ans = getFunctionBuilder(parent_function_).CreateNot(load());
       break;
+    }
     default:
       LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -315,6 +329,35 @@ JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
                          getLLVMPtrType(type_tag, parent_function_.getLLVMContext()));
   return makeJITValuePointer<LLVMJITValue>(
       JITTypeTag::POINTER, parent_function_, new_llvm_value, "cast_ptr", false, type_tag);
+}
+
+JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_tag) {
+  llvm::Type* source_type =
+      getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
+  llvm::Type* target_type =
+      getLLVMType(target_jit_tag, parent_function_.getLLVMContext());
+  CHECK(source_type && target_type);
+  llvm::Value* source_lv = load();
+  llvm::Value* target_lv = nullptr;
+  if (source_type->isIntegerTy() && target_type->isIntegerTy()) {
+    target_lv =
+        getFunctionBuilder(parent_function_).CreateIntCast(source_lv, target_type, true);
+  } else if (source_type->isIntegerTy() && target_type->isFloatingPointTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateSIToFP(source_lv, target_type);
+  } else if (source_type->isFloatingPointTy() && target_type->isIntegerTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateFPToSI(source_lv, target_type);
+  } else if (source_type->isFloatingPointTy() && target_type->isFloatingPointTy()) {
+    target_lv = getFunctionBuilder(parent_function_).CreateFPCast(source_lv, target_type);
+  }
+  CHECK(target_lv) << "error when cast JITValue type from:"
+                   << getJITTypeName(getValueTypeTag())
+                   << " into type:" << getJITTypeName(target_jit_tag);
+  return makeJITValuePointer<LLVMJITValue>(target_jit_tag,
+                                           parent_function_,
+                                           target_lv,
+                                           "cast_val",
+                                           false,
+                                           JITTypeTag::INVALID);
 }
 
 JITValuePointer LLVMJITValue::dereference() {

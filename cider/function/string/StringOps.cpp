@@ -344,6 +344,7 @@ NullableStrType RegexpReplace::operator()(const std::string& str) const {
   const size_t wrapped_start = static_cast<size_t>(std::min(
       start_pos_ >= 0 ? start_pos_ : std::max(str_len + start_pos_, 0L), str_len));
   if (occurrence_ == 0L) {
+    // occurrence_ == 0: replace all occurrences
     std::string result;
     std::string::const_iterator replace_start(str.cbegin() + wrapped_start);
     std::regex_replace(std::back_inserter(result),
@@ -353,6 +354,7 @@ NullableStrType RegexpReplace::operator()(const std::string& str) const {
                        replacement_);
     return str.substr(0UL, wrapped_start) + result;
   } else {
+    // only replace n-th occurrence
     const auto occurrence_match_pos = RegexpReplace::get_nth_regex_match(
         str,
         wrapped_start,
@@ -631,13 +633,20 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
           var_string_optional_literal, delimiter_literal, split_part_literal);
     }
     case SqlStringOpKind::REGEXP_REPLACE: {
-      CHECK_GE(num_non_variable_literals, 5UL);
-      CHECK_LE(num_non_variable_literals, 5UL);
+      // 4 mandatory literals + up to 3 optional arguments
+      CHECK_GE(num_non_variable_literals, 4UL);
+      CHECK_LE(num_non_variable_literals, 7UL);
       const auto pattern_literal = string_op_info.getStringLiteral(1);
       const auto replacement_literal = string_op_info.getStringLiteral(2);
       const auto start_pos_literal = string_op_info.getIntLiteral(3);
       const auto occurrence_literal = string_op_info.getIntLiteral(4);
-      const auto regex_params_literal = string_op_info.getStringLiteral(5);
+
+      // TODO: (YBRua) currently only supports case sensitive ('c')
+      // this interface should be changed to comply with substrait specification
+      // which uses enum types instead of char[] for specifying options
+      // const auto regex_params_literal = string_op_info.getStringLiteral(5);
+      const std::string regex_params_literal = "c";
+
       return std::make_unique<const RegexpReplace>(var_string_optional_literal,
                                                    pattern_literal,
                                                    replacement_literal,

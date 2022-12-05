@@ -427,6 +427,33 @@ std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
+std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
+  return makeExpr<Analyzer::RegexpReplaceStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
+    int start_idx) {
+  std::vector<std::shared_ptr<Analyzer::Expr>> folded_operands;
+  folded_operands.reserve(operands.size());
+  for (int i = 0; i < operands.size(); ++i) {
+    if (i < start_idx) {
+      folded_operands.push_back(operands[i]);
+    } else {
+      auto literal_arg =
+          dynamic_cast<const Analyzer::Constant*>(remove_cast(operands[i].get()));
+      if (literal_arg && literal_arg->get_type_info().is_string()) {
+        // only fold str casts
+        folded_operands.push_back(literal_arg->deep_copy());
+      } else {
+        folded_operands.push_back(operands[i]);
+      }
+    }
+  }
+  return folded_operands;
+}
+
 bool ConcatStringOper::isLiteralOrCastLiteral(const Analyzer::Expr* operand) {
   // literals may exist in a CAST op (casted from fixedchar to varchar)
   auto literal_arg = dynamic_cast<const Analyzer::Constant*>(remove_cast(operand));
