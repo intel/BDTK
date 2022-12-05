@@ -88,6 +88,7 @@ inline int64_t getBufferNum(SQLTypes type) {
 
 inline int64_t getTypeBytes(SQLTypes type) {
   switch (type) {
+    case kBOOLEAN:
     case kTINYINT:
       return 1;
     case kSMALLINT:

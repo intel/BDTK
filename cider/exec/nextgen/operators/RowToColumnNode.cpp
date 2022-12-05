@@ -45,6 +45,7 @@ class ColumnWriter {
   void write() {
     // CHECK(0 == expr_->getLocalIndex());
     switch (expr_->get_type_info().get_type()) {
+      case kBOOLEAN:
       case kTINYINT:
       case kSMALLINT:
       case kINT:
@@ -65,18 +66,12 @@ class ColumnWriter {
     utils::FixSizeJITExprValue values(expr_->get_expr_value());
 
     // Allocate buffer.
-    auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue(
-        [this]() { return allocateRawDataBuffer(1, expr_->get_type_info().get_type()); });
     // the null_buffer, raw_data_buffer not used anymore.
     // so it doesn't matter whether null_buffer is nullptr
     // or constant false.
     auto null_buffer = JITValuePointer(nullptr);
-
     // Write value
-    auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(
-        utils::getJITTypeTag(expr_->get_type_info().get_type()));
-    actual_raw_data_buffer[index_] = *values.getValue();
-
+    auto raw_data_buffer = setFixSizeRawData(values);
     if (!expr_->get_type_info().get_notnull()) {
       // TBD: Null representation, bit-array or bool-array.
       null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
@@ -95,6 +90,32 @@ class ColumnWriter {
         arrow_array_,
         utils::JITExprValue(JITExprValueType::BATCH, null_buffer, raw_data_buffer));
     expr_->setLocalIndex(local_offset);
+  }
+
+  JITValuePointer setFixSizeRawData(utils::FixSizeJITExprValue& fixsize_val) {
+    if (expr_->get_type_info().get_type() == kBOOLEAN) {
+      auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue(
+          [this]() { return allocateBitwiseBuffer(1); });
+      // leverage existing set_null_vector but need opposite value as input
+      // TODO: (yma11) need check in UT
+      context_.getJITFunction()->emitRuntimeFunctionCall(
+          "set_null_vector",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::VOID,
+              .params_vector = {{raw_data_buffer.get(),
+                                 index_.get(),
+                                 (!fixsize_val.getValue()).get()}}});
+      return raw_data_buffer;
+    } else {
+      auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+        return allocateRawDataBuffer(1, expr_->get_type_info().get_type());
+      });
+      // Write value
+      auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(
+          utils::getJITTypeTag(expr_->get_type_info().get_type()));
+      actual_raw_data_buffer[index_] = *fixsize_val.getValue();
+      return raw_data_buffer;
+    }
   }
 
  private:
