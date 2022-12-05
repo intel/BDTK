@@ -89,8 +89,7 @@ class JITFunction {
 
   template <typename T>
   JITValuePointer createLiteral(JITTypeTag type_tag, T value) {
-    std::any casted_value = castConstant(type_tag, value);
-    return createLiteralImpl(type_tag, casted_value);
+    return createLiteralImpl(type_tag, castLiteral(type_tag, value));
   }
 
   using LocalJITValueBuilderEmitter = JITValuePointer(void*);

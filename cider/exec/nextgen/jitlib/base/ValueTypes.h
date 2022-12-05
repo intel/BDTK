@@ -208,25 +208,24 @@ inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
 }
 
 template <typename T>
-inline std::any castConstant(JITTypeTag target_type, T value) {
-  std::any ret;
+inline std::any castLiteral(JITTypeTag target_type, T value) {
   switch (target_type) {
     case JITTypeTag::BOOL:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::BOOL>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::BOOL>::NativeType>(value);
     case JITTypeTag::INT8:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT8>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::INT8>::NativeType>(value);
     case JITTypeTag::INT16:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT16>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::INT16>::NativeType>(value);
     case JITTypeTag::INT32:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT32>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::INT32>::NativeType>(value);
     case JITTypeTag::INT64:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::INT64>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::INT64>::NativeType>(value);
     case JITTypeTag::FLOAT:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::FLOAT>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::FLOAT>::NativeType>(value);
     case JITTypeTag::DOUBLE:
-      return ret = static_cast<JITTypeTraits<JITTypeTag::DOUBLE>::NativeType>(value);
+      return static_cast<JITTypeTraits<JITTypeTag::DOUBLE>::NativeType>(value);
     default:
-      return ret;
+      LOG(FATAL) << "Invalid JITType in castLiteral: " << getJITTypeName(target_type);
   }
 }
 };  // namespace cider::jitlib
