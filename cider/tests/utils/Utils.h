@@ -143,6 +143,10 @@ class SchemaUtils {
 
 class ArrowBuilderUtils {
  public:
+  /**
+   * Helper method for creating CiderBatch instances.
+   * Builds a CiderBatch from the array and schema returned by ArrowArrayBuilder::build()
+   */
   static std::shared_ptr<CiderBatch> createCiderBatchFromArrowBuilder(
       std::tuple<ArrowSchema*&, ArrowArray*&> array_with_schema) {
     ArrowSchema* schema = nullptr;
@@ -153,6 +157,12 @@ class ArrowBuilderUtils {
         schema, array, std::make_shared<CiderDefaultAllocator>());
   }
 
+  /**
+   * Helper method for generating inputs for ArrowArrayBuilder::addUTF8Column()
+   * It accepts a vector of strings (i.e., rows of a VarChar/String column)
+   * and returns a buffer for strings and a vector for offsets
+   * which can then be passed to ArrowArrayBuilder::addUtf8Column()
+   */
   static std::tuple<std::string, std::vector<int32_t>> createDataAndOffsetFromStrVector(
       const std::vector<std::string>& input) {
     std::vector<int32_t> offsets{0};

@@ -1259,6 +1259,11 @@ class StringOper : public Expr {
     return {};
   }
 
+ protected:
+  std::vector<std::shared_ptr<Analyzer::Expr>> foldLiteralStrCasts(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
+      int start_idx = 1);
+
  private:
   static SQLTypeInfo get_return_type(
       const SqlStringOpKind kind,
@@ -1504,6 +1509,49 @@ class ConcatStringOper : public StringOper {
 
   std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
       const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
+};
+
+class RegexpReplaceStringOper : public StringOper {
+ public:
+  RegexpReplaceStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::REGEXP_REPLACE,
+                   foldLiteralStrCasts(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  RegexpReplaceStringOper(const std::shared_ptr<Analyzer::Expr>& input,
+                          const std::shared_ptr<Analyzer::Expr>& pattern,
+                          const std::shared_ptr<Analyzer::Expr>& replacement,
+                          const std::shared_ptr<Analyzer::Expr>& position,
+                          const std::shared_ptr<Analyzer::Expr>& occurrence)
+      : StringOper(
+            SqlStringOpKind::REGEXP_REPLACE,
+            foldLiteralStrCasts({input, pattern, replacement, position, occurrence}),
+            getMinArgs(),
+            getExpectedTypeFamilies(),
+            getArgNames()) {}
+
+  RegexpReplaceStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 5UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{
+        "input", "pattern", "replacement", "position", "occurrence"};
+    return names;
+  }
 };
 
 class TryStringCastOper : public StringOper {
