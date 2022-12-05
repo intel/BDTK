@@ -29,6 +29,7 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
+#include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
@@ -261,6 +262,43 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
                                                false,
                                                param_type.sub_type);
   }
+}
+
+JITValuePointer LLVMJITFunction::packJITValues(const std::vector<JITValuePointer> vals,
+                                               const uint64_t alignment) {
+  int64_t memory_count = 0;
+  // record memory index address
+  std::vector<int64_t> memory_index;
+  for (auto val : vals) {
+    memory_index.push_back(memory_count);
+    memory_count += getJITTypeSize(val->getValueTypeTag());
+    // memory align
+    memory_count = (memory_count + alignment) & ~(alignment - 1);
+  }
+
+  llvm::AllocaInst* allocated_memory = ir_builder_->CreateAlloca(
+      llvm::Type::getInt8Ty(getLLVMContext()),
+      getLLVMConstantInt(memory_count, JITTypeTag::INT64, getLLVMContext()));
+  auto start_address = allocated_memory;
+  auto start_val = makeJITValuePointer<LLVMJITValue>(JITTypeTag::POINTER,
+                                                     *this,
+                                                     allocated_memory,
+                                                     "allocated_memory",
+                                                     false,
+                                                     JITTypeTag::INT8);
+
+  // store JITValuePointer
+  for (int i = 0; i < vals.size(); ++i) {
+    auto offset = createConstant(JITTypeTag::INT64, memory_index[i]);
+    auto memory_val = (start_val + offset)->castPointerSubType(vals[i]->getTypeTag());
+    **memory_val = *vals[i];
+  }
+  return makeJITValuePointer<LLVMJITValue>(JITTypeTag::POINTER,
+                                           *this,
+                                           start_address,
+                                           "start_address",
+                                           false,
+                                           JITTypeTag::INT8);
 }
 
 IfBuilderPointer LLVMJITFunction::createIfBuilder() {
