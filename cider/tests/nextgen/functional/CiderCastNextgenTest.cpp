@@ -69,7 +69,7 @@ class CiderCastNextgenTest : public ::testing::Test {
                           "input",
                           cider::jitlib::JITTypeTag::INT8)
             .addProcedureBuilder(
-                [&codegen_ctx, &translators](cider::jitlib::JITFunction* func) {
+                [&codegen_ctx, &translators](cider::jitlib::JITFunctionPointer func) {
                   codegen_ctx.setJITFunction(func);
                   translators->consume(codegen_ctx);
                   func->createReturn();
