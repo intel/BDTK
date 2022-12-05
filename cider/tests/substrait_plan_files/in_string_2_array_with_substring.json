@@ -20,7 +20,7 @@
             "extension_function": {
                 "extension_uri_reference": 1,
                 "function_anchor": 1,
-                "name": "substr:vchar_i32_i32"
+                "name": "substring:vchar_i32_i32"
             }
         }
     ],
@@ -142,46 +142,6 @@
                                         "input": {
                                           "literal": {
                                             "fixedChar": "1111",
-                                            "nullable": false,
-                                            "typeVariationReference": 0
-                                          }
-                                        },
-                                        "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
-                                      }
-                                    }
-                                  }, {
-                                    "value": {
-                                      "cast": {
-                                        "type": {
-                                          "varchar": {
-                                            "length": 10,
-                                            "typeVariationReference": 0,
-                                            "nullability": "NULLABILITY_NULLABLE"
-                                          }
-                                        },
-                                        "input": {
-                                          "literal": {
-                                            "fixedChar": "2222",
-                                            "nullable": false,
-                                            "typeVariationReference": 0
-                                          }
-                                        },
-                                        "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
-                                      }
-                                    }
-                                  }, {
-                                    "value": {
-                                      "cast": {
-                                        "type": {
-                                          "varchar": {
-                                            "length": 10,
-                                            "typeVariationReference": 0,
-                                            "nullability": "NULLABILITY_NULLABLE"
-                                          }
-                                        },
-                                        "input": {
-                                          "literal": {
-                                            "fixedChar": "3333",
                                             "nullable": false,
                                             "typeVariationReference": 0
                                           }

@@ -99,11 +99,51 @@ class TypeUtils {
   static std::string getStringType(const ::substrait::Type& type) {
     switch (type.kind_case()) {
       case substrait::Type::kBool:
-        return "bool";
+        return "boolean";
+      case substrait::Type::kI8:
+        return "i8";
+      case substrait::Type::kI16:
+        return "i16";
       case substrait::Type::kI32:
         return "i32";
       case substrait::Type::kI64:
         return "i64";
+      case substrait::Type::kFp32:
+        return "fp32";
+      case substrait::Type::kFp64:
+        return "fp64";
+      case substrait::Type::kString:
+        return "str";
+      case substrait::Type::kBinary:
+        return "vbin";
+      case substrait::Type::kTimestamp:
+        return "ts";
+      case substrait::Type::kDate:
+        return "date";
+      case substrait::Type::kTime:
+        return "time";
+      case substrait::Type::kIntervalYear:
+        return "iyear";
+      case substrait::Type::kIntervalDay:
+        return "iday";
+      case substrait::Type::kTimestampTz:
+        return "tstz";
+      case substrait::Type::kUuid:
+        return "uuid";
+      case substrait::Type::kFixedChar:
+        return "fchar";
+      case substrait::Type::kVarchar:
+        return "vchar";
+      case substrait::Type::kFixedBinary:
+        return "fbin";
+      case substrait::Type::kDecimal:
+        return "dec";
+      case substrait::Type::kStruct:
+        return "struct";
+      case substrait::Type::kList:
+        return "list";
+      case substrait::Type::kMap:
+        return "map";
       default:
         CIDER_THROW(CiderCompileException,
                     "Failed to get arg type when trying to make func");

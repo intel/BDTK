@@ -21,3 +21,127 @@ scalar_functions:
             name: high
             description: The value to check if less than or equal to.
         return: BOOLEAN
+  -      
+    name: "between"
+    description: >-
+      Whether the `expression` is greater than or equal to `low` and less than or equal to `high`.
+
+      `expression` BETWEEN `low` AND `high`
+
+      If `low`, `high`, or `expression` are `null`, `null` is returned.
+    impls:
+      - args:
+          - value: any1
+            name: expression
+            description: The expression to test for in the range defined by `low` and `high`.
+          - value: any1
+            name: low
+            description: The value to check if greater than or equal to.
+          - value: any1
+            name: high
+            description: The value to check if less than or equal to.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i8
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i8
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i16
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i16
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i32
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i32
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: i64
+            name: expression
+            description: The expression to test for in the value list.
+          - value: i64
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: fp32
+            name: expression
+            description: The expression to test for in the value list.
+          - value: fp32
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: fp64
+            name: expression
+            description: The expression to test for in the value list.
+          - value: fp64
+            name: list
+            description: The value list.
+        return: BOOLEAN
+  -   
+    name: "is_distinct_from"
+    description: >-
+      Whether the `expression` is distinct from value.
+    impls:
+      - args:
+          - value: any
+            name: expression
+            description: The expression to test for is distinct from value.
+          - value: any
+            name: value
+            description: The distinct from value.
+        return: BOOLEAN
+  -   
+    name: "is_not_distinct_from"
+    description: >-
+      Whether the `expression` is not distinct from value.
+    impls:
+      - args:
+          - value: any
+            name: expression
+            description: The expression to test for is not distinct from value.
+          - value: any
+            name: value
+            description: The not distinct from value.
+        return: BOOLEAN

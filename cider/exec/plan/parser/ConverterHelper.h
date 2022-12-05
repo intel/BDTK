@@ -53,18 +53,18 @@ void registerExtensionFunctions();
 /**
  * generate function map according to substrait plan
  * @param plan: substrait plan
- * @return std::unordered_map: function map <function_id, function_name>
+ * @return std::unordered_map: function map <function_id, function_signature>
  */
 std::unordered_map<int, std::string> getFunctionMap(const substrait::Plan& plan);
 
 /**
  * function lookup
- * @param function_map: function map <function_id, function_name>
+ * @param function_map: function map <function_id, function_signature_str>
  * @param function_reference: function_id
- * @return std::string: function_name
+ * @return std::string: function_signature_str
  */
-std::string getFunctionName(const std::unordered_map<int, std::string> function_map,
-                            int function_reference);
+std::string getFunctionSignature(const std::unordered_map<int, std::string>& function_map,
+                                 int function_reference);
 
 /**
  * convert substrait type to cider SQLTypeInfo(SQLTypes t, int d/p, int s,
@@ -88,8 +88,8 @@ substrait::Type getSubstraitType(const SQLTypeInfo& type_info);
 /**
  * substrait operation conversion
  */
-SQLOps getCiderSqlOps(const std::string op);
-SQLAgg getCiderAggOp(const std::string op);
+SQLOps getCiderSqlOps(const std::string& op);
+SQLAgg getCiderAggOp(const std::string& op);
 
 /**
  * Verifies whether this `function` is registered as extension function.
@@ -122,4 +122,5 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr,
 std::unordered_map<int, std::string> getFunctionMap(
     const std::vector<
         substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*> func_infos);
+
 }  // namespace generator

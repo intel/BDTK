@@ -28,6 +28,7 @@
 
 #include <cstdint>
 #include "ConverterHelper.h"
+#include "include/cider/CiderSupportPlatType.h"
 #include "substrait/algebra.pb.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
@@ -43,8 +44,10 @@ enum ContextUpdateType {
 
 class Substrait2AnalyzerExprConverter {
  public:
-  explicit Substrait2AnalyzerExprConverter()
-      : cols_update_stat_{}, cur_table_id_{fake_table_id} {}
+  explicit Substrait2AnalyzerExprConverter(PlatformType from_platform)
+      : cols_update_stat_{}
+      , cur_table_id_{fake_table_id}
+      , from_platform_{from_platform} {}
   std::shared_ptr<Analyzer::Expr> toAnalyzerExpr(
       const substrait::Expression& s_expr,
       const std::unordered_map<int, std::string> function_map,
@@ -55,7 +58,8 @@ class Substrait2AnalyzerExprConverter {
       const substrait::AggregateFunction& s_expr,
       const std::unordered_map<int, std::string> function_map,
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-          expr_map_ptr = nullptr);
+          expr_map_ptr = nullptr,
+      std::string return_type = "");
 
   // new_table_id is used when updating a ColumnVar to new index in join node
   std::shared_ptr<Analyzer::Expr> updateAnalyzerExpr(
@@ -152,7 +156,7 @@ class Substrait2AnalyzerExprConverter {
   std::shared_ptr<Analyzer::Expr> buildExtractExpr(
       const substrait::Expression_ScalarFunction& s_scalar_function,
       const std::unordered_map<int, std::string> function_map,
-      const ExtractField& extractField,
+      const std::string& function_name,
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 
@@ -165,6 +169,7 @@ class Substrait2AnalyzerExprConverter {
   std::shared_ptr<Analyzer::Expr> buildStrExpr(
       const substrait::Expression_ScalarFunction& s_scalar_function,
       const std::unordered_map<int, std::string> function_map,
+      std::string function_name,
       std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
           expr_map_ptr = nullptr);
 
@@ -185,5 +190,7 @@ class Substrait2AnalyzerExprConverter {
   // what's the current table id
   // TODO: remove it to assure expression convertor is stateless
   int cur_table_id_;
+
+  PlatformType from_platform_;
 };
 }  // namespace generator

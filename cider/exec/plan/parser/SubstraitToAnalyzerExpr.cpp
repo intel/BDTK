@@ -25,31 +25,17 @@
  **/
 #include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include <cstdint>
+#include "TypeUtils.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DateTimeTranslator.h"
+#include "function/FunctionLookupEngine.h"
 #include "util/DateTimeParser.h"
 
 namespace generator {
 bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> map,
                       std::shared_ptr<Analyzer::Expr> expr) {
   return map.find(expr) == map.end() || !map.find(expr)->second;
-}
-
-bool isStringFunction(const std::string& function_name) {
-  static std::unordered_set<std::string> funcs{"substring",
-                                               "substr",
-                                               "lower",
-                                               "upper",
-                                               "trim",
-                                               "ltrim",
-                                               "rtrim",
-                                               "concat",
-                                               "||",
-                                               "length",
-                                               "char_length",
-                                               "regexp_replace"};
-  return funcs.find(function_name) != funcs.end();
 }
 
 std::shared_ptr<Analyzer::ColumnVar> Substrait2AnalyzerExprConverter::makeColumnVar(
@@ -665,9 +651,10 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildInValuesEx
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExpr(
     const substrait::Expression_ScalarFunction& s_scalar_function,
     const std::unordered_map<int, std::string> function_map,
-    const ExtractField& extract_field,
+    const std::string& function_name,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
+  auto extract_field = ExtractExpr::try_map_presto_extract_function(function_name);
   if (extract_field == ExtractField::kNONE) {
     CHECK(s_scalar_function.arguments_size() == 2);
     CHECK(s_scalar_function.arguments(1).has_value());
@@ -797,6 +784,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildLikeExpr(
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     const substrait::Expression_ScalarFunction& s_scalar_function,
     const std::unordered_map<int, std::string> function_map,
+    std::string function_name,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
   std::vector<std::shared_ptr<Analyzer::Expr>> args;
@@ -804,8 +792,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
     auto value = s_scalar_function.arguments(i).value();
     args.push_back(toAnalyzerExpr(value, function_map, expr_map_ptr));
   }
-  auto function_name =
-      getFunctionName(function_map, s_scalar_function.function_reference());
   std::transform(
       function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
   auto string_op_kind = name_to_string_op_kind(function_name);
@@ -893,25 +879,47 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  auto function = getFunctionName(function_map, s_scalar_function.function_reference());
-  // If it's an InValues expr, like "in (1, 2, 3)" or "in cast(vector)", build
-  // Analyzer::InValues and return
-  if (function == "in") {
-    return buildInValuesExpr(s_scalar_function, function_map, expr_map_ptr);
+  auto function_sig =
+      getFunctionSignature(function_map, s_scalar_function.function_reference());
+  auto funtion_return_type = TypeUtils::getStringType(s_scalar_function.output_type());
+  const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_sig, funtion_return_type, from_platform_);
+  if (!function_descriptor.is_cider_support_function) {
+    CIDER_THROW(CiderCompileException,
+                fmt::format("Not cider support scalar function, function_sig: {}, "
+                            "funtion_return_type: {}",
+                            function_sig,
+                            funtion_return_type));
   }
-  if (auto field = ExtractExpr::try_map_presto_extract_function(function);
-      field != ExtractField::kNONE || function == "extract") {
-    return buildExtractExpr(s_scalar_function, function_map, field, expr_map_ptr);
+  auto function = function_descriptor.func_sig.func_name;
+  auto scalar_op_type = function_descriptor.scalar_op_type;
+  auto op_support_expr_type = function_descriptor.op_support_expr_type;
+  switch (op_support_expr_type) {
+    case OpSupportExprType::kIN_VALUES:
+      // If it's an InValues expr, like "in (1, 2, 3)" or "in cast(vector)", build
+      // Analyzer::InValues and return
+      return buildInValuesExpr(s_scalar_function, function_map, expr_map_ptr);
+    case OpSupportExprType::kEXTRACT_EXPR:
+      return buildExtractExpr(s_scalar_function, function_map, function, expr_map_ptr);
+    case OpSupportExprType::kIS_NOT_NULL:
+      return buildNotNullExpr(s_scalar_function, function_map, expr_map_ptr);
+    case OpSupportExprType::kCASE_EXPR:
+      return buildCoalesceExpr(s_scalar_function, function_map, expr_map_ptr);
+    case OpSupportExprType::kLOWER_STRING_OPER:
+    case OpSupportExprType::kUPPER_STRING_OPER:
+    case OpSupportExprType::kTRIM_STRING_OPER:
+    case OpSupportExprType::kSUBSTRING_STRING_OPER:
+    case OpSupportExprType::kCONCAT_STRING_OPER:
+    case OpSupportExprType::kCHAR_LENGTH_OPER:
+    case OpSupportExprType::kREGEXP_REPLACE_OPER:
+      return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
+    case OpSupportExprType::kLIKE_EXPR:
+      return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);
+    default:
+      break;
   }
-  if (function == "is_not_null") {
-    return buildNotNullExpr(s_scalar_function, function_map, expr_map_ptr);
-  }
-  if (function == "coalesce") {
-    return buildCoalesceExpr(s_scalar_function, function_map, expr_map_ptr);
-  }
-  if (isStringFunction(function)) {
-    return buildStrExpr(s_scalar_function, function_map, expr_map_ptr);
-  }
+
   std::vector<std::shared_ptr<Analyzer::Expr>> args;
   for (size_t i = 0; i < s_scalar_function.arguments_size(); i++) {
     args.push_back(toAnalyzerExpr(
@@ -951,10 +959,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   if (s_scalar_function.has_output_type() &&
       isTimeType(s_scalar_function.output_type())) {
     return buildTimeAddExpr(s_scalar_function, function, function_map, expr_map_ptr);
-  }
-
-  if (function == "like") {
-    return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);
   }
 
   // translate UOper
@@ -1072,9 +1076,28 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const substrait::AggregateFunction& s_expr,
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
-        expr_map_ptr) {
-  auto function = getFunctionName(function_map, s_expr.function_reference());
-  SQLAgg agg_kind = getCiderAggOp(function);
+        expr_map_ptr,
+    std::string return_type) {
+  auto function_sig = getFunctionSignature(function_map, s_expr.function_reference());
+  if (return_type.empty()) {
+    return_type = TypeUtils::getStringType(s_expr.output_type());
+  }
+  const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_sig, return_type, from_platform_);
+  if (!function_descriptor.is_cider_support_function ||
+      function_descriptor.agg_op_type == SQLAgg::kUNDEFINED_AGG) {
+    CIDER_THROW(
+        CiderCompileException,
+        fmt::format(
+            "Not cider support agg function, function_sig: {}, funtion_return_type: {}",
+            function_sig,
+            return_type));
+  }
+  auto function = function_descriptor.func_sig.func_name;
+  SQLAgg agg_kind = function_descriptor.agg_op_type;
+
+  // SQLAgg agg_kind = getCiderAggOp(function);
   std::shared_ptr<Analyzer::Constant> arg1;  // 2nd aggregate parameter
   std::shared_ptr<Analyzer::Expr> arg_expr;
   // Aggregate functions like count(*)/count(1) have no arguments, thus arg_expr is

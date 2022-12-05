@@ -29,7 +29,7 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
     function_lookup_ptr =
-        std::make_shared<FunctionLookupEngine>(PlatformType::SubstraitPlatform);
+        FunctionLookupEngine::getInstance(PlatformType::SubstraitPlatform);
   }
 
   bool containsTips(const std::string& exception_str, const std::string& expect_str) {
@@ -40,21 +40,20 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
   }
 
  public:
-  FunctionLookupEnginePtr function_lookup_ptr;
+  const FunctionLookupEngine* function_lookup_ptr = nullptr;
 };
 
 class PrestoFunctionLookupTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    function_lookup_ptr =
-        std::make_shared<FunctionLookupEngine>(PlatformType::PrestoPlatform);
+    function_lookup_ptr = FunctionLookupEngine::getInstance(PlatformType::PrestoPlatform);
   }
 
  public:
-  FunctionLookupEnginePtr function_lookup_ptr;
+  const FunctionLookupEngine* function_lookup_ptr = nullptr;
 };
 
-TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between__3";
@@ -69,11 +68,30 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest)
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
 }
 
-TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest2) {
+  const std::string function_signature_str = "between__3:fp64_fp64_fp64";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between__3";
@@ -88,11 +106,30 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
 }
 
-TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI8Test2) {
+  const std::string function_signature_str = "between__3:i8_i8_i8";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between__3";
@@ -107,11 +144,30 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
 }
 
-TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenI16Test2) {
+  const std::string function_signature_str = "between:i64_i64_i64";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "avg";
@@ -122,11 +178,78 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kAVG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "avg");
 }
 
-TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest2) {
+  const std::string function_signature_str = "avg:struct<fp64,i64>";
+  const std::string return_type = "fp64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kAVG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "avg");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest3) {
+  const std::string function_signature_str = "count:i64";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kCOUNT);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "count");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest4) {
+  const std::string function_signature_str = "count:opt";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kCOUNT);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "count");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionAggTest5) {
+  const std::string function_signature_str = "count";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kCOUNT);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "count");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "equal";
@@ -140,11 +263,176 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "equal");
 }
 
-TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest2) {
+  const std::string function_signature_str = "equal:i32_i32";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "equal");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest3) {
+  FunctionSignature function_signature;
+  function_signature.from_platform = PlatformType::PrestoPlatform;
+  function_signature.func_name = "eq";
+  function_signature.arguments = {
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+  };
+  function_signature.return_type =
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "equal");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest4) {
+  const std::string function_signature_str = "eq:i32_i32";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "equal");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest5) {
+  FunctionSignature function_signature;
+  function_signature.from_platform = PlatformType::PrestoPlatform;
+  function_signature.func_name = "substr";
+  function_signature.arguments = {
+      std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kString>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+      std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(),
+  };
+  function_signature.return_type = std::make_shared<
+      const io::substrait::ScalarType<io::substrait::TypeKind::kString>>();
+  auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::SUBSTRING);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kSUBSTRING_STRING_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest6) {
+  const std::string function_signature_str = "substr:string_i32_i32";
+  const std::string return_type = "string";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::SUBSTRING);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kSUBSTRING_STRING_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest7) {
+  const std::string function_signature_str = "char_length:vchar";
+  const std::string return_type = "i64";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::CHAR_LENGTH);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kCHAR_LENGTH_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "char_length");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest8) {
+  const std::string function_signature_str = "substr:varchar<L1>_i32_i32";
+  const std::string return_type = "varchar<L1>";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::SUBSTRING);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kSUBSTRING_STRING_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest9) {
+  const std::string function_signature_str = "substr:vchar_i32_i32";
+  const std::string return_type = "varchar<L1>";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::SUBSTRING);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kSUBSTRING_STRING_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest10) {
+  const std::string function_signature_str = "substr:str_i64_i64";
+  const std::string return_type = "str";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::SUBSTRING);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type,
+            OpSupportExprType::kSUBSTRING_STRING_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
   function_signature.func_name = "between_unregisterd";
@@ -159,11 +447,30 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kUNDEFINED_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, false);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between_unregisterd");
 }
 
-TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest2) {
+  const std::string function_signature_str = "between_unregisterd:fp64_fp64_fp64";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kUNDEFINED_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, false);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between_unregisterd");
+}
+
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "between__3";
@@ -178,11 +485,30 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
 }
 
-TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitExtentionTest2) {
+  const std::string function_signature_str = "between__3:fp64_fp64_fp64";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::SubstraitPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kFUNCTION_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between__3");
+}
+
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "avg";
@@ -193,11 +519,30 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kAVG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "avg");
 }
 
-TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionAggTest2) {
+  const std::string function_signature_str = "avg:struct<fp64,i64>";
+  const std::string return_type = "fp64";
+  const PlatformType from_platform = PlatformType::SubstraitPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kAVG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kAGG_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "avg");
+}
+
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "equal";
@@ -209,12 +554,32 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest) 
       std::make_shared<const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>();
   auto function_descriptor = function_lookup_ptr->lookupFunction(function_signature);
 
+  // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "equal");
 }
 
-TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitIntentionScalarTest2) {
+  const std::string function_signature_str = "equal:i32_i32";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::SubstraitPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kEQ);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kBIN_OPER);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "equal");
+}
+
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::SubstraitPlatform;
   function_signature.func_name = "between_unregisterd";
@@ -229,8 +594,27 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest) {
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
   ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
   ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kUNDEFINED_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, false);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between_unregisterd");
+}
+
+TEST_F(SubstraitFunctionLookupTest, functionLookupSubstraitUnregisteredTest2) {
+  const std::string function_signature_str = "between_unregisterd:fp64_fp64_fp64";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::SubstraitPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kUNDEFINED_OP);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kUNDEFINED_EXPR);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, false);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "between_unregisterd");
 }
 
 TEST_F(SubstraitFunctionLookupTest, functionLookupSparkExtentionTest) {

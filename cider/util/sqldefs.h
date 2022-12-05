@@ -29,31 +29,31 @@ enum SQLOps {
   // BitWise Equal <=> a = b or (a is null and b is null)
   // The only difference between EQ and BW_EQ is that BW_EQ will check nullability of both
   // sides while EQ won't.
-  kBW_EQ,
-  kNE,
-  kLT,
-  kGT,
-  kLE,
-  kGE,
-  kAND,
-  kOR,
-  kNOT,
-  kMINUS,
-  kPLUS,
-  kMULTIPLY,
-  kDIVIDE,
-  kMODULO,
-  kUMINUS,
-  kISNULL,
-  kISNOTNULL,
-  kEXISTS,
-  kCAST,
-  kARRAY_AT,
-  kUNNEST,
-  kFUNCTION,
-  kIN,
-  kBW_NE,
-  kUNDEFINED_OP
+  kBW_EQ = 1,
+  kNE = 2,
+  kLT = 3,
+  kGT = 4,
+  kLE = 5,
+  kGE = 6,
+  kAND = 7,
+  kOR = 8,
+  kNOT = 9,
+  kMINUS = 10,
+  kPLUS = 11,
+  kMULTIPLY = 12,
+  kDIVIDE = 13,
+  kMODULO = 14,
+  kUMINUS = 15,
+  kISNULL = 16,
+  kISNOTNULL = 17,
+  kEXISTS = 18,
+  kCAST = 19,
+  kARRAY_AT = 20,
+  kUNNEST = 21,
+  kFUNCTION = 22,
+  kIN = 23,
+  kBW_NE = 24,
+  kUNDEFINED_OP = 25,
 };
 
 #define IS_COMPARISON(X)                                                    \
@@ -71,16 +71,16 @@ enum SQLOps {
 enum SQLQualifier { kONE, kANY, kALL };
 
 enum SQLAgg {
-  kAVG,
-  kMIN,
-  kMAX,
-  kSUM,
-  kCOUNT,
-  kAPPROX_COUNT_DISTINCT,
-  kAPPROX_QUANTILE,
-  kSAMPLE,
-  kSINGLE_VALUE,
-  kUNDEFINED_AGG
+  kAVG = 0,
+  kMIN = 1,
+  kMAX = 2,
+  kSUM = 3,
+  kCOUNT = 4,
+  kAPPROX_COUNT_DISTINCT = 5,
+  kAPPROX_QUANTILE = 6,
+  kSAMPLE = 7,
+  kSINGLE_VALUE = 8,
+  kUNDEFINED_AGG = 9,
 };
 
 enum class SqlStringOpKind {
@@ -111,7 +111,8 @@ enum class SqlStringOpKind {
   BASE64_ENCODE,
   BASE64_DECODE,
   TRY_STRING_CAST,
-  INVALID
+  INVALID,
+  kUNDEFINED_STRING_OP
 };
 
 enum class SqlWindowFunctionKind {
@@ -301,6 +302,8 @@ inline std::ostream& operator<<(std::ostream& os, const SqlStringOpKind kind) {
       return os << "TRY_STRING_CAST";
     case SqlStringOpKind::INVALID:
       return os << "INVALID";
+    case SqlStringOpKind::kUNDEFINED_STRING_OP:
+      return os << "kUNDEFINED_STRING_OP";
   }
   LOG(FATAL) << "Invalid string operation";
   // Make compiler happy
@@ -322,7 +325,6 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"LTRIM", SqlStringOpKind::LTRIM},
       {"RTRIM", SqlStringOpKind::RTRIM},
       {"SUBSTRING", SqlStringOpKind::SUBSTRING},
-      {"SUBSTR", SqlStringOpKind::SUBSTRING},
       {"OVERLAY", SqlStringOpKind::OVERLAY},
       {"REPLACE", SqlStringOpKind::REPLACE},
       {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
