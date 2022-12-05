@@ -29,3 +29,7 @@ add_executable(FilterProjectTest FilterProjectTest.cpp)
 target_link_libraries(FilterProjectTest ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
          ${TEST_ARGS})
+
+add_executable(ContextTest ContextTest.cpp)
+target_link_libraries(ContextTest ${NEXTGEN_COMPILER_TEST_LIBS})
+add_test(ContextTest ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})

@@ -30,9 +30,9 @@
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
-class ContextTest : public ::testing::Test {};
+class ContextTests : public ::testing::Test {};
 
-TEST_F(ContextTest, ContextTest) {
+TEST_F(ContextTests, ContextTest) {
   cider::exec::nextgen::context::CodegenContext context;
   auto module = cider::jitlib::LLVMJITModule("test", true);
   cider::jitlib::JITFunctionPointer function =
@@ -46,7 +46,7 @@ TEST_F(ContextTest, ContextTest) {
           .addParameter(cider::jitlib::JITTypeTag::POINTER,
                         "input",
                         cider::jitlib::JITTypeTag::INT8)
-          .addProcedureBuilder([&context](cider::jitlib::JITFunction* func) {
+          .addProcedureBuilder([&context](cider::jitlib::JITFunctionPointer func) {
             context.setJITFunction(func);
             auto output_batch =
                 context.registerBatch(SQLTypeInfo(SQLTypes::kBIGINT), "output");
@@ -64,6 +64,60 @@ TEST_F(ContextTest, ContextTest) {
   EXPECT_NE(runtime_ctx->getContextItem(0), nullptr);
   EXPECT_NE(runtime_ctx->getContextItem(1), nullptr);
   EXPECT_NE(runtime_ctx->getContextItem(2), nullptr);
+}
+
+TEST_F(ContextTests, ContextBufferTest) {
+  cider::exec::nextgen::context::CodegenContext context;
+  auto module = cider::jitlib::LLVMJITModule("test_context_buffer", true);
+  cider::jitlib::JITFunctionPointer function =
+      cider::jitlib::JITFunctionBuilder()
+          .registerModule(module)
+          .setFuncName("allocate_buffer")
+          .addReturn(cider::jitlib::JITTypeTag::VOID)
+          .addParameter(cider::jitlib::JITTypeTag::POINTER,
+                        "context",
+                        cider::jitlib::JITTypeTag::INT8)
+          .addProcedureBuilder([&context](cider::jitlib::JITFunctionPointer func) {
+            context.setJITFunction(func);
+            auto output_buffer1 = context.registerBuffer(1 * 8, "output_buffer1");
+            auto output_buffer2 = context.registerBuffer(2 * 8, "output_buffer2");
+
+            auto cast_output_buffer1 =
+                output_buffer1->castPointerSubType(cider::jitlib::JITTypeTag::INT64);
+            auto cast_output_buffer2 =
+                output_buffer2->castPointerSubType(cider::jitlib::JITTypeTag::INT64);
+
+            auto index_0 = func->createLiteral(cider::jitlib::JITTypeTag::INT32, 0);
+            auto index_1 = func->createLiteral(cider::jitlib::JITTypeTag::INT32, 1);
+
+            cast_output_buffer1[index_0] =
+                func->createLiteral(cider::jitlib::JITTypeTag::INT64, 1l);
+            cast_output_buffer2[index_1] =
+                func->createLiteral(cider::jitlib::JITTypeTag::INT64, 2l);
+
+            func->createReturn();
+          })
+          .build();
+  module.finish();
+
+  auto runtime_ctx = context.generateRuntimeCTX(allocator);
+
+  auto query_func = function->getFunctionPointer<void, int8_t*>();
+  query_func((int8_t*)runtime_ctx.get());
+
+  EXPECT_EQ(runtime_ctx->getContextItemNum(), 2);
+  EXPECT_NE(runtime_ctx->getContextItem(0), nullptr);
+  EXPECT_NE(runtime_ctx->getContextItem(1), nullptr);
+
+  auto output_buffer1 = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(
+      runtime_ctx->getContextItem(0));
+  auto raw_buffer1 = reinterpret_cast<int64_t*>(output_buffer1->getBuffer());
+  EXPECT_EQ(raw_buffer1[0], 1);
+
+  auto output_buffer2 = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(
+      runtime_ctx->getContextItem(1));
+  auto raw_buffer2 = reinterpret_cast<int64_t*>(output_buffer2->getBuffer());
+  EXPECT_EQ(raw_buffer2[1], 2);
 }
 
 int main(int argc, char** argv) {
