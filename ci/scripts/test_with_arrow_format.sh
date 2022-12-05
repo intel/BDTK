@@ -17,7 +17,7 @@
 BUILD_TYPE=${1:-'Debug'}
 TEST_ARGS='--use_cider_data_format'
 
-cd build-${BUILD_TYPE}/cider-velox/test
+cd build-${BUILD_TYPE}/src/cider-velox/test
 filenames=$(ls -F | grep '*')
 
 start_time=`date +%s`

@@ -56,6 +56,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
+option(BDTK_ENABLE_COMPRESSION "Build compression library for BDTK " OFF)
 option(CIDER_ENABLE_TESTS "Build unit tests" ON)
 option(CIDER_ENABLE_GOOGLETEST "Build GoogleTest for Cider." ON)
 option(CIDER_ENABLE_DUCKDB "Build DuckDB for Cider." ON)
@@ -120,11 +121,15 @@ include_directories(${SUBSTRAITCPP_INCLUDE_DIR})
 #
 # Subdirectories
 #
-include_directories(cider)
-include_directories(cider/include)
-add_subdirectory(cider)
+include_directories(src/cider)
+include_directories(src/cider/include)
+add_subdirectory(src/cider)
 
 if(CIDER_ENABLE_VELOX)
   add_subdirectory(thirdparty/velox)
-  add_subdirectory(cider-velox)
+  add_subdirectory(src/cider-velox)
+endif()
+
+if(BDTK_ENABLE_COMPRESSION)
+  add_subdirectory(src/compression)
 endif()
