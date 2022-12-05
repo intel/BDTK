@@ -55,7 +55,7 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
   }
 
   return makeJITValuePointer<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "and", false);
+      JITTypeTag::BOOL, parent_function_, ans, "and", false);
 }
 
 JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
@@ -75,7 +75,7 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
   }
 
   return makeJITValuePointer<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "or", false);
+      JITTypeTag::BOOL, parent_function_, ans, "or", false);
 }
 
 JITValuePointer LLVMJITValue::notOp() {
@@ -95,7 +95,7 @@ JITValuePointer LLVMJITValue::notOp() {
   }
 
   return makeJITValuePointer<LLVMJITValue>(
-      getValueTypeTag(), parent_function_, ans, "not", false);
+      JITTypeTag::BOOL, parent_function_, ans, "not", false);
 }
 
 JITValuePointer LLVMJITValue::mod(JITValue& rh) {
