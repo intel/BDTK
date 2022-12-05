@@ -44,10 +44,12 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
     CIDER_THROW(CiderCompileException,
                 "Decimal and TimeInterval are not supported in arithmetic codegen now.");
   }
-
   FixSizeJITExprValue lhs_val(lhs->codegen(func));
   FixSizeJITExprValue rhs_val(rhs->codegen(func));
 
+  if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
+    return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
+  }
   auto null = lhs_val.getNull() || rhs_val.getNull();
 
   switch (lhs_ti.get_type()) {
@@ -114,8 +116,27 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
     default:
       UNREACHABLE();
   }
-
   return expr_var_;
+}
+
+JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,
+                                                    FixSizeJITExprValue& lhs_val,
+                                                    FixSizeJITExprValue& rhs_val) {
+  JITValuePointer value = func.createVariable(JITTypeTag::BOOL, "bw_cmp");
+  // both not null and value not equal, or have different null property
+  value = (!lhs_val.getNull() && !rhs_val.getNull() &&
+           lhs_val.getValue() != rhs_val.getValue()) ||
+          (lhs_val.getNull() != rhs_val.getNull());
+  switch (get_optype()) {
+    case kBW_NE: {
+      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
+    }
+    case kBW_EQ: {
+      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), !value);
+    }
+    default:
+      UNREACHABLE();
+  }
 }
 
 }  // namespace Analyzer

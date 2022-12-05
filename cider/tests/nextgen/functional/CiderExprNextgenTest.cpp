@@ -34,13 +34,28 @@ using namespace cider::exec::nextgen;
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
-class CiderUOperNextgenTest : public ::testing::Test {
+std::string getDataFilesPath() {
+  const std::string absolute_path = __FILE__;
+  auto const pos = absolute_path.find_last_of('/');
+  return absolute_path.substr(0, pos) + "/jsons/";
+}
+
+std::string get_json_data(std::string file_name) {
+  auto json_file = getDataFilesPath() + file_name;
+  std::ifstream sub_json(json_file);
+  std::stringstream buffer;
+  buffer << sub_json.rdbuf();
+  return buffer.str();
+}
+
+class CiderExprNextgenTest : public ::testing::Test {
  public:
   void executeTest(const std::string& create_ddl,
                    const std::string& sql,
-                   const int32_t& expected_length) {
+                   const int32_t& expected_length,
+                   const bool is_file = false) {
     // SQL Parsing
-    auto json = RunIsthmus::processSql(sql, create_ddl);
+    auto json = is_file ? get_json_data(sql) : RunIsthmus::processSql(sql, create_ddl);
     ::substrait::Plan plan;
     google::protobuf::util::JsonStringToMessage(json, &plan);
 
@@ -108,7 +123,7 @@ class CiderUOperNextgenTest : public ::testing::Test {
   }
 };
 
-TEST_F(CiderUOperNextgenTest, isNullTest) {
+TEST_F(CiderExprNextgenTest, isNullTest) {
   executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
               "select col_int_b from test where col_int_a IS NULL",
               2);
@@ -123,6 +138,17 @@ TEST_F(CiderUOperNextgenTest, isNullTest) {
       "CREATE TABLE test(col_int_a INTEGER NOT NULL, col_int_b INTEGER NOT NULL);",
       "select col_int_b from test where col_int_a IS NOT NULL",
       5);
+}
+
+TEST_F(CiderExprNextgenTest, isDistinctFromTest) {
+  executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
+              "is_distinct_from.json",
+              2,
+              true);
+  executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
+              "is_not_distinct_from.json",
+              3,
+              true);
 }
 
 int main(int argc, char** argv) {
