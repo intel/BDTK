@@ -93,6 +93,7 @@ void executeCompareOp(T left, T right, bool output, OpFunc op) {
 
         auto right_const = func->createConstant(Type, right);
         auto ans = op(left, right_const);
+        CHECK(ans->getValueTypeTag() == JITTypeTag::BOOL);
 
         func->createReturn(ans);
       });
