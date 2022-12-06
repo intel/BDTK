@@ -29,11 +29,9 @@ namespace cider::exec::nextgen {
 
 using QueryFunc = void (*)(int8_t*, int8_t*);
 
-std::pair<std::unique_ptr<context::RuntimeContext>,
-          std::unique_ptr<context::CodegenContext>>
-compile(const RelAlgExecutionUnit& eu,
-        const CiderAllocatorPtr& allocator,
-        const jitlib::CompilationOptions& co = jitlib::CompilationOptions{});
+std::unique_ptr<context::CodegenContext> compile(
+    const RelAlgExecutionUnit& eu,
+    const jitlib::CompilationOptions& co = jitlib::CompilationOptions{});
 
 }  // namespace cider::exec::nextgen
 

@@ -27,11 +27,8 @@
 
 namespace cider::exec::nextgen {
 
-std::pair<std::unique_ptr<context::RuntimeContext>,
-          std::unique_ptr<context::CodegenContext>>
-compile(const RelAlgExecutionUnit& ra_exe_unit,
-        const CiderAllocatorPtr& allocator,
-        const jitlib::CompilationOptions& co) {
+std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
+                                                 const jitlib::CompilationOptions& co) {
   auto codegen_ctx = std::make_unique<context::CodegenContext>();
   auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
 
@@ -57,9 +54,7 @@ compile(const RelAlgExecutionUnit& ra_exe_unit,
 
   codegen_ctx->setJITModule(std::move(module));
 
-  auto runtime_ctx = codegen_ctx->generateRuntimeCTX(allocator);
-
-  return std::make_pair(std::move(runtime_ctx), std::move(codegen_ctx));
+  return codegen_ctx;
 }
 
 }  // namespace cider::exec::nextgen

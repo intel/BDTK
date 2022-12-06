@@ -180,7 +180,10 @@ CiderRuntimeModule::CiderRuntimeModule(
     , ciderCompilationOption_(ciderCompilationOption)
     , ciderExecutionOption_(ciderExecutionOption)
     , allocator_(allocator) {
-  if (!ciderCompilationOption_.use_nextgen_compiler) {
+  if (ciderCompilationOption_.use_nextgen_compiler) {
+    ciderCompilationResult->impl_->runtime_ctx_ =
+        ciderCompilationResult->impl_->codegen_ctx_->generateRuntimeCTX(allocator_);
+  } else {
     hoist_literals_ = ciderCompilationOption.hoist_literals;
     num_tables_ = 1;
     error_code_ = 0;

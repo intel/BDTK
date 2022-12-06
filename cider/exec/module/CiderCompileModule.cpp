@@ -125,9 +125,8 @@ class CiderCompileModule::Impl {
     if (co.use_nextgen_compiler) {
       cider::jitlib::CompilationOptions co;
       co.dump_ir = true;
-      std::tie(ciderCompilationResult->impl_->runtime_ctx_,
-               ciderCompilationResult->impl_->codegen_ctx_) =
-          cider::exec::nextgen::compile(*ra_exe_unit_, allocator_, co);
+      ciderCompilationResult->impl_->codegen_ctx_ =
+          cider::exec::nextgen::compile(*ra_exe_unit_, co);
       return ciderCompilationResult;
     }
 

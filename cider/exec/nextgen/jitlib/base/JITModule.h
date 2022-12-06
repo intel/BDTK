@@ -99,7 +99,7 @@ class JITFunctionBuilder {
   static constexpr size_t DefaultParamsNum = 8;
   boost::container::small_vector<JITFunctionParam, DefaultParamsNum> parameter_list_;
   JITFunctionParam return_;
-  std::function<void(JITFunctionPointer)> builder_;
+  std::function<void(const JITFunctionPointer&)> builder_;
 };
 
 };  // namespace cider::jitlib
