@@ -36,6 +36,8 @@ class JITModule {
       const JITFunctionDescriptor& descriptor) = 0;
 };
 
+using JITModulePointer = std::shared_ptr<JITModule>;
+
 class JITFunctionBuilder {
  public:
   JITFunctionBuilder() : module_(nullptr){};

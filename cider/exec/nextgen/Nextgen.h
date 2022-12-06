@@ -24,7 +24,6 @@
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/parsers/Parser.h"
 #include "exec/nextgen/transformer/Transformer.h"
-#include "jitlib/llvmjit/LLVMJITModule.h"
 
 namespace cider::exec::nextgen {
 

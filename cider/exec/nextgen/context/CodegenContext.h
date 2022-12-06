@@ -21,8 +21,8 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
+#include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "include/cider/CiderAllocator.h"
 #include "type/data/sqltypes.h"
@@ -71,9 +71,7 @@ class CodegenContext {
         : ctx_id(id), name(n), type(t) {}
   };
 
-  void setJITModule(std::unique_ptr<jitlib::LLVMJITModule> jit_module) {
-    jit_module_ = std::move(jit_module);
-  }
+  void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
 
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
 
@@ -85,7 +83,7 @@ class CodegenContext {
 
   jitlib::JITFunctionPointer jit_func_;
   int64_t id_counter_{0};
-  std::unique_ptr<jitlib::LLVMJITModule> jit_module_;
+  jitlib::JITModulePointer jit_module_;
 
   int64_t acquireContextID() { return id_counter_++; }
   int64_t getNextContextID() const { return id_counter_; }

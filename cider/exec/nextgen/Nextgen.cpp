@@ -20,7 +20,9 @@
  */
 
 #include "exec/nextgen/Nextgen.h"
+
 #include <memory>
+
 #include "jitlib/base/JITFunction.h"
 
 namespace cider::exec::nextgen {
@@ -31,7 +33,7 @@ compile(const RelAlgExecutionUnit& ra_exe_unit,
         const CiderAllocatorPtr& allocator,
         const jitlib::CompilationOptions& co) {
   auto codegen_ctx = std::make_unique<context::CodegenContext>();
-  auto module = std::make_unique<jitlib::LLVMJITModule>("codegen", true, co);
+  auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
 
   auto builder = [&ra_exe_unit, &codegen_ctx](jitlib::JITFunctionPointer function) {
     codegen_ctx->setJITFunction(function);
@@ -52,6 +54,7 @@ compile(const RelAlgExecutionUnit& ra_exe_unit,
           .build();
 
   module->finish();
+
   codegen_ctx->setJITModule(std::move(module));
 
   auto runtime_ctx = codegen_ctx->generateRuntimeCTX(allocator);
