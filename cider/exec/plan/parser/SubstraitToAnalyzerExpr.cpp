@@ -804,14 +804,19 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
   /// split() with indexing is treated as a SPLIT_PART StringOper
   /// but the actual return type of split() should be a list
   /// this method should be deprecated after list types are supported
-  auto function_name =
-      getFunctionName(function_map, s_scalar_function.function_reference());
-  std::transform(
-      function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
-  /// FIXME: (YBRua) unify function_name to STRING_SPLIT after PR#207 (2592) get merged
-  CHECK(function_name == "STRING_SPLIT" || function_name == "SPLIT");
-  auto string_op_kind = name_to_string_op_kind(function_name);
-  CHECK_EQ(string_op_kind, SqlStringOpKind::STRING_SPLIT);
+  auto function_sig =
+      getFunctionSignature(function_map, s_scalar_function.function_reference());
+  auto funtion_return_type = TypeUtils::getStringType(s_scalar_function.output_type());
+  const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_sig, funtion_return_type, from_platform_);
+  if (!function_descriptor.is_cider_support_function) {
+    CIDER_THROW(CiderCompileException,
+                fmt::format("Not cider support scalar function, function_sig: {}, "
+                            "funtion_return_type: {}",
+                            function_sig,
+                            funtion_return_type));
+  }
 
   std::vector<std::shared_ptr<Analyzer::Expr>> args;
   for (int i = 0; i < s_scalar_function.arguments_size(); i++) {
@@ -968,6 +973,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case OpSupportExprType::kCONCAT_STRING_OPER:
     case OpSupportExprType::kCHAR_LENGTH_OPER:
     case OpSupportExprType::kREGEXP_REPLACE_OPER:
+    case OpSupportExprType::kSPLIT_PART_OPER:
+    case OpSupportExprType::kSTRING_SPLIT_OPER:
       return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
     case OpSupportExprType::kLIKE_EXPR:
       return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);
