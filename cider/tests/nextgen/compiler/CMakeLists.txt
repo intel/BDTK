@@ -25,6 +25,11 @@ target_link_libraries(NextgenCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
          --use_nextgen_compiler)
 
+add_executable(NextgenExprCompilerTest NextgenExprCompilerTest.cpp)
+target_link_libraries(NextgenExprCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})
+add_test(NextgenExprCompilerTest
+         ${EXECUTABLE_OUTPUT_PATH}/NextgenExprCompilerTest)
+
 add_executable(FilterProjectTest FilterProjectTest.cpp)
 target_link_libraries(FilterProjectTest ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest

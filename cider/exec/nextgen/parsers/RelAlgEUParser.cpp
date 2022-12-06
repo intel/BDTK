@@ -47,66 +47,6 @@ static bool isParseable(const RelAlgExecutionUnit& eu) {
   return true;
 }
 
-// Used for input columnVar collection and combination
-class InputAnalyzer {
- public:
-  InputAnalyzer(const std::vector<InputColDescriptor>& input_desc, OpPipeline& pipeline)
-      : input_desc_(input_desc)
-      , pipeline_(pipeline)
-      , input_exprs_(input_desc.size(), nullptr) {}
-
-  void run() {
-    if (pipeline_.empty()) {
-      return;
-    }
-
-    for (size_t i = 0; i < input_desc_.size(); ++i) {
-      input_desc_to_index_.insert({input_desc_[i], i});
-    }
-
-    for (auto& op : pipeline_) {
-      auto&& [type, exprs] = op->getOutputExprs();
-      for (auto& expr : exprs) {
-        traverse(&expr);
-      }
-    }
-
-    input_exprs_.erase(
-        std::remove_if(input_exprs_.begin(),
-                       input_exprs_.end(),
-                       [](const ExprPtr& input_expr) { return input_expr == nullptr; }),
-        input_exprs_.end());
-
-    pipeline_.insert(pipeline_.begin(), createOpNode<ArrowSourceNode>(input_exprs_));
-  }
-
- private:
-  void traverse(ExprPtr* curr) {
-    if (auto col_var_ptr = dynamic_cast<Analyzer::ColumnVar*>(curr->get())) {
-      auto iter = input_desc_to_index_.find(
-          InputColDescriptor(col_var_ptr->get_column_info(), col_var_ptr->get_rte_idx()));
-      CHECK(iter != input_desc_to_index_.end());
-
-      size_t index = iter->second;
-      if (input_exprs_[index]) {
-        *curr = input_exprs_[index];
-      } else {
-        input_exprs_[index] = *curr;
-      }
-    } else {
-      auto children = (*curr)->get_children_reference();
-      for (ExprPtr* child : children) {
-        traverse(child);
-      }
-    }
-  }
-
-  const std::vector<InputColDescriptor>& input_desc_;
-  OpPipeline& pipeline_;
-  ExprPtrVector input_exprs_;
-  std::unordered_map<InputColDescriptor, size_t> input_desc_to_index_;
-};
-
 static void insertSourceNode(const RelAlgExecutionUnit& eu, OpPipeline& pipeline) {
   std::vector<InputColDescriptor> input_desc;
   input_desc.reserve(eu.input_col_descs.size());
@@ -114,7 +54,7 @@ static void insertSourceNode(const RelAlgExecutionUnit& eu, OpPipeline& pipeline
     input_desc.push_back(*desc);
   }
 
-  InputAnalyzer analyzer(input_desc, pipeline);
+  InputAnalyzer<ArrowSourceNode> analyzer(input_desc, pipeline);
   analyzer.run();
 }
 

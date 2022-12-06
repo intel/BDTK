@@ -18,27 +18,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_NEXTGEN_H
-#define EXEC_NEXTGEN_NEXTGEN_H
 
-#include "exec/nextgen/context/RuntimeContext.h"
-#include "exec/nextgen/operators/OpNode.h"
+#include "exec/nextgen/operators/ColSourceNode.h"
+#include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/nextgen/parsers/Parser.h"
-#include "exec/nextgen/transformer/Transformer.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
+#include "util/Logger.h"
 
-namespace cider::exec::nextgen {
+namespace cider::exec::nextgen::parsers {
 
-using QueryFunc = void (*)(int8_t*, int8_t*);
+using namespace cider::exec::nextgen::operators;
 
-std::unique_ptr<context::CodegenContext> compile(
-    const RelAlgExecutionUnit& eu,
-    const jitlib::CompilationOptions& co = jitlib::CompilationOptions{});
+static void insertSourceNode(const std::vector<InputColDescriptor>& input_descs,
+                             OpPipeline& pipeline) {
+  InputAnalyzer<ColSourceNode> analyzer(input_descs, pipeline);
+  analyzer.run();
+}
 
-std::unique_ptr<context::CodegenContext> compile(
-    const operators::ExprPtrVector& expr,
-    const std::vector<InputColDescriptor>& input_descs,
-    const jitlib::CompilationOptions& co);
-}  // namespace cider::exec::nextgen
+operators::OpPipeline toOpPipeline(const ExprPtrVector& expr,
+                                   const std::vector<InputColDescriptor>& input_descs) {
+  OpPipeline ops;
 
-#endif  // EXEC_NEXTGEN_NEXTGEN_H
+  ops.emplace_back(createOpNode<operators::ProjectNode>(expr));
+
+  insertSourceNode(input_descs, ops);
+
+  return ops;
+}
+
+}  // namespace cider::exec::nextgen::parsers

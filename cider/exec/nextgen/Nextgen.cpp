@@ -19,11 +19,15 @@
  * under the License.
  */
 
-#include "exec/nextgen/Nextgen.h"
-
 #include <memory>
 
-#include "jitlib/base/JITFunction.h"
+#include "exec/nextgen/Nextgen.h"
+#include "exec/nextgen/jitlib/base/JITFunction.h"
+#include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
+#include "exec/nextgen/utils/TypeUtils.h"
+#include "type/data/sqltypes.h"
+#include "type/plan/Expr.h"
 
 namespace cider::exec::nextgen {
 
@@ -49,6 +53,60 @@ std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_e
           .addParameter(jitlib::JITTypeTag::POINTER, "input", jitlib::JITTypeTag::INT8)
           .addProcedureBuilder(builder)
           .build();
+
+  module->finish();
+
+  codegen_ctx->setJITModule(std::move(module));
+
+  return codegen_ctx;
+}
+
+std::unique_ptr<context::CodegenContext> compile(
+    const operators::ExprPtrVector& exprs,
+    const std::vector<InputColDescriptor>& input_descs,
+    const jitlib::CompilationOptions& co) {
+  auto codegen_ctx = std::make_unique<context::CodegenContext>();
+  auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
+
+  // void query_func(context, input..., output...)
+  size_t out_arg_idx = 1;  // first is context
+  auto func =
+      jitlib::JITFunctionBuilder()
+          .registerModule(*module)
+          .setFuncName("row_func")
+          .addReturn(jitlib::JITTypeTag::VOID)
+          .addParameter(jitlib::JITTypeTag::POINTER, "context", jitlib::JITTypeTag::INT8);
+  // input arguments
+  for (auto& input : input_descs) {
+    auto input_ti = input.getType();
+    if (!input_ti.get_notnull()) {
+      func.addParameter(jitlib::JITTypeTag::BOOL);  // for null
+      ++out_arg_idx;
+    }
+    func.addParameter(utils::getJITTypeTag(input_ti.get_type()));
+    ++out_arg_idx;
+  }
+  // output argument
+  for (auto& output_expr : exprs) {
+    auto output_ti = output_expr->get_type_info();
+    if (!output_ti.get_notnull()) {
+      func.addParameter(jitlib::JITTypeTag::POINTER,
+                        "output_null",
+                        jitlib::JITTypeTag::BOOL);  // for null
+    }
+    func.addParameter(jitlib::JITTypeTag::POINTER,
+                      "output",
+                      utils::getJITTypeTag(output_ti.get_type()));
+  }
+  // body
+  auto builder = [&](jitlib::JITFunctionPointer function) {
+    codegen_ctx->setJITFunction(function);
+    auto pipeline = parsers::toOpPipeline(exprs, input_descs);
+    auto translator = transformer::Transformer::toTranslator(pipeline, out_arg_idx);
+    translator->consume(*codegen_ctx);
+    function->createReturn();
+  };
+  func.addProcedureBuilder(builder).build();
 
   module->finish();
 

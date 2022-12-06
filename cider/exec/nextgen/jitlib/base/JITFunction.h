@@ -59,13 +59,8 @@ class JITFunction {
 
   template <typename R, typename... Args>
   auto getFunctionPointer() {
-    if constexpr (sizeof...(Args) > 0) {
-      using func_type = R (*)(Args...);
-      return reinterpret_cast<func_type>(getFunctionPointer());
-    } else {
-      using func_type = R (*)();
-      return reinterpret_cast<func_type>(getFunctionPointer());
-    }
+    using func_type = R (*)(Args...);
+    return reinterpret_cast<func_type>(getFunctionPointer());
   }
 
   template <typename T = int32_t>

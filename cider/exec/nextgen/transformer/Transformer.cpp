@@ -20,6 +20,7 @@
  */
 #include "exec/nextgen/transformer/Transformer.h"
 
+#include "exec/nextgen/operators/ColSinkNode.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
 
 namespace cider::exec::nextgen::transformer {
@@ -54,6 +55,14 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
       createOpNode<RowToColumnNode>(pipeline.back()->getOutputExprs().second,
                                     static_cast<ColumnToRowNode*>(c2r_node.get()));
   pipeline.emplace_back(r2c_node);
+
+  return generateTranslators(pipeline);
+}
+
+TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline, size_t out_arg_idx) {
+  auto sink_node =
+      createOpNode<ColSinkNode>(pipeline.back()->getOutputExprs().second, out_arg_idx);
+  pipeline.emplace_back(sink_node);
 
   return generateTranslators(pipeline);
 }

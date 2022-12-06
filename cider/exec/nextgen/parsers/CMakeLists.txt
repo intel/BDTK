@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(PARSERS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/RelAlgEUParser.cpp)
+set(PARSERS_SOURCE ${CMAKE_CURRENT_LIST_DIR}/RelAlgEUParser.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/ExprParser.cpp)
 
 add_library(cider_parsers OBJECT ${PARSERS_SOURCE})

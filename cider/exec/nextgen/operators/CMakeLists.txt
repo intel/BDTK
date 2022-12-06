@@ -24,6 +24,8 @@ endmacro(add_opnode)
 add_opnode(FilterNode)
 add_opnode(ProjectNode)
 add_opnode(ArrowSourceNode)
+add_opnode(ColSourceNode)
+add_opnode(ColSinkNode)
 add_opnode(ColumnToRowNode)
 add_opnode(RowToColumnNode)
 

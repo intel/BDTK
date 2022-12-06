@@ -18,27 +18,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_NEXTGEN_H
-#define EXEC_NEXTGEN_NEXTGEN_H
+#ifndef NEXTGEN_OPERATORS_COLSINKNODE_H
+#define NEXTGEN_OPERATORS_COLSINKNODE_H
 
-#include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/operators/OpNode.h"
-#include "exec/nextgen/parsers/Parser.h"
-#include "exec/nextgen/transformer/Transformer.h"
-#include "exec/template/common/descriptors/InputDescriptors.h"
 
-namespace cider::exec::nextgen {
+namespace cider::exec::nextgen::operators {
 
-using QueryFunc = void (*)(int8_t*, int8_t*);
+class ColSinkNode : public OpNode {
+ public:
+  ColSinkNode(ExprPtrVector&& output_exprs, size_t out_arg_idx)
+      : OpNode("ColSinkNode", std::move(output_exprs)), out_arg_idx_(out_arg_idx) {}
 
-std::unique_ptr<context::CodegenContext> compile(
-    const RelAlgExecutionUnit& eu,
-    const jitlib::CompilationOptions& co = jitlib::CompilationOptions{});
+  ColSinkNode(const ExprPtrVector& output_exprs, size_t out_arg_idx)
+      : OpNode("ColSinkNode", output_exprs), out_arg_idx_(out_arg_idx) {}
 
-std::unique_ptr<context::CodegenContext> compile(
-    const operators::ExprPtrVector& expr,
-    const std::vector<InputColDescriptor>& input_descs,
-    const jitlib::CompilationOptions& co);
-}  // namespace cider::exec::nextgen
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
-#endif  // EXEC_NEXTGEN_NEXTGEN_H
+  size_t out_arg_idx_;
+};
+
+class ColSinkTranslator : public Translator {
+ public:
+  using Translator::Translator;
+
+  void consume(context::CodegenContext& context) override;
+
+ private:
+  void codegen(context::CodegenContext& context);
+};
+}  // namespace cider::exec::nextgen::operators
+#endif  // NEXTGEN_OPERATORS_COLSINKNODE_H

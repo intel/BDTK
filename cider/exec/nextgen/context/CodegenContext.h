@@ -96,10 +96,10 @@ class CodegenContext {
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
 
-  jitlib::JITFunctionPointer jit_func_;
-  int64_t id_counter_{0};
   jitlib::JITModulePointer jit_module_;
+  jitlib::JITFunctionPointer jit_func_;
 
+  int64_t id_counter_{0};
   int64_t acquireContextID() { return id_counter_++; }
   int64_t getNextContextID() const { return id_counter_; }
 };
