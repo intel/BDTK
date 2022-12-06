@@ -27,7 +27,7 @@ JITExprValue& Constant::codegen(JITFunction& func) {
     return expr_var;
   }
 
-  auto null = func.createConstant(JITTypeTag::BOOL, false);
+  auto null = func.createLiteral(JITTypeTag::BOOL, false);
 
   const auto& ti = get_type_info();
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
@@ -37,24 +37,30 @@ JITExprValue& Constant::codegen(JITFunction& func) {
                   "NULL type literals are not currently supported in this context.");
     case kBOOLEAN:
       return set_expr_value(null,
-                            func.createConstant(getJITTag(type), get_constval().boolval));
+                            func.createLiteral(getJITTag(type), get_constval().boolval));
     case kTINYINT:
+      return set_expr_value(
+          null, func.createLiteral(getJITTag(type), get_constval().tinyintval));
     case kSMALLINT:
+      return set_expr_value(
+          null, func.createLiteral(getJITTag(type), get_constval().smallintval));
     case kINT:
+      return set_expr_value(null,
+                            func.createLiteral(getJITTag(type), get_constval().intval));
     case kBIGINT:
     case kTIME:
     case kTIMESTAMP:
     case kDATE:
     case kINTERVAL_DAY_TIME:
     case kINTERVAL_YEAR_MONTH:
-      return set_expr_value(null,
-                            func.createConstant(getJITTag(type), get_constval().intval));
-    case kFLOAT:
       return set_expr_value(
-          null, func.createConstant(getJITTag(type), get_constval().floatval));
+          null, func.createLiteral(getJITTag(type), get_constval().bigintval));
+    case kFLOAT:
+      return set_expr_value(null,
+                            func.createLiteral(getJITTag(type), get_constval().floatval));
     case kDOUBLE:
       return set_expr_value(
-          null, func.createConstant(getJITTag(type), get_constval().doubleval));
+          null, func.createLiteral(getJITTag(type), get_constval().doubleval));
     case kVARCHAR:
     case kCHAR:
     case kTEXT: {
