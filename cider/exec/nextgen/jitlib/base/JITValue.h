@@ -56,8 +56,6 @@ class JITValue : protected exec::nextgen::utils::ReferenceCounter {
 
   JITFunction& getParentJITFunction() { return parent_function_; }
 
-  JITTypeTag getTypeTag() { return type_tag_; }
-
   JITValue& operator=(JITValue& rh) { return assign(rh); }
 
   JITValuePointer operator[](JITValue& index);

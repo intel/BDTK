@@ -68,15 +68,43 @@ class JITFunction {
     }
   }
 
-  // TODO: Support initial value.
-  virtual JITValuePointer createVariable(JITTypeTag type_tag,
-                                         const std::string& name) = 0;
+  template <typename T = int32_t>
+  JITValuePointer createVariable(JITTypeTag type_tag,
+                                 const std::string& name = "var",
+                                 T&& init_val = 0) {
+    if constexpr (std::is_same_v<std::decay_t<T>, JITValuePointer> ||
+                  std::is_same_v<std::decay_t<T>, JITValue>) {
+      return createVariableImpl(type_tag, name, init_val);
+    } else {
+      auto init_jit_value = createLiteral(type_tag, init_val);
+      return createVariableImpl(type_tag, name, init_jit_value);
+    }
+  }
 
-  // TODO: Rename as 'createLiterals'.
-  virtual JITValuePointer createConstant(JITTypeTag type_tag, std::any value) = 0;
+  [[deprecated("Use createLiteral.")]] JITValuePointer createConstant(
+      JITTypeTag type_tag,
+      const std::any& value) {
+    return createLiteralImpl(type_tag, value);
+  }
 
-  virtual JITValuePointer createLocalJITValue(
-      std::function<JITValuePointer()> builder) = 0;
+  template <typename T>
+  JITValuePointer createLiteral(JITTypeTag type_tag, T value) {
+    return createLiteralImpl(type_tag, castLiteral(type_tag, value));
+  }
+
+  using LocalJITValueBuilderEmitter = JITValuePointer(void*);
+
+  template <
+      typename T,
+      typename std::enable_if_t<std::is_invocable_r_v<JITValuePointer, T>, bool> = true>
+  JITValuePointer createLocalJITValue(T&& builder) {
+    auto builder_wrapper = [](void* builder_ptr) -> JITValuePointer {
+      auto actual_builder = reinterpret_cast<T*>(builder_ptr);
+      return (*actual_builder)();
+    };
+
+    return createLocalJITValueImpl(builder_wrapper, (void*)&builder);
+  }
 
   virtual JITValuePointer getArgument(size_t index) = 0;
 
@@ -103,6 +131,16 @@ class JITFunction {
 
  private:
   virtual void* getFunctionPointer() = 0;
+
+  virtual JITValuePointer createLiteralImpl(JITTypeTag type_tag,
+                                            const std::any& value) = 0;
+
+  virtual JITValuePointer createLocalJITValueImpl(LocalJITValueBuilderEmitter emitter,
+                                                  void* builder) = 0;
+
+  virtual JITValuePointer createVariableImpl(JITTypeTag type_tag,
+                                             const std::string& name,
+                                             JITValuePointer& init_val) = 0;
 };
 
 using JITFunctionPointer = std::shared_ptr<JITFunction>;

@@ -96,8 +96,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   ExprPtrVector& inputs = exprs;
 
   // for row loop
-  auto index = func->createVariable(JITTypeTag::INT64, "index");
-  index = func->createConstant(JITTypeTag::INT64, 0l);
+  auto index = func->createVariable(JITTypeTag::INT64, "index", 0);
 
   // input column rows num.
   auto len = func->createLocalJITValue([&context, &inputs]() {

@@ -41,12 +41,6 @@ class LLVMJITFunction final : public JITFunction {
 
   operator llvm::IRBuilder<>&() const { return *ir_builder_; }
 
-  JITValuePointer createVariable(JITTypeTag type_tag, const std::string& name) override;
-
-  JITValuePointer createConstant(JITTypeTag type_tag, std::any value) override;
-
-  JITValuePointer createLocalJITValue(std::function<JITValuePointer()> builder) override;
-
   JITValuePointer getArgument(size_t index) override;
 
   IfBuilderPointer createIfBuilder() override;
@@ -71,7 +65,16 @@ class LLVMJITFunction final : public JITFunction {
   llvm::LLVMContext& getLLVMContext();
 
  private:
+  JITValuePointer createVariableImpl(JITTypeTag type_tag,
+                                     const std::string& name,
+                                     JITValuePointer& init_val) override;
+
+  JITValuePointer createLocalJITValueImpl(LocalJITValueBuilderEmitter emitter,
+                                          void* builder) override;
+
   void* getFunctionPointer() override;
+
+  JITValuePointer createLiteralImpl(JITTypeTag type_tag, const std::any& value) override;
 
   void cloneFunctionRecursive(llvm::Function* fn);
 

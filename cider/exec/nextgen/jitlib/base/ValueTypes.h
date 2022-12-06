@@ -21,7 +21,7 @@
 #ifndef JITLIB_BASE_VALUETYPES_H
 #define JITLIB_BASE_VALUETYPES_H
 
-#include <cstdint>
+#include <any>
 
 #include "util/Logger.h"
 
@@ -205,6 +205,28 @@ inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
       LOG(FATAL) << "Invalid JITType in getJITTypeSize: " << getJITTypeName(type_tag);
   }
   return 0;
+}
+
+template <typename T>
+inline std::any castLiteral(JITTypeTag target_type, T value) {
+  switch (target_type) {
+    case JITTypeTag::BOOL:
+      return static_cast<JITTypeTraits<JITTypeTag::BOOL>::NativeType>(value);
+    case JITTypeTag::INT8:
+      return static_cast<JITTypeTraits<JITTypeTag::INT8>::NativeType>(value);
+    case JITTypeTag::INT16:
+      return static_cast<JITTypeTraits<JITTypeTag::INT16>::NativeType>(value);
+    case JITTypeTag::INT32:
+      return static_cast<JITTypeTraits<JITTypeTag::INT32>::NativeType>(value);
+    case JITTypeTag::INT64:
+      return static_cast<JITTypeTraits<JITTypeTag::INT64>::NativeType>(value);
+    case JITTypeTag::FLOAT:
+      return static_cast<JITTypeTraits<JITTypeTag::FLOAT>::NativeType>(value);
+    case JITTypeTag::DOUBLE:
+      return static_cast<JITTypeTraits<JITTypeTag::DOUBLE>::NativeType>(value);
+    default:
+      LOG(FATAL) << "Invalid JITType in castLiteral: " << getJITTypeName(target_type);
+  }
 }
 };  // namespace cider::jitlib
 

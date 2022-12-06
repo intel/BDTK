@@ -31,7 +31,7 @@ JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
                                               bool arrow_array_output) {
   int64_t id = acquireContextID();
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id, arrow_array_output]() {
-    auto index = this->jit_func_->createConstant(JITTypeTag::INT64, id);
+    auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
     auto pointer = this->jit_func_->emitRuntimeFunctionCall(
         "get_query_context_ptr",
         JITFunctionEmitDescriptor{
@@ -86,7 +86,7 @@ jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array
   CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
-  auto jit_index = func.createConstant(JITTypeTag::INT64, index);
+  auto jit_index = func.createLiteral(JITTypeTag::INT64, index);
   auto ret = func.emitRuntimeFunctionCall(
       "extract_arrow_array_buffer",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
@@ -102,7 +102,7 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
   CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
-  auto jit_index = func.createConstant(JITTypeTag::INT64, index);
+  auto jit_index = func.createLiteral(JITTypeTag::INT64, index);
   auto ret = func.emitRuntimeFunctionCall(
       "extract_arrow_array_child",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
@@ -120,7 +120,7 @@ jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_
   CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
 
   auto& func = arrow_array->getParentJITFunction();
-  auto jit_index = func.createConstant(JITTypeTag::INT64, index);
+  auto jit_index = func.createLiteral(JITTypeTag::INT64, index);
   func.emitRuntimeFunctionCall(
       "allocate_arrow_array_buffer",
       JITFunctionEmitDescriptor{

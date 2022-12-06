@@ -43,6 +43,7 @@ class ColumnWriter {
       , arrow_array_len_(arrow_array_len) {}
 
   void write() {
+    // TBD: Whether input ColumnVar's ArrowArray could be overwriten.
     // CHECK(0 == expr_->getLocalIndex());
     switch (expr_->get_type_info().get_type()) {
       case kTINYINT:
@@ -103,7 +104,7 @@ class ColumnWriter {
   }
 
   JITValuePointer allocateRawDataBuffer(int64_t index, SQLTypes type) {
-    auto bytes = arrow_array_len_ * context_.getJITFunction()->createConstant(
+    auto bytes = arrow_array_len_ * context_.getJITFunction()->createLiteral(
                                         JITTypeTag::INT64, utils::getTypeBytes(type));
     return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
   }
@@ -144,12 +145,7 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context) {
       "output",
       true);
 
-  // TODO (bigPYJ1151): Refactor after JITLib Refactor.
-  auto output_index = func->createVariable(JITTypeTag::INT64, "output_index");
-  output_index = func->createLocalJITValue([func, &output_index]() {
-    output_index = func->createConstant(JITTypeTag::INT64, 0l);
-    return output_index;
-  });
+  auto output_index = func->createVariable(JITTypeTag::INT64, "output_index", 0);
 
   // Get input ArrowArray length from previous C2RNode
   auto prev_c2r_node = static_cast<RowToColumnNode*>(node_.get())->getColumnToRowNode();
