@@ -219,6 +219,7 @@ inline std::any castLiteral(JITTypeTag target_type, T value) {
     case JITTypeTag::INT32:
       return static_cast<JITTypeTraits<JITTypeTag::INT32>::NativeType>(value);
     case JITTypeTag::INT64:
+    case JITTypeTag::POINTER:
       return static_cast<JITTypeTraits<JITTypeTag::INT64>::NativeType>(value);
     case JITTypeTag::FLOAT:
       return static_cast<JITTypeTraits<JITTypeTag::FLOAT>::NativeType>(value);

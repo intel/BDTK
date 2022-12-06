@@ -21,6 +21,7 @@
 
 #include "exec/nextgen/parsers/Parser.h"
 
+#include "exec/nextgen/operators/AggregationNode.h"
 #include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
@@ -33,10 +34,6 @@ using namespace cider::exec::nextgen::operators;
 static bool isParseable(const RelAlgExecutionUnit& eu) {
   if (!eu.join_quals.empty()) {
     LOG(ERROR) << "JOIN is not supported in RelAlgExecutionUnitParser.";
-    return false;
-  }
-  if (eu.groupby_exprs.empty()) {
-    LOG(ERROR) << "Aggregation is not supported in RelAlgExecutionUnitParser.";
     return false;
   }
   if (eu.groupby_exprs.size() > 1 || *eu.groupby_exprs.begin() != nullptr) {
@@ -138,10 +135,27 @@ OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
   ops.emplace_back(createOpNode<operators::FilterNode>(filters));
 
   ExprPtrVector projs;
+  ExprPtrVector aggs;
+  ExprPtrVector groupbys;
+
   for (auto& targets_expr : eu.shared_target_exprs) {
-    projs.push_back(targets_expr);
+    if (targets_expr->get_contains_agg()) {
+      aggs.push_back(targets_expr);
+    } else {
+      projs.push_back(targets_expr);
+    }
   }
   ops.emplace_back(createOpNode<operators::ProjectNode>(projs));
+
+  if (!eu.groupby_exprs.empty() && eu.groupby_exprs.front()) {
+    for (auto& groupby_expr : eu.groupby_exprs) {
+      groupbys.push_back(groupby_expr);
+    }
+  }
+
+  if (!groupbys.empty() || !aggs.empty()) {
+    ops.emplace_back(createOpNode<operators::AggNode>(groupbys, aggs));
+  }
 
   insertSourceNode(eu, ops);
 

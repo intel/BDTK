@@ -143,6 +143,8 @@ JITValuePointer LLVMJITFunction::createLiteralImpl(JITTypeTag type_tag,
     case JITTypeTag::INT32:
       llvm_value = createConstantImpl<JITTypeTag::INT32>(getLLVMContext(), value);
       break;
+    case JITTypeTag::POINTER:
+      type_tag = JITTypeTag::INT64;
     case JITTypeTag::INT64:
       llvm_value = createConstantImpl<JITTypeTag::INT64>(getLLVMContext(), value);
       break;

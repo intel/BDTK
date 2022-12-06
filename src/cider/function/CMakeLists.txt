@@ -67,13 +67,14 @@ add_custom_command(
     aggregate/CiderRuntimeFunctions.h
     aggregate/GroupByRuntime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/context/ContextRuntimeFunctions.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/operators/OperatorRuntimeFunctions.h
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
   COMMAND
     ${llvm_clangpp_cmd} ARGS -std=c++17 ${RT_OPT_FLAGS} -c -emit-llvm
     --gcc-toolchain=${GCC_TOOLCHAIN} ${CLANG_SDK_INC} ${CLANG_CRT_INC}
     ${MAPD_DEFINITIONS} -I ${CMAKE_CURRENT_SOURCE_DIR}/../ -I
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include
-    -I ${CMAKE_SOURCE_DIR}/thirdparty/robin-hood-hashing/src/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include -I
+    ${CMAKE_SOURCE_DIR}/thirdparty/robin-hood-hashing/src/include
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
 add_library(cider_function ${function_source_files})
