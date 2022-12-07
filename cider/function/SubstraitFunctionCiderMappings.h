@@ -46,9 +46,7 @@ class SubstraitFunctionCiderMappings {
     return iter->second;
   }
 
-  const SqlStringOpKind getFunctionStringOp(std::string function_name) const {
-    std::transform(
-        function_name.begin(), function_name.end(), function_name.begin(), ::toupper);
+  const SqlStringOpKind getFunctionStringOp(const std::string& function_name) const {
     const auto& string_op_map = stringMappings();
     auto iter = string_op_map.find(function_name);
     if (iter == string_op_map.end()) {
@@ -106,29 +104,32 @@ class SubstraitFunctionCiderMappings {
   // string function name and sql-ops mapping.
   virtual const FunctionSQLStringOpsMappings& stringMappings() const {
     static const FunctionSQLStringOpsMappings mapping{
-        {"LOWER", SqlStringOpKind::LOWER},
-        {"UPPER", SqlStringOpKind::UPPER},
-        {"INITCAP", SqlStringOpKind::INITCAP},
-        {"REVERSE", SqlStringOpKind::REVERSE},
-        {"REPEAT", SqlStringOpKind::REPEAT},
+        {"lower", SqlStringOpKind::LOWER},
+        {"upper", SqlStringOpKind::UPPER},
+        {"initcap", SqlStringOpKind::INITCAP},
+        {"reverse", SqlStringOpKind::REVERSE},
+        {"repeat", SqlStringOpKind::REPEAT},
         {"||", SqlStringOpKind::CONCAT},
-        {"LPAD", SqlStringOpKind::LPAD},
-        {"RPAD", SqlStringOpKind::RPAD},
-        {"TRIM", SqlStringOpKind::TRIM},
-        {"LTRIM", SqlStringOpKind::LTRIM},
-        {"RTRIM", SqlStringOpKind::RTRIM},
-        {"SUBSTRING", SqlStringOpKind::SUBSTRING},
-        {"OVERLAY", SqlStringOpKind::OVERLAY},
-        {"REPLACE", SqlStringOpKind::REPLACE},
-        {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
-        {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
-        {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
-        {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},
-        {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
-        {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
-        {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
-        {"TRY_CAST", SqlStringOpKind::TRY_STRING_CAST},
-        {"CHAR_LENGTH", SqlStringOpKind::CHAR_LENGTH},
+        {"lpad", SqlStringOpKind::LPAD},
+        {"rpad", SqlStringOpKind::RPAD},
+        {"trim", SqlStringOpKind::TRIM},
+        {"ltrim", SqlStringOpKind::LTRIM},
+        {"rtrim", SqlStringOpKind::RTRIM},
+        {"substring", SqlStringOpKind::SUBSTRING},
+        {"overlay", SqlStringOpKind::OVERLAY},
+        {"replace", SqlStringOpKind::REPLACE},
+        {"regexp_replace", SqlStringOpKind::REGEXP_REPLACE},
+        {"regexp_substr", SqlStringOpKind::REGEXP_SUBSTR},
+        {"regexp_match", SqlStringOpKind::REGEXP_SUBSTR},
+        {"json_value", SqlStringOpKind::JSON_VALUE},
+        {"base64_encode", SqlStringOpKind::BASE64_ENCODE},
+        {"base64_decode", SqlStringOpKind::BASE64_DECODE},
+        {"try_cast", SqlStringOpKind::TRY_STRING_CAST},
+        {"char_length", SqlStringOpKind::CHAR_LENGTH},
+        {"string_split", SqlStringOpKind::STRING_SPLIT},
+        {"split_part", SqlStringOpKind::SPLIT_PART},  // split_part()
+        {"split", SqlStringOpKind::STRING_SPLIT}      // split(input, delimiter, limit)
+
     };
     return mapping;
   };
@@ -204,6 +205,10 @@ class SubstraitFunctionCiderMappings {
         {"char_length", OpSupportExprType::kCHAR_LENGTH_OPER},
         {"regexp_replace", OpSupportExprType::kREGEXP_REPLACE_OPER},
         {"like", OpSupportExprType::kLIKE_EXPR},
+        {"split_part", OpSupportExprType::kSPLIT_PART_OPER},
+        {"string_split", OpSupportExprType::kSTRING_SPLIT_OPER},
+        {"split", OpSupportExprType::kSTRING_SPLIT_OPER},
+
     };
     return mapping;
   };

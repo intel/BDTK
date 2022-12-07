@@ -343,10 +343,26 @@ struct Replace : public StringOp {
 struct SplitPart : public StringOp {
   SplitPart(const std::optional<std::string>& var_str_optional_literal,
             const std::string& delimiter,
+            const int64_t limit,
             const int64_t split_part)
       : StringOp(SqlStringOpKind::SPLIT_PART, var_str_optional_literal)
       , delimiter_(delimiter)
       , split_part_(split_part == 0 ? 1UL : std::abs(split_part))
+      , limit_(limit)
+      , delimiter_length_(delimiter.size())
+      , reverse_(split_part < 0) {
+    if (limit_ <= 0) {
+      CIDER_THROW(CiderCompileException, "split(): param 'limit' must be positive");
+    }
+  }
+
+  SplitPart(const std::optional<std::string>& var_str_optional_literal,
+            const std::string& delimiter,
+            const int64_t split_part)
+      : StringOp(SqlStringOpKind::SPLIT_PART, var_str_optional_literal)
+      , delimiter_(delimiter)
+      , split_part_(split_part == 0 ? 1UL : std::abs(split_part))
+      , limit_(0)  // informal internal representation of 'no limit specified'
       , delimiter_length_(delimiter.size())
       , reverse_(split_part < 0) {}
 
@@ -356,6 +372,7 @@ struct SplitPart : public StringOp {
 
   const std::string delimiter_;
   const size_t split_part_;
+  const size_t limit_;
   const size_t delimiter_length_;
   const bool reverse_;
 };

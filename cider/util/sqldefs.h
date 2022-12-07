@@ -104,6 +104,7 @@ enum class SqlStringOpKind {
   OVERLAY,
   REPLACE,
   SPLIT_PART,
+  STRING_SPLIT,
   /* 6 args */
   REGEXP_REPLACE,
   REGEXP_SUBSTR,
@@ -327,7 +328,11 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"SUBSTRING", SqlStringOpKind::SUBSTRING},
       {"OVERLAY", SqlStringOpKind::OVERLAY},
       {"REPLACE", SqlStringOpKind::REPLACE},
+      // split_part is a presto extension
       {"SPLIT_PART", SqlStringOpKind::SPLIT_PART},
+      // split with limit is a presto extension
+      {"STRING_SPLIT", SqlStringOpKind::STRING_SPLIT},
+      {"SPLIT", SqlStringOpKind::STRING_SPLIT},
       {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
       {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
       {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},
