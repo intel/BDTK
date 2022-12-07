@@ -27,8 +27,11 @@
 
 namespace cider::exec::nextgen {
 
-std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
-                                                 const jitlib::CompilationOptions& co);
+using QueryFunc = void (*)(int8_t*, int8_t*);
+
+std::unique_ptr<context::CodegenContext> compile(
+    const RelAlgExecutionUnit& eu,
+    const jitlib::CompilationOptions& co = jitlib::CompilationOptions{});
 
 }  // namespace cider::exec::nextgen
 

@@ -21,24 +21,28 @@
 
 #include "exec/nextgen/Nextgen.h"
 
+#include <memory>
+
+#include "jitlib/base/JITFunction.h"
+
 namespace cider::exec::nextgen {
 
 std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
                                                  const jitlib::CompilationOptions& co) {
-  auto context = std::make_unique<context::CodegenContext>();
-  jitlib::LLVMJITModule module("codegen", true, co);
+  auto codegen_ctx = std::make_unique<context::CodegenContext>();
+  auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
 
-  auto builder = [&ra_exe_unit, &context](jitlib::JITFunction* function) {
-    context->setJITFunction(function);
+  auto builder = [&ra_exe_unit, &codegen_ctx](jitlib::JITFunctionPointer function) {
+    codegen_ctx->setJITFunction(function);
     auto pipeline = parsers::toOpPipeline(ra_exe_unit);
     auto translator = transformer::Transformer::toTranslator(pipeline);
-    translator->consume(*context);
+    translator->consume(*codegen_ctx);
     function->createReturn();
   };
 
   jitlib::JITFunctionPointer func =
       jitlib::JITFunctionBuilder()
-          .registerModule(module)
+          .registerModule(*module)
           .setFuncName("query_func")
           .addReturn(jitlib::JITTypeTag::VOID)
           .addParameter(jitlib::JITTypeTag::POINTER, "context", jitlib::JITTypeTag::INT8)
@@ -46,9 +50,11 @@ std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_e
           .addProcedureBuilder(builder)
           .build();
 
-  module.finish();
+  module->finish();
 
-  return context;
+  codegen_ctx->setJITModule(std::move(module));
+
+  return codegen_ctx;
 }
 
 }  // namespace cider::exec::nextgen

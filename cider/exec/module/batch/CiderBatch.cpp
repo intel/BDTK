@@ -263,7 +263,7 @@ void CiderBatch::releaseArrowEntries() {
       if (arrow_array_->release) {
         arrow_array_->release(arrow_array_);
       }
-      CiderBatchUtils::freeArrowArray(arrow_array_);
+      // CiderBatchUtils::freeArrowArray(arrow_array_);
       arrow_array_ = nullptr;
     }
   }

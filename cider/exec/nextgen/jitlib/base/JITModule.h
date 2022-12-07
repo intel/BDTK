@@ -36,6 +36,8 @@ class JITModule {
       const JITFunctionDescriptor& descriptor) = 0;
 };
 
+using JITModulePointer = std::shared_ptr<JITModule>;
+
 class JITFunctionBuilder {
  public:
   JITFunctionBuilder() : module_(nullptr){};
@@ -86,7 +88,7 @@ class JITFunctionBuilder {
 
     JITFunctionPointer function = module_->createJITFunction(JITFunctionDescriptor{
         .function_name = name_, .ret_type = return_, .params_type = parameter_list_});
-    builder_(function.get());
+    builder_(function);
     function->finish();
     return function;
   }
@@ -97,7 +99,7 @@ class JITFunctionBuilder {
   static constexpr size_t DefaultParamsNum = 8;
   boost::container::small_vector<JITFunctionParam, DefaultParamsNum> parameter_list_;
   JITFunctionParam return_;
-  std::function<void(JITFunction*)> builder_;
+  std::function<void(const JITFunctionPointer&)> builder_;
 };
 
 };  // namespace cider::jitlib

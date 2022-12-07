@@ -35,7 +35,7 @@
 #define COMPILE_AND_GEN_RUNTIME_MODULE()                                             \
   compile_option.needs_error_check = true;                                           \
   auto compile_res = ciderCompileModule_->compile(plan, compile_option, exe_option); \
-  auto cider_runtime_module =                                                        \
+  cider_runtime_module_ =                                                            \
       std::make_shared<CiderRuntimeModule>(compile_res, compile_option, exe_option); \
   auto output_schema = compile_res->getOutputCiderTableSchema();
 
@@ -90,21 +90,27 @@ CiderBatch CiderQueryRunner::runQueryOneBatch(
   COMPILE_AND_GEN_RUNTIME_MODULE();
 
   // Step 3: run on this batch
-  cider_runtime_module->processNextBatch(*input_batch);
+  cider_runtime_module_->processNextBatch(*input_batch);
 
   // Step 4: handle agg and fetch data
-  if (cider_runtime_module->isGroupBy()) {
-    auto iterator = cider_runtime_module->getGroupByAggHashTableIteratorAt(0);
+  if (compile_option.use_nextgen_compiler) {
+    auto [_, output_batch] = cider_runtime_module_->fetchResults();
+    if (!output_batch->schema()) {
+      output_batch->set_schema(output_schema);
+    }
+    return std::move(*output_batch);
+  } else if (cider_runtime_module_->isGroupBy()) {
+    auto iterator = cider_runtime_module_->getGroupByAggHashTableIteratorAt(0);
     auto runtime_state = iterator->getRuntimeState();
     CHECK_EQ(runtime_state.getRowIndexNeedSpillVec().size(), 0);
-    return std::move(handleRes(1024, cider_runtime_module, compile_res).front());
+    return std::move(handleRes(1024, cider_runtime_module_, compile_res).front());
   } else if (compile_res->impl_->query_mem_desc_->hasCountDistinct() &&
              compile_res->impl_->query_mem_desc_->getQueryDescriptionType() ==
                  QueryDescriptionType::NonGroupedAggregate) {
-    auto [_, output_batch] = cider_runtime_module->fetchResults();
+    auto [_, output_batch] = cider_runtime_module_->fetchResults();
     return updateCountDistinctRes(std::move(output_batch), compile_res);
   } else {
-    auto [_, output_batch] = cider_runtime_module->fetchResults();
+    auto [_, output_batch] = cider_runtime_module_->fetchResults();
     if (!output_batch->schema()) {
       output_batch->set_schema(output_schema);
     }
@@ -130,26 +136,26 @@ std::vector<CiderBatch> CiderQueryRunner::runQueryMultiBatches(
       compile_res->impl_->query_mem_desc_->getQueryDescriptionType() ==
       QueryDescriptionType::NonGroupedAggregate;
 
-  if (cider_runtime_module->isGroupBy()) {
+  if (cider_runtime_module_->isGroupBy()) {
     for (auto it = input_batches.begin(); it != input_batches.end(); it++) {
-      cider_runtime_module->processNextBatch(**it);
+      cider_runtime_module_->processNextBatch(**it);
     }
-    auto iterator = cider_runtime_module->getGroupByAggHashTableIteratorAt(0);
+    auto iterator = cider_runtime_module_->getGroupByAggHashTableIteratorAt(0);
     CHECK_EQ(iterator->getRuntimeState().getRowIndexNeedSpillVec().size(), 0);
-    res_vec = handleRes(1024, cider_runtime_module, compile_res);
+    res_vec = handleRes(1024, cider_runtime_module_, compile_res);
   } else if (is_non_groupby_agg) {
     for (auto it = input_batches.begin(); it != input_batches.end(); it++) {
-      cider_runtime_module->processNextBatch(**it);
+      cider_runtime_module_->processNextBatch(**it);
     }
-    auto [_, output_batch] = cider_runtime_module->fetchResults();
+    auto [_, output_batch] = cider_runtime_module_->fetchResults();
     if (!output_batch->schema()) {
       output_batch->set_schema(output_schema);
     }
     res_vec.emplace_back(std::move(*output_batch));
   } else {
     for (auto it = input_batches.begin(); it != input_batches.end(); it++) {
-      cider_runtime_module->processNextBatch(**it);
-      auto [_, output_batch] = cider_runtime_module->fetchResults();
+      cider_runtime_module_->processNextBatch(**it);
+      auto [_, output_batch] = cider_runtime_module_->fetchResults();
       if (!output_batch->schema()) {
         output_batch->set_schema(output_schema);
       }
@@ -218,8 +224,8 @@ std::vector<CiderBatch> CiderQueryRunner::runQueryForCountDistinct(
   // Check result for each batch process
   std::vector<CiderBatch> res_batches;
   for (int i = 0; i < input_batches.size(); i++) {
-    cider_runtime_module->processNextBatch(*input_batches[i]);
-    auto [_, output_batch] = cider_runtime_module->fetchResults();
+    cider_runtime_module_->processNextBatch(*input_batches[i]);
+    auto [_, output_batch] = cider_runtime_module_->fetchResults();
     auto res_batch = updateCountDistinctRes(std::move(output_batch), compile_res);
     res_batches.push_back(std::move(res_batch));
   }

@@ -23,6 +23,7 @@
 #define CIDER_CIDERCOMPILATIONRESULTIMPL_H
 
 #include "cider/CiderCompileModule.h"
+#include "exec/nextgen/Nextgen.h"
 #include "exec/template/Execute.h"
 
 class CiderCompilationResult::Impl {
@@ -35,6 +36,10 @@ class CiderCompilationResult::Impl {
   std::vector<int8_t> getHoistLiteral() const { return hoist_buf; }
 
   void* func() {
+    if (co.use_nextgen_compiler) {
+      return reinterpret_cast<void*>(
+          codegen_ctx_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
+    }
     auto cpu_generated_code = std::dynamic_pointer_cast<CpuCompilationContext>(
         compilation_result_.generated_code);
     return cpu_generated_code->func();
@@ -66,6 +71,9 @@ class CiderCompilationResult::Impl {
   std::shared_ptr<CiderTableSchema> outputSchema_;
   CiderBatch build_table_;
   std::shared_ptr<StringDictionaryProxy> ciderStringDictionaryProxy_;
+  CompilationOptions co;
+  std::unique_ptr<cider::exec::nextgen::context::CodegenContext> codegen_ctx_;
+  std::unique_ptr<cider::exec::nextgen::context::RuntimeContext> runtime_ctx_;
 };
 
 #endif
