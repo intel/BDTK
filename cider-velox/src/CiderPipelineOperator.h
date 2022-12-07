@@ -55,6 +55,8 @@ class CiderPipelineOperator : public exec::Operator {
 
   // Future for synchronizing with other Drivers of the same pipeline.
   ContinueFuture future_{ContinueFuture::makeEmpty()};
+
+  const std::shared_ptr<CiderAllocator> allocator_;
 };
 
 }  // namespace facebook::velox::plugin

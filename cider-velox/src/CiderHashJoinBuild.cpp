@@ -53,9 +53,11 @@ std::optional<CiderHashBuildResult> CiderHashJoinBridge::hashBuildResultOrFuture
 CiderHashJoinBuild::CiderHashJoinBuild(int32_t operatorId,
                                        exec::DriverCtx* driverCtx,
                                        std::shared_ptr<const CiderPlanNode> joinNode)
-    : Operator(driverCtx, nullptr, operatorId, joinNode->id(), "CiderHashJoinBuild") {
+    : Operator(driverCtx, nullptr, operatorId, joinNode->id(), "CiderHashJoinBuild")
+    , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
   const auto& joinRel = joinNode->getSubstraitPlan().relations(0).root().input().join();
-  joinHashTableBuilder_ = cider::processor::makeJoinHashTableBuilder(joinRel);
+  auto context = std::make_shared<CiderJoinHashTableBuildContext>(allocator_);
+  joinHashTableBuilder_ = cider::processor::makeJoinHashTableBuilder(joinRel, context);
   auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
       operatorCtx_->driverCtx()->splitGroupId, planNodeId());
   joinBridge_ = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);
@@ -70,9 +72,8 @@ void CiderHashJoinBuild::addInput(RowVectorPtr input) {
   ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
   exportToArrow(input_, *inputArrowSchema);
 
-  auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
   auto inBatch =
-      CiderBatchUtils::createCiderBatch(allocator, inputArrowSchema, inputArrowArray);
+      CiderBatchUtils::createCiderBatch(allocator_, inputArrowSchema, inputArrowArray);
   joinHashTableBuilder_->appendBatch(std::move(inBatch));
 }
 

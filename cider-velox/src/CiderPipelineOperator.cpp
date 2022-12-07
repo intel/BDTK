@@ -41,9 +41,8 @@ void CiderPipelineOperator::addInput(RowVectorPtr input) {
   ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
   exportToArrow(input_, *inputArrowSchema);
 
-  auto allocator = std::make_shared<PoolAllocator>(operatorCtx_->pool());
   auto inBatch =
-      CiderBatchUtils::createCiderBatch(allocator, inputArrowSchema, inputArrowArray);
+      CiderBatchUtils::createCiderBatch(allocator_, inputArrowSchema, inputArrowArray);
   batchProcessor_->processNextBatch(std::move(inBatch));
 }
 
@@ -94,10 +93,9 @@ CiderPipelineOperator::CiderPipelineOperator(
                operatorId,
                ciderPlanNode->id(),
                "CiderOp")
-    , ciderPlanNode_(ciderPlanNode) {
-  auto context = std::make_shared<cider::processor::BatchProcessorContext>(
-      std::make_shared<PoolAllocator>(operatorCtx_->pool()));
-
+    , ciderPlanNode_(ciderPlanNode)
+    , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
+  auto context = std::make_shared<cider::processor::BatchProcessorContext>(allocator_);
   cider::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
     auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
         operatorCtx_->driverCtx()->splitGroupId, planNodeId());
