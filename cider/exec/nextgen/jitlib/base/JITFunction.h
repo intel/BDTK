@@ -68,9 +68,9 @@ class JITFunction {
     }
   }
 
-  template <typename T>
-  JITValuePointer packValues(T&& params, uint64_t alignment = 8) {
-    return packJITValues(std::forward<T>(params), alignment);
+  template <uint64_t alignment = 8, typename... T>
+  JITValuePointer packJITValues(T&&... params) {
+    return packJITValuesImpl({std::forward<T>(params)...}, alignment);
   }
 
   template <typename T = int32_t>
@@ -147,8 +147,8 @@ class JITFunction {
                                              const std::string& name,
                                              JITValuePointer& init_val) = 0;
 
-  virtual JITValuePointer packJITValues(const std::vector<JITValuePointer> vals,
-                                        const uint64_t alignment) = 0;
+  virtual JITValuePointer packJITValuesImpl(const std::vector<JITValuePointer>& vals,
+                                            const uint64_t alignment) = 0;
 };
 
 using JITFunctionPointer = std::shared_ptr<JITFunction>;
