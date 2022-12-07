@@ -141,6 +141,11 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
           ->ifFalse([&]() { value = lhs_val.getValue() && rhs_val.getValue(); })
           ->build();
       return set_expr_value(null, value);
+      // branchless implementation for future perf comparison
+      // null = (lhs_val.getNull() && rhs_val.getNull()) ||
+      //          (lhs_val.getNull() && lhs_val.getValue()) ||
+      //          (rhs_val.getNull() && rhs_val.getValue());
+      // return set_expr_value(null, lhs_val.getValue() && rhs_val.getValue());
     }
     case kOR: {
       // If one side is not null and true, return not null and TRUE
@@ -160,6 +165,11 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
           ->ifFalse([&]() { value = lhs_val.getValue() || rhs_val.getValue(); })
           ->build();
       return set_expr_value(null, value);
+      // branchless implementation for future perf comparison
+      // null = (lhs_val.getNull() && rhs_val.getNull()) ||
+      //          (lhs_val.getNull() && !rhs_val.getValue()) ||
+      //          (rhs_val.getNull() && !lhs_val.getValue());
+      // return set_expr_value(null, lhs_val.getValue() || rhs_val.getValue());
     }
     default:
       UNREACHABLE();
