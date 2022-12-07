@@ -21,6 +21,7 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include <type_traits>
 
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
@@ -36,9 +37,12 @@ static const std::shared_ptr<CiderAllocator> allocator =
 
 class FilterProjectTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& sql) {
+  template <typename COL_TYPE = int64_t>
+  void executeTest(const std::string& create_ddl,
+                   const std::string& sql,
+                   const std::vector<std::vector<COL_TYPE>> expected_cols) {
     // SQL Parsing
-    auto json = RunIsthmus::processSql(sql, create_ddl_);
+    auto json = RunIsthmus::processSql(sql, create_ddl);
     ::substrait::Plan plan;
     google::protobuf::util::JsonStringToMessage(json, &plan);
 
@@ -79,52 +83,82 @@ class FilterProjectTest : public ::testing::Test {
     auto input_builder = ArrowArrayBuilder();
     auto&& [schema, array] =
         input_builder.setRowNum(10)
-            .addColumn<int64_t>(
+            .addColumn<COL_TYPE>(
                 "a",
                 CREATE_SUBSTRAIT_TYPE(I64),
                 {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
                 {true, false, false, false, false, true, false, false, false, false})
-            .addColumn<int64_t>(
+            .template addColumn<COL_TYPE>(
                 "b", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
             .build();
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
-    EXPECT_EQ(output_batch_array->length, 4);
 
-    auto check_array =
-        [](ArrowArray* array, size_t expect_len, std::vector<int64_t>& expect_res) {
-          EXPECT_EQ(array->length, expect_len);
-          int64_t* data_buffer = (int64_t*)array->buffers[1];
-          for (size_t i = 0; i < expect_len; ++i) {
-            EXPECT_EQ(data_buffer[i], expect_res[i]);
-          }
-        };
+    size_t expected_row = expected_cols[0].size();
+    EXPECT_EQ(output_batch_array->length, expected_row);
 
-    // a   1 2 3 4
-    // b   2 3 4 5
-    // a+b 3 5 7 9
-    // b+a 3 5 7 9
-    // a+a 2 4 6 8
-    // b+b 4 6 8 10
-    std::vector<int64_t> expect_res = {3, 5, 7, 9};
-    check_array(output_batch_array->children[0], 4, expect_res);
-    expect_res = {3, 5, 7, 9};
-    check_array(output_batch_array->children[1], 4, expect_res);
-    expect_res = {2, 4, 6, 8};
-    check_array(output_batch_array->children[2], 4, expect_res);
-    expect_res = {4, 6, 8, 10};
-    check_array(output_batch_array->children[3], 4, expect_res);
+    auto check_array = [expected_row](ArrowArray* array,
+                                      const std::vector<COL_TYPE>& expected_res) {
+      EXPECT_EQ(array->length, expected_row);
+      COL_TYPE* data_buffer = (COL_TYPE*)array->buffers[1];
+      for (size_t i = 0; i < expected_row; ++i) {
+        EXPECT_EQ(data_buffer[i], expected_res[i]);
+      }
+    };
+
+    for (size_t i = 0; i < expected_cols.size(); ++i) {
+      check_array(output_batch_array->children[i], expected_cols[i]);
+    }
   }
-
- private:
-  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);";
 };
 
-TEST_F(FilterProjectTest, FrameworkTest) {
+TEST_F(FilterProjectTest, TestINT8) {
   // nullable + not null, not null + nullable, nullable + nullable, not null + not null
-  executeTest("select a + b, b + a, a + a, b + b from test where a < b");
+  // a   1 2 3 4
+  // b   2 3 4 5
+  // a+b 3 5 7 9
+  // b+a 3 5 7 9
+  // a+a 2 4 6 8
+  // b+b 4 6 8 10
+  std::vector<std::vector<int8_t>> expected_cols = {
+      {3, 5, 7, 9}, {3, 5, 7, 9}, {2, 4, 6, 8}, {4, 6, 8, 10}};
+  executeTest<int8_t>("CREATE TABLE test(a TINYINT, b TINYINT NOT NULL);",
+                      "select a + b, b + a, a + a, b + b from test where a < b",
+                      expected_cols);
+}
+TEST_F(FilterProjectTest, TestINT16) {
+  std::vector<std::vector<int16_t>> expected_cols = {
+      {3, 5, 7, 9}, {3, 5, 7, 9}, {2, 4, 6, 8}, {4, 6, 8, 10}};
+  executeTest<int16_t>("CREATE TABLE test(a SMALLINT, b SMALLINT NOT NULL);",
+                       "select a + b, b + a, a + a, b + b from test where a < b",
+                       expected_cols);
+}
+TEST_F(FilterProjectTest, TestINT32) {
+  std::vector<std::vector<int32_t>> expected_cols = {
+      {3, 5, 7, 9}, {3, 5, 7, 9}, {2, 4, 6, 8}, {4, 6, 8, 10}};
+  executeTest<int32_t>("CREATE TABLE test(a INT, b INT NOT NULL);",
+                       "select a + b, b + a, a + a, b + b from test where a < b",
+                       expected_cols);
+}
+TEST_F(FilterProjectTest, TestINT64) {
+  std::vector<std::vector<int64_t>> expected_cols = {
+      {3, 5, 7, 9}, {3, 5, 7, 9}, {2, 4, 6, 8}, {4, 6, 8, 10}};
+  executeTest<int64_t>("CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);",
+                       "select a + b, b + a, a + a, b + b from test where a < b",
+                       expected_cols);
+}
+TEST_F(FilterProjectTest, TestOther) {
+  std::vector<std::vector<int64_t>> expected_cols = {{1, 2, 3, 4},
+                                                     {2, 3, 4, 5},
+                                                     {3, 4, 5, 6},
+                                                     {3, 4, 5, 6},
+                                                     {12, 13, 14, 15},
+                                                     {12, 13, 14, 15}};
+  executeTest<int64_t>("CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);",
+                       "select a, b, a+2, 2+a, b+10, 10+b from test where a < b",
+                       expected_cols);
 }
 
 int main(int argc, char** argv) {
