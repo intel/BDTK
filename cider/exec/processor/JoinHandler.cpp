@@ -39,7 +39,7 @@ void HashProbeHandler::onState(BatchProcessorState state) {
 std::shared_ptr<CiderBatch> HashProbeHandler::onProcessBatch(
     std::shared_ptr<CiderBatch> batch) {
   // TODO: spill rows if the corresponding partition was spilled in build-side
-  return nullptr;
+  return batch;
 }
 
 }  // namespace cider::processor

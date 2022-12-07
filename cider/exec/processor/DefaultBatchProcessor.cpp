@@ -52,6 +52,7 @@ void DefaultBatchProcessor::processNextBatch(std::shared_ptr<CiderBatch> batch) 
   } else {
     this->inputBatch_ = batch;
   }
+
   // TODO: processBatch through nextGen API
 }
 

@@ -30,6 +30,17 @@ namespace cider::processor {
 
 class JoinHashTable;
 
+class JoinHashTableBuildContext {
+ public:
+  JoinHashTableBuildContext(const std::shared_ptr<CiderAllocator>& allocator)
+      : allocator_(allocator){}
+
+  std::shared_ptr<CiderAllocator> allocator() { return allocator_; }
+
+ private:
+  const std::shared_ptr<CiderAllocator> allocator_;
+};
+
 class JoinHashTableBuilder {
  public:
   virtual void appendBatch(std::shared_ptr<CiderBatch> batch) = 0;
@@ -39,7 +50,8 @@ class JoinHashTableBuilder {
 
 /// Factory method to create an instance of  JoinHashTableBuilder
 std::shared_ptr<JoinHashTableBuilder> makeJoinHashTableBuilder(
-    const ::substrait::JoinRel& joinRel);
+    const ::substrait::JoinRel& joinRel,
+    const std::shared_ptr<JoinHashTableBuildContext>& context);
 
 }  // namespace cider::processor
 

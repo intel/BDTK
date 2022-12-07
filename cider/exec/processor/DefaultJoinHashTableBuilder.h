@@ -31,7 +31,9 @@ namespace cider::processor {
 
 class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
  public:
-  DefaultJoinHashTableBuilder(const ::substrait::JoinRel& joinRel) : joinRel_(joinRel){};
+  DefaultJoinHashTableBuilder(const ::substrait::JoinRel& joinRel,
+                              const std::shared_ptr<JoinHashTableBuildContext>& context)
+      : joinRel_(joinRel), context_(context){};
 
   void appendBatch(std::shared_ptr<CiderBatch> batch) override;
 
@@ -39,6 +41,8 @@ class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
 
  private:
   ::substrait::JoinRel joinRel_;
+  std::shared_ptr<JoinHashTableBuildContext> context_;
+  std::unique_ptr<JoinHashTable> hashTable_;
 };
 
 }  // namespace cider::processor

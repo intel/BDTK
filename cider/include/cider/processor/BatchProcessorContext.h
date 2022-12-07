@@ -32,6 +32,7 @@ namespace cider::processor {
 
 class JoinHashTable {
  public:
+  /// merge other hashTable into this one
   virtual std::unique_ptr<JoinHashTable> merge(
       std::vector<std::unique_ptr<JoinHashTable>> otherTables) = 0;
 };

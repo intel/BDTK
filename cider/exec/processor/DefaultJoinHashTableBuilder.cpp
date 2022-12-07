@@ -25,7 +25,7 @@ namespace cider::processor {
 
 std::unique_ptr<JoinHashTable> DefaultJoinHashTableBuilder::build() {
   // TODO: build a join hash table
-  return std::unique_ptr<JoinHashTable>();
+  return std::move(hashTable_);
 }
 
 void DefaultJoinHashTableBuilder::appendBatch(std::shared_ptr<CiderBatch> batch) {
@@ -33,8 +33,9 @@ void DefaultJoinHashTableBuilder::appendBatch(std::shared_ptr<CiderBatch> batch)
 }
 
 std::shared_ptr<JoinHashTableBuilder> makeJoinHashTableBuilder(
-    const ::substrait::JoinRel& joinRel) {
-  return std::make_shared<DefaultJoinHashTableBuilder>(joinRel);
+    const ::substrait::JoinRel& joinRel,
+    const std::shared_ptr<JoinHashTableBuildContext>& context) {
+  return std::make_shared<DefaultJoinHashTableBuilder>(joinRel, context);
 }
 
 }  // namespace cider::processor

@@ -32,8 +32,10 @@ std::shared_ptr<CiderBatch> StatefulProcessor::getResult() {
     inputBatch_ = nullptr;
     return nullptr;
   }
+
+  state_ = BatchProcessorState::kFinished;
   // TODO: getResult through nextGen runtime api
-  return nullptr;
+  return inputBatch_;
 }
 
 }  // namespace cider::processor

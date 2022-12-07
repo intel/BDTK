@@ -35,9 +35,8 @@ std::shared_ptr<CiderBatch> StatelessProcessor::getResult() {
     }
     return nullptr;
   }
-  inputBatch_ = nullptr;
   // TODO: getResult through nextGen runtime api
-  return nullptr;
+  return std::move(inputBatch_);
 }
 
 }  // namespace cider::processor
