@@ -67,4 +67,9 @@ extern "C" ALWAYS_INLINE void allocate_arrow_array_buffer(int8_t* array,
   holder->allocBuffer(buffer_index, bytes);
 }
 
+extern "C" ALWAYS_INLINE int8_t* get_under_level_buffer_ptr(int8_t* buffer) {
+  auto batch_ptr = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(buffer);
+  return batch_ptr->getBuffer();
+}
+
 #endif  // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H

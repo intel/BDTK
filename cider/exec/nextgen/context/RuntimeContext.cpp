@@ -19,10 +19,13 @@
  * under the License.
  */
 #include "exec/nextgen/context/RuntimeContext.h"
-
 namespace cider::exec::nextgen::context {
 void RuntimeContext::addBatch(const CodegenContext::BatchDescriptorPtr& descriptor) {
   batch_holder_.emplace_back(descriptor, nullptr);
+}
+
+void RuntimeContext::addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor) {
+  buffer_holder_.emplace_back(descriptor, nullptr);
 }
 
 void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
@@ -31,6 +34,15 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
     if (nullptr == batch_desc.second) {
       batch_desc.second = std::make_unique<Batch>(batch_desc.first->type, allocator);
       runtime_ctx_pointers_[batch_desc.first->ctx_id] = batch_desc.second.get();
+    }
+  }
+
+  // Instantiation of buffers.
+  for (auto& buffer_desc : buffer_holder_) {
+    if (nullptr == buffer_desc.second) {
+      buffer_desc.second =
+          std::make_unique<Buffer>(buffer_desc.first->capacity, allocator);
+      runtime_ctx_pointers_[buffer_desc.first->ctx_id] = buffer_desc.second.get();
     }
   }
 }

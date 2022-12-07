@@ -22,6 +22,7 @@
 #define NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
 
 #include "exec/nextgen/context/Batch.h"
+#include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CodegenContext.h"
 
 namespace cider::exec::nextgen::context {
@@ -34,6 +35,8 @@ class RuntimeContext {
   void* getContextItem(size_t id) { return runtime_ctx_pointers_[id]; }
 
   void addBatch(const CodegenContext::BatchDescriptorPtr& descriptor);
+
+  void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
@@ -48,6 +51,7 @@ class RuntimeContext {
  private:
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
+  std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;

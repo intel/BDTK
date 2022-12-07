@@ -22,7 +22,6 @@
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
 #include "exec/nextgen/jitlib/base/JITModule.h"
-#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "include/cider/CiderAllocator.h"
 #include "type/data/sqltypes.h"
@@ -59,6 +58,9 @@ class CodegenContext {
                                         bool arrow_array_output = true);
 
   // TBD: HashTable (GroupBy, Join), other objects registration.
+  jitlib::JITValuePointer registerBuffer(const int32_t capacity,
+                                         const std::string& name = "",
+                                         bool output_raw_buffer = true);
 
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
@@ -71,13 +73,26 @@ class CodegenContext {
         : ctx_id(id), name(n), type(t) {}
   };
 
+  struct BufferDescriptor {
+    int64_t ctx_id;
+    std::string name;
+    // SQLTypeInfo type;
+    int32_t capacity;
+
+    BufferDescriptor(int64_t id, const std::string& n, int32_t c)
+        : ctx_id(id), name(n), capacity(c) {}
+  };
+
   void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
 
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
+  using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
 
  private:
   std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
       batch_descriptors_{};
+  std::vector<std::pair<BufferDescriptorPtr, jitlib::JITValuePointer>>
+      buffer_descriptors_{};
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
 
