@@ -623,34 +623,30 @@ TEST_F(JITLibTests, PackJITValueTest) {
   LLVMJITModule module("TestModule");
   JITFunctionPointer func =
       JITFunctionBuilder()
-          .setFuncName("test_pack_jitvalue")
+          .setFuncName("test_packjitvalues")
           .registerModule(module)
           .addReturn(JITTypeTag::BOOL)
-          .addProcedureBuilder([](JITFunction* function) {
+          .addProcedureBuilder([](JITFunctionPointer function) {
             JITValuePointer param1 =
-                function->createVariable(JITTypeTag::INT32, "param1");
-            param1 = function->createConstant(JITTypeTag::INT32, 1);
+                function->createVariable(JITTypeTag::INT32, "param1", 1);
             JITValuePointer param2 =
-                function->createVariable(JITTypeTag::INT64, "param2");
-            param2 = function->createConstant(JITTypeTag::INT64, 2l);
+                function->createVariable(JITTypeTag::INT64, "param2", 2l);
             JITValuePointer param3 =
-                function->createVariable(JITTypeTag::DOUBLE, "param3");
-            param3 = function->createConstant(JITTypeTag::DOUBLE, 3.0);
+                function->createVariable(JITTypeTag::DOUBLE, "param3", 3.0);
             uint64_t alignment = 16;
             std::vector<JITValuePointer> vals = {param1, param2, param3};
-            auto start_address = function->packValues(vals, alignment);
+            auto start_address = function->packJITValues<16>(param1, param2, param3);
             int64_t memory_count = 0;
             std::vector<int64_t> memory_index;
             for (auto val : vals) {
               memory_index.push_back(memory_count);
-              memory_count += getJITTypeSize(val->getTypeTag());
-              memory_count = (memory_count + alignment) & ~(alignment - 1);
+              memory_count += getJITTypeSize(val->getValueTypeTag());
+              memory_count = (memory_count + alignment - 1) & ~(alignment - 1);
             }
-            auto isTrue = function->createVariable(JITTypeTag::BOOL, "isTrue");
-            isTrue = function->createConstant(JITTypeTag::BOOL, true);
+            auto isTrue = function->createVariable(JITTypeTag::BOOL, "isTrue", true);
 
             for (int i = 0; i < vals.size(); ++i) {
-              auto offset = function->createConstant(JITTypeTag::INT64, memory_index[i]);
+              auto offset = function->createLiteral(JITTypeTag::INT64, memory_index[i]);
               auto jit_value = (start_address + offset)
                                    ->castPointerSubType(vals[i]->getValueTypeTag());
               auto res = (**jit_value == vals[i]);

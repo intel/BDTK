@@ -264,8 +264,9 @@ JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   }
 }
 
-JITValuePointer LLVMJITFunction::packJITValues(const std::vector<JITValuePointer> vals,
-                                               const uint64_t alignment) {
+JITValuePointer LLVMJITFunction::packJITValuesImpl(
+    const std::vector<JITValuePointer>& vals,
+    const uint64_t alignment) {
   int64_t memory_count = 0;
   // record memory index address
   std::vector<int64_t> memory_index;
@@ -273,7 +274,7 @@ JITValuePointer LLVMJITFunction::packJITValues(const std::vector<JITValuePointer
     memory_index.push_back(memory_count);
     memory_count += getJITTypeSize(val->getValueTypeTag());
     // memory align
-    memory_count = (memory_count + alignment) & ~(alignment - 1);
+    memory_count = (memory_count + alignment - 1) & ~(alignment - 1);
   }
 
   llvm::AllocaInst* allocated_memory = ir_builder_->CreateAlloca(
@@ -289,8 +290,9 @@ JITValuePointer LLVMJITFunction::packJITValues(const std::vector<JITValuePointer
 
   // store JITValuePointer
   for (int i = 0; i < vals.size(); ++i) {
-    auto offset = createConstant(JITTypeTag::INT64, memory_index[i]);
-    auto memory_val = (start_val + offset)->castPointerSubType(vals[i]->getTypeTag());
+    auto offset = createLiteral(JITTypeTag::INT64, memory_index[i]);
+    auto memory_val =
+        (start_val + offset)->castPointerSubType(vals[i]->getValueTypeTag());
     **memory_val = *vals[i];
   }
   return makeJITValuePointer<LLVMJITValue>(JITTypeTag::POINTER,
