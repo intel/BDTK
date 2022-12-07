@@ -42,6 +42,16 @@ inline jitlib::JITTypeTag getJITTypeTag(const SQLTypes& st) {
       return jitlib::JITTypeTag::FLOAT;
     case kDOUBLE:
       return jitlib::JITTypeTag::DOUBLE;
+<<<<<<< HEAD
+=======
+    case kDATE:
+      return jitlib::JITTypeTag::INT32;
+    case kTIME:
+    case kTIMESTAMP:
+    case kINTERVAL_YEAR_MONTH:
+    case kINTERVAL_DAY_TIME:
+      return jitlib::JITTypeTag::INT64;
+>>>>>>> a15c1e9 (date add func support for nextgen)
     case kVARCHAR:
     case kCHAR:
     case kTEXT:

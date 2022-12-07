@@ -24,6 +24,52 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
+JITValuePointer codegenCastBetweenDateAndTime(JITFunction& func,
+                                              JITValue& operand_val,
+                                              const SQLTypeInfo& operand_ti,
+                                              const SQLTypeInfo& ti) {
+  const int64_t operand_width = getTypeBytes(operand_ti.get_type());
+  const int64_t target_width = getTypeBytes(ti.get_type());
+  int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
+      abs(operand_ti.get_dimension() - ti.get_dimension()));
+  JITValuePointer cast_scaled =
+      func.createConstant(JITTypeTag::INT64, dim_scaled * kSecondsInOneDay);
+  if (target_width == operand_width) {
+    return JITValuePointer(&operand_val);
+  } else if (target_width > operand_width) {
+    JITValuePointer cast_val =
+        operand_val.castJITValuePrimitiveType(getJITTypeTag(ti.get_type()));
+    return JITValuePointer(cast_val * cast_scaled);
+  } else {
+    JITValuePointer trunc_val = func.emitRuntimeFunctionCall(
+        "floor_div_lhs",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                  .params_vector = {&operand_val, cast_scaled.get()}});
+    return trunc_val->castJITValuePrimitiveType(getJITTypeTag(ti.get_type()));
+  }
+}
+
+JITValuePointer codegenCastBetweenTime(JITFunction& func,
+                                       JITValue& operand_val,
+                                       const SQLTypeInfo& operand_ti,
+                                       const SQLTypeInfo& target_ti) {
+  const auto operand_dimen = operand_ti.get_dimension();
+  const auto target_dimen = target_ti.get_dimension();
+  JITValuePointer cast_scaled = func.createConstant(
+      JITTypeTag::INT64,
+      DateTimeUtils::get_timestamp_precision_scale(abs(operand_dimen - target_dimen)));
+  if (operand_dimen == target_dimen) {
+    return JITValuePointer(&operand_val);
+  } else if (operand_dimen < target_dimen) {
+    return JITValuePointer(operand_val * cast_scaled);
+  } else {
+    return func.emitRuntimeFunctionCall(
+        "floor_div_lhs",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                  .params_vector = {&operand_val, cast_scaled.get()}});
+  }
+}
+
 JITExprValue& UOper::codegen(JITFunction& func) {
   if (auto& expr_var = get_expr_value()) {
     return expr_var;
@@ -54,6 +100,7 @@ JITExprValue& UOper::codegen(JITFunction& func) {
   }
 }
 
+<<<<<<< HEAD
 JITExprValue& UOper::codegenIsNull(JITFunction& func,
                                    Analyzer::Expr* operand,
                                    SQLOps optype) {
@@ -158,9 +205,11 @@ JITValuePointer codegenCastBetweenTime(JITFunction& func,
   }
 }
 
+=======
+>>>>>>> a15c1e9 (date add func support for nextgen)
 JITValuePointer UOper::codegenCastFunc(JITFunction& func, JITValue& operand_val) {
-  const SQLTypeInfo& ti = this->get_type_info();
-  const SQLTypeInfo& operand_ti = this->get_operand()->get_type_info();
+  const SQLTypeInfo& ti = get_type_info();
+  const SQLTypeInfo& operand_ti = get_operand()->get_type_info();
   JITTypeTag ti_jit_tag = getJITTypeTag(ti.get_type());
   if (operand_ti.is_string() || ti.is_string()) {
     UNIMPLEMENTED();

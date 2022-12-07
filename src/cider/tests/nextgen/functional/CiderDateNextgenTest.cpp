@@ -34,7 +34,7 @@ using namespace cider::exec::nextgen;
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
-class CiderCastNextgenTest : public ::testing::Test {
+class CiderDateNextgenTest : public ::testing::Test {
  public:
   void executeTest(ArrowArray* array,
                    const std::string& create_ddl,
@@ -93,75 +93,18 @@ class CiderCastNextgenTest : public ::testing::Test {
   }
 };
 
-TEST_F(CiderCastNextgenTest, castFloatTest) {
-  ArrowArray* array = nullptr;
-  ArrowSchema* schema = nullptr;
-  std::vector<float> col_float{1.1, 2.1, 3.1, 4.1, 5.1};
-  std::vector<double> col_double{1.1, 1.9, 2.8, 3.7, 4.9};
-  std::vector<int32_t> col_int{1, 2, 3, 4, 5};
-  const int32_t row_num = 5;
-  std::vector<bool> vec_null(row_num, false);
-  std::tie(schema, array) =
-      ArrowArrayBuilder()
-          .setRowNum(row_num)
-          .addColumn<float>("col_float", CREATE_SUBSTRAIT_TYPE(Fp32), col_float, vec_null)
-          .addColumn<double>(
-              "col_double", CREATE_SUBSTRAIT_TYPE(Fp64), col_double, vec_null)
-          .addColumn<int32_t>("col_int", CREATE_SUBSTRAIT_TYPE(I32), col_int, vec_null)
-          .build();
-
-  std::string ddl =
-      "CREATE TABLE test(col_float FLOAT, col_double DOUBLE, col_int INTEGER);";
-
-  executeTest(array,
-              ddl,
-              "select cast(col_float as int), cast(col_double as int) from test",
-              {row_num * sizeof(int32_t), row_num * sizeof(int32_t)},
-              {reinterpret_cast<int8_t*>(col_int.data()),
-               reinterpret_cast<int8_t*>(col_int.data())});
-}
-
-TEST_F(CiderCastNextgenTest, castIntegerTest) {
-  ArrowArray* array = nullptr;
-  ArrowSchema* schema = nullptr;
-  std::vector<int8_t> col_tinyint{1, 2, 3, 4, 5};
-  std::vector<int64_t> col_bigint{1, 2, 3, 4, 5};
-  std::vector<int32_t> col_int{1, 2, 3, 4, 5};
-  const int32_t row_num = 5;
-  std::vector<bool> vec_null(row_num, false);
-  std::tie(schema, array) =
-      ArrowArrayBuilder()
-          .setRowNum(row_num)
-          .addColumn<int8_t>(
-              "col_tinyint", CREATE_SUBSTRAIT_TYPE(I8), col_tinyint, vec_null)
-          .addColumn<int64_t>(
-              "col_bigint", CREATE_SUBSTRAIT_TYPE(I64), col_bigint, vec_null)
-          .addColumn<int32_t>("col_int", CREATE_SUBSTRAIT_TYPE(I32), col_int, vec_null)
-          .build();
-
-  std::string ddl =
-      "CREATE TABLE test(col_tinyint TINYINT, col_bigint BIGINT, col_int INTEGER);";
-
-  executeTest(
-      array,
-      ddl,
-      "select cast(col_tinyint as int), cast(col_bigint as int), cast(col_int as bigint) "
-      "from test",
-      {row_num * sizeof(int32_t), row_num * sizeof(int32_t), row_num * sizeof(int64_t)},
-      {reinterpret_cast<int8_t*>(col_int.data()),
-       reinterpret_cast<int8_t*>(col_int.data()),
-       reinterpret_cast<int8_t*>(col_bigint.data())});
-}
-
-TEST_F(CiderCastNextgenTest, castDateTest) {
+TEST_F(CiderDateNextgenTest, DateTimeTest) {
   ArrowArray* array = nullptr;
   ArrowSchema* schema = nullptr;
   const int64_t cast_scaled = 86400L * 1000 * 1000;
   const int32_t row_num = 5;
   std::vector<int32_t> col_date{-1, -2, -3, 4, 5};
+  std::vector<int32_t> col_date_expected{0, -1, -2, 5, 6};
   std::vector<int64_t> col_timestamp(row_num);
+  std::vector<int64_t> col_timestamp_expected(row_num);
   for (int i = 0; i < row_num; i++) {
     col_timestamp[i] = col_date[i] * cast_scaled;
+    col_timestamp_expected[i] = col_date_expected[i] * cast_scaled;
   }
   std::vector<bool> vec_null(row_num, false);
   std::tie(schema, array) =
@@ -174,14 +117,15 @@ TEST_F(CiderCastNextgenTest, castDateTest) {
 
   std::string ddl = "CREATE TABLE test(col_date DATE, col_timestamp TIMESTAMP);";
 
-  executeTest(array,
-              ddl,
-              "select cast(col_date as TIMESTAMP), cast(col_timestamp as DATE) from test",
-              {row_num * sizeof(int64_t), row_num * sizeof(int32_t)},
-              {
-                  reinterpret_cast<int8_t*>(col_timestamp.data()),
-                  reinterpret_cast<int8_t*>(col_date.data()),
-              });
+  executeTest(
+      array,
+      ddl,
+      "select col_date + interval '1' day, col_timestamp + interval '1' day from test",
+      {row_num * sizeof(int32_t), row_num * sizeof(int64_t)},
+      {
+          reinterpret_cast<int8_t*>(col_date_expected.data()),
+          reinterpret_cast<int8_t*>(col_timestamp_expected.data()),
+      });
 }
 
 int main(int argc, char** argv) {

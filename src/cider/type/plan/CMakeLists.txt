@@ -24,5 +24,6 @@ set(cider_type_plan_source_files
     UnaryExpr.cpp
     ColumnExpr.cpp
     ConstantExpr.cpp
-    LikeExpr.cpp)
+    LikeExpr.cpp
+    DateExpr.cpp)
 add_library(cider_type_plan ${cider_type_plan_source_files})
