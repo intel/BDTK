@@ -24,10 +24,11 @@
 #include "CiderOperator.h"
 #include "CiderPipelineOperator.h"
 #include "cider/processor/BatchProcessor.h"
+#include "velox/exec/Operator.h"
 
 namespace facebook::velox::plugin {
 
-class CiderPipelineOperator : public CiderOperator {
+class CiderPipelineOperator : public exec::Operator {
  public:
   CiderPipelineOperator(int32_t operatorId,
                         exec::DriverCtx* driverCtx,
@@ -43,7 +44,19 @@ class CiderPipelineOperator : public CiderOperator {
 
   RowVectorPtr getOutput() override;
 
+  void noMoreInput() override;
+
  private:
   cider::processor::BatchProcessorPtr batchProcessor_;
+
+  bool finished_{false};
+
+  const std::shared_ptr<const CiderPlanNode> ciderPlanNode_;
+
+  // Future for synchronizing with other Drivers of the same pipeline.
+  ContinueFuture future_{ContinueFuture::makeEmpty()};
+
+  const std::shared_ptr<CiderAllocator> allocator_;
 };
+
 }  // namespace facebook::velox::plugin

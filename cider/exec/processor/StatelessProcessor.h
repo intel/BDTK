@@ -22,20 +22,16 @@
 #ifndef CIDER_STATELESS_PROCESSOR_H
 #define CIDER_STATELESS_PROCESSOR_H
 
-#include "cider/processor/BatchProcessor.h"
+#include "DefaultBatchProcessor.h"
 
 namespace cider::processor {
 
-class StatelessProcessor : public BatchProcessor {
+class StatelessProcessor : public DefaultBatchProcessor {
  public:
-  StatelessProcessor(const ::substrait::Plan& plan,
+  StatelessProcessor(const plan::SubstraitPlanPtr& plan,
                      const BatchProcessorContextPtr& context);
 
-  void processNextBatch(std::shared_ptr<CiderBatch> batch) override;
-
   std::shared_ptr<CiderBatch> getResult() override;
-
-  BatchProcessorState getState() override;
 };
 
 }  // namespace cider::processor

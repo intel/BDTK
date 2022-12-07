@@ -22,51 +22,45 @@
 #ifndef CIDER_BATCH_PROCESSOR_H
 #define CIDER_BATCH_PROCESSOR_H
 
+#include <memory>
 #include "BatchProcessorContext.h"
-#include "cider/CiderBatch.h"
+#include "cider/processor/JoinHashTableBuilder.h"
+#include "include/cider/batch/CiderBatch.h"
 #include "substrait/plan.pb.h"
 
 namespace cider::processor {
 
 enum class BatchProcessorState {
   kRunning,
-  kWaitForJoinBuild,
+  kWaiting,
   kFinished,
 };
 
 class BatchProcessor {
  public:
-  virtual ~BatchProcessor() = default;
+  virtual BatchProcessorContextPtr context() = 0;
+  /// Adds an input batch to the batchProcessor.  This method will only be called if
+  /// getState return kRunning.
+  virtual void processNextBatch(std::shared_ptr<CiderBatch> batch) = 0;
 
-  BatchProcessorContextPtr getContext() const { return context_; }
+  /// Gets an output batch from the batchProcessor.  return null If no output data.
+  virtual std::shared_ptr<CiderBatch> getResult() = 0;
 
-  virtual void processNextBatch(std::shared_ptr<CiderBatch> batch);
+  /// Notifies the batchProcessor that no more batch will be added and the
+  /// batchProcessor should finish processing and flush results.
+  virtual void finish() = 0;
 
-  virtual std::shared_ptr<CiderBatch> getResult();
+  virtual BatchProcessorState getState() = 0;
 
-  virtual void finish(){};
-
-  virtual BatchProcessorState getState();
-
-  virtual bool isFinished() { return BatchProcessorState::kFinished == state_; }
-
-  static std::shared_ptr<BatchProcessor> make(const ::substrait::Plan& plan,
-                                              const BatchProcessorContextPtr& context);
-
- protected:
-  BatchProcessor(const ::substrait::Plan& plan, const BatchProcessorContextPtr& context);
-
-  const ::substrait::Plan plan_;
-
-  const BatchProcessorContextPtr context_;
-
-  BatchProcessorState state_{BatchProcessorState::kRunning};
-
-  std::shared_ptr<CiderBatch> inputBatch_;
+  virtual void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hasTable) = 0;
 };
 
 using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
 
+/// Factory method to create an instance of batchProcessor
+std::shared_ptr<BatchProcessor> makeBatchProcessor(
+    const ::substrait::Plan& plan,
+    const BatchProcessorContextPtr& context);
 }  // namespace cider::processor
 
 #endif  // CIDER_BATCH_PROCESSOR_H

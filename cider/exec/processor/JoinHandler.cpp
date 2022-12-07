@@ -19,22 +19,27 @@
  * under the License.
  */
 
-#ifndef CIDER_STATEFUL_PROCESSOR_H
-#define CIDER_STATEFUL_PROCESSOR_H
-
-#include "DefaultBatchProcessor.h"
-#include "exec/plan/substrait/SubstraitPlan.h"
+#include "JoinHandler.h"
 
 namespace cider::processor {
 
-class StatefulProcessor : public DefaultBatchProcessor {
- public:
-  StatefulProcessor(const plan::SubstraitPlanPtr& plan,
-                    const BatchProcessorContextPtr& context);
+void HashProbeHandler::onState(BatchProcessorState state) {
+  if (BatchProcessorState::kWaiting == state) {
+    const auto& hashBuildTableSupplier =
+        batchProcessor_->context()->getHashBuildTableSupplier();
+    if (hashBuildTableSupplier) {
+      auto hashBuildResult = hashBuildTableSupplier();
+      if (hashBuildResult.has_value()) {
+        batchProcessor_->feedHashBuildTable(hashBuildResult.value().table);
+      }
+    }
+  }
+}
 
-  std::shared_ptr<CiderBatch> getResult() override;
-};
+std::shared_ptr<CiderBatch> HashProbeHandler::onProcessBatch(
+    std::shared_ptr<CiderBatch> batch) {
+  // TODO: spill rows if the corresponding partition was spilled in build-side
+  return batch;
+}
 
 }  // namespace cider::processor
-
-#endif  // CIDER_STATEFUL_PROCESSOR_H

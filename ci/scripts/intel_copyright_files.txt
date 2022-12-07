@@ -20,12 +20,13 @@ cider/exec/plan/parser/*Context*
 cider/exec/plan/parser/Plan*
 cider/exec/plan/parser/*Visitor*
 cider/exec/plan/parser/Substrait*
+cider/exec/plan/substrait/*
 cider/exec/plan/parser/ConverterHelper.*
 cider/exec/plan/validator/*
 cider/exec/nextgen/*
+cider/exec/processor/*
 cider/type/plan/*Expr.cpp
 cider/function/FunctionLookupEngine.*
 cider/function/SubstraitFunctionCiderMappings.h
 cider/function/substrait/*
-cider/exec/processor/*
 Makefile

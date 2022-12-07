@@ -19,22 +19,32 @@
  * under the License.
  */
 
-#ifndef CIDER_STATEFUL_PROCESSOR_H
-#define CIDER_STATEFUL_PROCESSOR_H
+#ifndef CIDER_DEFAULT_JOIN_HASH_TABLE_BUILDER_H
+#define CIDER_DEFAULT_JOIN_HASH_TABLE_BUILDER_H
 
-#include "DefaultBatchProcessor.h"
-#include "exec/plan/substrait/SubstraitPlan.h"
+#include <memory>
+#include "cider/processor/BatchProcessorContext.h"
+#include "cider/processor/JoinHashTableBuilder.h"
+#include "exec/module/batch/ArrowABI.h"
 
 namespace cider::processor {
 
-class StatefulProcessor : public DefaultBatchProcessor {
+class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
  public:
-  StatefulProcessor(const plan::SubstraitPlanPtr& plan,
-                    const BatchProcessorContextPtr& context);
+  DefaultJoinHashTableBuilder(const ::substrait::JoinRel& joinRel,
+                              const std::shared_ptr<JoinHashTableBuildContext>& context)
+      : joinRel_(joinRel), context_(context){};
 
-  std::shared_ptr<CiderBatch> getResult() override;
+  void appendBatch(std::shared_ptr<CiderBatch> batch) override;
+
+  std::unique_ptr<JoinHashTable> build() override;
+
+ private:
+  ::substrait::JoinRel joinRel_;
+  std::shared_ptr<JoinHashTableBuildContext> context_;
+  std::unique_ptr<JoinHashTable> hashTable_;
 };
 
 }  // namespace cider::processor
 
-#endif  // CIDER_STATEFUL_PROCESSOR_H
+#endif  // CIDER_DEFAULT_JOIN_HASH_TABLE_BUILDER_H
