@@ -93,23 +93,9 @@ class CiderExprNextgenTest : public ::testing::Test {
 
     // Execution
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
-
-    std::vector<int> vec0{1, 3, 2, 1, 6};
-    std::vector<int> vec1{1, 2, 3, 4, 5};
-    std::vector<bool> vec_null{false, false, true, false, true};
-
-    ArrowArray* array = nullptr;
-    ArrowSchema* schema = nullptr;
-    std::tie(schema, array) =
-        ArrowArrayBuilder()
-            .setRowNum(5)
-            .addColumn<int>("col_int_a", CREATE_SUBSTRAIT_TYPE(I32), vec0, vec_null)
-            .addColumn<int>("col_int_b", CREATE_SUBSTRAIT_TYPE(I32), vec1, vec_null)
-            .build();
-
-    query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
-
+    query_func((int8_t*)runtime_ctx.get(), (int8_t*)array_);
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
+
     EXPECT_EQ(output_batch_array->length, expected_length);
     auto check_array = [](ArrowArray* array, size_t expect_len) {
       EXPECT_EQ(array->length, expect_len);
@@ -121,9 +107,54 @@ class CiderExprNextgenTest : public ::testing::Test {
     };
     check_array(output_batch_array->children[0], expected_length);
   }
+
+ public:
+  ArrowArray* array_ = nullptr;
 };
 
-TEST_F(CiderExprNextgenTest, isNullTest) {
+TEST_F(CiderExprNextgenTest, logicalOpTest) {
+  std::vector<bool> vec0{true, true, true, false, true, true, false, false};
+  std::vector<bool> vec1{true, true, true, false, false, false, true, true};
+  std::vector<int32_t> vec2{1, 2, 3, 4, 5, 6, 7, 8};
+  std::vector<bool> vec_null0{false, true, true, false, true, false, false, false};
+  std::vector<bool> vec_null1{false, true, false, true, false, false, true, false};
+  std::vector<bool> vec_null2{false, false, false, false, false, false, false, false};
+
+  // AND:                     true,  NULL, NULL, false, false, false, false, false
+  // OR:                      true,  NULL, true, NULL,  NULL, true, NULL, true
+  ArrowSchema* schema = nullptr;
+  std::tie(schema, array_) =
+      ArrowArrayBuilder()
+          .setRowNum(8)
+          .addBoolColumn<bool>("col_int_a", vec0, vec_null0)
+          .addBoolColumn<bool>("col_int_b", vec1, vec_null1)
+          .addColumn<int>("col_int_c", CREATE_SUBSTRAIT_TYPE(I32), vec2, vec_null2)
+          .build();
+  executeTest(
+      "CREATE TABLE test(col_int_a BOOLEAN, col_int_b BOOLEAN, col_int_c INTEGER);",
+      "select col_int_a from test",
+      8);
+  executeTest(
+      "CREATE TABLE test(col_int_a BOOLEAN, col_int_b BOOLEAN, col_int_c INTEGER);",
+      "select col_int_c from test where col_int_a and col_int_b",
+      1);
+  executeTest(
+      "CREATE TABLE test(col_int_a BOOLEAN, col_int_b BOOLEAN, col_int_c INTEGER);",
+      "select col_int_c from test where col_int_a or col_int_b",
+      4);
+}
+
+TEST_F(CiderExprNextgenTest, isNullAndDistinctFromTest) {
+  std::vector<int> vec0{1, 3, 2, 1, 6};
+  std::vector<int> vec1{1, 2, 3, 4, 5};
+  std::vector<bool> vec_null{false, false, true, false, true};
+  ArrowSchema* schema = nullptr;
+  std::tie(schema, array_) =
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addColumn<int>("col_int_a", CREATE_SUBSTRAIT_TYPE(I32), vec0, vec_null)
+          .addColumn<int>("col_int_b", CREATE_SUBSTRAIT_TYPE(I32), vec1, vec_null)
+          .build();
   executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
               "select col_int_b from test where col_int_a IS NULL",
               2);
@@ -138,9 +169,6 @@ TEST_F(CiderExprNextgenTest, isNullTest) {
       "CREATE TABLE test(col_int_a INTEGER NOT NULL, col_int_b INTEGER NOT NULL);",
       "select col_int_b from test where col_int_a IS NOT NULL",
       5);
-}
-
-TEST_F(CiderExprNextgenTest, isDistinctFromTest) {
   executeTest("CREATE TABLE test(col_int_a INTEGER, col_int_b INTEGER);",
               "is_distinct_from.json",
               2,

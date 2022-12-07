@@ -36,6 +36,7 @@ class ColumnReader {
 
   void read() {
     switch (expr_->get_type_info().get_type()) {
+      case kBOOLEAN:
       case kTINYINT:
       case kSMALLINT:
       case kINT:
@@ -56,11 +57,7 @@ class ColumnReader {
     utils::FixSizeJITExprValue fixsize_values(buffers);
 
     auto& func = batch->getParentJITFunction();
-    JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
-    // data buffer decoder
-    auto data_pointer = fixsize_values.getValue()->castPointerSubType(tag);
-    auto row_data = data_pointer[index_];
-
+    auto row_data = getFixSizeRowData(func, fixsize_values);
     if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createConstant(JITTypeTag::BOOL, false), row_data);
     } else {
@@ -73,6 +70,24 @@ class ColumnReader {
               .params_vector = {{fixsize_values.getNull().get(), index_.get()}}});
 
       expr_->set_expr_value(row_null_data, row_data);
+    }
+  }
+
+  JITValuePointer getFixSizeRowData(JITFunction& func,
+                                    utils::FixSizeJITExprValue& fixsize_val) {
+    if (expr_->get_type_info().get_type() == kBOOLEAN) {
+      auto row_data = func.emitRuntimeFunctionCall(
+          "check_bit_vector_set",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::BOOL,
+              .params_vector = {{fixsize_val.getValue().get(), index_.get()}}});
+      return row_data;
+    } else {
+      JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
+      // data buffer decoder
+      auto data_pointer = fixsize_val.getValue()->castPointerSubType(tag);
+      auto row_data = data_pointer[index_];
+      return row_data;
     }
   }
 
