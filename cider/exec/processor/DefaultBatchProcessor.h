@@ -54,7 +54,7 @@ class DefaultBatchProcessor : public BatchProcessor,
 
   BatchProcessorState state_{BatchProcessorState::kRunning};
 
-  ArrowArray* inputBatch_;
+  std::shared_ptr<CiderBatch> inputBatch_;
 
   bool noMoreBatch_{false};
 
