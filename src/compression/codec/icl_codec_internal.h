@@ -48,4 +48,4 @@ std::unique_ptr<IclCompressionCodec> MakeQatCodec(
 }  // namespace codec
 }  // namespace icl
 
-#endif // _ICL_COMPRESSION_CODEC_ICL_CODEC_INTERNAL_H_
+#endif  // _ICL_COMPRESSION_CODEC_ICL_CODEC_INTERNAL_H_

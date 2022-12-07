@@ -60,4 +60,4 @@ class IclCompressionCodec {
 }  // namespace codec
 }  // namespace icl
 
-#endif // _ICL_COMPRESSION_CODEC_ICL_CODEC_H_
+#endif  // _ICL_COMPRESSION_CODEC_ICL_CODEC_H_
