@@ -50,7 +50,8 @@ void CiderPipelineOperator::addInput(RowVectorPtr input) {
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(
     facebook::velox::ContinueFuture* future) {
   auto batchProcessState = batchProcessor_->getState();
-  if (cider::processor::BatchProcessorState::kWaiting == batchProcessState) {
+  if (cider::processor::BatchProcessorState::kWaiting == batchProcessState &&
+      ciderPlanNode_->isKindOf(CiderPlanNodeKind::kJoin)) {
     return exec::BlockingReason::kWaitForJoinBuild;
   }
   if (cider::processor::BatchProcessorState::kFinished == batchProcessState) {
@@ -92,7 +93,8 @@ CiderPipelineOperator::CiderPipelineOperator(
                ciderPlanNode->outputType(),
                operatorId,
                ciderPlanNode->id(),
-               "CiderOp") {
+               "CiderOp")
+    , ciderPlanNode_(ciderPlanNode) {
   auto context = std::make_shared<cider::processor::BatchProcessorContext>(
       std::make_shared<PoolAllocator>(operatorCtx_->pool()));
 

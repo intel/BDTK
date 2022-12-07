@@ -48,7 +48,10 @@ class CiderPipelineOperator : public exec::Operator {
 
  private:
   cider::processor::BatchProcessorPtr batchProcessor_;
+
   bool finished_{false};
+
+  const std::shared_ptr<const CiderPlanNode> ciderPlanNode_;
 
   // Future for synchronizing with other Drivers of the same pipeline.
   ContinueFuture future_{ContinueFuture::makeEmpty()};

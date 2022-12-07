@@ -33,7 +33,7 @@ class JoinHashTable;
 class JoinHashTableBuildContext {
  public:
   JoinHashTableBuildContext(const std::shared_ptr<CiderAllocator>& allocator)
-      : allocator_(allocator){}
+      : allocator_(allocator) {}
 
   std::shared_ptr<CiderAllocator> allocator() { return allocator_; }
 
