@@ -40,12 +40,13 @@ from
         lineitem
 limit 10;
 
-select
-        *
-from
-        lineitem
-offset 5
-limit 10;
+-- disable this since presto native not support offset
+-- select
+--         *
+-- from
+--         lineitem
+-- offset 5
+-- limit 10;
 
 --top-n
 select
@@ -76,3 +77,26 @@ order by
         orderkey nulls first,
         shipmode desc nulls last
 limit 10;
+
+
+select
+        *
+from
+        lineitem
+where
+        orderkey > 15
+order by
+        partkey + 1
+limit
+        10;
+
+elect
+*
+from
+        lineitem
+where
+        orderkey > 15
+order by
+        1
+limit
+        10;
