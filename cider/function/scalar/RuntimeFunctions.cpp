@@ -1457,8 +1457,8 @@ extern "C" ALWAYS_INLINE void clear_bit_vector(uint8_t* bit_vector, uint64_t ind
 
 // For temporary use
 extern "C" ALWAYS_INLINE void set_null_vector_bit(uint8_t* bit_vector,
-                                              uint64_t index,
-                                              bool is_null) {
+                                                  uint64_t index,
+                                                  bool is_null) {
   is_null ? CiderBitUtils::clearBitAt(bit_vector, index)
           : CiderBitUtils::setBitAt(bit_vector, index);
 }
