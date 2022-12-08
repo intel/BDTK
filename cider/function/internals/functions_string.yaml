@@ -1367,9 +1367,11 @@ scalar_functions:
       - args:
           - value: "varchar<L1>"
             name: "input"
+            description: The input string.
           - value: "varchar<L2>"
             name: "separator"
             description: A character used for splitting the string.
+        return: "varchar<L1>"
       - args:
           - value: "string"
             name: "input"
@@ -1431,6 +1433,7 @@ scalar_functions:
           - value: "i64"
             name: "limit"
             description: Must be positive. Returns an array of size at most 'limit', and the last element in array contains everything left in the string.
+        return: "string"
   -
     name: regexp_match_substring
     description: >-
@@ -1444,20 +1447,17 @@ scalar_functions:
       specified using the `position` argument. Specifying `1` means to search for matches
       starting at the first character of the input string, `2` means the second character, and so
       on. The `position` argument should be a positive non-zero integer.
-
       The `case_sensitivity` option specifies case-sensitive or case-insensitive matching.
       Enabling the `multiline` option will treat the input string as multiple lines. This makes
       the `^` and `$` characters match at the beginning and end of any line, instead of just the
       beginning and end of the input string. Enabling the `dotall` option makes the `.` character
       match line terminator characters in a string.
-
       Behavior is undefined if the regex fails to compile, the occurrence value is out of range, or
       the position value is out of range.
     impls:
       - args:
           - value: "varchar<L1>"
             name: "input"
-            description: The input string.
           - value: "varchar<L2>"
             name: "pattern"
           - value: i64
@@ -1472,6 +1472,9 @@ scalar_functions:
           dotall:
             values: [ DOTALL_DISABLED, DOTALL_ENABLED ]
         return: "varchar<L1>"
+      - args:
+          - value: "string"
+            name: "input"
           - value: "string"
             name: "pattern"
           - value: i64
