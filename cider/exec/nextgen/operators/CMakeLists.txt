@@ -26,5 +26,6 @@ add_opnode(ProjectNode)
 add_opnode(ArrowSourceNode)
 add_opnode(ColumnToRowNode)
 add_opnode(RowToColumnNode)
+add_opnode(HashJoinNode)
 
 add_library(cider_operators OBJECT ${OPERATORS_SOURCE})

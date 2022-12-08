@@ -72,4 +72,36 @@ extern "C" ALWAYS_INLINE int8_t* get_under_level_buffer_ptr(int8_t* buffer) {
   return batch_ptr->getBuffer();
 }
 
+extern "C" ALWAYS_INLINE int8_t* look_up_value_by_key(int8_t* hashtable, int8_t* keys) {
+  // TODO look_up_value_by_key function
+  return nullptr;
+}
+
+extern "C" ALWAYS_INLINE int64_t get_join_res_len(int8_t* vec_pointer) {
+  auto vec = reinterpret_cast<std::vector<int8_t>*>(vec_pointer);
+  return vec->size();
+}
+
+extern "C" ALWAYS_INLINE int8_t* extract_join_res_array(int8_t* vec_pointer,
+                                                        int64_t index) {
+  auto vec = reinterpret_cast<
+      std::vector<std::pair<cider::exec::nextgen::context::Batch*, int64_t>>*>(
+      vec_pointer);
+  cider::exec::nextgen::context::Batch* batch;
+  int64_t row_id;
+  std::tie(batch, row_id) = vec->at(index);
+
+  return reinterpret_cast<int8_t*>(batch->getArray());
+}
+
+extern "C" ALWAYS_INLINE int64_t extract_join_row_id(int8_t* vec_pointer, int64_t index) {
+  auto vec = reinterpret_cast<
+      std::vector<std::pair<cider::exec::nextgen::context::Batch*, int64_t>>*>(
+      vec_pointer);
+  cider::exec::nextgen::context::Batch* batch;
+  int64_t row_id;
+  std::tie(batch, row_id) = vec->at(index);
+
+  return row_id;
+}
 #endif  // NEXTGEN_CONTEXT_CONTEXTRUNTIMEFUNCTIONS_H

@@ -59,7 +59,7 @@ class ColumnReader {
     auto& func = batch->getParentJITFunction();
     auto row_data = getFixSizeRowData(func, fixsize_values);
     if (expr_->get_type_info().get_notnull()) {
-      expr_->set_expr_value(func.createConstant(JITTypeTag::BOOL, false), row_data);
+      expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), row_data);
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.

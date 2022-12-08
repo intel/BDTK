@@ -175,5 +175,70 @@ void setArrowArrayLength(jitlib::JITValuePointer& arrow_array,
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
                                 .params_vector = {arrow_array.get(), len.get()}});
 }
+
+jitlib::JITValuePointer lookUpValueByKey(jitlib::JITValuePointer& hash_table,
+                                         jitlib::JITValuePointer& keys) {
+  CHECK(hash_table->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(keys->getValueTypeTag() == JITTypeTag::POINTER);
+
+  auto& func = hash_table->getParentJITFunction();
+
+  auto ret = func.emitRuntimeFunctionCall(
+      "look_up_value_by_key",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {hash_table.get(), keys.get()}});
+
+  ret->setName("join_probe_results");
+  return ret;
+}
+
+jitlib::JITValuePointer getJoinResLength(jitlib::JITValuePointer& join_res) {
+  CHECK(join_res->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(join_res->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = join_res->getParentJITFunction();
+
+  auto ret = func.emitRuntimeFunctionCall(
+      "get_join_res_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {join_res.get()}});
+
+  ret->setName("join_results_length");
+  return ret;
+}
+
+jitlib::JITValuePointer getJoinResArray(jitlib::JITValuePointer& join_res,
+                                        jitlib::JITValuePointer& index) {
+  CHECK(join_res->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(join_res->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = join_res->getParentJITFunction();
+
+  auto ret = func.emitRuntimeFunctionCall(
+      "extract_join_res_array",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {join_res.get(), index.get()}});
+
+  ret->setName("join_results_array");
+  return ret;
+}
+
+jitlib::JITValuePointer getJoinResRowId(jitlib::JITValuePointer& join_res,
+                                        jitlib::JITValuePointer& index) {
+  CHECK(join_res->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(join_res->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = join_res->getParentJITFunction();
+
+  auto ret = func.emitRuntimeFunctionCall(
+      "extract_join_row_id",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {join_res.get(), index.get()}});
+
+  ret->setName("join_results_row_id");
+  return ret;
+}
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context

@@ -119,6 +119,17 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
 jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
                                                  int64_t index,
                                                  jitlib::JITValuePointer& bytes);
+
+jitlib::JITValuePointer lookUpValueByKey(jitlib::JITValuePointer& hash_table,
+                                         jitlib::JITValuePointer& keys);
+
+jitlib::JITValuePointer getJoinResLength(jitlib::JITValuePointer& join_res);
+
+jitlib::JITValuePointer getJoinResArray(jitlib::JITValuePointer& join_res,
+                                        jitlib::JITValuePointer& index);
+
+jitlib::JITValuePointer getJoinResRowId(jitlib::JITValuePointer& join_res,
+                                        jitlib::JITValuePointer& index);
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context
 

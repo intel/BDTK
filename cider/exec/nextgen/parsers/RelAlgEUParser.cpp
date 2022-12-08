@@ -23,6 +23,7 @@
 
 #include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
+#include "exec/nextgen/operators/HashJoinNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "util/Logger.h"
 
@@ -80,6 +81,9 @@ class InputAnalyzer {
     pipeline_.insert(pipeline_.begin(), createOpNode<ArrowSourceNode>(input_exprs_));
   }
 
+  ExprPtrVector& getInputExprs() { return input_exprs_; };
+  const std::vector<InputColDescriptor>& getInputDesc() { return input_desc_; };
+
  private:
   void traverse(ExprPtr* curr) {
     if (auto col_var_ptr = dynamic_cast<Analyzer::ColumnVar*>(curr->get())) {
@@ -116,6 +120,31 @@ static void insertSourceNode(const RelAlgExecutionUnit& eu, OpPipeline& pipeline
 
   InputAnalyzer analyzer(input_desc, pipeline);
   analyzer.run();
+
+  ExprPtrVector join_quals;
+  for (auto& join_condition : eu.join_quals) {
+    for (auto& join_expr : join_condition.quals) {
+      join_quals.push_back(join_expr);
+    }
+  }
+
+  ExprPtrVector left_exprs, right_exprs;
+  auto input_exprs = analyzer.getInputExprs();
+  for (size_t i = 0; i < input_exprs.size(); ++i) {
+    if (nullptr == input_exprs[i]) {
+      LOG(FATAL) << "Input column expr missed. Column descriptor = "
+                 << analyzer.getInputDesc()[i].toString();
+    }
+    auto input = static_cast<Analyzer::ColumnVar*>(input_exprs[i].get());
+    // TODO:: how to differentiate build and probe table
+    input->get_table_id() == 0 ? left_exprs.push_back(input_exprs[i])
+                               : right_exprs.push_back(input_exprs[i]);
+  }
+
+  pipeline.insert(pipeline.begin(), createOpNode<ArrowSourceNode>(left_exprs));
+  if (right_exprs.size() > 0) {
+    pipeline.push_back(createOpNode<HashJoinNode>(left_exprs, right_exprs, join_quals));
+  }
 }
 
 OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
