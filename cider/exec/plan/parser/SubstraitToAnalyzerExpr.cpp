@@ -891,8 +891,10 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       return makeExpr<Analyzer::SplitPartStringOper>(args);
     case SqlStringOpKind::REGEXP_REPLACE:
       return makeExpr<Analyzer::RegexpReplaceStringOper>(args);
-      //    case SqlStringOpKind::REGEXP_SUBSTR:
-      //      return makeExpr<Analyzer::RegexpSubstrStringOper>(args);
+    case SqlStringOpKind::REGEXP_SUBSTR:
+      return makeExpr<Analyzer::RegexpSubstrStringOper>(args);
+    case SqlStringOpKind::REGEXP_EXTRACT:
+      return makeExpr<Analyzer::RegexpExtractStringOper>(args);
       //    case SqlStringOpKind::JSON_VALUE:
       //      return makeExpr<Analyzer::JsonValueStringOper>(args);
       //    case SqlStringOpKind::BASE64_ENCODE:
@@ -975,6 +977,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     case OpSupportExprType::kREGEXP_REPLACE_OPER:
     case OpSupportExprType::kSPLIT_PART_OPER:
     case OpSupportExprType::kSTRING_SPLIT_OPER:
+    case OpSupportExprType::kREGEXP_EXTRACT_OPER:
+    case OpSupportExprType::kREGEXP_SUBSTR_OPER:
       return buildStrExpr(s_scalar_function, function_map, function, expr_map_ptr);
     case OpSupportExprType::kLIKE_EXPR:
       return buildLikeExpr(s_scalar_function, function_map, expr_map_ptr);

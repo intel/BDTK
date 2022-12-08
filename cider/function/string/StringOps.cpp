@@ -485,11 +485,20 @@ std::string RegexpSubstr::get_sub_match(const std::smatch& match,
 std::pair<bool, int64_t> RegexpSubstr::set_sub_match_info(
     const std::string& regex_pattern,
     const int64_t sub_match_group_idx) {
-  if (regex_pattern.find("e", 0UL) == std::string::npos) {
-    return std::make_pair(false, 0UL);
+  // in OmnisciDb, whether to return submatches is controlled by an optional 'e' parameter
+  // <https://github.com/heavyai/heavydb/blob/master/Tests/StringFunctionsTest.cpp#L1353>
+  // but in regexp_extract, it should automatically return capturing groups
+  // whenever the parameter sub_match_group_idx > 0
+
+  // if (regex_pattern.find("e", 0UL) == std::string::npos) {
+  //   return std::make_pair(false, 0UL);
+  // }
+  if (sub_match_group_idx < 0) {
+    CIDER_THROW(CiderCompileException, "sub_match_group_idx must be non-negative");
   }
-  return std::make_pair(
-      true, sub_match_group_idx > 0L ? sub_match_group_idx - 1 : sub_match_group_idx);
+  bool do_sub_match = sub_match_group_idx > 0L;
+  return std::make_pair(do_sub_match,
+                        do_sub_match ? sub_match_group_idx - 1 : sub_match_group_idx);
 }
 
 std::string StringOps::operator()(const std::string& str) const {
@@ -697,13 +706,38 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
                                                    regex_params_literal);
     }
     case SqlStringOpKind::REGEXP_SUBSTR: {
-      CHECK_GE(num_non_variable_literals, 5UL);
-      CHECK_LE(num_non_variable_literals, 5UL);
+      // 3 required parameters and 3 options, although options are not supported for now
+      CHECK_GE(num_non_variable_literals, 3UL);
+      CHECK_LE(num_non_variable_literals, 6UL);
       const auto pattern_literal = string_op_info.getStringLiteral(1);
       const auto start_pos_literal = string_op_info.getIntLiteral(2);
       const auto occurrence_literal = string_op_info.getIntLiteral(3);
-      const auto regex_params_literal = string_op_info.getStringLiteral(4);
-      const auto sub_match_idx_literal = string_op_info.getIntLiteral(5);
+      // const auto case_sensitivitiy_literal = string_op_info.getStringLiteral(4);
+      // const auto multiline_literal = string_op_info.getIntLiteral(5);
+      // const auto dotall_literal = stringop_info.getIntLiteral(6);
+
+      std::string regex_params_literal = "c";  // case sensitive
+      int64_t sub_match_idx_literal = 0;       // return the entire match
+
+      return std::make_unique<const RegexpSubstr>(var_string_optional_literal,
+                                                  pattern_literal,
+                                                  start_pos_literal,
+                                                  occurrence_literal,
+                                                  regex_params_literal,
+                                                  sub_match_idx_literal);
+    }
+    case SqlStringOpKind::REGEXP_EXTRACT: {
+      // PrestoDb extension function, reuses exising functionalities in RegexpSubstr
+      CHECK_GE(num_non_variable_literals, 2UL);
+      CHECK_LE(num_non_variable_literals, 2UL);
+      const auto pattern_literal = string_op_info.getStringLiteral(1);
+      // id of caputuring group to be returned, 0 means returning entire match
+      const auto sub_match_idx_literal = string_op_info.getIntLiteral(2);
+
+      std::string regex_params_literal = "c";
+      int64_t start_pos_literal = 1;   // start from beginning
+      int64_t occurrence_literal = 1;  // returns the first match
+
       return std::make_unique<const RegexpSubstr>(var_string_optional_literal,
                                                   pattern_literal,
                                                   start_pos_literal,

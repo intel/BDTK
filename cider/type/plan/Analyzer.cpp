@@ -392,6 +392,16 @@ void StringOper::check_operand_types(
   }
 }
 
+std::shared_ptr<Analyzer::Expr> RegexpExtractStringOper::deep_copy() const {
+  return makeExpr<Analyzer::RegexpExtractStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+std::shared_ptr<Analyzer::Expr> RegexpSubstrStringOper::deep_copy() const {
+  return makeExpr<Analyzer::RegexpSubstrStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
 std::shared_ptr<Analyzer::Expr> CharLengthStringOper::deep_copy() const {
   return makeExpr<Analyzer::CharLengthStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
