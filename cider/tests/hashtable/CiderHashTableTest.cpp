@@ -60,29 +60,25 @@ int random(int low, int high) {
 
 TEST(CiderHashTableTest, mergeTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
-  CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal> hm1(16, NULL);
-  CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal> hm2(16, NULL);
-  CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal> hm3(16, NULL);
+  cider_ht::LPHashTable<int, int, murmurHash, Equal> hm1(16, NULL);
+  cider_ht::LPHashTable<int, int, murmurHash, Equal> hm2(16, NULL);
+  cider_ht::LPHashTable<int, int, murmurHash, Equal> hm3(16, NULL);
   for (int i = 0; i < 100; i++) {
     int value = random(-1000, 1000);
     hm1.insert(random(-10, 10), value);
     hm2.insert(random(-10, 10), value);
     hm3.insert(random(-10, 10), value);
   }
-  std::vector<
-      std::unique_ptr<CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal>>>
+  std::vector<std::unique_ptr<cider_ht::LPHashTable<int, int, murmurHash, Equal>>>
       other_tables;
   other_tables.push_back(
-      std::make_unique<CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal>>(
-          hm1));
+      std::make_unique<cider_ht::LPHashTable<int, int, murmurHash, Equal>>(hm1));
   other_tables.push_back(
-      std::make_unique<CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal>>(
-          hm2));
+      std::make_unique<cider_ht::LPHashTable<int, int, murmurHash, Equal>>(hm2));
   other_tables.push_back(
-      std::make_unique<CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal>>(
-          hm3));
+      std::make_unique<cider_ht::LPHashTable<int, int, murmurHash, Equal>>(hm3));
 
-  CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal> hm_final(16, NULL);
+  cider_ht::LPHashTable<int, int, murmurHash, Equal> hm_final(16, NULL);
   hm_final.merge_other_hashtables(std::move(other_tables));
   EXPECT_EQ(hm_final.size(), 300);
 }
@@ -90,8 +86,7 @@ TEST(CiderHashTableTest, mergeTest) {
 // test value type for probe
 TEST(CiderHashTableTest, pairAsValueTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
-  CiderLinearProbing::LPHashTable<int, std::pair<int*, int>, murmurHash, Equal> hm(16,
-                                                                                   NULL);
+  cider_ht::LPHashTable<int, std::pair<int*, int>, murmurHash, Equal> hm(16, NULL);
   Dup_map<int, std::pair<int*, int>> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
@@ -112,7 +107,7 @@ TEST(CiderHashTableTest, pairAsValueTest) {
 
 TEST(CiderHashTableTest, keyCollisionTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
-  CiderLinearProbing::LPHashTable<int, int, Hash, Equal> hm(16, NULL);
+  cider_ht::LPHashTable<int, int, Hash, Equal> hm(16, NULL);
   Dup_map<int, int> udup_map;
   hm.insert(1, 1);
   hm.insert(1, 2);
@@ -138,7 +133,7 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 
 TEST(CiderHashTableTest, randomInsertAndLookUpTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
-  CiderLinearProbing::LPHashTable<int, int, murmurHash, Equal> hm(16, NULL);
+  cider_ht::LPHashTable<int, int, murmurHash, Equal> hm(16, NULL);
   Dup_map<int, int> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
@@ -152,6 +147,34 @@ TEST(CiderHashTableTest, randomInsertAndLookUpTest) {
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
     std::sort(hm_res_vec.begin(), hm_res_vec.end());
     EXPECT_TRUE(dup_res_vec == hm_res_vec);
+  }
+}
+
+TEST(CiderHashTableTest, LPHashMapTest) {
+  // Create a LPHashTable with 16 buckets and 0 as the empty key
+  cider_ht::LPHashTable<int, int, murmurHash, Equal> hm(1024, NULL);
+  for (int i = 0; i < 10000; i++) {
+    int key = random(-10000, 10000);
+    int value = random(-10000, 10000);
+    hm.insert(key, value);
+  }
+  for (int i = 0; i < 100000; i++) {
+    int key = random(-10000, 10000);
+    auto hm_res_vec = hm.lookup(key);
+  }
+}
+
+TEST(CiderHashTableTest, dupMapTest) {
+  // Create a LPHashTable with 16 buckets and 0 as the empty key
+  Dup_map<int, int> dup_map;
+  for (int i = 0; i < 10000; i++) {
+    int key = random(-10000, 10000);
+    int value = random(-10000, 10000);
+    dup_map.insert(std::move(key), std::move(value));
+  }
+  for (int i = 0; i < 100000; i++) {
+    int key = random(-10000, 10000);
+    auto dup_res_vec = dup_map.lookup(key);
   }
 }
 

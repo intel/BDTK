@@ -39,7 +39,7 @@ Disadvantages:
 #include <stdexcept>
 #include <vector>
 
-namespace CiderLinearProbing {
+namespace cider_ht {
 template <typename KT>
 struct table_key {
   KT key;
@@ -270,4 +270,4 @@ class LPHashTable {
   buckets buckets_;
   size_t size_ = 0;
 };
-}  // namespace CiderLinearProbing
+}  // namespace cider_ht
