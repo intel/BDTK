@@ -89,6 +89,17 @@ class FixSizeJITExprValue : public JITExprValueAdaptor {
 
   void setValue(jitlib::JITValuePointer& rh) { values_[1].replace(rh); }
 };
+
+class VarSizeJITExprValue : public JITExprValueAdaptor {
+ public:
+  VarSizeJITExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
+    values_.resize(3);
+  }
+  jitlib::JITValuePointer& getLength() { return values_[1]; }
+
+  jitlib::JITValuePointer& getValue() { return values_[2]; }
+};
+
 }  // namespace cider::exec::nextgen::utils
 
 #endif  // NEXTGEN_UTILS_JITEXPRVALUE_H

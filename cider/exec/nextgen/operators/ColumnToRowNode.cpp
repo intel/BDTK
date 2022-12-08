@@ -45,6 +45,11 @@ class ColumnReader {
       case kDOUBLE:
         readFixSizedTypeCol();
         break;
+      case kVARCHAR:
+      case kCHAR:
+      case kTEXT:
+        readVariableSizeTypeCol();
+        break;
       default:
         LOG(FATAL) << "Unsupported data type in ColumnReader: "
                    << expr_->get_type_info().get_type_name();
@@ -52,6 +57,34 @@ class ColumnReader {
   }
 
  private:
+  void readVariableSizeTypeCol() {
+    auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
+    utils::VarSizeJITExprValue varsize_values(buffers);
+
+    auto& func = batch->getParentJITFunction();
+    // offset buffer
+    auto offset_pointer =
+        varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
+    auto len = offset_pointer[index_ + 1] - offset_pointer[index_];
+    auto cur_offset = offset_pointer[index_];
+    // data buffer
+    auto value_pointer = varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8);
+    auto row_data = value_pointer + cur_offset;  // still char*
+
+    if (expr_->get_type_info().get_notnull()) {
+      expr_->set_expr_value<JITExprValueType::ROW>(nullptr, len, row_data);
+    } else {
+      // null buffer decoder
+      // TBD: Null representation, bit-array or bool-array.
+      auto row_null_data = func.emitRuntimeFunctionCall(
+          "check_bit_vector_clear",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::BOOL,
+              .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
+      expr_->set_expr_value<JITExprValueType::ROW>(row_null_data, len, row_data);
+    }
+  }
+
   void readFixSizedTypeCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::FixSizeJITExprValue fixsize_values(buffers);

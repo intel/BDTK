@@ -55,6 +55,11 @@ class ColumnWriter {
       case kDOUBLE:
         writeFixSizedTypeCol();
         break;
+      case kVARCHAR:
+      case kCHAR:
+      case kTEXT:
+        writeVariableSizeTypeCol();
+        break;
       default:
         LOG(FATAL) << "Unsupported data type in ColumnWriter: "
                    << expr_->get_type_info().get_type_name();
@@ -62,6 +67,65 @@ class ColumnWriter {
   }
 
  private:
+  void writeVariableSizeTypeCol() {
+    // Get values need to write
+    utils::VarSizeJITExprValue values(expr_->get_expr_value());
+
+    // Allocate buffer
+
+    // the null_buffer, raw_data_buffer not used anymore.
+    // so it doesn't matter whether null_buffer is nullptr
+    // or constant false.
+    auto null_buffer = JITValuePointer(nullptr);
+    if (!expr_->get_type_info().get_notnull()) {
+      // TBD: Null representation, bit-array or bool-array.
+      null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
+          [this]() { return allocateBitwiseBuffer(0); }));
+
+      context_.getJITFunction()->emitRuntimeFunctionCall(
+          "set_null_vector_bit",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::VOID,
+              .params_vector = {
+                  {null_buffer.get(), index_.get(), values.getNull().get()}}});
+    }
+
+    // offset, need array_len + 1 element.
+    auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+      auto bytes = (arrow_array_len_ + 1) *
+                   context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
+      // TODO: should set memory to 0.
+      return allocateRawDataBuffer(1, bytes);
+    });
+    auto actual_raw_length_buffer =
+        raw_length_buffer->castPointerSubType(JITTypeTag::INT32);
+    actual_raw_length_buffer[index_ + 1] =
+        actual_raw_length_buffer[index_] + *values.getLength();
+
+    // value, buffer size is variable.
+    auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+      // FIXME(jikunshang): try add re-allocate for string type buffer.
+      auto bytes = arrow_array_len_ *
+                   context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 10);
+      return allocateRawDataBuffer(2, bytes);
+    });
+    auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
+    auto cur_pointer = actual_raw_data_buffer + *actual_raw_length_buffer[index_];
+    context_.getJITFunction()->emitRuntimeFunctionCall(
+        "do_memcpy",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::VOID,
+            .params_vector = {
+                cur_pointer.get(), values.getValue().get(), values.getLength().get()}});
+
+    // Register Output ArrowArray to CodegenContext
+    size_t local_offset = context_.appendArrowArrayValues(
+        arrow_array_,
+        utils::JITExprValue(
+            JITExprValueType::BATCH, null_buffer, raw_length_buffer, raw_data_buffer));
+    expr_->setLocalIndex(local_offset);
+  }
+
   void writeFixSizedTypeCol() {
     // Get values need to write
     utils::FixSizeJITExprValue values(expr_->get_expr_value());
@@ -79,7 +143,7 @@ class ColumnWriter {
           [this]() { return allocateBitwiseBuffer(0); }));
 
       context_.getJITFunction()->emitRuntimeFunctionCall(
-          "set_null_vector",
+          "set_null_vector_bit",
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::VOID,
               .params_vector = {
@@ -127,6 +191,10 @@ class ColumnWriter {
   JITValuePointer allocateRawDataBuffer(int64_t index, SQLTypes type) {
     auto bytes = arrow_array_len_ * context_.getJITFunction()->createLiteral(
                                         JITTypeTag::INT64, utils::getTypeBytes(type));
+    return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
+  }
+
+  JITValuePointer allocateRawDataBuffer(int64_t index, jitlib::JITValuePointer& bytes) {
     return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
   }
 
