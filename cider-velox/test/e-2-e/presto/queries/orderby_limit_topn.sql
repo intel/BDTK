@@ -90,7 +90,7 @@ order by
 limit
         10;
 
-elect
+select
 *
 from
         lineitem
