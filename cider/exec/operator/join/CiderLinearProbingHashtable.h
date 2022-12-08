@@ -44,7 +44,7 @@ template <typename KT>
 struct table_key {
   KT key;
   bool is_not_null;
-  int duplicate_num;
+  std::size_t duplicate_num;
 };
 
 // TODO: extends JoinHashTable class
@@ -53,7 +53,7 @@ template <typename Key,
           typename Hash = std::hash<Key>,
           typename KeyEqual = std::equal_to<void>,
           typename Allocator = std::allocator<std::pair<Key, T>>>
-class HashMap {
+class LPHashTable {
  public:
   using key_type = table_key<Key>;
 
@@ -107,13 +107,13 @@ class HashMap {
     friend ContT;
   };
 
-  using iterator = hm_iterator<HashMap, value_type>;
-  using const_iterator = hm_iterator<const HashMap, const value_type>;
+  using iterator = hm_iterator<LPHashTable, value_type>;
+  using const_iterator = hm_iterator<const LPHashTable, const value_type>;
 
  public:
-  HashMap(size_type bucket_count,
-          Key empty_key,
-          const allocator_type& alloc = allocator_type())
+  LPHashTable(size_type bucket_count,
+              Key empty_key,
+              const allocator_type& alloc = allocator_type())
       : empty_key_({empty_key, false, 0}), buckets_(alloc) {
     size_t pow2 = 1;
     while (pow2 < bucket_count) {
@@ -122,8 +122,8 @@ class HashMap {
     buckets_.resize(pow2, std::make_pair(empty_key_, T()));
   }
 
-  HashMap(const HashMap& other, size_type bucket_count)
-      : HashMap(bucket_count, other.empty_key_.key, other.get_allocator()) {
+  LPHashTable(const LPHashTable& other, size_type bucket_count)
+      : LPHashTable(bucket_count, other.empty_key_.key, other.get_allocator()) {
     for (auto it = other.begin(); it != other.end(); ++it) {
       insert(*it);
     }
@@ -169,7 +169,20 @@ class HashMap {
     return emplace_impl(std::forward<Args>(args)...);
   }
 
-  void swap(HashMap& other) noexcept {
+  // TODO: assert key and value types
+  void merge_other_hashtables(std::vector<std::unique_ptr<LPHashTable>> otherTables) {
+    int total_size = 0;
+    for (const auto& table_ptr : otherTables) {
+      total_size += table_ptr->size();
+    }
+    rehash(total_size);
+    for (const auto& table_ptr : otherTables) {
+      for (auto it = table_ptr->begin(); it != table_ptr->end(); ++it)
+        insert((*it).first.key, (*it).second);
+    }
+  }
+
+  void swap(LPHashTable& other) noexcept {
     std::swap(buckets_, other.buckets_);
     std::swap(size_, other.size_);
     std::swap(empty_key_, other.empty_key_);
@@ -187,7 +200,7 @@ class HashMap {
   void rehash(size_type count) {
     // comment out due to may adjust load factor in futures
     // count = std::max(count, size() * 2);
-    HashMap other(*this, count);
+    LPHashTable other(*this, count);
     swap(other);
   }
 
@@ -234,7 +247,7 @@ class HashMap {
           return vec;
         }
       } else if (buckets_[idx].first.is_not_null == false ||
-                 (vec.size() == duplicate_num + 1)) {
+                 (vec.size() == duplicate_num + unsigned(1))) {
         return vec;
       }
     }
