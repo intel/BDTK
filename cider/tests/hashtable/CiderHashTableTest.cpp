@@ -87,7 +87,7 @@ TEST(CiderHashTableTest, mergeTest) {
 TEST(CiderHashTableTest, pairAsValueTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
   cider_ht::LPHashTable<int, std::pair<int*, int>, murmurHash, Equal> hm(16, NULL);
-  Dup_map<int, std::pair<int*, int>> dup_map;
+  DuplicateStdHashmap<int, std::pair<int*, int>> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
     int value = random(-1000, 1000);
@@ -108,7 +108,7 @@ TEST(CiderHashTableTest, pairAsValueTest) {
 TEST(CiderHashTableTest, keyCollisionTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
   cider_ht::LPHashTable<int, int, Hash, Equal> hm(16, NULL);
-  Dup_map<int, int> udup_map;
+  DuplicateStdHashmap<int, int> udup_map;
   hm.insert(1, 1);
   hm.insert(1, 2);
   hm.insert(15, 1515);
@@ -134,7 +134,7 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 TEST(CiderHashTableTest, randomInsertAndLookUpTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
   cider_ht::LPHashTable<int, int, murmurHash, Equal> hm(16, NULL);
-  Dup_map<int, int> dup_map;
+  DuplicateStdHashmap<int, int> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
     int value = random(-1000, 1000);
@@ -166,7 +166,7 @@ TEST(CiderHashTableTest, LPHashMapTest) {
 
 TEST(CiderHashTableTest, dupMapTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
-  Dup_map<int, int> dup_map;
+  DuplicateStdHashmap<int, int> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-10000, 10000);
     int value = random(-10000, 10000);
