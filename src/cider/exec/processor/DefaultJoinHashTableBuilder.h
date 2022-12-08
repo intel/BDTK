@@ -27,7 +27,7 @@
 #include "cider/processor/JoinHashTableBuilder.h"
 #include "exec/module/batch/ArrowABI.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
  public:
@@ -45,6 +45,6 @@ class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
   std::unique_ptr<JoinHashTable> hashTable_;
 };
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_DEFAULT_JOIN_HASH_TABLE_BUILDER_H

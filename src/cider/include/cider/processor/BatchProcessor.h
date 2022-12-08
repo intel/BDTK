@@ -23,12 +23,15 @@
 #define CIDER_BATCH_PROCESSOR_H
 
 #include <memory>
-#include "BatchProcessorContext.h"
+
+#include "cider/processor/BatchProcessorContext.h"
 #include "cider/processor/JoinHashTableBuilder.h"
-#include "include/cider/batch/CiderBatch.h"
 #include "substrait/plan.pb.h"
 
-namespace cider::processor {
+struct ArrowArray;
+struct ArrowSchema;
+
+namespace cider::exec::processor {
 
 enum class BatchProcessorState {
   kRunning,
@@ -36,15 +39,16 @@ enum class BatchProcessorState {
   kFinished,
 };
 
-class BatchProcessor {
+class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
  public:
-  virtual BatchProcessorContextPtr context() = 0;
+  virtual const BatchProcessorContextPtr& context() const = 0;
   /// Adds an input batch to the batchProcessor.  This method will only be called if
   /// getState return kRunning.
-  virtual void processNextBatch(std::shared_ptr<CiderBatch> batch) = 0;
+  virtual void processNextBatch(const struct ArrowArray* array,
+                                const struct ArrowSchema* schema = nullptr) = 0;
 
   /// Gets an output batch from the batchProcessor.  return null If no output data.
-  virtual std::shared_ptr<CiderBatch> getResult() = 0;
+  virtual std::pair<struct ArrowArray*, struct ArrowSchema*> getResult() = 0;
 
   /// Notifies the batchProcessor that no more batch will be added and the
   /// batchProcessor should finish processing and flush results.
@@ -58,9 +62,9 @@ class BatchProcessor {
 using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
 
 /// Factory method to create an instance of batchProcessor
-std::shared_ptr<BatchProcessor> makeBatchProcessor(
+std::unique_ptr<BatchProcessor> makeBatchProcessor(
     const ::substrait::Plan& plan,
     const BatchProcessorContextPtr& context);
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_BATCH_PROCESSOR_H

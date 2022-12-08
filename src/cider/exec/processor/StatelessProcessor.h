@@ -22,18 +22,17 @@
 #ifndef CIDER_STATELESS_PROCESSOR_H
 #define CIDER_STATELESS_PROCESSOR_H
 
-#include "DefaultBatchProcessor.h"
+#include "exec/processor/DefaultBatchProcessor.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 class StatelessProcessor : public DefaultBatchProcessor {
  public:
-  StatelessProcessor(const plan::SubstraitPlanPtr& plan,
-                     const BatchProcessorContextPtr& context);
+  using DefaultBatchProcessor::DefaultBatchProcessor;
 
-  std::shared_ptr<CiderBatch> getResult() override;
+  std::pair<struct ArrowArray*, struct ArrowSchema*> getResult() override;
 };
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_STATELESS_PROCESSOR_H

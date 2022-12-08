@@ -21,7 +21,7 @@
 
 #include "JoinHandler.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 void HashProbeHandler::onState(BatchProcessorState state) {
   if (BatchProcessorState::kWaiting == state) {
@@ -42,4 +42,4 @@ std::shared_ptr<CiderBatch> HashProbeHandler::onProcessBatch(
   return batch;
 }
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor

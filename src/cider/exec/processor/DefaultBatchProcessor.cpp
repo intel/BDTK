@@ -19,18 +19,21 @@
  * under the License.
  */
 
-#include "DefaultBatchProcessor.h"
-#include "StatefulProcessor.h"
-#include "StatelessProcessor.h"
-#include "cider/CiderException.h"
+#include "exec/processor/DefaultBatchProcessor.h"
 
-namespace cider::processor {
+#include <memory>
+
+#include "cider/CiderException.h"
+#include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
+#include "exec/processor/StatefulProcessor.h"
+#include "exec/processor/StatelessProcessor.h"
+
+namespace cider::exec::processor {
 
 DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
                                              const BatchProcessorContextPtr& context)
     : plan_(plan), context_(context) {
   auto allocator = context->allocator();
-  const auto substraitPlan = plan_->getPlan();
   if (plan_->hasJoinRel()) {
     // TODO: currently we can't distinguish the joinRel is either a hashJoin rel
     // or a mergeJoin rel, just hard-code as HashJoinHandler for now and will refactor to
@@ -38,22 +41,32 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
     joinHandler_ = std::make_shared<HashProbeHandler>(shared_from_this());
     this->state_ = BatchProcessorState::kWaiting;
   }
-  // TODO: compile substrait plan
+
+  auto translator =
+      std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan_->getPlan());
+  RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
+  jitlib::CompilationOptions co;
+  co.dump_ir = true;
+  codegen_context_ = nextgen::compile(ra_exe_unit, co);
+  runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
+  query_func_ = reinterpret_cast<nextgen::QueryFunc>(
+      codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
 }
 
-void DefaultBatchProcessor::processNextBatch(std::shared_ptr<CiderBatch> batch) {
+void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
+                                             const struct ArrowSchema* schema) {
   if (BatchProcessorState::kRunning != state_) {
     CIDER_THROW(CiderRuntimeException,
                 "DefaultBatchProcessor::processNextBatch can only be called if state is "
                 "kRunning.");
   }
   if (joinHandler_) {
-    this->inputBatch_ = joinHandler_->onProcessBatch(batch);
+    // this->inputBatch_ = joinHandler_->onProcessBatch(batch);
   } else {
-    this->inputBatch_ = batch;
+    input_arrow_array_ = array;
   }
 
-  // TODO: processBatch through nextGen API
+  query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);
 }
 
 BatchProcessorState DefaultBatchProcessor::getState() {
@@ -77,15 +90,15 @@ void DefaultBatchProcessor::feedHashBuildTable(
   // TODO: feed the hashTable into nextGen context
 }
 
-std::shared_ptr<BatchProcessor> makeBatchProcessor(
+std::unique_ptr<BatchProcessor> makeBatchProcessor(
     const ::substrait::Plan& plan,
     const BatchProcessorContextPtr& context) {
   auto substraitPlan = std::make_shared<plan::SubstraitPlan>(plan);
   if (substraitPlan->hasAggregateRel()) {
-    return std::make_shared<StatefulProcessor>(substraitPlan, context);
+    return std::make_unique<StatefulProcessor>(substraitPlan, context);
   } else {
-    return std::make_shared<StatelessProcessor>(substraitPlan, context);
+    return std::make_unique<StatelessProcessor>(substraitPlan, context);
   }
 }
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor

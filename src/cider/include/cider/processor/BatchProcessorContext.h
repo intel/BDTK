@@ -28,7 +28,7 @@
 #include <vector>
 #include "cider/CiderAllocator.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 class JoinHashTable {
  public:
@@ -49,20 +49,22 @@ class BatchProcessorContext {
   BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
       : allocator_(allocator){};
 
-  std::shared_ptr<CiderAllocator> allocator() { return allocator_; }
+  std::shared_ptr<CiderAllocator> allocator() const { return allocator_; }
 
   void setHashBuildTableSupplier(const HashBuildTableSupplier& hashBuildTableSupplier) {
-    this->buildTableSupplier_ = hashBuildTableSupplier;
+    buildTableSupplier_ = hashBuildTableSupplier;
   }
 
-  HashBuildTableSupplier getHashBuildTableSupplier() { return buildTableSupplier_; }
+  const HashBuildTableSupplier& getHashBuildTableSupplier() const {
+    return buildTableSupplier_;
+  }
 
  private:
-  const std::shared_ptr<CiderAllocator> allocator_;
+  std::shared_ptr<CiderAllocator> allocator_;
   HashBuildTableSupplier buildTableSupplier_;
 };
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_BATCH_PROCESSOR_CONTEXT_H

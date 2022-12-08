@@ -21,7 +21,7 @@
 
 #include "DefaultJoinHashTableBuilder.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 std::unique_ptr<JoinHashTable> DefaultJoinHashTableBuilder::build() {
   // TODO: build a join hash table
@@ -38,4 +38,4 @@ std::shared_ptr<JoinHashTableBuilder> makeJoinHashTableBuilder(
   return std::make_shared<DefaultJoinHashTableBuilder>(joinRel, context);
 }
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor

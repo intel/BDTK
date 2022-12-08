@@ -19,23 +19,21 @@
  * under the License.
  */
 
-#include "StatefulProcessor.h"
+#include "exec/processor/StatefulProcessor.h"
 
-namespace cider::processor {
+#include <utility>
 
-StatefulProcessor::StatefulProcessor(const plan::SubstraitPlanPtr& plan,
-                                     const BatchProcessorContextPtr& context)
-    : DefaultBatchProcessor(plan, context) {}
+namespace cider::exec::processor {
 
-std::shared_ptr<CiderBatch> StatefulProcessor::getResult() {
+std::pair<struct ArrowArray*, struct ArrowSchema*> StatefulProcessor::getResult() {
   if (!noMoreBatch_ || BatchProcessorState::kFinished == state_) {
-    inputBatch_ = nullptr;
-    return nullptr;
+    input_arrow_array_ = nullptr;
+    return std::make_pair(nullptr, nullptr);
   }
 
   state_ = BatchProcessorState::kFinished;
   // TODO: getResult through nextGen runtime api
-  return inputBatch_;
+  return std::make_pair(nullptr, nullptr);
 }
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
