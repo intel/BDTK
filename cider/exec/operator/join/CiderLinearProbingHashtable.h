@@ -198,7 +198,7 @@ class LPHashTable {
 
   // Hash policy
   void rehash(size_type count) {
-    // comment out due to may adjust load factor in futures
+    // comment out due to may adjust load factor in future
     // count = std::max(count, size() * 2);
     LPHashTable other(*this, count);
     swap(other);
