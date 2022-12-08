@@ -27,6 +27,7 @@ add_opnode(ArrowSourceNode)
 add_opnode(ColumnToRowNode)
 add_opnode(AggregationNode)
 add_opnode(RowToColumnNode)
+add_opnode(HashJoinNode)
 
 list(APPEND OPERATORS_SOURCE
      ${CMAKE_CURRENT_LIST_DIR}/extractor/AggExtractorBuilder.cpp)

@@ -21,6 +21,7 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
+#include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
@@ -52,6 +53,7 @@ struct murmurHash {
 struct Equal {
   bool operator()(int lhs, int rhs) { return lhs == rhs; }
 };
+
 struct AggExprsInfo {
  public:
   SQLTypeInfo sql_type_info_;
@@ -134,6 +136,7 @@ class CodegenContext {
       bool output_raw_buffer = true);
 
   jitlib::JITValuePointer registerHashTable(const std::string& name = "");
+  
   jitlib::JITValuePointer registerCiderSet(const std::string& name,
                                            const SQLTypeInfo& type,
                                            CiderSetPtr c_set);

@@ -30,7 +30,7 @@ namespace cider::exec::nextgen {
 using QueryFunc = int32_t (*)(int8_t*, int8_t*);
 
 std::unique_ptr<context::CodegenContext> compile(
-    const RelAlgExecutionUnit& eu,
+    RelAlgExecutionUnit& eu,
     const jitlib::CompilationOptions& co = jitlib::CompilationOptions{},
     const context::CodegenOptions& codegen_options = context::CodegenOptions{});
 

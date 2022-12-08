@@ -282,5 +282,6 @@ void setArrowArrayLength(jitlib::JITValuePointer& arrow_array,
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
                                 .params_vector = {arrow_array.get(), len.get()}});
 }
+
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context

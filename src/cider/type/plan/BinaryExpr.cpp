@@ -167,8 +167,8 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
             return condition;
           })
           ->ifTrue([&]() {
-            null = func.createConstant(JITTypeTag::BOOL, false);
-            value = func.createConstant(JITTypeTag::BOOL, false);
+            null = func.createLiteral(JITTypeTag::BOOL, false);
+            value = func.createLiteral(JITTypeTag::BOOL, false);
           })
           ->ifFalse([&]() { value = lhs_val.getValue() && rhs_val.getValue(); })
           ->build();
@@ -191,8 +191,8 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
             return condition;
           })
           ->ifTrue([&]() {
-            null = func.createConstant(JITTypeTag::BOOL, false);
-            value = func.createConstant(JITTypeTag::BOOL, true);
+            null = func.createLiteral(JITTypeTag::BOOL, false);
+            value = func.createLiteral(JITTypeTag::BOOL, true);
           })
           ->ifFalse([&]() { value = lhs_val.getValue() || rhs_val.getValue(); })
           ->build();
@@ -218,10 +218,10 @@ JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,
           (lhs_val.getNull() != rhs_val.getNull());
   switch (get_optype()) {
     case kBW_NE: {
-      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
+      return set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), value);
     }
     case kBW_EQ: {
-      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), !value);
+      return set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), !value);
     }
     default:
       UNREACHABLE();
