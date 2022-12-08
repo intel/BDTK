@@ -16,7 +16,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+find_package(Arrow REQUIRED)
 set(TEST_ARGS "--gtest_output=xml:../")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
 file(GLOB cider_profiling_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
@@ -25,6 +25,6 @@ foreach(cider_profiling_file ${cider_profiling_files})
   string(REGEX REPLACE "profiling/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${cider_profiling_file})
-  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS})
+  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS} arrow_shared)
   add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name} ${TEST_ARGS})
 endforeach()

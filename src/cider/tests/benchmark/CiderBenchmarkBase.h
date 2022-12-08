@@ -22,8 +22,8 @@
 #ifndef MODULARSQL_CIDERBENCHMARKBASE_H
 #define MODULARSQL_CIDERBENCHMARKBASE_H
 
+#include "CiderBenchmarkUtils.cpp"
 #include "benchmark/benchmark.h"
-
 class CiderBenchmarkBaseFixture : public benchmark::Fixture {
  public:
   // add members as needed
@@ -31,23 +31,23 @@ class CiderBenchmarkBaseFixture : public benchmark::Fixture {
   CiderBenchmarkBaseFixture() {}
 };
 
-std::shared_ptr<CiderBatch> genBatch(int row_num) {
-  return std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-      row_num,
-      {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
-      {CREATE_SUBSTRAIT_TYPE(I32),
-       CREATE_SUBSTRAIT_TYPE(I64),
-       CREATE_SUBSTRAIT_TYPE(Fp32),
-       CREATE_SUBSTRAIT_TYPE(Fp64),
-       CREATE_SUBSTRAIT_TYPE(I32),
-       CREATE_SUBSTRAIT_TYPE(I64),
-       CREATE_SUBSTRAIT_TYPE(Fp32),
-       CREATE_SUBSTRAIT_TYPE(Fp64)},
-      {},
-      GeneratePattern::Random,
-      -1000'000,
-      1000'000));
-}
+// std::shared_ptr<CiderBatch> genBatch(int row_num) {
+//   return std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+//       row_num,
+//       {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
+//       {CREATE_SUBSTRAIT_TYPE(I32),
+//        CREATE_SUBSTRAIT_TYPE(I64),
+//        CREATE_SUBSTRAIT_TYPE(Fp32),
+//        CREATE_SUBSTRAIT_TYPE(Fp64),
+//        CREATE_SUBSTRAIT_TYPE(I32),
+//        CREATE_SUBSTRAIT_TYPE(I64),
+//        CREATE_SUBSTRAIT_TYPE(Fp32),
+//        CREATE_SUBSTRAIT_TYPE(Fp64)},
+//       {},
+//       GeneratePattern::Random,
+//       -1000'000,
+//       1000'000));
+// }
 
 #define GEN_BENCHMARK(FIXTURE_NAME, BATCH_SIZE, CASE, QUERY_STR, ITER)       \
   BENCHMARK_F(FIXTURE_NAME, CASE##_##BATCH_SIZE)(benchmark::State & state) { \
@@ -56,6 +56,15 @@ std::shared_ptr<CiderBatch> genBatch(int row_num) {
     for (auto _ : state) {                                                   \
       runner.runNextBatch(input_batch);                                      \
     }                                                                        \
+  }
+
+#define GEN_BENCHMARK_FROM_CSV(FIXTURE_NAME, CASE, FILE_NAME, QUERY_STR, COL_NAME) \
+  BENCHMARK_F(FIXTURE_NAME, CASE)(benchmark::State & state) {                      \
+    input_batch = readFromCsv(FILE_NAME, COL_NAME);                                \
+    runner.compile(QUERY_STR);                                                     \
+    for (auto _ : state) {                                                         \
+      runner.runNextBatch(input_batch);                                            \
+    }                                                                              \
   }
 
 #endif  // MODULARSQL_CIDERBENCHMARKBASE_H
