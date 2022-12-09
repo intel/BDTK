@@ -61,7 +61,7 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id, output_raw_buffer]() {
     auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
     auto pointer = this->jit_func_->emitRuntimeFunctionCall(
-        "get_query_context_ptr",
+        "get_query_context_item_ptr",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,

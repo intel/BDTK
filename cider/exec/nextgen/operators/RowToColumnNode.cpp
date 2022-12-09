@@ -164,7 +164,7 @@ class ColumnWriter {
       // leverage existing set_null_vector but need opposite value as input
       // TODO: (yma11) need check in UT
       context_.getJITFunction()->emitRuntimeFunctionCall(
-          "set_null_vector",
+          "set_null_vector_bit",
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::VOID,
               .params_vector = {{raw_data_buffer.get(),
