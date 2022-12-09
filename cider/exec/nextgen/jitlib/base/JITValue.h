@@ -128,7 +128,7 @@ class JITValuePointer {
 
   JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_) { rh.ptr_ = nullptr; }
 
-  JITValue* get() { return ptr_; }
+  JITValue* get() const { return ptr_; }
 
   size_t getRefNum() { return ptr_->getRefNum(); }
 
@@ -155,13 +155,13 @@ class JITValuePointer {
 
   JITValuePointer& operator=(JITValue& rh) noexcept;
 
-  JITValue& operator*() { return *ptr_; }
+  JITValue& operator*() const { return *ptr_; }
 
-  JITValue* operator->() { return ptr_; }
+  JITValue* operator->() const { return ptr_; }
 
-  operator JITValue&() { return *ptr_; }
+  operator JITValue&() const { return *ptr_; }
 
-  JITValuePointer operator[](JITValue& index);
+  JITValuePointer operator[](JITValue& index) const;
 
  private:
   void release() {
@@ -190,7 +190,7 @@ inline JITValuePointer& JITValuePointer::operator=(JITValue& rh) noexcept {
   return *this;
 }
 
-inline JITValuePointer JITValuePointer::operator[](JITValue& index) {
+inline JITValuePointer JITValuePointer::operator[](JITValue& index) const {
   return (*ptr_)[index];
 }
 };  // namespace cider::jitlib
