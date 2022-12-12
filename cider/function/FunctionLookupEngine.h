@@ -155,6 +155,8 @@ class FunctionLookupEngine {
 
   const PlatformType from_platform_;
   static FunctionLookupEnginePtrMap function_lookup_engine_ptr_map_;
+  // use for prevent multiple times of new which is caused under multithreading
+  // getInstance
   static std::mutex s_mutex_;
 };
 
