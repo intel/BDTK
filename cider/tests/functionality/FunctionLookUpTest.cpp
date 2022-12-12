@@ -40,7 +40,7 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
   }
 
  public:
-  const FunctionLookupEngine* function_lookup_ptr = nullptr;
+  FunctionLookupEnginePtr function_lookup_ptr = nullptr;
 };
 
 class PrestoFunctionLookupTest : public ::testing::Test {
@@ -50,7 +50,7 @@ class PrestoFunctionLookupTest : public ::testing::Test {
   }
 
  public:
-  const FunctionLookupEngine* function_lookup_ptr = nullptr;
+  FunctionLookupEnginePtr function_lookup_ptr = nullptr;
 };
 
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoExtentionBetweenDoubleTest1) {

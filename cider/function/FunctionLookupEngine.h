@@ -23,8 +23,10 @@
 #define CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
 
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -81,12 +83,13 @@ struct FunctionDescriptor {
 using FunctionDescriptorPtr = std::shared_ptr<FunctionDescriptor>;
 
 class FunctionLookupEngine;
+using FunctionLookupEnginePtr = std::shared_ptr<const FunctionLookupEngine>;
 using FunctionLookupEnginePtrMap =
-    std::unordered_map<const PlatformType, const FunctionLookupEngine*>;
+    std::unordered_map<const PlatformType, FunctionLookupEnginePtr>;
 
 class FunctionLookupEngine {
  public:
-  static const FunctionLookupEngine* getInstance(const PlatformType from_platform);
+  static FunctionLookupEnginePtr getInstance(const PlatformType from_platform);
 
   /// lookup function descriptor by given function Signature.
   /// a) If sql_op is not kUNDEFINED_OP, means cider runtime function is selected for
@@ -152,8 +155,9 @@ class FunctionLookupEngine {
 
   const PlatformType from_platform_;
   static FunctionLookupEnginePtrMap function_lookup_engine_ptr_map_;
+  // use for prevent multiple times of new which is caused under multithreading
+  // getInstance
+  static std::mutex s_mutex_;
 };
-
-using FunctionLookupEnginePtr = std::shared_ptr<const FunctionLookupEngine>;
 
 #endif  // CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H

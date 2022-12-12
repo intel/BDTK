@@ -24,15 +24,24 @@
 
 FunctionLookupEnginePtrMap FunctionLookupEngine::function_lookup_engine_ptr_map_ = {};
 
-const FunctionLookupEngine* FunctionLookupEngine::getInstance(
+std::mutex FunctionLookupEngine::s_mutex_;
+
+FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
     const PlatformType from_platform) {
   if (from_platform == PlatformType::SubstraitPlatform ||
       from_platform == PlatformType::PrestoPlatform) {
-    if (function_lookup_engine_ptr_map_.find(from_platform) ==
+    if (function_lookup_engine_ptr_map_.find(from_platform) !=
         function_lookup_engine_ptr_map_.end()) {
-      function_lookup_engine_ptr_map_.insert(
-          std::pair(from_platform, new FunctionLookupEngine(from_platform)));
+      return function_lookup_engine_ptr_map_[from_platform];
     }
+    std::lock_guard<std::mutex> lk(s_mutex_);
+    if (function_lookup_engine_ptr_map_.find(from_platform) !=
+        function_lookup_engine_ptr_map_.end()) {
+      return function_lookup_engine_ptr_map_[from_platform];
+    }
+    function_lookup_engine_ptr_map_.insert(std::pair(
+        from_platform,
+        std::shared_ptr<FunctionLookupEngine>(new FunctionLookupEngine(from_platform))));
     return function_lookup_engine_ptr_map_[from_platform];
   } else {
     CIDER_THROW(CiderCompileException,
@@ -44,8 +53,6 @@ const FunctionLookupEngine* FunctionLookupEngine::getInstance(
 void FunctionLookupEngine::registerFunctionLookUpContext(
     const PlatformType from_platform) {
   // Load cider support function default yaml files first.
-  /*io::substrait::ExtensionPtr cider_internal_function_ptr =
-      io::substrait::Extension::load();*/
   const std::vector<std::string> internal_files = {
       "functions_aggregate_approx.yaml",
       "functions_aggregate_generic.yaml",
