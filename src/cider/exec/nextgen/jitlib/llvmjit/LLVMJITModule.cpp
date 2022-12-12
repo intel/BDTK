@@ -43,13 +43,13 @@ static void dumpModuleIR(llvm::Module* module, const std::string& module_name) {
   llvm::raw_fd_ostream file(fname, error_code, llvm::sys::fs::F_None);
   if (error_code) {
     LOG(ERROR) << "Could not open file to dump Module IR: " << fname;
+  } else {
+    llvm::legacy::PassManager pass_mgr;
+    pass_mgr.add(llvm::createStripDeadPrototypesPass());
+    pass_mgr.run(*module);
+
+    file << *module;
   }
-
-  llvm::legacy::PassManager pass_mgr;
-  pass_mgr.add(llvm::createStripDeadPrototypesPass());
-  pass_mgr.run(*module);
-
-  file << *module;
 }
 
 static llvm::MemoryBuffer* getRuntimeBuffer() {
