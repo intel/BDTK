@@ -100,6 +100,122 @@ class VeloxPlanFragmentSubstraitConverterTest : public OperatorTestBase {
       std::make_shared<SubstraitVeloxPlanConverter>(pool_.get());
 };
 
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, orderBySingleKey) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan =
+      PlanBuilder().values(vectors).orderBy({"c0 DESC NULLS LAST"}, false).planNode();
+  assertQuery(plan, "SELECT * FROM tmp ORDER BY c0 DESC NULLS LAST");
+
+  assertPlanConversion(plan, plan, "SELECT * FROM tmp ORDER BY c0 DESC NULLS LAST");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, orderBy) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder()
+                  .values(vectors)
+                  .orderBy({"c0 ASC NULLS FIRST", "c1 ASC NULLS LAST"}, false)
+                  .planNode();
+
+  assertQuery(plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST, c1 NULLS LAST");
+  assertPlanConversion(
+      plan, plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST, c1 NULLS LAST");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, orderByPartial) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder()
+                  .values(vectors)
+                  .orderBy({"c0 ASC NULLS FIRST", "c1 ASC NULLS LAST"}, true)
+                  .planNode();
+  assertQuery(plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST, c1 NULLS LAST");
+  assertPlanConversion(
+      plan, plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST, c1 NULLS LAST");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, Limit) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder().values(vectors).limit(0, 10, false).planNode();
+
+  assertQuery(plan, "SELECT * FROM tmp LIMIT 10");
+  assertPlanConversion(plan, plan, "SELECT * FROM tmp LIMIT 10");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, LimitPartial) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder().values(vectors).limit(0, 10, true).planNode();
+
+  assertQuery(plan, "SELECT * FROM tmp LIMIT 10");
+
+  assertPlanConversion(plan, plan, "SELECT * FROM tmp LIMIT 10");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, LimitOffest) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder().values(vectors).limit(5, 10, false).planNode();
+
+  assertQuery(plan, "SELECT * FROM tmp OFFSET 5 LIMIT 10");
+  assertPlanConversion(plan, plan, "SELECT * FROM tmp OFFSET 5 LIMIT 10");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, topN) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan =
+      PlanBuilder().values(vectors).topN({"c0 NULLS FIRST"}, 10, false).planNode();
+  assertPlanConversion(plan, plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST LIMIT 10");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, topNPartial) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder().values(vectors).topN({"c0 NULLS FIRST"}, 10, true).planNode();
+
+  assertQuery(plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST LIMIT 10");
+
+  assertPlanConversion(plan, plan, "SELECT * FROM tmp ORDER BY c0 NULLS FIRST LIMIT 10");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, topNFilter) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder()
+                  .values(vectors)
+                  .filter("c0 > 15")
+                  .topN({"c0 NULLS FIRST"}, 10, true)
+                  .planNode();
+  assertQuery(plan, "SELECT * FROM tmp WHERE c0 > 15 ORDER BY c0 NULLS FIRST LIMIT 10");
+
+  assertPlanConversion(
+      plan,
+      plan->sources()[0],
+      "SELECT * FROM tmp WHERE c0 > 15 ORDER BY c0 NULLS FIRST LIMIT 10");
+}
+
+TEST_F(VeloxPlanFragmentSubstraitConverterTest, topNTwoKeys) {
+  auto vectors = makeVector(3, 4, 2);
+  createDuckDbTable(vectors);
+  auto plan = PlanBuilder()
+                  .values(vectors)
+                  .filter("c0 > 15")
+                  .topN({"c0 NULLS FIRST", "c1 DESC NULLS LAST"}, 10, true)
+                  .planNode();
+
+  assertQuery(plan,
+              "SELECT * FROM tmp WHERE c0 > 15 ORDER BY c0 NULLS FIRST, c1 DESC "
+              "NULLS LAST LIMIT 10");
+
+  assertPlanConversion(plan,
+                       plan->sources()[0],
+                       "SELECT * FROM tmp WHERE c0 > 15 ORDER BY c0 NULLS FIRST, c1 DESC "
+                       "NULLS LAST LIMIT 10");
+}
+
 TEST_F(VeloxPlanFragmentSubstraitConverterTest, avg_on_col_single) {
   std::vector<RowVectorPtr> vectors;
   vectors = makeVector(2, 7, 3);

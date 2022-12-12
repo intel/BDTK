@@ -78,6 +78,9 @@ class LLVMJITFunction final : public JITFunction {
 
   void cloneFunctionRecursive(llvm::Function* fn);
 
+  JITValuePointer packJITValuesImpl(const std::vector<JITValuePointer>& vals,
+                                    const uint64_t alignment) override;
+
   LLVMJITModule& module_;
   llvm::Function& func_;
   mutable std::unique_ptr<llvm::IRBuilder<>> ir_builder_;

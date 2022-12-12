@@ -105,9 +105,9 @@ enum class SqlStringOpKind {
   REPLACE,
   SPLIT_PART,
   STRING_SPLIT,
-  /* 6 args */
-  REGEXP_REPLACE,
+  REGEXP_EXTRACT,
   REGEXP_SUBSTR,
+  REGEXP_REPLACE,
   JSON_VALUE,
   BASE64_ENCODE,
   BASE64_DECODE,
@@ -256,59 +256,40 @@ inline std::string toString(const SQLOps& op) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SqlStringOpKind kind) {
-  switch (kind) {
-    case SqlStringOpKind::LOWER:
-      return os << "LOWER";
-    case SqlStringOpKind::UPPER:
-      return os << "UPPER";
-    case SqlStringOpKind::INITCAP:
-      return os << "INITCAP";
-    case SqlStringOpKind::REVERSE:
-      return os << "REVERSE";
-    case SqlStringOpKind::REPEAT:
-      return os << "REPEAT";
-    case SqlStringOpKind::CONCAT:
-      return os << "CONCAT";
-    case SqlStringOpKind::RCONCAT:
-      return os << "RCONCAT";
-    case SqlStringOpKind::LPAD:
-      return os << "LPAD";
-    case SqlStringOpKind::RPAD:
-      return os << "RPAD";
-    case SqlStringOpKind::TRIM:
-      return os << "TRIM";
-    case SqlStringOpKind::LTRIM:
-      return os << "LTRIM";
-    case SqlStringOpKind::RTRIM:
-      return os << "RTRIM";
-    case SqlStringOpKind::SUBSTRING:
-      return os << "SUBSTRING";
-    case SqlStringOpKind::OVERLAY:
-      return os << "OVERLAY";
-    case SqlStringOpKind::REPLACE:
-      return os << "REPLACE";
-    case SqlStringOpKind::SPLIT_PART:
-      return os << "SPLIT_PART";
-    case SqlStringOpKind::REGEXP_REPLACE:
-      return os << "REGEXP_REPLACE";
-    case SqlStringOpKind::REGEXP_SUBSTR:
-      return os << "REGEXP_SUBSTR";
-    case SqlStringOpKind::JSON_VALUE:
-      return os << "JSON_VALUE";
-    case SqlStringOpKind::BASE64_ENCODE:
-      return os << "BASE64_ENCODE";
-    case SqlStringOpKind::BASE64_DECODE:
-      return os << "BASE64_DECODE";
-    case SqlStringOpKind::TRY_STRING_CAST:
-      return os << "TRY_STRING_CAST";
-    case SqlStringOpKind::INVALID:
-      return os << "INVALID";
-    case SqlStringOpKind::kUNDEFINED_STRING_OP:
-      return os << "kUNDEFINED_STRING_OP";
+  const static std::unordered_map<SqlStringOpKind, std::string> kind_to_string_map{
+      {SqlStringOpKind::LOWER, "LOWER"},
+      {SqlStringOpKind::UPPER, "UPPER"},
+      {SqlStringOpKind::INITCAP, "INITCAP"},
+      {SqlStringOpKind::REVERSE, "REVERSE"},
+      {SqlStringOpKind::REPEAT, "REPEAT"},
+      {SqlStringOpKind::CONCAT, "||"},
+      {SqlStringOpKind::RCONCAT, "||"},
+      {SqlStringOpKind::LPAD, "LPAD"},
+      {SqlStringOpKind::RPAD, "RPAD"},
+      {SqlStringOpKind::TRIM, "TRIM"},
+      {SqlStringOpKind::LTRIM, "LTRIM"},
+      {SqlStringOpKind::RTRIM, "RTRIM"},
+      {SqlStringOpKind::SUBSTRING, "SUBSTRING"},
+      {SqlStringOpKind::OVERLAY, "OVERLAY"},
+      {SqlStringOpKind::REPLACE, "REPLACE"},
+      {SqlStringOpKind::SPLIT_PART, "SPLIT_PART"},
+      {SqlStringOpKind::STRING_SPLIT, "STRING_SPLIT"},
+      {SqlStringOpKind::REGEXP_REPLACE, "REGEXP_REPLACE"},
+      {SqlStringOpKind::REGEXP_SUBSTR, "REGEXP_SUBSTR"},
+      {SqlStringOpKind::REGEXP_EXTRACT, "REGEXP_EXTRACT"},
+      {SqlStringOpKind::JSON_VALUE, "JSON_VALUE"},
+      {SqlStringOpKind::BASE64_ENCODE, "BASE64_ENCODE"},
+      {SqlStringOpKind::BASE64_DECODE, "BASE64_DECODE"},
+      {SqlStringOpKind::TRY_STRING_CAST, "TRY_STRING_CAST"},
+      {SqlStringOpKind::CHAR_LENGTH, "CHAR_LENGTH"}};
+
+  auto it = kind_to_string_map.find(kind);
+  if (it == kind_to_string_map.end()) {
+    LOG(FATAL) << "Invalid string operation";
+    return os << "INVALID";
+  } else {
+    return os << it->second;
   }
-  LOG(FATAL) << "Invalid string operation";
-  // Make compiler happy
-  return os << "INVALID";
 }
 
 inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
@@ -335,7 +316,8 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
       {"SPLIT", SqlStringOpKind::STRING_SPLIT},
       {"REGEXP_REPLACE", SqlStringOpKind::REGEXP_REPLACE},
       {"REGEXP_SUBSTR", SqlStringOpKind::REGEXP_SUBSTR},
-      {"REGEXP_MATCH", SqlStringOpKind::REGEXP_SUBSTR},
+      {"REGEXP_MATCH_SUBSTRING", SqlStringOpKind::REGEXP_SUBSTR},
+      {"REGEXP_EXTRACT", SqlStringOpKind::REGEXP_EXTRACT},
       {"JSON_VALUE", SqlStringOpKind::JSON_VALUE},
       {"BASE64_ENCODE", SqlStringOpKind::BASE64_ENCODE},
       {"BASE64_DECODE", SqlStringOpKind::BASE64_DECODE},
@@ -354,54 +336,40 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
 }
 
 inline std::string toString(const SqlStringOpKind& kind) {
-  switch (kind) {
-    case SqlStringOpKind::LOWER:
-      return "LOWER";
-    case SqlStringOpKind::UPPER:
-      return "UPPER";
-    case SqlStringOpKind::INITCAP:
-      return "INITCAP";
-    case SqlStringOpKind::REVERSE:
-      return "REVERSE";
-    case SqlStringOpKind::REPEAT:
-      return "REPEAT";
-    case SqlStringOpKind::CONCAT:
-    case SqlStringOpKind::RCONCAT:
-      return "||";
-    case SqlStringOpKind::LPAD:
-      return "LPAD";
-    case SqlStringOpKind::RPAD:
-      return "RPAD";
-    case SqlStringOpKind::TRIM:
-      return "TRIM";
-    case SqlStringOpKind::LTRIM:
-      return "LTRIM";
-    case SqlStringOpKind::RTRIM:
-      return "RTRIM";
-    case SqlStringOpKind::SUBSTRING:
-      return "SUBSTRING";
-    case SqlStringOpKind::OVERLAY:
-      return "OVERLAY";
-    case SqlStringOpKind::REPLACE:
-      return "REPLACE";
-    case SqlStringOpKind::SPLIT_PART:
-      return "SPLIT_PART";
-    case SqlStringOpKind::REGEXP_REPLACE:
-      return "REGEXP_REPLACE";
-    case SqlStringOpKind::REGEXP_SUBSTR:
-      return "REGEXP_SUBSTR";
-    case SqlStringOpKind::JSON_VALUE:
-      return "JSON_VALUE";
-    case SqlStringOpKind::BASE64_ENCODE:
-      return "BASE64_ENCODE";
-    case SqlStringOpKind::BASE64_DECODE:
-      return "BASE64_DECODE";
-    case SqlStringOpKind::TRY_STRING_CAST:
-      return "TRY_STRING_CAST";
-    default:
-      LOG(FATAL) << "Invalid string operation";
+  const static std::unordered_map<SqlStringOpKind, std::string> kind_to_string_map{
+      {SqlStringOpKind::LOWER, "LOWER"},
+      {SqlStringOpKind::UPPER, "UPPER"},
+      {SqlStringOpKind::INITCAP, "INITCAP"},
+      {SqlStringOpKind::REVERSE, "REVERSE"},
+      {SqlStringOpKind::REPEAT, "REPEAT"},
+      {SqlStringOpKind::CONCAT, "||"},
+      {SqlStringOpKind::RCONCAT, "||"},
+      {SqlStringOpKind::LPAD, "LPAD"},
+      {SqlStringOpKind::RPAD, "RPAD"},
+      {SqlStringOpKind::TRIM, "TRIM"},
+      {SqlStringOpKind::LTRIM, "LTRIM"},
+      {SqlStringOpKind::RTRIM, "RTRIM"},
+      {SqlStringOpKind::SUBSTRING, "SUBSTRING"},
+      {SqlStringOpKind::OVERLAY, "OVERLAY"},
+      {SqlStringOpKind::REPLACE, "REPLACE"},
+      {SqlStringOpKind::SPLIT_PART, "SPLIT_PART"},
+      {SqlStringOpKind::STRING_SPLIT, "STRING_SPLIT"},
+      {SqlStringOpKind::REGEXP_REPLACE, "REGEXP_REPLACE"},
+      {SqlStringOpKind::REGEXP_SUBSTR, "REGEXP_SUBSTR"},
+      {SqlStringOpKind::REGEXP_EXTRACT, "REGEXP_EXTRACT"},
+      {SqlStringOpKind::JSON_VALUE, "JSON_VALUE"},
+      {SqlStringOpKind::BASE64_ENCODE, "BASE64_ENCODE"},
+      {SqlStringOpKind::BASE64_DECODE, "BASE64_DECODE"},
+      {SqlStringOpKind::TRY_STRING_CAST, "TRY_STRING_CAST"},
+      {SqlStringOpKind::CHAR_LENGTH, "CHAR_LENGTH"}};
+
+  auto it = kind_to_string_map.find(kind);
+  if (it == kind_to_string_map.end()) {
+    LOG(FATAL) << "Invalid string operation";
+    return "";
+  } else {
+    return it->second;
   }
-  return "";
 }
 
 inline std::string toString(const SqlWindowFunctionKind& kind) {
