@@ -61,6 +61,7 @@ class LLVMJITValue final : public JITValue {
   JITValuePointer mul(JITValue& rh) override;
   JITValuePointer div(JITValue& rh) override;
   JITValuePointer mod(JITValue& rh) override;
+  JITValuePointer uminus() override;
 
   JITValuePointer eq(JITValue& rh) override;
   JITValuePointer ne(JITValue& rh) override;

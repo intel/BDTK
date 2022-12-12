@@ -23,9 +23,9 @@
 
 namespace {
 class MonthDaySecond {
-  int64_t months;  // Number of months since 2000 March 1.
-  unsigned dom;    // day-of-month (0-based)
-  unsigned sod;    // second-of-day
+  int64_t months_;  // Number of months since 2000 March 1.
+  unsigned dom_;    // day-of-month (0-based)
+  unsigned sod_;    // second-of-day
 
   // Clamp day-of-month to max day of the month. E.g. April 31 -> 30.
   static unsigned clampDom(unsigned yoe, unsigned moy, unsigned dom) {
@@ -41,33 +41,32 @@ class MonthDaySecond {
   }
 
  public:
-  MonthDaySecond(int64_t const timeval) {
-    int64_t const day = floor_div(timeval, kSecsPerDay);
-    int64_t const era = floor_div(day - kEpochAdjustedDays, kDaysPer400Years);
-    sod = timeval - day * kSecsPerDay;
-    unsigned const doe = day - kEpochAdjustedDays - era * kDaysPer400Years;
+  MonthDaySecond(int32_t const days, unsigned sod = 0) {
+    sod_ = sod;
+    int64_t const era = floor_div(days - kEpochAdjustedDays, kDaysPer400Years);
+    unsigned const doe = days - kEpochAdjustedDays - era * kDaysPer400Years;
     unsigned const yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
     unsigned const doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
     unsigned const moy = (5 * doy + 2) / 153;
-    dom = doy - (153 * moy + 2) / 5;
-    months = (era * 400 + yoe) * 12 + moy;
+    dom_ = doy - (153 * moy + 2) / 5;
+    months_ = (era * 400 + yoe) * 12 + moy;
   }
 
   MonthDaySecond const& addMonths(int64_t const months) {
-    this->months += months;
+    months_ += months;
     return *this;
   }
 
   // Return number of seconds since 1 January 1970.
-  int64_t unixtime() const { return getDays() * kSecsPerDay + sod; }
+  int64_t unixtime() const { return getDays() * kSecsPerDay + sod_; }
 
   // Return days since 1 January 1970.
   int32_t getDays() const {
-    int64_t const era = floor_div(months, 12 * 400);
-    unsigned const moe = months - era * (12 * 400);
+    int64_t const era = floor_div(months_, 12 * 400);
+    unsigned const moe = months_ - era * (12 * 400);
     unsigned const yoe = moe / 12;
     unsigned const moy = moe % 12;
-    unsigned const doy = (153 * moy + 2) / 5 + clampDom(yoe, moy, dom);
+    unsigned const doy = (153 * moy + 2) / 5 + clampDom(yoe, moy, dom_);
     unsigned const doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     return (kEpochAdjustedDays + era * kDaysPer400Years + doe);
   }
@@ -77,9 +76,9 @@ class MonthDaySecond {
 
 constexpr int64_t pow10[10]{1, 0, 0, 1000, 0, 0, 1000 * 1000, 0, 0, 1000 * 1000 * 1000};
 
-extern "C" ALWAYS_INLINE int32_t DateAddSeconds(const int32_t time,
+extern "C" ALWAYS_INLINE int32_t DateAddSeconds(const int32_t days,
                                                 const int64_t interval) {
-  return time + interval / kSecsPerDay;
+  return days + interval / kSecsPerDay;
 }
 
 extern "C" ALWAYS_INLINE int64_t TimeAddSeconds(const int64_t time,
@@ -87,20 +86,21 @@ extern "C" ALWAYS_INLINE int64_t TimeAddSeconds(const int64_t time,
   return time + interval;
 }
 
-extern "C" ALWAYS_INLINE int32_t DateAddMonths(const int32_t time,
+extern "C" ALWAYS_INLINE int32_t DateAddMonths(const int32_t days,
                                                const int64_t interval) {
-  return MonthDaySecond(time).addMonths(interval).getDays();
+  return MonthDaySecond(days).addMonths(interval).getDays();
 }
 
-extern "C" ALWAYS_INLINE int32_t TimeAddMonths(const int64_t time,
+extern "C" ALWAYS_INLINE int64_t TimeAddMonths(const int64_t time,
                                                const int64_t interval) {
-  return MonthDaySecond(time).addMonths(interval).unixtime();
+  int32_t const days = floor_div(time, kSecsPerDay);
+  return MonthDaySecond(days, time - days * kSecsPerDay).addMonths(interval).unixtime();
 }
 
 extern "C" ALWAYS_INLINE int64_t TimeAddMonthsHighPrecision(const int64_t time,
                                                             const int64_t interval,
                                                             const int32_t dim) {
-  const int64_t scale = pow10[dim];
+  int64_t const scale = pow10[dim];
   return TimeAddMonths(floor_div(time, scale), interval) * scale +
          unsigned_mod(time, scale);
 }
@@ -108,7 +108,7 @@ extern "C" ALWAYS_INLINE int64_t TimeAddMonthsHighPrecision(const int64_t time,
 extern "C" ALWAYS_INLINE int64_t TimeAddSecondsHighPrecision(const int64_t time,
                                                              const int64_t interval,
                                                              const int32_t dim) {
-  const int64_t scale = pow10[dim];
+  int64_t const scale = pow10[dim];
   return TimeAddSeconds(floor_div(time, scale), interval) * scale +
          unsigned_mod(time, scale);
 }

@@ -98,6 +98,27 @@ JITValuePointer LLVMJITValue::notOp() {
       JITTypeTag::BOOL, parent_function_, ans, "not", false);
 }
 
+JITValuePointer LLVMJITValue::uminus() {
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_).CreateNeg(load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_).CreateFNeg(load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for uminus operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "uminus", false);
+}
+
 JITValuePointer LLVMJITValue::mod(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mod");

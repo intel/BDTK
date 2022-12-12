@@ -82,6 +82,7 @@ class JITValue : protected exec::nextgen::utils::ReferenceCounter {
   virtual JITValuePointer mul(JITValue& rh) = 0;
   virtual JITValuePointer div(JITValue& rh) = 0;
   virtual JITValuePointer mod(JITValue& rh) = 0;
+  virtual JITValuePointer uminus() = 0;
 
   // // Compare Operators
   virtual JITValuePointer eq(JITValue& rh) = 0;

@@ -724,11 +724,10 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildTimeAddExp
                                    .months();
     std::shared_ptr<Analyzer::Expr> interval_months =
         std::make_shared<Analyzer::Constant>(interval_ti, false, interval_value);
-    auto bigint_ti = SQLTypeInfo(kBIGINT, false);
     auto interval_expr = function_name == "add"
                              ? interval_months
                              : std::make_shared<Analyzer::UOper>(
-                                   bigint_ti, false, SQLOps::kUMINUS, interval_months);
+                                   interval_ti, false, SQLOps::kUMINUS, interval_months);
     return makeExpr<Analyzer::DateaddExpr>(datetime_ti, daMONTH, interval_expr, datetime);
   } else if (s_scalar_function.arguments(1)
                  .value()
@@ -747,12 +746,11 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildTimeAddExp
     SQLTypeInfo interval_ti(SQLTypes::kINTERVAL_DAY_TIME, true);
     std::shared_ptr<Analyzer::Expr> interval_secs =
         std::make_shared<Analyzer::Constant>(interval_ti, false, interval_value);
-    auto bigint_ti = SQLTypeInfo(kBIGINT, false);
 
     auto interval_expr = function_name == "add"
                              ? interval_secs
                              : std::make_shared<Analyzer::UOper>(
-                                   bigint_ti, false, SQLOps::kUMINUS, interval_secs);
+                                   interval_ti, false, SQLOps::kUMINUS, interval_secs);
 
     return makeExpr<Analyzer::DateaddExpr>(
         datetime_ti, daSECOND, interval_expr, datetime);

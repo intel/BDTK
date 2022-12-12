@@ -79,9 +79,8 @@ JITExprValue& UOper::codegen(JITFunction& func) {
     CIDER_THROW(CiderCompileException, "Unnest not supported in UOper");
   }
   const auto& operand_ti = operand->get_type_info();
-  if (operand_ti.is_decimal() || operand_ti.is_timeinterval()) {
-    CIDER_THROW(CiderCompileException,
-                "Decimal and TimeInterval are not supported in Uoper codegen now.");
+  if (operand_ti.is_decimal()) {
+    CIDER_THROW(CiderCompileException, "Decimal not supported in Uoper codegen now.");
   }
 
   switch (get_optype()) {
@@ -94,6 +93,9 @@ JITExprValue& UOper::codegen(JITFunction& func) {
     }
     case kCAST: {
       return codegenCast(func, operand);
+    }
+    case kUMINUS: {
+      return set_expr_value(operand_val.getNull(), -operand_val.getValue());
     }
     default:
       UNIMPLEMENTED();

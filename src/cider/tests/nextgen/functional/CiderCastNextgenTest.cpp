@@ -153,37 +153,6 @@ TEST_F(CiderCastNextgenTest, castIntegerTest) {
        reinterpret_cast<int8_t*>(col_bigint.data())});
 }
 
-TEST_F(CiderCastNextgenTest, castDateTest) {
-  ArrowArray* array = nullptr;
-  ArrowSchema* schema = nullptr;
-  const int64_t cast_scaled = 86400L * 1000 * 1000;
-  const int32_t row_num = 5;
-  std::vector<int32_t> col_date{-1, -2, -3, 4, 5};
-  std::vector<int64_t> col_timestamp(row_num);
-  for (int i = 0; i < row_num; i++) {
-    col_timestamp[i] = col_date[i] * cast_scaled;
-  }
-  std::vector<bool> vec_null(row_num, false);
-  std::tie(schema, array) =
-      ArrowArrayBuilder()
-          .setRowNum(row_num)
-          .addColumn<int32_t>("col_date", CREATE_SUBSTRAIT_TYPE(Date), col_date, vec_null)
-          .addColumn<int64_t>(
-              "col_timestamp", CREATE_SUBSTRAIT_TYPE(Timestamp), col_timestamp, vec_null)
-          .build();
-
-  std::string ddl = "CREATE TABLE test(col_date DATE, col_timestamp TIMESTAMP);";
-
-  executeTest(array,
-              ddl,
-              "select cast(col_date as TIMESTAMP), cast(col_timestamp as DATE) from test",
-              {row_num * sizeof(int64_t), row_num * sizeof(int32_t)},
-              {
-                  reinterpret_cast<int8_t*>(col_timestamp.data()),
-                  reinterpret_cast<int8_t*>(col_date.data()),
-              });
-}
-
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);

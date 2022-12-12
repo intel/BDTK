@@ -100,6 +100,10 @@ inline JITValuePointer operator+(T lh, JITValue& rh) {
   return rh + lh;
 }
 
+inline JITValuePointer operator-(JITValue& value) {
+  return value.uminus();
+}
+
 inline JITValuePointer operator-(JITValue& lh, JITValue& rh) {
   return lh.sub(rh);
 }
