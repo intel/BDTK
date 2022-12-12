@@ -72,7 +72,7 @@ class ColumnReader {
     auto row_data = value_pointer + cur_offset;  // still char*
 
     if (expr_->get_type_info().get_notnull()) {
-      expr_->set_expr_value<JITExprValueType::ROW>(nullptr, len, row_data);
+      expr_->set_expr_value(func.createConstant(JITTypeTag::BOOL, false), len, row_data);
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.
@@ -81,7 +81,7 @@ class ColumnReader {
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::BOOL,
               .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
-      expr_->set_expr_value<JITExprValueType::ROW>(row_null_data, len, row_data);
+      expr_->set_expr_value(row_null_data, len, row_data);
     }
   }
 
