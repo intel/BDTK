@@ -21,7 +21,21 @@ set(DEP_LIBS ${EXECUTE_TEST_LIBS})
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
+find_package(folly REQUIRED)
+find_package(gflags REQUIRED)
+
+set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -mavx2 -mfma -mavx -mf16c -masm=intel -mlzcnt")
+
+set_and_check(FOLLY_INCLUDE_DIR /usr/local/include/folly)
+set_and_check(FOLLY_CMAKE_DIR /usr/local/lib/cmake/folly)
+if(NOT TARGET Folly::folly)
+  include("${FOLLY_CMAKE_DIR}/folly-targets.cmake")
+endif()
+
+include_directories(${folly_INCLUDE_DIRS})
+
 add_executable(CiderHashTableTest CiderHashTableTest.cpp)
-target_link_libraries(CiderHashTableTest ${DEP_LIBS})
+target_link_libraries(CiderHashTableTest ${DEP_LIBS} ${FOLLY_LIBRARIES})
 add_test(CiderHashTableTest ${EXECUTABLE_OUTPUT_PATH}/CiderHashTableTest
          ${TEST_ARGS})

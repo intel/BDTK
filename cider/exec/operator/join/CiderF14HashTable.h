@@ -18,16 +18,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #include <folly/FBVector.h>
+#include <folly/container/F14Map.h>
 
 // used as test
 template <typename Key, typename Value>
-class DuplicateStdHashmap {
+class DuplicateF14map {
  public:
-  DuplicateStdHashmap(){};
+  DuplicateF14map(){};
   folly::fbvector<Value> lookup(Key key) {
-    auto iter = umap_.find(key);
-    if (iter != umap_.end()) {
+    auto iter = f14_map_.find(key);
+    if (iter != f14_map_.end()) {
       return iter->second;
     }
     folly::fbvector<Value> empty_res;
@@ -35,15 +37,15 @@ class DuplicateStdHashmap {
   }
 
   void insert(Key&& key, Value&& value) {
-    if (umap_.count(key) == 0) {
-      umap_[key] = folly::fbvector<Value>{value};
+    if (f14_map_.count(key) == 0) {
+      f14_map_[key] = folly::fbvector<Value>{value};
     } else {
-      auto tmp_value = &umap_[key];
+      auto tmp_value = &f14_map_[key];
       tmp_value->push_back(value);
     }
   }
-  std::unordered_map<Key, folly::fbvector<Value>>& getMap() { return umap_; }
+  folly::F14FastMap<Key, folly::fbvector<Value>>& getMap() { return f14_map_; }
 
  private:
-  std::unordered_map<Key, folly::fbvector<Value>> umap_;
+  folly::F14FastMap<Key, folly::fbvector<Value>> f14_map_;
 };

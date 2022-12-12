@@ -25,6 +25,7 @@
 #include <random>
 #include <unordered_map>
 #include <vector>
+#include "exec/operator/join/CiderF14HashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashtable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "util/Logger.h"
@@ -154,27 +155,39 @@ TEST(CiderHashTableTest, LPHashMapTest) {
   // Create a LPHashTable with 16 buckets and 0 as the empty key
   cider_ht::LPHashTable<int, int, murmurHash, Equal> hm(1024, NULL);
   for (int i = 0; i < 10000; i++) {
-    int key = random(-10000, 10000);
+    int key = random(-100000, 10000);
     int value = random(-10000, 10000);
     hm.insert(key, value);
   }
-  for (int i = 0; i < 100000; i++) {
+  for (int i = 0; i < 1000000; i++) {
     int key = random(-10000, 10000);
     auto hm_res_vec = hm.lookup(key);
   }
 }
 
 TEST(CiderHashTableTest, dupMapTest) {
-  // Create a LPHashTable with 16 buckets and 0 as the empty key
   DuplicateStdHashmap<int, int> dup_map;
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 100000; i++) {
     int key = random(-10000, 10000);
     int value = random(-10000, 10000);
     dup_map.insert(std::move(key), std::move(value));
   }
-  for (int i = 0; i < 100000; i++) {
+  for (int i = 0; i < 1000000; i++) {
     int key = random(-10000, 10000);
     auto dup_res_vec = dup_map.lookup(key);
+  }
+}
+
+TEST(CiderHashTableTest, f14MapTest) {
+  DuplicateF14map<int, int> f14_map;
+  for (int i = 0; i < 100000; i++) {
+    int key = random(-10000, 10000);
+    int value = random(-10000, 10000);
+    f14_map.insert(std::move(key), std::move(value));
+  }
+  for (int i = 0; i < 1000000; i++) {
+    int key = random(-10000, 10000);
+    auto f14_res_vec = f14_map.lookup(key);
   }
 }
 

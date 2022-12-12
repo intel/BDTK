@@ -32,6 +32,7 @@ Disadvantages:
  */
 #pragma once
 
+#include <folly/FBVector.h>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -47,16 +48,15 @@ struct table_key {
   std::size_t duplicate_num;
 };
 
-// TODO: extends JoinHashTable class
+// TODO: extends JoinHashTable class and a hashtable basic interface
 template <typename Key,
           typename T,
           typename Hash = std::hash<Key>,
           typename KeyEqual = std::equal_to<void>,
-          typename Allocator = std::allocator<std::pair<Key, T>>>
+          typename Allocator = std::allocator<std::pair<table_key<Key>, T>>>
 class LPHashTable {
  public:
   using key_type = table_key<Key>;
-
   using mapped_type = T;
   using value_type = std::pair<key_type, T>;
   using size_type = std::size_t;
@@ -64,7 +64,7 @@ class LPHashTable {
   using key_equal = KeyEqual;
   using allocator_type = Allocator;
   using reference = value_type&;
-  using buckets = std::vector<value_type, allocator_type>;
+  using buckets = folly::fbvector<value_type, allocator_type>;
 
   template <typename ContT, typename IterVal>
   struct hm_iterator {
@@ -189,7 +189,7 @@ class LPHashTable {
   }
 
   // Lookup
-  std::vector<mapped_type> lookup(const Key& key) { return lookup_impl(key); }
+  folly::fbvector<mapped_type> lookup(const Key& key) { return lookup_impl(key); }
 
   // Bucket interface
   size_type bucket_count() const noexcept { return buckets_.size(); }
@@ -234,8 +234,8 @@ class LPHashTable {
   }
 
   template <typename K>
-  std::vector<mapped_type> lookup_impl(const K& key) {
-    std::vector<mapped_type> vec;
+  folly::fbvector<mapped_type> lookup_impl(const K& key) {
+    folly::fbvector<mapped_type> vec;
     int duplicate_num = 0;
     for (size_t idx = key_to_idx(key);; idx = probe_next(idx)) {
       if (key_equal()(buckets_[idx].first.key, key) && buckets_[idx].first.is_not_null) {
