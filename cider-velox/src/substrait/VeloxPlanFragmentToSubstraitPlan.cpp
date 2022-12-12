@@ -103,6 +103,31 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
         return std::make_shared<FilterNode>(
             filterNode->id(), filterNode->filter(), planBuilder_->planNode());
       });
+    } else if (auto orderByNode = std::dynamic_pointer_cast<const OrderByNode>(*riter)) {
+      planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
+        return std::make_shared<OrderByNode>(orderByNode->id(),
+                                             orderByNode->sortingKeys(),
+                                             orderByNode->sortingOrders(),
+                                             orderByNode->isPartial(),
+                                             planBuilder_->planNode());
+      });
+    } else if (auto limitNode = std::dynamic_pointer_cast<const LimitNode>(*riter)) {
+      planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
+        return std::make_shared<LimitNode>(limitNode->id(),
+                                           limitNode->offset(),
+                                           limitNode->count(),
+                                           limitNode->isPartial(),
+                                           planBuilder_->planNode());
+      });
+    } else if (auto topNNode = std::dynamic_pointer_cast<const TopNNode>(*riter)) {
+      planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
+        return std::make_shared<TopNNode>(topNNode->id(),
+                                          topNNode->sortingKeys(),
+                                          topNNode->sortingOrders(),
+                                          topNNode->count(),
+                                          topNNode->isPartial(),
+                                          planBuilder_->planNode());
+      });
     } else if (auto valuesNode = std::dynamic_pointer_cast<const ValuesNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
         return std::make_shared<ValuesNode>(valuesNode->id(), valuesNode->values());
