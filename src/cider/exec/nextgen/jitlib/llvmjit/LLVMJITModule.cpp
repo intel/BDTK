@@ -52,21 +52,20 @@ static void dumpModuleIR(llvm::Module* module, const std::string& module_name) {
   }
 }
 
+namespace {
+static std::unique_ptr<llvm::MemoryBuffer> runtime_function_buffer = []() {
+  auto root_path = cider::get_root_abs_path();
+  auto template_path = root_path + "/function/RuntimeFunctions.bc";
+  CHECK(boost::filesystem::exists(template_path));
+
+  auto buffer_or_error = llvm::MemoryBuffer::getFile(template_path);
+  CHECK(!buffer_or_error.getError()) << "bc_filename=" << template_path;
+  return std::move(buffer_or_error.get());
+}();
+
 static llvm::MemoryBuffer* getRuntimeBuffer() {
-  static std::once_flag has_set_buffer;
-  static std::unique_ptr<llvm::MemoryBuffer> runtime_function_buffer;
-
-  std::call_once(has_set_buffer, [&]() {
-    auto root_path = cider::get_root_abs_path();
-    auto template_path = root_path + "/function/RuntimeFunctions.bc";
-    CHECK(boost::filesystem::exists(template_path));
-
-    auto buffer_or_error = llvm::MemoryBuffer::getFile(template_path);
-    CHECK(!buffer_or_error.getError()) << "bc_filename=" << template_path;
-    runtime_function_buffer = std::move(buffer_or_error.get());
-  });
-
   return runtime_function_buffer.get();
+}
 }
 
 LLVMJITModule::LLVMJITModule(const std::string& name,
