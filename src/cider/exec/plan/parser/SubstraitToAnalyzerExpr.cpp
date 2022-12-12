@@ -806,8 +806,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildStrExpr(
       getFunctionSignature(function_map, s_scalar_function.function_reference());
   auto funtion_return_type = TypeUtils::getStringType(s_scalar_function.output_type());
   const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
-  auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_sig, funtion_return_type, from_platform_);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_sig, funtion_return_type);
   if (!function_descriptor.is_cider_support_function) {
     CIDER_THROW(CiderCompileException,
                 fmt::format("Not cider support scalar function, function_sig: {}, "
@@ -943,8 +943,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       getFunctionSignature(function_map, s_scalar_function.function_reference());
   auto funtion_return_type = TypeUtils::getStringType(s_scalar_function.output_type());
   const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
-  auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_sig, funtion_return_type, from_platform_);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_sig, funtion_return_type);
   if (!function_descriptor.is_cider_support_function) {
     CIDER_THROW(CiderCompileException,
                 fmt::format("Not cider support scalar function, function_sig: {}, "
@@ -1148,7 +1148,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
   }
   const auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform_);
   auto function_descriptor =
-      function_lookup_ptr->lookupFunction(function_sig, return_type, from_platform_);
+      function_lookup_ptr->lookupFunction(function_sig, return_type);
   if (!function_descriptor.is_cider_support_function ||
       function_descriptor.agg_op_type == SQLAgg::kUNDEFINED_AGG) {
     CIDER_THROW(

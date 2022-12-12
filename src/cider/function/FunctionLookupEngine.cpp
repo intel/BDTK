@@ -332,8 +332,7 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
 
 const FunctionDescriptor FunctionLookupEngine::lookupFunction(
     const std::string& function_signature_str,
-    const std::string& function_return_type_str,
-    const PlatformType& from_platform) const {
+    const std::string& function_return_type_str) const {
   FunctionDescriptor function_descriptor;
   std::string function_name;
   auto pos = function_signature_str.find_first_of(':');
@@ -352,7 +351,7 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
       function_signature_str.substr(pos + 1, function_signature_str.length());
   std::vector<std::string> function_args_vec = split(function_args, "_");
   FunctionSignature function_signature;
-  function_signature.from_platform = from_platform;
+  function_signature.from_platform = from_platform_;
   function_signature.func_name = function_name;
   std::vector<io::substrait::TypePtr> arguments_vec;
   for (const auto& arg_str : function_args_vec) {
