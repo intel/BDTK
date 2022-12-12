@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <vector>
 #include "exec/operator/join/CiderF14HashTable.h"
-#include "exec/operator/join/CiderLinearProbingHashtable.h"
+#include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "util/Logger.h"
 
