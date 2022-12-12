@@ -47,8 +47,9 @@ void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
   for (int64_t index = 0; index < exprs.size(); ++index) {
     auto col_var_expr = dynamic_cast<Analyzer::ColumnVar*>(exprs[index].get());
     CHECK(col_var_expr);
-    auto child_array = func->createLocalJITValue([&arrow_pointer, index]() {
-      return context::codegen_utils::getArrowArrayChild(arrow_pointer, index);
+    auto child_array = func->createLocalJITValue([&arrow_pointer, col_var_expr]() {
+      return context::codegen_utils::getArrowArrayChild(arrow_pointer,
+                                                        col_var_expr->get_column_id());
     });
 
     int64_t buffer_num = utils::getBufferNum(col_var_expr->get_type_info().get_type());
