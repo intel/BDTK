@@ -97,6 +97,10 @@ class JITFunction {
     return createLiteralImpl(type_tag, castLiteral(type_tag, value));
   }
 
+  JITValuePointer createStringLiteral(const std::string& value) {
+    return createLiteralImpl(JITTypeTag::VARCHAR, value);
+  }
+
   using LocalJITValueBuilderEmitter = JITValuePointer(void*);
 
   template <

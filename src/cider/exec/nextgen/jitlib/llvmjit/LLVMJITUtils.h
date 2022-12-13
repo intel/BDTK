@@ -99,6 +99,15 @@ inline llvm::Value* getLLVMConstantFP(double value,
       return nullptr;
   }
 }
+
+inline llvm::Value* getLLVMConstantGlobalStr(const std::string& value,
+                                             llvm::IRBuilder<>* builder,
+                                             llvm::LLVMContext& ctx) {
+  llvm::Value* str_lv = builder->CreateGlobalString(
+      value, "str_const_" + std::to_string(std::hash<std::string>()(value)));
+  str_lv = builder->CreateBitCast(str_lv, getLLVMPtrType(JITTypeTag::INT8, ctx));
+  return str_lv;
+}
 };  // namespace cider::jitlib
 
 #endif  // JITLIB_LLVMJIT_LLVMJITUTILS_H

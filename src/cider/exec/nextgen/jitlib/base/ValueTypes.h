@@ -37,6 +37,7 @@ enum class JITTypeTag {
   FLOAT,
   DOUBLE,
   POINTER,
+  VARCHAR,
   TUPLE,  // Logical struct
   STRUCT  // Physical struct
 };
@@ -155,6 +156,14 @@ struct JITTypeTraits<JITTypeTag::STRUCT> {
   static constexpr const char* name = "STRUCT";
 };
 
+template <>
+struct JITTypeTraits<JITTypeTag::VARCHAR> {
+  using NativeType = std::string;
+  static constexpr bool isFixedWidth = false;
+  static constexpr JITTypeTag tag = JITTypeTag::VARCHAR;
+  static constexpr const char* name = "VARCHAR";
+};
+
 inline const char* getJITTypeName(JITTypeTag type_tag) {
   switch (type_tag) {
     case JITTypeTag::BOOL:
@@ -173,6 +182,8 @@ inline const char* getJITTypeName(JITTypeTag type_tag) {
       return JITTypeTraits<JITTypeTag::DOUBLE>::name;
     case JITTypeTag::POINTER:
       return JITTypeTraits<JITTypeTag::POINTER>::name;
+    case JITTypeTag::VARCHAR:
+      return JITTypeTraits<JITTypeTag::VARCHAR>::name;
     case JITTypeTag::TUPLE:
       return JITTypeTraits<JITTypeTag::TUPLE>::name;
     case JITTypeTag::STRUCT:

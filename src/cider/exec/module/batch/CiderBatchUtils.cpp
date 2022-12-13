@@ -267,6 +267,7 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
     case kSTRUCT:
       return "+s";
     case kVARCHAR:
+    case kCHAR:
     case kTEXT:
       return "u";
     default:
