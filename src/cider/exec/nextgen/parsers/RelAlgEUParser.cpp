@@ -96,6 +96,9 @@ class InputAnalyzer {
     } else {
       auto children = (*curr)->get_children_reference();
       for (ExprPtr* child : children) {
+        if (!child || !child->get()) {
+          continue;
+        }
         traverse(child);
       }
     }
