@@ -349,53 +349,61 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
   function_signature.from_platform = from_platform;
   function_signature.func_name = function_name;
   std::vector<io::substrait::TypePtr> arguments_vec;
-  for (const auto& arg_str : function_args_vec) {
+  for (auto i = 0; i < function_args_vec.size(); ++i) {
+    auto arg_str = function_args_vec[i];
     if (arg_str == "req" || arg_str == "opt") {
       continue;
     }
-    arguments_vec.push_back(getArgueTypePtr(arg_str));
+    if (arg_str == "list") {
+      // convert in:str_list to in:string_list<string>
+      CHECK_GT(i, 0);
+      arguments_vec.push_back(getArgueTypePtr(fmt::format(
+          "list<{}>", getTypeSignatureRealTypeName(function_args_vec[i - 1]))));
+    } else {
+      arguments_vec.push_back(getArgueTypePtr(getTypeSignatureRealTypeName(arg_str)));
+    }
   }
   function_signature.arguments = arguments_vec;
-  function_signature.return_type = getArgueTypePtr(function_return_type_str);
+  function_signature.return_type =
+      getArgueTypePtr(getTypeSignatureRealTypeName(function_return_type_str));
   function_descriptor = lookupFunction(function_signature);
   return function_descriptor;
 }
 
 const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
     const std::string& argue_type_str) const {
-  io::substrait::TypePtr result_ptr = nullptr;
-  if (argue_type_str == "varchar" || argue_type_str == "vchar") {
-    result_ptr = io::substrait::Type::decode("varchar<L1>");
-  } else if (argue_type_str == "fixedchar" || argue_type_str == "fchar") {
-    result_ptr = io::substrait::Type::decode("fixedchar<L1>");
-  } else if (argue_type_str == "fixedbinary" || argue_type_str == "fbin") {
-    result_ptr = io::substrait::Type::decode("fixedbinary<L1>");
-  } else if (argue_type_str == "decimal" || argue_type_str == "dec") {
-    result_ptr = io::substrait::Type::decode("decimal<P,S>");
-  } else if (argue_type_str == "struct") {
-    result_ptr = io::substrait::Type::decode("struct<fp64,i64>");
-  } else if (argue_type_str == "bool") {
-    result_ptr = io::substrait::Type::decode("boolean");
-  } else if (argue_type_str == "int8") {
-    result_ptr = io::substrait::Type::decode("i8");
-  } else if (argue_type_str == "int16") {
-    result_ptr = io::substrait::Type::decode("i16");
-  } else if (argue_type_str == "int32") {
-    result_ptr = io::substrait::Type::decode("i32");
-  } else if (argue_type_str == "int64") {
-    result_ptr = io::substrait::Type::decode("i64");
-  } else if (argue_type_str == "str") {
-    result_ptr = io::substrait::Type::decode("string");
-  } else if (argue_type_str == "year" || argue_type_str == "iyear") {
-    result_ptr = io::substrait::Type::decode("interval_year");
-  } else if (argue_type_str == "day" || argue_type_str == "iday") {
-    result_ptr = io::substrait::Type::decode("interval_day");
-  } else if (argue_type_str == "ts") {
-    result_ptr = io::substrait::Type::decode("timestamp");
-  } else if (argue_type_str == "tstz") {
-    result_ptr = io::substrait::Type::decode("timestamp_tz");
-  } else {
-    result_ptr = io::substrait::Type::decode(argue_type_str);
-  }
+  io::substrait::TypePtr result_ptr = io::substrait::Type::decode(argue_type_str);
   return result_ptr;
+}
+
+const std::string FunctionLookupEngine::getTypeSignatureRealTypeName(
+    const std::string& argue_type_signature_str) const {
+  const static std::unordered_map<std::string, std::string> type_signature_map = {
+      {"varchar", "varchar<L1>"},
+      {"vchar", "varchar<L1>"},
+      {"fixedchar", "fixedchar<L1>"},
+      {"fchar", "fixedchar<L1>"},
+      {"fixedbinary", "fixedbinary<L1>"},
+      {"fbin", "fixedbinary<L1>"},
+      {"decimal", "decimal<P,S>"},
+      {"struct", "struct<fp64,i64>"},
+      {"dec", "decimal<P,S>"},
+      {"bool", "boolean"},
+      {"int8", "i8"},
+      {"int16", "i16"},
+      {"int32", "i32"},
+      {"int64", "i64"},
+      {"str", "string"},
+      {"year", "interval_year"},
+      {"iyear", "interval_year"},
+      {"day", "interval_day"},
+      {"iday", "interval_day"},
+      {"ts", "timestamp"},
+      {"tstz", "timestamp_tz"},
+  };
+  const auto iter = type_signature_map.find(argue_type_signature_str);
+  if (iter != type_signature_map.end()) {
+    return iter->second;
+  }
+  return argue_type_signature_str;
 }
