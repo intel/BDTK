@@ -61,6 +61,7 @@ void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
     buffers_bytes_[index] = bytes;
   } else {
     buffers_[index] = allocator_->allocate(bytes);
+    memset(buffers_[index], 0, bytes);  // set new initialized bytes to 0
     buffers_bytes_[index] = bytes;
   }
 }
