@@ -223,7 +223,16 @@ class ProjectStringTest : public ::testing::Test {
                 CREATE_SUBSTRAIT_TYPE(I64),
                 {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
                 {true, false, false, false, false, true, false, false, false, false})
-            .addUTF8Column("b", str1, offset1)
+            .addUTF8Column(
+                "b",
+                str1,
+                offset1,
+                {true, false, false, false, false, true, false, false, false, false})
+            .addUTF8Column(
+                "c",
+                str1,
+                offset1,
+                {true, false, false, false, false, true, false, false, false, false})
             .build();
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
@@ -246,11 +255,11 @@ class ProjectStringTest : public ::testing::Test {
   }
 
  private:
-  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b VARCHAR(10));";
+  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b VARCHAR(10), c VARCHAR(10));";
 };
 
 TEST_F(ProjectStringTest, FrameworkTest) {
-  executeTest("select b from test where a > 0");
+  executeTest("select b from test where b = c");
 }
 
 int main(int argc, char** argv) {

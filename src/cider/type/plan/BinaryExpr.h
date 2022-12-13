@@ -157,6 +157,10 @@ class BinOper : public Expr {
   JITExprValue& codegenFixedSizeDistinctFrom(JITFunction& func,
                                              FixSizeJITExprValue& lhs,
                                              FixSizeJITExprValue& rhs);
+  JITExprValue& codegenVarcharCmpFun(JITFunction& func,
+                                     JITValuePointer& null,
+                                     VarSizeJITExprValue& lhs,
+                                     VarSizeJITExprValue& rhs);
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.
