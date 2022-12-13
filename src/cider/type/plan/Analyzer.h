@@ -43,8 +43,8 @@
 #include "type/plan/ColumnExpr.h"
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/Expr.h"
-#include "type/plan/UnaryExpr.h"
 #include "type/plan/LikeExpr.h"
+#include "type/plan/UnaryExpr.h"
 #include "util/Logger.h"
 #include "util/sqldefs.h"
 
