@@ -36,6 +36,22 @@
 
 namespace cider::jitlib {
 
+static void dumpModuleIR(llvm::Module* module, const std::string& module_name) {
+  const std::string fname = module_name + ".ll";
+
+  std::error_code error_code;
+  llvm::raw_fd_ostream file(fname, error_code, llvm::sys::fs::F_None);
+  if (error_code) {
+    LOG(ERROR) << "Could not open file to dump Module IR: " << fname;
+  }
+
+  llvm::legacy::PassManager pass_mgr;
+  pass_mgr.add(llvm::createStripDeadPrototypesPass());
+  pass_mgr.run(*module);
+
+  file << *module;
+}
+
 static llvm::MemoryBuffer* getRuntimeBuffer() {
   static std::once_flag has_set_buffer;
   static std::unique_ptr<llvm::MemoryBuffer> runtime_function_buffer;
@@ -54,10 +70,10 @@ static llvm::MemoryBuffer* getRuntimeBuffer() {
 }
 
 LLVMJITModule::LLVMJITModule(const std::string& name,
-                             bool should_copy_runtime_module,
+                             bool copy_runtime_module,
                              const CompilationOptions& co)
     : context_(std::make_unique<llvm::LLVMContext>()), engine_(nullptr), co_(co) {
-  if (should_copy_runtime_module) {
+  if (copy_runtime_module) {
     auto expected_res =
         llvm::parseBitcodeFile(getRuntimeBuffer()->getMemBufferRef(), *context_);
     if (!expected_res) {
@@ -66,6 +82,7 @@ LLVMJITModule::LLVMJITModule(const std::string& name,
       runtime_module_ = std::move(expected_res.get());
     }
     copyRuntimeModule();
+    module_->setModuleIdentifier(name);
   } else {
     module_ = std::make_unique<llvm::Module>(name, *context_);
   }
@@ -120,13 +137,16 @@ JITFunctionPointer LLVMJITModule::createJITFunction(
 void LLVMJITModule::finish() {
   // TODO (bigPYJ1151): Refactor Debug information.
   if (co_.dump_ir) {
-    llvm::outs() << *module_;
+    dumpModuleIR(module_.get(), module_->getModuleIdentifier());
   }
 
   LLVMJITEngineBuilder builder(*this);
 
   // IR optimization
   optimizeIR(module_.get());
+  if (co_.dump_ir) {
+    dumpModuleIR(module_.get(), module_->getModuleIdentifier() + "_opt");
+  }
 
   engine_ = builder.build();
 }
