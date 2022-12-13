@@ -53,9 +53,6 @@ FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
 
 void FunctionLookupEngine::registerFunctionLookUpContext(
     const std::string& yaml_conf_path, const PlatformType from_platform) {
-
-  printf("66666666666666666666666666666 yaml_conf_path = %s\n", yaml_conf_path.c_str());
-
   // Load cider support function default yaml files first.
   const std::vector<std::string> internal_files = {
       "functions_aggregate_approx.yaml",
