@@ -22,6 +22,7 @@
 #ifndef CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
 #define CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
 
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -30,7 +31,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <filesystem>
 
 #include "FunctionLookup.h"
 #include "FunctionMapping.h"
@@ -110,15 +110,14 @@ class FunctionLookupEngine {
                                           const std::string& function_return_type_str,
                                           const PlatformType& from_platform) const;
 
-  static void setDataPath(const std::string& conf_path) {
-    data_path_ = conf_path;
-  }
+  static void setDataPath(const std::string& conf_path) { data_path_ = conf_path; }
 
  private:
   FunctionLookupEngine(const PlatformType from_platform) : from_platform_(from_platform) {
     registerFunctionLookUpContext(getDataPath(), from_platform);
   }
-  void registerFunctionLookUpContext(const std::string& yaml_conf_path, const PlatformType from_platform);
+  void registerFunctionLookUpContext(const std::string& yaml_conf_path,
+                                     const PlatformType from_platform);
   template <typename T>
   void loadExtensionYamlAndInitializeFunctionLookup(
       const std::string& yaml_conf_path,

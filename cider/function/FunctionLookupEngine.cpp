@@ -52,7 +52,8 @@ FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
 }
 
 void FunctionLookupEngine::registerFunctionLookUpContext(
-    const std::string& yaml_conf_path, const PlatformType from_platform) {
+    const std::string& yaml_conf_path,
+    const PlatformType from_platform) {
   // Load cider support function default yaml files first.
   const std::vector<std::string> internal_files = {
       "functions_aggregate_approx.yaml",
@@ -79,7 +80,10 @@ void FunctionLookupEngine::registerFunctionLookUpContext(
   // Load engine's extension function yaml files second.
   if (from_platform == PlatformType::SubstraitPlatform) {
     loadExtensionYamlAndInitializeFunctionLookup<io::substrait::FunctionMapping>(
-        yaml_conf_path, "substrait", "substrait_extension.yaml", cider_internal_function_ptr);
+        yaml_conf_path,
+        "substrait",
+        "substrait_extension.yaml",
+        cider_internal_function_ptr);
   } else if (from_platform == PlatformType::PrestoPlatform) {
     loadExtensionYamlAndInitializeFunctionLookup<io::substrait::PrestoFunctionMappings>(
         yaml_conf_path, "presto", "presto_extension.yaml", cider_internal_function_ptr);
