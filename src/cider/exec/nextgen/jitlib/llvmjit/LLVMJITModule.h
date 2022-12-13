@@ -33,19 +33,6 @@
 
 namespace cider::jitlib {
 
-enum class OptimizeLevel {
-  DEBUG,
-  RELEASE
-  // TBD other optimizeLevel to be added
-};
-
-// compilation config info
-struct CompilationOptions {
-  OptimizeLevel optimize_level = OptimizeLevel::DEBUG;
-  llvm::CodeGenOpt::Level codegen_level = llvm::CodeGenOpt::None;
-  bool dump_ir = false;
-};
-
 class LLVMJITModule final : public JITModule {
  public:
   friend LLVMJITEngineBuilder;
@@ -58,9 +45,9 @@ class LLVMJITModule final : public JITModule {
 
   llvm::LLVMContext& getLLVMContext() { return *context_; }
 
-  void finish() override;
+  const CompilationOptions& getCompilationOptions() const { return co_; }
 
-  llvm::CodeGenOpt::Level getCodeGenLevel() { return co_.codegen_level; }
+  void finish() override;
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);

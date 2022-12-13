@@ -66,7 +66,7 @@ static std::unique_ptr<llvm::MemoryBuffer> runtime_function_buffer = []() {
 static llvm::MemoryBuffer* getRuntimeBuffer() {
   return runtime_function_buffer.get();
 }
-}
+}  // namespace
 
 LLVMJITModule::LLVMJITModule(const std::string& name,
                              bool copy_runtime_module,
@@ -153,7 +153,7 @@ void LLVMJITModule::finish() {
 void LLVMJITModule::optimizeIR(llvm::Module* module) {
   llvm::legacy::PassManager pass_manager;
   switch (co_.optimize_level) {
-    case OptimizeLevel::RELEASE:
+    case LLVMJITOptimizeLevel::RELEASE:
       // the always inliner legacy pass must always run first
       pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
 
@@ -184,7 +184,7 @@ void LLVMJITModule::optimizeIR(llvm::Module* module) {
       pass_manager.run(*module);
       break;
     // TBD other optimize level to be added
-    case OptimizeLevel::DEBUG:
+    case LLVMJITOptimizeLevel::DEBUG:
       // DEBUG : default optimize level, will not do any optimization
       break;
     default:
