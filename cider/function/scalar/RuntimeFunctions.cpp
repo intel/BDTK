@@ -1456,11 +1456,15 @@ extern "C" ALWAYS_INLINE void clear_bit_vector(uint8_t* bit_vector, uint64_t ind
 }
 
 // For temporary use
-extern "C" ALWAYS_INLINE void set_null_vector(uint8_t* bit_vector,
-                                              uint64_t index,
-                                              bool is_null) {
+extern "C" ALWAYS_INLINE void set_null_vector_bit(uint8_t* bit_vector,
+                                                  uint64_t index,
+                                                  bool is_null) {
   is_null ? CiderBitUtils::clearBitAt(bit_vector, index)
           : CiderBitUtils::setBitAt(bit_vector, index);
+}
+
+extern "C" ALWAYS_INLINE void do_memcpy(int8_t* dst, int8_t* src, int32_t len) {
+  memcpy(dst, src, len);
 }
 
 extern "C" ALWAYS_INLINE int8_t* extract_str_ptr_arrow(int8_t* data_buffer,
