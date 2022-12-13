@@ -25,6 +25,7 @@
 FunctionLookupEnginePtrMap FunctionLookupEngine::function_lookup_engine_ptr_map_ = {};
 
 std::mutex FunctionLookupEngine::s_mutex_;
+std::string FunctionLookupEngine::data_path_ = "";
 
 FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
     const PlatformType from_platform) {
@@ -51,7 +52,10 @@ FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
 }
 
 void FunctionLookupEngine::registerFunctionLookUpContext(
-    const PlatformType from_platform) {
+    const std::string& yaml_conf_path, const PlatformType from_platform) {
+
+  printf("66666666666666666666666666666 yaml_conf_path = %s\n", yaml_conf_path.c_str());
+
   // Load cider support function default yaml files first.
   const std::vector<std::string> internal_files = {
       "functions_aggregate_approx.yaml",
@@ -71,17 +75,17 @@ void FunctionLookupEngine::registerFunctionLookUpContext(
   internal_files_path_vec.reserve(internal_files.size());
   for (const auto& internal_file : internal_files) {
     internal_files_path_vec.push_back(
-        fmt::format("{}/{}/{}", getDataPath(), "internals", internal_file));
+        fmt::format("{}/{}/{}", yaml_conf_path, "internals", internal_file));
   }
   io::substrait::ExtensionPtr cider_internal_function_ptr =
       io::substrait::Extension::load(internal_files_path_vec);
   // Load engine's extension function yaml files second.
   if (from_platform == PlatformType::SubstraitPlatform) {
     loadExtensionYamlAndInitializeFunctionLookup<io::substrait::FunctionMapping>(
-        "substrait", "substrait_extension.yaml", cider_internal_function_ptr);
+        yaml_conf_path, "substrait", "substrait_extension.yaml", cider_internal_function_ptr);
   } else if (from_platform == PlatformType::PrestoPlatform) {
     loadExtensionYamlAndInitializeFunctionLookup<io::substrait::PrestoFunctionMappings>(
-        "presto", "presto_extension.yaml", cider_internal_function_ptr);
+        yaml_conf_path, "presto", "presto_extension.yaml", cider_internal_function_ptr);
   } else {
     CIDER_THROW(CiderCompileException,
                 fmt::format("Function lookup unsupported platform {}", from_platform));
@@ -90,12 +94,13 @@ void FunctionLookupEngine::registerFunctionLookUpContext(
 
 template <typename T>
 void FunctionLookupEngine::loadExtensionYamlAndInitializeFunctionLookup(
-    std::string platform_name,
-    std::string yaml_extension_filename,
+    const std::string& yaml_conf_path,
+    const std::string& platform_name,
+    const std::string& yaml_extension_filename,
     const io::substrait::ExtensionPtr& cider_internal_function_ptr) {
   io::substrait::ExtensionPtr extension_function_ptr =
       io::substrait::Extension::load({fmt::format("{}/{}/{}/{}",
-                                                  getDataPath(),
+                                                  yaml_conf_path,
                                                   "extensions",
                                                   platform_name,
                                                   yaml_extension_filename)});
