@@ -24,10 +24,10 @@
 
 // used as test
 template <typename Key, typename Value>
-class DuplicateF14map {
+class F14MapDuplicateKeyWrapper {
  public:
-  DuplicateF14map(){};
-  folly::fbvector<Value> lookup(Key key) {
+  F14MapDuplicateKeyWrapper(){};
+  folly::fbvector<Value> find(Key key) {
     auto iter = f14_map_.find(key);
     if (iter != f14_map_.end()) {
       return iter->second;

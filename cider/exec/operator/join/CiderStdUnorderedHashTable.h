@@ -22,10 +22,10 @@
 
 // used as test
 template <typename Key, typename Value>
-class DuplicateStdHashmap {
+class StdMapDuplicateKeyWrapper {
  public:
-  DuplicateStdHashmap(){};
-  folly::fbvector<Value> lookup(Key key) {
+  StdMapDuplicateKeyWrapper(){};
+  folly::fbvector<Value> find(Key key) {
     auto iter = umap_.find(key);
     if (iter != umap_.end()) {
       return iter->second;

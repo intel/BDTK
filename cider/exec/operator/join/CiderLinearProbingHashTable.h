@@ -24,7 +24,7 @@ A hash map for join. Uses open addressing with linear probing.
 Advantages:
   - Predictable performance. Doesn't use the allocator unless load factor
     grows beyond 50%. Linear probing ensures cash efficency.
-  - Desgin for no delete/erase action, makes it faster on insert and lookup
+  - Desgin for no delete/erase action, makes it faster on insert and find
   - Allow duplicate keys
 Disadvantages:
   - Significant performance degradation at high load factors.
@@ -40,10 +40,11 @@ Disadvantages:
 #include <stdexcept>
 #include <vector>
 
-namespace cider_ht {
-template <typename KT>
+namespace cider_hashtable {
+
+template <typename KeyType>
 struct table_key {
-  KT key;
+  KeyType key;
   bool is_not_null;
   std::size_t duplicate_num;
 };
@@ -54,7 +55,7 @@ template <typename Key,
           typename Hash = std::hash<Key>,
           typename KeyEqual = std::equal_to<void>,
           typename Allocator = std::allocator<std::pair<table_key<Key>, T>>>
-class LPHashTable {
+class LinearProbeHashTable {
  public:
   using key_type = table_key<Key>;
   using mapped_type = T;
@@ -66,20 +67,20 @@ class LPHashTable {
   using reference = value_type&;
   using buckets = folly::fbvector<value_type, allocator_type>;
 
-  template <typename ContT, typename IterVal>
-  struct hm_iterator {
+  template <typename IterVal>
+  struct hashtable_iterator {
     using difference_type = std::ptrdiff_t;
     using value_type = IterVal;
     using pointer = value_type*;
     using reference = value_type&;
     using iterator_category = std::forward_iterator_tag;
 
-    bool operator==(const hm_iterator& other) const {
+    bool operator==(const hashtable_iterator& other) const {
       return other.hm_ == hm_ && other.idx_ == idx_;
     }
-    bool operator!=(const hm_iterator& other) const { return !(other == *this); }
+    bool operator!=(const hashtable_iterator& other) const { return !(other == *this); }
 
-    hm_iterator& operator++() {
+    hashtable_iterator& operator++() {
       ++idx_;
       advance_past_empty();
       return *this;
@@ -89,10 +90,19 @@ class LPHashTable {
     pointer operator->() const { return &hm_->buckets_[idx_]; }
 
    private:
-    explicit hm_iterator(ContT* hm) : hm_(hm) { advance_past_empty(); }
-    explicit hm_iterator(ContT* hm, size_type idx) : hm_(hm), idx_(idx) {}
-    template <typename OtherContT, typename OtherIterVal>
-    hm_iterator(const hm_iterator<OtherContT, OtherIterVal>& other)
+    explicit hashtable_iterator(LinearProbeHashTable* hm) : hm_(hm) {
+      advance_past_empty();
+    }
+    explicit hashtable_iterator(const LinearProbeHashTable* hm)
+        : hm_(const_cast<LinearProbeHashTable*>(hm)) {
+      advance_past_empty();
+    }
+    explicit hashtable_iterator(LinearProbeHashTable* hm, size_type idx)
+        : hm_(hm), idx_(idx) {}
+    explicit hashtable_iterator(const LinearProbeHashTable* hm, const size_type idx)
+        : hm_(const_cast<LinearProbeHashTable*>(hm)), idx_(idx) {}
+    template <typename OtherIterVal>
+    hashtable_iterator(const hashtable_iterator<OtherIterVal>& other)
         : hm_(other.hm_), idx_(other.idx_) {}
 
     void advance_past_empty() {
@@ -102,18 +112,18 @@ class LPHashTable {
       }
     }
 
-    ContT* hm_ = nullptr;
-    typename ContT::size_type idx_ = 0;
-    friend ContT;
+    LinearProbeHashTable* hm_ = nullptr;
+    typename LinearProbeHashTable::size_type idx_ = 0;
+    friend LinearProbeHashTable;
   };
 
-  using iterator = hm_iterator<LPHashTable, value_type>;
-  using const_iterator = hm_iterator<const LPHashTable, const value_type>;
+  using iterator = hashtable_iterator<value_type>;
+  using const_iterator = hashtable_iterator<const value_type>;
 
  public:
-  LPHashTable(size_type bucket_count,
-              Key empty_key,
-              const allocator_type& alloc = allocator_type())
+  LinearProbeHashTable(size_type bucket_count,
+                       Key empty_key,
+                       const allocator_type& alloc = allocator_type())
       : empty_key_({empty_key, false, 0}), buckets_(alloc) {
     size_t pow2 = 1;
     while (pow2 < bucket_count) {
@@ -122,8 +132,8 @@ class LPHashTable {
     buckets_.resize(pow2, std::make_pair(empty_key_, T()));
   }
 
-  LPHashTable(const LPHashTable& other, size_type bucket_count)
-      : LPHashTable(bucket_count, other.empty_key_.key, other.get_allocator()) {
+  LinearProbeHashTable(const LinearProbeHashTable& other, size_type bucket_count)
+      : LinearProbeHashTable(bucket_count, other.empty_key_.key, other.get_allocator()) {
     for (auto it = other.begin(); it != other.end(); ++it) {
       insert(*it);
     }
@@ -170,7 +180,8 @@ class LPHashTable {
   }
 
   // TODO: assert key and value types
-  void merge_other_hashtables(std::vector<std::unique_ptr<LPHashTable>> otherTables) {
+  void merge_other_hashtables(
+      std::vector<std::unique_ptr<LinearProbeHashTable>> otherTables) {
     int total_size = 0;
     for (const auto& table_ptr : otherTables) {
       total_size += table_ptr->size();
@@ -182,14 +193,14 @@ class LPHashTable {
     }
   }
 
-  void swap(LPHashTable& other) noexcept {
+  void swap(LinearProbeHashTable& other) noexcept {
     std::swap(buckets_, other.buckets_);
     std::swap(size_, other.size_);
     std::swap(empty_key_, other.empty_key_);
   }
 
-  // Lookup
-  folly::fbvector<mapped_type> lookup(const Key& key) { return lookup_impl(key); }
+  // find
+  folly::fbvector<mapped_type> find(const Key& key) { return find_impl(key); }
 
   // Bucket interface
   size_type bucket_count() const noexcept { return buckets_.size(); }
@@ -200,7 +211,7 @@ class LPHashTable {
   void rehash(size_type count) {
     // comment out due to may adjust load factor in future
     // count = std::max(count, size() * 2);
-    LPHashTable other(*this, count);
+    LinearProbeHashTable other(*this, count);
     swap(other);
   }
 
@@ -234,7 +245,7 @@ class LPHashTable {
   }
 
   template <typename K>
-  folly::fbvector<mapped_type> lookup_impl(const K& key) {
+  folly::fbvector<mapped_type> find_impl(const K& key) {
     folly::fbvector<mapped_type> vec;
     int duplicate_num = 0;
     for (size_t idx = key_to_idx(key);; idx = probe_next(idx)) {
@@ -270,4 +281,4 @@ class LPHashTable {
   buckets buckets_;
   size_t size_ = 0;
 };
-}  // namespace cider_ht
+}  // namespace cider_hashtable
