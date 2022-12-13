@@ -21,14 +21,15 @@
 
 #include "tests/utils/CiderBenchmarkRunner.h"
 
-
 #include "CiderBenchmarkBase.h"
 
 class CiderOpBenchmark : public CiderBenchmarkBaseFixture {
  public:
   CiderOpBenchmark() {
     runner.prepare(
-        "CREATE TABLE test(id1 BIGINT NOT NULL, id2 BIGINT NOT NULL, id3 BIGINT NOT NULL, id4 BIGINT NOT NULL, id5 BIGINT NOT NULL, id6 BIGINT NOT NULL, v1 BIGINT NOT NULL, "
+        "CREATE TABLE test(id1 VARCHAR NOT NULL, id2 VARCHAR NOT NULL, id3 VARCHAR NOT "
+        "NULL, id4 BIGINT NOT NULL, id5 BIGINT NOT NULL, id6 BIGINT NOT NULL, v1 BIGINT "
+        "NOT NULL, "
         "v2 BIGINT NOT NULL,v3 DOUBLE NOT NULL);");
 
     Iterations(10);
@@ -38,7 +39,14 @@ class CiderOpBenchmark : public CiderBenchmarkBaseFixture {
 };
 
 char* groupbysql("SELECT sum(v1),sum(v2),sum(v3) FROM test group by id6");
-std::vector<std::string> col_name = {"id1","id2","id3","id4","id5","id6","v1","v2","v3"};
-GEN_BENCHMARK_FROM_CSV(CiderOpBenchmark, h2oai_q5, "/data/G1_1e7_1e2_0_0.csv", groupbysql, col_name);
+std::vector<std::string> col_name =
+    {"id1", "id2", "id3", "id4", "id5", "id6", "v1", "v2", "v3"};
+
+// need to upload dataset
+// GEN_BENCHMARK_FROM_CSV(CiderOpBenchmark,
+//                        h2oai_q5,
+//                        "/data/G1_1e7_1e2_0_0.csv",
+//                        groupbysql,
+//                        col_name);
 // Run the benchmark
 BENCHMARK_MAIN();

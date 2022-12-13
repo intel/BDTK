@@ -22,8 +22,9 @@
 #ifndef MODULARSQL_CIDERBENCHMARKBASE_H
 #define MODULARSQL_CIDERBENCHMARKBASE_H
 
-#include "CiderBenchmarkUtils.cpp"
+#include "CiderBenchmarkUtils.h"
 #include "benchmark/benchmark.h"
+#include "tests/utils/QueryArrowDataGenerator.h"
 class CiderBenchmarkBaseFixture : public benchmark::Fixture {
  public:
   // add members as needed
@@ -31,23 +32,29 @@ class CiderBenchmarkBaseFixture : public benchmark::Fixture {
   CiderBenchmarkBaseFixture() {}
 };
 
-// std::shared_ptr<CiderBatch> genBatch(int row_num) {
-//   return std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
-//       row_num,
-//       {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
-//       {CREATE_SUBSTRAIT_TYPE(I32),
-//        CREATE_SUBSTRAIT_TYPE(I64),
-//        CREATE_SUBSTRAIT_TYPE(Fp32),
-//        CREATE_SUBSTRAIT_TYPE(Fp64),
-//        CREATE_SUBSTRAIT_TYPE(I32),
-//        CREATE_SUBSTRAIT_TYPE(I64),
-//        CREATE_SUBSTRAIT_TYPE(Fp32),
-//        CREATE_SUBSTRAIT_TYPE(Fp64)},
-//       {},
-//       GeneratePattern::Random,
-//       -1000'000,
-//       1000'000));
-// }
+std::shared_ptr<CiderBatch> genBatch(int row_num) {
+  ArrowArray* array_ = nullptr;
+  ArrowSchema* schema_ = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(
+      schema_,
+      array_,
+      row_num,
+      {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
+      {CREATE_SUBSTRAIT_TYPE(I32),
+       CREATE_SUBSTRAIT_TYPE(I64),
+       CREATE_SUBSTRAIT_TYPE(Fp32),
+       CREATE_SUBSTRAIT_TYPE(Fp64),
+       CREATE_SUBSTRAIT_TYPE(I32),
+       CREATE_SUBSTRAIT_TYPE(I64),
+       CREATE_SUBSTRAIT_TYPE(Fp32),
+       CREATE_SUBSTRAIT_TYPE(Fp64)},
+      {},
+      GeneratePattern::Random,
+      -1000'000,
+      1000'000);
+  return std::make_shared<CiderBatch>(
+      schema_, array_, std::make_shared<CiderDefaultAllocator>());
+}
 
 #define GEN_BENCHMARK(FIXTURE_NAME, BATCH_SIZE, CASE, QUERY_STR, ITER)       \
   BENCHMARK_F(FIXTURE_NAME, CASE##_##BATCH_SIZE)(benchmark::State & state) { \

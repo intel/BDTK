@@ -19,25 +19,44 @@
  * under the License.
  */
 
-#include "tests/benchmark/CiderBenchmarkUtils.cpp"
 #include "tests/utils/CiderProfilingBase.h"
-class CiderGroupbyProfiling : public CiderProfilingBase {
+
+class CiderFilterProfiling : public CiderProfilingBase {
  public:
-  CiderGroupbyProfiling() {
+  CiderFilterProfiling() {
     table_name_ = "test";
     create_ddl_ =
-        "CREATE TABLE test(id1 BIGINT NOT NULL, id2 BIGINT NOT NULL, id3 BIGINT NOT "
-        "NULL, id4 BIGINT NOT NULL, id5 BIGINT NOT NULL, id6 BIGINT NOT NULL, v1 BIGINT "
-        "NOT NULL, "
-        "v2 BIGINT NOT NULL,v3 DOUBLE NOT NULL);";
-    std::vector<std::string> col_name = {
-        "id1", "id2", "id3", "id4", "id5", "id6", "v1", "v2", "v3"};
-    input_ = {readFromCsv("/data/G1_1e7_1e2_0_0.csv", col_name)};
+        R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
+        col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE);)";
+    input_ = {std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+        1000'000,
+        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
+        {CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Fp64),
+         CREATE_SUBSTRAIT_TYPE(I32),
+         CREATE_SUBSTRAIT_TYPE(I64),
+         CREATE_SUBSTRAIT_TYPE(Fp32),
+         CREATE_SUBSTRAIT_TYPE(Fp64)},
+        {},
+        GeneratePattern::Random,
+        -1000'000,
+        1000'000))};
   }
 };
 
-TEST_F(CiderGroupbyProfiling, GroupbySum) {
-  benchSQL("SELECT sum(v1),sum(v2),sum(v3) FROM test group by id6");
+TEST_F(CiderFilterProfiling, singleFilter) {
+  benchSQL("SELECT * FROM test WHERE col_1 > 0");
+  benchSQL("SELECT * FROM test WHERE col_2 > 0");
+  benchSQL("SELECT * FROM test WHERE col_3 > 0");
+  benchSQL("SELECT * FROM test WHERE col_4 > 0");
+}
+
+TEST_F(CiderFilterProfiling, multipleFilter) {
+  benchSQL(
+      "SELECT * FROM test WHERE col_1 > -100 AND col_1 < 100 AND col_2 > -100 AND col_2 "
+      "< 100 AND col_3 > -100 AND col_3 < 100 AND col_4 > -100 AND col_4 < 100 ");
 }
 
 int main(int argc, char** argv) {
