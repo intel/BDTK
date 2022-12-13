@@ -22,7 +22,6 @@
 #include "VeloxToCiderExpr.h"
 #include <cstdint>
 #include "exec/plan/parser/ConverterHelper.h"
-#include "function/FunctionLookupEngine.h"
 #include "type/data/sqltypes.h"
 
 using namespace facebook::velox::core;
@@ -169,6 +168,14 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
 std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
     std::shared_ptr<const CallTypedExpr> vExpr,
     std::unordered_map<std::string, int> colInfo) const {
+  static const std::unordered_map<std::string, std::string> scalarMappings{
+      {"plus", "add"},
+      {"minus", "subtract"},
+      {"mod", "modulus"},
+      {"eq", "equal"},
+      {"neq", "not_equal"},
+      {"substr", "substring"},
+  };
   // common scalar funtions with 2 arguments
   if (isSupportedScalarFunction(vExpr->name()) && isBinOp(vExpr)) {
     auto type = getCiderType(vExpr->type(), false);
@@ -178,10 +185,8 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
     auto rightExpr = toCiderExpr(inputs[1], colInfo);
     if (leftExpr && rightExpr) {
       std::string function_name_in_cider = vExpr->name();
-      io::substrait::FunctionMappingPtr func_mappings =
-          std::make_shared<io::substrait::PrestoFunctionMappings>();
-      auto iter = func_mappings->scalaMapping().find(vExpr->name());
-      if (iter != func_mappings->scalaMapping().end()) {
+      auto iter = scalarMappings.find(vExpr->name());
+      if (iter != scalarMappings.end()) {
         function_name_in_cider = iter->second;
       }
       return std::make_shared<Analyzer::BinOper>(
