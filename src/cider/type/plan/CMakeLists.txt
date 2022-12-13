@@ -18,5 +18,6 @@
 # under the License.
 
 set(cider_type_plan_source_files Analyzer.cpp Expr.cpp BinaryExpr.cpp
-                                 UnaryExpr.cpp ColumnExpr.cpp ConstantExpr.cpp)
+                                 UnaryExpr.cpp ColumnExpr.cpp ConstantExpr.cpp
+                                 LikeExpr.cpp)
 add_library(cider_type_plan ${cider_type_plan_source_files})
