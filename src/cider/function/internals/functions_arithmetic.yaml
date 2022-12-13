@@ -775,6 +775,14 @@ scalar_functions:
             name: list
             description: The value list.
         return: BOOLEAN
+      - args:
+          - value: i8
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<i8>
+            name: list
+            description: The value list.
+        return: BOOLEAN
   - 
     name: "in"
     description: >-
@@ -785,6 +793,14 @@ scalar_functions:
             name: expression
             description: The expression to test for in the value list.
           - value: i16
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: i16
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<i16>
             name: list
             description: The value list.
         return: BOOLEAN
@@ -801,6 +817,14 @@ scalar_functions:
             name: list
             description: The value list.
         return: BOOLEAN
+      - args:
+          - value: i32
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<i32>
+            name: list
+            description: The value list.
+        return: BOOLEAN
   - 
     name: "in"
     description: >-
@@ -811,6 +835,14 @@ scalar_functions:
             name: expression
             description: The expression to test for in the value list.
           - value: i64
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: i64
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<i64>
             name: list
             description: The value list.
         return: BOOLEAN
@@ -827,6 +859,14 @@ scalar_functions:
             name: list
             description: The value list.
         return: BOOLEAN
+      - args:
+          - value: fp32
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<fp32>
+            name: list
+            description: The value list.
+        return: BOOLEAN
   - 
     name: "in"
     description: >-
@@ -837,6 +877,14 @@ scalar_functions:
             name: expression
             description: The expression to test for in the value list.
           - value: fp64
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: fp64
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<fp64>
             name: list
             description: The value list.
         return: BOOLEAN

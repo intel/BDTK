@@ -432,6 +432,54 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest10) {
   ASSERT_EQ(function_descriptor.func_sig.func_name, "substring");
 }
 
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest11) {
+  const std::string function_signature_str = "in:str_str";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kIN);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kIN_VALUES);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "in");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest12) {
+  const std::string function_signature_str = "in:str_list";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kIN);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kIN_VALUES);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "in");
+}
+
+TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest13) {
+  const std::string function_signature_str = "in:str_list<string>";
+  const std::string return_type = "boolean";
+  const PlatformType from_platform = PlatformType::PrestoPlatform;
+  auto function_descriptor = function_lookup_ptr->lookupFunction(
+      function_signature_str, return_type, from_platform);
+
+  // it should match with the correct type
+  ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kIN);
+  ASSERT_EQ(function_descriptor.string_op_type, SqlStringOpKind::kUNDEFINED_STRING_OP);
+  ASSERT_EQ(function_descriptor.agg_op_type, SQLAgg::kUNDEFINED_AGG);
+  ASSERT_EQ(function_descriptor.op_support_expr_type, OpSupportExprType::kIN_VALUES);
+  ASSERT_EQ(function_descriptor.is_cider_support_function, true);
+  ASSERT_EQ(function_descriptor.func_sig.func_name, "in");
+}
+
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoUnregisteredTest1) {
   FunctionSignature function_signature;
   function_signature.from_platform = PlatformType::PrestoPlatform;
