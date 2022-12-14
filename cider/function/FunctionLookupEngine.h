@@ -22,6 +22,7 @@
 #ifndef CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
 #define CIDER_FUNCTION_FUNCTIONLOOKUP_ENGINE_H
 
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -109,15 +110,19 @@ class FunctionLookupEngine {
                                           const std::string& function_return_type_str,
                                           const PlatformType& from_platform) const;
 
+  static void setDataPath(const std::string& conf_path) { data_path_ = conf_path; }
+
  private:
   FunctionLookupEngine(const PlatformType from_platform) : from_platform_(from_platform) {
-    registerFunctionLookUpContext(from_platform);
+    registerFunctionLookUpContext(getDataPath(), from_platform);
   }
-  void registerFunctionLookUpContext(const PlatformType from_platform);
+  void registerFunctionLookUpContext(const std::string& yaml_conf_path,
+                                     const PlatformType from_platform);
   template <typename T>
   void loadExtensionYamlAndInitializeFunctionLookup(
-      std::string platform_name,
-      std::string yaml_extension_filename,
+      const std::string& yaml_conf_path,
+      const std::string& platform_name,
+      const std::string& yaml_extension_filename,
       const io::substrait::ExtensionPtr& cider_internal_function_ptr);
 
   const SQLOps getFunctionScalarOp(const FunctionSignature& function_signature) const;
@@ -136,11 +141,22 @@ class FunctionLookupEngine {
   const io::substrait::TypePtr getArgueTypePtr(const std::string& argue_type_str) const;
 
   static std::string getDataPath() {
-    const std::string absolute_path = __FILE__;
-    auto const pos = absolute_path.find_last_of('/');
-    return absolute_path.substr(0, pos);
+    if (std::filesystem::is_directory(data_path_)) {
+      return data_path_;
+    }
+    // for ut usage
+    // ut does not provide a conf path
+    // even ut's yaml file does not copy to a conf path
+    // so ut will just use original path and original file
+    // that means if we copy the ut to another path
+    // ut will core or failed, due to can not find yaml file
+    // TODO should provide conf for ut
+    std::string file_path = __FILE__;
+    size_t pos = file_path.find_last_of('/');
+    return file_path.substr(0, pos);
   }
 
+  static std::string data_path_;
   SubstraitFunctionCiderMappingsPtr function_mappings_ =
       std::make_shared<const SubstraitFunctionCiderMappings>();
 

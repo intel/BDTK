@@ -31,6 +31,7 @@ using VeloxPlanNodePtr = std::shared_ptr<const facebook::velox::core::PlanNode>;
 class CiderVeloxPluginCtx {
  public:
   static void init();
+  static void init(const std::string& conf_path);
   static VeloxPlanNodePtr transformVeloxPlan(VeloxPlanNodePtr originalPlan);
 
  private:

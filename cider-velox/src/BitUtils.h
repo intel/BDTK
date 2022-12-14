@@ -23,6 +23,7 @@
 
 #include <climits>
 #include <cstdint>
+
 namespace facebook::velox::plugin {
 
 inline bool isBitSet(const uint64_t* bits, int32_t idx) {
