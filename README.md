@@ -60,6 +60,27 @@ The following diagram shows the design architecture. Currently, it offers a few 
 
 ![BDTK-INTRODUCTION](docs/images/BDTK-arch.PNG)
 
+# BDTK Functional Module
+BDTK provides several functional modules for user to use or integrate into their product. Here are breif description for each module. Details can be found on [Module Page](https://intel.github.io/BDTK/user/modules.html)
+
+ - [Intel Codec Library Module](https://intel.github.io/BDTK/user/modules/icl-module.html)
+
+  Intel Codec Library module provides compression and decompression library for Apache Hadoop/Spark to make use of the acceleration hardware for compression/decompression. It not only can leverage QAT/IAA hardware to accelerate deflate-compatible data compression algorithms but also supports the use of Intel software optimized solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.
+
+ - [Hash Table Module](https://intel.github.io/BDTK/user/modules/hash-table-module.html) 
+
+  Hash table performance is critical to a SQL engine. Operators like hash join, hash aggregation count on an efficient hash table implementation. 
+
+  Hash table module will provide a bunch of hash table implementations, which are **easy to use**, leverage **state of art hardware technology** like AVX-512, will be **optimized for query-specific scenarios**.
+
+ - [Expression Evaluation Module](https://intel.github.io/BDTK/user/modules/expr-eval-module.html)
+
+  Expression evaluation module could do Projection/Filter computation effectively. It provides a runtime expression evaluation API which accept Substrait based expression representation and Apache Arrow based column format data representation. It only handles projection and filters currently. 
+
+ - [Operator Module](https://intel.github.io/BDTK/user/modules/operators-module.html)
+
+  BDTK implements typical SQL operators based on JitLib, provide a batch-at-a-time execution model. Each operator support plug and play, could easily integrated into other existing sql-engines. Operators BDTK target to supported includes: HashAggregation, HashJoin(HashBuild and HashProbe), etc.
+
 # Supported Features
 Current supported features are available on [Project Page](https://intel.github.io/BDTK/user/function-support.html). Newly supported feature in release 0.9 is available at [release page](https://github.com/intel/BDTK/releases/tag/v0.9.0). 
 
