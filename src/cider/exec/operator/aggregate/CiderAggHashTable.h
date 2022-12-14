@@ -26,7 +26,7 @@
 #include <memory>
 #include <vector>
 
-#include "../thirdparty/robin-hood-hashing/src/include/robin_hood.h"
+#include "robin_hood.h"
 #include "CiderAggHashTableUtils.h"
 #include "cider/CiderAllocator.h"
 #include "cider/CiderTypes.h"

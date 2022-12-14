@@ -73,6 +73,7 @@ add_custom_command(
     --gcc-toolchain=${GCC_TOOLCHAIN} ${CLANG_SDK_INC} ${CLANG_CRT_INC}
     ${MAPD_DEFINITIONS} -I ${CMAKE_CURRENT_SOURCE_DIR}/../ -I
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    -I ${CMAKE_SOURCE_DIR}/thirdparty/robin-hood-hashing/src/include
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
 add_library(cider_function ${function_source_files})

@@ -72,7 +72,7 @@ build-common:
 build:
 	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
 	cmake --build build-${BUILD_TYPE}
-	@mkdir -p build-${BUILD_TYPE}/cider-velox/function/ && cp -r build-${BUILD_TYPE}/cider/function/*.bc build-${BUILD_TYPE}/cider-velox/function/
+	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/function/
 
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
@@ -83,11 +83,11 @@ release:
 	@$(MAKE) build BUILD_TYPE=Release
 
 test-cider:
-	@cd build-${BUILD_TYPE}/cider/tests && \
+	@cd build-${BUILD_TYPE}/src/cider/tests && \
 	ctest -j $${CPU_COUNT:-`nproc`} -V
 
 test-cider-velox:
-	@cd build-${BUILD_TYPE}/cider-velox/test && \
+	@cd build-${BUILD_TYPE}/src/cider-velox/test && \
 	ctest -j $${CPU_COUNT:-`nproc`} -V
 
 test-with-arrow-format:
