@@ -79,7 +79,7 @@ BDTK provides several functional modules for user to use or integrate into their
 
  - [Operator Module](https://intel.github.io/BDTK/user/modules/operators-module.html)
 
-  BDTK implements typical SQL operators based on JitLib, provide a batch-at-a-time execution model. Each operator support plug and play, could easily integrated into other existing sql-engines. Operators BDTK target to supported includes: HashAggregation, HashJoin(HashBuild and HashProbe), etc.
+  BDTK implements typical SQL operators based on JitLib, provide a batch-at-a-time execution model. Each operator support plug and play, could easily integrated into other existing sql-engines. Operators BDTK target to supported includes: HashAggregation, HashJoin(HashBuild and HashProbe), etc.
 
 # Supported Features
 Current supported features are available on [Project Page](https://intel.github.io/BDTK/user/function-support.html). Newly supported feature in release 0.9 is available at [release page](https://github.com/intel/BDTK/releases/tag/v0.9.0). 
