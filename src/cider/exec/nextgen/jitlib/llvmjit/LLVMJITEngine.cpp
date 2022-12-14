@@ -130,6 +130,8 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
 
   auto engine = std::make_unique<LLVMJITEngine>();
   engine->engine = eb.create(buildTargetMachine(module_.co_));
+  engine->engine->DisableLazyCompilation(false);
+  engine->engine->setVerifyModules(false);
 
   LOG(INFO) << "Enabled features: "
             << engine->engine->getTargetMachine()->getTargetFeatureString().str();
