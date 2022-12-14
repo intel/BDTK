@@ -25,9 +25,12 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include "CiderHashJoinBuild.h"
 #include "CiderJoinBuild.h"
 #include "CiderOperator.h"
+#include "CiderPipelineOperator.h"
 #include "CiderPlanNode.h"
+#include "CiderVeloxOptions.h"
 
 namespace facebook::velox::plugin {
 
@@ -42,7 +45,11 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
       int32_t id,
       const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderPlanNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
-      return CiderOperator::Make(id, ctx, ciderPlanNode);
+      if (FLAGS_enable_batch_processor) {
+        return std::make_unique<CiderPipelineOperator>(id, ctx, ciderPlanNode);
+      } else {
+        return CiderOperator::Make(id, ctx, ciderPlanNode);
+      }
     }
     return nullptr;
   }
@@ -50,7 +57,11 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
   std::unique_ptr<exec::JoinBridge> toJoinBridge(
       const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderJoinNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
-      return std::make_unique<CiderJoinBridge>();
+      if (FLAGS_enable_batch_processor) {
+        return std::make_unique<CiderHashJoinBridge>();
+      } else {
+        return std::make_unique<CiderJoinBridge>();
+      }
     }
     return nullptr;
   }
@@ -58,8 +69,13 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
   exec::OperatorSupplier toOperatorSupplier(
       const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderJoinNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
-      return [ciderJoinNode](int32_t operatorId, exec::DriverCtx* ctx) {
-        return std::make_unique<CiderJoinBuild>(operatorId, ctx, ciderJoinNode);
+      return [ciderJoinNode](int32_t operatorId,
+                             exec::DriverCtx* ctx) -> std::unique_ptr<exec::Operator> {
+        if (FLAGS_enable_batch_processor) {
+          return std::make_unique<CiderHashJoinBuild>(operatorId, ctx, ciderJoinNode);
+        } else {
+          return std::make_unique<CiderJoinBuild>(operatorId, ctx, ciderJoinNode);
+        }
       };
     }
     return nullptr;
