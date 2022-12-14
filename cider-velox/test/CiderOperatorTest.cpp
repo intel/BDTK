@@ -75,6 +75,8 @@ class CiderOperatorTest : public OperatorTestBase {
   std::vector<RowVectorPtr> vectors;
 };
 
+// test with arrow format will failed until update submodule after
+// https://github.com/Intel-bigdata/velox/pull/16
 TEST_F(CiderOperatorTest, filter) {
   const std::string& filter = "l_quantity  > 24.0";
   auto veloxPlan = PlanBuilder().values(vectors).filter(filter).planNode();
@@ -277,6 +279,8 @@ TEST_F(CiderOperatorTest, aggOnExpr_withoutCond) {
   assertQuery(resultPtr, duckDbSql);
 }
 
+// Below AVG tests with arrow format will failed until update submodule after
+// https://github.com/Intel-bigdata/velox/pull/16
 TEST_F(CiderOperatorTest, avg_on_col_cider) {
   auto veloxPlan =
       PlanBuilder()
