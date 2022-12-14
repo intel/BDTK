@@ -169,14 +169,6 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
 std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
     std::shared_ptr<const CallTypedExpr> vExpr,
     std::unordered_map<std::string, int> colInfo) const {
-  static const std::unordered_map<std::string, std::string> scalarMappings{
-      {"plus", "add"},
-      {"minus", "subtract"},
-      {"mod", "modulus"},
-      {"eq", "equal"},
-      {"neq", "not_equal"},
-      {"substr", "substring"},
-  };
   // common scalar funtions with 2 arguments
   if (isSupportedScalarFunction(vExpr->name()) && isBinOp(vExpr)) {
     auto type = getCiderType(vExpr->type(), false);
