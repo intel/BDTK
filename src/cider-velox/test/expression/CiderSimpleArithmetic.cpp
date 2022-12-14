@@ -19,20 +19,21 @@
  * under the License.
  */
 
+#define _LOGGING_H_  // ignore glog
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 
 #include "Allocator.h"
-#include "DataConvertor.h"
 #include "ExprEvalUtils.h"
+#include "VeloxToCiderExpr.h"
 #include "cider/CiderCompileModule.h"
 #include "cider/CiderRuntimeModule.h"
 #include "exec/template/InputMetadata.h"
 #include "velox/expression/Expr.h"
 #include "velox/functions/Registerer.h"
 #include "velox/functions/lib/benchmarks/FunctionBenchmarkBase.h"
-#include "velox/functions/prestosql/ArithmeticImpl.h"
-#include "velox/functions/prestosql/CheckedArithmeticImpl.h"
+#include "velox/functions/prestosql/Arithmetic.h"
+#include "velox/functions/prestosql/CheckedArithmetic.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
 
 // #include "velox/functions/Udf.h"
@@ -40,45 +41,45 @@
 
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
+DEFINE_int64(batch_size, 1000, "batch size for one loop");
+DEFINE_int64(loop_count, 5000, "loop count for benchmark");
 
 using namespace facebook::velox;
 using namespace facebook::velox::exec;
 using namespace facebook::velox::test;
 using namespace facebook::velox::plugin;
+using namespace facebook::velox::functions;
+
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
 namespace {
 
-// simple multiply function.
-template <typename T>
-struct MultiplyVoidOutputFunction {
-  template <typename TInput>
-  FOLLY_ALWAYS_INLINE void call(TInput& result, const TInput& a, const TInput& b) {
-    result = functions::multiply(a, b);
-  }
-};
-
-// Checked Arithmetic.
-template <typename T>
-struct PlusFunction {
-  template <typename TInput>
-  FOLLY_ALWAYS_INLINE void call(TInput& result, const TInput& a, const TInput& b) {
-    result = functions::plus(a, b);
-  }
-};
-
 class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   explicit CiderSimpleArithmeticBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
-    registerFunction<MultiplyVoidOutputFunction, double, double, double>({"multiply"});
+    registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
+    registerFunction<MultiplyFunction, int16_t, int16_t, int16_t>({"multiply"});
+    registerFunction<MultiplyFunction, int32_t, int32_t, int32_t>({"multiply"});
+    registerFunction<MultiplyFunction, int64_t, int64_t, int64_t>({"multiply"});
+    registerFunction<MultiplyFunction, double, double, double>({"multiply"});
+    registerFunction<PlusFunction, int8_t, int8_t, int8_t>({"plus"});
+    registerFunction<PlusFunction, int16_t, int16_t, int16_t>({"plus"});
+    registerFunction<PlusFunction, int32_t, int32_t, int32_t>({"plus"});
     registerFunction<PlusFunction, int64_t, int64_t, int64_t>({"plus"});
+    registerFunction<PlusFunction, double, double, double>({"plus"});
+
+    registerFunction<CheckedPlusFunction, int64_t, int64_t, int64_t>({"checkedPlus"});
     // behavior of plus function is different when registered using above method
     // and registerAllScalarFunctions
     // functions::prestosql::registerAllScalarFunctions();
     parse::registerTypeResolver();
     // Set input schema.
     inputType_ = ROW({
+        {"i8", TINYINT()},
+        {"i16", SMALLINT()},
+        {"i32", INTEGER()},
+        {"i64", BIGINT()},
         {"a", DOUBLE()},
         {"b", DOUBLE()},
         {"c", BIGINT()},
@@ -94,11 +95,15 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     std::vector<VectorPtr> children;
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));  // A
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));  // B
-    children.emplace_back(fuzzer.fuzzFlat(BIGINT()));  // C
-    children.emplace_back(fuzzer.fuzzFlat(BIGINT()));  // D
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));  // fake constant
+    children.emplace_back(fuzzer.fuzzFlat(TINYINT()));   // i8
+    children.emplace_back(fuzzer.fuzzFlat(SMALLINT()));  // i16
+    children.emplace_back(fuzzer.fuzzFlat(INTEGER()));   // i32
+    children.emplace_back(fuzzer.fuzzFlat(BIGINT()));    // i64
+    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // A
+    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // B
+    children.emplace_back(fuzzer.fuzzFlat(BIGINT()));    // C
+    children.emplace_back(fuzzer.fuzzFlat(BIGINT()));    // D
+    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // fake constant
 
     opts.nullRatio = 0.5;  // 50%
     fuzzer.setOptions(opts);
@@ -109,17 +114,25 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
   }
 
   // benchmark for IR generation
-  size_t runCiderCompile(const std::string& expression) {
+  size_t runCiderCompile(const std::string& expression,
+                         bool use_nextgen_compiler = false) {
     folly::BenchmarkSuspender suspender;
-    parse::ParseOptions options;
-    auto untyped = parse::parseExpr(expression, options);
-    auto typedExpr = core::Expressions::inferTypes(untyped, inputType_, execCtx_.pool());
-    auto rowType = std::dynamic_pointer_cast<const RowType>(inputType_);
-    auto relAlgEU = ExprEvalUtils::getMockedRelAlgEU(typedExpr, rowType, "arithmetic");
-    auto ciderCompileModule = CiderCompileModule::Make(allocator);
+
+    RelAlgExecutionUnit relAlgEU =
+        ExprEvalUtils::getEU(expression,
+                             std::dynamic_pointer_cast<const RowType>(inputType_),
+                             "arithmetic",
+                             execCtx_.pool());
     std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
+    auto schema = ExprEvalUtils::getOutputTableSchema(relAlgEU);
     suspender.dismiss();
-    auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
+
+    FLAGS_use_cider_data_format = true;
+    FLAGS_use_nextgen_compiler = use_nextgen_compiler;
+    auto ciderCompileModule = CiderCompileModule::Make(allocator);
+
+    auto result =
+        ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos, schema);
     return 1;
   }
 
@@ -127,55 +140,50 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
       const std::string& text,
       const std::shared_ptr<const Type> type,
       memory::MemoryPool* pool,
-      const std::string euType) {
-    parse::ParseOptions options;
-    auto untyped = parse::parseExpr(text, options);
-    auto typedExpr = core::Expressions::inferTypes(untyped, type, pool);
-    auto rowType = std::dynamic_pointer_cast<const RowType>(type);
-    auto relAlgEU = ExprEvalUtils::getMockedRelAlgEU(typedExpr, rowType, euType);
+      const std::string eu_group,
+      bool use_nextgen_compiler) {
+    RelAlgExecutionUnit relAlgEU =
+        ExprEvalUtils::getEU(text,
+                             std::dynamic_pointer_cast<const RowType>(inputType_),
+                             eu_group,
+                             execCtx_.pool());
+    auto schema = ExprEvalUtils::getOutputTableSchema(relAlgEU);
+
+    FLAGS_use_cider_data_format = true;
+    FLAGS_use_nextgen_compiler = use_nextgen_compiler;
     auto ciderCompileModule = CiderCompileModule::Make(allocator);
     std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
-    auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
-    auto ciderRuntimeModule = std::make_shared<CiderRuntimeModule>(result);
-    return ciderRuntimeModule;
+    auto result =
+        ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos, schema);
+    return std::make_shared<CiderRuntimeModule>(result);
   }
 
-  // Runs `expression` `times` times in Cider
-  size_t runCiderCompute(const std::string& expression, int times) {
+  size_t runCiderCompute(const std::string& expression,
+                         bool use_nextgen_compiler = false) {
     folly::BenchmarkSuspender suspender;
     // prepare runtime module
-    auto ciderRuntimeModule =
-        getCiderRuntimeModule(expression, inputType_, execCtx_.pool(), "arithmetic");
-    // convert data to CiderBatch
-    auto batchConvertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
-    std::chrono::microseconds convertorInternalCounter;
-    auto inBatch = batchConvertor->convertToCider(
-        rowVector_, vectorSize_, &convertorInternalCounter, execCtx_.pool());
-    // TODO :process the batch and return result
-    size_t max_out = inBatch.row_num();
-    std::vector<const int8_t*> col_buffer;
-    double* col_0 = reinterpret_cast<double*>(
-        execCtx_.pool()->allocate(sizeof(double) * max_out * 2));
-    int num_rows = max_out;
-    col_buffer.push_back(reinterpret_cast<const int8_t*>(col_0));
-    CiderBatch outBatch(num_rows, col_buffer);
+    auto ciderRuntimeModule = getCiderRuntimeModule(
+        expression, inputType_, execCtx_.pool(), "arithmetic", use_nextgen_compiler);
+    // Convert data to CiderBatch
+    auto inBatch = veloxVectorToCiderBatch(rowVector_, execCtx_.pool());
     suspender.dismiss();
+
     size_t rows_size = 0;
-    for (auto i = 0; i < times; i++) {
-      ciderRuntimeModule->processNextBatch(inBatch);
+    for (auto i = 0; i < FLAGS_loop_count; i++) {
+      ciderRuntimeModule->processNextBatch(*inBatch);
       auto [_, outBatch] = ciderRuntimeModule->fetchResults();
-      rows_size += vectorSize_;
+      rows_size += outBatch->getLength();
     }
     return rows_size;
   }
 
-  // Runs `expression` `times` times in Velox
-  size_t runVelox(const std::string& expression, int times) {
+  size_t runVelox(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
     auto exprSet = compileExpression(expression, inputType_);
     suspender.dismiss();
+
     size_t count = 0;
-    for (auto i = 0; i < times; i++) {
+    for (auto i = 0; i < FLAGS_loop_count; i++) {
       count += evaluate(exprSet, rowVector_)->size();
     }
     return count;
@@ -189,120 +197,37 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
 
 std::unique_ptr<CiderSimpleArithmeticBenchmark> benchmark;
 
-BENCHMARK(multiply) {
-  benchmark->runVelox("multiply(a, b)", 100);
-}
-
-BENCHMARK_RELATIVE(multiplyCiderCompute) {
-  benchmark->runCiderCompute("multiply(a, b)", 100);
-}
-
-BENCHMARK(multiplyCiderCompile) {
-  benchmark->runCiderCompile("multiply(a, b)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(multiplySameColumn) {
-  benchmark->runVelox("multiply(a, a)", 100);
-}
-
-BENCHMARK_RELATIVE(multiplySameColumnCiderCompute) {
-  benchmark->runCiderCompute("multiply(a, a)", 100);
-}
-
-BENCHMARK(multiplySameColumnCiderCompile) {
-  benchmark->runCiderCompile("multiply(a, a)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(multiplyHalfNull) {
-  benchmark->runVelox("multiply(a, half_null)", 100);
-}
-
-BENCHMARK_RELATIVE(multiplyHalfNullCiderCompute) {
-  benchmark->runCiderCompute("multiply(a, half_null)", 100);
-}
-
-BENCHMARK(multiplyHalfNullCiderCompile) {
-  benchmark->runCiderCompile("multiply(a, half_null)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(multiplyNested) {
-  benchmark->runVelox("multiply(multiply(a, b), b)", 100);
-}
-
-BENCHMARK_RELATIVE(multiplyNestedCiderCompute) {
-  benchmark->runCiderCompute("multiply(multiply(a, b), b)", 100);
-}
-
-BENCHMARK(multiplyNestedCiderCompile) {
-  benchmark->runCiderCompile("multiply(multiply(a, b), b)");
-}
-
-// BENCHMARK_DRAW_LINE();
-
-// BENCHMARK(multiplyAndPlusArithmetic) {
-//   benchmark->runVelox(
-//       "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0",
-//       100);
+// BENCHMARK(multiplyVeloxCompile) {
+//   benchmark->runVeloxCompile("multiply(i8, i8)");
 // }
-
-// BENCHMARK_RELATIVE(multiplyAndPlusArithmeticCiderCompute) {
-//   benchmark->runCiderCompute(
-//       "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0",
-//       100);
-// }
-
-// BENCHMARK(multiplyAndPlusArithmeticCiderCompile) {
-//   benchmark->runCiderCompile(
-//       "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
-// }
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(multiplyNestedDeep) {
-  benchmark->runVelox(
-      "multiply(multiply(multiply(a, b), a), "
-      "multiply(a, multiply(a, b)))",
-      100);
+BENCHMARK(multiplyNextgenCompile) {
+  benchmark->runCiderCompile("multiply(i8, i8)", true);
 }
+// BENCHMARK_GROUP(i8_mul_i8, "multiply(i8, i8)");
+// BENCHMARK_GROUP(i8_plus_i8, "plus(i8, i8)");
+// BENCHMARK_GROUP(i16_mul_i16, "multiply(i16, i16)");
+// BENCHMARK_GROUP(i16_plus_i16, "plus(i16, i16)");
+// BENCHMARK_GROUP(i32_mul_i32, "multiply(i32, i32)");
+// BENCHMARK_GROUP(i32_plus_i32, "plus(i32, i32)");
+// BENCHMARK_GROUP(i64_mul_i64, "multiply(i64, i64)");
+// BENCHMARK_GROUP(i64_plus_i64, "plus(i64, i64)");
 
-BENCHMARK_RELATIVE(multiplyNestedDeepCiderCompute) {
-  benchmark->runCiderCompute(
-      "multiply(multiply(multiply(a, b), a), "
-      "multiply(a, multiply(a, b)))",
-      100);
-}
-
-BENCHMARK(multiplyNestedDeepCiderCompile) {
-  benchmark->runCiderCompile(
-      "multiply(multiply(multiply(a, b), a), "
-      "multiply(a, multiply(a, b)))");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(plusUnchecked) {
-  benchmark->runVelox("plus(c, d)", 100);
-}
-
-BENCHMARK_RELATIVE(plusUncheckedCiderCompute) {
-  benchmark->runCiderCompute("plus(c, d)", 100);
-}
-
-BENCHMARK(plusUncheckedCiderCompile) {
-  benchmark->runCiderCompile("plus(c, d)");
-}
+// BENCHMARK_GROUP(double_mul_double, "multiply(a, a)");
+// BENCHMARK_GROUP(multiplyDouble, "multiply(a, b)");
+// BENCHMARK_GROUP(multiplyHalfNull, "multiply(a, half_null)");
+// BENCHMARK_GROUP(multiplyNested, "multiply(multiply(a, b), b)");
+// BENCHMARK_GROUP(multiplyNestedDeep,
+//                 "multiply(multiply(multiply(a, b), a), "
+//                 "multiply(a, multiply(a, b)))");
+// BENCHMARK_GROUP(plusUnchecked, "plus(c, d)");
+// BENCHMARK_GROUP(plusChecked, "checkedPlus(c, d)");
+// BENCHMARK_GROUP(multiplyAndPlusArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
 }  // namespace
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  benchmark = std::make_unique<CiderSimpleArithmeticBenchmark>(5'000);
+  benchmark = std::make_unique<CiderSimpleArithmeticBenchmark>(FLAGS_batch_size);
   folly::runBenchmarks();
   benchmark.reset();
   return 0;

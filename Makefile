@@ -63,7 +63,7 @@ build-common:
 		  -DENABLE_PERF_JIT_LISTENER=OFF\
 		  -DENABLE_INTEL_JIT_LISTENER=OFF \
 		  -DPREFER_STATIC_LIBS=OFF \
-			-DENABLE_ASN=OFF \
+		  -DENABLE_ASN=OFF \
 		  -DVELOX_ENABLE_SUBSTRAIT=ON \
 		  -DVELOX_ENABLE_PARQUET=ON \
 		  $(FORCE_COLOR) \
@@ -89,6 +89,10 @@ icl:
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
 	@$(MAKE) build BUILD_TYPE=Debug
+
+reldeb:
+	@$(MAKE) build-common BUILD_TYPE=RelWithDebInfo
+	@$(MAKE) build BUILD_TYPE=RelWithDebInfo
 
 release:
 	@$(MAKE) build-common BUILD_TYPE=Release

@@ -19,6 +19,7 @@
 
 set(SRC_FILE ExprEvalUtils.cpp VeloxToCiderExpr.cpp)
 add_library(eu_mocker ${SRC_FILE})
+target_link_libraries(eu_mocker velox_arrow_bridge)
 if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR OR NOT LIBSUBSTRAITCPP_LIB)
   add_dependencies(eu_mocker SUBSTRAITCPP)
 endif()

@@ -33,17 +33,26 @@ using RowTypePtr = std::shared_ptr<const RowType>;
 
 class ExprEvalUtils {
  public:
-  static RelAlgExecutionUnit getMockedRelAlgEU(
-      std::shared_ptr<const core::ITypedExpr> v_expr,
-      RowTypePtr row_type,
-      std::string eu_group);
+  static RelAlgExecutionUnit getEU(const std::string& text,
+                                   const std::shared_ptr<const RowType>& rowType,
+                                   std::string eu_group,
+                                   velox::memory::MemoryPool* pool);
+
   static std::vector<InputTableInfo> buildInputTableInfo();
 
   static AggregatedColRange buildDefaultColRangeCache(RowTypePtr row_type);
 
- private:
+  static std::shared_ptr<CiderTableSchema> getOutputTableSchema(
+      RelAlgExecutionUnit& relAlgEU);
+
   static SQLTypeInfo getCiderType(const std::shared_ptr<const velox::Type> expr_type,
                                   bool isNullable);
+
+ private:
+  static RelAlgExecutionUnit getMockedRelAlgEU(
+      std::shared_ptr<const core::ITypedExpr> v_expr,
+      RowTypePtr row_type,
+      std::string eu_group);
   static Analyzer::Expr* getExpr(std::shared_ptr<const Analyzer::Expr> expr);
 };
 }  // namespace facebook::velox::plugin

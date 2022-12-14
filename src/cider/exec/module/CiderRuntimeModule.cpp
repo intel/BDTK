@@ -604,6 +604,7 @@ CiderRuntimeModule::fetchResults(int32_t max_row) {
     output_batch->move(*output_arrow_schema, *output_arrow_array);
     auto output_cider_batch = CiderBatchUtils::createCiderBatch(
         allocator_, output_arrow_schema, output_arrow_array);
+
     // Only for filter/project now
     return std::make_pair(kNoMoreOutput, std::move(output_cider_batch));
   }

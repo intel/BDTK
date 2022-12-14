@@ -19,35 +19,35 @@
  * under the License.
  */
 
+#define _LOGGING_H_  // ignore glog
 #include <folly/Benchmark.h>
 #include <folly/init/Init.h>
 #include <gflags/gflags.h>
 
 #include "Allocator.h"
-#include "DataConvertor.h"
 #include "ExprEvalUtils.h"
-#include "cider/CiderRuntimeModule.h"
+#include "VeloxToCiderExpr.h"
 #include "exec/template/InputMetadata.h"
-#include "velox/functions/Registerer.h"
+#include "exec/template/RelAlgExecutionUnit.h"
 #include "velox/functions/lib/RegistrationHelpers.h"
 #include "velox/functions/lib/benchmarks/FunctionBenchmarkBase.h"
-#include "velox/functions/prestosql/ArithmeticImpl.h"
 #include "velox/functions/prestosql/Comparisons.h"
-#include "velox/parse/ExpressionsParser.h"
-#include "velox/parse/TypeResolver.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
 
 // This file refers velox/velox/benchmarks/basic/ComparisonConjunct.cpp.
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
+DEFINE_int64(batch_size, 1000, "batch size for one loop");
+DEFINE_int64(loop_count, 5000, "loop count for benchmark");
 
 using namespace facebook::velox;
 using namespace facebook::velox::exec;
 using namespace facebook::velox::test;
 using namespace facebook::velox::functions;
 using namespace facebook::velox::plugin;
+
+namespace {
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
-namespace {
 
 class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
@@ -94,77 +94,82 @@ class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
         pool(), inputType_, nullptr, vectorSize, std::move(children));
   }
 
-  RelAlgExecutionUnit getEU(const std::string& text,
-                            const std::shared_ptr<const RowType>& rowType = nullptr) {
-    parse::ParseOptions options;
-    auto untyped = parse::parseExpr(text, options);
-    auto typedExpr = core::Expressions::inferTypes(untyped, rowType, execCtx_.pool());
-    RelAlgExecutionUnit relAlgEU = ExprEvalUtils::getMockedRelAlgEU(
-        typedExpr, std::dynamic_pointer_cast<const RowType>(inputType_), "comparison");
-
-    return relAlgEU;
-  }
-
-  // Run `expression` `times` times.
   // Function runVelox records Velox execution time.
-  size_t runVelox(const std::string& expression, size_t times) {
+  size_t runVelox(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
     auto exprSet = compileExpression(expression, inputType_);
     suspender.dismiss();
 
     size_t count = 0;
-    for (auto i = 0; i < times; i++) {
+    for (auto i = 0; i < FLAGS_loop_count; i++) {
       count += evaluate(exprSet, rowVector_)->size();
     }
     return count;
   }
 
   // Function runCiderCompile records Cider compile time.
-  size_t runCiderCompile(const std::string& expression) {
+  size_t runCiderCompile(const std::string& expression,
+                         bool use_nextgen_compiler = false) {
     folly::BenchmarkSuspender suspender;
 
     // Get EU
     RelAlgExecutionUnit relAlgEU =
-        getEU(expression, std::dynamic_pointer_cast<const RowType>(inputType_));
+        ExprEvalUtils::getEU(expression,
+                             std::dynamic_pointer_cast<const RowType>(inputType_),
+                             "comparison",
+                             execCtx_.pool());
+
+    std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
+    // get output column types
+    auto schema = ExprEvalUtils::getOutputTableSchema(relAlgEU);
 
     // Prepare runtime module
+    FLAGS_use_cider_data_format = true;
+    FLAGS_use_nextgen_compiler = use_nextgen_compiler;
     auto ciderCompileModule = CiderCompileModule::Make(allocator);
-    std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
 
     suspender.dismiss();
-    auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
+
+    auto result =
+        ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos, schema);
     return 1;
   }
 
   // Function runCiderCompute records Cider execution time.
-  size_t runCiderCompute(const std::string& expression, size_t times) {
+  size_t runCiderCompute(const std::string& expression,
+                         bool use_nextgen_compiler = false) {
     folly::BenchmarkSuspender suspender;
 
     // Get EU
     RelAlgExecutionUnit relAlgEU =
-        getEU(expression, std::dynamic_pointer_cast<const RowType>(inputType_));
+        ExprEvalUtils::getEU(expression,
+                             std::dynamic_pointer_cast<const RowType>(inputType_),
+                             "comparison",
+                             execCtx_.pool());
+
+    std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
+    // get output column types
+    auto schema = ExprEvalUtils::getOutputTableSchema(relAlgEU);
 
     // Prepare runtime module
+    FLAGS_use_cider_data_format = true;
+    FLAGS_use_nextgen_compiler = use_nextgen_compiler;
     auto ciderCompileModule = CiderCompileModule::Make(allocator);
-    std::vector<InputTableInfo> queryInfos = ExprEvalUtils::buildInputTableInfo();
-    auto result = ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos);
+    auto result =
+        ciderCompileModule->compile((void*)&relAlgEU, (void*)&queryInfos, schema);
     std::shared_ptr<CiderRuntimeModule> ciderRuntimeModule =
         std::make_shared<CiderRuntimeModule>(result);
 
     // Convert data to CiderBatch
-    auto batchConvertor = DataConvertor::create(CONVERT_TYPE::DIRECT);
-    std::chrono::microseconds convertorInternalCounter;
-    auto inBatch = batchConvertor->convertToCider(
-        rowVector_, vectorSize_, &convertorInternalCounter, execCtx_.pool());
+    auto inBatch = veloxVectorToCiderBatch(rowVector_, execCtx_.pool());
 
     suspender.dismiss();
 
     size_t count = 0;
-    for (int i = 0; i < times; i++) {
-      ciderRuntimeModule->processNextBatch(inBatch);
+    for (int i = 0; i < FLAGS_loop_count; i++) {
+      ciderRuntimeModule->processNextBatch(*inBatch);
       auto [_, outBatch] = ciderRuntimeModule->fetchResults();
-      // TODO: the result total_matched is not right now
-      count += vectorSize_;
+      count += outBatch->getLength();
     }
     return count;
   }
@@ -178,151 +183,23 @@ class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
 std::unique_ptr<ComparisonBenchmark> benchmark;
 
 // Use Velox execution as a baseline.
-BENCHMARK(eqVelox) {
-  benchmark->runVelox("eq(a, b)", 100);
-}
-
-BENCHMARK_RELATIVE(eqCiderCompute) {
-  benchmark->runCiderCompute("eq(a, b)", 100);
-}
-
-BENCHMARK(eqCiderCompile) {
-  benchmark->runCiderCompile("eq(a, b)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(neqVelox) {
-  benchmark->runVelox("neq(a, b)", 100);
-}
-
-BENCHMARK_RELATIVE(neqCiderCompute) {
-  benchmark->runCiderCompute("neq(a, b)", 100);
-}
-
-BENCHMARK(neqCiderCompile) {
-  benchmark->runCiderCompile("neq(a, b)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(gtVelox) {
-  benchmark->runVelox("gt(a, b)", 100);
-}
-
-BENCHMARK_RELATIVE(gtCiderCompute) {
-  benchmark->runCiderCompute("gt(a, b)", 100);
-}
-
-BENCHMARK(gtCiderCompile) {
-  benchmark->runCiderCompile("gt(a, b)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(ltVelox) {
-  benchmark->runVelox("lt(a, b)", 100);
-}
-
-BENCHMARK_RELATIVE(ltCiderCompute) {
-  benchmark->runCiderCompute("lt(a, b)", 100);
-}
-
-BENCHMARK(ltCiderCompile) {
-  benchmark->runCiderCompile("lt(a, b)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(eqHalfNullVelox) {
-  benchmark->runVelox("eq(a, half_null)", 100);
-}
-
-BENCHMARK_RELATIVE(eqHalfNullCiderCompute) {
-  benchmark->runCiderCompute("eq(a, half_null)", 100);
-}
-
-BENCHMARK(eqHalfNullCiderCompile) {
-  benchmark->runCiderCompile("eq(a, half_null)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(eqBoolsVelox) {
-  benchmark->runVelox("eq(d, e)", 100);
-}
-
-BENCHMARK_RELATIVE(eqBoolsCiderCompute) {
-  benchmark->runCiderCompute("eq(d, e)", 100);
-}
-
-BENCHMARK(eqBoolCiderCompiles) {
-  benchmark->runCiderCompile("eq(d, e)");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(andConjunctVelox) {
-  benchmark->runVelox("d AND e", 100);
-}
-
-BENCHMARK_RELATIVE(andConjunctCiderCompute) {
-  benchmark->runCiderCompute("d AND e", 100);
-}
-
-BENCHMARK(andConjunctCiderCompile) {
-  benchmark->runCiderCompile("d AND e");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(orConjunctVelox) {
-  benchmark->runVelox("d OR e", 100);
-}
-
-BENCHMARK_RELATIVE(orConjunctCiderCompute) {
-  benchmark->runCiderCompute("d OR e", 100);
-}
-
-BENCHMARK(orConjunctCiderCompile) {
-  benchmark->runCiderCompile("d OR e");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(andHalfNullVelox) {
-  benchmark->runVelox("d AND bool_half_null", 100);
-}
-
-BENCHMARK_RELATIVE(andHalfNullCiderCompute) {
-  benchmark->runCiderCompute("d AND bool_half_null", 100);
-}
-
-BENCHMARK(andHalfNullCiderCompile) {
-  benchmark->runCiderCompile("d AND bool_half_null");
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(conjunctsNestedVelox) {
-  benchmark->runVelox("(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))", 100);
-}
-
-BENCHMARK_RELATIVE(conjunctsNestedCiderCompute) {
-  benchmark->runCiderCompute("(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))",
-                             100);
-}
-
-BENCHMARK(conjunctsNestedCiderCompile) {
-  benchmark->runCiderCompile("(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
-}
-
+BENCHMARK_GROUP(eq, "eq(a, b)");
+BENCHMARK_GROUP(neq, "neq(a, b)");
+BENCHMARK_GROUP(gt, "gt(a, b)");
+BENCHMARK_GROUP(lt, "lt(a, b)");
+BENCHMARK_GROUP(eqHalfNull, "eq(a, half_null)");
+BENCHMARK_GROUP(eqBool, "eq(d, e)");
+BENCHMARK_GROUP(and, "d AND e");
+BENCHMARK_GROUP(or, "d or e");
+BENCHMARK_GROUP(andHalfNull, "d AND bool_half_null");
+BENCHMARK_GROUP(conjunctsNested,
+                "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
 }  // namespace
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  benchmark = std::make_unique<ComparisonBenchmark>(1'000'000);
+  benchmark = std::make_unique<ComparisonBenchmark>(FLAGS_batch_size);
   folly::runBenchmarks();
   benchmark.reset();
   return 0;

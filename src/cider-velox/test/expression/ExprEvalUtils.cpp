@@ -26,8 +26,24 @@
 #include "exec/template/RelAlgExecutionUnit.h"
 #include "type/data/sqltypes.h"
 #include "util/memory/Fragmenter.h"
+#include "velox/parse/Expressions.h"
+#include "velox/parse/ExpressionsParser.h"
 
 namespace facebook::velox::plugin {
+using namespace facebook::velox;
+
+RelAlgExecutionUnit ExprEvalUtils::getEU(const std::string& text,
+                                         const std::shared_ptr<const RowType>& rowType,
+                                         std::string eu_group,
+                                         velox::memory::MemoryPool* pool) {
+  parse::ParseOptions options;
+  auto untyped = parse::parseExpr(text, options);
+  auto typedExpr = core::Expressions::inferTypes(untyped, rowType, pool);
+  RelAlgExecutionUnit relAlgEU =
+      ExprEvalUtils::getMockedRelAlgEU(typedExpr, rowType, eu_group);
+
+  return relAlgEU;
+}
 
 RelAlgExecutionUnit ExprEvalUtils::getMockedRelAlgEU(
     std::shared_ptr<const core::ITypedExpr> v_expr,
@@ -42,6 +58,7 @@ RelAlgExecutionUnit ExprEvalUtils::getMockedRelAlgEU(
   std::list<std::shared_ptr<const InputColDescriptor>> input_col_descs;
   std::unordered_map<std::string, int> col_info;
   std::vector<Analyzer::Expr*> target_exprs;
+  std::vector<std::shared_ptr<Analyzer::Expr>> shared_target_exprs;
   std::list<std::shared_ptr<Analyzer::Expr>> quals;
   std::list<std::shared_ptr<Analyzer::Expr>> simple_quals;
   for (int i = 0; i < row_type->size(); i++) {
@@ -54,21 +71,31 @@ RelAlgExecutionUnit ExprEvalUtils::getMockedRelAlgEU(
     input_col_descs.push_back(
         std::make_shared<const InputColDescriptor>(col_desc, cur_nest_level));
     col_info.emplace(row_type->names()[i], i);
-    auto col_expr = std::make_shared<const Analyzer::ColumnVar>(col_desc, cur_nest_level);
-    target_exprs.emplace_back(getExpr(col_expr));
+
+    // auto col_expr = std::make_shared<const Analyzer::ColumnVar>(col_desc,
+    // cur_nest_level);
+    // target_exprs.emplace_back(getExpr(col_expr));
   }
   VeloxToCiderExprConverter expr_converter;
-  if (eu_group == "comparison") {
-    auto c_expr = expr_converter.toCiderExpr(v_expr, col_info);
-    auto quals_filter = qual_to_conjunctive_form(fold_expr(getExpr(c_expr)));
-    quals = quals_filter.quals;
-    simple_quals = quals_filter.simple_quals;
-  }
-  if (eu_group == "arithmetic") {
-    target_exprs.clear();
-    auto c_expr = expr_converter.toCiderExpr(v_expr, col_info);
-    target_exprs.emplace_back(getExpr(c_expr));
-  }
+  // if (eu_group == "comparison") {
+  //   auto c_expr = expr_converter.toCiderExpr(v_expr, col_info);
+  //   auto quals_filter = qual_to_conjunctive_form(fold_expr(getExpr(c_expr)));
+  //   quals = quals_filter.quals;
+  //   simple_quals = quals_filter.simple_quals;
+  // }
+  // if (eu_group == "arithmetic") {
+  //   target_exprs.clear();
+  //   shared_target_exprs.clear();
+  //   auto c_expr = expr_converter.toCiderExpr(v_expr, col_info);
+  //   target_exprs.emplace_back(getExpr(c_expr));
+  //   shared_target_exprs.emplace_back(c_expr);
+  // }
+  target_exprs.clear();
+  shared_target_exprs.clear();
+  auto c_expr = expr_converter.toCiderExpr(v_expr, col_info);
+  target_exprs.emplace_back(getExpr(c_expr));
+  shared_target_exprs.emplace_back(c_expr);
+
   RelAlgExecutionUnit rel_alg_eu{input_descs,
                                  input_col_descs,
                                  simple_quals,
@@ -84,7 +111,8 @@ RelAlgExecutionUnit ExprEvalUtils::getMockedRelAlgEU(
                                  {},
                                  {},
                                  false,
-                                 std::nullopt};
+                                 std::nullopt,
+                                 shared_target_exprs};
   return rel_alg_eu;
 }
 
@@ -148,6 +176,10 @@ SQLTypeInfo ExprEvalUtils::getCiderType(
       return SQLTypeInfo(SQLTypes::kBOOLEAN, notNull);
     case TypeKind::DOUBLE:
       return SQLTypeInfo(SQLTypes::kDOUBLE, notNull);
+    case TypeKind::TINYINT:
+      return SQLTypeInfo(SQLTypes::kTINYINT, notNull);
+    case TypeKind::SMALLINT:
+      return SQLTypeInfo(SQLTypes::kSMALLINT, notNull);
     case TypeKind::INTEGER:
       return SQLTypeInfo(SQLTypes::kINT, notNull);
     case TypeKind::BIGINT:
@@ -199,5 +231,19 @@ Analyzer::Expr* ExprEvalUtils::getExpr(std::shared_ptr<const Analyzer::Expr> exp
                                    column_var_expr->get_rte_idx());
   }
   VELOX_UNSUPPORTED("unsupported column type for target expr.");
+}
+
+std::shared_ptr<CiderTableSchema> ExprEvalUtils::getOutputTableSchema(
+    RelAlgExecutionUnit& relAlgEU) {
+  std::vector<substrait::Type> column_types;
+  std::vector<ColumnHint> col_hints;
+  std::vector<std::string> col_names;
+  for (size_t i_target = 0; i_target < relAlgEU.target_exprs.size(); i_target++) {
+    col_names.push_back(std::to_string(i_target));
+    col_hints.push_back(Normal);
+    column_types.push_back(
+        generator::getSubstraitType(relAlgEU.target_exprs[i_target]->get_type_info()));
+  }
+  return std::make_shared<CiderTableSchema>(col_names, column_types, "", col_hints);
 }
 }  // namespace facebook::velox::plugin
