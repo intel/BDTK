@@ -5,5 +5,6 @@ User Guide
     :maxdepth: 2
 
     user/quick-start
+    user/modules
     user/feature-type
     user/utils
