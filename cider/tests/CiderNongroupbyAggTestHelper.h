@@ -233,7 +233,6 @@ struct AggArrowResult {
     float min_float;
     double min_double;
   };
-  double avg_double;
   int64_t null;
 };
 
@@ -318,9 +317,6 @@ static void verifyArrowResult(SQLTypes type,
       EXPECT_FLOAT_EQ(
           (float)out_batch->getChildAt(4)->as<ScalarBatch<float>>()->getRawData()[0],
           expect_result.min_float);
-      EXPECT_FLOAT_EQ(
-          (double)out_batch->getChildAt(5)->as<ScalarBatch<double>>()->getRawData()[0],
-          expect_result.avg_double);
       EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
                     out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
                 expect_result.null);
@@ -342,9 +338,6 @@ static void verifyArrowResult(SQLTypes type,
       EXPECT_DOUBLE_EQ(
           (double)out_batch->getChildAt(4)->as<ScalarBatch<double>>()->getRawData()[0],
           expect_result.min_double);
-      EXPECT_DOUBLE_EQ(
-          (double)out_batch->getChildAt(5)->as<ScalarBatch<double>>()->getRawData()[0],
-          expect_result.avg_double);
       EXPECT_EQ((int64_t)!CiderBitUtils::isBitSetAt(
                     out_batch->getChildAt(0)->as<ScalarBatch<int64_t>>()->getNulls(), 0),
                 expect_result.null);
