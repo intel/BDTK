@@ -110,9 +110,9 @@
 
 // basic string functionalities
 
-class CiderStringTestArrow : public CiderTestBase {
+class CiderStringTestNextGen : public CiderTestBase {
  public:
-  CiderStringTestArrow() {
+  CiderStringTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
@@ -130,9 +130,9 @@ class CiderStringTestArrow : public CiderTestBase {
   }
 };
 
-class CiderStringRandomTestArrow : public CiderTestBase {
+class CiderStringRandomTestNextGen : public CiderTestBase {
  public:
-  CiderStringRandomTestArrow() {
+  CiderStringRandomTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER, col_2 VARCHAR(10));)";
 
@@ -149,9 +149,9 @@ class CiderStringRandomTestArrow : public CiderTestBase {
   }
 };
 
-class CiderStringNullableTestArrow : public CiderTestBase {
+class CiderStringNullableTestNextGen : public CiderTestBase {
  public:
-  CiderStringNullableTestArrow() {
+  CiderStringNullableTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
 
@@ -168,26 +168,27 @@ class CiderStringNullableTestArrow : public CiderTestBase {
   }
 };
 
-BASIC_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, basicStringTest)
-LIKE_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, likeStringTest)
-ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, escapeStringTest)
-IN_STRING_TEST_UNIT_ARROW(CiderStringTestArrow, inStringTest)
+// TODO: (YBRua) enable inStringTest after nextgen supports IN
+BASIC_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, BasicStringTest)
+LIKE_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, LikeStringTest)
+ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, EscapeStringTest)
+// IN_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, InStringTest)
 
-BASIC_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, basicRandomStringTest)
-LIKE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, likeRandomStringTest)
-ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, escapeRandomStringTest)
-IN_STRING_TEST_UNIT_ARROW(CiderStringRandomTestArrow, inRandomStringTest)
+BASIC_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, BasicRandomStringTest)
+LIKE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, LikeRandomStringTest)
+ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, EscapeRandomStringTest)
+// IN_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, InRandomStringTest)
 
-BASIC_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, basicStringTest)
-LIKE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, likeStringTest)
-ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, escapeStringTest)
-IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestArrow, inStringTest)
+BASIC_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, BasicStringTest)
+LIKE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, LikeStringTest)
+ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, EscapeStringTest)
+// IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, InStringTest)
 
 // duplicate string
 
-class CiderDuplicateStringArrowTest : public CiderTestBase {
+class CiderDuplicateStringTestNextGen : public CiderTestBase {
  public:
-  CiderDuplicateStringArrowTest() {
+  CiderDuplicateStringTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 VARCHAR(10), col_2 VARCHAR(10));)";
 
@@ -205,7 +206,9 @@ class CiderDuplicateStringArrowTest : public CiderTestBase {
   }
 };
 
-TEST_F(CiderDuplicateStringArrowTest, SingleGroupKeyTest) {
+TEST_F(CiderDuplicateStringTestNextGen, SingleGroupKeyTest) {
+  // TODO: (YBRua) Enable this after nextgen supports GROUP BY
+  GTEST_SKIP();
   std::string res_str = "aaaaaaaaabbccddddd";
   std::vector<int> res_offset{0, 0, 7, 15, 18};
   ArrowArray* array = nullptr;
@@ -223,7 +226,9 @@ TEST_F(CiderDuplicateStringArrowTest, SingleGroupKeyTest) {
   assertQueryArrow("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", res_batch, true);
 }
 
-TEST_F(CiderDuplicateStringArrowTest, MultiGroupKeyTest) {
+TEST_F(CiderDuplicateStringTestNextGen, MultiGroupKeyTest) {
+  // TODO: (YBRua) Enable this after nextgen supports GROUP BY
+  GTEST_SKIP();
   std::string res_str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
   std::vector<int> res_offset1{0, 0, 7, 15, 15, 22, 25, 33};
 
@@ -249,55 +254,50 @@ TEST_F(CiderDuplicateStringArrowTest, MultiGroupKeyTest) {
 
 // constant string
 
-class CiderConstantStringTest : public CiderTestBase {
+class CiderConstantStringTestNextGen : public CiderTestBase {
  public:
-  CiderConstantStringTest() {
+  CiderConstantStringTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 VARCHAR(10));)";
 
-    std::vector<CiderByteArray> vec;
-    vec.push_back(CiderByteArray(7, reinterpret_cast<const uint8_t*>("1111111")));
-    vec.push_back(CiderByteArray(7, reinterpret_cast<const uint8_t*>("1112222")));
-    vec.push_back(CiderByteArray(7, reinterpret_cast<const uint8_t*>("aaaaaaa")));
-    vec.push_back(CiderByteArray(8, reinterpret_cast<const uint8_t*>("bbbbbbbb")));
-    vec.push_back(CiderByteArray(8, reinterpret_cast<const uint8_t*>("aabbccdd")));
-    input_.push_back(std::make_shared<CiderBatch>(
-        CiderBatchBuilder()
-            .setRowNum(5)
-            .addColumn<CiderByteArray>("col_1", CREATE_SUBSTRAIT_TYPE(Varchar), vec)
-            .build()));
+    auto vec =
+        std::vector<std::string>{"1111111", "1112222", "aaaaaaa", "bbbbbbbb", "aabbccdd"};
+
+    auto [data, offset] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
+    std::tie(schema_, array_) =
+        ArrowArrayBuilder().setRowNum(5).addUTF8Column("col_1", data, offset).build();
   }
 };
 
-TEST_F(CiderConstantStringTest, likeStringTest) {
-  std::vector<CiderByteArray> expected_vec;
-  expected_vec.push_back(CiderByteArray(7, reinterpret_cast<const uint8_t*>("aaaaaaa")));
-  expected_vec.push_back(CiderByteArray(8, reinterpret_cast<const uint8_t*>("aabbccdd")));
-  auto expected_batch_2 = std::make_shared<CiderBatch>(
-      CiderBatchBuilder()
-          .setRowNum(2)
-          .addColumn<CiderByteArray>(
-              "col_1", CREATE_SUBSTRAIT_TYPE(Varchar), expected_vec)
-          .build());
-  assertQuery("SELECT col_1 FROM test where col_1 LIKE '[aa]%'", expected_batch_2);
+TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
+  auto expected_vec = std::vector<std::string>{"aaaaaaa", "aabbccdd"};
+  auto [data, offset] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(expected_vec);
+  auto expected_batch_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+      ArrowArrayBuilder().setRowNum(2).addUTF8Column("col_1", data, offset).build());
 
-  expected_vec.clear();
-  expected_vec.push_back(CiderByteArray(7, reinterpret_cast<const uint8_t*>("1111111")));
-  expected_vec.push_back(CiderByteArray(8, reinterpret_cast<const uint8_t*>("bbbbbbbb")));
-  auto expected_batch_3 = CiderBatchBuilder()
-                              .setRowNum(2)
-                              .addColumn<CiderByteArray>(
-                                  "col_1", CREATE_SUBSTRAIT_TYPE(Varchar), expected_vec)
-                              .build();
+  assertQueryArrow("SELECT col_1 FROM test where col_1 LIKE '[aa]%'", expected_batch_2);
+
   // FIXME(jikunshang): Cider only support [],%,_ pattern, !/^ is not supported yet.
   // listed on document.
+  // expected_vec.clear();
+  // expected_vec.push_back(CiderByteArray(7, reinterpret_cast<const
+  // uint8_t*>("1111111"))); expected_vec.push_back(CiderByteArray(8,
+  // reinterpret_cast<const uint8_t*>("bbbbbbbb"))); auto expected_batch_3 =
+  // CiderBatchBuilder()
+  //                             .setRowNum(2)
+  //                             .addColumn<CiderByteArray>(
+  //                                 "col_1", CREATE_SUBSTRAIT_TYPE(Varchar),
+  //                                 expected_vec)
+  //                             .build();
   // assertQuery("SELECT col_1 FROM test where col_1 LIKE '[!aa]%'",
   // expected_batch_3);
 }
 
 // stringop: substring
 
-TEST_F(CiderStringNullableTestArrow, ArrowSubstringTest) {
+TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // variable source string
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
@@ -318,21 +318,27 @@ TEST_F(CiderStringNullableTestArrow, ArrowSubstringTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
 }
 
-TEST_F(CiderStringTestArrow, ArrowSubstringNestTest) {
+TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
   assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
-TEST_F(CiderStringNullableTestArrow, ArrowSubstringNestTest) {
+TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
   assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
-TEST_F(CiderStringRandomTestArrow, ArrowSubstringNestTest) {
+TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -341,7 +347,9 @@ TEST_F(CiderStringRandomTestArrow, ArrowSubstringNestTest) {
 
 // stringop: upper/lower
 
-TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
+TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
@@ -379,7 +387,9 @@ TEST_F(CiderStringTestArrow, ArrowCaseConvertionTest) {
   // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
 }
 
-TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
+TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
@@ -399,7 +409,9 @@ TEST_F(CiderStringNullableTestArrow, ArrowCaseConvertionTest) {
 
 // stringop: concat
 
-TEST_F(CiderStringTestArrow, ConcatTest) {
+TEST_F(CiderStringTestNextGen, ConcatTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // Skipped because Isthmus does not support concatenating two literals
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -415,7 +427,10 @@ TEST_F(CiderStringTestArrow, ConcatTest) {
                    "stringop_concat_filter.json");
 }
 
-TEST_F(CiderStringNullableTestArrow, ConcatTest) {
+TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
+
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
   assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
@@ -432,7 +447,9 @@ TEST_F(CiderStringNullableTestArrow, ConcatTest) {
 
 // stringop: char_length
 
-TEST_F(CiderStringTestArrow, CharLengthTest) {
+TEST_F(CiderStringTestNextGen, CharLengthTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
                    "stringop_charlen_project_2.json");
@@ -446,7 +463,9 @@ TEST_F(CiderStringTestArrow, CharLengthTest) {
       "stringop_charlen_nested.json");
 }
 
-TEST_F(CiderStringNullableTestArrow, CharLengthTest) {
+TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;",
                    "stringop_charlen_project_1_null.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
@@ -463,9 +482,9 @@ TEST_F(CiderStringNullableTestArrow, CharLengthTest) {
 
 // stringop: trim
 
-class CiderTrimOpTestArrow : public CiderTestBase {
+class CiderTrimOpTestNextGen : public CiderTestBase {
  public:
-  CiderTrimOpTestArrow() {
+  CiderTrimOpTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL, col_3 VARCHAR(10)))";
@@ -497,7 +516,9 @@ class CiderTrimOpTestArrow : public CiderTestBase {
   }
 };
 
-TEST_F(CiderTrimOpTestArrow, LiteralTrimTest) {
+TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
   // basic trim (defaults to trim spaces)
   assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
@@ -510,7 +531,9 @@ TEST_F(CiderTrimOpTestArrow, LiteralTrimTest) {
                    "stringop_rtrim_literal.json");
 }
 
-TEST_F(CiderTrimOpTestArrow, ColumnTrimTest) {
+TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
   assertQueryArrow("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
                    "stringop_trim_2.json");
@@ -526,7 +549,9 @@ TEST_F(CiderTrimOpTestArrow, ColumnTrimTest) {
                    "stringop_rtrim_2.json");
 }
 
-TEST_F(CiderTrimOpTestArrow, NestedTrimTest) {
+TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   assertQueryArrow("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
                    "stringop_trim_nested_1.json");
   assertQueryArrow(
@@ -554,9 +579,9 @@ TEST_F(CiderTrimOpTestArrow, NestedTrimTest) {
 
 // stringop: split
 
-class CiderSplitPartTestArrow : public CiderTestBase {
+class CiderSplitPartTestNextGen : public CiderTestBase {
  public:
-  CiderSplitPartTestArrow() {
+  CiderSplitPartTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(12) NOT NULL, col_3 VARCHAR(12)))";
@@ -577,7 +602,9 @@ class CiderSplitPartTestArrow : public CiderTestBase {
   }
 };
 
-TEST_F(CiderSplitPartTestArrow, SplitAndIndexingTest) {
+TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // note that duckdb array indexing is one-based, so [2] references the second element
   assertQueryArrow(
       "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
@@ -609,7 +636,9 @@ TEST_F(CiderSplitPartTestArrow, SplitAndIndexingTest) {
       "stringop_split_index_not_found.json");
 }
 
-TEST_F(CiderSplitPartTestArrow, SplitWithLimitTest) {
+TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // test for prestodb extension split(input, delimiter, limit)
   auto is_null = std::vector<bool>{false, true, false, true, false, true};
   {
@@ -640,7 +669,9 @@ TEST_F(CiderSplitPartTestArrow, SplitWithLimitTest) {
   }
 }
 
-TEST_F(CiderSplitPartTestArrow, SplitPartTest) {
+TEST_F(CiderSplitPartTestNextGen, SplitPartTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // test for prestodb extension split_part(input, delimiter, part)
   // the underlying codegen and runtime function are the same as split-with-index
   // so a basic test for verifying runnability should suffice for now
@@ -661,9 +692,9 @@ TEST_F(CiderSplitPartTestArrow, SplitPartTest) {
 
 // stringop: regular expressions
 
-class CiderRegexpTestArrow : public CiderTestBase {
+class CiderRegexpTestNextGen : public CiderTestBase {
  public:
-  CiderRegexpTestArrow() {
+  CiderRegexpTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(15) NOT NULL, col_3 VARCHAR(15)))";
@@ -695,7 +726,9 @@ class CiderRegexpTestArrow : public CiderTestBase {
   }
 };
 
-TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
+TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   // replace first
   assertQueryArrow(
       "SELECT "
@@ -792,7 +825,9 @@ TEST_F(CiderRegexpTestArrow, RegexpReplaceBasicTest) {
   }
 }
 
-TEST_F(CiderRegexpTestArrow, RegexpReplaceExtendedTest) {
+TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   /// NOTE: (YBRua) substrait requires occurrence >= 0 & position > 0
   /// but currently implementation also handled cases where occurence < 0 or position < 0
   /// these cases are also tested here for completeness
@@ -849,7 +884,9 @@ TEST_F(CiderRegexpTestArrow, RegexpReplaceExtendedTest) {
   }
 }
 
-TEST_F(CiderRegexpTestArrow, SubstrTest) {
+TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -896,7 +933,9 @@ TEST_F(CiderRegexpTestArrow, SubstrTest) {
   }
 }
 
-TEST_F(CiderRegexpTestArrow, ExtractTest) {
+TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
+  // TODO: (YBRua) Enable this after nextgen supports StringOp
+  GTEST_SKIP();
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -951,9 +990,9 @@ TEST_F(CiderRegexpTestArrow, ExtractTest) {
 
 // string to date
 
-class CiderStringToDateTestForArrow : public CiderTestBase {
+class CiderStringToDateTestNextGen : public CiderTestBase {
  public:
-  CiderStringToDateTestForArrow() {
+  CiderStringToDateTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_int INTEGER, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
@@ -967,7 +1006,9 @@ class CiderStringToDateTestForArrow : public CiderTestBase {
   }
 };
 
-TEST_F(CiderStringToDateTestForArrow, NestedTryCastStringOpTest) {
+TEST_F(CiderStringToDateTestNextGen, NestedTryCastStringOpTest) {
+  // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
+  GTEST_SKIP();
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
@@ -977,7 +1018,9 @@ TEST_F(CiderStringToDateTestForArrow, NestedTryCastStringOpTest) {
       "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > col_int");
 }
 
-TEST_F(CiderStringToDateTestForArrow, DateStrTest) {
+TEST_F(CiderStringToDateTestNextGen, DateStrTest) {
+  // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
+  GTEST_SKIP();
   assertQueryArrow(
       "select col_str from test where col_str between date '1970-01-01' and date "
       "'2077-12-31'",
@@ -997,9 +1040,12 @@ TEST_F(CiderStringToDateTestForArrow, DateStrTest) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);
-  log_options.parse_command_line(argc, argv);
-  log_options.max_files_ = 0;  // stderr only by default
-  logger::init(log_options);
+  
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  // log_options.parse_command_line(argc, argv);
+  // log_options.max_files_ = 0;  // stderr only by default
+  // logger::init(log_options);
   int err{0};
   try {
     err = RUN_ALL_TESTS();
@@ -1008,4 +1054,3 @@ int main(int argc, char** argv) {
   }
   return err;
 }
-
