@@ -1,1 +1,1 @@
-cider/common/*
+src/cider/common/*
