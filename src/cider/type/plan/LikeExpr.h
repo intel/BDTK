@@ -70,11 +70,11 @@ class LikeExpr : public Expr {
   void find_expr(bool (*f)(const Expr*),
                  std::list<const Expr*>& expr_list) const override;
 
-
   [[deprecated]] const std::shared_ptr<Analyzer::Expr> get_own_arg() const { return arg; }
-  [[deprecated]] void group_predicates(std::list<const Expr*>& scan_predicates,
-                        std::list<const Expr*>& join_predicates,
-                        std::list<const Expr*>& const_predicates) const override;
+  [[deprecated]] void group_predicates(
+      std::list<const Expr*>& scan_predicates,
+      std::list<const Expr*>& join_predicates,
+      std::list<const Expr*>& const_predicates) const override;
   [[deprecated]] void collect_rte_idx(std::set<int>& rte_idx_set) const override {
     arg->collect_rte_idx(rte_idx_set);
   }
