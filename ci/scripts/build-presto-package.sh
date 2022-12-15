@@ -59,20 +59,18 @@ popd
 cp -r ./BDTK/thirdparty/velox .
 mkdir -p ./presto_cpp/main/lib
 
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider-velox/src/ciderTransformer/libcider_plan_transformer.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider-velox/src/planTransformer/libvelox_plan_transformer.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider-velox/src/substrait/libvelox_substrait_convertor.a ./presto_cpp/main/lib
-cp -a ./BDTK/build-${BDTK_BUILD_MODE}/cider/exec/module/libcider.so* ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/ciderTransformer/libcider_plan_transformer.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/planTransformer/libvelox_plan_transformer.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/substrait/libvelox_substrait_convertor.a ./presto_cpp/main/lib
+cp -a ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/exec/module/libcider.so* ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider/function/libcider_function.a ./presto_cpp/main/lib
-
-sed -i 's/\"planTransformer\/PlanTransformer\.h\"/\"..\/planTransformer\/PlanTransformer\.h\"/' ./BDTK/cider-velox/src/ciderTransformer/CiderPlanTransformerFactory.h
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/function/libcider_function.a ./presto_cpp/main/lib
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
 mkdir -p ./_build/${PRESTO_CPP_MODE}/presto_cpp/function
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cider/function/RuntimeFunctions.bc ./_build/${PRESTO_CPP_MODE}/presto_cpp/function/
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/function/RuntimeFunctions.bc ./_build/${PRESTO_CPP_MODE}/presto_cpp/function/
 popd
 
 # build package
@@ -81,6 +79,9 @@ rm -rf ${package_name} ${package_name}.tar.gz
 mkdir -p ${package_name}/lib
 mkdir -p ${package_name}/function
 mkdir -p ${package_name}/bin
+mkdir -p ${package_name}/conf
+cp -r ./presto/presto-native-execution/BDTK/src/cider/function/extensions ./${package_name}/conf
+cp -r ./presto/presto-native-execution/BDTK/src/cider/function/internals ./${package_name}/conf
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/main/presto_server ./${package_name}/bin
 
