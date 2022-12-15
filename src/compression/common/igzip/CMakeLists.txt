@@ -27,5 +27,5 @@ set(IGZIP_COMMON_SOURCES igzip_wrapper.c)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
-add_library(igzip_common ${IGZIP_COMMON_SOURCES})
+add_library(igzip_common STATIC ${IGZIP_COMMON_SOURCES})
 target_link_libraries(igzip_common ISAL::igzip)
