@@ -70,9 +70,7 @@ JITExprValue& UOper::codegenIsNull(JITFunction& func,
     return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
   } else {
     // is null
-    auto null_value = operand_val.getNull().get()
-                          ? operand_val.getNull()
-                          : func.createConstant(getJITTag(type), false);
+    auto null_value = operand_val.getNull();
     return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
   }
 }
