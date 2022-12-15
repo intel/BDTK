@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef _ICL_COMPRESSION_COMMON_QPL_WRAPPER_H_
-#define _ICL_COMPRESSION_COMMON_QPL_WRAPPER_H_
+#ifndef _ICL_COMPRESSION_COMMON_IGZIP_WRAPPER_H_
+#define _ICL_COMPRESSION_COMMON_IGZIP_WRAPPER_H_
 
 #include <stdint.h>
 
@@ -28,37 +28,35 @@
 extern "C" {
 #endif
 
-int64_t qpl_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
+typedef struct igzip_wrapper_context {
+  int compression_level;
+  uint8_t* level_buf;
+  uint32_t level_buf_size;
+} igzip_wrapper_context_t;
 
-int64_t qpl_wrapper_compress(void* context,
+void* igzip_wrapper_init(int compression_level);
+
+void igzip_wrapper_destroy(void* context);
+
+int64_t igzip_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
+
+int64_t igzip_wrapper_compress(void* context,
                                int64_t input_length,
                                const uint8_t* input,
                                int64_t output_length,
                                uint8_t* output);
 
-int64_t qpl_wrapper_decompress(void* context,
+int64_t igzip_wrapper_decompress(void* context,
                                  int64_t input_length,
                                  const uint8_t* input,
                                  int64_t output_length,
                                  uint8_t* output);
 
-int qpl_wrapper_minimum_compression_level();
+int igzip_wrapper_minimum_compression_level();
 
-int qpl_wrapper_maximum_compression_level();
+int igzip_wrapper_maximum_compression_level();
 
-int qpl_wrapper_default_compression_level();
-
-int32_t qpl_wrapper_decode_parquet_rle(uint32_t value_count,
-                                   const uint8_t* input,
-                                   int32_t input_length,
-                                   uint8_t* output,
-                                   int32_t* outut_length);
-
-int32_t qpl_wrapper_decompress_decode_parquet_rle(int32_t value_count,
-                                             const uint8_t* input,
-                                             int32_t input_length,
-                                             uint8_t* output,
-                                             int32_t* output_length);
+int igzip_wrapper_default_compression_level();
 
 #ifdef __cplusplus
 }

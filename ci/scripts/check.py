@@ -29,7 +29,7 @@ import sys
 from util import attrdict
 import util
 
-EXTENSIONS = "cpp,cc,h,hpp,inc,prolog"
+EXTENSIONS = "cpp,cc,c,h,hpp,inc,prolog"
 SCRIPTS = util.script_path()
 
 
@@ -92,6 +92,7 @@ format_file_types = OrderedDict(
         "CMakeLists.txt": attrdict({"formatter": CMakeFormatter}),
         "*.cpp": attrdict({"formatter": CppFormatter}),
         "*.cc": attrdict({"formatter": CppFormatter}),
+        "*.c": attrdict({"formatter": CppFormatter}),
         "*.h": attrdict({"formatter": CppFormatter}),
         "*.hpp": attrdict({"formatter": CppFormatter}),
         "*.inc": attrdict({"formatter": CppFormatter}),

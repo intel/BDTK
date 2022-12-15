@@ -23,32 +23,18 @@
 
 project(IclCodec)
 
-add_custom_target(IclCodec)
+set(ICL_CODEC_SOURCES icl_codec.cpp)
+set(ICL_CODEC_LIBRATY)
+if(ICL_WITH_QPL)
+  list(APPEND ICL_CODEC_SOURCES qpl_codec.cpp)
+endif()
+if(ICL_WITH_QAT)
+  list(APPEND ICL_CODEC_SOURCES qat_codec.cpp)
+endif()
+if(ICL_WITH_IGZIP)
+  list(APPEND ICL_CODEC_SOURCES igzip_codec.cpp)
+  list(APPEND ICL_CODEC_LINK_LIBS igzip_common)
+endif()
 
-install(FILES icl_codec.h DESTINATION include)
-
-set(ICL_CODEC_SOURCES icl_codec.cpp qpl_codec.cpp qat_codec.cpp)
-
-get_target_property(IaxCommon_INCLUDE_DIRS IaxCommon_static INCLUDE_DIRECTORIES)
-get_target_property(QatCommon_INCLUDE_DIRS QatCommon_static INCLUDE_DIRECTORIES)
-
-add_icl_lib(
-  IclCodec
-  BUILD_SHARED
-  SOURCES
-  ${ICL_CODEC_SOURCES}
-  OUTPUTS
-  ICL_CODEC_LIBRARIES
-  SHARED_PRIVATE_LINK_LIBS
-  IaxCommon_static
-  QatCommon_static
-  EXTRA_INCLUDES
-  ${ARROW_HEADERS_DIR}
-  PRIVATE_INCLUDES
-  ${IaxCommon_INCLUDE_DIRS}
-  ${QatCommon_INCLUDE_DIRS}
-  DEPENDENCIES
-  IaxCommon_static
-  QatCommon_static)
-
-add_dependencies(IclCodec ${ICL_CODEC_LIBRARIES})
+add_library(icl_codec SHARED ${ICL_CODEC_SOURCES})
+target_link_libraries(icl_codec ${ICL_CODEC_LINK_LIBS})
