@@ -18,14 +18,5 @@
 # under the License.
 set(DEP_LIBS ${EXECUTE_TEST_LIBS} benchmark::benchmark nextgen)
 
-set(TEST_ARGS "--gtest_output=xml:../")
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
-file(GLOB nextgen_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
-  string(REGEX MATCH "benchmark/.*" test_relative_path
-               ${nextgen_benchmark_file})
-  string(REGEX REPLACE "benchmark/" "" target_name ${test_relative_path})
-  string(REGEX REPLACE ".cpp" "" target_name ${target_name})
-  add_executable(${target_name} ${nextgen_benchmark_file})
-  target_link_libraries(${target_name} ${DEP_LIBS})
-endforeach()
+add_executable(jitlib_benchmark JITlibBenchmark.cpp)
+target_link_libraries(jitlib_benchmark ${DEP_LIBS})

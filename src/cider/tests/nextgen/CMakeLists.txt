@@ -17,9 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# TODO: Temporarily disable benchmark target until we finish nextgen test
-# framework and integrate the target with the new framework.
-# add_subdirectory(benchmark)
+option(ENABLE_NEXGEN_BENCHMARK "Enable Benchmark for Nextgen Project." OFF)
+if(ENABLE_NEXGEN_BENCHMARK)
+add_subdirectory(benchmark)
+endif()
+
 add_subdirectory(jitlib)
 add_subdirectory(compiler)
 add_subdirectory(functional)
