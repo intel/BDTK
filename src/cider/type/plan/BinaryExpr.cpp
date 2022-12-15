@@ -45,12 +45,18 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
                 "Decimal and TimeInterval are not supported in arithmetic codegen now.");
   }
   if (lhs_ti.is_string()) {
-    // string binops (cmp)
-    VarSizeJITExprValue lhs_val(lhs->codegen(func));
-    VarSizeJITExprValue rhs_val(rhs->codegen(func));
-    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
-    null = lhs_val.getNull() || rhs_val.getNull();
-    return codegenVarcharCmpFun(func, null, lhs_val, rhs_val);
+    // string binops, should only be comparisons
+    const auto optype = get_optype();
+    if (IS_COMPARISON(optype)) {
+      VarSizeJITExprValue lhs_val(lhs->codegen(func));
+      VarSizeJITExprValue rhs_val(rhs->codegen(func));
+      JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+      null = lhs_val.getNull() || rhs_val.getNull();
+      return codegenVarcharCmpFun(func, null, lhs_val, rhs_val);
+    } else {
+      CIDER_THROW(CiderUnsupportedException, "string BinOp only supports comparison");
+    }
+
   } else {
     // primitive type binops
     FixSizeJITExprValue lhs_val(lhs->codegen(func));

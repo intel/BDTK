@@ -37,33 +37,80 @@ JITExprValue& UOper::codegen(JITFunction& func) {
     CIDER_THROW(CiderCompileException,
                 "Decimal and TimeInterval are not supported in Uoper codegen now.");
   }
-  FixSizeJITExprValue operand_val(operand->codegen(func));
-  const auto& ti = get_type_info();
-  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
+
   switch (get_optype()) {
-    case kISNULL: {
-      // For ISNULL, the null will always be false
-      auto null_value = operand_val.getNull().get()
-                            ? operand_val.getNull()
-                            : func.createConstant(getJITTag(type), false);
-      return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
-    }
+    case kISNULL:
     case kISNOTNULL: {
-      auto null_value = operand_val.getNull().get()
-                            ? operand_val.getNull()->notOp()
-                            : func.createConstant(getJITTag(type), true);
-      return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
+      return codegenIsNull(func, operand, get_optype() == kISNOTNULL);
     }
     case kNOT: {
-      CHECK(operand_val.getNull().get());
-      return set_expr_value(operand_val.getNull(), operand_val.getValue()->notOp());
+      return codegenNot(func, operand);
     }
     case kCAST: {
-      return set_expr_value(operand_val.getNull(),
-                            codegenCastFunc(func, operand_val.getValue()));
+      return codegenCast(func, operand);
     }
     default:
       UNIMPLEMENTED();
+  }
+}
+
+JITExprValue& UOper::codegenIsNull(JITFunction& func,
+                                   Analyzer::Expr* operand,
+                                   bool use_is_not_null) {
+  // For ISNULL, the null will always be false
+  const auto& ti = get_type_info();
+  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
+
+  // for IS NULL / IS NOT NULL, we only need the null info (getNull())
+  JITExprValueAdaptor operand_val(operand->codegen(func));
+
+  if (use_is_not_null) {
+    // is not null
+    auto null_value = operand_val.getNull().get()
+                          ? operand_val.getNull()->notOp()
+                          : func.createConstant(getJITTag(type), true);
+    return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
+  } else {
+    // is null
+    auto null_value = operand_val.getNull().get()
+                          ? operand_val.getNull()
+                          : func.createConstant(getJITTag(type), false);
+    return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
+  }
+}
+
+JITExprValue& UOper::codegenNot(JITFunction& func, Analyzer::Expr* operand) {
+  const auto& ti = get_type_info();
+  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
+
+  // should be bool, or otherwise will throw in notOp()
+  FixSizeJITExprValue operand_val(operand->codegen(func));
+
+  CHECK(operand_val.getNull().get());
+  return set_expr_value(operand_val.getNull(), operand_val.getValue()->notOp());
+}
+
+JITExprValue& UOper::codegenCast(JITFunction& func, Analyzer::Expr* operand) {
+  const auto& ret_ti = get_type_info();
+  const auto& operand_ti = operand->get_type_info();
+  if (operand_ti.is_string()) {
+    // input is varchar
+    VarSizeJITExprValue operand_val(operand->codegen(func));
+    if (ret_ti.is_string()) {
+      // only supports casting from varchar to varchar
+      return set_expr_value(
+          operand_val.getNull(), operand_val.getLength(), operand_val.getValue());
+    } else {
+      CIDER_THROW(CiderUnsupportedException,
+                  fmt::format("casting from type:{} to type:{} is not supported",
+                              operand_ti.get_type_name(),
+                              ret_ti.get_type_name()));
+    }
+  } else {
+    // input is primitive type
+    FixSizeJITExprValue operand_val(operand->codegen(func));
+    return set_expr_value(operand_val.getNull(),
+                          codegenCastFunc(func, operand_val.getValue()));
   }
 }
 
