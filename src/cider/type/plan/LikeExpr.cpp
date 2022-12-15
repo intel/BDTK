@@ -82,20 +82,6 @@ std::shared_ptr<Analyzer::Expr> LikeExpr::deep_copy() const {
                             is_simple);
 }
 
-void LikeExpr::group_predicates(std::list<const Expr*>& scan_predicates,
-                                std::list<const Expr*>& join_predicates,
-                                std::list<const Expr*>& const_predicates) const {
-  std::set<int> rte_idx_set;
-  arg->collect_rte_idx(rte_idx_set);
-  if (rte_idx_set.size() > 1) {
-    join_predicates.push_back(this);
-  } else if (rte_idx_set.size() == 1) {
-    scan_predicates.push_back(this);
-  } else {
-    const_predicates.push_back(this);
-  }
-}
-
 bool LikeExpr::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(LikeExpr)) {
     return false;
@@ -136,6 +122,21 @@ void LikeExpr::find_expr(bool (*f)(const Expr*),
   like_expr->find_expr(f, expr_list);
   if (escape_expr != nullptr) {
     escape_expr->find_expr(f, expr_list);
+  }
+}
+
+// to be deprecated
+void LikeExpr::group_predicates(std::list<const Expr*>& scan_predicates,
+                                std::list<const Expr*>& join_predicates,
+                                std::list<const Expr*>& const_predicates) const {
+  std::set<int> rte_idx_set;
+  arg->collect_rte_idx(rte_idx_set);
+  if (rte_idx_set.size() > 1) {
+    join_predicates.push_back(this);
+  } else if (rte_idx_set.size() == 1) {
+    scan_predicates.push_back(this);
+  } else {
+    const_predicates.push_back(this);
   }
 }
 }  // namespace Analyzer

@@ -53,26 +53,38 @@ class LikeExpr : public Expr {
       , escape_expr(e)
       , is_ilike(i)
       , is_simple(s) {}
+
   const Expr* get_arg() const { return arg.get(); }
-  const std::shared_ptr<Analyzer::Expr> get_own_arg() const { return arg; }
   const Expr* get_like_expr() const { return like_expr.get(); }
   const Expr* get_escape_expr() const { return escape_expr.get(); }
+  std::shared_ptr<Analyzer::Expr> get_shared_arg() { return arg; }
+  std::shared_ptr<Analyzer::Expr> get_shared_like() { return like_expr; }
+  std::shared_ptr<Analyzer::Expr> get_shared_escape() { return escape_expr; }
+
   bool get_is_ilike() const { return is_ilike; }
   bool get_is_simple() const { return is_simple; }
+
+  bool operator==(const Expr& rhs) const override;
+  std::string toString() const override;
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-  void group_predicates(std::list<const Expr*>& scan_predicates,
+  void find_expr(bool (*f)(const Expr*),
+                 std::list<const Expr*>& expr_list) const override;
+
+
+  [[deprecated]] const std::shared_ptr<Analyzer::Expr> get_own_arg() const { return arg; }
+  [[deprecated]] void group_predicates(std::list<const Expr*>& scan_predicates,
                         std::list<const Expr*>& join_predicates,
                         std::list<const Expr*>& const_predicates) const override;
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override {
+  [[deprecated]] void collect_rte_idx(std::set<int>& rte_idx_set) const override {
     arg->collect_rte_idx(rte_idx_set);
   }
-  void collect_column_var(
+  [[deprecated]] void collect_column_var(
       std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
           colvar_set,
       bool include_agg) const override {
     arg->collect_column_var(colvar_set, include_agg);
   }
-  std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
     return makeExpr<LikeExpr>(arg->rewrite_with_targetlist(tlist),
                               like_expr->deep_copy(),
@@ -80,7 +92,7 @@ class LikeExpr : public Expr {
                               is_ilike,
                               is_simple);
   }
-  std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
     return makeExpr<LikeExpr>(arg->rewrite_with_child_targetlist(tlist),
                               like_expr->deep_copy(),
@@ -88,7 +100,7 @@ class LikeExpr : public Expr {
                               is_ilike,
                               is_simple);
   }
-  std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override {
     return makeExpr<LikeExpr>(arg->rewrite_agg_to_var(tlist),
                               like_expr->deep_copy(),
@@ -96,13 +108,6 @@ class LikeExpr : public Expr {
                               is_ilike,
                               is_simple);
   }
-  bool operator==(const Expr& rhs) const override;
-  std::string toString() const override;
-  void find_expr(bool (*f)(const Expr*),
-                 std::list<const Expr*>& expr_list) const override;
-  std::shared_ptr<Analyzer::Expr> get_shared_arg() { return arg; }
-  std::shared_ptr<Analyzer::Expr> get_shared_Like() { return like_expr; }
-  std::shared_ptr<Analyzer::Expr> get_shared_escape() { return escape_expr; }
 
  private:
   std::shared_ptr<Analyzer::Expr> arg;        // the argument to the left of LIKE
