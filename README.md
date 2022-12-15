@@ -50,10 +50,6 @@ The following diagram shows the design architecture. Currently, it offers a few 
 
 ## Solutions Introduction
 
-   - [Cider](https://github.com/intel/BDTK/tree/main/src/cider):
-
-      A modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
-
   - Presto E2E Solution:
 
     BDTK could provide a Presto End-to-End accelaration solution via Velox and Velox-Plugin.
@@ -61,6 +57,9 @@ The following diagram shows the design architecture. Currently, it offers a few 
 
         Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
 
+     - [Cider](https://github.com/intel/BDTK/tree/main/src/cider):
+
+      A modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
   - [Analytic Cache Solution](https://github.com/oap-project/sql-ds-cache/tree/ape/oap-ape)
 
      Analytic Cache targets to improve data source side performance for multiple bigdata analytic framework such as Apache Spark and Apache Flink. Compare to other row based execution engine, Analytic Cache could utilize column format and do batch computation, which will boost performance in Ad-hoc queries. Meanwhile, Analytic Cache provide QAT codec accelaration and IAA predicition pushing down.
