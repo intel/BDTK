@@ -81,7 +81,7 @@ JITExprValue& DateaddExpr::codegen(JITFunction& func) {
   if (datetime_ti.is_high_precision_timestamp()) {
     func_name = func_name + "HighPrecision";
     JITValuePointer dim_val =
-        func.createConstant(JITTypeTag::INT32, datetime_ti.get_dimension());
+        func.createLiteral(JITTypeTag::INT32, datetime_ti.get_dimension());
     JITValuePointer res_val = func.emitRuntimeFunctionCall(
         func_name,
         JITFunctionEmitDescriptor{
@@ -96,30 +96,6 @@ JITExprValue& DateaddExpr::codegen(JITFunction& func) {
               datetime_ti.get_type() == kDATE ? JITTypeTag::INT32 : JITTypeTag::INT64,
           .params_vector = {datetime_val.get(), interval_val.get()}});
   return set_expr_value(datetime.getNull(), res_val);
-}
-
-std::shared_ptr<Analyzer::Expr> DateaddExpr::rewrite_with_targetlist(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  return makeExpr<DateaddExpr>(type_info,
-                               field_,
-                               number_->rewrite_with_targetlist(tlist),
-                               datetime_->rewrite_with_targetlist(tlist));
-}
-
-std::shared_ptr<Analyzer::Expr> DateaddExpr::rewrite_with_child_targetlist(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  return makeExpr<DateaddExpr>(type_info,
-                               field_,
-                               number_->rewrite_with_child_targetlist(tlist),
-                               datetime_->rewrite_with_child_targetlist(tlist));
-}
-
-std::shared_ptr<Analyzer::Expr> DateaddExpr::rewrite_agg_to_var(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  return makeExpr<DateaddExpr>(type_info,
-                               field_,
-                               number_->rewrite_agg_to_var(tlist),
-                               datetime_->rewrite_agg_to_var(tlist));
 }
 
 bool DateaddExpr::operator==(const Expr& rhs) const {
@@ -146,6 +122,35 @@ void DateaddExpr::find_expr(bool (*f)(const Expr*),
   datetime_->find_expr(f, expr_list);
 }
 
+std::shared_ptr<Analyzer::Expr> DateaddExpr::deep_copy() const {
+  return makeExpr<DateaddExpr>(
+      type_info, field_, number_->deep_copy(), datetime_->deep_copy());
+}
+
+std::shared_ptr<Analyzer::Expr> DateaddExpr::rewrite_with_targetlist(
+    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
+  return makeExpr<DateaddExpr>(type_info,
+                               field_,
+                               number_->rewrite_with_targetlist(tlist),
+                               datetime_->rewrite_with_targetlist(tlist));
+}
+
+std::shared_ptr<Analyzer::Expr> DateaddExpr::rewrite_with_child_targetlist(
+    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
+  return makeExpr<DateaddExpr>(type_info,
+                               field_,
+                               number_->rewrite_with_child_targetlist(tlist),
+                               datetime_->rewrite_with_child_targetlist(tlist));
+}
+
+std::shared_ptr<Analyzer::Expr> DateaddExpr::rewrite_agg_to_var(
+    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
+  return makeExpr<DateaddExpr>(type_info,
+                               field_,
+                               number_->rewrite_agg_to_var(tlist),
+                               datetime_->rewrite_agg_to_var(tlist));
+}
+
 void DateaddExpr::collect_rte_idx(std::set<int>& rte_idx_set) const {
   number_->collect_rte_idx(rte_idx_set);
   datetime_->collect_rte_idx(rte_idx_set);
@@ -162,11 +167,6 @@ void DateaddExpr::check_group_by(
     const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
   number_->check_group_by(groupby);
   datetime_->check_group_by(groupby);
-}
-
-std::shared_ptr<Analyzer::Expr> DateaddExpr::deep_copy() const {
-  return makeExpr<DateaddExpr>(
-      type_info, field_, number_->deep_copy(), datetime_->deep_copy());
 }
 
 void DateaddExpr::group_predicates(std::list<const Expr*>& scan_predicates,

@@ -31,4 +31,4 @@ src/cider/function/SubstraitFunctionCiderMappings.h
 src/cider/function/substrait/*
 Makefile
 src/compression/*
-cider/function/datetime/Cider*
+src/cider/function/datetime/Cider*
