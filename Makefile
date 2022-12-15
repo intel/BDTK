@@ -47,7 +47,8 @@ clean:
 	@rm -rf build-*
 
 build-common:
-	@sed -i "s/COMMAND protoc --proto_path \$${CMAKE_SOURCE_DIR}\/ --cpp_out \$${CMAKE_SOURCE_DIR}/COMMAND protoc --proto_path \$${proto_directory}\/ --cpp_out \$${PROTO_OUTPUT_DIR}/g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
+	@sed -i "s/\$${Protobuf_PROTOC_EXECUTABLE} --proto_path \$${PROJECT_SOURCE_DIR}\//protoc --proto_path \$${proto_directory}\//g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
+	@sed -i "s/--proto_path \$${Protobuf_INCLUDE_DIR} --cpp_out \$${PROJECT_SOURCE_DIR}/--cpp_out \$${PROTO_OUTPUT_DIR} /g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/algebra.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/function.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
