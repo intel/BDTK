@@ -73,7 +73,7 @@ class CiderCompileException : public CiderException {
 class CiderPlanValidateException : public CiderException {
  public:
   explicit CiderPlanValidateException(const std::string& msg)
-      : CiderException("CiderCompileException", msg) {}
+      : CiderException("CiderPlanValidateException", msg) {}
 
   // for subclass inheritance
   explicit CiderPlanValidateException(std::string type, const std::string& msg)
