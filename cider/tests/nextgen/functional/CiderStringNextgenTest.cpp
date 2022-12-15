@@ -1040,7 +1040,7 @@ TEST_F(CiderStringToDateTestNextGen, DateStrTest) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   logger::LogOptions log_options(argv[0]);
-  
+
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   // log_options.parse_command_line(argc, argv);
