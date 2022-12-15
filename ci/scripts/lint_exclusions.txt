@@ -3,4 +3,3 @@
 */ThirdParty/*
 *Tests/DataMgr/*
 *src/substrait/proto/*
-*/contrib/*
