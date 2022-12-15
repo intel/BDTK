@@ -92,7 +92,7 @@ class UOper : public Expr {
   JITExprValue& codegen(JITFunction& func) override;
   JITExprValue& codegenIsNull(JITFunction& func,
                               Analyzer::Expr* operand_expr_val,
-                              bool use_is_not_null = false);
+                              SQLOps optype);
   JITExprValue& codegenNot(JITFunction& func, Analyzer::Expr* operand_expr_val);
   JITExprValue& codegenCast(JITFunction& func, Analyzer::Expr* operand_expr_val);
   JITValuePointer codegenCastFunc(JITFunction& func, JITValue& lhs);

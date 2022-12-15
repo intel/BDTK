@@ -41,7 +41,7 @@ JITExprValue& UOper::codegen(JITFunction& func) {
   switch (get_optype()) {
     case kISNULL:
     case kISNOTNULL: {
-      return codegenIsNull(func, operand, get_optype() == kISNOTNULL);
+      return codegenIsNull(func, operand, get_optype());
     }
     case kNOT: {
       return codegenNot(func, operand);
@@ -56,7 +56,7 @@ JITExprValue& UOper::codegen(JITFunction& func) {
 
 JITExprValue& UOper::codegenIsNull(JITFunction& func,
                                    Analyzer::Expr* operand,
-                                   bool use_is_not_null) {
+                                   SQLOps optype) {
   // For ISNULL, the null will always be false
   const auto& ti = get_type_info();
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
@@ -64,11 +64,9 @@ JITExprValue& UOper::codegenIsNull(JITFunction& func,
   // for IS NULL / IS NOT NULL, we only need the null info (getNull())
   JITExprValueAdaptor operand_val(operand->codegen(func));
 
-  if (use_is_not_null) {
+  if (optype == kISNOTNULL) {
     // is not null
-    auto null_value = operand_val.getNull().get()
-                          ? operand_val.getNull()->notOp()
-                          : func.createConstant(getJITTag(type), true);
+    auto null_value = operand_val.getNull()->notOp();
     return set_expr_value(func.createConstant(getJITTag(type), false), null_value);
   } else {
     // is null
@@ -81,7 +79,6 @@ JITExprValue& UOper::codegenIsNull(JITFunction& func,
 
 JITExprValue& UOper::codegenNot(JITFunction& func, Analyzer::Expr* operand) {
   const auto& ti = get_type_info();
-  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
 
   // should be bool, or otherwise will throw in notOp()
   FixSizeJITExprValue operand_val(operand->codegen(func));

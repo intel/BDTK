@@ -200,7 +200,7 @@ class CiderDuplicateStringTestNextGen : public CiderTestBase {
 
 TEST_F(CiderDuplicateStringTestNextGen, SingleGroupKeyTest) {
   // TODO: (YBRua) Enable this after nextgen supports GROUP BY
-  GTEST_SKIP();
+  GTEST_SKIP_("string group-by is not supported yet in nextgen");
   std::string res_str = "aaaaaaaaabbccddddd";
   std::vector<int> res_offset{0, 0, 7, 15, 18};
   ArrowArray* array = nullptr;
@@ -220,7 +220,7 @@ TEST_F(CiderDuplicateStringTestNextGen, SingleGroupKeyTest) {
 
 TEST_F(CiderDuplicateStringTestNextGen, MultiGroupKeyTest) {
   // TODO: (YBRua) Enable this after nextgen supports GROUP BY
-  GTEST_SKIP();
+  GTEST_SKIP_("string group-by is not supported yet in nextgen");
   std::string res_str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
   std::vector<int> res_offset1{0, 0, 7, 15, 15, 22, 25, 33};
 
@@ -289,7 +289,7 @@ TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
 
 TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   // variable source string
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
@@ -312,7 +312,7 @@ TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
 
 TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -321,7 +321,7 @@ TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
 
 TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -330,7 +330,7 @@ TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
 
 TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -341,7 +341,7 @@ TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
 
 TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringops (upper/lower) are not supported yet in nextgen");
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
@@ -381,7 +381,7 @@ TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
 
 TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringops (upper/lower) are not supported yet in nextgen");
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
@@ -403,7 +403,7 @@ TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
 
 TEST_F(CiderStringTestNextGen, ConcatTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
   // Skipped because Isthmus does not support concatenating two literals
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -421,7 +421,7 @@ TEST_F(CiderStringTestNextGen, ConcatTest) {
 
 TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
 
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -441,7 +441,7 @@ TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
 
 TEST_F(CiderStringTestNextGen, CharLengthTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (char-length) is not supported yet in nextgen");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
                    "stringop_charlen_project_2.json");
@@ -457,7 +457,7 @@ TEST_F(CiderStringTestNextGen, CharLengthTest) {
 
 TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (char-length) is not supported yet in nextgen");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;",
                    "stringop_charlen_project_1_null.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
@@ -510,7 +510,7 @@ class CiderTrimOpTestNextGen : public CiderTestBase {
 
 TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (trim) is not supported yet in nextgen");
   // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
   // basic trim (defaults to trim spaces)
   assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
@@ -525,7 +525,7 @@ TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
 
 TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (trim) is not supported yet in nextgen");
   assertQueryArrow("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
   assertQueryArrow("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
                    "stringop_trim_2.json");
@@ -543,7 +543,7 @@ TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
 
 TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (trim) is not supported yet in nextgen");
   assertQueryArrow("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
                    "stringop_trim_nested_1.json");
   assertQueryArrow(
@@ -596,7 +596,7 @@ class CiderSplitPartTestNextGen : public CiderTestBase {
 
 TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (string-split) is not supported yet in nextgen");
   // note that duckdb array indexing is one-based, so [2] references the second element
   assertQueryArrow(
       "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
@@ -630,7 +630,7 @@ TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
 
 TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (split) is not supported yet in nextgen");
   // test for prestodb extension split(input, delimiter, limit)
   auto is_null = std::vector<bool>{false, true, false, true, false, true};
   {
@@ -663,7 +663,7 @@ TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
 
 TEST_F(CiderSplitPartTestNextGen, SplitPartTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (split-part) is not supported yet in nextgen");
   // test for prestodb extension split_part(input, delimiter, part)
   // the underlying codegen and runtime function are the same as split-with-index
   // so a basic test for verifying runnability should suffice for now
@@ -720,7 +720,7 @@ class CiderRegexpTestNextGen : public CiderTestBase {
 
 TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (regexp-replace) is not supported yet in nextgen");
   // replace first
   assertQueryArrow(
       "SELECT "
@@ -819,7 +819,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
 
 TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (regexp-replace) is not supported yet in nextgen");
   /// NOTE: (YBRua) substrait requires occurrence >= 0 & position > 0
   /// but currently implementation also handled cases where occurence < 0 or position < 0
   /// these cases are also tested here for completeness
@@ -878,7 +878,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
 
 TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (regexp-match-substring) is not supported yet in nextgen");
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -927,7 +927,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
 
 TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP();
+  GTEST_SKIP_("stringop (regexp-extract) is not supported yet in nextgen");
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -1000,7 +1000,7 @@ class CiderStringToDateTestNextGen : public CiderTestBase {
 
 TEST_F(CiderStringToDateTestNextGen, NestedTryCastStringOpTest) {
   // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
-  GTEST_SKIP();
+  GTEST_SKIP_("casting strings to other types (date) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
   assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
@@ -1012,7 +1012,7 @@ TEST_F(CiderStringToDateTestNextGen, NestedTryCastStringOpTest) {
 
 TEST_F(CiderStringToDateTestNextGen, DateStrTest) {
   // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
-  GTEST_SKIP();
+  GTEST_SKIP_("casting strings to other types (date) is not supported yet in nextgen");
   assertQueryArrow(
       "select col_str from test where col_str between date '1970-01-01' and date "
       "'2077-12-31'",
