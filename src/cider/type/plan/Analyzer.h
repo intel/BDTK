@@ -881,6 +881,7 @@ class AggExpr : public Expr {
   std::string toString() const override;
   void find_expr(bool (*f)(const Expr*),
                  std::list<const Expr*>& expr_list) const override;
+  ExprPtrRefVector get_children_reference() override { return {&arg}; }
 
  private:
   SQLAgg aggtype;                       // aggregate type: kAVG, kMIN, kMAX, kSUM, kCOUNT

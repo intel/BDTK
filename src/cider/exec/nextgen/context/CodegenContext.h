@@ -21,6 +21,7 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
+#include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "include/cider/CiderAllocator.h"
@@ -58,9 +59,12 @@ class CodegenContext {
                                         bool arrow_array_output = true);
 
   // TBD: HashTable (GroupBy, Join), other objects registration.
-  jitlib::JITValuePointer registerBuffer(const int32_t capacity,
-                                         const std::string& name = "",
-                                         bool output_raw_buffer = true);
+  jitlib::JITValuePointer registerBuffer(
+      const int32_t capacity,
+      const std::string& name = "",
+      const BufferInitializer& initializer =
+          [](Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
+      bool output_raw_buffer = true);
 
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
@@ -79,8 +83,13 @@ class CodegenContext {
     // SQLTypeInfo type;
     int32_t capacity;
 
-    BufferDescriptor(int64_t id, const std::string& n, int32_t c)
-        : ctx_id(id), name(n), capacity(c) {}
+    BufferInitializer initializer_;
+
+    BufferDescriptor(int64_t id,
+                     const std::string& n,
+                     int32_t c,
+                     const BufferInitializer& initializer)
+        : ctx_id(id), name(n), capacity(c), initializer_(initializer) {}
   };
 
   void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }

@@ -21,7 +21,6 @@
 #include "exec/nextgen/context/CodegenContext.h"
 
 #include "exec/nextgen/context/RuntimeContext.h"
-#include "exec/nextgen/jitlib/JITLib.h"
 
 namespace cider::exec::nextgen::context {
 using namespace cider::jitlib;
@@ -56,6 +55,7 @@ JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
 
 JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
                                                const std::string& name,
+                                               const BufferInitializer& initializer,
                                                bool output_raw_buffer) {
   int64_t id = acquireContextID();
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id, output_raw_buffer]() {
@@ -78,8 +78,8 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
 
   ret->setName(name);
 
-  buffer_descriptors_.emplace_back(std::make_shared<BufferDescriptor>(id, name, capacity),
-                                   ret);
+  buffer_descriptors_.emplace_back(
+      std::make_shared<BufferDescriptor>(id, name, capacity, initializer), ret);
 
   return ret;
 }

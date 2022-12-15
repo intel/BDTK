@@ -21,19 +21,27 @@
 #ifndef NEXTGEN_CONTEXT_BUFFER_H
 #define NEXTGEN_CONTEXT_BUFFER_H
 
+#include <functional>
+
 #include "cider/CiderAllocator.h"
 
 namespace cider::exec::nextgen::context {
 class Buffer {
  public:
-  Buffer(const int32_t capacity, const CiderAllocatorPtr& allocator)
+  Buffer(const int32_t capacity,
+         const CiderAllocatorPtr& allocator,
+         const std::function<void(Buffer*)>& initializer)
       : capacity_(capacity)
       , allocator_(allocator)
-      , buffer_(allocator_->allocate(capacity_)) {}
+      , buffer_(allocator_->allocate(capacity_)) {
+    initializer(this);
+  }
 
   ~Buffer() { allocator_->deallocate(buffer_, capacity_); }
 
   int8_t* getBuffer() { return buffer_; }
+
+  int32_t getCapacity() { return capacity_; }
 
  private:
   int32_t capacity_;
@@ -42,6 +50,7 @@ class Buffer {
 };
 
 using BufferPtr = std::unique_ptr<Buffer>;
+using BufferInitializer = std::function<void(Buffer*)>;
 
 }  // namespace cider::exec::nextgen::context
 #endif  // NEXTGEN_CONTEXT_BUFFER_H

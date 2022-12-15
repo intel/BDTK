@@ -40,8 +40,8 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of buffers.
   for (auto& buffer_desc : buffer_holder_) {
     if (nullptr == buffer_desc.second) {
-      buffer_desc.second =
-          std::make_unique<Buffer>(buffer_desc.first->capacity, allocator);
+      buffer_desc.second = std::make_unique<Buffer>(
+          buffer_desc.first->capacity, allocator, buffer_desc.first->initializer_);
       runtime_ctx_pointers_[buffer_desc.first->ctx_id] = buffer_desc.second.get();
     }
   }
