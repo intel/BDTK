@@ -43,28 +43,27 @@ Below comes the view from personas for this project.
 
 ![BDTK-Personas](docs/images/Personas.PNG)
 
-# BDTK Components Introduction
-The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator, QATCodec - compression codec wrapper based on Intel QAT accelerator. 
-
- - [Cider](https://github.com/intel/BDTK/tree/main/cider):
-
-   a modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
-
+# Introduction
+The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler(Cider) on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator, QATCodec - compression codec wrapper based on Intel QAT accelerator. 
 
 ![BDTK-INTRODUCTION](docs/images/BDTK-arch.PNG)
 
 ## Solutions Introduction
 
-  - [Presto E2E Solution]():
+   - [Cider](https://github.com/intel/BDTK/tree/main/src/cider):
 
-    To be added
-     - [Velox Plugin](https://github.com/intel/BDTK/tree/main/cider-velox):
+      A modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
 
-      a Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
+  - Presto E2E Solution:
+
+    BDTK could provide a Presto End-to-End accelaration solution via Velox and Velox-Plugin.
+     - [Velox Plugin](https://github.com/intel/BDTK/tree/main/src/cider-velox):
+
+        Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
 
   - [Analytic Cache Solution](https://github.com/oap-project/sql-ds-cache/tree/ape/oap-ape)
 
-     To be added
+     Analytic Cache targets to improve data source side performance for multiple bigdata analytic framework such as Apache Spark and Apache Flink. Compare to other row based execution engine, Analytic Cache could utilize column format and do batch computation, which will boost performance in Ad-hoc queries. Meanwhile, Analytic Cache provide QAT codec accelaration and IAA predicition pushing down.
 
 ## Reusable Modules
 BDTK provides several functional modules for user to use or integrate into their product. Here are breif description for each module. Details can be found on [Module Page](https://intel.github.io/BDTK/user/modules.html)
