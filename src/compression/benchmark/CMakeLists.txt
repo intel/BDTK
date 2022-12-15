@@ -17,15 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#
-# IgzipCommon
-#
+project(icl-benchmark)
 
-project(igzip_common)
+find_package(Arrow REQUIRED)
+if(${Arrow_FOUND})
+  message(STATUS "arrow library found: ${ARROW_STATIC_LIB}")
 
-set(IGZIP_COMMON_SOURCES igzip_wrapper.c)
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-
-add_library(igzip_common ${IGZIP_COMMON_SOURCES})
-target_link_libraries(igzip_common ISAL::igzip)
+endif()
+set(ICL_COMPRESSION_BENCHMARK_SRCS BenchmarkMain.cpp CompressionBenchmark.cpp)
+add_executable(IclCompressionBenchmark ${ICL_COMPRESSION_BENCHMARK_SRCS})
+target_link_libraries(IclCompressionBenchmark benchmark icl_codec
+                      ${ARROW_TESTING_STATIC_LIB})
