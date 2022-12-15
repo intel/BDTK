@@ -31,7 +31,9 @@ class StatefulProcessor : public DefaultBatchProcessor {
  public:
   using DefaultBatchProcessor::DefaultBatchProcessor;
 
-  std::pair<struct ArrowArray*, struct ArrowSchema*> getResult() override;
+  void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
+
+  Type getType() const override { return Type::kStateful; };
 };
 
 }  // namespace cider::exec::processor

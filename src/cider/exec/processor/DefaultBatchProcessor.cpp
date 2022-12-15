@@ -77,7 +77,7 @@ BatchProcessorState DefaultBatchProcessor::getState() {
 }
 
 void DefaultBatchProcessor::finish() {
-  noMoreBatch_ = true;
+  no_more_batch_ = true;
   if (joinHandler_) {
     joinHandler_->onFinish();
   }

@@ -25,15 +25,16 @@
 
 namespace cider::exec::processor {
 
-std::pair<struct ArrowArray*, struct ArrowSchema*> StatefulProcessor::getResult() {
-  if (!noMoreBatch_ || BatchProcessorState::kFinished == state_) {
+void StatefulProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
+  if (!no_more_batch_ || BatchProcessorState::kFinished == state_) {
     input_arrow_array_ = nullptr;
-    return std::make_pair(nullptr, nullptr);
+    array.length = 0;
+    return;
   }
 
   state_ = BatchProcessorState::kFinished;
   // TODO: getResult through nextGen runtime api
-  return std::make_pair(nullptr, nullptr);
+  return;
 }
 
 }  // namespace cider::exec::processor

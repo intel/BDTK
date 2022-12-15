@@ -67,9 +67,12 @@ bool CiderPipelineOperator::isFinished() {
 }
 
 facebook::velox::RowVectorPtr CiderPipelineOperator::getOutput() {
-  auto [array, schema] = batchProcessor_->getResult();
-  if (array) {
-    VectorPtr baseVec = importFromArrowAsOwner(*schema, *array, operatorCtx_->pool());
+  struct ArrowArray array;
+  struct ArrowSchema schema;
+
+  batchProcessor_->getResult(array, schema);
+  if (array.length) {
+    VectorPtr baseVec = importFromArrowAsOwner(schema, array, operatorCtx_->pool());
     return std::reinterpret_pointer_cast<RowVector>(baseVec);
   }
   return nullptr;

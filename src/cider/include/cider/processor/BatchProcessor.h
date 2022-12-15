@@ -41,6 +41,11 @@ enum class BatchProcessorState {
 
 class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
  public:
+  enum class Type {
+    kStateless,
+    kStateful,
+  };
+
   virtual const BatchProcessorContextPtr& context() const = 0;
   /// Adds an input batch to the batchProcessor.  This method will only be called if
   /// getState return kRunning.
@@ -48,13 +53,15 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
                                 const struct ArrowSchema* schema = nullptr) = 0;
 
   /// Gets an output batch from the batchProcessor.  return null If no output data.
-  virtual std::pair<struct ArrowArray*, struct ArrowSchema*> getResult() = 0;
+  virtual void getResult(struct ArrowArray& array, struct ArrowSchema& schema) = 0;
 
   /// Notifies the batchProcessor that no more batch will be added and the
   /// batchProcessor should finish processing and flush results.
   virtual void finish() = 0;
 
   virtual BatchProcessorState getState() = 0;
+
+  virtual Type getType() const = 0;
 
   virtual void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hasTable) = 0;
 };
@@ -65,6 +72,21 @@ using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
 std::unique_ptr<BatchProcessor> makeBatchProcessor(
     const ::substrait::Plan& plan,
     const BatchProcessorContextPtr& context);
+
+inline std::ostream& operator<<(std::ostream& stream, const BatchProcessor::Type& type) {
+  switch (type) {
+    case BatchProcessor::Type::kStateless:
+      stream << "Stateless";
+      break;
+    case BatchProcessor::Type::kStateful:
+      stream << "Stateful";
+      break;
+    default:
+      stream << "Unknown Processor Type";
+  }
+  return stream;
+}
+
 }  // namespace cider::exec::processor
 
 #endif  // CIDER_BATCH_PROCESSOR_H

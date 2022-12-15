@@ -22,7 +22,6 @@
 #ifndef CIDER_DEFAULT_BATCH_PROCESSOR_H
 #define CIDER_DEFAULT_BATCH_PROCESSOR_H
 
-#include "cider/batch/CiderBatch.h"
 #include "cider/processor/BatchProcessor.h"
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/substrait/SubstraitPlan.h"
@@ -60,7 +59,7 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   struct ArrowSchema* output_arrow_schema_{nullptr};
 
-  bool noMoreBatch_{false};
+  bool no_more_batch_{false};
 
   JoinHandlerPtr joinHandler_;
 

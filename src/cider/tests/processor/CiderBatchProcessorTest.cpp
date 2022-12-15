@@ -19,12 +19,12 @@
  * under the License.
  */
 
-#include "cider/processor/BatchProcessor.h"
-
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 #include <string>
 
+#include "exec/processor/StatefulProcessor.h"
+#include "exec/processor/StatelessProcessor.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 #include "tests/utils/Utils.h"
 
@@ -50,7 +50,9 @@ TEST(CiderBatchProcessorTest, statelessProcessorCompileTest) {
         CREATE TABLE test(col_1 BIGINT NOT NULL, col_2 BIGINT NOT NULL, col_3 BIGINT NOT NULL);
         )";
   std::string sql = "SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2";
-  createBatchProcessorFromSql(sql, ddl);
+  auto processor = createBatchProcessorFromSql(sql, ddl);
+  std::cout << "Processor type:" << processor->getType() << std::endl;
+  EXPECT_EQ(processor->getType(), BatchProcessor::Type::kStateless);
 }
 
 TEST(CiderBatchProcessorTest, statelessProcessorProcessNextBatchTest) {
@@ -59,6 +61,7 @@ TEST(CiderBatchProcessorTest, statelessProcessorProcessNextBatchTest) {
         )";
   std::string sql = "SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2";
   auto processor = createBatchProcessorFromSql(sql, ddl);
+  EXPECT_EQ(processor->getType(), BatchProcessor::Type::kStateless);
 
   struct ArrowArray* input_array;
   struct ArrowSchema* input_schema;
@@ -72,9 +75,11 @@ TEST(CiderBatchProcessorTest, statelessProcessorProcessNextBatchTest) {
 
   processor->processNextBatch(input_array, input_schema);
 
-  auto [output_array, output_schema] = processor->getResult();
+  struct ArrowArray output_array;
+  struct ArrowSchema output_schema;
+  processor->getResult(output_array, output_schema);
 
-  std::cout << "Query result has " << output_array->length << " rows" << std::endl;
+  std::cout << "Query result has " << output_array.length << " rows" << std::endl;
 }
 
 int main(int argc, char** argv) {

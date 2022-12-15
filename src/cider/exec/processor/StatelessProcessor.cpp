@@ -23,20 +23,29 @@
 
 namespace cider::exec::processor {
 
-std::pair<struct ArrowArray*, struct ArrowSchema*> StatelessProcessor::getResult() {
+void StatelessProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
   if (!input_arrow_array_) {
-    if (noMoreBatch_) {
+    if (no_more_batch_) {
       // set state as finish if last batch has been processed and no more batch
       state_ = BatchProcessorState::kFinished;
     }
-    return std::make_pair(nullptr, nullptr);
+    array.length = 0;
+    return;
   }
 
+  if (input_arrow_array_->release) {
+    input_arrow_array_->release(const_cast<struct ArrowArray*>(input_arrow_array_));
+  }
   input_arrow_array_ = nullptr;
 
-  auto output_arrow_array = runtime_context_->getOutputBatch()->getArray();
+  if (input_arrow_schema_ && input_arrow_schema_->release) {
+    input_arrow_schema_->release(const_cast<struct ArrowSchema*>(input_arrow_schema_));
+  }
+  input_arrow_schema_ = nullptr;
 
-  return std::make_pair(output_arrow_array, output_arrow_schema_);
+  auto output_batch = runtime_context_->getOutputBatch();
+  output_batch->move(schema, array);
+  return;
 }
 
 }  // namespace cider::exec::processor
