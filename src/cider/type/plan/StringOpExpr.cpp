@@ -317,13 +317,22 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
   auto start_val = FixSizeJITExprValue(start->codegen(func));
   auto len_val = FixSizeJITExprValue(len->codegen(func));
 
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::POINTER,
+          .ret_sub_type = JITTypeTag::INT8,
+          .params_vector = {func.getArgument(0).get()}});
+
   // call external function
   auto emit_desc = JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                             .params_vector = {arg_val.getValue().get(),
+                                             .params_vector = {string_heap_ptr.get(),
+                                                               arg_val.getValue().get(),
                                                                arg_val.getLength().get(),
                                                                start_val.getValue().get(),
                                                                len_val.getValue().get()}};
-  std::string fn_name = "cider_substring";
+  std::string fn_name = "cider_substring_extra";
 
   auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
   // decode result

@@ -250,7 +250,8 @@ class ProjectStringTest : public ::testing::Test {
 };
 
 TEST_F(ProjectStringTest, FrameworkTest) {
-  executeTest("select b from test where a > 0");
+  // executeTest("select b from test where a > 0");
+  executeTest("select substring(b,1,1) from test where a > 0");
 }
 
 int main(int argc, char** argv) {

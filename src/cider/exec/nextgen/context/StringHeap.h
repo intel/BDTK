@@ -47,6 +47,7 @@ struct string_t {
 class StringHeap {
  public:
   StringHeap() : allocator_(), total_num_(0) {}
+  ~StringHeap() { destroy(); }
 
   // Destroy all allocated buffer.
   void destroy() {

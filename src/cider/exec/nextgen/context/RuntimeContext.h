@@ -29,11 +29,15 @@
 namespace cider::exec::nextgen::context {
 class RuntimeContext {
  public:
-  RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {}
+  RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {
+    string_heap_ptr_ = std::make_shared<StringHeap>();
+  }
 
   size_t getContextItemNum() const { return runtime_ctx_pointers_.size(); }
 
   void* getContextItem(size_t id) { return runtime_ctx_pointers_[id]; }
+
+  void* getStringHeapPtr() { return string_heap_ptr_.get(); }
 
   void addBatch(const CodegenContext::BatchDescriptorPtr& descriptor);
 
@@ -53,6 +57,7 @@ class RuntimeContext {
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
   std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
+  std::shared_ptr<StringHeap> string_heap_ptr_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
