@@ -25,6 +25,8 @@
 
 using namespace TestHelpers;
 
+class CiderNewHashTableTest : public ::testing::Test {};
+
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
