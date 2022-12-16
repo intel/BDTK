@@ -44,30 +44,38 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
     CIDER_THROW(CiderCompileException,
                 "Decimal and TimeInterval are not supported in arithmetic codegen now.");
   }
-  FixSizeJITExprValue lhs_val(lhs->codegen(func));
-  FixSizeJITExprValue rhs_val(rhs->codegen(func));
+  if (lhs_ti.is_string()) {
+    // string binops, should only be comparisons
+    const auto optype = get_optype();
+    if (IS_COMPARISON(optype)) {
+      VarSizeJITExprValue lhs_val(lhs->codegen(func));
+      VarSizeJITExprValue rhs_val(rhs->codegen(func));
+      JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+      null = lhs_val.getNull() || rhs_val.getNull();
+      return codegenVarcharCmpFun(func, null, lhs_val, rhs_val);
+    } else {
+      CIDER_THROW(CiderUnsupportedException, "string BinOp only supports comparison");
+    }
 
-  if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
-    return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
-  }
-  JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
-  null = lhs_val.getNull() || rhs_val.getNull();
+  } else {
+    // primitive type binops
+    FixSizeJITExprValue lhs_val(lhs->codegen(func));
+    FixSizeJITExprValue rhs_val(rhs->codegen(func));
 
-  switch (lhs_ti.get_type()) {
-    case kVARCHAR:
-    case kTEXT:
-    case kCHAR:
-      // return codegenVarcharCmpFun(bin_oper, lhs_lv.get(), rhs_lv.get(), null);
-      UNIMPLEMENTED();
-    default:
-      const auto optype = get_optype();
-      if (IS_ARITHMETIC(optype)) {
-        return codegenFixedSizeColArithFun(null, lhs_val.getValue(), rhs_val.getValue());
-      } else if (IS_COMPARISON(optype)) {
-        return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
-      } else if (IS_LOGIC(optype)) {
-        return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val);
-      }
+    if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
+      return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
+    }
+    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+    null = lhs_val.getNull() || rhs_val.getNull();
+
+    const auto optype = get_optype();
+    if (IS_ARITHMETIC(optype)) {
+      return codegenFixedSizeColArithFun(null, lhs_val.getValue(), rhs_val.getValue());
+    } else if (IS_COMPARISON(optype)) {
+      return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
+    } else if (IS_LOGIC(optype)) {
+      return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val);
+    }
   }
   UNREACHABLE();
   return expr_var_;
@@ -194,6 +202,34 @@ JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,
     default:
       UNREACHABLE();
   }
+}
+
+JITExprValue& BinOper::codegenVarcharCmpFun(JITFunction& func,
+                                            JITValuePointer& null,
+                                            VarSizeJITExprValue& lhs,
+                                            VarSizeJITExprValue& rhs) {
+  const std::unordered_map<SQLOps, std::string> op_to_func_map{{kEQ, "string_eq"},
+                                                               {kNE, "string_ne"},
+                                                               {kLT, "string_lt"},
+                                                               {kLE, "string_le"},
+                                                               {kGT, "string_gt"},
+                                                               {kGE, "string_ge"}};
+
+  auto it = op_to_func_map.find(get_optype());
+  if (it == op_to_func_map.end()) {
+    CIDER_THROW(CiderUnsupportedException,
+                fmt::format("unsupported varchar optype: {}", optype));
+  }
+  std::string func_name = it->second;
+  auto cmp_res = func.emitRuntimeFunctionCall(
+      func_name,
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::BOOL,
+                                .params_vector = {lhs.getValue().get(),
+                                                  lhs.getLength().get(),
+                                                  rhs.getValue().get(),
+                                                  rhs.getLength().get()}});
+
+  return set_expr_value(null, cmp_res);
 }
 
 }  // namespace Analyzer

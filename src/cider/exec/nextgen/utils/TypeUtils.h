@@ -42,14 +42,15 @@ inline jitlib::JITTypeTag getJITTypeTag(const SQLTypes& st) {
       return jitlib::JITTypeTag::FLOAT;
     case kDOUBLE:
       return jitlib::JITTypeTag::DOUBLE;
+    case kVARCHAR:
+    case kCHAR:
+    case kTEXT:
+      return jitlib::JITTypeTag::VARCHAR;
     case kTIME:
     case kINTERVAL_YEAR_MONTH:
     case kINTERVAL_DAY_TIME:
     case kTIMESTAMP:
     case kDATE:
-    case kVARCHAR:
-    case kCHAR:
-    case kTEXT:
       UNIMPLEMENTED();
     case kNULLT:
     default:

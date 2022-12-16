@@ -525,14 +525,6 @@ std::shared_ptr<Analyzer::Expr> CardinalityExpr::deep_copy() const {
   return makeExpr<CardinalityExpr>(arg->deep_copy());
 }
 
-std::shared_ptr<Analyzer::Expr> LikeExpr::deep_copy() const {
-  return makeExpr<LikeExpr>(arg->deep_copy(),
-                            like_expr->deep_copy(),
-                            escape_expr ? escape_expr->deep_copy() : nullptr,
-                            is_ilike,
-                            is_simple);
-}
-
 std::shared_ptr<Analyzer::Expr> RegexpExpr::deep_copy() const {
   return makeExpr<RegexpExpr>(arg->deep_copy(),
                               pattern_expr->deep_copy(),
@@ -1987,20 +1979,6 @@ void CardinalityExpr::group_predicates(std::list<const Expr*>& scan_predicates,
   }
 }
 
-void LikeExpr::group_predicates(std::list<const Expr*>& scan_predicates,
-                                std::list<const Expr*>& join_predicates,
-                                std::list<const Expr*>& const_predicates) const {
-  std::set<int> rte_idx_set;
-  arg->collect_rte_idx(rte_idx_set);
-  if (rte_idx_set.size() > 1) {
-    join_predicates.push_back(this);
-  } else if (rte_idx_set.size() == 1) {
-    scan_predicates.push_back(this);
-  } else {
-    const_predicates.push_back(this);
-  }
-}
-
 void RegexpExpr::group_predicates(std::list<const Expr*>& scan_predicates,
                                   std::list<const Expr*>& join_predicates,
                                   std::list<const Expr*>& const_predicates) const {
@@ -2566,25 +2544,6 @@ bool CardinalityExpr::operator==(const Expr& rhs) const {
   return true;
 }
 
-bool LikeExpr::operator==(const Expr& rhs) const {
-  if (typeid(rhs) != typeid(LikeExpr)) {
-    return false;
-  }
-  const LikeExpr& rhs_lk = dynamic_cast<const LikeExpr&>(rhs);
-  if (!(*arg == *rhs_lk.get_arg()) || !(*like_expr == *rhs_lk.get_like_expr()) ||
-      is_ilike != rhs_lk.get_is_ilike()) {
-    return false;
-  }
-  if (escape_expr.get() == rhs_lk.get_escape_expr()) {
-    return true;
-  }
-  if (escape_expr != nullptr && rhs_lk.get_escape_expr() != nullptr &&
-      *escape_expr == *rhs_lk.get_escape_expr()) {
-    return true;
-  }
-  return false;
-}
-
 bool RegexpExpr::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(RegexpExpr)) {
     return false;
@@ -2975,17 +2934,6 @@ std::string CardinalityExpr::toString() const {
   return str;
 }
 
-std::string LikeExpr::toString() const {
-  std::string str{"(LIKE "};
-  str += arg->toString();
-  str += like_expr->toString();
-  if (escape_expr) {
-    str += escape_expr->toString();
-  }
-  str += ") ";
-  return str;
-}
-
 std::string RegexpExpr::toString() const {
   std::string str{"(REGEXP "};
   str += arg->toString();
@@ -3213,19 +3161,6 @@ void CardinalityExpr::find_expr(bool (*f)(const Expr*),
     return;
   }
   arg->find_expr(f, expr_list);
-}
-
-void LikeExpr::find_expr(bool (*f)(const Expr*),
-                         std::list<const Expr*>& expr_list) const {
-  if (f(this)) {
-    add_unique(expr_list);
-    return;
-  }
-  arg->find_expr(f, expr_list);
-  like_expr->find_expr(f, expr_list);
-  if (escape_expr != nullptr) {
-    escape_expr->find_expr(f, expr_list);
-  }
 }
 
 void RegexpExpr::find_expr(bool (*f)(const Expr*),

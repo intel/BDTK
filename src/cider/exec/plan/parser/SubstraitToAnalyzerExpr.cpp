@@ -426,7 +426,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::updateAnalyzerE
                                                            s_type,
                                                            update_type,
                                                            new_table_id),
-                                        updateAnalyzerExpr(like_expr->get_shared_Like(),
+                                        updateAnalyzerExpr(like_expr->get_shared_like(),
                                                            pre_index,
                                                            cur_index,
                                                            table_id,

@@ -127,6 +127,17 @@ llvm::Value* createConstantImpl(llvm::LLVMContext& context, const std::any& valu
   }
 }
 
+template <JITTypeTag type_tag,
+          typename NativeType = typename JITTypeTraits<type_tag>::NativeType>
+llvm::Value* createConstantImpl(llvm::LLVMContext& context,
+                                llvm::IRBuilder<>* builder,
+                                const std::any& value) {
+  static_assert(std::is_same_v<NativeType, std::string>,
+                "this function should only be used to create string literals");
+  NativeType actual_value = std::any_cast<NativeType>(value);
+  return getLLVMConstantGlobalStr(actual_value, builder, context);
+}
+
 JITValuePointer LLVMJITFunction::createLiteralImpl(JITTypeTag type_tag,
                                                    const std::any& value) {
   llvm::Value* llvm_value = nullptr;
@@ -153,6 +164,10 @@ JITValuePointer LLVMJITFunction::createLiteralImpl(JITTypeTag type_tag,
       break;
     case JITTypeTag::DOUBLE:
       llvm_value = createConstantImpl<JITTypeTag::DOUBLE>(getLLVMContext(), value);
+      break;
+    case JITTypeTag::VARCHAR:
+      llvm_value = createConstantImpl<JITTypeTag::VARCHAR>(
+          getLLVMContext(), ir_builder_.get(), value);
       break;
     default:
       LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createLiteralImpl: "

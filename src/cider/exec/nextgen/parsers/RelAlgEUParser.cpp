@@ -93,6 +93,11 @@ class InputAnalyzer {
     } else {
       auto children = (*curr)->get_children_reference();
       for (ExprPtr* child : children) {
+        if (!child || !child->get()) {
+          // optional args in some exprs returns nullptr in child->get(),
+          // (e.g. escape in LIKE) check and skip them to prevent segfaults
+          continue;
+        }
         traverse(child);
       }
     }

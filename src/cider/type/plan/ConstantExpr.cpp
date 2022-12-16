@@ -64,8 +64,10 @@ JITExprValue& Constant::codegen(JITFunction& func) {
     case kVARCHAR:
     case kCHAR:
     case kTEXT: {
-      UNIMPLEMENTED();
-      break;
+      return set_expr_value(
+          null,
+          func.createLiteral(JITTypeTag::INT32, get_constval().stringval->length()),
+          func.createStringLiteral(*get_constval().stringval));
     }
     default:
       UNIMPLEMENTED();
