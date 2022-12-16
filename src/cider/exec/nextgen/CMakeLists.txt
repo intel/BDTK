@@ -36,4 +36,4 @@ add_library(
   Nextgen.cpp $<TARGET_OBJECTS:cider_operators> $<TARGET_OBJECTS:cider_context>
   $<TARGET_OBJECTS:cider_parsers> $<TARGET_OBJECTS:cider_transformer>)
 # TODO(qiuyang) : folly will deleted after hashtable refactoring
-target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib folly)
+target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib folly substrait)

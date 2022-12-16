@@ -37,7 +37,7 @@ class PlanTransformerTestBase : public CiderOperatorTestBase {
   void setTransformerFactory(PlanTransformerFactory& transformerFactory) {
     transformerFactory_ = transformerFactory;
   }
-  std::unique_ptr<memory::MemoryPool> pool_{memory::getDefaultScopedMemoryPool()};
+  std::shared_ptr<memory::MemoryPool> pool_{memory::getDefaultMemoryPool()};
 
   VeloxPlanNodePtr getCiderExpectedPtr(RowTypePtr rowType,
                                        VeloxPlanNodeVec joinSrcVec = {});

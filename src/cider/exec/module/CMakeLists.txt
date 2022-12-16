@@ -30,6 +30,7 @@ set(SRC_FILE
 add_library(cider SHARED ${SRC_FILE})
 target_link_libraries(
   cider
+  substrait
   QueryEngine
   nextgen
   memory

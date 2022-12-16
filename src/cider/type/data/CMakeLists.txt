@@ -18,6 +18,7 @@
 # under the License.
 add_library(cider_type_data string/StringDictionary.cpp
                             string/StringDictionaryProxy.cpp)
+add_dependencies(cider_type_data substrait)
 
 if(ENABLE_FOLLY)
   target_link_libraries(

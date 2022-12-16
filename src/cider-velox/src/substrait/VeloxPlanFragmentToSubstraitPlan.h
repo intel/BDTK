@@ -65,7 +65,7 @@ class VeloxPlanFragmentToSubstraitPlan {
 
   memory::MemoryPool* pool() const { return pool_.get(); }
 
-  std::unique_ptr<memory::MemoryPool> pool_{memory::getDefaultScopedMemoryPool()};
+  std::shared_ptr<memory::MemoryPool> pool_{memory::getDefaultMemoryPool()};
   google::protobuf::Arena arena_;
 };
 }  // namespace facebook::velox::substrait

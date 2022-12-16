@@ -39,6 +39,8 @@ set(cider_util_source_files
     MathUtils.cpp)
 
 add_library(cider_util ${cider_util_source_files})
-target_link_libraries(cider_util ${BLOSC_LIBRARIES} ${CMAKE_DL_LIBS}
+
+target_link_libraries(cider_util substrait ${BLOSC_LIBRARIES} ${CMAKE_DL_LIBS}
                       ${Boost_LIBRARIES} fmt::fmt)
+
 add_subdirectory(memory)

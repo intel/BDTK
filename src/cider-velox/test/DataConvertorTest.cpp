@@ -58,7 +58,7 @@ class DataConvertorTest : public testing::Test {
   }
 
  protected:
-  std::unique_ptr<memory::ScopedMemoryPool> pool_{memory::getDefaultScopedMemoryPool()};
+  std::shared_ptr<memory::MemoryPool> pool_{memory::getDefaultMemoryPool()};
   VectorMaker vectorMaker_{pool_.get()};
 };
 

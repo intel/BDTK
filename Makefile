@@ -48,12 +48,13 @@ clean:
 
 build-common:
 	@sed -i "s/\$${Protobuf_PROTOC_EXECUTABLE} --proto_path \$${PROJECT_SOURCE_DIR}\//protoc --proto_path \$${proto_directory}\//g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
-	@sed -i "s/--proto_path \$${Protobuf_INCLUDE_DIR} --cpp_out \$${PROJECT_SOURCE_DIR}/--cpp_out \$${PROTO_OUTPUT_DIR} /g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
+	@sed -i "s/--proto_path \$${Protobuf_INCLUDE_DIR} --cpp_out \$${PROJECT_SOURCE_DIR}/--proto_path \$${Protobuf_INCLUDE_DIR} --cpp_out \$${PROTO_OUTPUT_DIR}/g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/algebra.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/function.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/plan.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/type_expressions.proto
+	@sed -i "\$$a\\target_include_directories(velox_dwio_dwrf_proto PUBLIC \$${CMAKE_CURRENT_BINARY_DIR}\/..\/..\/..\/..\/..\/..\/)" ./thirdparty/velox/velox/dwio/dwrf/proto/CMakeLists.txt
 
 	@mkdir -p build-${BUILD_TYPE}
 	@cd build-${BUILD_TYPE} && \

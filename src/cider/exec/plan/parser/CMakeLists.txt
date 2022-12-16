@@ -70,4 +70,4 @@ set(CIDER_PLAN_PARSER_SRCS
     PlanRelVisitor.cpp)
 add_library(cider_plan_parser STATIC ${CIDER_PLAN_PARSER_SRCS})
 target_link_libraries(cider_plan_parser cider_util cider_function protobuf
-                      fmt::fmt)
+                      fmt::fmt substrait)

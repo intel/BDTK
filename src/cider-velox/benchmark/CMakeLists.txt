@@ -102,12 +102,12 @@ set(CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES
     ${FILESYSTEM}
     ${LLVM_LIB}
     cider
+    substrait
     velox_plan_transformer
     cider_plan_transformer
     cider_plan_parser)
 
 add_executable(tpch_benchmark_velox_plugin TpchBenchmarkCompare.cpp)
-
 target_link_libraries(
   tpch_benchmark_velox_plugin ${VELOX_BENCHMARKS_DEPENDENCIES}
   ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})

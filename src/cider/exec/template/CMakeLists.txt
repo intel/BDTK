@@ -120,6 +120,7 @@ install(
   COMPONENT "QE")
 
 add_library(QueryEngine ${query_engine_source_files})
+add_dependencies(QueryEngine substrait)
 
 target_precompile_headers(QueryEngine PRIVATE [["exec/template/Execute.h"]])
 

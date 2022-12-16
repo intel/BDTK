@@ -29,3 +29,4 @@ set(cider_type_plan_source_files
     StringOpExpr.cpp
     InValues.cpp)
 add_library(cider_type_plan ${cider_type_plan_source_files})
+add_dependencies(cider_type_plan substrait)
