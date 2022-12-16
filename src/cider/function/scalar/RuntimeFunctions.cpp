@@ -1076,6 +1076,7 @@ extern "C" ALWAYS_INLINE uint64_t string_pack(const int8_t* ptr, const int32_t l
 
 #ifdef __clang__
 #include "function/string/StringLike.cpp"
+#include "function/string/CiderStringFunctions.cpp"
 #endif
 
 #include "function/scalar/TopKRuntime.cpp"

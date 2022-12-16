@@ -206,4 +206,8 @@ makeExpr(Args&&... args) {
   return std::make_shared<Tp>(std::forward<Args>(args)...);
 }
 
+// Remove a cast operator if present.
+std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr);
+const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr);
+
 #endif  // TYPE_PLAN_EXPR_H

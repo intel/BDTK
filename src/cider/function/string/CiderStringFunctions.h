@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2022 Intel Corporation.
  *
@@ -19,31 +18,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "type/plan/Expr.h"
-#include "type/plan/UnaryExpr.h"
 
-namespace Analyzer {
-using namespace cider::jitlib;
+#ifndef CIDER_STRING_FUNCTIONS_H
+#define CIDER_STRING_FUNCTIONS_H
 
-// change this to pure virtual method after all subclasses support codegen.
-JITExprValue& Expr::codegen(JITFunction& func) {
-  UNREACHABLE();
-  return expr_var_;
-}
-}  // namespace Analyzer
+#include "type/data/funcannotations.h"
 
-std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr) {
-  const auto uoper = dynamic_cast<const Analyzer::UOper*>(expr.get());
-  if (!uoper || uoper->get_optype() != kCAST) {
-    return expr;
-  }
-  return uoper->get_own_operand();
-}
+#include <cstdint>
 
-const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr) {
-  const auto uoper = dynamic_cast<const Analyzer::UOper*>(expr);
-  if (!uoper || uoper->get_optype() != kCAST) {
-    return expr;
-  }
-  return uoper->get_operand();
-}
+ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len);
+
+extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str,
+                                                  int str_len,
+                                                  int start,
+                                                  int len);
+
+extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
+                                                        const char* str,
+                                                        int str_len,
+                                                        int start,
+                                                        int len);
+
+#endif

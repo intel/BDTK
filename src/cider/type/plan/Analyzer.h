@@ -45,6 +45,7 @@
 #include "type/plan/DateExpr.h"
 #include "type/plan/Expr.h"
 #include "type/plan/LikeExpr.h"
+#include "type/plan/StringOpExpr.h"
 #include "type/plan/UnaryExpr.h"
 #include "util/Logger.h"
 #include "util/sqldefs.h"
@@ -989,186 +990,6 @@ class DatetruncExpr : public Expr {
   std::shared_ptr<Analyzer::Expr> from_expr_;
 };
 
-class StringOper : public Expr {
- public:
-  // Todo(todd): Set nullability based on literals too
-
-  enum class OperandTypeFamily { STRING_FAMILY, INT_FAMILY };
-
-  StringOper(const SqlStringOpKind kind,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& args)
-      : Expr(StringOper::get_return_type(kind, args)), kind_(kind), args_(args) {}
-
-  StringOper(const SqlStringOpKind kind,
-             const SQLTypeInfo& return_ti,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& args)
-      : Expr(return_ti), kind_(kind), args_(args) {}
-
-  StringOper(const SqlStringOpKind kind,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& args,
-             const size_t min_args,
-             const std::vector<OperandTypeFamily>& expected_type_families,
-             const std::vector<std::string>& arg_names)
-      : Expr(StringOper::get_return_type(kind, args)), kind_(kind), args_(args) {
-    check_operand_types(min_args, expected_type_families, arg_names);
-  }
-
-  StringOper(const SqlStringOpKind kind,
-             const SQLTypeInfo& return_ti,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& args,
-             const size_t min_args,
-             const std::vector<OperandTypeFamily>& expected_type_families,
-             const std::vector<std::string>& arg_names)
-      : Expr(return_ti), kind_(kind), args_(args) {
-    check_operand_types(min_args, expected_type_families, arg_names);
-  }
-
-  StringOper(const SqlStringOpKind kind,
-             const SQLTypeInfo& return_ti,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& args,
-             const std::vector<std::shared_ptr<Analyzer::Expr>>& chained_string_op_exprs)
-      : Expr(return_ti)
-      , kind_(kind)
-      , args_(args)
-      , chained_string_op_exprs_(chained_string_op_exprs) {}
-
-  StringOper(const StringOper& other_string_oper)
-      : Expr(other_string_oper.get_type_info()) {
-    kind_ = other_string_oper.kind_;
-    args_ = other_string_oper.args_;
-    chained_string_op_exprs_ = other_string_oper.chained_string_op_exprs_;
-  }
-
-  StringOper(const std::shared_ptr<StringOper>& other_string_oper)
-      : Expr(other_string_oper->get_type_info()) {
-    kind_ = other_string_oper->kind_;
-    args_ = other_string_oper->args_;
-    chained_string_op_exprs_ = other_string_oper->chained_string_op_exprs_;
-  }
-
-  SqlStringOpKind get_kind() const { return kind_; }
-
-  size_t getArity() const { return args_.size(); }
-
-  size_t getLiteralsArity() const {
-    size_t num_literals{0UL};
-    for (const auto& arg : args_) {
-      if (dynamic_cast<const Constant*>(arg.get())) {
-        num_literals++;
-      }
-    }
-    return num_literals;
-  }
-
-  const Expr* getArg(const size_t i) const {
-    CHECK_LT(i, args_.size());
-    return args_[i].get();
-  }
-
-  std::shared_ptr<Analyzer::Expr> getOwnArg(const size_t i) const {
-    CHECK_LT(i, args_.size());
-    return args_[i];
-  }
-
-  std::vector<std::shared_ptr<Analyzer::Expr>> getOwnArgs() const { return args_; }
-
-  std::vector<std::shared_ptr<Analyzer::Expr>> getChainedStringOpExprs() const {
-    return chained_string_op_exprs_;
-  }
-
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override;
-
-  void collect_column_var(
-      std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
-          colvar_set,
-      bool include_agg) const override;
-
-  bool hasNoneEncodedTextArg() const {
-    if (args_.empty()) {
-      return false;
-    }
-    const auto& arg0_ti = args_[0]->get_type_info();
-    if (!arg0_ti.is_string()) {
-      return false;
-    }
-    if (arg0_ti.is_none_encoded_string()) {
-      return true;
-    }
-    CHECK(arg0_ti.is_dict_encoded_string());
-    return arg0_ti.get_comp_param() == TRANSIENT_DICT_ID;
-  }
-
-  /**
-   * @brief returns whether we have one and only one column involved
-   * in this StringOper and all its descendents, and that that column
-   * is a dictionary-encoded text type
-   *
-   * @return std::vector<SqlTypeInfo>
-   */
-  bool hasSingleDictEncodedColInput() const;
-
-  std::vector<size_t> getLiteralArgIndexes() const;
-
-  using LiteralArgMap = std::map<size_t, std::pair<SQLTypes, Datum>>;
-
-  LiteralArgMap getLiteralArgs() const;
-
-  std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-
-  std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-
-  std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  void group_predicates(std::list<const Expr*>& scan_predicates,
-                        std::list<const Expr*>& join_predicates,
-                        std::list<const Expr*>& const_predicates) const override;
-
-  bool operator==(const Expr& rhs) const override;
-
-  std::string toString() const override;
-
-  void find_expr(bool (*f)(const Expr*),
-                 std::list<const Expr*>& expr_list) const override;
-
-  virtual size_t getMinArgs() const {
-    CHECK(false);
-    return {};
-  }
-  virtual std::vector<OperandTypeFamily> getExpectedTypeFamilies() const {
-    CHECK(false);
-    return {};
-  }
-  virtual const std::vector<std::string>& getArgNames() const {
-    CHECK(false);
-    return {};
-  }
-
- protected:
-  std::vector<std::shared_ptr<Analyzer::Expr>> foldLiteralStrCasts(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
-      int start_idx = 1);
-
- private:
-  static SQLTypeInfo get_return_type(
-      const SqlStringOpKind kind,
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& args);
-
-  void check_operand_types(const size_t min_args,
-                           const std::vector<OperandTypeFamily>& expected_type_families,
-                           const std::vector<std::string>& arg_names,
-                           const bool dict_encoded_cols_only = true,
-                           const bool cols_first_arg_only = true) const;
-
-  SqlStringOpKind kind_;
-  std::vector<std::shared_ptr<Analyzer::Expr>> args_;
-  std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
-};
-
 class RegexpExtractStringOper : public StringOper {
  public:
   RegexpExtractStringOper(const std::shared_ptr<Analyzer::Expr>& input,
@@ -1442,50 +1263,6 @@ class SplitPartStringOper : public StringOper {
   const std::vector<std::string>& getArgNames() const override {
     static std::vector<std::string> names{
         "operand", "delimiter", "limit_or_splitpart", "splitpart"};
-    return names;
-  }
-};
-
-class SubstringStringOper : public StringOper {
- public:
-  SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
-                      const std::shared_ptr<Analyzer::Expr>& start_pos)
-      : StringOper(SqlStringOpKind::SUBSTRING,
-                   {operand, start_pos},
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  SubstringStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
-                      const std::shared_ptr<Analyzer::Expr>& start_pos,
-                      const std::shared_ptr<Analyzer::Expr>& length)
-      : StringOper(SqlStringOpKind::SUBSTRING,
-                   {operand, start_pos, length},
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  SubstringStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
-      : StringOper(SqlStringOpKind::SUBSTRING,
-                   operands,
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  SubstringStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
-      : StringOper(string_oper) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  size_t getMinArgs() const override { return 2UL; }
-
-  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
-    return {OperandTypeFamily::STRING_FAMILY,
-            OperandTypeFamily::INT_FAMILY,
-            OperandTypeFamily::INT_FAMILY};
-  }
-  const std::vector<std::string>& getArgNames() const override {
-    static std::vector<std::string> names{"operand", "start_pos", "substr_len"};
     return names;
   }
 };
@@ -1887,9 +1664,5 @@ inline std::shared_ptr<Analyzer::Var> var_ref(const Analyzer::Expr* expr,
 // equal).
 bool expr_list_match(const std::vector<std::shared_ptr<Analyzer::Expr>>& lhs,
                      const std::vector<std::shared_ptr<Analyzer::Expr>>& rhs);
-
-// Remove a cast operator if present.
-std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr);
-const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr);
 
 #endif  // TYPE_PLAN_ANALYZER_H

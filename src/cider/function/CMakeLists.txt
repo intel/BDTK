@@ -25,6 +25,7 @@ set(function_source_files
     ExtensionFunctionsWhitelist.cpp
     FunctionLookupEngine.cpp
     string/StringLike.cpp
+    string/CiderStringFunctions.cpp
     string/StringFunctions.cpp
     string/StringOpInfo.cpp
     string/StringOps.cpp
@@ -64,6 +65,7 @@ add_custom_command(
     scalar/TopKRuntime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/template/operator/join/hashtable/runtime/JoinHashTableQueryRuntime.cpp
     string/StringLike.cpp
+    string/CiderStringFunctions.cpp
     aggregate/CiderRuntimeFunctions.h
     aggregate/GroupByRuntime.cpp
     datetime/CiderDateFunctions.cpp
