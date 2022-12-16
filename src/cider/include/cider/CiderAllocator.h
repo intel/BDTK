@@ -163,9 +163,9 @@ class CiderArenaAllocator : public CiderAllocator {
   static constexpr const size_t ARENA_ALLOCATOR_INITIAL_CAPACITY = 2048;
 
  public:
-  CiderArenaAllocator(std::shared_ptr<CiderAllocator> parent =
-                          std::make_shared<CiderDefaultAllocator>(),
-                      size_t initial_capacity = ARENA_ALLOCATOR_INITIAL_CAPACITY)
+  CiderArenaAllocator(
+      std::shared_ptr<CiderAllocator> parent = std::make_shared<CiderDefaultAllocator>(),
+      size_t initial_capacity = ARENA_ALLOCATOR_INITIAL_CAPACITY)
       : parent_(parent) {
     head_ = nullptr;
     tail_ = nullptr;
