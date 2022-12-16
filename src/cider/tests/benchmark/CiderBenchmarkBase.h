@@ -22,7 +22,7 @@
 #ifndef MODULARSQL_CIDERBENCHMARKBASE_H
 #define MODULARSQL_CIDERBENCHMARKBASE_H
 
-#include "CiderBenchmarkUtils.h"
+#include "ArrowDataReader.h"
 #include "benchmark/benchmark.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 class CiderBenchmarkBaseFixture : public benchmark::Fixture {
@@ -65,13 +65,14 @@ std::shared_ptr<CiderBatch> genBatch(int row_num) {
     }                                                                        \
   }
 
-#define GEN_BENCHMARK_FROM_CSV(FIXTURE_NAME, CASE, FILE_NAME, QUERY_STR, COL_NAME) \
-  BENCHMARK_F(FIXTURE_NAME, CASE)(benchmark::State & state) {                      \
-    input_batch = readFromCsv(FILE_NAME, COL_NAME);                                \
-    runner.compile(QUERY_STR);                                                     \
-    for (auto _ : state) {                                                         \
-      runner.runNextBatch(input_batch);                                            \
-    }                                                                              \
+#define GEN_BENCHMARK_FROM_FILE(                                           \
+    FIXTURE_NAME, CASE, ARROW_DATA_READER, FILE_NAME, QUERY_STR, COL_NAME) \
+  BENCHMARK_F(FIXTURE_NAME, CASE)(benchmark::State & state) {              \
+    input_batch = ARROW_DATA_READER(FILE_NAME, COL_NAME).read();           \
+    runner.compile(QUERY_STR);                                             \
+    for (auto _ : state) {                                                 \
+      runner.runNextBatch(input_batch);                                    \
+    }                                                                      \
   }
 
 #endif  // MODULARSQL_CIDERBENCHMARKBASE_H

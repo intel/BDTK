@@ -43,8 +43,9 @@ std::vector<std::string> col_name =
     {"id1", "id2", "id3", "id4", "id5", "id6", "v1", "v2", "v3"};
 
 // need to upload dataset
-// GEN_BENCHMARK_FROM_CSV(CiderOpBenchmark,
+// GEN_BENCHMARK_FROM_FILE(CiderOpBenchmark,
 //                        h2oai_q5,
+//                        CSVToArrowDataReader,
 //                        "/data/G1_1e7_1e2_0_0.csv",
 //                        groupbysql,
 //                        col_name);
