@@ -19,9 +19,9 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <glob.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
 #include <boost/program_options.hpp>
 #include "util/CiderBitUtils.h"
 

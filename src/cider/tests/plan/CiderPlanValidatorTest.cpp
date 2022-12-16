@@ -19,9 +19,9 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
 #include <boost/filesystem.hpp>
 #include <string>
 #include "exec/plan/validator/CiderPlanValidator.h"

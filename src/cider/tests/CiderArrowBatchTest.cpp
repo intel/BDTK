@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "cider/batch/CiderBatch.h"
 #include "cider/batch/ScalarBatch.h"
 #include "cider/batch/StructBatch.h"

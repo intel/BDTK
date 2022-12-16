@@ -21,8 +21,8 @@
 
 #include "Utils.h"
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "ArrowArrayBuilder.h"
 #include "CiderBatchBuilder.h"
 #include "CiderBatchChecker.h"

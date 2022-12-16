@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "cider/CiderException.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "function/FunctionLookupEngine.h"

@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "ArrowArrayBuilder.h"
 #include "CiderBatchChecker.h"
 #include "QueryArrowDataGenerator.h"
