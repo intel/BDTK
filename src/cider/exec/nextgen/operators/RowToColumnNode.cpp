@@ -75,24 +75,6 @@ class ColumnWriter {
     utils::VarSizeJITExprValue values(expr_->get_expr_value());
 
     // Allocate buffer
-
-    // the null_buffer, raw_data_buffer not used anymore.
-    // so it doesn't matter whether null_buffer is nullptr
-    // or constant false.
-    auto null_buffer = JITValuePointer(nullptr);
-    if (!expr_->get_type_info().get_notnull()) {
-      // TBD: Null representation, bit-array or bool-array.
-      null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
-          [this]() { return allocateBitwiseBuffer(0); }));
-
-      context_.getJITFunction()->emitRuntimeFunctionCall(
-          "set_null_vector_bit",
-          JITFunctionEmitDescriptor{
-              .ret_type = JITTypeTag::VOID,
-              .params_vector = {
-                  {null_buffer.get(), index_.get(), values.getNull().get()}}});
-    }
-
     // offset, need array_len + 1 element.
     auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
       auto bytes = (arrow_array_len_ + 1) *
@@ -124,8 +106,10 @@ class ColumnWriter {
     // Register Output ArrowArray to CodegenContext
     size_t local_offset = context_.appendArrowArrayValues(
         arrow_array_,
-        utils::JITExprValue(
-            JITExprValueType::BATCH, null_buffer, raw_length_buffer, raw_data_buffer));
+        utils::JITExprValue(JITExprValueType::BATCH,
+                            setNullBuffer(values.getNull()),
+                            raw_length_buffer,
+                            raw_data_buffer));
     expr_->setLocalIndex(local_offset);
   }
 
@@ -134,29 +118,13 @@ class ColumnWriter {
     utils::FixSizeJITExprValue values(expr_->get_expr_value());
 
     // Allocate buffer.
-    // the null_buffer, raw_data_buffer not used anymore.
-    // so it doesn't matter whether null_buffer is nullptr
-    // or constant false.
-    auto null_buffer = JITValuePointer(nullptr);
     // Write value
     auto raw_data_buffer = setFixSizeRawData(values);
-    if (!expr_->get_type_info().get_notnull()) {
-      // TBD: Null representation, bit-array or bool-array.
-      null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
-          [this]() { return allocateBitwiseBuffer(0); }));
-
-      context_.getJITFunction()->emitRuntimeFunctionCall(
-          "set_null_vector_bit",
-          JITFunctionEmitDescriptor{
-              .ret_type = JITTypeTag::VOID,
-              .params_vector = {
-                  {null_buffer.get(), index_.get(), values.getNull().get()}}});
-    }
-
     // Register Output ArrowArray to CodegenContext
     size_t local_offset = context_.appendArrowArrayValues(
         arrow_array_,
-        utils::JITExprValue(JITExprValueType::BATCH, null_buffer, raw_data_buffer));
+        utils::JITExprValue(
+            JITExprValueType::BATCH, setNullBuffer(values.getNull()), raw_data_buffer));
     expr_->setLocalIndex(local_offset);
   }
 
@@ -184,6 +152,38 @@ class ColumnWriter {
       actual_raw_data_buffer[index_] = *fixsize_val.getValue();
       return raw_data_buffer;
     }
+  }
+
+  JITValuePointer setNullBuffer(JITValuePointer& null_val) {
+    // the null_buffer, raw_data_buffer not used anymore.
+    // so it doesn't matter whether null_buffer is nullptr
+    // or constant false.
+    auto null_buffer = JITValuePointer(nullptr);
+    if (!expr_->get_type_info().get_notnull()) {
+      // TBD: Null representation, bit-array or bool-array.
+      null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
+          [this]() { return allocateBitwiseBuffer(0); }));
+
+      context_.getJITFunction()->emitRuntimeFunctionCall(
+          "set_null_vector_bit",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::VOID,
+              .params_vector = {{null_buffer.get(), index_.get(), null_val.get()}}});
+    } else {
+      null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
+          [this]() { return allocateBitwiseBuffer(0); }));
+
+      context_.getJITFunction()->emitRuntimeFunctionCall(
+          "set_null_vector_bit",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::VOID,
+              .params_vector = {{null_buffer.get(),
+                                 index_.get(),
+                                 context_.getJITFunction()
+                                     ->createConstant(JITTypeTag::BOOL, false)
+                                     .get()}}});
+    }
+    return null_buffer;
   }
 
  private:

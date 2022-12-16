@@ -25,6 +25,8 @@
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/context/StringHeap.h"
+#include "exec/nextgen/utils/FunctorUtils.h"
+#include "util/CiderBitUtils.h"
 
 namespace cider::exec::nextgen::context {
 class RuntimeContext {
@@ -46,7 +48,27 @@ class RuntimeContext {
     if (batch_holder_.empty()) {
       return nullptr;
     }
-    return batch_holder_.back().second.get();
+    auto batch = batch_holder_.back().second.get();
+    auto arrow_array = batch->getArray();
+    auto length = arrow_array->length;
+    auto arrow_schema = batch->getSchema();
+
+    auto process_function =
+        utils::RecursiveFunctor{[&length](auto&& process_function,
+                                          ArrowArray* arrow_array,
+                                          ArrowSchema* arrow_schema) -> void {
+          if (arrow_array->buffers[0]) {
+            arrow_array->null_count =
+                length -
+                CiderBitUtils::countSetBits(
+                    reinterpret_cast<const uint8_t*>(arrow_array->buffers[0]), length);
+          }
+          for (size_t i = 0; i < arrow_schema->n_children; ++i) {
+            process_function(arrow_array->children[i], arrow_schema->children[i]);
+          }
+        }};
+    process_function(arrow_array, arrow_schema);
+    return batch;
   }
 
  private:
