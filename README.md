@@ -50,7 +50,7 @@ The following diagram shows the design architecture. Currently, it offers a few 
 
 ## Solutions Introduction
 
-  - Presto E2E Solution:
+  - [Presto E2E Solution](https://intel.github.io/BDTK/user/quick-start.html):
 
     BDTK could provide a Presto End-to-End accelaration solution via Velox and Velox-Plugin.
      - [Velox Plugin](https://github.com/intel/BDTK/tree/main/src/cider-velox):
@@ -59,7 +59,8 @@ The following diagram shows the design architecture. Currently, it offers a few 
 
      - [Cider](https://github.com/intel/BDTK/tree/main/src/cider):
 
-      A modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
+        A modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
+
   - [Analytic Cache Solution](https://github.com/oap-project/sql-ds-cache/tree/ape/oap-ape)
 
      Analytic Cache targets to improve data source side performance for multiple bigdata analytic framework such as Apache Spark and Apache Flink. Compare to other row based execution engine, Analytic Cache could utilize column format and do batch computation, which will boost performance in Ad-hoc queries. Meanwhile, Analytic Cache provide QAT codec accelaration and IAA predicition pushing down.
@@ -76,6 +77,10 @@ BDTK provides several functional modules for user to use or integrate into their
   Hash table performance is critical to a SQL engine. Operators like hash join, hash aggregation count on an efficient hash table implementation. 
 
   Hash table module will provide a bunch of hash table implementations, which are **easy to use**, leverage **state of art hardware technology** like AVX-512, will be **optimized for query-specific scenarios**.
+
+ - [JIT Lib Module](https://intel.github.io/BDTK/user/modules/jit-lib-module.html)
+   
+  JIT Lib module provides unified JIT interfaces like Value, Ptr, control flow and .etc to isolate operator logic and IR generation
 
  - [Expression Evaluation Module](https://intel.github.io/BDTK/user/modules/expr-eval-module.html)
 
