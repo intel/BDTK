@@ -96,7 +96,7 @@ static llvm::SubtargetFeatures buildTargetFeatures(const CompilationOptions& co)
     }
   };
 
-  switch_inst_set(avx256_inst_sets, co.enable_avx);
+  switch_inst_set(avx256_inst_sets, co.enable_avx2);
   switch_inst_set(avx512_inst_sets, co.enable_avx512);
 
   llvm::SubtargetFeatures features;
@@ -108,15 +108,16 @@ static llvm::SubtargetFeatures buildTargetFeatures(const CompilationOptions& co)
 
 llvm::TargetMachine* LLVMJITEngineBuilder::buildTargetMachine(
     const CompilationOptions& co) {
-  return host_target->createTargetMachine(
-      process_triple,
-      process_name,
-      buildTargetFeatures(co).getString(),
-      buildTargetOptions(),
-      llvm::None,
-      llvm::None,
-      co.aggresive_jit_compile ? llvm::CodeGenOpt::Aggressive : llvm::CodeGenOpt::Default,
-      true);
+  return host_target->createTargetMachine(process_triple,
+                                          process_name,
+                                          buildTargetFeatures(co).getString(),
+                                          buildTargetOptions(),
+                                          llvm::None,
+                                          llvm::None,
+                                          co.aggressive_jit_compile
+                                              ? llvm::CodeGenOpt::Aggressive
+                                              : llvm::CodeGenOpt::Default,
+                                          true);
 }
 
 std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
