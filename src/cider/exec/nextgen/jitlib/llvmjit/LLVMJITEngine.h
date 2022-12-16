@@ -26,6 +26,21 @@
 namespace cider::jitlib {
 class LLVMJITModule;
 
+enum class LLVMJITOptimizeLevel {
+  DEBUG,
+  RELEASE
+  // TBD other optimizeLevel to be added
+};
+
+// compilation config info
+struct CompilationOptions {
+  LLVMJITOptimizeLevel optimize_level = LLVMJITOptimizeLevel::RELEASE;
+  bool aggressive_jit_compile = true;
+  bool dump_ir = false;
+  bool enable_avx2 = true;
+  bool enable_avx512 = false;
+};
+
 struct LLVMJITEngine {
   llvm::ExecutionEngine* engine{nullptr};
 
@@ -39,7 +54,7 @@ class LLVMJITEngineBuilder {
   std::unique_ptr<LLVMJITEngine> build();
 
  private:
-  static void initializationTargets();
+  llvm::TargetMachine* buildTargetMachine(const CompilationOptions& co);
 
   LLVMJITModule& module_;
 };

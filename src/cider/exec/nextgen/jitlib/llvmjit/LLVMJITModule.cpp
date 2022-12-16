@@ -43,13 +43,13 @@ static void dumpModuleIR(llvm::Module* module, const std::string& module_name) {
   llvm::raw_fd_ostream file(fname, error_code, llvm::sys::fs::F_None);
   if (error_code) {
     LOG(ERROR) << "Could not open file to dump Module IR: " << fname;
+  } else {
+    llvm::legacy::PassManager pass_mgr;
+    pass_mgr.add(llvm::createStripDeadPrototypesPass());
+    pass_mgr.run(*module);
+
+    file << *module;
   }
-
-  llvm::legacy::PassManager pass_mgr;
-  pass_mgr.add(llvm::createStripDeadPrototypesPass());
-  pass_mgr.run(*module);
-
-  file << *module;
 }
 
 static llvm::MemoryBuffer* getRuntimeBuffer() {
@@ -154,7 +154,7 @@ void LLVMJITModule::finish() {
 void LLVMJITModule::optimizeIR(llvm::Module* module) {
   llvm::legacy::PassManager pass_manager;
   switch (co_.optimize_level) {
-    case OptimizeLevel::RELEASE:
+    case LLVMJITOptimizeLevel::RELEASE:
       // the always inliner legacy pass must always run first
       pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
 
@@ -185,7 +185,7 @@ void LLVMJITModule::optimizeIR(llvm::Module* module) {
       pass_manager.run(*module);
       break;
     // TBD other optimize level to be added
-    case OptimizeLevel::DEBUG:
+    case LLVMJITOptimizeLevel::DEBUG:
       // DEBUG : default optimize level, will not do any optimization
       break;
     default:
