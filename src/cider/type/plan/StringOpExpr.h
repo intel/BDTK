@@ -264,7 +264,8 @@ class SubstringStringOper : public StringOper {
 
   ExprPtrRefVector get_children_reference() override;
   JITExprValue& codegen(JITFunction& func) override;
-  private:
+
+ private:
   std::shared_ptr<Analyzer::Expr> arg0_;
   std::shared_ptr<Analyzer::Expr> arg1_;
   std::shared_ptr<Analyzer::Expr> arg2_;

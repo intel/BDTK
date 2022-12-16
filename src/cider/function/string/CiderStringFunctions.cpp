@@ -46,4 +46,3 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
   string_t s = ptr->addString(str + start, len);
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
-

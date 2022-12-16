@@ -19,9 +19,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "type/plan/Analyzer.h"
 #include "exec/template/DateTimeUtils.h"
 #include "type/data/sqltypes.h"
-#include "type/plan/Analyzer.h"
 #include "util/DateConverters.h"
 #include "util/misc.h"
 

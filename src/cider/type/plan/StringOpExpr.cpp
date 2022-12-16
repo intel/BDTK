@@ -320,10 +320,9 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(
       "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::POINTER,
-          .ret_sub_type = JITTypeTag::INT8,
-          .params_vector = {func.getArgument(0).get()}});
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
 
   // call external function
   auto emit_desc = JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
