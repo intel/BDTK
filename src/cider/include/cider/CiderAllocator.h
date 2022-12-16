@@ -116,8 +116,8 @@ class AlignAllocator : public CiderAllocator {
 
 class AllocatedData {
  public:
-  AllocatedData(CiderAllocator& allocator, int8_t* pointer, size_t allocated_size)
-      : allocator_(&allocator), pointer_(pointer), allocated_size_(allocated_size) {}
+  AllocatedData(CiderAllocator* allocator, int8_t* pointer, size_t allocated_size)
+      : allocator_(allocator), pointer_(pointer), allocated_size_(allocated_size) {}
   ~AllocatedData() { reset(); }
 
   int8_t* get() { return pointer_; }
@@ -138,11 +138,11 @@ class AllocatedData {
 };
 
 struct ArenaChunk {
-  ArenaChunk(CiderAllocator& allocator, size_t size)
+  ArenaChunk(CiderAllocator* allocator, size_t size)
       : current_position(0)
       , maximum_size(size)
       , prev(nullptr)
-      , data(allocator, allocator.allocate(size), size){};
+      , data(allocator, allocator->allocate(size), size) {}
   ~ArenaChunk() {
     if (next) {
       auto current_next = std::move(next);
@@ -150,7 +150,7 @@ struct ArenaChunk {
         current_next = std::move(current_next->next);
       }
     }
-  };
+  }
 
   AllocatedData data;
   size_t current_position;
@@ -163,7 +163,10 @@ class CiderArenaAllocator : public CiderAllocator {
   static constexpr const size_t ARENA_ALLOCATOR_INITIAL_CAPACITY = 2048;
 
  public:
-  CiderArenaAllocator(size_t initial_capacity = ARENA_ALLOCATOR_INITIAL_CAPACITY) {
+  CiderArenaAllocator(std::shared_ptr<CiderAllocator> parent =
+                          std::make_shared<CiderDefaultAllocator>(),
+                      size_t initial_capacity = ARENA_ALLOCATOR_INITIAL_CAPACITY)
+      : parent_(parent) {
     head_ = nullptr;
     tail_ = nullptr;
     current_arena_capacity_ = initial_capacity;
@@ -174,7 +177,8 @@ class CiderArenaAllocator : public CiderAllocator {
       do {
         current_arena_capacity_ *= 2;
       } while (current_arena_capacity_ < len);
-      auto new_chunk = std::make_unique<ArenaChunk>(allocator_, current_arena_capacity_);
+      auto new_chunk =
+          std::make_unique<ArenaChunk>(parent_.get(), current_arena_capacity_);
       total_capacity_ += current_arena_capacity_;
       if (head_) {
         head_->prev = new_chunk.get();
@@ -212,7 +216,7 @@ class CiderArenaAllocator : public CiderAllocator {
   size_t total_capacity_ = 0;
   std::unique_ptr<ArenaChunk> head_;
   ArenaChunk* tail_;
-  CiderDefaultAllocator allocator_;
+  std::shared_ptr<CiderAllocator> parent_;
 };
 
 #endif
