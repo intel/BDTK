@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 #include "CiderInt128.h"
 
 TEST(CiderInt128Test, ToStringTest) {
@@ -68,6 +69,7 @@ TEST(CiderInt128Test, ToDoubleTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

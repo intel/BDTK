@@ -26,6 +26,7 @@
 #include "util/Logger.h"
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/variant.hpp>

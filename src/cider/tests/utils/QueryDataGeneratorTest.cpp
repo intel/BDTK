@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 #include "CiderBatchBuilder.h"
 #include "CiderBatchChecker.h"
 #include "QueryDataGenerator.h"
@@ -231,6 +232,7 @@ TEST(QueryDataGeneratorTest, genTimestampColumn) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

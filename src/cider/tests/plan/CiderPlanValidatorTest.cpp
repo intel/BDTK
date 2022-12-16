@@ -21,6 +21,7 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 #include <boost/filesystem.hpp>
 #include <string>
 #include "exec/plan/validator/CiderPlanValidator.h"
@@ -114,6 +115,7 @@ int main(int argc, char** argv) {
   log_options.parse_command_line(argc, argv);
   log_options.max_files_ = 0;  // stderr only by default
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

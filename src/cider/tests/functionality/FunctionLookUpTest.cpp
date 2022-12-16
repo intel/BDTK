@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 #include "cider/CiderException.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "function/FunctionLookupEngine.h"
@@ -722,6 +723,7 @@ TEST_F(SubstraitFunctionLookupTest, functionLookupSparkUnregisteredTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

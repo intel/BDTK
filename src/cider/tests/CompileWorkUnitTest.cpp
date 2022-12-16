@@ -193,6 +193,7 @@ int main(int argc, char** argv) {
 
   logger::LogOptions log_options(argv[0]);
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   try {
     err = RUN_ALL_TESTS();

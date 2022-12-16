@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
   logger::LogOptions log_options(argv[0]);
   log_options.parse_command_line(argc, argv);
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

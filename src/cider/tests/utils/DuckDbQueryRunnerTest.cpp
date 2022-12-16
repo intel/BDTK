@@ -22,7 +22,7 @@
 #include "Utils.h"
 
 #include <gtest/gtest.h>
-
+#include <gflags/gflags.h>
 #include "ArrowArrayBuilder.h"
 #include "CiderBatchBuilder.h"
 #include "CiderBatchChecker.h"
@@ -555,6 +555,7 @@ TEST(DuckDBQueryRunnerTest, multiBatchFetchTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 #include "CiderBatchBuilder.h"
 #include "exec/plan/parser/TypeUtils.h"
 
@@ -254,6 +255,7 @@ TEST(CiderBatchBuilderTest, nullTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {
