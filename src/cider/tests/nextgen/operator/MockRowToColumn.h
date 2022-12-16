@@ -39,7 +39,7 @@ class MockRowToColumnTranslator : public Translator {
     auto& func_ = context.query_func_;
     for (int idx = 0; idx < context.expr_outs_.size(); idx++) {
       auto var = func_->getArgument(pos_++);
-      //TODO : add null vector sink
+      // TODO : add null vector sink
       var[*context.cur_line_idx_] = context.expr_outs_[idx]->getValue();
     }
   }

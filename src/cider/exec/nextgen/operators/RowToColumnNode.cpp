@@ -53,6 +53,9 @@ class ColumnWriter {
       case kBIGINT:
       case kFLOAT:
       case kDOUBLE:
+      case kDATE:
+      case kTIMESTAMP:
+      case kTIME:
         writeFixSizedTypeCol();
         break;
       case kVARCHAR:

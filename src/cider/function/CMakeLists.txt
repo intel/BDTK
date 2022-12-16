@@ -66,6 +66,7 @@ add_custom_command(
     string/StringLike.cpp
     aggregate/CiderRuntimeFunctions.h
     aggregate/GroupByRuntime.cpp
+    datetime/CiderDateFunctions.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/context/ContextRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/operators/OperatorRuntimeFunctions.h
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc

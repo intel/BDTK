@@ -47,10 +47,12 @@ JITExprValue& Constant::codegen(JITFunction& func) {
     case kINT:
       return set_expr_value(null,
                             func.createLiteral(getJITTag(type), get_constval().intval));
+    case kDATE:
+      return set_expr_value(null,
+                            func.createLiteral(getJITTag(type), get_constval().intval));
     case kBIGINT:
     case kTIME:
     case kTIMESTAMP:
-    case kDATE:
     case kINTERVAL_DAY_TIME:
     case kINTERVAL_YEAR_MONTH:
       return set_expr_value(

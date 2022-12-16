@@ -43,6 +43,9 @@ class ColumnReader {
       case kBIGINT:
       case kFLOAT:
       case kDOUBLE:
+      case kDATE:
+      case kTIME:
+      case kTIMESTAMP:
         readFixSizedTypeCol();
         break;
       case kVARCHAR:
