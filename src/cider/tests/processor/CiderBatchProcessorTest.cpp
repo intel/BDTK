@@ -51,8 +51,8 @@ TEST(CiderBatchProcessorTest, statelessProcessorCompileTest) {
         )";
   std::string sql = "SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2";
   auto processor = createBatchProcessorFromSql(sql, ddl);
-  std::cout << "Processor type:" << processor->getType() << std::endl;
-  EXPECT_EQ(processor->getType(), BatchProcessor::Type::kStateless);
+  std::cout << "Processor type:" << processor->getProcessorType() << std::endl;
+  EXPECT_EQ(processor->getProcessorType(), BatchProcessor::Type::kStateless);
 }
 
 TEST(CiderBatchProcessorTest, statelessProcessorProcessNextBatchTest) {
@@ -61,7 +61,7 @@ TEST(CiderBatchProcessorTest, statelessProcessorProcessNextBatchTest) {
         )";
   std::string sql = "SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2";
   auto processor = createBatchProcessorFromSql(sql, ddl);
-  EXPECT_EQ(processor->getType(), BatchProcessor::Type::kStateless);
+  EXPECT_EQ(processor->getProcessorType(), BatchProcessor::Type::kStateless);
 
   struct ArrowArray* input_array;
   struct ArrowSchema* input_schema;

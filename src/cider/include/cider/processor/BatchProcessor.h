@@ -46,7 +46,7 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
     kStateful,
   };
 
-  virtual const BatchProcessorContextPtr& context() const = 0;
+  virtual const BatchProcessorContextPtr& getContext() const = 0;
   /// Adds an input batch to the batchProcessor.  This method will only be called if
   /// getState return kRunning.
   virtual void processNextBatch(const struct ArrowArray* array,
@@ -61,7 +61,7 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
 
   virtual BatchProcessorState getState() = 0;
 
-  virtual Type getType() const = 0;
+  virtual Type getProcessorType() const = 0;
 
   virtual void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hasTable) = 0;
 };

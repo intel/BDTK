@@ -26,7 +26,7 @@ namespace cider::exec::processor {
 void HashProbeHandler::onState(BatchProcessorState state) {
   if (BatchProcessorState::kWaiting == state) {
     const auto& hashBuildTableSupplier =
-        batchProcessor_->context()->getHashBuildTableSupplier();
+        batchProcessor_->getContext()->getHashBuildTableSupplier();
     if (hashBuildTableSupplier) {
       auto hashBuildResult = hashBuildTableSupplier();
       if (hashBuildResult.has_value()) {

@@ -36,7 +36,7 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   virtual ~DefaultBatchProcessor() = default;
 
-  const BatchProcessorContextPtr& context() const override { return context_; }
+  const BatchProcessorContextPtr& getContext() const override { return context_; }
 
   void processNextBatch(const struct ArrowArray* array,
                         const struct ArrowSchema* schema = nullptr) override;

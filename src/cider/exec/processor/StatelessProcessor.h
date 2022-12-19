@@ -32,7 +32,7 @@ class StatelessProcessor : public DefaultBatchProcessor {
 
   void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
 
-  Type getType() const override { return Type::kStateless; };
+  Type getProcessorType() const override { return Type::kStateless; };
 };
 
 }  // namespace cider::exec::processor

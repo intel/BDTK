@@ -33,7 +33,7 @@ namespace cider::exec::processor {
 DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
                                              const BatchProcessorContextPtr& context)
     : plan_(plan), context_(context) {
-  auto allocator = context->allocator();
+  auto allocator = context->getAllocator();
   if (plan_->hasJoinRel()) {
     // TODO: currently we can't distinguish the joinRel is either a hashJoin rel
     // or a mergeJoin rel, just hard-code as HashJoinHandler for now and will refactor to

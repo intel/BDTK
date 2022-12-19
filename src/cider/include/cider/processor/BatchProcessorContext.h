@@ -49,7 +49,7 @@ class BatchProcessorContext {
   BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
       : allocator_(allocator){};
 
-  std::shared_ptr<CiderAllocator> allocator() const { return allocator_; }
+  const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 
   void setHashBuildTableSupplier(const HashBuildTableSupplier& hashBuildTableSupplier) {
     buildTableSupplier_ = hashBuildTableSupplier;
