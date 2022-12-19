@@ -31,16 +31,16 @@ extern "C" {
 int64_t qat_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
 
 int64_t qat_wrapper_compress(void* context,
+                             int64_t input_length,
+                             const uint8_t* input,
+                             int64_t output_length,
+                             uint8_t* output);
+
+int64_t qat_wrapper_decompress(void* context,
                                int64_t input_length,
                                const uint8_t* input,
                                int64_t output_length,
                                uint8_t* output);
-
-int64_t qat_wrapper_decompress(void* context,
-                                 int64_t input_length,
-                                 const uint8_t* input,
-                                 int64_t output_length,
-                                 uint8_t* output);
 
 int qat_wrapper_minimum_compression_level();
 

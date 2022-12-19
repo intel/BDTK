@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "common/igzip/igzip_wrapper.h"
 #include "codec/icl_codec_internal.h"
+#include "common/igzip/igzip_wrapper.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,16 +40,14 @@ class IgzipCodec : public IclCompressionCodec {
     context = static_cast<struct igzip_context*>(igzip_wrapper_init(compression_level));
   }
 
-  ~IgzipCodec() override {
-    igzip_wrapper_destroy(context);
-  }
+  ~IgzipCodec() override { igzip_wrapper_destroy(context); }
 
   int64_t Decompress(int64_t input_len,
                      const uint8_t* input,
                      int64_t output_buffer_len,
                      uint8_t* output_buffer) override {
-    int64_t decompressed_size = igzip_wrapper_decompress(context,
-        input_len, input, output_buffer_len, output_buffer);
+    int64_t decompressed_size = igzip_wrapper_decompress(
+        context, input_len, input, output_buffer_len, output_buffer);
 
     return decompressed_size;
   }
@@ -62,9 +60,8 @@ class IgzipCodec : public IclCompressionCodec {
                    const uint8_t* input,
                    int64_t output_buffer_len,
                    uint8_t* output_buffer) override {
-    int64_t compressed_size =
-     igzip_wrapper_compress(context,
-        input_len, input, output_buffer_len, output_buffer);
+    int64_t compressed_size = igzip_wrapper_compress(
+        context, input_len, input, output_buffer_len, output_buffer);
 
     return compressed_size;
   }
