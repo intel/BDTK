@@ -32,6 +32,11 @@ void RuntimeContext::addBuffer(const CodegenContext::BufferDescriptorPtr& descri
   buffer_holder_.emplace_back(descriptor, nullptr);
 }
 
+void RuntimeContext::addHashTable(
+    const CodegenContext::HashTableDescriptorPtr& descriptor) {
+  hashtable_holder_ = descriptor;
+}
+
 void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of batches.
   for (auto& batch_desc : batch_holder_) {
@@ -51,6 +56,11 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   }
 
   string_heap_ptr_ = std::make_shared<StringHeap>(allocator);
+
+  // Instantiation of hashtable.
+  if (hashtable_holder_ != nullptr) {
+    runtime_ctx_pointers_[hashtable_holder_->ctx_id] = hashtable_holder_->hash_table;
+  }
 }
 
 void allocateBatchMem(ArrowArray* array,
