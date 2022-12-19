@@ -20,6 +20,7 @@
  */
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 
+#include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/MC/SubtargetFeature.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/TargetRegistry.h>
@@ -77,11 +78,13 @@ static llvm::StringMap<bool> host_supported_features = []() {
 }();
 }  // namespace
 
-LLVMJITEngineBuilder::LLVMJITEngineBuilder(LLVMJITModule& module) : module_(module) {}
+LLVMJITEngineBuilder::LLVMJITEngineBuilder(LLVMJITModule& module)
+    : module_(module), llvm_module_(module.module_.get()) {}
 
 static llvm::TargetOptions buildTargetOptions() {
   llvm::TargetOptions to;
   to.EnableFastISel = true;
+  to.MCOptions.AsmVerbose = false;
 
   return to;
 }
@@ -106,18 +109,38 @@ static llvm::SubtargetFeatures buildTargetFeatures(const CompilationOptions& co)
   return features;
 }
 
-llvm::TargetMachine* LLVMJITEngineBuilder::buildTargetMachine(
-    const CompilationOptions& co) {
+llvm::TargetMachine* LLVMJITEngineBuilder::buildTargetMachine() {
   return host_target->createTargetMachine(process_triple,
                                           process_name,
-                                          buildTargetFeatures(co).getString(),
+                                          buildTargetFeatures(module_.co_).getString(),
                                           buildTargetOptions(),
                                           llvm::None,
                                           llvm::None,
-                                          co.aggressive_jit_compile
+                                          module_.co_.aggressive_jit_compile
                                               ? llvm::CodeGenOpt::Aggressive
                                               : llvm::CodeGenOpt::Default,
                                           true);
+}
+
+void LLVMJITEngineBuilder::dumpASM(LLVMJITEngine& engine) {
+  const std::string fname = llvm_module_->getModuleIdentifier() + ".s";
+
+  std::error_code error_code;
+  llvm::raw_fd_ostream file(fname, error_code, llvm::sys::fs::F_None);
+  if (error_code) {
+    LOG(ERROR) << "Could not open file to dump Module ASM: " << fname;
+  } else {
+    llvm::legacy::PassManager pass_mgr;
+    llvm::TargetMachine* tm = engine.engine->getTargetMachine();
+
+    tm->Options.MCOptions.AsmVerbose = true;
+    pass_mgr.add(llvm::createTargetTransformInfoWrapperPass(tm->getTargetIRAnalysis()));
+    tm->addPassesToEmitFile(
+        pass_mgr, file, nullptr, llvm::TargetMachine::CGFT_AssemblyFile);
+
+    pass_mgr.run(*llvm_module_);
+    tm->Options.MCOptions.AsmVerbose = false;
+  }
 }
 
 std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
@@ -129,12 +152,18 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
       .setErrorStr(&error);
 
   auto engine = std::make_unique<LLVMJITEngine>();
-  engine->engine = eb.create(buildTargetMachine(module_.co_));
+  engine->engine = eb.create(buildTargetMachine());
+  engine->engine->DisableLazyCompilation(false);
+  engine->engine->setVerifyModules(false);
 
   LOG(INFO) << "Enabled features: "
             << engine->engine->getTargetMachine()->getTargetFeatureString().str();
 
   engine->engine->finalizeObject();
+
+  if (module_.getCompilationOptions().dump_ir) {
+    dumpASM(*engine);
+  }
 
   return engine;
 }

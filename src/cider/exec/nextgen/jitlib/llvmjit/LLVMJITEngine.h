@@ -54,9 +54,12 @@ class LLVMJITEngineBuilder {
   std::unique_ptr<LLVMJITEngine> build();
 
  private:
-  llvm::TargetMachine* buildTargetMachine(const CompilationOptions& co);
+  llvm::TargetMachine* buildTargetMachine();
+
+  void dumpASM(LLVMJITEngine& engine);
 
   LLVMJITModule& module_;
+  llvm::Module* llvm_module_;
 };
 };  // namespace cider::jitlib
 

@@ -47,6 +47,8 @@ class LLVMJITModule final : public JITModule {
 
   const CompilationOptions& getCompilationOptions() const { return co_; }
 
+  std::string getName() const { return module_->getModuleIdentifier(); }
+
   void finish() override;
 
  protected:
