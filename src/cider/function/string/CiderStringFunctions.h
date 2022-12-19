@@ -28,15 +28,14 @@
 
 ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len);
 
-extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str,
-                                                  int str_len,
-                                                  int start,
-                                                  int len);
-
+extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int len);
 extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
                                                         const char* str,
-                                                        int str_len,
-                                                        int start,
+                                                        int pos,
                                                         int len);
 
+extern "C" RUNTIME_EXPORT int32_t format_substring_pos(int pos, int str_len);
+extern "C" RUNTIME_EXPORT int32_t format_substring_len(int pos,
+                                                       int str_len,
+                                                       int target_len);
 #endif

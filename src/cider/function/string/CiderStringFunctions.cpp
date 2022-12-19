@@ -27,22 +27,53 @@ ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
          (static_cast<const uint64_t>(len) << 48);
 }
 
-extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str,
-                                                  int str_len,
-                                                  int start,
-                                                  int len) {
-  const char* ret_ptr = str + start;
-  int64_t ret = (reinterpret_cast<const uint64_t>(ret_ptr) & 0xffffffffffff) |
-                (static_cast<const uint64_t>(len) << 48);
+// not in use.
+extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int len) {
+  const char* ret_ptr = str + pos - 1;
+  return pack_string((const int8_t*)ret_ptr, (const int32_t)len);
+}
+
+// pos parameter starts from 1 rather than 0
+extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
+                                                        const char* str,
+                                                        int pos,
+                                                        int len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(str + pos - 1, len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+// pos starts with 1. A negative starting position is interpreted as being relative
+// to the end of the string
+extern "C" RUNTIME_EXPORT int32_t format_substring_pos(int pos, int str_len) {
+  int32_t ret = 1;
+  if (pos > 0) {
+    if (pos > str_len) {
+      ret = str_len + 1;
+    } else {
+      ret = pos;
+    }
+  } else if (pos < 0) {
+    if (pos + str_len >= 0) {
+      ret = str_len + pos + 1;
+    }
+  }
   return ret;
 }
 
-extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
-                                                        const char* str,
-                                                        int str_len,
-                                                        int start,
-                                                        int len) {
-  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
-  string_t s = ptr->addString(str + start, len);
-  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+// pos should be [1, str_len+1]
+extern "C" RUNTIME_EXPORT int32_t format_substring_len(int pos,
+                                                       int str_len,
+                                                       int target_len) {
+  // already out of range, return empty string.
+  if (pos == str_len + 1) {
+    return 0;
+  }
+  // not reach to max str length, return target length
+  if (pos + target_len <= str_len + 1) {
+    return target_len;
+  } else {
+    // reach to max str length
+    return str_len - pos + 1;
+  }
 }

@@ -308,14 +308,27 @@ ExprPtrRefVector SubstringStringOper::get_children_reference() {
 JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
   // 1. decode parameters
   auto arg = const_cast<Analyzer::Expr*>(getArg(0));
-  auto start = const_cast<Analyzer::Expr*>(getArg(1));
+  auto pos = const_cast<Analyzer::Expr*>(getArg(1));
   auto len = const_cast<Analyzer::Expr*>(getArg(2));
 
   CHECK(arg->get_type_info().is_string());
 
   auto arg_val = VarSizeJITExprValue(arg->codegen(func));
-  auto start_val = FixSizeJITExprValue(start->codegen(func));
+  auto pos_val = FixSizeJITExprValue(pos->codegen(func));
   auto len_val = FixSizeJITExprValue(len->codegen(func));
+
+  // format parameters
+  auto pos_param = func.emitRuntimeFunctionCall(
+      "format_substring_pos",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT32,
+          .params_vector = {pos_val.getValue().get(), arg_val.getLength().get()}});
+  auto len_param = func.emitRuntimeFunctionCall(
+      "format_substring_len",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT32,
+          .params_vector = {
+              pos_param.get(), arg_val.getLength().get(), len_val.getValue().get()}});
 
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(
@@ -328,9 +341,8 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
   auto emit_desc = JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
                                              .params_vector = {string_heap_ptr.get(),
                                                                arg_val.getValue().get(),
-                                                               arg_val.getLength().get(),
-                                                               start_val.getValue().get(),
-                                                               len_val.getValue().get()}};
+                                                               pos_param.get(),
+                                                               len_param.get()}};
   std::string fn_name = "cider_substring_extra";
 
   auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
