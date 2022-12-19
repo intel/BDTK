@@ -64,6 +64,7 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/ciderTransformer/libcider
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/planTransformer/libvelox_plan_transformer.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider-velox/src/substrait/libvelox_substrait_convertor.a ./presto_cpp/main/lib
 cp -a ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/exec/module/libcider.so* ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/exec/processor/libcider_processor.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/function/libcider_function.a ./presto_cpp/main/lib
