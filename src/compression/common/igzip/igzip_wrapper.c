@@ -77,6 +77,7 @@ void igzip_wrapper_destroy(void* context) {
       igzip_wrapper_context->level_buf = NULL;
     }
     free(igzip_wrapper_context);
+    igzip_wrapper_context = NULL;
   }
 }
 
