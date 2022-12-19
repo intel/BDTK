@@ -372,7 +372,7 @@ inline std::string toString(const SqlStringOpKind& kind) {
   }
 }
 
-inline std::string toString(const SqlWindowFunctionKind& kind) {
+[[deprecated]] inline std::string toString(const SqlWindowFunctionKind& kind) {
   switch (kind) {
     case SqlWindowFunctionKind::ROW_NUMBER:
       return "ROW_NUMBER";

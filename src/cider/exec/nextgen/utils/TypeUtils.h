@@ -113,6 +113,35 @@ inline int64_t getTypeBytes(SQLTypes type) {
   return -1;
 }
 
+inline std::string getSQLTypeName(SQLTypes type) {
+  switch (type) {
+    case kNULLT:
+      return "null";
+    case kTINYINT:
+      return "int8";
+    case kSMALLINT:
+      return "int16";
+    case kINT:
+      return "int32";
+    case kBIGINT:
+      return "int64";
+    case kFLOAT:
+      return "float";
+    case kDOUBLE:
+      return "double";
+    case kDATE:
+      return "date";
+    case kDECIMAL:
+      return "decimal";
+    case kBOOLEAN:
+      return "bool";
+    default:
+      UNIMPLEMENTED();
+  }
+  UNREACHABLE();
+  return "invalid";
+}
+
 }  // namespace cider::exec::nextgen::utils
 
 #endif  // NEXTGEN_UTILS_TYPEUTILS_H
