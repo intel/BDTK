@@ -191,7 +191,19 @@ TEST_UNIT(PrimitiveTypeBigintMinQueryTest, bigintMinArrowCompareTest)
 
 TEST_UNIT(PrimitiveTypeBigintMaxQueryTest, bigintMaxArrowCompareTest)
 
-TEST_UNIT(PrimitiveTypeMixQueryTest, mixTypeArrowCompareTest)
+TEST_F(PrimitiveTypeMixQueryTest, mixTypeArrowCompareTest) {
+  assertQueryArrow("SELECT * FROM test");
+  assertQueryArrow("SELECT col_a, col_b, col_c FROM test");
+  assertQueryArrow("SELECT col_c, col_b, col_a FROM test");
+  assertQueryArrow("SELECT col_c, col_b, col_d FROM test");
+  assertQueryArrow("SELECT col_b, col_c FROM test");
+  assertQueryArrow("SELECT col_b, col_a FROM test");
+  assertQueryArrow("SELECT col_d, col_a FROM test");
+  assertQueryArrow("SELECT col_a FROM test");
+  assertQueryArrow("SELECT col_b FROM test");
+  assertQueryArrow("SELECT col_c FROM test");
+  assertQueryArrow("SELECT col_d FROM test");
+}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
