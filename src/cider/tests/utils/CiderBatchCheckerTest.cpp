@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "ArrowArrayBuilder.h"
 #include "CiderBatchBuilder.h"
@@ -920,6 +921,7 @@ TEST(CiderBatchCheckerTest, vectorEqual) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

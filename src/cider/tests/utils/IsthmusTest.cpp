@@ -21,6 +21,7 @@
 
 #include "Utils.h"
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
 #include "util/Logger.h"
@@ -40,6 +41,7 @@ TEST(IsthmusTest, processSql) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

@@ -311,6 +311,7 @@ int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   generator::registerExtensionFunctions();
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

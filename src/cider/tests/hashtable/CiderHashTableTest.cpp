@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <iostream>
@@ -203,6 +204,8 @@ int main(int argc, char* argv[]) {
   log_options.severity_ = logger::Severity::INFO;
   log_options.set_options();  // update default values
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   try {
     err = RUN_ALL_TESTS();
   } catch (const std::exception& e) {

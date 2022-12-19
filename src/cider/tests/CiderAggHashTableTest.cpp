@@ -1234,6 +1234,7 @@ int main(int argc, char** argv) {
   po::variables_map vm;
   po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
   po::notify(vm);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

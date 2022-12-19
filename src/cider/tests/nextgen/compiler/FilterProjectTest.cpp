@@ -256,6 +256,8 @@ TEST_F(ProjectStringTest, FrameworkTest) {
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   int err = RUN_ALL_TESTS();
   return err;
 }

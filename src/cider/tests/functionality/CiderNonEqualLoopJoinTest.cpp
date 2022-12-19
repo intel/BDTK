@@ -734,6 +734,8 @@ int main(int argc, char** argv) {
   log_options.severity_ = logger::Severity::INFO;
   log_options.set_options();  // update default values
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   int err{0};
   try {
     err = RUN_ALL_TESTS();

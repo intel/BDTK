@@ -77,6 +77,7 @@ TEST_F(CiderExceptionTest, exception) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

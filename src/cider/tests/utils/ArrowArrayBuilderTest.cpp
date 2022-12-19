@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "ArrowArrayBuilder.h"
 #include "exec/plan/parser/TypeUtils.h"
@@ -354,6 +355,7 @@ TEST(ArrowArrayBuilderTest, NestedArrowArrayTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

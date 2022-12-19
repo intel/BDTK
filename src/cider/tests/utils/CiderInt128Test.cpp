@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "CiderInt128.h"
 
@@ -68,6 +69,7 @@ TEST(CiderInt128Test, ToDoubleTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

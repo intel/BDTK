@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "cider/batch/CiderBatch.h"
 #include "cider/batch/ScalarBatch.h"
@@ -789,6 +790,7 @@ TEST_F(CiderArrowBatchTest, ArrowEntryMoveTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

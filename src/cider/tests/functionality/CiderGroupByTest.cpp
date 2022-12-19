@@ -1324,6 +1324,8 @@ int main(int argc, char** argv) {
   log_options.parse_command_line(argc, argv);
   log_options.max_files_ = 0;  // stderr only by default
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   int err{0};
   try {
     err = RUN_ALL_TESTS();

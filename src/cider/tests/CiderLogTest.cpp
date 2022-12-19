@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
   log_options.parse_command_line(argc, argv);
   std::cout << log_options.full_log_dir() << std::endl;
   logger::init(log_options);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {
