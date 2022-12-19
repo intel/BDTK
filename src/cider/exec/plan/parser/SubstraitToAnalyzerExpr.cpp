@@ -23,11 +23,11 @@
  * @file    SubstraitToAnalyzerExpr.cpp
  * @brief   Translate Substrait expression to Analyzer expression
  **/
+#include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include <cstdint>
 #include "TypeUtils.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/ParserNode.h"
-#include "exec/plan/parser/SubstraitToAnalyzerExpr.h"
 #include "exec/template/DateTimeTranslator.h"
 #include "function/FunctionLookupEngine.h"
 #include "util/DateTimeParser.h"
