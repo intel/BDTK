@@ -30,55 +30,70 @@
 
 namespace {
 
-#define constructArrowFixedColumn(s_type)                         \
-  {                                                               \
-    for (int j = 0; j < chunk_arrays->num_chunks(); j++) {        \
-      auto arrow_array = chunk_arrays->chunk(j);                  \
-      builder.addColumn(name,                                     \
-                        s_type,                                   \
-                        arrow_array->null_bitmap_data(),          \
-                        arrow_array->data()->buffers[1]->data()); \
-    }                                                             \
-    break;                                                        \
+substrait::Type convertToSubstraitType(const arrow::Type::type tag) {
+  switch (tag) {
+    case arrow::Type::type::BOOL:
+      return CREATE_SUBSTRAIT_TYPE(Bool);
+    case arrow::Type::type::INT8:
+      return CREATE_SUBSTRAIT_TYPE(I8);
+    case arrow::Type::type::INT16:
+      return CREATE_SUBSTRAIT_TYPE(I16);
+    case arrow::Type::type::INT32:
+      return CREATE_SUBSTRAIT_TYPE(I32);
+    case arrow::Type::type::INT64:
+      return CREATE_SUBSTRAIT_TYPE(I64);
+    case arrow::Type::type::FLOAT:
+      return CREATE_SUBSTRAIT_TYPE(Fp32);
+    case arrow::Type::type::DOUBLE:
+      return CREATE_SUBSTRAIT_TYPE(Fp64);
+    case arrow::Type::type::STRING:
+      return CREATE_SUBSTRAIT_TYPE(Varchar);
+    case arrow::Type::type::DATE32:
+      return CREATE_SUBSTRAIT_TYPE(Date);
+    case arrow::Type::type::TIME64:
+      return CREATE_SUBSTRAIT_TYPE(Time);
+    case arrow::Type::type::TIMESTAMP:
+      return CREATE_SUBSTRAIT_TYPE(Timestamp);
+    default:
+      CIDER_THROW(CiderRuntimeException, "Failed to convert arrow type: " + tag);
   }
-
-#define constructArrowVariColumn(s_type)                          \
-  {                                                               \
-    for (int j = 0; j < chunk_arrays->num_chunks(); j++) {        \
-      auto arrow_array = chunk_arrays->chunk(j);                  \
-      builder.addColumn(name,                                     \
-                        s_type,                                   \
-                        arrow_array->null_bitmap_data(),          \
-                        arrow_array->data()->buffers[1]->data(),  \
-                        arrow_array->data()->buffers[2]->data()); \
-    }                                                             \
-    break;                                                        \
-  }
+}
 
 void constructArrowArray(ArrowArrayBuilder& builder,
                          std::shared_ptr<arrow::ChunkedArray> chunk_arrays,
                          const std::string& name) {
-  auto tag = chunk_arrays->type()->id();
-  switch (tag) {
-    case arrow::Type::type::INT32:
-      constructArrowFixedColumn(CREATE_SUBSTRAIT_TYPE(I32));
-    case arrow::Type::type::INT64:
-      constructArrowFixedColumn(CREATE_SUBSTRAIT_TYPE(I64));
-    case arrow::Type::type::FLOAT:
-      constructArrowFixedColumn(CREATE_SUBSTRAIT_TYPE(Fp32));
-    case arrow::Type::type::DOUBLE:
-      constructArrowFixedColumn(CREATE_SUBSTRAIT_TYPE(Fp64));
-    case arrow::Type::type::STRING:
-      constructArrowVariColumn(CREATE_SUBSTRAIT_TYPE(Varchar));
+  for (int i = 0; i < chunk_arrays->num_chunks(); i++) {
+    auto arrow_array = chunk_arrays->chunk(i);
+    auto tag = arrow_array->type_id();
+    int64_t buffer_num = arrow_array->data()->buffers.size();
+    switch (buffer_num) {
+      case 2:
+        builder.addColumn(name,
+                          convertToSubstraitType(tag),
+                          arrow_array->null_bitmap_data(),
+                          arrow_array->data()->buffers[1]->data());
+        break;
+      case 3:
+        builder.addColumn(name,
+                          convertToSubstraitType(tag),
+                          arrow_array->null_bitmap_data(),
+                          arrow_array->data()->buffers[1]->data(),
+                          arrow_array->data()->buffers[2]->data());
+        break;
+      default:
+        CIDER_THROW(CiderRuntimeException,
+                    "Failed to extract array buffer, buffe_num is : " + buffer_num);
+    }
   }
 }
+
 }  // namespace
 
 class ArrowDataReader {
  public:
-  ArrowDataReader(std::string file_name, std::vector<std::string>& col_name)
-      : file_name_{file_name}, col_name_{col_name} {};
-
+  ArrowDataReader(const std::string& file_name,
+                  const std::unordered_set<std::string>& col_names = {})
+      : file_name_{file_name}, col_names_{col_names} {};
   std::shared_ptr<CiderBatch> read() {
     std::shared_ptr<arrow::Table> raw_table = constructArrowTable();
     // Combine chunks for workaround large volume dataset.
@@ -87,10 +102,14 @@ class ArrowDataReader {
     int64_t rows = table->num_rows();
     int64_t columns = table->num_columns();
     auto builder = ArrowArrayBuilder().setRowNum(rows);
+    bool col_selected = col_names_.size() > 0 ? true : false;
     for (int i = 0; i < table->num_columns(); i++) {
+      const std::string col_name = table->schema()->field(i)->name();
+      if (col_selected && col_names_.find(col_name) == col_names_.end()) {
+        continue;
+      }
       std::shared_ptr<arrow::ChunkedArray> field = table->column(i);
-      constructArrowArray(builder, field, col_name_[i]);
-      std::cout << table->column(i)->type()->ToString() << std::endl;
+      constructArrowArray(builder, field, col_name);
     }
     auto schema_and_array = builder.build();
     return std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
@@ -100,14 +119,15 @@ class ArrowDataReader {
   virtual std::shared_ptr<arrow::Table> constructArrowTable() = 0;
 
  protected:
-  std::string file_name_;
-  std::vector<std::string>& col_name_;
+  const std::string file_name_;
+  const std::unordered_set<std::string> col_names_;
 };
 
 class CSVToArrowDataReader : public ArrowDataReader {
  public:
-  CSVToArrowDataReader(std::string file_name, std::vector<std::string>& col_name)
-      : ArrowDataReader(file_name, col_name){};
+  CSVToArrowDataReader(const std::string& file_name,
+                       const std::unordered_set<std::string>& col_names = {})
+      : ArrowDataReader(file_name, col_names){};
   std::shared_ptr<arrow::Table> constructArrowTable() {
     arrow::io::IOContext io_context = arrow::io::default_io_context();
     auto open_file = arrow::io::ReadableFile::Open(file_name_);
@@ -136,8 +156,9 @@ class CSVToArrowDataReader : public ArrowDataReader {
 
 class ParquetToArrowDataReader : public ArrowDataReader {
  public:
-  ParquetToArrowDataReader(std::string file_name, std::vector<std::string>& col_name)
-      : ArrowDataReader(file_name, col_name){};
+  ParquetToArrowDataReader(const std::string& file_name,
+                           const std::unordered_set<std::string>& col_names = {})
+      : ArrowDataReader(file_name, col_names){};
 
   std::shared_ptr<arrow::Table> constructArrowTable() {
     arrow::MemoryPool* pool = arrow::default_memory_pool();

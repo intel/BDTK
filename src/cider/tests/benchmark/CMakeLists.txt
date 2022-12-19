@@ -16,19 +16,17 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-find_library(arrow_lib libarrow.a)
-find_library(arrow_dep libarrow_bundled_dependencies.a)
-find_library(parquet_lib libparquet.a)
-find_library(thrift_lib libthrift.a)
+
 set(TEST_ARGS "--gtest_output=xml:../")
+find_package(Arrow REQUIRED arrow_shared parquet)
+set(DATA_READER_LIB arrow_shared parquet)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
 file(GLOB cider_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-set(ARROW_READER_DEP ${parquet_lib} ${thrift_lib} ${arrow_lib} ${arrow_dep})
 foreach(cider_benchmark_file ${cider_benchmark_files})
   string(REGEX MATCH "benchmark/.*" test_relative_path ${cider_benchmark_file})
   string(REGEX REPLACE "benchmark/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${cider_benchmark_file})
-  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS} ${ARROW_READER_DEP}
-                        benchmark::benchmark)
+  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
+                        ${DATA_READER_LIB} benchmark::benchmark)
 endforeach()
