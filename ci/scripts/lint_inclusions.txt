@@ -3,4 +3,5 @@ src/cider/examples/
 src/cider/exec/module/
 src/cider/exec/nextgen/
 src/cider/exec/plan/substrait/
+src/cider/exec/plan/validator/
 src/cider-velox/
