@@ -7,4 +7,5 @@ src/cider/exec/plan/validator/
 src/cider/exec/processor/
 src/cider/include/
 src/cider/tests/
+src/cider/type/
 src/cider-velox/

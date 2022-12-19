@@ -5,4 +5,4 @@
 *src/substrait/proto/*
 *src/cider/type/plan/Analyzer.*
 *src/cider/exec/plan/parser/ParserNode*
-*src/cider/exec/plan/parser/ParserNode*
+*src/cider/type/data/sqltypes.h

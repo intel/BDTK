@@ -66,7 +66,8 @@ struct Array {
   int64_t size;
   int8_t is_null;
 
-  Array(const int64_t size, const bool is_null = false) : size(size), is_null(is_null) {
+  explicit Array(const int64_t size, const bool is_null = false)
+      : size(size), is_null(is_null) {
     if (!is_null) {
       ptr = reinterpret_cast<T*>(
           allocate_varlen_buffer(size, static_cast<int64_t>(sizeof(T))));
