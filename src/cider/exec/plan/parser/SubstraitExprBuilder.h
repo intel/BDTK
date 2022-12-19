@@ -30,7 +30,7 @@
 
 class SubstraitExprBuilder {
  public:
-  explicit SubstraitExprBuilder()
+  SubstraitExprBuilder()
       : func_anchor_(0), names_{}, types_{}, schema_(nullptr), funcs_info_{} {}
   static ::substrait::Type* makeType(bool isNullable);
 
