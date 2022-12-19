@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <common/hashtable/HashTableAllocator.h>
 #include <gtest/gtest.h>
 #include "TestHelpers.h"
 #include "common/hashtable/FixedHashMap.h"
@@ -34,17 +35,24 @@ struct Block {
   int64_t sum = 0;
   size_t count = 0;
 
-  void add(int8_t value) {
+  Block(){};
+
+  Block(int64_t sum, size_t count) {
+    this->sum = sum;
+    this->count = count;
+  }
+
+  void add(int16_t value) {
     sum += value;
     ++count;
   }
 
-  template <size_t unroll_count = 128 / sizeof(int8_t)>
-  void addBatch(const int8_t* ptr, size_t size) {
+  template <size_t unroll_count = 128 / sizeof(int16_t)>
+  void addBatch(const int16_t* ptr, size_t size) {
     /// Compiler cannot unroll this loop, do it manually.
     /// (at least for floats, most likely due to the lack of -fassociative-math)
 
-    int8_t partial_sums[unroll_count]{};
+    int16_t partial_sums[unroll_count]{};
 
     const auto* end = ptr + size;
     const auto* unrolled_end = ptr + (size / unroll_count * unroll_count);
@@ -140,6 +148,47 @@ TEST_F(CiderNewHashTableTest, aggInt16Test) {
     CHECK_EQ(map[keys[i]].getCount(), 2);
     CHECK_EQ(map[keys[i]].getAvg(), 30);
   }
+}
+
+TEST_F(CiderNewHashTableTest, hashTableTest) {
+  using Cell = FixedHashMapCell<int16_t, Block>;
+  FixedHashTable<int16_t, Cell, FixedHashTableStoredSize<Cell>, HashTableAllocator> fht;
+
+  int16_t key = 1;
+  PairNoInit<int16_t, Block> in;
+  in.first = key;
+  in.second = Block(10, key);
+
+  // emplace api of FixedHashTable
+  std::pair<Cell*, bool> res;
+
+  fht.emplace(key, res.first, res.second);
+
+  if (res.second)
+    insertSetMapped(res.first->getMapped(), in);
+
+  // find api of FixedHashTable
+  auto find_res = fht.find(key);
+  CHECK_EQ(find_res[0].getMapped().getSum(), 10);
+  CHECK_EQ(find_res[0].getMapped().getCount(), 1);
+
+  // hash api of FixedHashTable
+  CHECK_EQ(fht.hash(key), 1);
+
+  // empty api of FixedHashTable
+  CHECK_EQ(fht.size(), 1);
+
+  // empty api of FixedHashTable
+  CHECK_EQ(fht.empty(), false);
+
+  // contains api of FixedHashTable
+  CHECK_EQ(fht.contains(key), true);
+  CHECK_EQ(fht.contains(0), false);
+
+  // clear api of FixedHashTable
+  fht.clear();
+  CHECK_EQ(fht.empty(), true);
+  CHECK_EQ(fht.contains(key), false);
 }
 
 int main(int argc, char** argv) {

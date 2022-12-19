@@ -1194,7 +1194,7 @@ class HashTable : private boost::noncopyable,
     return true;
   }
 
-  bool ALWAYS_INLINE has(const Key& x) const {
+  bool ALWAYS_INLINE contains(const Key& x) const {
     if (Cell::isZero(x, *this))
       return this->hasZero();
 
@@ -1203,7 +1203,7 @@ class HashTable : private boost::noncopyable,
     return !buf[place_value].isZero(*this);
   }
 
-  bool ALWAYS_INLINE has(const Key& x, size_t hash_value) const {
+  bool ALWAYS_INLINE contains(const Key& x, size_t hash_value) const {
     if (Cell::isZero(x, *this))
       return this->hasZero();
 
