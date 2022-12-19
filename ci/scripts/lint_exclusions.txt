@@ -3,3 +3,4 @@
 */ThirdParty/*
 *Tests/DataMgr/*
 *src/substrait/proto/*
+*src/cider/type/plan/Analyzer.*

@@ -112,9 +112,9 @@ class JITValuePointer {
   friend auto makeJITValuePointer(Args&&... args);
 
  public:
-  JITValuePointer(std::nullptr_t ptr_) : ptr_(ptr_) {}
+  explicit JITValuePointer(std::nullptr_t ptr) : ptr_(ptr) {}
 
-  JITValuePointer(JITValue* value = nullptr) : ptr_(value) {
+  explicit JITValuePointer(JITValue* value = nullptr) : ptr_(value) {
     if (ptr_) {
       ptr_->addRef();
     }
@@ -125,7 +125,7 @@ class JITValuePointer {
     if (ptr_) {
       ptr_->addRef();
     }
-  };
+  }
 
   JITValuePointer(JITValuePointer&& rh) noexcept : ptr_(rh.ptr_) { rh.ptr_ = nullptr; }
 

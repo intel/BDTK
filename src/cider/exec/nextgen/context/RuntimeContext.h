@@ -29,7 +29,7 @@
 namespace cider::exec::nextgen::context {
 class RuntimeContext {
  public:
-  RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {}
+  explicit RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {}
 
   size_t getContextItemNum() const { return runtime_ctx_pointers_.size(); }
 

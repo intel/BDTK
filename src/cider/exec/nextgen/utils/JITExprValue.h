@@ -33,14 +33,14 @@ class JITExprValue {
       bool>;
 
  public:
-  JITExprValue(size_t size = 0, JITExprValueType type = JITExprValueType::ROW)
+  explicit JITExprValue(size_t size = 0, JITExprValueType type = JITExprValueType::ROW)
       : ptrs_(0), value_type_(type) {
     ptrs_.reserve(size);
   }
 
   // for {JITValuePointer, ...}
   template <typename... T>
-  JITExprValue(JITExprValueType type, T&&... ptrs) {
+  explicit JITExprValue(JITExprValueType type, T&&... ptrs) {
     value_type_ = type;
     append(std::forward<T>(ptrs)...);
   }
@@ -69,7 +69,7 @@ class JITExprValue {
 
 class JITExprValueAdaptor {
  public:
-  JITExprValueAdaptor(JITExprValue& values) : values_(values) {}
+  explicit JITExprValueAdaptor(JITExprValue& values) : values_(values) {}
 
   jitlib::JITValuePointer& getNull() { return values_[0]; }
 
@@ -81,7 +81,7 @@ class JITExprValueAdaptor {
 
 class FixSizeJITExprValue : public JITExprValueAdaptor {
  public:
-  FixSizeJITExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
+  explicit FixSizeJITExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
     values_.resize(2);
   }
 
@@ -92,7 +92,7 @@ class FixSizeJITExprValue : public JITExprValueAdaptor {
 
 class VarSizeJITExprValue : public JITExprValueAdaptor {
  public:
-  VarSizeJITExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
+  explicit VarSizeJITExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
     values_.resize(3);
   }
   jitlib::JITValuePointer& getLength() { return values_[1]; }

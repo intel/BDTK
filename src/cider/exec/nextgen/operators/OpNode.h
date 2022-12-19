@@ -75,7 +75,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 // TBD: Combine OpNode and Translator
 class Translator {
  public:
-  Translator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
+  explicit Translator(const OpNodePtr& node, const TranslatorPtr& successor = nullptr)
       : node_(node), successor_(successor) {}
 
   virtual ~Translator() = default;

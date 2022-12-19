@@ -1,3 +1,6 @@
-cider/exec/module
-cider/tests
-cider-velox/
+src/cider/benchmarks/
+src/cider/examples/
+src/cider/exec/module/
+src/cider/exec/nextgen/
+src/cider/exec/plan/substrait/
+src/cider-velox/
