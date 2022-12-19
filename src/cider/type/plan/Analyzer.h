@@ -1666,7 +1666,7 @@ class FunctionOperWithCustomTypeHandling : public FunctionOper {
  */
 class OffsetInFragment : public Expr {
  public:
-  OffsetInFragment() : Expr(SQLTypeInfo(kBIGINT, true)){}
+  OffsetInFragment() : Expr(SQLTypeInfo(kBIGINT, true)) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
 
@@ -1679,7 +1679,7 @@ class OffsetInFragment : public Expr {
  * @brief represents an entry in ORDER BY clause.
  */
 struct OrderEntry {
-  OrderEntry(int t, bool d, bool nf) : tle_no(t), is_desc(d), nulls_first(nf){}
+  OrderEntry(int t, bool d, bool nf) : tle_no(t), is_desc(d), nulls_first(nf) {}
   ~OrderEntry() {}
   std::string toString() const;
   void print() const { std::cout << toString(); }
@@ -1705,7 +1705,7 @@ class WindowFunction : public Expr {
       , args_(args)
       , partition_keys_(partition_keys)
       , order_keys_(order_keys)
-      , collation_(collation){}
+      , collation_(collation) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
 
