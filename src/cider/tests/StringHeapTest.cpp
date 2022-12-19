@@ -20,47 +20,27 @@
  */
 
 #include <gtest/gtest.h>
-#include "TestHelpers.h"
-#include "cider/CiderAllocator.h"
+#include "exec/nextgen/context/StringHeap.h"
 
-class CiderAllocatorTest : public ::testing::Test {};
-
-TEST_F(CiderAllocatorTest, AlignTest) {
-  auto alloc = std::make_shared<CiderDefaultAllocator>();
-  auto alignAlloc = std::make_shared<AlignAllocator<64>>(alloc);
-
-  int8_t* p = alignAlloc->allocate(19);
-  alignAlloc->deallocate(p, 19);
-
-  EXPECT_FALSE((int64_t)p & (64 - 1));
-}
-
-TEST_F(CiderAllocatorTest, ArenaAllocator) {
-  auto allocator = std::make_shared<CiderArenaAllocator>();
-
-  int8_t* ptr1 = allocator->allocate(1000);
-  EXPECT_EQ(allocator->getCap(), 4096);
-  int8_t* ptr2 = allocator->allocate(1000);
-  EXPECT_EQ(allocator->getCap(), 4096);
-  int8_t* ptr3 = allocator->allocate(4000);
-  EXPECT_EQ(allocator->getCap(), 4096 + 8192);
-
-  EXPECT_THROW(allocator->deallocate(ptr1, 1000), CiderUnsupportedException);
-  EXPECT_THROW(allocator->reallocate(ptr1, 1000, 2000), CiderUnsupportedException);
-
-  allocator->destory();
-  allocator = nullptr;
+TEST(StringHeapTest, addString) {
+  StringHeap heap;
+  const char* str1 = "abcdef";
+  heap.addString(str1, 6);
+  EXPECT_EQ(heap.getNum(), 1);
+  auto str = heap.emptyString(10);
+  EXPECT_EQ(heap.getNum(), 2);
+  heap.destroy();
+  EXPECT_EQ(heap.getNum(), 0);
 }
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {
     err = RUN_ALL_TESTS();
   } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
+    // LOG(ERROR) << e.what();
   }
 
   return err;

@@ -24,6 +24,7 @@
 #include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/context/StringHeap.h"
 
 namespace cider::exec::nextgen::context {
 class RuntimeContext {

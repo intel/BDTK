@@ -40,6 +40,7 @@ add_executable(CiderArrowBatchTest CiderArrowBatchTest.cpp)
 add_executable(CiderExceptionTest CiderExceptionTest.cpp)
 add_executable(CiderLogTest CiderLogTest.cpp)
 add_executable(Sql2IR Sql2IR.cpp)
+add_executable(StringHeapTest StringHeapTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     cider
@@ -68,6 +69,7 @@ target_link_libraries(CiderArrowBatchTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(Sql2IR ${EXECUTE_TEST_LIBS})
+target_link_libraries(StringHeapTest ${EXECUTE_TEST_LIBS})
 
 set(TEST_ARGS "--gtest_output=xml:../")
 add_test(CodeGeneratorTest CodeGeneratorTest ${TEST_ARGS})
@@ -86,6 +88,7 @@ add_test(CiderAllocatorTest CiderAllocatorTest ${TEST_ARGS})
 add_test(CiderArrowBatchTest CiderArrowBatchTest ${TEST_ARGS})
 add_test(CiderExceptionTest CiderExceptionTest ${TEST_ARGS})
 add_test(CiderLogTest CiderLogTest ${TEST_ARGS})
+add_test(StringHeapTest StringHeapTest ${TEST_ARGS})
 
 find_package(fmt REQUIRED)
 
