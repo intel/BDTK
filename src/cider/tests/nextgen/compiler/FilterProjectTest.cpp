@@ -161,6 +161,14 @@ TEST_F(FilterProjectTest, TestOther) {
                        expected_cols);
 }
 
+TEST_F(FilterProjectTest, TestConstantExpression) {
+  std::vector<std::vector<int32_t>> expected_cols = {{2, 2, 2, 2, 2, 2, 2, 2, 2, 2}};
+  // select 2 from test returns int32_t in substrait
+  executeTest<int32_t>("CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);",
+                       "select 2 from test",
+                       expected_cols);
+}
+
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);

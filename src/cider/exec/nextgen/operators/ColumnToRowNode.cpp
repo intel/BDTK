@@ -150,10 +150,22 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   auto index = func->createVariable(JITTypeTag::INT64, "index", 0);
 
   // input column rows num.
-  auto len = func->createLocalJITValue([&context, &inputs]() {
-    return context::codegen_utils::getArrowArrayLength(
-        context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
-  });
+  JITValuePointer len = nullptr;
+  if (inputs.size()) {
+    len.replace(func->createLocalJITValue([&context, &inputs]() {
+      return context::codegen_utils::getArrowArrayLength(
+          context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
+    }));
+  } else {
+    // inputs will be empty if no column is referenced in the sql query
+    // e.g. select 123 from test, so we directly get length from the input arrow array
+    // assumes signature be like: query_func(context, array)
+    auto input_array = func->getArgument(1);  // array
+    len.replace(func->createLocalJITValue([&context, &input_array]() {
+      return context::codegen_utils::getArrowArrayLength(input_array);
+    }));
+  }
+
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
 
   func->createLoopBuilder()
