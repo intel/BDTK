@@ -5,4 +5,5 @@ src/cider/exec/nextgen/
 src/cider/exec/plan/substrait/
 src/cider/exec/plan/validator/
 src/cider/exec/processor/
+src/cider/include/
 src/cider-velox/
