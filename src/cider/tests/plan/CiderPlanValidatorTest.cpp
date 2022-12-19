@@ -48,11 +48,11 @@ TEST(CiderPlanValidator, InvalidAggAndJoinTest) {
       google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
   google::protobuf::util::JsonStringToMessage(
       get_json_data("cider_plan_validator_join.json"), sub_plan);
-  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      *sub_plan, generator::FrontendEngine::VELOX);
+  auto plan_slices = validator::CiderPlanValidator::getCiderSupportedSlice(
+      *sub_plan, PlatformType::PrestoPlatform);
   // Agg(invalid phase) <- proj <- filter <- proj <- join(type not supported) <-project
   // <-read
-  CHECK_EQ(plan_slice.rel_nodes.size(), 3);
+  CHECK_EQ(plan_slices[0].rel_nodes.size(), 3);
 }
 
 TEST(CiderPlanValidator, InvalidAggTest) {
@@ -61,11 +61,11 @@ TEST(CiderPlanValidator, InvalidAggTest) {
       google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
   google::protobuf::util::JsonStringToMessage(get_json_data("cider_pv_invalid_agg.json"),
                                               sub_plan);
-  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      *sub_plan, generator::FrontendEngine::VELOX);
+  auto plan_slices = validator::CiderPlanValidator::getCiderSupportedSlice(
+      *sub_plan, PlatformType::PrestoPlatform);
   // Agg(invalid phase) <- proj <- filter <- proj <- join <- project <- read
   // <-read
-  CHECK_EQ(plan_slice.rel_nodes.size(), 6);
+  CHECK_EQ(plan_slices[0].rel_nodes.size(), 6);
 }
 
 TEST(CiderPlanValidator, InvalidJoinTest) {
@@ -74,11 +74,11 @@ TEST(CiderPlanValidator, InvalidJoinTest) {
       google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
   google::protobuf::util::JsonStringToMessage(get_json_data("cider_pv_invalid_join.json"),
                                               sub_plan);
-  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      *sub_plan, generator::FrontendEngine::VELOX);
+  auto plan_slices = validator::CiderPlanValidator::getCiderSupportedSlice(
+      *sub_plan, PlatformType::PrestoPlatform);
   // Agg <- proj <- filter <- proj <- join(invalid type) <- project <- read
   // <-read
-  CHECK_EQ(plan_slice.rel_nodes.size(), 4);
+  CHECK_EQ(plan_slices[0].rel_nodes.size(), 4);
 }
 
 TEST(CiderPlanValidator, InvalidReadTest) {
@@ -87,12 +87,12 @@ TEST(CiderPlanValidator, InvalidReadTest) {
       google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
   google::protobuf::util::JsonStringToMessage(get_json_data("cider_pv_invalid_read.json"),
                                               sub_plan);
-  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      *sub_plan, generator::FrontendEngine::VELOX);
+  auto plan_slices = validator::CiderPlanValidator::getCiderSupportedSlice(
+      *sub_plan, PlatformType::PrestoPlatform);
   // Agg <- proj <- filter <- proj <- join <- project <- read (invalid type)
   // <-read
   // read has a decimal type which will fail following nodes except Agg
-  CHECK_EQ(plan_slice.rel_nodes.size(), 1);
+  CHECK_EQ(plan_slices[0].rel_nodes.size(), 1);
 }
 
 TEST(CiderPlanValidator, MultiJoinTest) {
@@ -101,12 +101,37 @@ TEST(CiderPlanValidator, MultiJoinTest) {
       google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
   google::protobuf::util::JsonStringToMessage(get_json_data("cider_pv_multi_join.json"),
                                               sub_plan);
-  auto plan_slice = validator::CiderPlanValidator::getCiderSupportedSlice(
-      *sub_plan, generator::FrontendEngine::VELOX);
+  auto plan_slices = validator::CiderPlanValidator::getCiderSupportedSlice(
+      *sub_plan, PlatformType::PrestoPlatform);
   // Agg <- proj <- filter <- proj <- join <- project <- join <- read
   // <-read
   // read has a decimal type which will fail following nodes except Agg
-  CHECK_EQ(plan_slice.rel_nodes.size(), 6);
+  CHECK_EQ(plan_slices[0].rel_nodes.size(), 6);
+}
+
+TEST(CiderPlanValidator, UnsupportedFunctionTest) {
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(
+      get_json_data("cider_pv_unsupported_function.json"), sub_plan);
+  auto plan_slices = validator::CiderPlanValidator::getCiderSupportedSlice(
+      *sub_plan, PlatformType::PrestoPlatform);
+  // Agg <- proj <- filter <- proj <- join(unsupported function add_ov) <- project <- read
+  // <-read
+  CHECK_EQ(plan_slices[0].rel_nodes.size(), 4);
+}
+
+TEST(CiderPlanValidator, ValidateAPITest) {
+  google::protobuf::Arena arena;
+  substrait::Plan* sub_plan =
+      google::protobuf::Arena::CreateMessage<::substrait::Plan>(&arena);
+  google::protobuf::util::JsonStringToMessage(
+      get_json_data("cider_pv_unsupported_function.json"), sub_plan);
+  // Agg <- proj <- filter <- proj <- join(unsupported function add_ov) <- project <- read
+  // <-read
+  CHECK(
+      !validator::CiderPlanValidator::validate(*sub_plan, PlatformType::PrestoPlatform));
 }
 
 int main(int argc, char** argv) {

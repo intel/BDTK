@@ -28,6 +28,7 @@
 #include "TypeUtils.h"
 #include "cider/CiderTypes.h"
 #include "function/ExtensionFunctionsBinding.h"
+#include "function/FunctionLookupEngine.h"
 
 namespace generator {
 void registerExtensionFunctions() {
@@ -284,30 +285,11 @@ substrait::Type getSubstraitType(const SQLTypeInfo& type_info) {
 }
 
 SQLOps getCiderSqlOps(const std::string& op) {
-  static const std::unordered_map<std::string, SQLOps> scalar_op_map = {
-      {"lt", SQLOps::kLT},
-      {"and", SQLOps::kAND},
-      {"or", SQLOps::kOR},
-      {"not", SQLOps::kNOT},
-      {"gt", SQLOps::kGT},
-      {"equal", SQLOps::kEQ},
-      {"not_equal", SQLOps::kNE},
-      {"gte", SQLOps::kGE},
-      {"lte", SQLOps::kLE},
-      {"multiply", SQLOps::kMULTIPLY},
-      {"divide", SQLOps::kDIVIDE},
-      {"add", SQLOps::kPLUS},
-      {"subtract", SQLOps::kMINUS},
-      {"modulus", SQLOps::kMODULO},
-      {"mod", SQLOps::kMODULO},
-      {"is_not_null", SQLOps::kISNOTNULL},
-      {"is_null", SQLOps::kISNULL},
-      {"is_not_distinct_from", SQLOps::kBW_EQ},
-      {"is_distinct_from", SQLOps::kBW_NE},
-  };
-  auto iter = scalar_op_map.find(op);
-  if (iter != scalar_op_map.end()) {
-    return iter->second;
+  SubstraitFunctionCiderMappingsPtr function_mappings_ =
+      std::make_shared<const SubstraitFunctionCiderMappings>();
+  auto sql_op = function_mappings_->getFunctionScalarOp(op);
+  if (sql_op != SQLOps::kUNDEFINED_OP) {
+    return sql_op;
   }
   CIDER_THROW(CiderCompileException, op + " is not yet supported");
 }

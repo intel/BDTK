@@ -106,9 +106,9 @@ class FunctionLookupEngine {
       const FunctionSignature& function_signature) const;
 
   // like:vchar<L1>_vchar<L1>, boolean
-  const FunctionDescriptor lookupFunction(const std::string& function_signature_str,
-                                          const std::string& function_return_type_str,
-                                          const PlatformType& from_platform) const;
+  const FunctionDescriptor lookupFunction(
+      const std::string& function_signature_str,
+      const std::string& function_return_type_str) const;
 
   static void setDataPath(const std::string& conf_path) { data_path_ = conf_path; }
 

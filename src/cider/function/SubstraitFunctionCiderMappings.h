@@ -96,6 +96,7 @@ class SubstraitFunctionCiderMappings {
         {"is_null", SQLOps::kISNULL},
         {"is_not_distinct_from", SQLOps::kBW_EQ},
         {"is_distinct_from", SQLOps::kBW_NE},
+        {"cast", SQLOps::kCAST},
         {"in", SQLOps::kIN},
     };
     return mapping;
@@ -174,6 +175,7 @@ class SubstraitFunctionCiderMappings {
         {"is_null", OpSupportExprType::kU_OPER},
         {"is_not_distinct_from", OpSupportExprType::kBIN_OPER},
         {"is_distinct_from", OpSupportExprType::kBIN_OPER},
+        {"cast", OpSupportExprType::kU_OPER},
         {"in", OpSupportExprType::kIN_VALUES},
         {"extract", OpSupportExprType::kEXTRACT_EXPR},
         {"year", OpSupportExprType::kEXTRACT_EXPR},

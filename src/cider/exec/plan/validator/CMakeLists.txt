@@ -24,4 +24,4 @@ set(CMAKE_CXX_FLAGS
 
 set(CIDER_PLAN_VALIDATOR_SRCS CiderPlanValidator.cpp SingleNodeValidator.cpp)
 add_library(cider_plan_validator STATIC ${CIDER_PLAN_VALIDATOR_SRCS})
-target_link_libraries(cider_plan_validator substrait fmt::fmt)
+target_link_libraries(cider_plan_validator cider_function protobuf fmt::fmt)

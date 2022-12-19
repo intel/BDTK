@@ -30,38 +30,36 @@ namespace validator {
 
 struct PlanSlice {
   std::vector<substrait::Rel> rel_nodes;
-  const generator::FrontendEngine& frontend_engine;
+  const PlatformType& from_platform;
 };
 
 class CiderPlanValidator {
  public:
   /**
    * @param plan plan with pattern already validated
-   * @param frontend_engine specific frontend framework for future function lookup
+   * @param from_platform specific frontend framework for future function lookup
    * @return whether the plan can be executed by Cider
    **/
-  static bool validate(const substrait::Plan& plan,
-                       const generator::FrontendEngine& frontend_engine);
+  static bool validate(const substrait::Plan& plan, const PlatformType& from_platform);
 
   /**
    * @param plan original plan without any validation
-   * @param frontend_engine specific frontend framework for future function lookup
+   * @param from_platform specific frontend framework for future function lookup
    * @return the longest plan slice that can be executed by Cider
    **/
-  static PlanSlice getCiderSupportedSlice(
-      substrait::Plan& plan,
-      const generator::FrontendEngine& frontend_engine);
+  static std::vector<PlanSlice> getCiderSupportedSlice(substrait::Plan& plan,
+                                                       const PlatformType& from_platform);
 
  private:
   // Validate plan slice by function lookup and rule based check
   static bool isSupportedSlice(const PlanSlice& plan_slice,
                                const substrait::Plan& plan,
-                               const generator::FrontendEngine& frontend_engine);
+                               const PlatformType& from_platform);
 
   static const substrait::Rel& getRootRel(const substrait::Plan& plan);
 
   static PlanSlice constructPlanSlice(const substrait::Plan& plan,
-                                      const generator::FrontendEngine& frontend_engine);
+                                      const PlatformType& from_platform);
 
   static void putRelNodesInVec(const substrait::Rel& rel_node,
                                std::vector<substrait::Rel>& rel_vec);

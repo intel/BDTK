@@ -69,6 +69,19 @@ class CiderCompileException : public CiderException {
   virtual ~CiderCompileException() noexcept {}
 };
 
+// please use CIDER_THROW(CiderPlanValidateException, "Exception message");
+class CiderPlanValidateException : public CiderException {
+ public:
+  explicit CiderPlanValidateException(const std::string& msg)
+      : CiderException("CiderPlanValidateException", msg) {}
+
+  // for subclass inheritance
+  explicit CiderPlanValidateException(std::string type, const std::string& msg)
+      : CiderException(type, msg) {}
+
+  virtual ~CiderPlanValidateException() noexcept {}
+};
+
 // please use CIDER_THROW(CiderOutOfMemoryException, "Exception message");
 class CiderOutOfMemoryException : public CiderRuntimeException {
  public:
