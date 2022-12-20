@@ -242,7 +242,7 @@ class Encoder {
    * the incoming stats differ from the current stats.
    */
   virtual bool resetChunkStats(const ChunkStats&) {
-    UNREACHABLE() << "Attempting to reset stats for unsupported type.";
+    UNREACHABLE();
     return false;
   }
 
@@ -254,9 +254,7 @@ class Encoder {
   /**
    * @brief: Copy current chunk level stats (min, max, nulls) to the output arg.
    */
-  virtual void fillChunkStats(ChunkStats&, const SQLTypeInfo&) {
-    UNREACHABLE() << "Attempting to get stats for unsupported type.";
-  }
+  virtual void fillChunkStats(ChunkStats&, const SQLTypeInfo&) { UNREACHABLE(); }
 
   size_t getNumElems() const { return num_elems_; }
   void setNumElems(const size_t num_elems) { num_elems_ = num_elems; }

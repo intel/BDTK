@@ -22,7 +22,10 @@
 #pragma once
 
 #include "VeloxToCiderExpr.h"
-#include "cider/CiderRuntimeModule.h"
+// #include "cider/CiderRuntimeModule.h"
+#include "exec/template/AggregatedColRange.h"
+#include "exec/template/InputMetadata.h"
+#include "exec/template/RelAlgExecutionUnit.h"
 #include "velox/core/ITypedExpr.h"
 #include "velox/type/Type.h"
 

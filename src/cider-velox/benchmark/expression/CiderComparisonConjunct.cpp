@@ -19,16 +19,17 @@
  * under the License.
  */
 
-#define _LOGGING_H_  // ignore glog
+// #define _LOGGING_H_  // ignore glog
+#define SHARED_LOGGER_H
 #include <folly/Benchmark.h>
-#include <folly/init/Init.h>
+// #include <folly/init/Init.h>
 #include <gflags/gflags.h>
 
 #include "Allocator.h"
 #include "ExprEvalUtils.h"
 #include "VeloxToCiderExpr.h"
-#include "exec/template/InputMetadata.h"
-#include "exec/template/RelAlgExecutionUnit.h"
+#include "cider/CiderCompileModule.h"
+#include "cider/CiderRuntimeModule.h"
 #include "velox/functions/lib/RegistrationHelpers.h"
 #include "velox/functions/lib/benchmarks/FunctionBenchmarkBase.h"
 #include "velox/functions/prestosql/Comparisons.h"

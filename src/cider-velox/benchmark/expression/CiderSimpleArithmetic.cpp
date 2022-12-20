@@ -19,7 +19,8 @@
  * under the License.
  */
 
-#define _LOGGING_H_  // ignore glog
+// #define _LOGGING_H_  // ignore glog
+#define SHARED_LOGGER_H
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 
@@ -28,7 +29,6 @@
 #include "VeloxToCiderExpr.h"
 #include "cider/CiderCompileModule.h"
 #include "cider/CiderRuntimeModule.h"
-#include "exec/template/InputMetadata.h"
 #include "velox/expression/Expr.h"
 #include "velox/functions/Registerer.h"
 #include "velox/functions/lib/benchmarks/FunctionBenchmarkBase.h"
@@ -197,31 +197,25 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
 
 std::unique_ptr<CiderSimpleArithmeticBenchmark> benchmark;
 
-// BENCHMARK(multiplyVeloxCompile) {
-//   benchmark->runVeloxCompile("multiply(i8, i8)");
+// BENCHMARK(single) {
+//   // benchmark->runVelox("multiply(i8, i8)");
+//   benchmark->runVelox("multiply(i64, i64)");
 // }
-BENCHMARK(multiplyNextgenCompile) {
-  benchmark->runCiderCompile("multiply(i8, i8)", true);
-}
-// BENCHMARK_GROUP(i8_mul_i8, "multiply(i8, i8)");
-// BENCHMARK_GROUP(i8_plus_i8, "plus(i8, i8)");
-// BENCHMARK_GROUP(i16_mul_i16, "multiply(i16, i16)");
-// BENCHMARK_GROUP(i16_plus_i16, "plus(i16, i16)");
-// BENCHMARK_GROUP(i32_mul_i32, "multiply(i32, i32)");
-// BENCHMARK_GROUP(i32_plus_i32, "plus(i32, i32)");
-// BENCHMARK_GROUP(i64_mul_i64, "multiply(i64, i64)");
-// BENCHMARK_GROUP(i64_plus_i64, "plus(i64, i64)");
+BENCHMARK_GROUP(i8_mul_i8, "multiply(i8, i8)");
+BENCHMARK_GROUP(i16_mul_i16, "multiply(i16, i16)");
+BENCHMARK_GROUP(i32_mul_i32, "multiply(i32, i32)");
+BENCHMARK_GROUP(i64_mul_i64, "multiply(i64, i64)");
 
-// BENCHMARK_GROUP(double_mul_double, "multiply(a, a)");
-// BENCHMARK_GROUP(multiplyDouble, "multiply(a, b)");
-// BENCHMARK_GROUP(multiplyHalfNull, "multiply(a, half_null)");
-// BENCHMARK_GROUP(multiplyNested, "multiply(multiply(a, b), b)");
-// BENCHMARK_GROUP(multiplyNestedDeep,
-//                 "multiply(multiply(multiply(a, b), a), "
-//                 "multiply(a, multiply(a, b)))");
-// BENCHMARK_GROUP(plusUnchecked, "plus(c, d)");
-// BENCHMARK_GROUP(plusChecked, "checkedPlus(c, d)");
-// BENCHMARK_GROUP(multiplyAndPlusArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+BENCHMARK_GROUP(double_mul_double, "multiply(a, a)");
+BENCHMARK_GROUP(multiplyDouble, "multiply(a, b)");
+BENCHMARK_GROUP(multiplyHalfNull, "multiply(a, half_null)");
+BENCHMARK_GROUP(multiplyNested, "multiply(multiply(a, b), b)");
+BENCHMARK_GROUP(multiplyNestedDeep,
+                "multiply(multiply(multiply(a, b), a), "
+                "multiply(a, multiply(a, b)))");
+BENCHMARK_GROUP(plusUnchecked, "plus(c, d)");
+BENCHMARK_GROUP(plusChecked, "checkedPlus(c, d)");
+BENCHMARK_GROUP(multiplyAndPlusArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
 }  // namespace
 
 int main(int argc, char* argv[]) {
