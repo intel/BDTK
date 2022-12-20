@@ -288,8 +288,6 @@ TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
 // stringop: substring
 
 TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   // variable source string
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
@@ -311,8 +309,6 @@ TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
 }
 
 TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -320,8 +316,6 @@ TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
 }
 
 TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -329,8 +323,6 @@ TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
 }
 
 TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");

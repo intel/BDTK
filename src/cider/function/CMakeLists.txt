@@ -69,6 +69,7 @@ add_custom_command(
     datetime/CiderDateFunctions.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/context/ContextRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/operators/OperatorRuntimeFunctions.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/function/CiderStringFunctions.cpp
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
   COMMAND
     ${llvm_clangpp_cmd} ARGS -std=c++17 ${RT_OPT_FLAGS} -c -emit-llvm

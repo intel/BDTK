@@ -20,6 +20,7 @@
  * under the License.
  */
 #include "type/plan/Expr.h"
+#include "type/plan/UnaryExpr.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;
@@ -30,3 +31,19 @@ JITExprValue& Expr::codegen(JITFunction& func) {
   return expr_var_;
 }
 }  // namespace Analyzer
+
+std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr) {
+  const auto uoper = dynamic_cast<const Analyzer::UOper*>(expr.get());
+  if (!uoper || uoper->get_optype() != kCAST) {
+    return expr;
+  }
+  return uoper->get_own_operand();
+}
+
+const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr) {
+  const auto uoper = dynamic_cast<const Analyzer::UOper*>(expr);
+  if (!uoper || uoper->get_optype() != kCAST) {
+    return expr;
+  }
+  return uoper->get_operand();
+}

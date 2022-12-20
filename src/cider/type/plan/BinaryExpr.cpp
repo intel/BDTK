@@ -39,7 +39,11 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
 
   const auto& lhs_ti = lhs->get_type_info();
   const auto& rhs_ti = rhs->get_type_info();
-  CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+  if (lhs_ti.is_string()) {
+    CHECK(rhs_ti.is_string());
+  } else {
+    CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+  }
   if (lhs_ti.is_decimal() || lhs_ti.is_timeinterval()) {
     CIDER_THROW(CiderCompileException,
                 "Decimal and TimeInterval are not supported in arithmetic codegen now.");
@@ -56,7 +60,6 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
     } else {
       CIDER_THROW(CiderUnsupportedException, "string BinOp only supports comparison");
     }
-
   } else {
     // primitive type binops
     FixSizeJITExprValue lhs_val(lhs->codegen(func));

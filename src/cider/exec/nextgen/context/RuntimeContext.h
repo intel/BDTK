@@ -35,6 +35,8 @@ class RuntimeContext {
 
   void* getContextItem(size_t id) { return runtime_ctx_pointers_[id]; }
 
+  void* getStringHeapPtr() { return string_heap_ptr_.get(); }
+
   void addBatch(const CodegenContext::BatchDescriptorPtr& descriptor);
 
   void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
@@ -53,6 +55,7 @@ class RuntimeContext {
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
   std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
+  std::shared_ptr<StringHeap> string_heap_ptr_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
