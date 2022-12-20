@@ -275,6 +275,76 @@ class SubstringStringOper : public StringOper {
 
   JITExprValue& codegen(JITFunction& func) override;
 };
+
+class LowerStringOper : public StringOper {
+ public:
+  LowerStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::LOWER,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  LowerStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::LOWER,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  LowerStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
+
+  JITExprValue& codegen(JITFunction& func) override;
+};
+
+class UpperStringOper : public StringOper {
+ public:
+  UpperStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::UPPER,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  UpperStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::UPPER,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  UpperStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
+
+  JITExprValue& codegen(JITFunction& func) override;
+};
 }  // namespace Analyzer
 
 #endif

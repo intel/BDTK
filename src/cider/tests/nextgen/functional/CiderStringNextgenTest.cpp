@@ -332,8 +332,6 @@ TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
 // stringop: upper/lower
 
 TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringops (upper/lower) are not supported yet in nextgen");
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
@@ -372,8 +370,6 @@ TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
 }
 
 TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringops (upper/lower) are not supported yet in nextgen");
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");

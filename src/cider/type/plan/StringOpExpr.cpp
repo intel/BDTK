@@ -41,6 +41,8 @@ LiteralArgMap StringOper::getLiteralArgs() const {
   return literal_arg_map;
 }
 
+// StringOper Base Class
+
 void StringOper::group_predicates(std::list<const Expr*>& scan_predicates,
                                   std::list<const Expr*>& join_predicates,
                                   std::list<const Expr*>& const_predicates) const {
@@ -291,6 +293,8 @@ void StringOper::check_operand_types(
   }
 }
 
+// SubstringStringOper: SUBSTRING
+
 std::shared_ptr<Analyzer::Expr> SubstringStringOper::deep_copy() const {
   return makeExpr<Analyzer::SubstringStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
@@ -347,6 +351,88 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
       "extract_str_len",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                 .params_vector = {ptr_and_len.get()}});
+  return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
+}
+
+// LowerStringOper: LOWER
+
+std::shared_ptr<Analyzer::Expr> LowerStringOper::deep_copy() const {
+  return makeExpr<Analyzer::LowerStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& LowerStringOper::codegen(JITFunction& func) {
+  // decode parameters
+  auto arg = const_cast<Analyzer::Expr*>(getArg(0));
+  CHECK(arg->get_type_info().is_string());
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+
+  // call external function
+  auto emit_desc = JITFunctionEmitDescriptor{
+      .ret_type = JITTypeTag::INT64,
+      .params_vector = {
+          string_heap_ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}};
+  std::string fn_name = "cider_ascii_lower";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_str_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_str_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
+}
+
+// UpperStringOper: UPPER
+
+std::shared_ptr<Analyzer::Expr> UpperStringOper::deep_copy() const {
+  return makeExpr<Analyzer::UpperStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& UpperStringOper::codegen(JITFunction& func) {
+  // decode parameters
+  auto arg = const_cast<Analyzer::Expr*>(getArg(0));
+  CHECK(arg->get_type_info().is_string());
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+
+  // call external function
+  auto emit_desc = JITFunctionEmitDescriptor{
+      .ret_type = JITTypeTag::INT64,
+      .params_vector = {
+          string_heap_ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}};
+  std::string fn_name = "cider_ascii_upper";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_str_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_str_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
   return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
 }
 
