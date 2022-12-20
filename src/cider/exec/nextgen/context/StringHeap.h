@@ -46,7 +46,9 @@ struct string_t {
 
 class StringHeap {
  public:
-  StringHeap() : allocator_(), total_num_(0) {}
+  StringHeap(const CiderAllocatorPtr& parent_alloctor =
+                 std::make_shared<CiderDefaultAllocator>())
+      : allocator_(parent_alloctor), total_num_(0) {}
   ~StringHeap() { destroy(); }
 
   // Destroy all allocated buffer.

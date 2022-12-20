@@ -19,6 +19,7 @@
  * under the License.
  */
 #include "exec/nextgen/context/RuntimeContext.h"
+
 namespace cider::exec::nextgen::context {
 void RuntimeContext::addBatch(const CodegenContext::BatchDescriptorPtr& descriptor) {
   batch_holder_.emplace_back(descriptor, nullptr);
@@ -45,5 +46,7 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
       runtime_ctx_pointers_[buffer_desc.first->ctx_id] = buffer_desc.second.get();
     }
   }
+
+  string_heap_ptr_ = std::make_shared<StringHeap>(allocator);
 }
 }  // namespace cider::exec::nextgen::context
