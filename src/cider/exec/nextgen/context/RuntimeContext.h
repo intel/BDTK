@@ -53,8 +53,8 @@ class RuntimeContext {
     auto length = arrow_array->length;
     auto arrow_schema = batch->getSchema();
 
-    auto process_function =
-        utils::RecursiveFunctor{[&length](auto&& process_function,
+    auto set_null_count_function =
+        utils::RecursiveFunctor{[&length](auto&& set_null_count_function,
                                           ArrowArray* arrow_array,
                                           ArrowSchema* arrow_schema) -> void {
           if (arrow_array->buffers[0]) {
@@ -64,10 +64,10 @@ class RuntimeContext {
                     reinterpret_cast<const uint8_t*>(arrow_array->buffers[0]), length);
           }
           for (size_t i = 0; i < arrow_schema->n_children; ++i) {
-            process_function(arrow_array->children[i], arrow_schema->children[i]);
+            set_null_count_function(arrow_array->children[i], arrow_schema->children[i]);
           }
         }};
-    process_function(arrow_array, arrow_schema);
+    set_null_count_function(arrow_array, arrow_schema);
     return batch;
   }
 
