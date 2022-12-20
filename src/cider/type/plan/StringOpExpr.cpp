@@ -296,14 +296,6 @@ std::shared_ptr<Analyzer::Expr> SubstringStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-ExprPtrRefVector SubstringStringOper::get_children_reference() {
-  // return {&args_[0], getOwnArg(1), getOwnArg(2)};
-  arg0_ = getOwnArg(0);
-  arg1_ = getOwnArg(1);
-  arg2_ = getOwnArg(2);
-  return {&arg0_, &arg1_, &arg2_};
-}
-
 JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
   // 1. decode parameters
   auto arg = const_cast<Analyzer::Expr*>(getArg(0));

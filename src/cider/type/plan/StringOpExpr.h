@@ -90,7 +90,10 @@ class StringOper : public Expr {
   SqlStringOpKind get_kind() const { return kind_; }
 
   ExprPtrRefVector get_children_reference() override {
-    UNREACHABLE() << "Should not call this method";
+    // For StringOper Expr and its inherited classes, get_children_reference by default
+    // returns references to the StringOper's arguments. it is implemented here
+    // in the base class for code reusability and access to private member args_
+    return get_argument_references();
   }
 
   size_t getArity() const { return args_.size(); }
@@ -198,6 +201,14 @@ class StringOper : public Expr {
       const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
       int start_idx = 1);
 
+  virtual ExprPtrRefVector get_argument_references() {
+    ExprPtrRefVector ret;
+    for (auto& arg : args_) {
+      ret.push_back(&arg);
+    }
+    return ret;
+  }
+
  private:
   static SQLTypeInfo get_return_type(
       const SqlStringOpKind kind,
@@ -262,13 +273,7 @@ class SubstringStringOper : public StringOper {
     return names;
   }
 
-  ExprPtrRefVector get_children_reference() override;
   JITExprValue& codegen(JITFunction& func) override;
-
- private:
-  std::shared_ptr<Analyzer::Expr> arg0_;
-  std::shared_ptr<Analyzer::Expr> arg1_;
-  std::shared_ptr<Analyzer::Expr> arg2_;
 };
 }  // namespace Analyzer
 
