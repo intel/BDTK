@@ -1075,7 +1075,6 @@ extern "C" ALWAYS_INLINE uint64_t string_pack(const int8_t* ptr, const int32_t l
 }
 
 #ifdef __clang__
-#include "function/string/CiderStringFunctions.cpp"
 #include "function/string/StringLike.cpp"
 #endif
 
@@ -1484,3 +1483,4 @@ extern "C" ALWAYS_INLINE int32_t extract_str_len_arrow(int8_t* offset_buffer,
 #include "exec/nextgen/operators/OperatorRuntimeFunctions.h"
 #include "function/aggregate/CiderRuntimeFunctions.h"
 #include "function/datetime/CiderDateFunctions.cpp"
+#include "exec/nextgen/function/CiderStringFunctions.cpp"

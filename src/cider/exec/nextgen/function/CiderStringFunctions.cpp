@@ -20,7 +20,6 @@
  * under the License.
  */
 
-#include "CiderStringFunctions.h"
 #include "exec/nextgen/context/StringHeap.h"
 
 ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
