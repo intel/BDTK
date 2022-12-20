@@ -19,4 +19,5 @@
 set(DEP_LIBS ${EXECUTE_TEST_LIBS} benchmark::benchmark nextgen)
 
 add_executable(jitlib_benchmark JITlibBenchmark.cpp)
+target_compile_options(jitlib_benchmark PRIVATE -g)
 target_link_libraries(jitlib_benchmark ${DEP_LIBS})

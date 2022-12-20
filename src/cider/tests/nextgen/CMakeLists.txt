@@ -19,7 +19,7 @@
 
 option(ENABLE_NEXGEN_BENCHMARK "Enable Benchmark for Nextgen Project." OFF)
 if(ENABLE_NEXGEN_BENCHMARK)
-add_subdirectory(benchmark)
+  add_subdirectory(benchmark)
 endif()
 
 add_subdirectory(jitlib)
