@@ -103,3 +103,4 @@ endif()
 
 add_subdirectory(nextgen)
 add_subdirectory(plan)
+add_subdirectory(processor)

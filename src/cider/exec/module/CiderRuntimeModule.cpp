@@ -598,15 +598,14 @@ std::pair<CiderRuntimeModule::ReturnCode, std::unique_ptr<CiderBatch>>
 CiderRuntimeModule::fetchResults(int32_t max_row) {
   INJECT_TIMER(CiderRuntimeModule_FetchResult);
   if (ciderCompilationOption_.use_nextgen_compiler) {
-    ArrowSchema* output_arrow_schema =
-        CiderBatchUtils::convertCiderTableSchemaToArrowSchema(
-            *(ciderCompilationResult_->getOutputCiderTableSchema()));
-    auto output_arrow_array =
-        ciderCompilationResult_->impl_->runtime_ctx_->getOutputBatch()->getArray();
-    auto output_batch = CiderBatchUtils::createCiderBatch(
+    auto output_batch = ciderCompilationResult_->impl_->runtime_ctx_->getOutputBatch();
+    struct ArrowArray* output_arrow_array = CiderBatchUtils::allocateArrowArray();
+    struct ArrowSchema* output_arrow_schema = CiderBatchUtils::allocateArrowSchema();
+    output_batch->move(*output_arrow_schema, *output_arrow_array);
+    auto output_cider_batch = CiderBatchUtils::createCiderBatch(
         allocator_, output_arrow_schema, output_arrow_array);
     // Only for filter/project now
-    return std::make_pair(kNoMoreOutput, std::move(output_batch));
+    return std::make_pair(kNoMoreOutput, std::move(output_cider_batch));
   }
   const auto& query_mem_desc_t =
       ciderCompilationResult_->impl_->query_mem_desc_->getQueryDescriptionType();

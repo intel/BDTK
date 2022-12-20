@@ -113,6 +113,8 @@ class CodegenContext {
   int64_t getNextContextID() const { return id_counter_; }
 };
 
+using CodegenCtxPtr = std::unique_ptr<CodegenContext>;
+
 namespace codegen_utils {
 jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array);
 

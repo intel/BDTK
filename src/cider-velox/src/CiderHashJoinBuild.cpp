@@ -57,7 +57,8 @@ CiderHashJoinBuild::CiderHashJoinBuild(int32_t operatorId,
     , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
   const auto& joinRel = joinNode->getSubstraitPlan().relations(0).root().input().join();
   auto context = std::make_shared<CiderJoinHashTableBuildContext>(allocator_);
-  joinHashTableBuilder_ = cider::processor::makeJoinHashTableBuilder(joinRel, context);
+  joinHashTableBuilder_ =
+      cider::exec::processor::makeJoinHashTableBuilder(joinRel, context);
   auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
       operatorCtx_->driverCtx()->splitGroupId, planNodeId());
   joinBridge_ = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);

@@ -47,7 +47,7 @@ class CiderPipelineOperator : public exec::Operator {
   void noMoreInput() override;
 
  private:
-  cider::processor::BatchProcessorPtr batchProcessor_;
+  cider::exec::processor::BatchProcessorPtr batchProcessor_;
 
   bool finished_{false};
 

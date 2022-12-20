@@ -25,7 +25,7 @@
 #include <memory>
 #include "cider/processor/BatchProcessor.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 class JoinHandler {
  public:
@@ -54,6 +54,6 @@ class HashProbeHandler : public JoinHandler {
   BatchProcessorPtr batchProcessor_;
 };
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_JOINHANDLER_H
