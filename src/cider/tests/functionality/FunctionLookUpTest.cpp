@@ -422,9 +422,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest10) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest11) {
   const std::string function_signature_str = "in:str_str";
   const std::string return_type = "boolean";
-  const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_signature_str, return_type, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, return_type);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kIN);
@@ -438,9 +437,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest11) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest12) {
   const std::string function_signature_str = "in:str_list";
   const std::string return_type = "boolean";
-  const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_signature_str, return_type, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, return_type);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kIN);
@@ -454,9 +452,8 @@ TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest12) {
 TEST_F(PrestoFunctionLookupTest, functionLookupPrestoIntentionScalarTest13) {
   const std::string function_signature_str = "in:str_list<string>";
   const std::string return_type = "boolean";
-  const PlatformType from_platform = PlatformType::PrestoPlatform;
-  auto function_descriptor = function_lookup_ptr->lookupFunction(
-      function_signature_str, return_type, from_platform);
+  auto function_descriptor =
+      function_lookup_ptr->lookupFunction(function_signature_str, return_type);
 
   // it should match with the correct type
   ASSERT_EQ(function_descriptor.scalar_op_type, SQLOps::kIN);
