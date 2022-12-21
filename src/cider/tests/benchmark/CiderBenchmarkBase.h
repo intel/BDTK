@@ -22,8 +22,9 @@
 #ifndef MODULARSQL_CIDERBENCHMARKBASE_H
 #define MODULARSQL_CIDERBENCHMARKBASE_H
 
+#include "ArrowDataReader.h"
 #include "benchmark/benchmark.h"
-
+#include "tests/utils/QueryArrowDataGenerator.h"
 class CiderBenchmarkBaseFixture : public benchmark::Fixture {
  public:
   // add members as needed
@@ -32,7 +33,11 @@ class CiderBenchmarkBaseFixture : public benchmark::Fixture {
 };
 
 std::shared_ptr<CiderBatch> genBatch(int row_num) {
-  return std::make_shared<CiderBatch>(QueryDataGenerator::generateBatchByTypes(
+  ArrowArray* array_ = nullptr;
+  ArrowSchema* schema_ = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(
+      schema_,
+      array_,
       row_num,
       {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
       {CREATE_SUBSTRAIT_TYPE(I32),
@@ -46,7 +51,9 @@ std::shared_ptr<CiderBatch> genBatch(int row_num) {
       {},
       GeneratePattern::Random,
       -1000'000,
-      1000'000));
+      1000'000);
+  return std::make_shared<CiderBatch>(
+      schema_, array_, std::make_shared<CiderDefaultAllocator>());
 }
 
 #define GEN_BENCHMARK(FIXTURE_NAME, BATCH_SIZE, CASE, QUERY_STR, ITER)       \
@@ -56,6 +63,26 @@ std::shared_ptr<CiderBatch> genBatch(int row_num) {
     for (auto _ : state) {                                                   \
       runner.runNextBatch(input_batch);                                      \
     }                                                                        \
+  }
+
+#define GEN_BENCHMARK_FROM_FILE(                                 \
+    FIXTURE_NAME, CASE, ARROW_DATA_READER, FILE_NAME, QUERY_STR) \
+  BENCHMARK_F(FIXTURE_NAME, CASE)(benchmark::State & state) {    \
+    input_batch = ARROW_DATA_READER(FILE_NAME).read();           \
+    runner.compile(QUERY_STR);                                   \
+    for (auto _ : state) {                                       \
+      runner.runNextBatch(input_batch);                          \
+    }                                                            \
+  }
+
+#define GEN_BENCHMARK_FROM_FILE_WITH_COL(                                   \
+    FIXTURE_NAME, CASE, ARROW_DATA_READER, FILE_NAME, QUERY_STR, COL_NAMES) \
+  BENCHMARK_F(FIXTURE_NAME, CASE)(benchmark::State & state) {               \
+    input_batch = ARROW_DATA_READER(FILE_NAME, COL_NAMES).read();           \
+    runner.compile(QUERY_STR);                                              \
+    for (auto _ : state) {                                                  \
+      runner.runNextBatch(input_batch);                                     \
+    }                                                                       \
   }
 
 #endif  // MODULARSQL_CIDERBENCHMARKBASE_H

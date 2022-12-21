@@ -18,6 +18,8 @@
 # under the License.
 
 set(TEST_ARGS "--gtest_output=xml:../")
+find_package(Arrow REQUIRED arrow_shared parquet)
+set(DATA_READER_LIB arrow_shared parquet)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
 file(GLOB cider_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(cider_benchmark_file ${cider_benchmark_files})
@@ -26,5 +28,5 @@ foreach(cider_benchmark_file ${cider_benchmark_files})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${cider_benchmark_file})
   target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
-                        benchmark::benchmark)
+                        ${DATA_READER_LIB} benchmark::benchmark)
 endforeach()

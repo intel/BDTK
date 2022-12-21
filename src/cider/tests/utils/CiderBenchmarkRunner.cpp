@@ -22,6 +22,7 @@
 
 void CiderBenchmarkRunner::compile(const std::string& sql) {
   auto plan = genSubstraitPlan(sql);
+  compile_option.use_cider_data_format = true;
   compile_res_ = ciderCompileModule_->compile(plan, compile_option, exe_option);
   cider_runtime_module_ =
       std::make_shared<CiderRuntimeModule>(compile_res_, compile_option, exe_option);
