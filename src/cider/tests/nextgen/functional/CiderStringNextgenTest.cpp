@@ -428,8 +428,6 @@ TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
 // stringop: char_length
 
 TEST_F(CiderStringTestNextGen, CharLengthTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (char-length) is not supported yet in nextgen");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
                    "stringop_charlen_project_2.json");
@@ -437,15 +435,14 @@ TEST_F(CiderStringTestNextGen, CharLengthTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
                    "stringop_charlen_filter.json");
 
-  assertQueryArrow(
-      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
-      "WHERE LENGTH(col_2 || 'boo') = 13;",
-      "stringop_charlen_nested.json");
+  // TODO: (YBRua) Enable this after nextgen supports concat
+  // assertQueryArrow(
+  //     "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
+  //     "WHERE LENGTH(col_2 || 'boo') = 13;",
+  //     "stringop_charlen_nested.json");
 }
 
 TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (char-length) is not supported yet in nextgen");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;",
                    "stringop_charlen_project_1_null.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
@@ -454,10 +451,11 @@ TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
                    "stringop_charlen_filter_null.json");
 
-  assertQueryArrow(
-      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
-      "WHERE LENGTH(col_2 || 'boo') = 13;",
-      "stringop_charlen_nested_null.json");
+  // TODO: (YBRua) Enable this after nextgen supports concat
+  // assertQueryArrow(
+  //     "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
+  //     "WHERE LENGTH(col_2 || 'boo') = 13;",
+  //     "stringop_charlen_nested_null.json");
 }
 
 // stringop: trim

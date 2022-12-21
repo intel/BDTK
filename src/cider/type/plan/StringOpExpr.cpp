@@ -436,4 +436,23 @@ JITExprValue& UpperStringOper::codegen(JITFunction& func) {
   return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
 }
 
+// CharLengthStringOp: CHAR_LENGTH
+
+std::shared_ptr<Analyzer::Expr> CharLengthStringOper::deep_copy() const {
+  return makeExpr<Analyzer::CharLengthStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& CharLengthStringOper::codegen(JITFunction& func) {
+  // decode parameters
+  auto arg = const_cast<Analyzer::Expr*>(getArg(0));
+  CHECK(arg->get_type_info().is_string());
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
+
+  // directly return str_len, but need to cast it to INT64
+  return set_expr_value(
+      arg_val.getNull(),
+      arg_val.getLength()->castJITValuePrimitiveType(JITTypeTag::INT64));
+}
+
 }  // namespace Analyzer
