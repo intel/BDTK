@@ -66,7 +66,7 @@ JITValuePointer getScaledIntervalAndFunc(JITValuePointer interval,
       fmt::format("date interval type is {}, field is {}", toString(from_type), to_type));
 }
 
-std::string getExtractFunc(ExtractField field) {
+std::string getExtractFuncName(ExtractField field) {
   switch (field) {
     case kHOUR:
       return "extract_hour";
@@ -157,7 +157,7 @@ JITExprValue& DateaddExpr::codegen(CodegenContext& context) {
 
 JITExprValue& ExtractExpr::codegen(CodegenContext& context) {
   JITFunction& func = *context.getJITFunction();
-  FixSizeJITExprValue fromtime(get_from_expr()->codegen(func));
+  FixSizeJITExprValue fromtime(get_from_expr()->codegen(context));
   const auto& extract_from_ti = get_from_expr()->get_type_info();
   JITValuePointer fromtime_val =
       !extract_from_ti.is_high_precision_timestamp()
@@ -166,7 +166,7 @@ JITExprValue& ExtractExpr::codegen(CodegenContext& context) {
                 fromtime.getValue(), extract_from_ti, get_field());
   const std::string func_prefix =
       (extract_from_ti.get_type() == kDATE) ? "date_" : "time_";
-  const std::string func_name = func_prefix + getExtractFunc(get_field());
+  const std::string func_name = func_prefix + getExtractFuncName(get_field());
   JITValuePointer res_val = func.emitRuntimeFunctionCall(
       func_name,
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,

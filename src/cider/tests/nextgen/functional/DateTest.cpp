@@ -320,6 +320,12 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
                    "extract/microsecond_of_timestamp.json");
   assertQueryArrow("SELECT EXTRACT(second FROM col_time) FROM test",
                    "extract/second_of_time.json");
+  assertQueryArrow("SELECT EXTRACT(quarter FROM col_timestamp) FROM test",
+                   "extract/quarter_of_timestamp.json");
+  assertQueryArrow("SELECT EXTRACT(month FROM col_timestamp) FROM test",
+                   "extract/month_of_timestamp.json");
+  assertQueryArrow("SELECT EXTRACT(year FROM col_timestamp) FROM test",
+                   "extract/year_of_timestamp.json");
   // equals to date trunc
   assertQueryArrow("SELECT CAST(col_timestamp AS DATE) FROM test",
                    "cast_timestamp_as_date.json");

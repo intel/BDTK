@@ -1,0 +1,114 @@
+{
+    "extensionUris": [
+        {
+            "extensionUriAnchor": 1,
+            "uri": "/functions_datetime.yaml"
+        }
+    ],
+    "extensions": [
+        {
+            "extensionFunction": {
+                "extensionUriReference": 1,
+                "functionAnchor": 0,
+                "name": "extract:req_ts"
+            }
+        }
+    ],
+    "relations": [
+        {
+            "root": {
+                "input": {
+                    "project": {
+                        "common": {
+                            "emit": {
+                                "outputMapping": [
+                                    3
+                                ]
+                            }
+                        },
+                        "input": {
+                            "read": {
+                                "common": {
+                                    "direct": {}
+                                },
+                                "baseSchema": {
+                                    "names": [
+                                        "COL_DATE",
+                                        "COL_TIME",
+                                        "COL_TIMESTAMP"
+                                    ],
+                                    "struct": {
+                                        "types": [
+                                            {
+                                                "date": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "time": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            },
+                                            {
+                                                "timestamp": {
+                                                    "typeVariationReference": 0,
+                                                    "nullability": "NULLABILITY_NULLABLE"
+                                                }
+                                            }
+                                        ],
+                                        "typeVariationReference": 0,
+                                        "nullability": "NULLABILITY_REQUIRED"
+                                    }
+                                },
+                                "namedTable": {
+                                    "names": [
+                                        "TEST"
+                                    ]
+                                }
+                            }
+                        },
+                        "expressions": [
+                            {
+                                "scalarFunction": {
+                                    "functionReference": 0,
+                                    "args": [],
+                                    "outputType": {
+                                        "i64": {
+                                            "typeVariationReference": 0,
+                                            "nullability": "NULLABILITY_NULLABLE"
+                                        }
+                                    },
+                                    "arguments": [
+                                        {
+                                            "enum": {
+                                                "specified": "QUARTER"
+                                            }
+                                        },
+                                        {
+                                            "value": {
+                                                "selection": {
+                                                    "directReference": {
+                                                        "structField": {
+                                                            "field": 2
+                                                        }
+                                                    },
+                                                    "rootReference": {}
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "names": [
+                    "EXPR$0"
+                ]
+            }
+        }
+    ],
+    "expectedTypeUrls": []
+}

@@ -70,7 +70,7 @@ class MonthDaySecond {
   OffsetUnit offset_unit_;
 
  public:
-  MonthDaySecond(int32_t const date, unsigned sod = 0) {
+  explicit MonthDaySecond(int32_t const date, unsigned sod = 0) {
     offset_unit_.sod = sod;
     era_ = floor_div(date - kEpochAdjustedDays, kDaysPer400Years);
     offset_unit_.doe = date - kEpochAdjustedDays - era_ * kDaysPer400Years;
@@ -258,16 +258,25 @@ extern "C" ALWAYS_INLINE int64_t time_extract_isodow(const int64_t time) {
 }
 
 extern "C" ALWAYS_INLINE int64_t time_extract_day_of_year(const int64_t time) {
-  int64_t const date = floor_div(time, kSecsPerDay);
-  return MonthDaySecond(date).extractDayOfYear();
+  return MonthDaySecond(floor_div(time, kSecsPerDay)).extractDayOfYear();
 }
 
 extern "C" ALWAYS_INLINE int64_t time_extract_day(const int64_t time) {
-  int64_t const date = floor_div(time, kSecsPerDay);
-  return MonthDaySecond(date).extractDay();
+  return MonthDaySecond(floor_div(time, kSecsPerDay)).extractDay();
 }
 
 extern "C" ALWAYS_INLINE int64_t time_extract_week_monday(const int64_t time) {
-  int64_t const date = floor_div(time, kSecsPerDay);
-  return MonthDaySecond(date).extract_week<MONDAY>();
+  return MonthDaySecond(floor_div(time, kSecsPerDay)).extract_week<MONDAY>();
+}
+
+extern "C" ALWAYS_INLINE int64_t time_extract_month(const int64_t time) {
+  return MonthDaySecond(floor_div(time, kSecsPerDay)).extractMonth();
+}
+
+extern "C" ALWAYS_INLINE int64_t time_extract_quarter(const int64_t time) {
+  return MonthDaySecond(floor_div(time, kSecsPerDay)).extractQuarter();
+}
+
+extern "C" ALWAYS_INLINE int64_t time_extract_year(const int64_t time) {
+  return MonthDaySecond(floor_div(time, kSecsPerDay)).extractYear();
 }
