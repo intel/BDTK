@@ -78,6 +78,7 @@ class RuntimeContext {
 
   Batch* getNonGroupByAggOutputBatch();
 
+  // TODO: batch and buffer should be self-managed
   void resetBatch(const CiderAllocatorPtr& allocator) {
     if (!batch_holder_.empty()) {
       auto& [descriptor, batch] = batch_holder_.back();

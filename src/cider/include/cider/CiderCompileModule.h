@@ -81,13 +81,6 @@ class CiderCompileModule {
       CiderCompilationOption cco = CiderCompilationOption::defaults(),
       CiderExecutionOption ceo = CiderExecutionOption::defaults());
 
-  // For test only
-  std::shared_ptr<CiderCompilationResult> compile(
-      void* ra_exe_unit,
-      void* query_infos,
-      CiderCompilationOption cco = CiderCompilationOption::defaults(),
-      CiderExecutionOption ceo = CiderExecutionOption::defaults());
-
   // For test only (with table schema)
   std::shared_ptr<CiderCompilationResult> compile(
       void* ra_exe_unit,
