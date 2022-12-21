@@ -39,7 +39,7 @@ jobs:
         run: |
           git fetch
           mkdir temp-build
-          cp scripts/{make.bat,Makefile} temp-build
+          cp docs/scripts/{make.bat,Makefile} temp-build
           mkdir temp-build/source
           cp -r docs/* temp-build/source
           rm -rf temp-build/source/syntax-support
