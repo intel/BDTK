@@ -36,6 +36,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Update license headers")
     parser.add_argument("--header", default="ci/scripts/license.header", help="header file")
     parser.add_argument("--header_intel", default="ci/scripts/license.header.intel", help="intel header file")
+    parser.add_argument("--header_intel_mixed", default="ci/scripts/license.header.mixed", help="intel mixed header file")
     parser.add_argument(
         "--extra",
         default=80,
@@ -58,6 +59,12 @@ def parse_args():
     )
     parser.add_argument("--intel_copyright_files", default="ci/scripts/intel_copyright_files.txt",
                         help="Files that should be only under intel copyright")
+
+    parser.add_argument("--mixed_copyright_files", default="ci/scripts/mixed_copyright_files.txt",
+                        help="Files that should be under intel and ck copyright")
+    
+    parser.add_argument("--excluded_copyright_files", default="ci/scripts/copyright_files_excluded.txt",
+                        help="Files that should be excluded")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -246,16 +253,34 @@ def process_license_header(files, args):
         with open(args.intel_copyright_files) as f:
             intel_copyright_files_globs.extend(line.strip() for line in f)
 
+    mixed_copyright_files_globs = []
+    if args.mixed_copyright_files:
+        with open(args.mixed_copyright_files) as f:
+            mixed_copyright_files_globs.extend(line.strip() for line in f)
+
+    excluded_copyright_files_globs = []
+    if args.excluded_copyright_files:
+        with open(args.excluded_copyright_files) as f:
+            excluded_copyright_files_globs.extend(line.strip() for line in f)
+
     intel_copyright_files = []
+    mixed_copyright_files = []
+    excluded_copyright_files = []
     other_copyright_files = []
     for file in files:
-        if any([fnmatch.fnmatch(file, glob) for glob in intel_copyright_files_globs]):
+        if any([fnmatch.fnmatch(file, glob) for glob in excluded_copyright_files_globs]):
+            continue
+        elif any([fnmatch.fnmatch(file, glob) for glob in mixed_copyright_files_globs]):
+            mixed_copyright_files.append(file)
+        elif any([fnmatch.fnmatch(file, glob) for glob in intel_copyright_files_globs]):
             intel_copyright_files.append(file)
         else:
             other_copyright_files.append(file)
 
+    license_header_mixed = file_lines(args.header_intel_mixed)
     license_header_intel = file_lines(args.header_intel)
     license_header = file_lines(args.header)
+    check_license_header(mixed_copyright_files, license_header_mixed, args)
     check_license_header(intel_copyright_files, license_header_intel, args)
     check_license_header(other_copyright_files, license_header, args)
 
