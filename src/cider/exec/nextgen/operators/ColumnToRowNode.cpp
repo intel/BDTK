@@ -149,10 +149,11 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   // for row loop
   auto index = func->createVariable(JITTypeTag::INT64, "index", 0);
 
-  // input column rows num.
-  auto len = func->createLocalJITValue([&context, &inputs]() {
-    return context::codegen_utils::getArrowArrayLength(
-        context.getArrowArrayValues(inputs.front()->getLocalIndex()).first);
+  // get input row num from input arrow array
+  // assumes signature be like: query_func(context, array)
+  auto input_array = func->getArgument(1);  // array
+  auto len = func->createLocalJITValue([&context, &input_array]() {
+    return context::codegen_utils::getArrowArrayLength(input_array);
   });
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
 
