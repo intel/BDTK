@@ -368,9 +368,9 @@ void ProjectRelVisitor::visit(TargetContext* target_context) {
         col_hint_records_ptr->push_back(std::make_pair(ColumnHint::Normal, 1));
         auto iter = expr_map_ptr->find(i);
         if (iter != expr_map_ptr->end()) {
-          if (auto column_var_expr =
-                  std::dynamic_pointer_cast<Analyzer::ColumnVar>(iter->second)) {
-          }
+          // if (auto column_var_expr =
+          //         std::dynamic_pointer_cast<Analyzer::ColumnVar>(iter->second)) {
+          // }
           target_exprs_ptr->push_back(iter->second);
         } else {
           CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");

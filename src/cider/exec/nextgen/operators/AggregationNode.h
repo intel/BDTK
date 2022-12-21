@@ -40,7 +40,7 @@ struct AggExprsInfo {
       , agg_type_(agg_type)
       , start_offset_(start_offset)
       , byte_size_(byte_size)
-      , agg_name_(getAggName(agg_type, sql_type)){};
+      , agg_name_(getAggName(agg_type, sql_type)) {}
 
   jitlib::JITTypeTag getJitValueType(SQLTypes sql_type);
 
@@ -69,7 +69,7 @@ class AggNode : public OpNode {
 
 class AggTranslator : public Translator {
  public:
-  AggTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
+  explicit AggTranslator(const OpNodePtr& node, const TranslatorPtr& succ = nullptr)
       : Translator(node, succ) {}
 
   void consume(context::CodegenContext& context) override;

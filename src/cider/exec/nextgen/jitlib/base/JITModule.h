@@ -40,7 +40,7 @@ using JITModulePointer = std::shared_ptr<JITModule>;
 
 class JITFunctionBuilder {
  public:
-  JITFunctionBuilder() : module_(nullptr){};
+  JITFunctionBuilder() : module_(nullptr) {}
 
   JITFunctionBuilder& setFuncName(const std::string& name) {
     name_ = name;

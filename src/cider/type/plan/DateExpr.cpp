@@ -75,8 +75,11 @@ JITExprValue& DateaddExpr::codegen(JITFunction& func) {
 
   std::string func_name = datetime_ti.get_type() == kDATE ? "DateAdd" : "TimeAdd";
   JITValuePointer datetime_val = datetime.getValue();
-  JITValuePointer interval_val = getScaledIntervalAndFunc(
-      interval.getValue().get(), interval_ti.get_type(), get_field(), func_name);
+  JITValuePointer interval_val =
+      getScaledIntervalAndFunc(JITValuePointer(interval.getValue().get()),
+                               interval_ti.get_type(),
+                               get_field(),
+                               func_name);
 
   if (datetime_ti.is_high_precision_timestamp()) {
     func_name = func_name + "HighPrecision";

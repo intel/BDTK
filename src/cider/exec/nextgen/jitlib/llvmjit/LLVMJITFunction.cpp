@@ -194,7 +194,7 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
         descriptor.ret_type, *this, ans, "ret", false);
   } else {
     LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
-    return nullptr;
+    return JITValuePointer(nullptr);
   }
 }
 

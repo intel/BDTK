@@ -206,7 +206,7 @@ void LLVMJITModule::copyRuntimeModule() {
     auto func = llvm::dyn_cast<llvm::Function>(gv);
     if (!func) {
       return true;
-    };
+    }
     return false;
   });
 }

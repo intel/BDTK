@@ -250,7 +250,7 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context) {
         codegen_utils::setArrowArrayLength(output_arrow_array, output_index);
         for (auto& expr : output_exprs) {
           size_t local_offset = expr->getLocalIndex();
-          CHECK(local_offset != 0);
+          CHECK_NE(local_offset, 0);
 
           auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
           codegen_utils::setArrowArrayLength(arrow_array, output_index);

@@ -41,7 +41,9 @@
 namespace generator {
 
 enum ExprType { FilterExpr, ProjectExpr, AggregationExpr };
-static const std::string enum_str[] = {"FilterExpr", "ProjectExpr", "AggregationExpr"};
+static const std::string enum_str[] = {"FilterExpr",  // NOLINT
+                                       "ProjectExpr",
+                                       "AggregationExpr"};
 
 class SubstraitToRelAlgExecutionUnit {
  public:

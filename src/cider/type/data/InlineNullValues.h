@@ -329,7 +329,7 @@ serialized_null_value() {
       }
     }
 #ifndef NO_BOOST
-  else {
+  else {  // NOLINT
     CHECK(false) << "Serializing null values of floating point or integral types only is "
                     "supported.";
   }

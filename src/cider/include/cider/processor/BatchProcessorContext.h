@@ -38,7 +38,8 @@ class JoinHashTable {
 };
 
 struct HashBuildResult {
-  HashBuildResult(std::shared_ptr<JoinHashTable> _table) : table(std::move(_table)) {}
+  explicit HashBuildResult(std::shared_ptr<JoinHashTable> _table)
+      : table(std::move(_table)) {}
   std::shared_ptr<JoinHashTable> table;
 };
 
@@ -46,8 +47,8 @@ using HashBuildTableSupplier = std::function<std::optional<HashBuildResult>()>;
 
 class BatchProcessorContext {
  public:
-  BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
-      : allocator_(allocator){};
+  explicit BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
+      : allocator_(allocator) {}
 
   const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 

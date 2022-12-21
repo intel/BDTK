@@ -50,8 +50,8 @@ static const char* avx512_inst_sets[] = {"avx512ifma",
                                          "avx512dq",
                                          "avx512pf"};
 
-static const std::string process_triple = llvm::sys::getProcessTriple();
-static const std::string process_name = llvm::sys::getHostCPUName();
+static const std::string process_triple = llvm::sys::getProcessTriple();  // NOLINT
+static const std::string process_name = llvm::sys::getHostCPUName();      // NOLINT
 static const llvm::Target* host_target = []() {
   // Initialize LLVM runtime env
   llvm::InitializeNativeTarget();

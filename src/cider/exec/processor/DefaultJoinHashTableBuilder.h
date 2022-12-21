@@ -33,7 +33,7 @@ class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
  public:
   DefaultJoinHashTableBuilder(const ::substrait::JoinRel& joinRel,
                               const std::shared_ptr<JoinHashTableBuildContext>& context)
-      : joinRel_(joinRel), context_(context){};
+      : joinRel_(joinRel), context_(context) {}
 
   void appendBatch(std::shared_ptr<CiderBatch> batch) override;
 

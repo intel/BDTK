@@ -43,7 +43,7 @@ class ColumnVar : public Expr {
  public:
   ColumnVar(ColumnInfoPtr col_info, int nest_level)
       : Expr(col_info->type), rte_idx(nest_level), col_info_(std::move(col_info)) {}
-  ColumnVar(const SQLTypeInfo& ti)
+  explicit ColumnVar(const SQLTypeInfo& ti)
       : Expr(ti)
       , rte_idx(-1)
       , col_info_(std::make_shared<ColumnInfo>(-1, 0, 0, "", ti, false)) {}

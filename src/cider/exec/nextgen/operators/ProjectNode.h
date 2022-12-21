@@ -27,10 +27,10 @@
 namespace cider::exec::nextgen::operators {
 class ProjectNode : public OpNode {
  public:
-  ProjectNode(ExprPtrVector&& output_exprs)
+  explicit ProjectNode(ExprPtrVector&& output_exprs)
       : OpNode("ProjectNode", std::move(output_exprs), JITExprValueType::ROW) {}
 
-  ProjectNode(const ExprPtrVector& output_exprs)
+  explicit ProjectNode(const ExprPtrVector& output_exprs)
       : OpNode("ProjectNode", output_exprs, JITExprValueType::ROW) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;

@@ -27,10 +27,10 @@
 namespace cider::exec::nextgen::operators {
 class ColumnToRowNode : public OpNode {
  public:
-  ColumnToRowNode(ExprPtrVector&& output_exprs)
+  explicit ColumnToRowNode(ExprPtrVector&& output_exprs)
       : OpNode("ColumnToRowNode", std::move(output_exprs), JITExprValueType::ROW) {}
 
-  ColumnToRowNode(const ExprPtrVector& output_exprs)
+  explicit ColumnToRowNode(const ExprPtrVector& output_exprs)
       : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;

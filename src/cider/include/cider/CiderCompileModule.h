@@ -59,7 +59,7 @@ class CiderCompilationResult {
 
 class CiderCompileModule {
  public:
-  CiderCompileModule(std::shared_ptr<CiderAllocator> allocator);
+  explicit CiderCompileModule(std::shared_ptr<CiderAllocator> allocator);
   ~CiderCompileModule();
 
   static std::shared_ptr<CiderCompileModule> Make(
