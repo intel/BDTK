@@ -86,9 +86,9 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
     LLVMJITModule module(                                                                \
         std::string("basic_arith_") + #OPNAME + getJITTypeName(JITTYPE) + "jit",         \
         false,                                                                           \
-        CompilationOptions{.aggresive_jit_compile = true,                                \
+        CompilationOptions{.aggressive_jit_compile = true,                               \
                            .dump_ir = true,                                              \
-                           .enable_avx = false,                                          \
+                           .enable_avx2 = false,                                         \
                            .enable_avx512 = false});                                     \
     auto func =                                                                          \
         JITFunctionBuilder()                                                             \
@@ -240,9 +240,9 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
     LLVMJITModule module(                                                                \
         std::string("basic_arith_sse_") + #OPNAME + getJITTypeName(JITTYPE) + "jit",     \
         false,                                                                           \
-        CompilationOptions{.aggresive_jit_compile = true,                                \
+        CompilationOptions{.aggressive_jit_compile = true,                               \
                            .dump_ir = true,                                              \
-                           .enable_avx = false,                                          \
+                           .enable_avx2 = false,                                         \
                            .enable_avx512 = false});                                     \
     auto func =                                                                          \
         JITFunctionBuilder()                                                             \

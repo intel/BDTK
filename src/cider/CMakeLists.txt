@@ -152,6 +152,11 @@ add_subdirectory(util)
 add_subdirectory(examples)
 add_subdirectory(tests)
 
+option(ENABLE_NEXGEN_BENCHMARK "Enable Benchmark for Nextgen Project." OFF)
+if(ENABLE_NEXGEN_BENCHMARK)
+  add_subdirectory(benchmarks)
+endif()
+
 set(CIDER_LIBRARIES cider_util cider_type_plan QueryEngine)
 
 if(ENABLE_FOLLY)

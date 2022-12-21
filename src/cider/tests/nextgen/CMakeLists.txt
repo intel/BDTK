@@ -17,11 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-option(ENABLE_NEXGEN_BENCHMARK "Enable Benchmark for Nextgen Project." OFF)
-if(ENABLE_NEXGEN_BENCHMARK)
-  add_subdirectory(benchmark)
-endif()
-
 add_subdirectory(jitlib)
 add_subdirectory(compiler)
 add_subdirectory(functional)

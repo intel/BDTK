@@ -16,7 +16,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(DEP_LIBS ${EXECUTE_TEST_LIBS} benchmark::benchmark nextgen)
+
+set(DEP_LIBS benchmark::benchmark nextgen)
 
 add_executable(jitlib_benchmark JITlibBenchmark.cpp)
 target_compile_options(jitlib_benchmark PRIVATE -g)
