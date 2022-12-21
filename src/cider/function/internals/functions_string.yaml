@@ -1511,6 +1511,59 @@ scalar_functions:
           - value: i64
             name: "group"
         return: "string"
+  - 
+    name: "in"
+    description: >-
+      Whether the `expression` is in value list.
+    impls:
+      - args:
+          - value: string
+            name: expression
+            description: The expression to test for in the value list.
+          - value: string
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: string
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<string>
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: varchar<L1>
+            name: expression
+            description: The expression to test for in the value list.
+          - value: varchar<L1>
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: varchar<L1>
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<varchar<L1>>
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: fixedchar<L1>
+            name: expression
+            description: The expression to test for in the value list.
+          - value: fixedchar<L1>
+            name: list
+            description: The value list.
+        return: BOOLEAN
+      - args:
+          - value: fixedchar<L1>
+            name: expression
+            description: The expression to test for in the value list.
+          - value: list<fixedchar<L1>>
+            name: list
+            description: The value list.
+        return: BOOLEAN
 
 aggregate_functions:
 
@@ -1528,16 +1581,3 @@ aggregate_functions:
             description: "Separator for concatenated strings"
         ordered: true
         return: "string"
-  - 
-    name: "in"
-    description: >-
-      Whether the `expression` is in value list.
-    impls:
-      - args:
-          - value: string
-            name: expression
-            description: The expression to test for in the value list.
-          - value: string
-            name: list
-            description: The value list.
-        return: BOOLEAN
