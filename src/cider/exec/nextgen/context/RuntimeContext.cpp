@@ -103,6 +103,6 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
   }
 
   return batch;
-};
+}
 
 }  // namespace cider::exec::nextgen::context

@@ -80,7 +80,7 @@ class StringOper : public Expr {
     chained_string_op_exprs_ = other_string_oper.chained_string_op_exprs_;
   }
 
-  StringOper(const std::shared_ptr<StringOper>& other_string_oper)
+  explicit StringOper(const std::shared_ptr<StringOper>& other_string_oper)
       : Expr(other_string_oper->get_type_info()) {
     kind_ = other_string_oper->kind_;
     args_ = other_string_oper->args_;
@@ -238,14 +238,15 @@ class SubstringStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  SubstringStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit SubstringStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::SUBSTRING,
                    operands,
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  SubstringStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit SubstringStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;

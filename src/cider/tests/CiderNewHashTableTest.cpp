@@ -35,7 +35,7 @@ struct Block {
   int64_t sum = 0;
   size_t count = 0;
 
-  Block(){};
+  Block() {}
 
   Block(int64_t sum, size_t count) {
     this->sum = sum;

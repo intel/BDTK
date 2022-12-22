@@ -31,7 +31,7 @@
 namespace cider::exec::nextgen::operators {
 class NextgenAggExtractor {
  public:
-  NextgenAggExtractor(const std::string& name) : name_(name) {}
+  explicit NextgenAggExtractor(const std::string& name) : name_(name) {}
 
   virtual void extract(const std::vector<const int8_t*>&, ArrowArray*) = 0;
 

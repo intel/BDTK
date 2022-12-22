@@ -59,7 +59,7 @@ void check_array(ArrowArray* array, size_t expect_len, std::vector<TYPE> expect_
   for (size_t i = 0; i < expect_len; ++i) {
     EXPECT_EQ(data_buffer[0], expect_values[0]);
   }
-};
+}
 
 class AggTest : public ::testing::Test {
  public:

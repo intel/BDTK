@@ -52,7 +52,7 @@ struct AggExprsInfo {
       , start_offset_(start_offset)
       , byte_size_(byte_size)
       , null_offset_(-1)
-      , agg_name_(getAggName(agg_type, sql_type_info_.get_type())){};
+      , agg_name_(getAggName(agg_type, sql_type_info_.get_type())) {}
 
  private:
   std::string getAggName(SQLAgg agg_type, SQLTypes sql_type);
