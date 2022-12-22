@@ -57,27 +57,6 @@ std::unique_ptr<CiderBatch> veloxVectorToCiderBatch(RowVectorPtr vec,
 }
 
 namespace {
-// // convert velox sqltype to cider SQLTypeInfo(SQLTypes t, int d/p, int s,
-// // bool n, EncodingType c, int p, SQLTypes st)
-// SQLTypeInfo getCiderType(const std::shared_ptr<const velox::Type>& expr_type,
-//                          bool isNullable) {
-//   // SQLTypeInfo notnull has an opposite value against isNullable
-//   bool notNull = !isNullable;
-//   switch (expr_type->kind()) {
-//     case TypeKind::BOOLEAN:
-//       return SQLTypeInfo(SQLTypes::kBOOLEAN, notNull);
-//     case TypeKind::DOUBLE:
-//       return SQLTypeInfo(SQLTypes::kDOUBLE, notNull);
-//     case TypeKind::INTEGER:
-//       return SQLTypeInfo(SQLTypes::kINT, notNull);
-//     case TypeKind::BIGINT:
-//       return SQLTypeInfo(SQLTypes::kBIGINT, notNull);
-//     case TypeKind::TIMESTAMP:
-//       return SQLTypeInfo(SQLTypes::kTIMESTAMP, notNull);
-//     default:
-//       VELOX_UNSUPPORTED(expr_type->toString() + " is not yet supported.");
-//   }
-// }
 
 bool isSupportedScalarFunction(std::string functionName) {
   return functionName == "gt" || functionName == "lt" || functionName == "gte" ||
@@ -207,8 +186,9 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
       std::string function_name_in_cider = vExpr->name();
       io::substrait::FunctionMappingPtr func_mappings =
           std::make_shared<io::substrait::PrestoFunctionMappings>();
-      auto iter = func_mappings->scalaMapping().find(vExpr->name());
-      if (iter != func_mappings->scalaMapping().end()) {
+      auto dict = func_mappings->scalaMapping();
+      auto iter = dict.find(vExpr->name());
+      if (iter != dict.end()) {
         function_name_in_cider = iter->second;
       }
       return std::make_shared<Analyzer::BinOper>(
