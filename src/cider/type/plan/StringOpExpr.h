@@ -80,7 +80,7 @@ class StringOper : public Expr {
     chained_string_op_exprs_ = other_string_oper.chained_string_op_exprs_;
   }
 
-  StringOper(const std::shared_ptr<StringOper>& other_string_oper)
+  explicit StringOper(const std::shared_ptr<StringOper>& other_string_oper)
       : Expr(other_string_oper->get_type_info()) {
     kind_ = other_string_oper->kind_;
     args_ = other_string_oper->args_;
@@ -249,14 +249,15 @@ class SubstringStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  SubstringStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit SubstringStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::SUBSTRING,
                    operands,
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  SubstringStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit SubstringStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
@@ -278,21 +279,21 @@ class SubstringStringOper : public StringOper {
 
 class LowerStringOper : public StringOper {
  public:
-  LowerStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+  explicit LowerStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
       : StringOper(SqlStringOpKind::LOWER,
                    {operand},
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  LowerStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit LowerStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::LOWER,
                    operands,
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  LowerStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit LowerStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
@@ -313,21 +314,21 @@ class LowerStringOper : public StringOper {
 
 class UpperStringOper : public StringOper {
  public:
-  UpperStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+  explicit UpperStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
       : StringOper(SqlStringOpKind::UPPER,
                    {operand},
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  UpperStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit UpperStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::UPPER,
                    operands,
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  UpperStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit UpperStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
@@ -348,21 +349,22 @@ class UpperStringOper : public StringOper {
 
 class CharLengthStringOper : public StringOper {
  public:
-  CharLengthStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+  explicit CharLengthStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
       : StringOper(SqlStringOpKind::CHAR_LENGTH,
                    {operand},
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  CharLengthStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit CharLengthStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::CHAR_LENGTH,
                    operands,
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  CharLengthStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit CharLengthStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
