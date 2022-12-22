@@ -21,6 +21,9 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 #include "exec/nextgen/Nextgen.h"
 #include "exec/nextgen/context/Batch.h"
@@ -30,6 +33,7 @@
 #include "tests/TestHelpers.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/Utils.h"
+#include "util/Logger.h"
 
 using namespace cider::exec::nextgen;
 
@@ -61,70 +65,127 @@ void check_array(ArrowArray* array, size_t expect_len, std::vector<TYPE> expect_
   }
 }
 
-class AggTest : public ::testing::Test {
+context::RuntimeCtxPtr executeAndReturnRuntimeCtx(const std::string& create_ddl,
+                                                  const std::string& sql,
+                                                  ArrowArray* array) {
+  auto translators = initSqlToTranslators(sql, create_ddl);
+
+  // Codegen
+  context::CodegenContext codegen_ctx;
+  auto module = cider::jitlib::LLVMJITModule("test", true);
+  cider::jitlib::JITFunctionPointer function =
+      cider::jitlib::JITFunctionBuilder()
+          .registerModule(module)
+          .setFuncName("query_func")
+          .addReturn(cider::jitlib::JITTypeTag::VOID)
+          .addParameter(cider::jitlib::JITTypeTag::POINTER,
+                        "context",
+                        cider::jitlib::JITTypeTag::INT8)
+          .addParameter(cider::jitlib::JITTypeTag::POINTER,
+                        "input",
+                        cider::jitlib::JITTypeTag::INT8)
+          .addProcedureBuilder(
+              [&codegen_ctx, &translators](cider::jitlib::JITFunctionPointer func) {
+                codegen_ctx.setJITFunction(func);
+                translators->consume(codegen_ctx);
+                func->createReturn();
+              })
+          .build();
+  module.finish();
+  auto query_func = function->getFunctionPointer<void, int8_t*, int8_t*>();
+
+  // Execution
+  auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
+  query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
+
+  return runtime_ctx;
+}
+
+class NonGroupbyAggTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& create_ddl,
-                   const std::string& sql,
-                   ArrowArray* array) {
-    auto translators = initSqlToTranslators(sql, create_ddl);
+  void executeTestBuffer(const std::string& create_ddl,
+                         const std::string& sql,
+                         ArrowArray* array) {
+    auto runtime_ctx = executeAndReturnRuntimeCtx(create_ddl, sql, array);
 
-    // Codegen
-    context::CodegenContext codegen_ctx;
-    auto module = cider::jitlib::LLVMJITModule("test", true);
-    cider::jitlib::JITFunctionPointer function =
-        cider::jitlib::JITFunctionBuilder()
-            .registerModule(module)
-            .setFuncName("query_func")
-            .addReturn(cider::jitlib::JITTypeTag::VOID)
-            .addParameter(cider::jitlib::JITTypeTag::POINTER,
-                          "context",
-                          cider::jitlib::JITTypeTag::INT8)
-            .addParameter(cider::jitlib::JITTypeTag::POINTER,
-                          "input",
-                          cider::jitlib::JITTypeTag::INT8)
-            .addProcedureBuilder(
-                [&codegen_ctx, &translators](cider::jitlib::JITFunctionPointer func) {
-                  codegen_ctx.setJITFunction(func);
-                  translators->consume(codegen_ctx);
-                  func->createReturn();
-                })
-            .build();
-    module.finish();
-    auto query_func = function->getFunctionPointer<void, int8_t*, int8_t*>();
-
-    // Execution
-    auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
-    query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
-
-    // test buffer
     auto buffer = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(
         runtime_ctx->getContextItem(1));
     auto under_buffer64 = reinterpret_cast<int64_t*>(buffer->getBuffer());
-    EXPECT_EQ(under_buffer64[0], 23);
+    EXPECT_EQ(under_buffer64[0], 22);
     auto under_buffer32 = reinterpret_cast<int32_t*>(buffer->getBuffer() + 8);
     EXPECT_EQ(under_buffer32[0], 1293);
+  }
 
-    // test fetch result
+  template <typename COL_TYPE>
+  void executeTestResult(const std::string& create_ddl,
+                         const std::string& sql,
+                         ArrowArray* array,
+                         std::vector<COL_TYPE> res) {
+    auto runtime_ctx = executeAndReturnRuntimeCtx(create_ddl, sql, array);
+
     auto output_batch_array = runtime_ctx->getNonGroupByAggOutputBatch()->getArray();
     EXPECT_EQ(output_batch_array->length, 1);
 
-    check_array<int64_t>(output_batch_array->children[0], 1, {23});
-    check_array<int32_t>(output_batch_array->children[1], 1, {1293});
+    for (size_t i = 0; i < output_batch_array->n_children; i++) {
+      check_array<COL_TYPE>(output_batch_array->children[i], 1, {res[i]});
+    }
   }
 };
 
-TEST_F(AggTest, NonGroupby) {
+TEST_F(NonGroupbyAggTest, TestBuffer) {
   auto input_builder = ArrowArrayBuilder();
-  auto&& [_F, input_array] =
+  auto&& [_, input_data] =
       input_builder.setRowNum(10)
           .addColumn<int64_t>(
-              "a", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 1, 2, 4, 1, 2, 3, 4})
+              "a",
+              CREATE_SUBSTRAIT_TYPE(I64),
+              {1, 2, 3, 1, 2, 4, 1, 2, 3, 4},
+              {true, false, false, false, false, false, false, false, false, false})
           .addColumn<int32_t>(
               "b", CREATE_SUBSTRAIT_TYPE(I32), {1, 11, 111, 2, 22, 222, 3, 33, 333, 555})
           .build();
-  executeTest("CREATE TABLE test(a BIGINT, b INTEGER);",
-              "select sum(a), sum(b) from test",
-              input_array);
+
+  executeTestBuffer("CREATE TABLE test(a BIGINT, b INT);",
+                    "select sum(a), sum(b) from test",
+                    input_data);
+}
+
+TEST_F(NonGroupbyAggTest, TestResultSumInt32NotNull) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<int32_t>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(I32),
+              {1, 2, 3, 1, 2, 4, 1, 2, 3, 4},
+              {true, false, false, false, false, false, false, false, false, false})
+          .addColumn<int32_t>(
+              "b", CREATE_SUBSTRAIT_TYPE(I32), {1, 11, 111, 2, 22, 222, 3, 33, 333, 555})
+          .build();
+
+  executeTestResult<int32_t>("CREATE TABLE test(a INT NOT NULL, b INT NOT NULL);",
+                             "select sum(a), sum(b) from test",
+                             input_data,
+                             {23, 1293});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultSumInt64Nullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(I64),
+              {1, 2, 3, 1, 2, 4, 1, 2, 3, 4},
+              {true, false, false, false, false, false, false, false, false, false})
+          .addColumn<int64_t>(
+              "b", CREATE_SUBSTRAIT_TYPE(I64), {1, 11, 111, 2, 22, 222, 3, 33, 333, 555})
+          .build();
+
+  executeTestResult<int64_t>("CREATE TABLE test(a BIGINT, b BIGINT);",
+                             "select sum(a), sum(b) from test",
+                             input_data,
+                             {22, 1293});
 }
 
 int main(int argc, char** argv) {
