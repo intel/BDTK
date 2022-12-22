@@ -38,4 +38,13 @@
 #define RUNTIME_EXPORT __declspec(dllexport)
 #else
 #define RUNTIME_EXPORT
+
+#define DISABLE_AUTO_VECTORIZATION __attribute__((optimize("no-tree-vectorize")))
+
+#define DISABLE_SSE __attribute__((target("no-sse,no-sse2,no-sse3,no-sse4")))
+#define ENABLE_SSE __attribute__((target("sse,sse2,sse3,sse4")))
+
+#define DISABLE_AVX256 __attribute__((target("no-avx,no-avx2")))
+#define ENABLE_AVX256 __attribute__((target("avx,avx2")))
+
 #endif

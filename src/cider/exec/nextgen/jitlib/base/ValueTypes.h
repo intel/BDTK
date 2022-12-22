@@ -239,6 +239,7 @@ inline std::any castLiteral(JITTypeTag target_type, T value) {
     default:
       LOG(FATAL) << "Invalid JITType in castLiteral: " << getJITTypeName(target_type);
   }
+  return -1;
 }
 };  // namespace cider::jitlib
 
