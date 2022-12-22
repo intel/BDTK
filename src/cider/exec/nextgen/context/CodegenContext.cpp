@@ -53,24 +53,29 @@ JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
   return ret;
 }
 
-JITValuePointer CodegenContext::getContentPtr(int64_t id,
-                                              bool output_raw_buffer,
-                                              const std::string& raw_buffer_func_name) {
-  auto index = jit_func_->createLiteral(JITTypeTag::INT64, id);
-  auto pointer = jit_func_->emitRuntimeFunctionCall(
-      "get_query_context_item_ptr",
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::POINTER,
-          .ret_sub_type = JITTypeTag::INT8,
-          .params_vector = {jit_func_->getArgument(0).get(), index.get()}});
-  if (output_raw_buffer) {
-    return this->jit_func_->emitRuntimeFunctionCall(
-        raw_buffer_func_name,
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                  .ret_sub_type = JITTypeTag::INT8,
-                                  .params_vector = {pointer.get()}});
-  }
-  return pointer;
+JITValuePointer CodegenContext::getBufferContentPtr(
+    int64_t id,
+    bool output_raw_buffer,
+    const std::string& raw_buffer_func_name) {
+  JITValuePointer ret = jit_func_->createLocalJITValue(
+      [this, id, output_raw_buffer, raw_buffer_func_name]() {
+        auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+        auto pointer = this->jit_func_->emitRuntimeFunctionCall(
+            "get_query_context_item_ptr",
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::POINTER,
+                .ret_sub_type = JITTypeTag::INT8,
+                .params_vector = {this->jit_func_->getArgument(0).get(), index.get()}});
+        if (output_raw_buffer) {
+          return this->jit_func_->emitRuntimeFunctionCall(
+              raw_buffer_func_name,
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .ret_sub_type = JITTypeTag::INT8,
+                                        .params_vector = {pointer.get()}});
+        }
+        return pointer;
+      });
+  return ret;
 }
 
 JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
@@ -79,7 +84,7 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
                                                bool output_raw_buffer) {
   int64_t id = acquireContextID();
   JITValuePointer ret =
-      getContentPtr(id, output_raw_buffer, "get_under_level_buffer_ptr");
+      getBufferContentPtr(id, output_raw_buffer, "get_under_level_buffer_ptr");
   ret->setName(name);
 
   buffer_descriptors_.emplace_back(
@@ -95,7 +100,7 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
                                                bool output_raw_buffer) {
   int64_t id = acquireContextID();
   JITValuePointer ret =
-      getContentPtr(id, output_raw_buffer, "get_under_level_buffer_ptr");
+      getBufferContentPtr(id, output_raw_buffer, "get_under_level_buffer_ptr");
   ret->setName(name);
 
   buffer_descriptors_.emplace_back(
@@ -128,7 +133,7 @@ std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
       break;
     }
     default:
-      LOG(FATAL) << "unsupport type";
+      LOG(FATAL) << "unsupport agg function type: " << toString(agg_type);
       break;
   }
   return agg_name;

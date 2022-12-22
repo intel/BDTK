@@ -21,12 +21,11 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
-#include "util/sqldefs.h"
-
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
+#include "util/sqldefs.h"
 
 namespace cider::exec::nextgen::context {
 
@@ -82,10 +81,6 @@ class CodegenContext {
     return arrow_array_values_.size();
   }
 
-  jitlib::JITValuePointer getContentPtr(int64_t id,
-                                        bool output_raw_buffer = false,
-                                        const std::string& raw_buffer_func_name = "");
-
   jitlib::JITValuePointer registerBatch(const SQLTypeInfo& type,
                                         const std::string& name = "",
                                         bool arrow_array_output = true);
@@ -131,7 +126,7 @@ class CodegenContext {
                      const BufferInitializer& initializer)
         : ctx_id(id), name(n), capacity(c), initializer_(initializer) {}
 
-    ~BufferDescriptor() = default;
+    virtual ~BufferDescriptor() = default;
   };
 
   struct AggBufferDescriptor : public BufferDescriptor {
@@ -163,6 +158,10 @@ class CodegenContext {
 
   int64_t acquireContextID() { return id_counter_++; }
   int64_t getNextContextID() const { return id_counter_; }
+  jitlib::JITValuePointer getBufferContentPtr(
+      int64_t id,
+      bool output_raw_buffer = false,
+      const std::string& raw_buffer_func_name = "");
 };
 
 using CodegenCtxPtr = std::unique_ptr<CodegenContext>;
