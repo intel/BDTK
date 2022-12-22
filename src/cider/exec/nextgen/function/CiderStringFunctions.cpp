@@ -26,6 +26,11 @@ ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
          (static_cast<const uint64_t>(len) << 48);
 }
 
+ALWAYS_INLINE uint64_t pack_string_t(const string_t& s) {
+  return (reinterpret_cast<const uint64_t>(s.getDataUnsafe()) & 0xffffffffffff) |
+         (static_cast<const uint64_t>(s.getSize()) << 48);
+}
+
 // not in use.
 extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int len) {
   const char* ret_ptr = str + pos - 1;
@@ -39,7 +44,7 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
                                                         int len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(str + pos - 1, len);
-  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+  return pack_string_t(s);
 }
 
 // pos starts with 1. A negative starting position is interpreted as being relative
@@ -130,9 +135,9 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_lower(int8_t* string_heap_ptr,
   string_t s = ptr->emptyString(str_len);
   char* sout = s.getDataWriteable();
   for (int i = 0; i < str_len; ++i) {
-    sout[i] = ascii_char_lower_map[str[i]];
+    sout[i] = ascii_char_lower_map[reinterpret_cast<const uint8_t*>(str)[i]];
   }
-  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+  return pack_string_t(s);
 }
 
 extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
@@ -142,7 +147,7 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
   string_t s = ptr->emptyString(str_len);
   char* sout = s.getDataWriteable();
   for (int i = 0; i < str_len; ++i) {
-    sout[i] = ascii_char_upper_map[str[i]];
+    sout[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
   }
-  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+  return pack_string_t(s);
 }
