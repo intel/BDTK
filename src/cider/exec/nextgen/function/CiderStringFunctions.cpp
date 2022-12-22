@@ -77,10 +77,17 @@ extern "C" RUNTIME_EXPORT int32_t format_substring_len(int pos,
   }
 }
 
-/// NOTE: (YBRua) for case conversion string ops,
-/// DuckDB uses lookup tables for ascii case conversion (probably for leveraging cache)
-/// Velox uses arithmetic ops (e.g. return (ch >= 'a' && ch <= 'z') ? ch + 32 : ch)
-/// we use DuckDb's lookup table impl for now
+// a copy of extract_str_ptr (originally implemented in RuntimeFunctions.cpp)
+extern "C" ALWAYS_INLINE int8_t* extract_string_ptr(const uint64_t str_and_len) {
+  return reinterpret_cast<int8_t*>(str_and_len & 0xffffffffffff);
+}
+
+extern "C" ALWAYS_INLINE int32_t extract_string_len(const uint64_t str_and_len) {
+  return static_cast<int64_t>(str_and_len) >> 48;
+}
+
+/// NOTE: (YBRua) referenced DuckDb's case conversion implementation,
+/// which uses lookup tables for ascii case conversion (probably for leveraging cache?)
 const uint8_t ascii_char_upper_map[] = {
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
     16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,

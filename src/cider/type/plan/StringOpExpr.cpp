@@ -344,11 +344,11 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
   // decode result
 
   auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_str_ptr",
+      "extract_string_ptr",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                 .params_vector = {ptr_and_len.get()}});
   auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_str_len",
+      "extract_string_len",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                 .params_vector = {ptr_and_len.get()}});
   return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
@@ -384,11 +384,11 @@ JITExprValue& LowerStringOper::codegen(JITFunction& func) {
 
   // decode result
   auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_str_ptr",
+      "extract_string_ptr",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                 .params_vector = {ptr_and_len.get()}});
   auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_str_len",
+      "extract_string_len",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                 .params_vector = {ptr_and_len.get()}});
 
@@ -425,11 +425,11 @@ JITExprValue& UpperStringOper::codegen(JITFunction& func) {
 
   // decode result
   auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_str_ptr",
+      "extract_string_ptr",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                 .params_vector = {ptr_and_len.get()}});
   auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_str_len",
+      "extract_string_len",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                 .params_vector = {ptr_and_len.get()}});
 
