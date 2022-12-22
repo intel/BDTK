@@ -294,7 +294,6 @@ void StringOper::check_operand_types(
 }
 
 // SubstringStringOper: SUBSTRING
-
 std::shared_ptr<Analyzer::Expr> SubstringStringOper::deep_copy() const {
   return makeExpr<Analyzer::SubstringStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
@@ -355,7 +354,6 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
 }
 
 // LowerStringOper: LOWER
-
 std::shared_ptr<Analyzer::Expr> LowerStringOper::deep_copy() const {
   return makeExpr<Analyzer::LowerStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
@@ -396,7 +394,6 @@ JITExprValue& LowerStringOper::codegen(JITFunction& func) {
 }
 
 // UpperStringOper: UPPER
-
 std::shared_ptr<Analyzer::Expr> UpperStringOper::deep_copy() const {
   return makeExpr<Analyzer::UpperStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
@@ -437,7 +434,6 @@ JITExprValue& UpperStringOper::codegen(JITFunction& func) {
 }
 
 // CharLengthStringOp: CHAR_LENGTH
-
 std::shared_ptr<Analyzer::Expr> CharLengthStringOper::deep_copy() const {
   return makeExpr<Analyzer::CharLengthStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));

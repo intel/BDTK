@@ -27,8 +27,7 @@ ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
 }
 
 ALWAYS_INLINE uint64_t pack_string_t(const string_t& s) {
-  return (reinterpret_cast<const uint64_t>(s.getDataUnsafe()) & 0xffffffffffff) |
-         (static_cast<const uint64_t>(s.getSize()) << 48);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
 
 // not in use.
