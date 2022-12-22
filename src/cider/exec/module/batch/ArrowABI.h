@@ -19,8 +19,7 @@
  * under the License.
  */
 
-#ifndef CIDER_ARROW_ABI_H
-#define CIDER_ARROW_ABI_H
+#ifndef ARROW_FLAG_DICTIONARY_ORDERED
 
 #include <cstdint>
 
