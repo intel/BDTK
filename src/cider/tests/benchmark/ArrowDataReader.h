@@ -115,7 +115,7 @@ class ArrowDataReader {
     return std::make_shared<CiderBatch>(std::get<0>(schema_and_array),
                                         std::get<1>(schema_and_array),
                                         std::make_shared<CiderDefaultAllocator>());
-  };
+  }
   virtual std::shared_ptr<arrow::Table> constructArrowTable() = 0;
 
  protected:
@@ -127,7 +127,7 @@ class CSVToArrowDataReader : public ArrowDataReader {
  public:
   CSVToArrowDataReader(const std::string& file_name,
                        const std::unordered_set<std::string>& col_names = {})
-      : ArrowDataReader(file_name, col_names){};
+      : ArrowDataReader(file_name, col_names) {}
   std::shared_ptr<arrow::Table> constructArrowTable() {
     arrow::io::IOContext io_context = arrow::io::default_io_context();
     auto open_file = arrow::io::ReadableFile::Open(file_name_);
@@ -158,7 +158,7 @@ class ParquetToArrowDataReader : public ArrowDataReader {
  public:
   ParquetToArrowDataReader(const std::string& file_name,
                            const std::unordered_set<std::string>& col_names = {})
-      : ArrowDataReader(file_name, col_names){};
+      : ArrowDataReader(file_name, col_names) {}
 
   std::shared_ptr<arrow::Table> constructArrowTable() {
     arrow::MemoryPool* pool = arrow::default_memory_pool();

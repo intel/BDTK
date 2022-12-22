@@ -73,7 +73,7 @@ enum SQLTypes {
   kSQLTYPE_LAST
 };
 
-inline std::string toString(const SQLTypes& type) {
+[[deprecated]] inline std::string toString(const SQLTypes& type) {
   switch (type) {
     case kNULLT:
       return "NULL";

@@ -73,6 +73,8 @@ class RuntimeContext {
     return batch;
   }
 
+  Batch* getNonGroupByAggOutputBatch();
+
  private:
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;

@@ -23,8 +23,10 @@
 #include <gtest/gtest.h>
 
 #include "exec/nextgen/Nextgen.h"
+#include "exec/nextgen/context/Batch.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
+
 #include "tests/TestHelpers.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/Utils.h"
@@ -34,21 +36,37 @@ using namespace cider::exec::nextgen;
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
+operators::TranslatorPtr initSqlToTranslators(const std::string& sql,
+                                              const std::string& create_ddl) {
+  // SQL Parsing
+  auto json = RunIsthmus::processSql(sql, create_ddl);
+  ::substrait::Plan plan;
+  google::protobuf::util::JsonStringToMessage(json, &plan);
+
+  generator::SubstraitToRelAlgExecutionUnit substrait2eu(plan);
+  auto eu = substrait2eu.createRelAlgExecutionUnit();
+
+  // Pipeline Building
+  auto pipeline = parsers::toOpPipeline(eu);
+  transformer::Transformer transformer;
+  return transformer.toTranslator(pipeline);
+}
+
+template <typename TYPE>
+void check_array(ArrowArray* array, size_t expect_len, std::vector<TYPE> expect_values) {
+  EXPECT_EQ(array->length, expect_len);
+  TYPE* data_buffer = (TYPE*)array->buffers[1];
+  for (size_t i = 0; i < expect_len; ++i) {
+    EXPECT_EQ(data_buffer[0], expect_values[0]);
+  }
+}
+
 class AggTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& sql) {
-    // SQL Parsing
-    auto json = RunIsthmus::processSql(sql, create_ddl_);
-    ::substrait::Plan plan;
-    google::protobuf::util::JsonStringToMessage(json, &plan);
-
-    generator::SubstraitToRelAlgExecutionUnit substrait2eu(plan);
-    auto eu = substrait2eu.createRelAlgExecutionUnit();
-
-    // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
-    transformer::Transformer transformer;
-    auto translators = transformer.toTranslator(pipeline);
+  void executeTest(const std::string& create_ddl,
+                   const std::string& sql,
+                   ArrowArray* array) {
+    auto translators = initSqlToTranslators(sql, create_ddl);
 
     // Codegen
     context::CodegenContext codegen_ctx;
@@ -76,32 +94,37 @@ class AggTest : public ::testing::Test {
 
     // Execution
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
-    auto input_builder = ArrowArrayBuilder();
-    auto&& [schema, array] =
-        input_builder.setRowNum(10)
-            .addColumn<int64_t>(
-                "a", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 1, 2, 4, 1, 2, 3, 4})
-            .addColumn<int32_t>("b",
-                                CREATE_SUBSTRAIT_TYPE(I32),
-                                {1, 11, 111, 2, 22, 222, 3, 33, 333, 555})
-            .build();
-
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
+    // test buffer
     auto buffer = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(
-        runtime_ctx->getContextItem(0));
+        runtime_ctx->getContextItem(1));
     auto under_buffer64 = reinterpret_cast<int64_t*>(buffer->getBuffer());
     EXPECT_EQ(under_buffer64[0], 23);
     auto under_buffer32 = reinterpret_cast<int32_t*>(buffer->getBuffer() + 8);
     EXPECT_EQ(under_buffer32[0], 1293);
-  }
 
- private:
-  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b INTEGER);";
+    // test fetch result
+    auto output_batch_array = runtime_ctx->getNonGroupByAggOutputBatch()->getArray();
+    EXPECT_EQ(output_batch_array->length, 1);
+
+    check_array<int64_t>(output_batch_array->children[0], 1, {23});
+    check_array<int32_t>(output_batch_array->children[1], 1, {1293});
+  }
 };
 
 TEST_F(AggTest, NonGroupby) {
-  executeTest("select sum(a), sum(b) from test");
+  auto input_builder = ArrowArrayBuilder();
+  auto&& [_F, input_array] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "a", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 1, 2, 4, 1, 2, 3, 4})
+          .addColumn<int32_t>(
+              "b", CREATE_SUBSTRAIT_TYPE(I32), {1, 11, 111, 2, 22, 222, 3, 33, 333, 555})
+          .build();
+  executeTest("CREATE TABLE test(a BIGINT, b INTEGER);",
+              "select sum(a), sum(b) from test",
+              input_array);
 }
 
 int main(int argc, char** argv) {

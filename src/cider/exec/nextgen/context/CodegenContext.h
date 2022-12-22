@@ -24,13 +24,40 @@
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
-#include "include/cider/CiderAllocator.h"
-#include "type/data/sqltypes.h"
+#include "exec/nextgen/utils/TypeUtils.h"
+#include "util/sqldefs.h"
 
 namespace cider::exec::nextgen::context {
 
 class RuntimeContext;
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
+struct AggExprsInfo {
+ public:
+  SQLTypeInfo sql_type_info_;
+  jitlib::JITTypeTag jit_value_type_;
+  SQLAgg agg_type_;
+  int8_t start_offset_;
+  int8_t byte_size_;
+  int8_t null_offset_;
+  std::string agg_name_;
+
+  AggExprsInfo(SQLTypeInfo sql_type_info,
+               SQLAgg agg_type,
+               int8_t start_offset,
+               int8_t byte_size)
+      : sql_type_info_(sql_type_info)
+      , jit_value_type_(utils::getJITTypeTag(sql_type_info_.get_type()))
+      , agg_type_(agg_type)
+      , start_offset_(start_offset)
+      , byte_size_(byte_size)
+      , null_offset_(-1)
+      , agg_name_(getAggName(agg_type, sql_type_info_.get_type())) {}
+
+ private:
+  std::string getAggName(SQLAgg agg_type, SQLTypes sql_type);
+};
+
+using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
 class CodegenContext {
  public:
@@ -66,6 +93,14 @@ class CodegenContext {
           [](Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
       bool output_raw_buffer = true);
 
+  jitlib::JITValuePointer registerBuffer(
+      const int32_t capacity,
+      const std::vector<AggExprsInfo>& info,
+      const std::string& name = "",
+      const BufferInitializer& initializer =
+          [](Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
+      bool output_raw_buffer = true);
+
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
   struct BatchDescriptor {
@@ -90,6 +125,18 @@ class CodegenContext {
                      int32_t c,
                      const BufferInitializer& initializer)
         : ctx_id(id), name(n), capacity(c), initializer_(initializer) {}
+
+    virtual ~BufferDescriptor() = default;
+  };
+
+  struct AggBufferDescriptor : public BufferDescriptor {
+    std::vector<AggExprsInfo> info_;
+    AggBufferDescriptor(int64_t id,
+                        const std::string& n,
+                        int32_t c,
+                        const BufferInitializer& initializer,
+                        const std::vector<AggExprsInfo>& info)
+        : BufferDescriptor(id, n, c, initializer), info_(info) {}
   };
 
   void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
@@ -111,6 +158,10 @@ class CodegenContext {
 
   int64_t acquireContextID() { return id_counter_++; }
   int64_t getNextContextID() const { return id_counter_; }
+  jitlib::JITValuePointer getBufferContentPtr(
+      int64_t id,
+      bool output_raw_buffer = false,
+      const std::string& raw_buffer_func_name = "");
 };
 
 using CodegenCtxPtr = std::unique_ptr<CodegenContext>;
