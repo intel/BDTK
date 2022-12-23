@@ -149,6 +149,33 @@ JITValuePointer LLVMJITValue::mod_with_error_check(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mod");
 
+  llvm::Type* rh_llvm_type =
+      getLLVMType(llvm_rh.getValueTypeTag(), parent_function_.getLLVMContext());
+
+  auto zero_const = rh_llvm_type->isIntegerTy()
+                        ? llvm::ConstantInt::get(rh_llvm_type, 0, true)
+                        : llvm::ConstantFP::get(rh_llvm_type, 0.);
+
+  llvm::BasicBlock* mod_ok{nullptr};
+  llvm::BasicBlock* mod_zero{nullptr};
+
+  mod_ok = llvm::BasicBlock::Create(
+      parent_function_.getLLVMContext(), "mod_ok", &parent_function_.func_);
+  mod_zero = llvm::BasicBlock::Create(
+      parent_function_.getLLVMContext(), "mod_zero", &parent_function_.func_);
+
+  getFunctionBuilder(parent_function_)
+      .CreateCondBr(
+          zero_const->getType()->isFloatingPointTy()
+              ? getFunctionBuilder(parent_function_)
+                    .CreateFCmp(llvm::FCmpInst::FCMP_ONE, llvm_rh.load(), zero_const)
+              : getFunctionBuilder(parent_function_)
+                    .CreateICmp(llvm::ICmpInst::ICMP_NE, llvm_rh.load(), zero_const),
+          mod_ok,
+          mod_zero);
+
+  getFunctionBuilder(parent_function_).SetInsertPoint(mod_ok);
+
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
     case JITTypeTag::INT8:
@@ -165,6 +192,13 @@ JITValuePointer LLVMJITValue::mod_with_error_check(JITValue& rh) {
       LOG(FATAL) << "Invalid JITValue type for mod operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
+
+  getFunctionBuilder(parent_function_).SetInsertPoint(mod_zero);
+  getFunctionBuilder(parent_function_)
+      .CreateRet(llvm::ConstantInt::get(
+          llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+          Executor::ERR_DIV_BY_ZERO));
+  getFunctionBuilder(parent_function_).SetInsertPoint(mod_ok);
 
   return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "mod", false);
@@ -244,7 +278,6 @@ JITValuePointer LLVMJITValue::div_with_error_check(JITValue& rh) {
   }
 
   getFunctionBuilder(parent_function_).SetInsertPoint(div_zero);
-  // CIDER_THROW(CiderException,"math op div zero error");
   getFunctionBuilder(parent_function_)
       .CreateRet(llvm::ConstantInt::get(
           llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),

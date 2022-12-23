@@ -104,7 +104,7 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValuePointer& null,
       case kDIVIDE:
         return set_expr_value(null, lhs.div_with_error_check(rhs));
       case kMODULO:
-        return set_expr_value(null, lhs % rhs);
+        return set_expr_value(null, lhs.mod_with_error_check(rhs));
       default:
         UNREACHABLE();
     }
