@@ -150,3 +150,7 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
   }
   return pack_string_t(s);
 }
+
+extern "C" void test_to_string(int value) {
+  std::printf("test_to_string: %s\n", std::to_string(value).c_str());
+}
