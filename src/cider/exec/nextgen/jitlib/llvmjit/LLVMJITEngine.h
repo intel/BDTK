@@ -49,7 +49,7 @@ struct LLVMJITEngine {
 
 class LLVMJITEngineBuilder {
  public:
-  explicit LLVMJITEngineBuilder(LLVMJITModule& module);
+  explicit LLVMJITEngineBuilder(LLVMJITModule& module, llvm::TargetMachine* tm);
 
   std::unique_ptr<LLVMJITEngine> build();
 
@@ -58,6 +58,7 @@ class LLVMJITEngineBuilder {
 
   LLVMJITModule& module_;
   llvm::Module* llvm_module_;
+  std::unique_ptr<llvm::TargetMachine> tm_;
 };
 };  // namespace cider::jitlib
 

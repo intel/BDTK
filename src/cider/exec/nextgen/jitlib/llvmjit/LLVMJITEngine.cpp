@@ -20,19 +20,17 @@
  */
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 
-#include <llvm/Support/CodeGen.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 
 namespace cider::jitlib {
 LLVMJITEngine::~LLVMJITEngine() {
   LLVMDisposeExecutionEngine(llvm::wrap(engine));
 }
 
-LLVMJITEngineBuilder::LLVMJITEngineBuilder(LLVMJITModule& module)
-    : module_(module), llvm_module_(module.module_.get()) {}
+LLVMJITEngineBuilder::LLVMJITEngineBuilder(LLVMJITModule& module, llvm::TargetMachine* tm)
+    : module_(module), llvm_module_(module.module_.get()), tm_(tm) {}
 
 void LLVMJITEngineBuilder::dumpASM(LLVMJITEngine& engine) {
   const std::string fname = llvm_module_->getModuleIdentifier() + ".s";
@@ -64,7 +62,7 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
       .setErrorStr(&error);
 
   auto engine = std::make_unique<LLVMJITEngine>();
-  engine->engine = eb.create(buildTargetMachine(module_.co_));
+  engine->engine = eb.create(tm_.release());
   engine->engine->DisableLazyCompilation(false);
   engine->engine->setVerifyModules(false);
 
