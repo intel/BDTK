@@ -19,6 +19,8 @@
  * under the License.
  */
 
+#include "exec/module/batch/ArrowABI.h"
+#include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/context/StringHeap.h"
 
 ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
@@ -153,4 +155,60 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
 
 extern "C" void test_to_string(int value) {
   std::printf("test_to_string: %s\n", std::to_string(value).c_str());
+}
+
+extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
+                                               const char* lhs,
+                                               int lhs_len,
+                                               const char* rhs,
+                                               int rhs_len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->emptyString(lhs_len + rhs_len);
+
+  char* buffer_ptr = s.getDataWriteable();
+  memcpy(buffer_ptr, lhs, lhs_len);
+  memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
+
+  return pack_string_t(s);
+}
+
+// to be deprecated. rconcat is only used for backward compatibility with template codegen
+// template based codegen only supports cases where the first arg is a variable
+// for concat ops like "constant || var", it will be converted to "var || constant"
+// and then concatenated in the reversed order.
+// However, nextgen allows both arguments to be variable, so rconcat is no longer needed.
+extern "C" RUNTIME_EXPORT int64_t cider_rconcat(char* string_heap_ptr,
+                                                const char* lhs,
+                                                int lhs_len,
+                                                const char* rhs,
+                                                int rhs_len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->emptyString(lhs_len + rhs_len);
+
+  char* buffer_ptr = s.getDataWriteable();
+  memcpy(buffer_ptr, rhs, rhs_len);
+  memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
+
+  return pack_string_t(s);
+}
+
+extern "C" RUNTIME_EXPORT int8_t* get_data_buffer_with_realloc_on_demand(
+    const int8_t* input_desc_ptr,
+    const int32_t current_bytes) {
+  const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
+
+  // assumes arrow_array is an array for var-size binary (with 3 buffers)
+  size_t capacity = holder->getBufferSizeAt(2);
+  if (capacity == 0) {
+    // initialize buffer with a capacity of 4096 bytes
+    holder->allocBuffer(2, 4096);
+  } else if (current_bytes >= 0.9 * capacity) {
+    // double capacity if current bytes take up 90% of capacity
+    // assumes we would have enough space for next input after at most one resize op
+    holder->allocBuffer(2, capacity * 2);
+  }
+
+  return holder->getBufferAs<int8_t>(2);
 }
