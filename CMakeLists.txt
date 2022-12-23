@@ -56,7 +56,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
-option(BDTK_ENABLE_ICL "Build ICL compression library for BDTK" ON)
+option(BDTK_ENABLE_ICL "Build ICL compression library for BDTK" OFF)
 option(ICL_WITH_QPL "Build ICL with QPL codec" OFF)
 option(ICL_WITH_QAT "Build ICL with QAT codec" OFF)
 option(ICL_WITH_IGZIP "Build ICL with IGZIP codec" ON)
