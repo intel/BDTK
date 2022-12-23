@@ -27,7 +27,7 @@
 
 namespace cider::exec::nextgen {
 
-using QueryFunc = void (*)(int8_t*, int8_t*);
+using QueryFunc = int32_t (*)(int8_t*, int8_t*);
 
 std::unique_ptr<context::CodegenContext> compile(
     const RelAlgExecutionUnit& eu,

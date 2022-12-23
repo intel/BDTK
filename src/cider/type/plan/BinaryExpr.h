@@ -36,6 +36,7 @@
 #include "util/sqldefs.h"
 
 namespace Analyzer {
+using namespace cider::exec::nextgen;
 
 /*
  * @type BinOper
@@ -147,7 +148,8 @@ class BinOper : public Expr {
   JITExprValue& codegen(CodegenContext& context) override;
   JITExprValue& codegenFixedSizeColArithFun(JITValuePointer& null,
                                             JITValue& lhs,
-                                            JITValue& rhs);
+                                            JITValue& rhs,
+                                            bool needs_error_check);
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
                                           JITValue& rhs);

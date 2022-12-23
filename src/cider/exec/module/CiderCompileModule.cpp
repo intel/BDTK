@@ -123,10 +123,11 @@ class CiderCompileModule::Impl {
         translator_->getOutputCiderTableSchema();
 
     if (co.use_nextgen_compiler) {
-      cider::jitlib::CompilationOptions co;
-      co.dump_ir = true;
+      cider::jitlib::CompilationOptions jit_co;
+      jit_co.needs_error_check = co.needs_error_check;
+      jit_co.dump_ir = true;
       ciderCompilationResult->impl_->codegen_ctx_ =
-          cider::exec::nextgen::compile(*ra_exe_unit_, co);
+          cider::exec::nextgen::compile(*ra_exe_unit_, jit_co);
       return ciderCompilationResult;
     }
 

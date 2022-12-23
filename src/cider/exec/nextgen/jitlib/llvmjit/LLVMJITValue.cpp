@@ -25,6 +25,7 @@
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/template/Execute.h"
 #include "util/Logger.h"
 
 namespace cider::jitlib {
@@ -144,6 +145,31 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "mod", false);
 }
 
+JITValuePointer LLVMJITValue::mod_with_error_check(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mod");
+
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_).CreateSRem(load(), llvm_rh.load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_).CreateFRem(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for mod operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "mod", false);
+}
+
 JITValuePointer LLVMJITValue::div(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "div");
@@ -169,7 +195,92 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "div", false);
 }
 
+JITValuePointer LLVMJITValue::div_with_error_check(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "div");
+
+  llvm::Type* rh_llvm_type =
+      getLLVMType(llvm_rh.getValueTypeTag(), parent_function_.getLLVMContext());
+
+  auto zero_const = rh_llvm_type->isIntegerTy()
+                        ? llvm::ConstantInt::get(rh_llvm_type, 0, true)
+                        : llvm::ConstantFP::get(rh_llvm_type, 0.);
+
+  llvm::BasicBlock* div_ok{nullptr};
+  llvm::BasicBlock* div_zero{nullptr};
+
+  div_ok = llvm::BasicBlock::Create(
+      parent_function_.getLLVMContext(), "div_ok", &parent_function_.func_);
+  div_zero = llvm::BasicBlock::Create(
+      parent_function_.getLLVMContext(), "div_zero", &parent_function_.func_);
+
+  getFunctionBuilder(parent_function_)
+      .CreateCondBr(
+          zero_const->getType()->isFloatingPointTy()
+              ? getFunctionBuilder(parent_function_)
+                    .CreateFCmp(llvm::FCmpInst::FCMP_ONE, llvm_rh.load(), zero_const)
+              : getFunctionBuilder(parent_function_)
+                    .CreateICmp(llvm::ICmpInst::ICMP_NE, llvm_rh.load(), zero_const),
+          div_ok,
+          div_zero);
+
+  getFunctionBuilder(parent_function_).SetInsertPoint(div_ok);
+
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_).CreateSDiv(load(), llvm_rh.load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_).CreateFDiv(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for div operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  getFunctionBuilder(parent_function_).SetInsertPoint(div_zero);
+  // CIDER_THROW(CiderException,"math op div zero error");
+  getFunctionBuilder(parent_function_)
+      .CreateRet(llvm::ConstantInt::get(
+          llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+          Executor::ERR_DIV_BY_ZERO));
+  getFunctionBuilder(parent_function_).SetInsertPoint(div_ok);
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "div", false);
+}
+
 JITValuePointer LLVMJITValue::mul(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mul");
+
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_).CreateMul(load(), llvm_rh.load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_).CreateFMul(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for mul operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "mul", false);
+}
+
+JITValuePointer LLVMJITValue::mul_with_error_check(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mul");
 
@@ -219,7 +330,75 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "sub", false);
 }
 
+JITValuePointer LLVMJITValue::sub_with_error_check(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "sub");
+
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_).CreateSub(load(), llvm_rh.load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_).CreateFSub(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for sub operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "sub", false);
+}
+
 JITValuePointer LLVMJITValue::add(JITValue& rh) {
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+
+  if (JITTypeTag::POINTER == getValueTypeTag()) {
+    auto rh_type = rh.getValueTypeTag();
+    if (rh_type != JITTypeTag::INT8 && rh_type != JITTypeTag::INT16 &&
+        rh_type != JITTypeTag::INT32 && rh_type != JITTypeTag::INT64) {
+      LOG(FATAL) << "Invalid index type for pointer offset operation. Name="
+                 << rh.getValueName() << ", Type=" << getJITTypeName(rh_type);
+    }
+  } else {
+    checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "add");
+  }
+
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+      ans = getFunctionBuilder(parent_function_).CreateAdd(load(), llvm_rh.load());
+      break;
+    case JITTypeTag::FLOAT:
+    case JITTypeTag::DOUBLE:
+      ans = getFunctionBuilder(parent_function_).CreateFAdd(load(), llvm_rh.load());
+      break;
+    case JITTypeTag::POINTER:
+      ans = getFunctionBuilder(parent_function_).CreateGEP(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(FATAL) << "Invalid JITValue type for add operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(),
+      parent_function_,
+      ans,
+      JITTypeTag::POINTER == getValueTypeTag() ? "add_ptr" : "add",
+      false,
+      getValueSubTypeTag());
+}
+
+JITValuePointer LLVMJITValue::add_with_error_check(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
 
   if (JITTypeTag::POINTER == getValueTypeTag()) {

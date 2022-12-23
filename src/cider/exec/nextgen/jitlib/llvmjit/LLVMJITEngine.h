@@ -39,6 +39,7 @@ struct CompilationOptions {
   bool dump_ir = false;
   bool enable_avx2 = true;
   bool enable_avx512 = false;
+  bool needs_error_check = false;
 };
 
 struct LLVMJITEngine {

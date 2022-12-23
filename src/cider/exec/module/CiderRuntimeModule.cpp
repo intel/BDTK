@@ -266,8 +266,11 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     auto query_func = reinterpret_cast<cider::exec::nextgen::QueryFunc>(
         ciderCompilationResult_->func());
     const ArrowArray& input_arrow_array = in_batch.getArrowArray();
-    query_func((int8_t*)ciderCompilationResult_->impl_->runtime_ctx_.get(),
-               (int8_t*)&input_arrow_array);
+    int32_t ret = query_func((int8_t*)ciderCompilationResult_->impl_->runtime_ctx_.get(),
+                             (int8_t*)&input_arrow_array);
+    if (ret != 0) {
+      CIDER_THROW(CiderRuntimeException, getErrorMessageFromCode(ret));
+    }
     return;
   }
   fetched_rows_ = 0;
