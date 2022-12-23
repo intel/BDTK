@@ -90,7 +90,10 @@ class StringOper : public Expr {
   SqlStringOpKind get_kind() const { return kind_; }
 
   ExprPtrRefVector get_children_reference() override {
-    UNREACHABLE() << "Should not call this method";
+    // For StringOper Expr and its inherited classes, get_children_reference by default
+    // returns references to the StringOper's arguments. it is implemented here
+    // in the base class for code reusability and access to private member args_
+    return get_argument_references();
   }
 
   size_t getArity() const { return args_.size(); }
@@ -198,6 +201,14 @@ class StringOper : public Expr {
       const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
       int start_idx = 1);
 
+  virtual ExprPtrRefVector get_argument_references() {
+    ExprPtrRefVector ret;
+    for (auto& arg : args_) {
+      ret.push_back(&arg);
+    }
+    return ret;
+  }
+
  private:
   static SQLTypeInfo get_return_type(
       const SqlStringOpKind kind,
@@ -263,13 +274,113 @@ class SubstringStringOper : public StringOper {
     return names;
   }
 
-  ExprPtrRefVector get_children_reference() override;
   JITExprValue& codegen(JITFunction& func) override;
+};
 
- private:
-  std::shared_ptr<Analyzer::Expr> arg0_;
-  std::shared_ptr<Analyzer::Expr> arg1_;
-  std::shared_ptr<Analyzer::Expr> arg2_;
+class LowerStringOper : public StringOper {
+ public:
+  explicit LowerStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::LOWER,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit LowerStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::LOWER,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit LowerStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
+
+  JITExprValue& codegen(JITFunction& func) override;
+};
+
+class UpperStringOper : public StringOper {
+ public:
+  explicit UpperStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::UPPER,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit UpperStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::UPPER,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit UpperStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
+
+  JITExprValue& codegen(JITFunction& func) override;
+};
+
+class CharLengthStringOper : public StringOper {
+ public:
+  explicit CharLengthStringOper(const std::shared_ptr<Analyzer::Expr>& operand)
+      : StringOper(SqlStringOpKind::CHAR_LENGTH,
+                   {operand},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit CharLengthStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::CHAR_LENGTH,
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit CharLengthStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 1UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"operand"};
+    return names;
+  }
+
+  JITExprValue& codegen(JITFunction& func) override;
 };
 }  // namespace Analyzer
 
