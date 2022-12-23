@@ -23,9 +23,9 @@
 
 #include <llvm/IR/Value.h>
 
+#include "exec/nextgen/Nextgen.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "exec/template/Execute.h"
 #include "util/Logger.h"
 
 namespace cider::jitlib {
@@ -197,7 +197,7 @@ JITValuePointer LLVMJITValue::mod_with_error_check(JITValue& rh) {
   getFunctionBuilder(parent_function_)
       .CreateRet(llvm::ConstantInt::get(
           llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-          Executor::ERR_DIV_BY_ZERO));
+          ERROR_CODE::ERR_DIV_BY_ZERO));
   getFunctionBuilder(parent_function_).SetInsertPoint(mod_ok);
 
   return makeJITValuePointer<LLVMJITValue>(
@@ -281,7 +281,7 @@ JITValuePointer LLVMJITValue::div_with_error_check(JITValue& rh) {
   getFunctionBuilder(parent_function_)
       .CreateRet(llvm::ConstantInt::get(
           llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-          Executor::ERR_DIV_BY_ZERO));
+          ERROR_CODE::ERR_DIV_BY_ZERO));
   getFunctionBuilder(parent_function_).SetInsertPoint(div_ok);
 
   return makeJITValuePointer<LLVMJITValue>(
@@ -351,7 +351,7 @@ JITValuePointer LLVMJITValue::mul_with_error_check(JITValue& rh) {
   getFunctionBuilder(parent_function_)
       .CreateRet(llvm::ConstantInt::get(
           llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-          Executor::ERR_OVERFLOW_OR_UNDERFLOW));
+          ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
   getFunctionBuilder(parent_function_).SetInsertPoint(check_ok);
 
   return makeJITValuePointer<LLVMJITValue>(
@@ -421,7 +421,7 @@ JITValuePointer LLVMJITValue::sub_with_error_check(JITValue& rh) {
   getFunctionBuilder(parent_function_)
       .CreateRet(llvm::ConstantInt::get(
           llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-          Executor::ERR_OVERFLOW_OR_UNDERFLOW));
+          ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
   getFunctionBuilder(parent_function_).SetInsertPoint(check_ok);
 
   return makeJITValuePointer<LLVMJITValue>(
@@ -518,7 +518,7 @@ JITValuePointer LLVMJITValue::add_with_error_check(JITValue& rh) {
   getFunctionBuilder(parent_function_)
       .CreateRet(llvm::ConstantInt::get(
           llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-          Executor::ERR_OVERFLOW_OR_UNDERFLOW));
+          ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
   getFunctionBuilder(parent_function_).SetInsertPoint(check_ok);
 
   return makeJITValuePointer<LLVMJITValue>(
