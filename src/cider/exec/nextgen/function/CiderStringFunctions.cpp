@@ -212,3 +212,39 @@ extern "C" RUNTIME_EXPORT int8_t* get_data_buffer_with_realloc_on_demand(
 
   return holder->getBufferAs<int8_t>(2);
 }
+
+extern "C" RUNTIME_EXPORT int64_t cider_trim(char* string_heap_ptr,
+                                             const char* str_ptr,
+                                             int str_len,
+                                             const int8_t* trim_char_map,
+                                             bool ltrim,
+                                             bool rtrim) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+
+  int start_idx = 0;
+  if (ltrim) {
+    while (start_idx < str_len &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[start_idx]]) {
+      start_idx++;
+    }
+  }
+
+  int end_idx = str_len - 1;
+  if (rtrim) {
+    while (end_idx > start_idx &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[end_idx]]) {
+      end_idx--;
+    }
+  }
+
+  int len = 0;
+  if (start_idx >= end_idx) {
+    // all chars are trimmed away, return an empty string
+    len = 0;
+  } else {
+    len = end_idx - start_idx + 1;
+  }
+
+  string_t s = ptr->addString(str_ptr + start_idx, len);
+  return pack_string_t(s);
+}
