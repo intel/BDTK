@@ -391,7 +391,7 @@ TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
 
 TEST_F(CiderStringTestNextGen, ConcatTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
+  // GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
   // Skipped because Isthmus does not support concatenating two literals
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -405,11 +405,15 @@ TEST_F(CiderStringTestNextGen, ConcatTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
                    "stringop_concat_filter.json");
+
+  // nextgen also supports concatenating two variable columns
+  assertQueryArrow("SELECT col_2 || col_2 FROM test;");
+  assertQueryArrow("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
+  // GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
 
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -423,6 +427,10 @@ TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2 || 'yo') <> col_2;",
                    "stringop_concat_filter_null.json");
+
+  // nextgen also supports concatenating two variable columns
+  assertQueryArrow("SELECT col_2 || col_2 FROM test;");
+  assertQueryArrow("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 // stringop: char_length

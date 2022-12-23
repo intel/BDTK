@@ -382,6 +382,59 @@ class CharLengthStringOper : public StringOper {
 
   JITExprValue& codegen(CodegenContext& context) override;
 };
+
+class ConcatStringOper : public StringOper {
+ public:
+  ConcatStringOper(const std::shared_ptr<Analyzer::Expr>& former,
+                   const std::shared_ptr<Analyzer::Expr>& latter)
+      : StringOper(getConcatOpKind({former, latter}),
+                   rearrangeOperands({former, latter}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(getConcatOpKind(operands),
+                   rearrangeOperands(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"lhs", "rhs"};
+    return names;
+  }
+
+  JITExprValue& codegen(JITFunction& func) override;
+
+ private:
+  // TODO: Deprecated. The following 3 methods are only used in template-based codegen
+  // the templated interface supports at most one variable column input in stringop
+  // these methods are used to ensure that the variable input is always the first arg
+  // they are not required in nextgen because nextgen supports two variable inputs
+
+  // To be removed after migration to nextgen.
+  bool isLiteralOrCastLiteral(const Analyzer::Expr* operand);
+
+  // To be removed after migration to nextgen.
+  SqlStringOpKind getConcatOpKind(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
+
+  // To be removed after migration to nextgen.
+  std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
+};
 }  // namespace Analyzer
 
 #endif

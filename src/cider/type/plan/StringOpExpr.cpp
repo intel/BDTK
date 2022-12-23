@@ -262,10 +262,12 @@ void StringOper::check_operand_types(
     }
 
     if (cols_first_arg_only && !is_arg_constant && arg_idx >= 1UL) {
-      oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
-          << "Currently only column inputs allowed for the primary argument, "
-          << "but a column input was received for argument " << arg_idx + 1 << ".";
-      CIDER_THROW(CiderCompileException, oss.str());
+      if (get_kind() != SqlStringOpKind::CONCAT) {
+        oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
+            << "Currently only column inputs allowed for the primary argument, "
+            << "but a column input was received for argument " << arg_idx + 1 << ".";
+        CIDER_THROW(CiderCompileException, oss.str());
+      }
     }
     switch (expected_type_family) {
       case OperandTypeFamily::STRING_FAMILY: {
@@ -455,4 +457,54 @@ JITExprValue& CharLengthStringOper::codegen(CodegenContext& context) {
       arg_val.getLength()->castJITValuePrimitiveType(JITTypeTag::INT64));
 }
 
+// ConcatStringOper: CONCAT
+std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
+  return makeExpr<Analyzer::ConcatStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& ConcatStringOper::codegen(JITFunction& func) {
+  // decode input args
+  auto lhs = const_cast<Analyzer::Expr*>(getArg(0));
+  auto rhs = const_cast<Analyzer::Expr*>(getArg(1));
+
+  CHECK(lhs->get_type_info().is_string());
+  CHECK(rhs->get_type_info().is_string());
+
+  auto lhs_val = VarSizeJITExprValue(lhs->codegen(func));
+  auto rhs_val = VarSizeJITExprValue(rhs->codegen(func));
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+
+  // call external function
+  auto emit_desc =
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {string_heap_ptr.get(),
+                                                  lhs_val.getValue().get(),
+                                                  lhs_val.getLength().get(),
+                                                  rhs_val.getValue().get(),
+                                                  rhs_val.getLength().get()}};
+  // TODO (YBRua): deprecate cider_rconcat after full migration to nextgen
+  // rconcat is a workaround used in template codegen for cases such as constant || var
+  std::string fn_name =
+      get_kind() == SqlStringOpKind::CONCAT ? "cider_concat" : "cider_rconcat";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_str_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_str_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(lhs_val.getNull() || rhs_val.getNull(), ret_len, ret_ptr);
+}
 }  // namespace Analyzer

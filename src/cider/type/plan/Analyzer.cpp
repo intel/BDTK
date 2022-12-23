@@ -139,11 +139,6 @@ std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
-  return makeExpr<Analyzer::ConcatStringOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
 std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
   return makeExpr<Analyzer::RegexpReplaceStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
@@ -199,8 +194,13 @@ SqlStringOpKind ConcatStringOper::getConcatOpKind(
     // concat(literal, col)
     return SqlStringOpKind::RCONCAT;
   } else {
-    CIDER_THROW(CiderCompileException,
-                "concat() currently does not support two variable operands.");
+    return SqlStringOpKind::CONCAT;
+    // NOTE: (YBRua) the error check here is disabled because nextgen supports two
+    // variable inputs, but note that templated codegen does not support this and can have
+    // errors if input contains two variable inputs
+    // error check in rearrangeOperands() and is disabled for the same reason
+    // CIDER_THROW(CiderCompileException,
+    //             "concat() currently does not support two variable operands.");
   }
 }
 
@@ -219,8 +219,9 @@ std::vector<std::shared_ptr<Analyzer::Expr>> ConcatStringOper::rearrangeOperands
     // concat(literal, col)
     return {operands[1], remove_cast(operands[0].get())->deep_copy()};
   } else {
-    CIDER_THROW(CiderCompileException,
-                "concat() currently does not support two variable operands.");
+    return operands;
+    // CIDER_THROW(CiderCompileException,
+    //             "concat() currently does not support two variable operands.");
   }
 }
 
@@ -1965,7 +1966,6 @@ std::shared_ptr<Analyzer::Expr> ExtractExpr::rewrite_agg_to_var(
       type_info, contains_agg, field_, from_expr_->rewrite_agg_to_var(tlist));
 }
 
-
 std::shared_ptr<Analyzer::Expr> DatediffExpr::rewrite_agg_to_var(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
   return makeExpr<DatediffExpr>(type_info,
@@ -2236,7 +2236,6 @@ bool ExtractExpr::operator==(const Expr& rhs) const {
   const ExtractExpr& rhs_ee = dynamic_cast<const ExtractExpr&>(rhs);
   return field_ == rhs_ee.get_field() && *from_expr_ == *rhs_ee.get_from_expr();
 }
-
 
 bool DatediffExpr::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(DatediffExpr)) {
@@ -2754,7 +2753,6 @@ void ExtractExpr::find_expr(bool (*f)(const Expr*),
   }
   from_expr_->find_expr(f, expr_list);
 }
-
 
 void DatediffExpr::find_expr(bool (*f)(const Expr*),
                              std::list<const Expr*>& expr_list) const {
