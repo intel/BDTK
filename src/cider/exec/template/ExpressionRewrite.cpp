@@ -739,15 +739,12 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
       // However, Cider does not handle chained_string_op_exprs_
       // so we should return the original stringop here
       // or otherwise the folded stringops will be mistakenly dropped and never processed
-      // return makeExpr<Analyzer::StringOper>(kind, return_ti, rewritten_args);
       // NOTE: (YBRua) do not instantiate StringOper base class, it breaks virtual
       // functions such as codegen() in nextgen framework.
       // construct derived classes instead
       return makeStringOperExpr(kind, return_ti, rewritten_args);
     } else {
       CHECK(!in_string_op_chain_);
-      // return makeExpr<Analyzer::StringOper>(
-      //     kind, return_ti, rewritten_args, chained_string_op_exprs_);
       return makeStringOperExpr(kind, return_ti, rewritten_args);
     }
   }
