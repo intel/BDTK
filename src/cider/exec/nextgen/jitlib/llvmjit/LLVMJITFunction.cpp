@@ -222,7 +222,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
 
 void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
   CHECK(fn);
-  if (!fn->isDeclaration()) {
+  if (fn->isDeclaration()) {
     return;
   }
   // Get the implementation from the runtime module.
@@ -329,4 +329,4 @@ LoopBuilderPointer LLVMJITFunction::createLoopBuilder() {
 }
 };  // namespace cider::jitlib
 
-#endif  // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
+#endif // JITLIB_LLVMJIT_LLVMJITFUNCTION_H
