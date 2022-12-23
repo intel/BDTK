@@ -19,8 +19,7 @@
  * under the License.
  */
 
-// #define _LOGGING_H_  // ignore glog
-#define SHARED_LOGGER_H
+#define SHARED_LOGGER_H  // ignore util/Logger.h
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 
@@ -58,6 +57,8 @@ namespace {
 class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   explicit CiderSimpleArithmeticBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
+    // registerAllScalarFunctions() just register checked version for integer
+    // we register uncheck version for integer and checkedPlus for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
     registerFunction<MultiplyFunction, int16_t, int16_t, int16_t>({"multiply"});
     registerFunction<MultiplyFunction, int32_t, int32_t, int32_t>({"multiply"});
@@ -69,11 +70,9 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     registerFunction<PlusFunction, int64_t, int64_t, int64_t>({"plus"});
     registerFunction<PlusFunction, double, double, double>({"plus"});
 
+    // compare with uncheck plus
     registerFunction<CheckedPlusFunction, int64_t, int64_t, int64_t>({"checkedPlus"});
-    // behavior of plus function is different when registered using above method
-    // and registerAllScalarFunctions
-    // functions::prestosql::registerAllScalarFunctions();
-    parse::registerTypeResolver();
+
     // Set input schema.
     inputType_ = ROW({
         {"i8", TINYINT()},
@@ -197,10 +196,14 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
 
 std::unique_ptr<CiderSimpleArithmeticBenchmark> benchmark;
 
+// for profile
 // BENCHMARK(single) {
-//   // benchmark->runVelox("multiply(i8, i8)");
-//   benchmark->runVelox("multiply(i64, i64)");
+//   benchmark->runVelox("multiply(i8, i8)");
 // }
+// BENCHMARK_RELATIVE(singleNextgen) {
+//   benchmark->runCiderCompute("multiply(i8, i8)", true);
+// }
+
 BENCHMARK_GROUP(i8_mul_i8, "multiply(i8, i8)");
 BENCHMARK_GROUP(i16_mul_i16, "multiply(i16, i16)");
 BENCHMARK_GROUP(i32_mul_i32, "multiply(i32, i32)");
@@ -213,9 +216,11 @@ BENCHMARK_GROUP(multiplyNested, "multiply(multiply(a, b), b)");
 BENCHMARK_GROUP(multiplyNestedDeep,
                 "multiply(multiply(multiply(a, b), a), "
                 "multiply(a, multiply(a, b)))");
+BENCHMARK(plusCheckedVelox) {
+  benchmark->runVelox("checkedPlus(c, d)");
+}
 BENCHMARK_GROUP(plusUnchecked, "plus(c, d)");
-BENCHMARK_GROUP(plusChecked, "checkedPlus(c, d)");
-BENCHMARK_GROUP(multiplyAndPlusArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
 }  // namespace
 
 int main(int argc, char* argv[]) {

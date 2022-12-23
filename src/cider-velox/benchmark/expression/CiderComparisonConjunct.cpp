@@ -19,10 +19,8 @@
  * under the License.
  */
 
-// #define _LOGGING_H_  // ignore glog
-#define SHARED_LOGGER_H
+#define SHARED_LOGGER_H  // ignore util/Logger.h
 #include <folly/Benchmark.h>
-// #include <folly/init/Init.h>
 #include <gflags/gflags.h>
 
 #include "Allocator.h"
