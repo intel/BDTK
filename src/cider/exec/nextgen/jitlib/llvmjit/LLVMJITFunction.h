@@ -84,6 +84,8 @@ class LLVMJITFunction final : public JITFunction {
   LLVMJITModule& module_;
   llvm::Function& func_;
   mutable std::unique_ptr<llvm::IRBuilder<>> ir_builder_;
+  // cache funtion pointer
+  void* func_ptr_ = nullptr;
 };
 };  // namespace cider::jitlib
 

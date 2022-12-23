@@ -67,7 +67,11 @@ void LLVMJITFunction::finish() {
 }
 
 void* LLVMJITFunction::getFunctionPointer() {
-  return module_.getFunctionPtrImpl(*this);
+  if (func_ptr_) {
+    return func_ptr_;
+  }
+  func_ptr_ = module_.getFunctionPtrImpl(*this);
+  return func_ptr_;
 }
 
 JITValuePointer LLVMJITFunction::createLocalJITValueImpl(
