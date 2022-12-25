@@ -49,8 +49,14 @@ class InputAnalyzer {
 
   void run() {
     size_t index = 0;
+    bool tag = true;
     for (auto iter = eu_.input_col_descs.begin(); iter != eu_.input_col_descs.end();
          ++iter) {
+      // record build table first column index
+      if (iter->get()->getTableId() == 101 && tag) {
+        build_table_offset_ = index;
+        tag = false;
+      }
       input_desc_to_index_.insert({**iter, index++});
     }
 
@@ -66,12 +72,6 @@ class InputAnalyzer {
       }
     }
 
-    if (!eu_.shared_target_exprs.empty()) {
-      for (auto& expr : eu_.shared_target_exprs) {
-        traverse(&expr);
-      }
-    }
-
     if (!eu_.join_quals.empty()) {
       for (auto& join_condition : eu_.join_quals) {
         for (auto join_expr : join_condition.quals) {
@@ -80,29 +80,22 @@ class InputAnalyzer {
       }
     }
 
+    if (!eu_.shared_target_exprs.empty()) {
+      for (auto& expr : eu_.shared_target_exprs) {
+        traverse(&expr);
+      }
+    }
+
     input_exprs_.erase(
         std::remove_if(input_exprs_.begin(),
                        input_exprs_.end(),
                        [](const ExprPtr& input_expr) { return input_expr == nullptr; }),
         input_exprs_.end());
-
-    for (auto expr : input_exprs_) {
-      if (expr != nullptr) {
-        auto col_var = dynamic_cast<Analyzer::ColumnVar*>(expr.get());
-        if (col_var->get_table_id() == 100) {
-          left_exprs_.push_back(expr);
-        } else {
-          right_exprs_.push_back(expr);
-        }
-      }
-    }
   }
 
   ExprPtrVector& getInputExprs() { return input_exprs_; }
 
-  ExprPtrVector& getLeftExprs() { return left_exprs_; }
-
-  ExprPtrVector& getRightExprs() { return right_exprs_; }
+  std::map<ExprPtr, size_t>& getBuildTableMap() { return build_table_map_; }
 
  private:
   void traverse(ExprPtr* curr) {
@@ -111,11 +104,15 @@ class InputAnalyzer {
           InputColDescriptor(col_var_ptr->get_column_info(), col_var_ptr->get_rte_idx()));
       CHECK(iter != input_desc_to_index_.end());
 
-      size_t index = iter->second;
-      if (input_exprs_[index]) {
-        *curr = input_exprs_[index];
+      size_t input_exprs_index = iter->second;
+      if (input_exprs_[input_exprs_index]) {
+        *curr = input_exprs_[input_exprs_index];
       } else {
-        input_exprs_[index] = *curr;
+        // insert build table expr
+        if (col_var_ptr->get_table_id() == 101) {
+          build_table_map_.insert({*curr, input_exprs_index - build_table_offset_});
+        }
+        input_exprs_[input_exprs_index] = *curr;
       }
     } else {
       auto children = (*curr)->get_children_reference();
@@ -132,8 +129,9 @@ class InputAnalyzer {
 
   RelAlgExecutionUnit& eu_;
   ExprPtrVector input_exprs_;
-  ExprPtrVector left_exprs_;
-  ExprPtrVector right_exprs_;
+  std::map<ExprPtr, size_t> build_table_map_;
+  // record build table index
+  size_t build_table_offset_;
   std::unordered_map<InputColDescriptor, size_t> input_desc_to_index_;
 };
 
@@ -149,7 +147,7 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   InputAnalyzer analyzer(eu);
   analyzer.run();
 
-  ops.insert(ops.begin(), createOpNode<ArrowSourceNode>(analyzer.getLeftExprs()));
+  ops.insert(ops.begin(), createOpNode<ArrowSourceNode>(analyzer.getInputExprs()));
 
   ExprPtrVector join_quals;
   for (auto& join_condition : eu.join_quals) {
@@ -157,9 +155,10 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
       join_quals.push_back(join_expr);
     }
   }
-  if (join_quals.size() > 0) {
+
+  if (!join_quals.empty()) {
     ops.emplace_back(createOpNode<HashJoinNode>(
-        analyzer.getLeftExprs(), analyzer.getRightExprs(), join_quals));
+        analyzer.getInputExprs(), join_quals, analyzer.getBuildTableMap()));
   }
 
   ExprPtrVector filters;
@@ -197,7 +196,6 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   if (!groupbys.empty() || !aggs.empty()) {
     ops.emplace_back(createOpNode<operators::AggNode>(groupbys, aggs));
   }
-
 
   return ops;
 }

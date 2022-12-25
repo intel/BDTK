@@ -28,28 +28,28 @@ namespace cider::exec::nextgen::operators {
 class HashJoinNode : public OpNode {
  public:
   HashJoinNode(ExprPtrVector&& output_exprs,
-               ExprPtrVector&& build_tables,
-               ExprPtrVector&& join_quals)
+               ExprPtrVector&& join_quals,
+               std::map<ExprPtr, size_t>&& build_table_map)
       : OpNode("HashJoinNode", std::move(output_exprs), JITExprValueType::ROW)
-      , build_tables_(std::move(build_tables))
-      , join_quals_(std::move(join_quals)) {}
+      , join_quals_(std::move(join_quals))
+      , build_table_map_(std::move(build_table_map)) {}
 
   HashJoinNode(const ExprPtrVector& output_exprs,
-               const ExprPtrVector& build_tables,
-               const ExprPtrVector& join_quals)
+               const ExprPtrVector& join_quals,
+               std::map<ExprPtr, size_t>& build_table_map)
       : OpNode("HashJoinNode", output_exprs, JITExprValueType::ROW)
-      , build_tables_(build_tables)
-      , join_quals_(join_quals) {}
-
-  ExprPtrVector getBuildTables() { return build_tables_; }
+      , join_quals_(join_quals)
+      , build_table_map_(build_table_map) {}
 
   ExprPtrVector getJoinQuals() { return join_quals_; }
+
+  std::map<ExprPtr, size_t>& getBuildTableMap() { return build_table_map_; }
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
  private:
-  ExprPtrVector build_tables_;
   ExprPtrVector join_quals_;
+  std::map<ExprPtr, size_t> build_table_map_;
 };
 
 class HashJoinTranslator : public Translator {

@@ -21,7 +21,6 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
-#include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"

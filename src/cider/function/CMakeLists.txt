@@ -40,8 +40,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 if(ENABLE_JIT_DEBUG)
   set(RT_OPT_FLAGS -O0 -g)
 else()
-  # TODO(qiuyang) : for test, return to -03 after hashtable refactoring
-  set(RT_OPT_FLAGS -O1)
+  set(RT_OPT_FLAGS -O3)
 endif()
 
 if(NOT PREFER_STATIC_LIBS)

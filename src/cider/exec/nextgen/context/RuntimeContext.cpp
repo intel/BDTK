@@ -67,11 +67,6 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
 
   string_heap_ptr_ = std::make_shared<StringHeap>(allocator);
 
-  // Instantiation of hashtable.
-  if (hashtable_holder_ != nullptr) {
-    runtime_ctx_pointers_[hashtable_holder_->ctx_id] = hashtable_holder_->hash_table;
-  }
-
   for (auto& cider_set_desc : cider_set_holder_) {
     if (nullptr == cider_set_desc.second) {
       runtime_ctx_pointers_[cider_set_desc.first->ctx_id] =

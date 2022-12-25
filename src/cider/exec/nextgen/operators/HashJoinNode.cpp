@@ -145,20 +145,25 @@ void HashJoinTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-// traverse join_quals expr tree to get join key value
+// traverse join_quals expr tree to get join key value and null vector
 void traverse(ExprPtr expr,
               jitlib::JITFunctionPointer func,
-              std::vector<JITValuePointer>& params) {
+              std::vector<JITValuePointer>& keys,
+              std::vector<JITValuePointer>& nulls,
+              context::CodegenContext& context) {
   if (Analyzer::ColumnVar* col_var = dynamic_cast<Analyzer::ColumnVar*>(expr.get())) {
     if (col_var->get_table_id() == 100) {
-      utils::FixSizeJITExprValue jit_value(col_var->codegen(*func));
-      // TODO(qiuyang): null vector handle
-      params.emplace_back(jit_value.getValue());
+      utils::FixSizeJITExprValue jit_value(expr->codegen(context));
+      keys.emplace_back(jit_value.getValue());
+      // null vector handle
+      if (!expr->get_type_info().get_notnull()) {
+        nulls.emplace_back(jit_value.getNull());
+      }
     }
   } else {
     auto children = expr->get_children_reference();
     for (auto child : children) {
-      traverse(*child, func, params);
+      traverse(*child, func, keys, nulls, context);
     }
   }
 }
@@ -167,9 +172,10 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
   auto join_quals = dynamic_cast<HashJoinNode*>(node_.get())->getJoinQuals();
 
-  std::vector<JITValuePointer> params;
+  std::vector<JITValuePointer> keys;
+  std::vector<JITValuePointer> nulls;
   for (int i = 0; i < join_quals.size(); ++i) {
-    traverse(join_quals[i], func, params);
+    traverse(join_quals[i], func, keys, nulls, context);
   }
 
   // open up a section of buffer to reserve the join result
@@ -177,8 +183,10 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
       16, "join_res_buffer", [](context::Buffer* buf) {}, false);
 
   // pack join key values(support only one key now)
-  auto keys = func->packJITValues(params);
-
+  auto key_value = func->packJITValues<64>(keys);
+  // pack null
+  auto key_null = func->packJITValues<8>(nulls);
+  // register hashtable
   auto hashtable = context.registerHashTable();
 
   // TODO(qiuyang) : hashtable will be a base class pointer
@@ -186,9 +194,10 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
       "look_up_value_by_key",
       JITFunctionEmitDescriptor{
           .ret_type = JITTypeTag::INT64,
-          .params_vector = {hashtable.get(), keys.get(), join_res_buffer.get()}});
+          .params_vector = {
+              hashtable.get(), key_value.get(), key_null.get(), join_res_buffer.get()}});
 
-  auto build_tables = dynamic_cast<HashJoinNode*>(node_.get())->getBuildTables();
+  auto build_table_map = dynamic_cast<HashJoinNode*>(node_.get())->getBuildTableMap();
   auto row_index = func->createVariable(JITTypeTag::INT64, "row_index", 0l);
   row_index = func->createLiteral(JITTypeTag::INT64, 0l);
   func->createLoopBuilder()
@@ -207,9 +216,10 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
                 .ret_type = JITTypeTag::INT64,
                 .params_vector = {join_res_buffer.get(), row_index.get()}});
 
-        for (int64_t idx = 0; idx < build_tables.size(); idx++) {
-          ExprPtr& expr = build_tables[idx];
-          auto build_idx = func->createLiteral(JITTypeTag::INT64, idx);
+        std::map<ExprPtr, size_t>::iterator iter;
+        for (iter = build_table_map.begin(); iter != build_table_map.end(); iter++) {
+          auto expr = iter->first;
+          auto build_idx = func->createLiteral(JITTypeTag::INT64, iter->second);
 
           auto child_arrow_array = func->emitRuntimeFunctionCall(
               "extract_arrow_array_child",
@@ -223,14 +233,14 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
           for (int64_t i = 0; i < buffer_num; ++i) {
             auto buffer_idx = func->createLiteral(JITTypeTag::INT64, i);
 
-            auto arroy_buffer = func->emitRuntimeFunctionCall(
+            auto array_buffer = func->emitRuntimeFunctionCall(
                 "extract_arrow_array_buffer",
                 JITFunctionEmitDescriptor{
                     .ret_type = JITTypeTag::POINTER,
                     .ret_sub_type = JITTypeTag::VOID,
                     .params_vector = {child_arrow_array.get(), buffer_idx.get()}});
 
-            buffer_values.append(arroy_buffer);
+            buffer_values.append(array_buffer);
           }
 
           BuildTableReader reader(buffer_values, expr, res_row_id);

@@ -35,20 +35,15 @@ using namespace cider::exec::nextgen;
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
-template <typename T>
-void check_arrow_array(ArrowArray* array, const std::vector<T>& expected_res) {
-  EXPECT_EQ(array->length, expected_res.size());
-  T* data_buffer = (T*)array->buffers[1];
-  for (size_t i = 0; i < expected_res.size(); ++i) {
-    EXPECT_EQ(data_buffer[i], expected_res[i]);
-  }
-}
-
 class HashJoinTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& sql) {
+  template <typename COL_TYPE = int64_t>
+  void executeTest(const std::string& ddl,
+                   const std::string& sql,
+                   const std::vector<std::vector<COL_TYPE>> expected_res,
+                   context::Batch& build_batch) {
     // SQL Parsing
-    auto json = RunIsthmus::processSql(sql, create_ddl_ + " " + build_ddl_);
+    auto json = RunIsthmus::processSql(sql, ddl);
     ::substrait::Plan plan;
     google::protobuf::util::JsonStringToMessage(json, &plan);
 
@@ -90,31 +85,30 @@ class HashJoinTest : public ::testing::Test {
     auto input_builder = ArrowArrayBuilder();
     auto&& [schema, array] =
         input_builder.setRowNum(4)
-            .addColumn<int8_t>("l_a", CREATE_SUBSTRAIT_TYPE(I8), {3, 4, 5, 6})
-            .addColumn<int32_t>("l_b", CREATE_SUBSTRAIT_TYPE(I32), {1, 2, 3, 4})
-            .addColumn<int64_t>("l_c", CREATE_SUBSTRAIT_TYPE(I64), {555, 666, 777, 888})
+            .addColumn<COL_TYPE>("l_a",
+                                 CREATE_SUBSTRAIT_TYPE(I64),
+                                 {3, 4, 5, 6},
+                                 {false, false, false, true})
+            .template addColumn<COL_TYPE>("l_b",
+                                          CREATE_SUBSTRAIT_TYPE(I64),
+                                          {1, 2, 3, 4},
+                                          {true, false, true, false})
+            .template addColumn<COL_TYPE>(
+                "l_c", CREATE_SUBSTRAIT_TYPE(I64), {555, 666, 777, 888})
             .build();
-    auto build_table = ArrowArrayBuilder();
-    auto&& [build_schema, build_array] =
-        build_table.setRowNum(4)
-            .addColumn<int8_t>("r_a", CREATE_SUBSTRAIT_TYPE(I8), {6, 7, 8, 9})
-            .addColumn<int32_t>("r_b", CREATE_SUBSTRAIT_TYPE(I32), {1, 2, 3, 4})
-            .addColumn<int64_t>("r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
-            .build();
-
-    context::Batch build_batch(*build_schema, *build_array);
-    auto batch = new context::Batch(build_batch);
 
     cider_hashtable::LinearProbeHashTable<int,
                                           std::pair<context::Batch*, int64_t>,
                                           context::murmurHash,
                                           context::Equal>
         hm(16, 0);
-    auto join_key = batch->getArray()->children[1];
+    auto join_key = build_batch.getArray()->children[1];
     for (int64_t i = 0; i < join_key->length; i++) {
+      // if (!*((reinterpret_cast<bool*>(const_cast<void*>(join_key->buffers[0]))) + i)) {
       int key =
-          *((reinterpret_cast<int32_t*>(const_cast<void*>(join_key->buffers[1]))) + i);
-      hm.insert(key, std::make_pair(batch, i));
+          *((reinterpret_cast<COL_TYPE*>(const_cast<void*>(join_key->buffers[1]))) + i);
+      hm.insert(key, std::make_pair(&build_batch, i));
+      // }
     }
 
     // TODO(Xinyi) : sethashtable in velox hashjoinbuild
@@ -124,34 +118,128 @@ class HashJoinTest : public ::testing::Test {
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     // check
-    CHECK(batch->getArray());
-    auto expected_row_len = batch->getArray()->children[0]->length;
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
 
+    CHECK(!expected_res.empty());
+    size_t expected_row_len = expected_res[0].size();
+
+    // for test only, to print result
+    auto print_array = [](ArrowArray* array, size_t expect_len) {
+      // EXPECT_EQ(array->length, expect_len);
+      int64_t* data_buffer = (int64_t*)array->buffers[1];
+      for (size_t i = 0; i < array->length; ++i) {
+        std::cout << data_buffer[i] << " ";
+      }
+      std::cout << std::endl;
+    };
+    print_array(output_batch_array->children[0], 4);
+    print_array(output_batch_array->children[1], 4);
+    print_array(output_batch_array->children[2], 4);
+    print_array(output_batch_array->children[3], 4);
+
     EXPECT_EQ(output_batch_array->length, expected_row_len);
-    check_arrow_array<int8_t>(output_batch_array->children[0], {3, 4, 5, 6});
-    check_arrow_array<int32_t>(output_batch_array->children[1], {1, 2, 3, 4});
-    check_arrow_array<int64_t>(output_batch_array->children[2], {555, 666, 777, 888});
-    check_arrow_array<int8_t>(output_batch_array->children[3], {6, 7, 8, 9});
-    check_arrow_array<int32_t>(output_batch_array->children[4], {1, 2, 3, 4});
-    check_arrow_array<int64_t>(output_batch_array->children[5], {666, 777, 888, 999});
+    auto check_array = [expected_row_len](ArrowArray* array,
+                                          const std::vector<COL_TYPE>& expected_cols) {
+      EXPECT_EQ(array->length, expected_row_len);
+      COL_TYPE* data_buffer = (COL_TYPE*)array->buffers[1];
+      for (size_t i = 0; i < expected_row_len; ++i) {
+        EXPECT_EQ(data_buffer[i], expected_cols[i]);
+      }
+    };
 
-    delete batch;
+    for (size_t i = 0; i < expected_res.size(); ++i) {
+      check_array(output_batch_array->children[i], expected_res[i]);
+    }
   }
-
- private:
-  std::string create_ddl_ =
-      "CREATE TABLE table_probe(l_a TINYINT NOT NULL, l_b INTEGER NOT NULL, l_c BIGINT "
-      "NOT NULL);";
-  std::string build_ddl_ =
-      "CREATE TABLE table_build(r_a TINYINT NOT NULL, r_b INTEGER NOT NULL, r_c BIGINT "
-      "NOT NULL);";
 };
 
-TEST_F(HashJoinTest, basicTest) {
+TEST_F(HashJoinTest, basicINT32NotNullTest) {
+  auto build_table = ArrowArrayBuilder();
+  auto&& [build_schema, build_array] =
+      build_table.setRowNum(4)
+          .addColumn<int32_t>(
+              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {6, 7, 8, 9}, {true, false, true, false})
+          .template addColumn<int32_t>("r_b",
+                                       CREATE_SUBSTRAIT_TYPE(I64),
+                                       {1, 2, 3, 4},
+                                       {false, false, false, false})
+          .template addColumn<int32_t>(
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
+          .build();
+  context::Batch build_batch(*build_schema, *build_array);
+  std::vector<std::vector<int32_t>> expected_res = {{3, 4, 5, 6},
+                                                    {1, 2, 3, 4},
+                                                    {555, 666, 777, 888},
+                                                    {6, 7, 8, 9},
+                                                    {1, 2, 3, 4},
+                                                    {666, 777, 888, 999}};
+  std::string ddl =
+      "CREATE TABLE table_probe(l_a INTEGER NOT NULL, l_b INTEGER NOT NULL, l_c INTEGER "
+      "NOT NULL);"
+      "CREATE TABLE table_build(r_a INTEGER NOT NULL, r_b INTEGER NOT NULL, r_c INTEGER "
+      "NOT NULL);";
+  executeTest(ddl,
+              "select * from table_probe join table_build on table_probe.l_b = "
+              "table_build.r_b",
+              expected_res,
+              build_batch);
+}
+
+TEST_F(HashJoinTest, basicINT64NullableTest) {
+  auto build_table = ArrowArrayBuilder();
+  auto&& [build_schema, build_array] =
+      build_table.setRowNum(4)
+          .addColumn<int32_t>(
+              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {6, 7, 8, 9}, {true, false, true, false})
+          .template addColumn<int32_t>("r_b",
+                                       CREATE_SUBSTRAIT_TYPE(I64),
+                                       {1, 2, 3, 4},
+                                       {false, false, false, false})
+          .template addColumn<int32_t>(
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
+          .build();
+  context::Batch build_batch(*build_schema, *build_array);
+  std::vector<std::vector<int32_t>> expected_res = {
+      {4, 6}, {2, 4}, {666, 888}, {7, 9}, {2, 4}, {777, 999}};
+  std::string ddl =
+      "CREATE TABLE table_probe(l_a INTEGER, l_b INTEGER, l_c INTEGER "
+      "NOT NULL);"
+      "CREATE TABLE table_build(r_a INTEGER, r_b INTEGER, r_c INTEGER "
+      "NOT NULL);";
+  executeTest(ddl,
+              "select * from table_probe join table_build on table_probe.l_b = "
+              "table_build.r_b",
+              expected_res,
+              build_batch);
+}
+
+TEST_F(HashJoinTest, basicINT64Test) {
+  auto build_table = ArrowArrayBuilder();
+  auto&& [build_schema, build_array] =
+      build_table.setRowNum(4)
+          .addColumn<int64_t>(
+              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {6, 7, 8, 9}, {true, false, true, false})
+          .template addColumn<int64_t>("r_b",
+                                       CREATE_SUBSTRAIT_TYPE(I64),
+                                       {1, 2, 3, 4},
+                                       {false, false, true, false})
+          .template addColumn<int64_t>(
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
+          .build();
+  context::Batch build_batch(*build_schema, *build_array);
+  std::vector<std::vector<int64_t>> expected_res = {
+      {3, 4, 5, 6}, {555, 666, 777, 888}, {1, 2, 3, 4}, {666, 777, 888, 999}};
+  std::string ddl =
+      "CREATE TABLE table_probe(l_a BIGINT NOT NULL, l_b BIGINT NOT NULL, l_c BIGINT NOT "
+      "NULL);"
+      "CREATE TABLE table_build(r_a BIGINT NOT NULL, r_b BIGINT NOT NULL, r_c BIGINT NOT "
+      "NULL);";
   executeTest(
-      "select * from table_probe join table_build on table_probe.l_b = "
-      "table_build.r_b");
+      ddl,
+      "select l_a, l_c, r_b, r_c from table_probe join table_build on table_probe.l_b = "
+      "table_build.r_b",
+      expected_res,
+      build_batch);
 }
 
 int main(int argc, char** argv) {
