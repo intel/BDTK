@@ -26,7 +26,7 @@ namespace Analyzer {
 using namespace cider::jitlib;
 
 // change this to pure virtual method after all subclasses support codegen.
-JITExprValue& Expr::codegen(JITFunction& func) {
+JITExprValue& Expr::codegen(JITFunction& func, CodegenContext& context) {
   UNREACHABLE();
   return expr_var_;
 }

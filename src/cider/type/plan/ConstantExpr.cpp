@@ -19,10 +19,11 @@
  * under the License.
  */
 #include "type/plan/ConstantExpr.h"
+#include "exec/nextgen/context/CodegenContext.h"
 
 namespace Analyzer {
 
-JITExprValue& Constant::codegen(JITFunction& func) {
+JITExprValue& Constant::codegen(JITFunction& func, CodegenContext& context) {
   if (auto& expr_var = get_expr_value()) {
     return expr_var;
   }

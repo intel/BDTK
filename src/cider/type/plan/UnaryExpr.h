@@ -89,13 +89,20 @@ class UOper : public Expr {
 
  public:
   ExprPtrRefVector get_children_reference() override { return {&operand}; }
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
   JITExprValue& codegenIsNull(JITFunction& func,
+                              CodegenContext& context,
                               Analyzer::Expr* operand_expr_val,
                               SQLOps optype);
-  JITExprValue& codegenNot(JITFunction& func, Analyzer::Expr* operand_expr_val);
-  JITExprValue& codegenCast(JITFunction& func, Analyzer::Expr* operand_expr_val);
-  JITExprValue& codegenUminus(JITFunction& func, Analyzer::Expr* operand_expr_val);
+  JITExprValue& codegenNot(JITFunction& func,
+                           CodegenContext& context,
+                           Analyzer::Expr* operand_expr_val);
+  JITExprValue& codegenCast(JITFunction& func,
+                            CodegenContext& context,
+                            Analyzer::Expr* operand_expr_val);
+  JITExprValue& codegenUminus(JITFunction& func,
+                              CodegenContext& context,
+                              Analyzer::Expr* operand_expr_val);
   JITValuePointer codegenCastFunc(JITFunction& func, JITValue& lhs);
 
  protected:

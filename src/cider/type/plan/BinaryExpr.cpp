@@ -25,7 +25,7 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
-JITExprValue& BinOper::codegen(JITFunction& func) {
+JITExprValue& BinOper::codegen(JITFunction& func, CodegenContext& context) {
   if (auto& expr_var = get_expr_value()) {
     return expr_var;
   }
@@ -52,8 +52,10 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
     // string binops, should only be comparisons
     const auto optype = get_optype();
     if (IS_COMPARISON(optype)) {
-      VarSizeJITExprValue lhs_val(lhs->codegen(func));
-      VarSizeJITExprValue rhs_val(rhs->codegen(func));
+      std::cout << lhs->toString() << std::endl;
+      std::cout << rhs->toString() << std::endl;
+      VarSizeJITExprValue lhs_val(lhs->codegen(func, context));
+      VarSizeJITExprValue rhs_val(rhs->codegen(func, context));
       JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
       null = lhs_val.getNull() || rhs_val.getNull();
       return codegenVarcharCmpFun(func, null, lhs_val, rhs_val);
@@ -62,8 +64,8 @@ JITExprValue& BinOper::codegen(JITFunction& func) {
     }
   } else {
     // primitive type binops
-    FixSizeJITExprValue lhs_val(lhs->codegen(func));
-    FixSizeJITExprValue rhs_val(rhs->codegen(func));
+    FixSizeJITExprValue lhs_val(lhs->codegen(func, context));
+    FixSizeJITExprValue rhs_val(rhs->codegen(func, context));
 
     if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
       return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);

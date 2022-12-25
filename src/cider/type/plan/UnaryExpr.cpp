@@ -70,7 +70,7 @@ JITValuePointer codegenCastBetweenTime(JITFunction& func,
   }
 }
 
-JITExprValue& UOper::codegen(JITFunction& func) {
+JITExprValue& UOper::codegen(JITFunction& func, CodegenContext& context) {
   if (auto& expr_var = get_expr_value()) {
     return expr_var;
   }
@@ -86,16 +86,16 @@ JITExprValue& UOper::codegen(JITFunction& func) {
   switch (get_optype()) {
     case kISNULL:
     case kISNOTNULL: {
-      return codegenIsNull(func, operand, get_optype());
+      return codegenIsNull(func, context, operand, get_optype());
     }
     case kNOT: {
-      return codegenNot(func, operand);
+      return codegenNot(func, context, operand);
     }
     case kCAST: {
-      return codegenCast(func, operand);
+      return codegenCast(func, context, operand);
     }
     case kUMINUS: {
-      return codegenUminus(func, operand);
+      return codegenUminus(func, context, operand);
     }
     default:
       UNIMPLEMENTED();
@@ -103,6 +103,7 @@ JITExprValue& UOper::codegen(JITFunction& func) {
 }
 
 JITExprValue& UOper::codegenIsNull(JITFunction& func,
+                                   CodegenContext& context,
                                    Analyzer::Expr* operand,
                                    SQLOps optype) {
   // For ISNULL, the null will always be false
@@ -110,7 +111,7 @@ JITExprValue& UOper::codegenIsNull(JITFunction& func,
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
 
   // for IS NULL / IS NOT NULL, we only need the null info (getNull())
-  JITExprValueAdaptor operand_val(operand->codegen(func));
+  JITExprValueAdaptor operand_val(operand->codegen(func, context));
 
   if (optype == kISNOTNULL) {
     // is not null
@@ -123,29 +124,35 @@ JITExprValue& UOper::codegenIsNull(JITFunction& func,
   }
 }
 
-JITExprValue& UOper::codegenNot(JITFunction& func, Analyzer::Expr* operand) {
+JITExprValue& UOper::codegenNot(JITFunction& func,
+                                CodegenContext& context,
+                                Analyzer::Expr* operand) {
   const auto& ti = get_type_info();
 
   // should be bool, or otherwise will throw in notOp()
-  FixSizeJITExprValue operand_val(operand->codegen(func));
+  FixSizeJITExprValue operand_val(operand->codegen(func, context));
 
   CHECK(operand_val.getNull().get());
   return set_expr_value(operand_val.getNull(), operand_val.getValue()->notOp());
 }
 
-JITExprValue& UOper::codegenUminus(JITFunction& func, Analyzer::Expr* operand) {
+JITExprValue& UOper::codegenUminus(JITFunction& func,
+                                   CodegenContext& context,
+                                   Analyzer::Expr* operand) {
   // should be fixedSize type
-  FixSizeJITExprValue operand_val(operand->codegen(func));
+  FixSizeJITExprValue operand_val(operand->codegen(func, context));
   CHECK(operand_val.getNull().get());
   return set_expr_value(operand_val.getNull(), -operand_val.getValue());
 }
 
-JITExprValue& UOper::codegenCast(JITFunction& func, Analyzer::Expr* operand) {
+JITExprValue& UOper::codegenCast(JITFunction& func,
+                                 CodegenContext& context,
+                                 Analyzer::Expr* operand) {
   const auto& ret_ti = get_type_info();
   const auto& operand_ti = operand->get_type_info();
   if (operand_ti.is_string()) {
     // input is varchar
-    VarSizeJITExprValue operand_val(operand->codegen(func));
+    VarSizeJITExprValue operand_val(operand->codegen(func, context));
     if (ret_ti.is_string()) {
       // only supports casting from varchar to varchar
       return set_expr_value(
@@ -158,7 +165,7 @@ JITExprValue& UOper::codegenCast(JITFunction& func, Analyzer::Expr* operand) {
     }
   } else {
     // input is primitive type
-    FixSizeJITExprValue operand_val(operand->codegen(func));
+    FixSizeJITExprValue operand_val(operand->codegen(func, context));
     return set_expr_value(operand_val.getNull(),
                           codegenCastFunc(func, operand_val.getValue()));
   }

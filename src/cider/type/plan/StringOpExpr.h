@@ -225,7 +225,7 @@ class StringOper : public Expr {
   std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
 
  public:
-  JITExprValue& codegen(JITFunction& func) override {
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override {
     UNREACHABLE() << "Base String Op should not do codegen";
   }
 };
@@ -274,7 +274,7 @@ class SubstringStringOper : public StringOper {
     return names;
   }
 
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
 };
 
 class LowerStringOper : public StringOper {
@@ -309,7 +309,7 @@ class LowerStringOper : public StringOper {
     return names;
   }
 
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
 };
 
 class UpperStringOper : public StringOper {
@@ -344,7 +344,7 @@ class UpperStringOper : public StringOper {
     return names;
   }
 
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
 };
 
 class CharLengthStringOper : public StringOper {
@@ -380,7 +380,7 @@ class CharLengthStringOper : public StringOper {
     return names;
   }
 
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
 };
 }  // namespace Analyzer
 

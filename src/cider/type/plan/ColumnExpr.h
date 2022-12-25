@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 #include "type/schema/ColumnInfo.h"
@@ -105,7 +106,7 @@ class ColumnVar : public Expr {
   std::string toString() const override;
 
  public:
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
 
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins

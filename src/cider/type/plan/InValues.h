@@ -19,66 +19,72 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#ifndef TYPE_PLAN_INVALUES_EXPR_H
+#define TYPE_PLAN_INVALUES_EXPR_H
 
-#ifndef TYPE_PLAN_DATE_EXPR_H
-#define TYPE_PLAN_DATE_EXPR_H
+#include <list>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 #include "util/sqldefs.h"
 
 namespace Analyzer {
 /*
- * @type DateaddExpr
- * @brief the DATEADD expression
+ * @type InValues
+ * @brief represents predicate expr IN (v1, v2, ...)
+ * v1, v2, ... are can be either Constant or Parameter.
  */
-class DateaddExpr : public Expr {
+class InValues : public Expr {
  public:
-  DateaddExpr(const SQLTypeInfo& ti,
-              const DateaddField f,
-              const std::shared_ptr<Analyzer::Expr> number,
-              const std::shared_ptr<Analyzer::Expr> datetime)
-      : Expr(ti, false), field_(f), number_(number), datetime_(datetime) {}
-  DateaddField get_field() const { return field_; }
-  const std::shared_ptr<Analyzer::Expr> get_number() const { return number_; }
-  const std::shared_ptr<Analyzer::Expr> get_datetime() const { return datetime_; }
-  Expr* get_number_expr() const { return number_.get(); }
-  Expr* get_datetime_expr() const { return datetime_.get(); }
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-  bool operator==(const Expr& rhs) const override;
-  std::string toString() const override;
-  void find_expr(bool (*f)(const Expr*),
-                 std::list<const Expr*>& expr_list) const override;
-  [[deprecated]] void check_group_by(
-      const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const override;
+  InValues(std::shared_ptr<Analyzer::Expr> a,
+           const std::list<std::shared_ptr<Analyzer::Expr>>& l);
+  const Expr* get_arg() const { return arg.get(); }
+  const std::shared_ptr<Analyzer::Expr> get_own_arg() const { return arg; }
+  const std::list<std::shared_ptr<Analyzer::Expr>>& get_value_list() const {
+    return value_list;
+  }
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> deep_copy() const override;
   [[deprecated]] void group_predicates(
       std::list<const Expr*>& scan_predicates,
       std::list<const Expr*>& join_predicates,
       std::list<const Expr*>& const_predicates) const override;
-  [[deprecated]] void collect_rte_idx(std::set<int>& rte_idx_set) const override;
+  [[deprecated]] void collect_rte_idx(std::set<int>& rte_idx_set) const override {
+    arg->collect_rte_idx(rte_idx_set);
+  }
   [[deprecated]] void collect_column_var(
       std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
           colvar_set,
-      bool include_agg) const override;
+      bool include_agg) const override {
+    arg->collect_column_var(colvar_set, include_agg);
+  }
   [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
   [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
   [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
+  bool operator==(const Expr& rhs) const override;
+  std::string toString() const override;
+  [[deprecated]] void find_expr(bool (*f)(const Expr*),
+                                std::list<const Expr*>& expr_list) const override;
 
  public:
-  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
-  ExprPtrRefVector get_children_reference() override {
-    return {&(number_), &(datetime_)};
-  }
+  ExprPtrRefVector get_children_reference() override { return {&arg}; }
+  JITExprValue& codegen(JITFunction& func, CodegenContext& context);
 
  private:
-  DateaddField field_;
-  std::shared_ptr<Analyzer::Expr> number_;
-  std::shared_ptr<Analyzer::Expr> datetime_;
+  std::shared_ptr<Analyzer::Expr> arg;  // the argument left of IN
+  const std::list<std::shared_ptr<Analyzer::Expr>>
+      value_list;  // the list of values right of IN
 };
+
 }  // namespace Analyzer
 
 #endif

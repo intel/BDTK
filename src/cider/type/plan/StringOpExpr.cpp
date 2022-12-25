@@ -299,7 +299,7 @@ std::shared_ptr<Analyzer::Expr> SubstringStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
+JITExprValue& SubstringStringOper::codegen(JITFunction& func, CodegenContext& context) {
   // 1. decode parameters
   auto arg = const_cast<Analyzer::Expr*>(getArg(0));
   auto pos = const_cast<Analyzer::Expr*>(getArg(1));
@@ -307,9 +307,9 @@ JITExprValue& SubstringStringOper::codegen(JITFunction& func) {
 
   CHECK(arg->get_type_info().is_string());
 
-  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
-  auto pos_val = FixSizeJITExprValue(pos->codegen(func));
-  auto len_val = FixSizeJITExprValue(len->codegen(func));
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func, context));
+  auto pos_val = FixSizeJITExprValue(pos->codegen(func, context));
+  auto len_val = FixSizeJITExprValue(len->codegen(func, context));
 
   // format parameters
   auto pos_param = func.emitRuntimeFunctionCall(
@@ -359,11 +359,11 @@ std::shared_ptr<Analyzer::Expr> LowerStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-JITExprValue& LowerStringOper::codegen(JITFunction& func) {
+JITExprValue& LowerStringOper::codegen(JITFunction& func, CodegenContext& context) {
   // decode parameters
   auto arg = const_cast<Analyzer::Expr*>(getArg(0));
   CHECK(arg->get_type_info().is_string());
-  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func, context));
 
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(
@@ -399,11 +399,11 @@ std::shared_ptr<Analyzer::Expr> UpperStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-JITExprValue& UpperStringOper::codegen(JITFunction& func) {
+JITExprValue& UpperStringOper::codegen(JITFunction& func, CodegenContext& context) {
   // decode parameters
   auto arg = const_cast<Analyzer::Expr*>(getArg(0));
   CHECK(arg->get_type_info().is_string());
-  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func, context));
 
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(
@@ -439,11 +439,11 @@ std::shared_ptr<Analyzer::Expr> CharLengthStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-JITExprValue& CharLengthStringOper::codegen(JITFunction& func) {
+JITExprValue& CharLengthStringOper::codegen(JITFunction& func, CodegenContext& context) {
   // decode parameters
   auto arg = const_cast<Analyzer::Expr*>(getArg(0));
   CHECK(arg->get_type_info().is_string());
-  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
+  auto arg_val = VarSizeJITExprValue(arg->codegen(func, context));
 
   // directly return str_len, but need to cast it to INT64
   return set_expr_value(
