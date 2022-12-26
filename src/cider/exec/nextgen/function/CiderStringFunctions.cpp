@@ -22,6 +22,8 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/context/StringHeap.h"
+#include "util/DateTimeParser.h"
+#include "util/misc.h"
 
 ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
   return (reinterpret_cast<const uint64_t>(ptr) & 0xffffffffffff) |
@@ -249,4 +251,123 @@ extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
 
   string_t s = ptr->addString(str_ptr + start_idx, len);
   return pack_string_t(s);
+}
+
+#define DEF_CONVERT_INTEGER_TO_STRING(value_type, value_name)                         \
+  extern "C" RUNTIME_EXPORT int64_t gen_string_from_##value_name(                     \
+      const value_type operand, char* string_heap_ptr) {                              \
+    std::string_view str = std::to_string(operand);                                   \
+    StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);                 \
+    string_t s = ptr->addString(str.data(), str.length());                            \
+    return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize()); \
+  }
+DEF_CONVERT_INTEGER_TO_STRING(int8_t, tinyint)
+DEF_CONVERT_INTEGER_TO_STRING(int16_t, smallint)
+DEF_CONVERT_INTEGER_TO_STRING(int32_t, int)
+DEF_CONVERT_INTEGER_TO_STRING(int64_t, bigint)
+#undef DEF_CONVERT_INTEGER_TO_STRING
+
+extern "C" RUNTIME_EXPORT NEVER_INLINE int64_t
+gen_string_from_float(const float operand, char* string_heap_ptr) {
+  std::string str = fmt::format("{:#}", operand);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(str.data(), str.length());
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT NEVER_INLINE int64_t
+gen_string_from_double(const double operand, char* string_heap_ptr) {
+  std::string str = fmt::format("{:#}", operand);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(str.data(), str.length());
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_bool(const int8_t operand, char* string_heap_ptr) {
+  std::string_view str = (operand == 1) ? "true" : "false";
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(str.data(), str.length());
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_time(const int64_t operand, char* string_heap_ptr) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatHMS(buf, buf_size, operand);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(buf, str_len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_timestamp(const int64_t operand,
+                          char* string_heap_ptr,
+                          const int32_t dimension) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatDateTime(buf, buf_size, operand, dimension);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(buf, str_len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_date(const int32_t operand, char* string_heap_ptr) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatDays(buf, buf_size, operand);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(buf, str_len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+// add error check
+#define DEF_CONVERT_STRING_TO_INTEGER(value_type, value_name)                        \
+  extern "C" RUNTIME_EXPORT ALWAYS_INLINE value_type convert_string_to_##value_name( \
+      const char* str_ptr, const int32_t str_len) {                                  \
+    std::string from_str(str_ptr, str_len);                                          \
+    return (value_type)std::stoi(from_str);                                          \
+  }
+
+DEF_CONVERT_STRING_TO_INTEGER(int8_t, tinyint)
+DEF_CONVERT_STRING_TO_INTEGER(int16_t, smallint)
+DEF_CONVERT_STRING_TO_INTEGER(int32_t, int)
+DEF_CONVERT_STRING_TO_INTEGER(int64_t, bigint)
+
+#undef DEF_CONVERT_STRING_TO_INTEGER
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE float convert_string_to_float(
+    const char* str_ptr,
+    const int32_t str_len) {
+  std::string from_str(str_ptr, str_len);
+  return std::stof(from_str);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE double convert_string_to_double(
+    const char* str_ptr,
+    const int32_t str_len) {
+  std::string from_str(str_ptr, str_len);
+  return std::stod(from_str);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int32_t
+convert_string_to_date(const char* str_ptr, const int32_t str_len) {
+  std::string from_str(str_ptr, str_len);
+  return parseDateInDays(from_str);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_string_to_timestamp(const char* str_ptr,
+                            const int32_t str_len,
+                            const int32_t dim) {
+  std::string from_str(str_ptr, str_len);
+  return dateTimeParse<kTIMESTAMP>(from_str, dim);
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_string_to_time(const char* str_ptr, const int32_t str_len, const int32_t dim) {
+  std::string from_str(str_ptr, str_len);
+  return dateTimeParse<kTIME>(from_str, dim);
 }
