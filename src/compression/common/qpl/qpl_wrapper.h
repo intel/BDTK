@@ -22,35 +22,43 @@
 #ifndef _ICL_COMPRESSION_COMMON_QPL_WRAPPER_H_
 #define _ICL_COMPRESSION_COMMON_QPL_WRAPPER_H_
 
-#include <cstdint>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int32_t iax_wrapper_max_compress_len(int32_t input_length);
+int64_t qpl_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
 
-int32_t iax_wrapper_compress(const uint8_t* pSrc,
-                             int32_t srcLen,
-                             uint8_t* pDst,
-                             int32_t* pDstLen);
+int64_t qpl_wrapper_compress(void* context,
+                             int64_t input_length,
+                             const uint8_t* input,
+                             int64_t output_length,
+                             uint8_t* output);
 
-int32_t iax_wrapper_decompress(const uint8_t* pSrc,
-                               int32_t srcLen,
-                               uint8_t* pDst,
-                               int32_t* pDstLen);
+int64_t qpl_wrapper_decompress(void* context,
+                               int64_t input_length,
+                               const uint8_t* input,
+                               int64_t output_length,
+                               uint8_t* output);
 
-int32_t iax_wrapper_decode_parquet_rle(uint32_t valueCount,
-                                       const uint8_t* pSrc,
-                                       int32_t srcLen,
-                                       uint8_t* pDst,
-                                       int32_t* pDstLen);
+int qpl_wrapper_minimum_compression_level();
 
-int32_t iax_wrapper_decompress_decode_parquet_rle(int32_t valueCount,
-                                                  const uint8_t* pSrc,
-                                                  int32_t srcLen,
-                                                  uint8_t* pDst,
-                                                  int32_t* pDstLen);
+int qpl_wrapper_maximum_compression_level();
+
+int qpl_wrapper_default_compression_level();
+
+int32_t qpl_wrapper_decode_parquet_rle(uint32_t value_count,
+                                       const uint8_t* input,
+                                       int32_t input_length,
+                                       uint8_t* output,
+                                       int32_t* outut_length);
+
+int32_t qpl_wrapper_decompress_decode_parquet_rle(int32_t value_count,
+                                                  const uint8_t* input,
+                                                  int32_t input_length,
+                                                  uint8_t* output,
+                                                  int32_t* output_length);
 
 #ifdef __cplusplus
 }

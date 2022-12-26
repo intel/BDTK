@@ -21,9 +21,9 @@
 #ifndef _ICL_COMPRESSION_CODEC_ICL_CODEC_INTERNAL_H_
 #define _ICL_COMPRESSION_CODEC_ICL_CODEC_INTERNAL_H_
 
-#include <memory>
-
 #include "icl_codec.h"
+
+#include <memory>
 
 namespace icl {
 namespace codec {
@@ -32,17 +32,23 @@ namespace codec {
 // Internal Codec factories
 namespace internal {
 
-// QPL codec.
+// Qpl codec.
 constexpr int kQplDefaultCompressionLevel = 1;
 
 std::unique_ptr<IclCompressionCodec> MakeQplCodec(
     int compression_level = kQplDefaultCompressionLevel);
 
-// QAT codec.
+// Qat codec.
 constexpr int kQatDefaultCompressionLevel = 1;
 
 std::unique_ptr<IclCompressionCodec> MakeQatCodec(
     int compression_level = kQatDefaultCompressionLevel);
+
+// IGzip Codec
+constexpr int kIgzipDefaultCompressionLevel = 1;
+
+std::unique_ptr<IclCompressionCodec> MakeIgzipCodec(
+    int compression_level = kIgzipDefaultCompressionLevel);
 
 }  // namespace internal
 }  // namespace codec
