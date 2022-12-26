@@ -17,18 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#
-# common
-#
-
-if(ICL_WITH_QPL)
-  add_subdirectory(qpl)
-endif()
-
-if(ICL_WITH_QAT)
-  add_subdirectory(qat)
-endif()
-
-if(ICL_WITH_IGZIP)
-  add_subdirectory(igzip)
-endif()
+add_executable(icl_codec_test icl_codec_test.cpp)
+target_link_libraries(icl_codec_test gtest icl_codec)
+add_test(icl_codec_test icl_codec_test ${TEST_ARGS})

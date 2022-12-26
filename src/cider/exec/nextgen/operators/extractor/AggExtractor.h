@@ -39,7 +39,7 @@ class NextgenAggExtractor {
 
  protected:
   int8_t null_offset_;
-  bool nullable_;
+  bool is_nullable_;
   const std::string name_;
 };
 
@@ -52,7 +52,7 @@ class NextgenBasicAggExtractor : public NextgenAggExtractor {
       : NextgenAggExtractor(name) {
     offset_ = info.start_offset_;
     null_offset_ = info.null_offset_;
-    nullable_ = info.sql_type_info_.get_notnull();
+    is_nullable_ = !info.sql_type_info_.get_notnull();
   }
 
   void extract(const std::vector<const int8_t*>& rowAddrs, ArrowArray* output) override {
@@ -62,11 +62,11 @@ class NextgenBasicAggExtractor : public NextgenAggExtractor {
     uint8_t* null_buffer = reinterpret_cast<uint8_t*>(no_const_buffer[0]);
     TT* buffer = reinterpret_cast<TT*>(no_const_buffer[1]);
 
-    if (nullable_) {
+    if (is_nullable_) {
       int64_t null_count_num = 0;
       for (size_t i = 0; i < rowNum; ++i) {
         const int8_t* rowPtr = rowAddrs[i];
-        if (!(*reinterpret_cast<const bool*>(rowPtr + null_offset_))) {
+        if (*reinterpret_cast<const bool*>(rowPtr + null_offset_)) {
           CiderBitUtils::clearBitAt(null_buffer, i);
           ++null_count_num;
         } else {

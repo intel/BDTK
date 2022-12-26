@@ -18,17 +18,16 @@
 # under the License.
 
 #
-# common
+# IgzipCommon
 #
 
-if(ICL_WITH_QPL)
-  add_subdirectory(qpl)
-endif()
+project(igzip_common)
 
-if(ICL_WITH_QAT)
-  add_subdirectory(qat)
-endif()
+include(igzip)
 
-if(ICL_WITH_IGZIP)
-  add_subdirectory(igzip)
-endif()
+set(IGZIP_COMMON_SOURCES igzip_wrapper.c)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+
+add_library(igzip_common ${IGZIP_COMMON_SOURCES})
+target_link_libraries(igzip_common ISAL::igzip)

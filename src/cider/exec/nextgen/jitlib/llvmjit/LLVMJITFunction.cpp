@@ -223,6 +223,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
 void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
   CHECK(fn);
   if (!fn->isDeclaration()) {
+    // Function has been cloned.
     return;
   }
   // Get the implementation from the runtime module.
@@ -254,7 +255,13 @@ void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
   for (auto it = llvm::inst_begin(fn), e = llvm::inst_end(fn); it != e; ++it) {
     if (llvm::isa<llvm::CallInst>(*it)) {
       auto& call = llvm::cast<llvm::CallInst>(*it);
-      cloneFunctionRecursive(call.getCalledFunction());
+      llvm::Function* called_func = call.getCalledFunction();
+      if (called_func) {
+        // Only symbol-called function needs to clone.
+        // TODO (bigPYJ1151): Clone all used runtime functions may lead to compile time
+        // expansion.
+        cloneFunctionRecursive(called_func);
+      }
     }
   }
 }
