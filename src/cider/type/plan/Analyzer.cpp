@@ -27,6 +27,9 @@
 #include "util/DateConverters.h"
 #include "util/SqlTypesLayout.h"
 #include "util/misc.h"
+#include "util/SqlTypesLayout.h"
+#include "exec/template/IRCodegenUtils.h"
+#include "exec/nextgen/utils/JITExprValue.h"
 
 #include <algorithm>
 #include <cstring>
