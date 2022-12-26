@@ -164,7 +164,8 @@ TEST_F(CiderCaseWhenNextgenTest, primitiveTypeCaseWhenTest) {
               ddl,
               "SELECT col_int, CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test",
               {row_num * sizeof(int32_t), row_num * sizeof(int32_t)},
-              {reinterpret_cast<int8_t*>(case3_col1_values.data()), reinterpret_cast<int8_t*>(case3_col2_values.data())});*/
+              {reinterpret_cast<int8_t*>(case3_col1_values.data()),
+  reinterpret_cast<int8_t*>(case3_col2_values.data())});*/
 }
 
 int main(int argc, char** argv) {

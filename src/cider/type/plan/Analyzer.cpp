@@ -20,13 +20,13 @@
  * under the License.
  */
 #include "type/plan/Analyzer.h"
+#include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/template/DateTimeUtils.h"
+#include "exec/template/IRCodegenUtils.h"
 #include "type/data/sqltypes.h"
 #include "util/DateConverters.h"
-#include "util/misc.h"
 #include "util/SqlTypesLayout.h"
-#include "exec/template/IRCodegenUtils.h"
-#include "exec/nextgen/utils/JITExprValue.h"
+#include "util/misc.h"
 
 #include <algorithm>
 #include <cstring>
@@ -3016,20 +3016,25 @@ JITExprValue& CaseExpr::codegen(JITFunction& func) {
   CHECK_GT(expr_pair_list.size(), 0);
   for (const auto& expr_pair : expr_pair_list) {
     func.createIfBuilder()
-    ->condition([&]() {
-      cider::exec::nextgen::utils::FixSizeJITExprValue cond(expr_pair.first->codegen(func));
-      auto condition = !cond.getNull() && cond.getValue();
-      return condition;
-    })
-    ->ifTrue([&]() {
-      cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(expr_pair.second->codegen(func));
-      return set_expr_value(then_jit_expr_value.getNull(), then_jit_expr_value.getValue());
-    })
-    ->ifFalse([&]() {
-      cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(else_expr->codegen(func));
-      return set_expr_value(else_jit_expr_value.getNull(), else_jit_expr_value.getValue());
-    })
-    ->build();
+        ->condition([&]() {
+          cider::exec::nextgen::utils::FixSizeJITExprValue cond(
+              expr_pair.first->codegen(func));
+          auto condition = !cond.getNull() && cond.getValue();
+          return condition;
+        })
+        ->ifTrue([&]() {
+          cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
+              expr_pair.second->codegen(func));
+          return set_expr_value(then_jit_expr_value.getNull(),
+                                then_jit_expr_value.getValue());
+        })
+        ->ifFalse([&]() {
+          cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
+              else_expr->codegen(func));
+          return set_expr_value(else_jit_expr_value.getNull(),
+                                else_jit_expr_value.getValue());
+        })
+        ->build();
   }
   return expr_var_;
 }
