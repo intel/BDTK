@@ -22,7 +22,7 @@
 
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/LegacyPassManager.h>
-#include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
@@ -130,6 +130,8 @@ JITFunctionPointer LLVMJITModule::createJITFunction(
       arg_iter->setName(name);
     }
   }
+
+  owned_functions_.emplace_back(func);
 
   // TODO (bigPYJ1151): Set Parameters Attributes.
   return std::make_shared<LLVMJITFunction>(descriptor, *this, *func);
