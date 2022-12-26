@@ -176,13 +176,17 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
 }
 
 int CodegenContext::registerTrimStringOperCharMap(const std::string& trim_chars) {
+  if (!trim_char_maps_) {
+    trim_char_maps_ = std::make_shared<std::vector<std::vector<int8_t>>>();
+  }
+
   auto trim_char_map = std::vector<int8_t>(256, 0);
   // initialize map and set characters to be trimmed to 1
   for (char ch : trim_chars) {
     trim_char_map[uint8_t(ch)] = 1;
   }
-  trim_char_maps_.emplace_back(std::move(trim_char_map));
-  return trim_char_maps_.size() - 1;
+  trim_char_maps_->emplace_back(std::move(trim_char_map));
+  return trim_char_maps_->size() - 1;
 }
 
 std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {

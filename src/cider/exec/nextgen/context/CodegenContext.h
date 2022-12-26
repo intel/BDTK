@@ -216,6 +216,7 @@ class CodegenContext {
   using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
   using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
   using CiderSetDescriptorPtr = std::shared_ptr<CiderSetDescriptor>;
+  using TrimCharMapsPtr = std::shared_ptr<std::vector<std::vector<int8_t>>>;
 
   // registers a set of trim characters for TrimStringOper, to be used at runtime
   // returns an index used for retrieving the charset at runtime
@@ -244,7 +245,8 @@ class CodegenContext {
       bool output_raw_buffer = false,
       const std::string& raw_buffer_func_name = "");
 
-  std::vector<std::vector<int8_t>> trim_char_maps_;
+  // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
+  TrimCharMapsPtr trim_char_maps_;
 };
 
 using CodegenCtxPtr = std::unique_ptr<CodegenContext>;
