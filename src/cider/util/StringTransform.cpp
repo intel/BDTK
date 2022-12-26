@@ -21,9 +21,6 @@
  */
 
 #include "StringTransform.h"
-#include <boost/algorithm/string/classification.hpp>  // Include boost::for is_any_of
-#include <boost/algorithm/string/split.hpp>           // Include for boost::split
-#include <boost/filesystem.hpp>
 #include <iomanip>
 #include <numeric>
 #include <random>
@@ -32,14 +29,14 @@
 #include "util/Logger.h"
 
 void apply_shim(std::string& result,
-                const boost::regex& reg_expr,
-                const std::function<void(std::string&, const boost::smatch&)>& shim_fn) {
-  boost::smatch what;
+                const std::regex& reg_expr,
+                const std::function<void(std::string&, const std::smatch&)>& shim_fn) {
+  std::smatch what;
   std::vector<std::pair<size_t, size_t>> lit_pos = find_string_literals(result);
   auto start_it = result.cbegin();
   auto end_it = result.cend();
   while (true) {
-    if (!boost::regex_search(start_it, end_it, what, reg_expr)) {
+    if (!std::regex_search(start_it, end_it, what, reg_expr)) {
       break;
     }
     const auto next_start =
@@ -56,14 +53,14 @@ void apply_shim(std::string& result,
 }
 
 std::vector<std::pair<size_t, size_t>> find_string_literals(const std::string& query) {
-  boost::regex literal_string_regex{R"(([^']+)('(?:[^']+|'')+'))", boost::regex::perl};
-  boost::smatch what;
+  std::regex literal_string_regex{R"(([^']+)('(?:[^']+|'')+'))"};
+  std::smatch what;
   auto it = query.begin();
   auto prev_it = it;
   std::vector<std::pair<size_t, size_t>> positions;
   while (true) {
     try {
-      if (!boost::regex_search(it, query.end(), what, literal_string_regex)) {
+      if (!std::regex_search(it, query.end(), what, literal_string_regex)) {
         break;
       }
     } catch (const std::exception& e) {

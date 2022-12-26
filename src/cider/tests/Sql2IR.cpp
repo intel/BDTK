@@ -21,6 +21,7 @@
 
 #include <boost/program_options/parsers.hpp>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 
 #include <google/protobuf/util/json_util.h>
