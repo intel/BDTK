@@ -29,7 +29,7 @@ namespace cider::exec::nextgen::context {
 
 class CiderSet {
  public:
-  explicit CiderSet() {}
+  CiderSet() {}
   virtual ~CiderSet() = default;
   virtual void insert(int8_t key_val) = 0;
   virtual void insert(int16_t key_val) = 0;
@@ -50,7 +50,7 @@ class CiderSet {
 
 class CiderInt64Set : public CiderSet {
  public:
-  explicit CiderInt64Set() : CiderSet(){};
+  CiderInt64Set() : CiderSet() {}
 
   void insert(int8_t key_val) { set_.insert(key_val); }
 
@@ -103,7 +103,7 @@ class CiderInt64Set : public CiderSet {
 
 class CiderDoubleSet : public CiderSet {
  public:
-  explicit CiderDoubleSet() : CiderSet(){};
+  CiderDoubleSet() : CiderSet() {}
 
   void insert(int8_t key_val) {
     CIDER_THROW(CiderRuntimeException,
