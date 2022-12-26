@@ -233,14 +233,14 @@ extern "C" RUNTIME_EXPORT int64_t cider_trim(char* string_heap_ptr,
 
   int end_idx = str_len - 1;
   if (rtrim) {
-    while (end_idx > start_idx &&
+    while (end_idx >= start_idx &&
            trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[end_idx]]) {
       end_idx--;
     }
   }
 
   int len = 0;
-  if (start_idx >= end_idx) {
+  if (start_idx > end_idx) {
     // all chars are trimmed away, return an empty string
     len = 0;
   } else {
