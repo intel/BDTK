@@ -24,6 +24,9 @@
 #include "type/data/sqltypes.h"
 #include "util/DateConverters.h"
 #include "util/misc.h"
+#include "util/SqlTypesLayout.h"
+#include "exec/template/IRCodegenUtils.h"
+#include "exec/nextgen/utils/JITExprValue.h"
 
 #include <algorithm>
 #include <cstring>
@@ -2745,6 +2748,45 @@ void CaseExpr::check_group_by(
   if (else_expr != nullptr) {
     else_expr->check_group_by(groupby);
   }
+}
+
+JITExprValue& CaseExpr::codegen(JITFunction& func) {
+  const auto& expr_pair_list = get_expr_pair_list();
+  const auto& else_expr = get_else_ref();
+  CHECK_GT(expr_pair_list.size(), 0);
+  for (const auto& expr_pair : expr_pair_list) {
+    func.createIfBuilder()
+    ->condition([&]() {
+      cider::exec::nextgen::utils::FixSizeJITExprValue cond(expr_pair.first->codegen(func));
+      auto condition = !cond.getNull() && cond.getValue();
+      return condition;
+    })
+    ->ifTrue([&]() {
+      cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(expr_pair.second->codegen(func));
+      return set_expr_value(then_jit_expr_value.getNull(), then_jit_expr_value.getValue());
+    })
+    ->ifFalse([&]() {
+      cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(else_expr->codegen(func));
+      return set_expr_value(else_jit_expr_value.getNull(), else_jit_expr_value.getValue());
+    })
+    ->build();
+  }
+  return expr_var_;
+}
+
+ExprPtrRefVector CaseExpr::get_children_reference() {
+  ExprPtrRefVector result;
+  for (auto& when_expr_pair : expr_pair_list) {
+    result.push_back(&when_expr_pair.first);
+    result.push_back(&when_expr_pair.second);
+  }
+  result.push_back(&else_expr);
+  return result;
+}
+
+void ExtractExpr::check_group_by(
+    const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
+  from_expr_->check_group_by(groupby);
 }
 
 void DatediffExpr::check_group_by(
