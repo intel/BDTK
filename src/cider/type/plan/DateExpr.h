@@ -69,7 +69,7 @@ class DateaddExpr : public Expr {
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
 
  public:
-  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
+  JITExprValue& codegen(CodegenContext& context) override;
   ExprPtrRefVector get_children_reference() override {
     return {&(number_), &(datetime_)};
   }

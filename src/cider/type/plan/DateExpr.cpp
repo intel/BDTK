@@ -65,11 +65,12 @@ JITValuePointer getScaledIntervalAndFunc(JITValuePointer interval,
       fmt::format("date interval type is {}, field is {}", toString(from_type), to_type));
 }
 
-JITExprValue& DateaddExpr::codegen(JITFunction& func, CodegenContext& context) {
+JITExprValue& DateaddExpr::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   const SQLTypeInfo& expr_ti = get_type_info();
   CHECK(expr_ti.get_type() == kTIMESTAMP || expr_ti.get_type() == kDATE);
-  FixSizeJITExprValue datetime(get_datetime_expr()->codegen(func, context));
-  FixSizeJITExprValue interval(get_number_expr()->codegen(func, context));
+  FixSizeJITExprValue datetime(get_datetime_expr()->codegen(context));
+  FixSizeJITExprValue interval(get_number_expr()->codegen(context));
   const SQLTypeInfo& datetime_ti = get_datetime_expr()->get_type_info();
   const SQLTypeInfo& interval_ti = get_number()->get_type_info();
 

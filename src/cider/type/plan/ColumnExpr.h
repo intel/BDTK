@@ -106,7 +106,7 @@ class ColumnVar : public Expr {
   std::string toString() const override;
 
  public:
-  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
+  JITExprValue& codegen(CodegenContext& context) override;
 
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins

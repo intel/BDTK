@@ -24,10 +24,11 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
-JITValuePointer codegenCastBetweenDateAndTime(JITFunction& func,
+JITValuePointer codegenCastBetweenDateAndTime(CodegenContext& context,
                                               JITValue& operand_val,
                                               const SQLTypeInfo& operand_ti,
                                               const SQLTypeInfo& ti) {
+  JITFunction& func = *context.getJITFunction();
   const int64_t operand_width = getTypeBytes(operand_ti.get_type());
   const int64_t target_width = getTypeBytes(ti.get_type());
   int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
@@ -49,10 +50,11 @@ JITValuePointer codegenCastBetweenDateAndTime(JITFunction& func,
   }
 }
 
-JITValuePointer codegenCastBetweenTime(JITFunction& func,
+JITValuePointer codegenCastBetweenTime(CodegenContext& context,
                                        JITValue& operand_val,
                                        const SQLTypeInfo& operand_ti,
                                        const SQLTypeInfo& target_ti) {
+  JITFunction& func = *context.getJITFunction();
   const auto operand_dimen = operand_ti.get_dimension();
   const auto target_dimen = target_ti.get_dimension();
   JITValuePointer cast_scaled = func.createLiteral(
@@ -70,7 +72,7 @@ JITValuePointer codegenCastBetweenTime(JITFunction& func,
   }
 }
 
-JITExprValue& UOper::codegen(JITFunction& func, CodegenContext& context) {
+JITExprValue& UOper::codegen(CodegenContext& context) {
   if (auto& expr_var = get_expr_value()) {
     return expr_var;
   }
@@ -86,32 +88,32 @@ JITExprValue& UOper::codegen(JITFunction& func, CodegenContext& context) {
   switch (get_optype()) {
     case kISNULL:
     case kISNOTNULL: {
-      return codegenIsNull(func, context, operand, get_optype());
+      return codegenIsNull(context, operand, get_optype());
     }
     case kNOT: {
-      return codegenNot(func, context, operand);
+      return codegenNot(context, operand);
     }
     case kCAST: {
-      return codegenCast(func, context, operand);
+      return codegenCast(context, operand);
     }
     case kUMINUS: {
-      return codegenUminus(func, context, operand);
+      return codegenUminus(context, operand);
     }
     default:
       UNIMPLEMENTED();
   }
 }
 
-JITExprValue& UOper::codegenIsNull(JITFunction& func,
-                                   CodegenContext& context,
+JITExprValue& UOper::codegenIsNull(CodegenContext& context,
                                    Analyzer::Expr* operand,
                                    SQLOps optype) {
+  JITFunction& func = *context.getJITFunction();
   // For ISNULL, the null will always be false
   const auto& ti = get_type_info();
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
 
   // for IS NULL / IS NOT NULL, we only need the null info (getNull())
-  JITExprValueAdaptor operand_val(operand->codegen(func, context));
+  JITExprValueAdaptor operand_val(operand->codegen(context));
 
   if (optype == kISNOTNULL) {
     // is not null
@@ -124,35 +126,29 @@ JITExprValue& UOper::codegenIsNull(JITFunction& func,
   }
 }
 
-JITExprValue& UOper::codegenNot(JITFunction& func,
-                                CodegenContext& context,
-                                Analyzer::Expr* operand) {
+JITExprValue& UOper::codegenNot(CodegenContext& context, Analyzer::Expr* operand) {
   const auto& ti = get_type_info();
 
   // should be bool, or otherwise will throw in notOp()
-  FixSizeJITExprValue operand_val(operand->codegen(func, context));
+  FixSizeJITExprValue operand_val(operand->codegen(context));
 
   CHECK(operand_val.getNull().get());
   return set_expr_value(operand_val.getNull(), operand_val.getValue()->notOp());
 }
 
-JITExprValue& UOper::codegenUminus(JITFunction& func,
-                                   CodegenContext& context,
-                                   Analyzer::Expr* operand) {
+JITExprValue& UOper::codegenUminus(CodegenContext& context, Analyzer::Expr* operand) {
   // should be fixedSize type
-  FixSizeJITExprValue operand_val(operand->codegen(func, context));
+  FixSizeJITExprValue operand_val(operand->codegen(context));
   CHECK(operand_val.getNull().get());
   return set_expr_value(operand_val.getNull(), -operand_val.getValue());
 }
 
-JITExprValue& UOper::codegenCast(JITFunction& func,
-                                 CodegenContext& context,
-                                 Analyzer::Expr* operand) {
+JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operand) {
   const auto& ret_ti = get_type_info();
   const auto& operand_ti = operand->get_type_info();
   if (operand_ti.is_string()) {
     // input is varchar
-    VarSizeJITExprValue operand_val(operand->codegen(func, context));
+    VarSizeJITExprValue operand_val(operand->codegen(context));
     if (ret_ti.is_string()) {
       // only supports casting from varchar to varchar
       return set_expr_value(
@@ -165,22 +161,23 @@ JITExprValue& UOper::codegenCast(JITFunction& func,
     }
   } else {
     // input is primitive type
-    FixSizeJITExprValue operand_val(operand->codegen(func, context));
+    FixSizeJITExprValue operand_val(operand->codegen(context));
     return set_expr_value(operand_val.getNull(),
-                          codegenCastFunc(func, operand_val.getValue()));
+                          codegenCastFunc(context, operand_val.getValue()));
   }
 }
 
-JITValuePointer UOper::codegenCastFunc(JITFunction& func, JITValue& operand_val) {
+JITValuePointer UOper::codegenCastFunc(CodegenContext& context, JITValue& operand_val) {
+  JITFunction& func = *context.getJITFunction();
   const SQLTypeInfo& ti = get_type_info();
   const SQLTypeInfo& operand_ti = get_operand()->get_type_info();
   JITTypeTag ti_jit_tag = getJITTypeTag(ti.get_type());
   if (operand_ti.is_string() || ti.is_string()) {
     UNIMPLEMENTED();
   } else if (operand_ti.get_type() == kDATE || ti.get_type() == kDATE) {
-    return codegenCastBetweenDateAndTime(func, operand_val, operand_ti, ti);
+    return codegenCastBetweenDateAndTime(context, operand_val, operand_ti, ti);
   } else if (operand_ti.get_type() == kTIMESTAMP && ti.get_type() == kTIMESTAMP) {
-    return codegenCastBetweenTime(func, operand_val, operand_ti, ti);
+    return codegenCastBetweenTime(context, operand_val, operand_ti, ti);
   } else if (operand_ti.is_integer()) {
     if (ti.is_fp() || ti.is_integer()) {
       return operand_val.castJITValuePrimitiveType(ti_jit_tag);

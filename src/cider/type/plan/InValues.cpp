@@ -235,7 +235,8 @@ std::string get_fn_name(const SQLTypeInfo& type_info) {
   }
 }
 
-JITExprValue& InValues::codegen(JITFunction& func, CodegenContext& context) {
+JITExprValue& InValues::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   // get the constant list and insert them in the set
   auto in_arg = const_cast<Analyzer::Expr*>(get_arg());
   if (is_unnest(in_arg)) {
@@ -243,7 +244,7 @@ JITExprValue& InValues::codegen(JITFunction& func, CodegenContext& context) {
   }
   const auto& expr_ti = get_type_info();
   CHECK(expr_ti.is_boolean());
-  FixSizeJITExprValue in_arg_val(in_arg->codegen(func, context));
+  FixSizeJITExprValue in_arg_val(in_arg->codegen(context));
   auto null_value = in_arg_val.getNull();
   // For values count >= 3, use CiderSet for evaluation
   // Otherwise, translate it into OR exprs
@@ -273,7 +274,7 @@ JITExprValue& InValues::codegen(JITFunction& func, CodegenContext& context) {
         CIDER_THROW(CiderCompileException, "InValues only support constant value list.");
       }
       if (in_val_const->get_type_info().get_notnull()) {
-        FixSizeJITExprValue in_val_const_jit(in_val_const->codegen(func, context));
+        FixSizeJITExprValue in_val_const_jit(in_val_const->codegen(context));
         val.replace(val || (in_arg_val.getValue() == in_val_const_jit.getValue()));
       }
     }

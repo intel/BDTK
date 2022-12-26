@@ -77,7 +77,7 @@ class InValues : public Expr {
 
  public:
   ExprPtrRefVector get_children_reference() override { return {&arg}; }
-  JITExprValue& codegen(JITFunction& func, CodegenContext& context);
+  JITExprValue& codegen(CodegenContext& context);
 
  private:
   std::shared_ptr<Analyzer::Expr> arg;  // the argument left of IN

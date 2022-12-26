@@ -124,7 +124,7 @@ class LikeExpr : public Expr {
     return {&arg, &like_expr, &escape_expr};
   }
 
-  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
+  JITExprValue& codegen(CodegenContext& context) override;
 };
 }  // namespace Analyzer
 

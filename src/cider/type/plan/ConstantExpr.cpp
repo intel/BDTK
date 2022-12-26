@@ -23,7 +23,8 @@
 
 namespace Analyzer {
 
-JITExprValue& Constant::codegen(JITFunction& func, CodegenContext& context) {
+JITExprValue& Constant::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   if (auto& expr_var = get_expr_value()) {
     return expr_var;
   }

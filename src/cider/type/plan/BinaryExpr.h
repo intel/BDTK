@@ -144,7 +144,7 @@ class BinOper : public Expr {
   ExprPtrRefVector get_children_reference() override {
     return {&left_operand, &right_operand};
   }
-  JITExprValue& codegen(JITFunction& func, CodegenContext& context) override;
+  JITExprValue& codegen(CodegenContext& context) override;
   JITExprValue& codegenFixedSizeColArithFun(JITValuePointer& null,
                                             JITValue& lhs,
                                             JITValue& rhs);
