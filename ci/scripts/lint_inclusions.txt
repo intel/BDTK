@@ -1,3 +1,4 @@
+src/cider/common/
 src/cider/benchmarks/
 src/cider/examples/
 src/cider/exec/module/

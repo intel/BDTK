@@ -32,7 +32,6 @@
 #include <boost/noncopyable.hpp>
 
 #include <common/hashtable/HashTableAllocator.h>
-// #include <common/hashtable/HashTableKeyHolder.h>
 
 #ifdef DBMS_HASH_MAP_DEBUG_RESIZES
 #include <Common/Stopwatch.h>
@@ -170,7 +169,7 @@ struct HashTableCell {
 
   Key key;
 
-  HashTableCell() {}  /// NOLINT
+  HashTableCell() {}
 
   /// Create a cell with the given key / key and value.
   HashTableCell(const Key& key_, const State&) : key(key_) {}
@@ -391,8 +390,7 @@ template <bool need_zero_value_storage, typename Cell>
 struct ZeroValueStorage;
 
 template <typename Cell>
-struct ZeroValueStorage<true, Cell>  //-V730
-{
+struct ZeroValueStorage<true, Cell> {
  private:
   bool has_zero = false;
   std::aligned_storage_t<sizeof(Cell), alignof(Cell)>
@@ -454,9 +452,7 @@ class HashTable : private boost::noncopyable,
                   protected Hash,
                   protected Allocator,
                   protected Cell::State,
-                  public ZeroValueStorage<Cell::need_zero_value_storage,
-                                          Cell>  /// empty base optimization
-{
+                  public ZeroValueStorage<Cell::need_zero_value_storage, Cell> {
   // public:
   //     // If we use an allocator with inline memory, check that the initial
   //     // size of the hash table is in sync with the amount of this memory.
@@ -554,10 +550,9 @@ class HashTable : private boost::noncopyable,
       new_grower.setBufSize(for_buf_size);
       if (new_grower.bufSize() <= old_size)
         return;
-    } else
+    } else {
       new_grower.increaseSize();
-
-    /// Expand the space.
+    }
 
     size_t old_buffer_size = getBufferSizeInBytes();
 
@@ -575,9 +570,10 @@ class HashTable : private boost::noncopyable,
       memcpy(reinterpret_cast<void*>(buf),
              reinterpret_cast<const void*>(old_buffer.get()),
              old_buffer_size);
-    } else
+    } else {
       buf = reinterpret_cast<Cell*>(
           Allocator::realloc(buf, old_buffer_size, new_grower.bufSize() * sizeof(Cell)));
+    }
 
     grower = new_grower;
 
@@ -664,8 +660,7 @@ class HashTable : private boost::noncopyable,
   }
 
   template <typename Derived, bool is_const>
-  class iterator_base  /// NOLINT
-  {
+  class iterator_base {
     using Container = std::conditional_t<is_const, const Self, Self>;
     using cell_type = std::conditional_t<is_const, const Cell, Cell>;
 
@@ -675,7 +670,7 @@ class HashTable : private boost::noncopyable,
     friend class HashTable;
 
    public:
-    iterator_base() {}  /// NOLINT
+    iterator_base() {}
     iterator_base(Container* container_, cell_type* ptr_)
         : container(container_), ptr(ptr_) {}
 
@@ -724,7 +719,7 @@ class HashTable : private boost::noncopyable,
      * compatibility with std find(). Unfortunately, now is not the time to
      * do this.
      */
-    operator Cell*() const { return nullptr; }  /// NOLINT
+    operator Cell*() const { return nullptr; }
   };
 
  public:
@@ -744,10 +739,10 @@ class HashTable : private boost::noncopyable,
     alloc(grower);
   }
 
-  HashTable(size_t reserve_for_num_elements)  /// NOLINT
-  {
-    if (Cell::need_zero_value_storage)
+  explicit HashTable(size_t reserve_for_num_elements) {
+    if (Cell::need_zero_value_storage) {
       this->zeroValue()->setZero();
+    }
     grower.set(reserve_for_num_elements);
     alloc(grower);
   }
@@ -767,11 +762,10 @@ class HashTable : private boost::noncopyable,
     std::swap(m_size, rhs.m_size);
     std::swap(grower, rhs.grower);
 
-    Hash::operator=(std::move(rhs));         /// NOLINT
-    Allocator::operator=(std::move(rhs));    /// NOLINT
-    Cell::State::operator=(std::move(rhs));  /// NOLINT
-    ZeroValueStorage<Cell::need_zero_value_storage, Cell>::operator=(
-        std::move(rhs));  /// NOLINT
+    Hash::operator=(std::move(rhs));
+    Allocator::operator=(std::move(rhs));
+    Cell::State::operator=(std::move(rhs));
+    ZeroValueStorage<Cell::need_zero_value_storage, Cell>::operator=(std::move(rhs));
 
     return *this;
   }
@@ -827,14 +821,12 @@ class HashTable : private boost::noncopyable,
   //     bool is_initialized = false;
   // };
 
-  class iterator : public iterator_base<iterator, false>  /// NOLINT
-  {
+  class iterator : public iterator_base<iterator, false> {
    public:
     using iterator_base<iterator, false>::iterator_base;
   };
 
-  class const_iterator : public iterator_base<const_iterator, true>  /// NOLINT
-  {
+  class const_iterator : public iterator_base<const_iterator, true> {
    public:
     using iterator_base<const_iterator, true>::iterator_base;
   };
@@ -906,8 +898,9 @@ class HashTable : private boost::noncopyable,
         this->setHasZero();
         this->zeroValue()->setHash(hash_value);
         inserted = true;
-      } else
+      } else {
         inserted = false;
+      }
 
       return true;
     }
@@ -1077,15 +1070,11 @@ class HashTable : private boost::noncopyable,
     return const_cast<std::decay_t<decltype(*this)>*>(this)->find(x, hash_value);
   }
 
-  ALWAYS_INLINE bool erase(const Key& x)
   // requires Grower::performs_linear_probing_with_single_step
-  {
-    return erase(x, hash(x));
-  }
+  ALWAYS_INLINE bool erase(const Key& x) { return erase(x, hash(x)); }
 
-  ALWAYS_INLINE bool erase(const Key& x, size_t hash_value)
   // requires Grower::performs_linear_probing_with_single_step
-  {
+  ALWAYS_INLINE bool erase(const Key& x, size_t hash_value) {
     /** Deletion from open addressing hash table without tombstones
      *
      * https://en.wikipedia.org/wiki/Linear_probing
