@@ -172,11 +172,13 @@ extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-// to be deprecated. rconcat is only used for backward compatibility with template codegen
-// template based codegen only supports cases where the first arg is a variable
-// for concat ops like "constant || var", it will be converted to "var || constant"
-// and then concatenated in the reversed order.
-// However, nextgen allows both arguments to be variable, so rconcat is no longer needed.
+// to be deprecated.
+// rconcat is only used for backward compatibility with template codegen, which only
+// supports cases where the first arg is a variable.
+// for concat ops like "constant || var", it will be converted to "var || constant" and
+// then concatenated in the REVERSED order (RCONCAT).
+// However, nextgen allows both arguments to be variables, so this function can be removed
+// after full migration to nextgen
 extern "C" RUNTIME_EXPORT int64_t cider_rconcat(char* string_heap_ptr,
                                                 const char* lhs,
                                                 int lhs_len,

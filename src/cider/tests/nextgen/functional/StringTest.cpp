@@ -390,8 +390,6 @@ TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
 // stringop: concat
 
 TEST_F(CiderStringTestNextGen, ConcatTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  // GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
   // Skipped because Isthmus does not support concatenating two literals
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -412,9 +410,6 @@ TEST_F(CiderStringTestNextGen, ConcatTest) {
 }
 
 TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  // GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
-
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
   assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");

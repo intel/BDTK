@@ -511,6 +511,64 @@ JITExprValue& ConcatStringOper::codegen(JITFunction& func,
   return set_expr_value(lhs_val.getNull() || rhs_val.getNull(), ret_len, ret_ptr);
 }
 
+// to be deprecated. Can be removed after full migration to nextgen
+bool ConcatStringOper::isLiteralOrCastLiteral(const Analyzer::Expr* operand) {
+  // literals may exist in a CAST op (casted from fixedchar to varchar)
+  auto literal_arg = dynamic_cast<const Analyzer::Constant*>(remove_cast(operand));
+  if (literal_arg) {
+    // is a literal or a casted literal
+    return true;
+  }
+  return false;
+}
+
+// to be deprecated. Can be removed after full migration to nextgen.
+// Anything else related with RCONCAT can also be removed after migration to nextgen
+SqlStringOpKind ConcatStringOper::getConcatOpKind(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+  CHECK_EQ(operands.size(), 2);
+  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
+  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
+
+  if (is_constant_arg1) {
+    // concat(col, literal) or concat(literal, literal)
+    return SqlStringOpKind::CONCAT;
+  } else if (is_constant_arg0) {
+    // concat(literal, col)
+    return SqlStringOpKind::RCONCAT;
+  } else {
+    return SqlStringOpKind::CONCAT;
+    // NOTE: (YBRua) the error check here is not needed in nextgen, because nextgen
+    // supports concatenating two variable inputs. However, templated codegen still does
+    // not support two variable inputs and will have errors in these cases
+    // CIDER_THROW(CiderCompileException,
+    //             "concat() currently does not support two variable operands.");
+  }
+}
+
+// to be deprecated. Can be removed after full migration to nextgen
+std::vector<std::shared_ptr<Analyzer::Expr>> ConcatStringOper::rearrangeOperands(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+  // ensures non-literal operand (if any) is not at arg1
+  // as stringops expect non-literals to be the first arg at runtime
+  CHECK_EQ(operands.size(), 2);
+  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
+  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
+
+  if (is_constant_arg1) {
+    // concat(col, literal) or concat(literal, literal)
+    return {operands[0], remove_cast(operands[1].get())->deep_copy()};
+  } else if (is_constant_arg0) {
+    // concat(literal, col)
+    return {operands[1], remove_cast(operands[0].get())->deep_copy()};
+  } else {
+    return operands;
+    // error check is disabled for the same reason as above
+    // CIDER_THROW(CiderCompileException,
+    //             "concat() currently does not support two variable operands.");
+  }
+}
+
 // TrimStringOper: LTRIM / TRIM / RTRIM
 std::shared_ptr<Analyzer::Expr> TrimStringOper::deep_copy() const {
   return makeExpr<Analyzer::TrimStringOper>(
