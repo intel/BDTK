@@ -24,6 +24,7 @@
 
 namespace Analyzer {
 using namespace cider::jitlib;
+using namespace cider::exec::nextgen;
 
 JITExprValue& BinOper::codegen(CodegenContext& context) {
   JITFunction& func = *context.getJITFunction();
