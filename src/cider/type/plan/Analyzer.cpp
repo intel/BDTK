@@ -27,9 +27,6 @@
 #include "util/DateConverters.h"
 #include "util/SqlTypesLayout.h"
 #include "util/misc.h"
-#include "util/SqlTypesLayout.h"
-#include "exec/template/IRCodegenUtils.h"
-#include "exec/nextgen/utils/JITExprValue.h"
 
 #include <algorithm>
 #include <cstring>
@@ -2748,44 +2745,25 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
     func.createIfBuilder()
         ->condition([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue cond(
-              expr_pair.first->codegen(context));
+              expr_pair.first->codegen(func));
           auto condition = !cond.getNull() && cond.getValue();
           return condition;
         })
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
-              expr_pair.second->codegen(context));
-          std::cout << then_jit_expr_value.getValue().get()->getValueName() << std::endl;
-          // std::cout << then_jit_expr_value.getValue().get()->getValueTypeTag() <<
-          // std::endl; std::cout <<
-          // then_jit_expr_value.getValue().get()->getValueSubTypeTag() << std::endl;
-          if (then_jit_expr_value.getValue().get() == nullptr) {
-            std::cout << "nullptr1" << std::endl;
-          }
-          if (then_jit_expr_value.getNull().get() == nullptr) {
-            std::cout << "nullptr2" << std::endl;
-          }
-          value.replace(then_jit_expr_value.getValue());
-          null.replace(then_jit_expr_value.getNull());
+              expr_pair.second->codegen(func));
+          return set_expr_value(then_jit_expr_value.getNull(),
+                                then_jit_expr_value.getValue());
         })
         ->ifFalse([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
-              else_expr->codegen(context));
-          std::cout << else_jit_expr_value.getValue().get()->getValueName() << std::endl;
-          // std::cout << else_jit_expr_value.getValue().get()->getValueTypeTag() <<
-          // std::endl;
-          if (else_jit_expr_value.getValue().get() == nullptr) {
-            std::cout << "nullptr3" << std::endl;
-          }
-          if (else_jit_expr_value.getNull().get() == nullptr) {
-            std::cout << "nullptr4" << std::endl;
-          }
-          value.replace(else_jit_expr_value.getValue());
-          null.replace(else_jit_expr_value.getNull());
+              else_expr->codegen(func));
+          return set_expr_value(else_jit_expr_value.getNull(),
+                                else_jit_expr_value.getValue());
         })
         ->build();
   }
-  return set_expr_value(null, value);
+  return expr_var_;
 }
 
 ExprPtrRefVector CaseExpr::get_children_reference() {
