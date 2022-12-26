@@ -27,7 +27,7 @@
 namespace icl {
 namespace codec {
 
-// ICL codec.
+/// \brief ICL Compression codec
 class IclCompressionCodec {
  public:
   virtual ~IclCompressionCodec() = default;
@@ -55,6 +55,15 @@ class IclCompressionCodec {
                            uint8_t* output_buffer) = 0;
 
   virtual int64_t MaxCompressedLen(int64_t input_len, const uint8_t* input) = 0;
+
+  /// \brief Return the smallest supported compression level
+  virtual int minimum_compression_level() const = 0;
+
+  /// \brief Return the largest supported compression level
+  virtual int maximum_compression_level() const = 0;
+
+  /// \brief Return the default compression level
+  virtual int default_compression_level() const = 0;
 };
 
 }  // namespace codec
