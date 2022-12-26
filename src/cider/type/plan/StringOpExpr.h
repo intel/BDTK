@@ -394,14 +394,14 @@ class ConcatStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(getConcatOpKind(operands),
                    rearrangeOperands(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
@@ -456,7 +456,7 @@ class TrimStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
