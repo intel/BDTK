@@ -816,6 +816,9 @@ class CaseExpr : public Expr {
   std::shared_ptr<Analyzer::Expr> add_cast(const SQLTypeInfo& new_type_info) override;
   void get_domain(DomainSet& domain_set) const override;
 
+  JITExprValue& codegen(JITFunction& func) override;
+  ExprPtrRefVector get_children_reference() override;
+
  private:
   std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
       expr_pair_list;  // a pair of expressions for each WHEN expr1 THEN expr2.  expr1
