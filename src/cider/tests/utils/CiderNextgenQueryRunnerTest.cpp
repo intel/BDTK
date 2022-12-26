@@ -21,6 +21,7 @@
 
 #include <gtest/gtest.h>
 
+#include "tests/utils/CiderArrowChecker.h"
 #include "tests/utils/CiderNextgenQueryRunner.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 
@@ -47,16 +48,8 @@ TEST(CiderProcessorQueryRunnerTest, filterProjectTest) {
   cider_query_runner.runQueryOneBatch(
       sql_select_star, *input_array, *input_schema, output_array, output_schema);
 
-  auto check_array = [](ArrowArray* array, size_t expect_len) {
-    EXPECT_EQ(array->length, expect_len);
-    int64_t* data_buffer = (int64_t*)array->buffers[1];
-    for (size_t i = 0; i < expect_len; ++i) {
-      std::cout << data_buffer[i] << " ";
-    }
-    std::cout << std::endl;
-  };
-
-  check_array(output_array.children[0], 99);
+  EXPECT_TRUE(CiderArrowChecker::checkArrowEq(
+      input_array, &output_array, input_schema, &output_schema));
 }
 
 int main(int argc, char** argv) {
