@@ -149,7 +149,7 @@ class BinOper : public Expr {
   JITExprValue& codegenFixedSizeColArithFun(JITValuePointer& null,
                                             JITValue& lhs,
                                             JITValue& rhs,
-                                            bool needs_error_check);
+                                            bool needs_error_check = false);
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
                                           JITValue& rhs);

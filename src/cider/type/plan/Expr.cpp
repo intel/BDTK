@@ -33,7 +33,7 @@ JITExprValue& Expr::codegen(CodegenContext& context) {
 }
 
 JITExprValue& Expr::codegen(JITFunction& func, context::CodegenContext& context) {
-  codegen(func);
+  return codegen(func);
 }
 }  // namespace Analyzer
 
