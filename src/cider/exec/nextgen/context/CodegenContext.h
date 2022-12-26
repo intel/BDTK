@@ -217,6 +217,10 @@ class CodegenContext {
   using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
   using CiderSetDescriptorPtr = std::shared_ptr<CiderSetDescriptor>;
 
+  // registers a set of trim characters for TrimStringOper, to be used at runtime
+  // returns an index used for retrieving the charset at runtime
+  int registerTrimStringOperCharMap(const std::string& trim_chars);
+
  private:
   std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
       batch_descriptors_{};
@@ -239,6 +243,8 @@ class CodegenContext {
       int64_t id,
       bool output_raw_buffer = false,
       const std::string& raw_buffer_func_name = "");
+
+  std::vector<std::vector<int8_t>> trim_char_maps_;
 };
 
 using CodegenCtxPtr = std::unique_ptr<CodegenContext>;
