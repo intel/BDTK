@@ -19,14 +19,15 @@
  * under the License.
  */
 
-#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/CiderArrowChecker.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 
 namespace cider::test::util {
 
 void CiderNextgenTestBase::assertQuery(const std::string& sql,
                                        const std::string& json_file,
                                        const bool ignore_order) {
+  std::cout << "query: " << sql << std::endl;
   auto duck_res = duckdb_query_runner_.runSql(sql);
   auto duck_res_arrow = DuckDbResultConvertor::fetchDataToArrow(duck_res);
 
@@ -39,12 +40,16 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   // As a result, in this case, we need feed a json file, which is delivered by Velox and
   // will be used to generate Substrait plan.
   auto file_or_sql = json_file.size() ? json_file : sql;
-  cider_nextgen_query_runner_.runQueryOneBatch(
+  cider_nextgen_query_runner_->runQueryOneBatch(
       file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
-  EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
-                                              &output_array,
-                                              duck_res_arrow[0].second.get(),
-                                              &output_schema));
+  if (0 == duck_res_arrow.size()) {
+    // result is empty.
+  } else {
+    EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
+                                                &output_array,
+                                                duck_res_arrow[0].second.get(),
+                                                &output_schema));
+  }
 
   output_array.release(&output_array);
   output_schema.release(&output_schema);

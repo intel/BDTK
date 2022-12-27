@@ -40,7 +40,7 @@ class CiderNextgenTestBase : public testing::Test {
       duckdb_query_runner_.createTableAndInsertArrowData(
           table_name_, create_ddl_, *input_array_, *input_schema_);
     }
-    cider_nextgen_query_runner_.prepare(create_ddl_);
+    cider_nextgen_query_runner_->prepare(create_ddl_);
   }
 
   // each assert call will reset DuckDbQueryRunner and CiderQueryRunner
@@ -59,7 +59,8 @@ class CiderNextgenTestBase : public testing::Test {
   ArrowArray* input_array_{nullptr};
   ArrowSchema* input_schema_{nullptr};
   DuckDbQueryRunner duckdb_query_runner_;
-  CiderNextgenQueryRunner cider_nextgen_query_runner_;
+  CiderNextgenQueryRunnerPtr cider_nextgen_query_runner_ =
+      std::make_shared<CiderNextgenQueryRunner>();
 };
 
 }  // namespace cider::test::util
