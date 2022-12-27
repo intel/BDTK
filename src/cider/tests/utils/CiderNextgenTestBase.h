@@ -48,6 +48,11 @@ class CiderNextgenTestBase : public testing::Test {
                    const std::string& json_file_or_sql = "",
                    const bool ignore_order = false);
 
+  void assertQueryIgnoreOrder(const std::string& sql,
+                              const std::string& json_file_or_sql = "") {
+    assertQuery(sql, json_file_or_sql, true);
+  }
+
   void setupDdl(std::string& table_name, std::string& create_ddl) {
     table_name_ = table_name;
     create_ddl_ = create_ddl;
