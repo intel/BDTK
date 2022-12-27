@@ -28,6 +28,9 @@
 
 namespace shared {
 
+constexpr int
+    pow10[10]{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
 size_t formatDate(char* buf, size_t const max, int64_t const unixtime) {
   DivUMod const div_day = divUMod(unixtime, 24 * 60 * 60);
   DivUMod const div_era = divUMod(div_day.quot - 11017, 146097);
@@ -50,8 +53,6 @@ size_t formatDateTime(char* buf,
                       size_t const max,
                       int64_t const timestamp,
                       int const dimension) {
-  constexpr int pow10[10]{
-      1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
   DivUMod const div_hip = divUMod(timestamp, pow10[dimension]);
   DivUMod const div_day = divUMod(div_hip.quot, 24 * 60 * 60);
   DivUMod const div_era = divUMod(div_day.quot - 11017, 146097);
@@ -83,15 +84,27 @@ size_t formatDateTime(char* buf,
   return 0;
 }
 
-size_t formatHMS(char* buf, size_t const max, int64_t const unixtime) {
-  unsigned const seconds = static_cast<unsigned>(unsignedMod(unixtime, 24 * 60 * 60));
-  unsigned const minutes = seconds / 60;
-  unsigned const ss = seconds % 60;
+size_t formatHMS(char* buf,
+                 size_t const max,
+                 int64_t const unixtime,
+                 int const dimension) {
+  DivUMod const div_hip = divUMod(unixtime, pow10[dimension]);
+  DivUMod const div_day = divUMod(div_hip.quot, 24 * 60 * 60);
+  unsigned const minutes = static_cast<unsigned>(div_day.rem) / 60;
+  unsigned const ss = div_day.rem % 60;
   unsigned const hh = minutes / 60;
   unsigned const mm = minutes % 60;
   int const len = snprintf(buf, max, "%02u:%02u:%02u", hh, mm, ss);
   if (0 <= len && static_cast<size_t>(len) < max) {
-    return static_cast<size_t>(len);
+    if (dimension) {
+      int const len_frac = snprintf(
+          buf + len, max - len, ".%0*d", dimension, static_cast<int>(div_hip.rem));
+      if (0 <= len_frac && static_cast<size_t>(len + len_frac) < max) {
+        return static_cast<size_t>(len + len_frac);
+      }
+    } else {
+      return static_cast<size_t>(len);
+    }
   }
   return 0;
 }

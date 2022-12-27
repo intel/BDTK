@@ -285,17 +285,19 @@ gen_string_from_double(const double operand, char* string_heap_ptr) {
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
 gen_string_from_bool(const int8_t operand, char* string_heap_ptr) {
-  std::string_view str = (operand == 1) ? "true" : "false";
+  std::string str = (operand == 1) ? "true" : "false";
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(str.data(), str.length());
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-gen_string_from_time(const int64_t operand, char* string_heap_ptr) {
+gen_string_from_time(const int64_t operand,
+                     char* string_heap_ptr,
+                     const int32_t dimension) {
   constexpr size_t buf_size = 64;
   char buf[buf_size];
-  int32_t str_len = shared::formatHMS(buf, buf_size, operand);
+  int32_t str_len = shared::formatHMS(buf, buf_size, operand, dimension);
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(buf, str_len);
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
@@ -323,12 +325,16 @@ gen_string_from_date(const int32_t operand, char* string_heap_ptr) {
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
 
-// add error check
-#define DEF_CONVERT_STRING_TO_INTEGER(value_type, value_name)                        \
-  extern "C" RUNTIME_EXPORT ALWAYS_INLINE value_type convert_string_to_##value_name( \
-      const char* str_ptr, const int32_t str_len) {                                  \
-    std::string from_str(str_ptr, str_len);                                          \
-    return (value_type)std::stoi(from_str);                                          \
+#define DEF_CONVERT_STRING_TO_INTEGER(value_type, value_name)          \
+  extern "C" RUNTIME_EXPORT value_type convert_string_to_##value_name( \
+      const char* str_ptr, const int32_t str_len) {                    \
+    std::string from_str(str_ptr, str_len);                            \
+    value_type res = std::stoi(from_str);                              \
+    if (res >= std::numeric_limits<value_type>::min() &&               \
+        res <= std::numeric_limits<value_type>::max())                 \
+      return res;                                                      \
+    CIDER_THROW(CiderRuntimeException,                                 \
+                "runtime error:cast from string to " #value_type);     \
   }
 
 DEF_CONVERT_STRING_TO_INTEGER(int8_t, tinyint)
@@ -343,6 +349,17 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE float convert_string_to_float(
     const int32_t str_len) {
   std::string from_str(str_ptr, str_len);
   return std::stof(from_str);
+}
+
+extern "C" RUNTIME_EXPORT int8_t convert_string_to_bool(const char* str_ptr,
+                                                        const int32_t str_len) {
+  std::string s(str_ptr, str_len);
+  if (s == "t" || s == "T" || s == "1" || to_upper(std::string(s)) == "TRUE") {
+    return 1;
+  } else if (s == "f" || s == "F" || s == "0" || to_upper(std::string(s)) == "FALSE") {
+    return 0;
+  }
+  CIDER_THROW(CiderRuntimeException, "cast from string to bool runtime error");
 }
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE double convert_string_to_double(

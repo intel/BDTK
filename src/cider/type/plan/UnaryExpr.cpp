@@ -25,50 +25,52 @@ namespace Analyzer {
 using namespace cider::jitlib;
 
 JITValuePointer codegenCastBetweenDateAndTime(CodegenContext& context,
-                                              JITValue& operand_val,
+                                              JITValuePointer operand_val,
                                               const SQLTypeInfo& operand_ti,
                                               const SQLTypeInfo& ti) {
-  JITFunction& func = *context.getJITFunction();
+  auto func = context.getJITFunction();
   const int64_t operand_width = getTypeBytes(operand_ti.get_type());
   const int64_t target_width = getTypeBytes(ti.get_type());
   int64_t dim_scaled = DateTimeUtils::get_timestamp_precision_scale(
       abs(operand_ti.get_dimension() - ti.get_dimension()));
   JITValuePointer cast_scaled =
-      func.createLiteral(JITTypeTag::INT64, dim_scaled * kSecondsInOneDay);
+      func->createLiteral(JITTypeTag::INT64, dim_scaled * kSecondsInOneDay);
   if (target_width == operand_width) {
-    return JITValuePointer(&operand_val);
+    return operand_val;
   } else if (target_width > operand_width) {
     JITValuePointer cast_val =
-        operand_val.castJITValuePrimitiveType(getJITTypeTag(ti.get_type()));
-    return JITValuePointer(cast_val * cast_scaled);
+        operand_val->castJITValuePrimitiveType(getJITTypeTag(ti.get_type()));
+    return cast_val * cast_scaled;
   } else {
-    JITValuePointer trunc_val = func.emitRuntimeFunctionCall(
+    JITValuePointer trunc_val = func->emitRuntimeFunctionCall(
         "floor_div_lhs",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                  .params_vector = {&operand_val, cast_scaled.get()}});
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT64,
+            .params_vector = {operand_val.get(), cast_scaled.get()}});
     return trunc_val->castJITValuePrimitiveType(getJITTypeTag(ti.get_type()));
   }
 }
 
 JITValuePointer codegenCastBetweenTime(CodegenContext& context,
-                                       JITValue& operand_val,
+                                       JITValuePointer operand_val,
                                        const SQLTypeInfo& operand_ti,
                                        const SQLTypeInfo& target_ti) {
-  JITFunction& func = *context.getJITFunction();
+  auto func = context.getJITFunction();
   const auto operand_dimen = operand_ti.get_dimension();
   const auto target_dimen = target_ti.get_dimension();
-  JITValuePointer cast_scaled = func.createLiteral(
+  JITValuePointer cast_scaled = func->createLiteral(
       JITTypeTag::INT64,
       DateTimeUtils::get_timestamp_precision_scale(abs(operand_dimen - target_dimen)));
   if (operand_dimen == target_dimen) {
-    return JITValuePointer(&operand_val);
+    return operand_val;
   } else if (operand_dimen < target_dimen) {
-    return JITValuePointer(operand_val * cast_scaled);
+    return operand_val * cast_scaled;
   } else {
-    return func.emitRuntimeFunctionCall(
+    return func->emitRuntimeFunctionCall(
         "floor_div_lhs",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                  .params_vector = {&operand_val, cast_scaled.get()}});
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT64,
+            .params_vector = {operand_val.get(), cast_scaled.get()}});
   }
 }
 
@@ -143,32 +145,33 @@ JITExprValue& UOper::codegenUminus(CodegenContext& context, Analyzer::Expr* oper
   return set_expr_value(operand_val.getNull(), -operand_val.getValue());
 }
 
-JITValuePointer codegenCastFixedSize(JITFunction& func,
-                                     JITValue& operand_val,
+JITValuePointer codegenCastFixedSize(CodegenContext& context,
+                                     JITValuePointer operand_val,
                                      const SQLTypeInfo& operand_ti,
                                      const SQLTypeInfo& target_ti) {
   JITTypeTag ti_jit_tag = getJITTypeTag(target_ti.get_type());
   if (operand_ti.get_type() == kDATE || target_ti.get_type() == kDATE) {
-    return codegenCastBetweenDateAndTime(func, operand_val, operand_ti, target_ti);
+    return codegenCastBetweenDateAndTime(context, operand_val, operand_ti, target_ti);
   } else if (operand_ti.get_type() == kTIMESTAMP && target_ti.get_type() == kTIMESTAMP) {
-    return codegenCastBetweenTime(func, operand_val, operand_ti, target_ti);
+    return codegenCastBetweenTime(context, operand_val, operand_ti, target_ti);
   } else if (operand_ti.is_integer()) {
-    if (target_ti.is_fp() || target_ti.is_integer()) {
-      return operand_val.castJITValuePrimitiveType(ti_jit_tag);
-    }
+    CHECK(target_ti.is_fp() || target_ti.is_integer());
+    return operand_val->castJITValuePrimitiveType(ti_jit_tag);
   } else if (operand_ti.is_fp()) {
-    // Round by adding/subtracting 0.5 before fptosi.
-    if (target_ti.is_integer()) {
-      auto round_val =
-          func.createVariable(getJITTypeTag(operand_ti.get_type()), "fp_round_val");
-      func.createIfBuilder()
-          ->condition([&]() { return operand_val < 0; })
-          ->ifTrue([&]() { round_val = operand_val - 0.5; })
-          ->ifFalse([&]() { round_val = operand_val + 0.5; })
-          ->build();
-      return round_val->castJITValuePrimitiveType(ti_jit_tag);
+    if (target_ti.is_fp()) {
+      return operand_val->castJITValuePrimitiveType(ti_jit_tag);
     }
-    return operand_val.castJITValuePrimitiveType(ti_jit_tag);
+    CHECK(target_ti.is_integer());
+    // Round by adding/subtracting 0.5 before fptosi.
+    auto round_val = context.getJITFunction()->createVariable(
+        getJITTypeTag(operand_ti.get_type()), "fp_round_val");
+    context.getJITFunction()
+        ->createIfBuilder()
+        ->condition([&]() { return operand_val < 0; })
+        ->ifTrue([&]() { round_val = operand_val - 0.5; })
+        ->ifFalse([&]() { round_val = operand_val + 0.5; })
+        ->build();
+    return round_val->castJITValuePrimitiveType(ti_jit_tag);
   }
   CIDER_THROW(CiderCompileException,
               fmt::format("cast type:{} into type:{} not support yet",
@@ -176,13 +179,16 @@ JITValuePointer codegenCastFixedSize(JITFunction& func,
                           target_ti.get_type_name()));
 }
 
-JITValuePointer codegenCastNumericToString(JITFunction& func,
-                                           JITValue& operand_val,
-                                           JITValue& string_heap_val,
+JITValuePointer codegenCastNumericToString(CodegenContext& context,
+                                           JITValuePointer operand_val,
+                                           JITValuePointer string_heap_val,
                                            const SQLTypeInfo& operand_ti) {
+  auto func = context.getJITFunction();
   std::string fn_call{"gen_string_from_"};
   auto args_desc = JITFunctionEmitDescriptor{
-      .ret_type = JITTypeTag::INT64, .params_vector = {&operand_val, &string_heap_val}};
+      .ret_type = JITTypeTag::INT64,
+      .params_vector = {operand_val.get(), string_heap_val.get()}};
+  auto dim_val = func->createLiteral(JITTypeTag::INT32, operand_ti.get_dimension());
   const auto operand_type = operand_ti.get_type();
   switch (operand_type) {
     case kBOOLEAN:
@@ -198,108 +204,112 @@ JITValuePointer codegenCastNumericToString(JITFunction& func,
       break;
     case kTIME:
       fn_call += "time";
+      args_desc.params_vector.push_back(dim_val.get());
       break;
     case kTIMESTAMP:
       fn_call += "timestamp";
-      args_desc.params_vector.push_back(
-          func.createLiteral(JITTypeTag::INT32, operand_ti.get_dimension()).get());
+      args_desc.params_vector.push_back(dim_val.get());
       break;
     case kDATE:
       fn_call += "date";
       break;
     default:
-      CIDER_THROW(CiderCompileException, "Unimplemented type for string cast");
+      CIDER_THROW(CiderCompileException,
+                  "Unimplemented type for string cast from " + toString(operand_type));
   }
-  return func.emitRuntimeFunctionCall(fn_call, args_desc);
+  return func->emitRuntimeFunctionCall(fn_call, args_desc);
 }
 
-JITValuePointer codegenCastStringToNumeric(JITFunction& func,
-                                           JITValue& str_val,
-                                           JITValue& str_len,
+JITValuePointer codegenCastStringToNumeric(CodegenContext& context,
+                                           JITValuePointer str_val,
+                                           JITValuePointer str_len,
                                            const SQLTypeInfo& target_ti) {
-  std::string func_name = "convert_string_to_";
+  auto func = context.getJITFunction();
+  std::string func_call = "convert_string_to_";
   auto args_desc =
       JITFunctionEmitDescriptor{.ret_type = getJITTypeTag(target_ti.get_type()),
-                                .params_vector = {&str_val, &str_len}};
-  switch (target_ti.get_type()) {
+                                .params_vector = {str_val.get(), str_len.get()}};
+  auto dim_val = func->createLiteral(JITTypeTag::INT32, target_ti.get_dimension());
+  const auto target_type = target_ti.get_type();
+  switch (target_type) {
     case kBOOLEAN:
-      func_name += "bool";
+      func_call += "bool";
       break;
     case kBIGINT:
-      func_name += "bigint";
+      func_call += "bigint";
       break;
     case kINT:
-      func_name += "int";
+      func_call += "int";
       break;
     case kSMALLINT:
-      func_name += "smallint";
+      func_call += "smallint";
       break;
     case kTINYINT:
-      func_name += "tinyint";
+      func_call += "tinyint";
       break;
     case kFLOAT:
-      func_name += "float";
+      func_call += "float";
       break;
     case kDOUBLE:
-      func_name += "double";
+      func_call += "double";
       break;
     case kTIME:
-      func_name += "time";
-      args_desc.params_vector.push_back(
-          func.createLiteral(JITTypeTag::INT32, target_ti.get_dimension()).get());
+      func_call += "time";
+      args_desc.params_vector.push_back(dim_val.get());
       break;
     case kTIMESTAMP:
-      func_name += "timestamp";
-      args_desc.params_vector.push_back(
-          func.createLiteral(JITTypeTag::INT32, target_ti.get_dimension()).get());
+      func_call += "timestamp";
+      args_desc.params_vector.push_back(dim_val.get());
       break;
     case kDATE:
-      func_name += "date";
+      func_call += "date";
       break;
     default:
-      CIDER_THROW(CiderCompileException, "Unimplemented type for string cast");
+      CIDER_THROW(CiderCompileException,
+                  "Unimplemented type for string cast to " + toString(target_type));
   }
-  return func.emitRuntimeFunctionCall(func_name, args_desc);
+  return func->emitRuntimeFunctionCall(func_call, args_desc);
 }
 
-JITValuePointer UOper::codegenCast(CodegenContext& context, JITValue& operand_val){
-  JITFunction& func = *context.getJITFunction();
+JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operand) {
+  auto func = context.getJITFunction();
   const auto& target_ti = get_type_info();
   const auto& operand_ti = operand->get_type_info();
   if (operand_ti.is_string() && target_ti.is_string()) {
     // only supports casting from varchar to varchar
-    VarSizeJITExprValue operand_val(operand->codegen(func));
+    VarSizeJITExprValue operand_val(operand->codegen(context));
     return set_expr_value(
         operand_val.getNull(), operand_val.getLength(), operand_val.getValue());
   } else if (target_ti.is_string()) {
-    FixSizeJITExprValue operand_val(operand->codegen(func));
-    auto string_heap_ptr = func.emitRuntimeFunctionCall(
+    FixSizeJITExprValue operand_val(operand->codegen(context));
+    auto string_heap_ptr = func->emitRuntimeFunctionCall(
         "get_query_context_string_heap_ptr",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                   .ret_sub_type = JITTypeTag::INT8,
-                                  .params_vector = {func.getArgument(0).get()}});
+                                  .params_vector = {func->getArgument(0).get()}});
     JITValuePointer ptr_and_len = codegenCastNumericToString(
-        func, operand_val.getValue(), string_heap_ptr, operand_ti);
-    auto ret_ptr = func.emitRuntimeFunctionCall(
+        context, operand_val.getValue(), string_heap_ptr, operand_ti);
+    auto ret_ptr = func->emitRuntimeFunctionCall(
         "extract_str_ptr",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                   .params_vector = {ptr_and_len.get()}});
-    auto ret_len = func.emitRuntimeFunctionCall(
+    auto ret_len = func->emitRuntimeFunctionCall(
         "extract_str_len",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                   .params_vector = {ptr_and_len.get()}});
     return set_expr_value(operand_val.getNull(), ret_len, ret_ptr);
   } else if (operand_ti.is_string()) {
-    auto str_val = VarSizeJITExprValue(operand->codegen(func));
-    return set_expr_value(str_val.getNull(),
-                          codegenCastStringToNumeric(
-                              func, str_val.getValue(), str_val.getLength(), target_ti));
+    auto str_val = VarSizeJITExprValue(operand->codegen(context));
+    return set_expr_value(
+        str_val.getNull(),
+        codegenCastStringToNumeric(
+            context, str_val.getValue(), str_val.getLength(), target_ti));
   } else {
     // input is primitive type
-    FixSizeJITExprValue operand_val(operand->codegen(func));
+    FixSizeJITExprValue operand_val(operand->codegen(context));
     return set_expr_value(
         operand_val.getNull(),
-        codegenCastFixedSize(func, operand_val.getValue(), operand_ti, target_ti));
+        codegenCastFixedSize(context, operand_val.getValue(), operand_ti, target_ti));
   }
 }
 
