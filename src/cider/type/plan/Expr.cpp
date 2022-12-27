@@ -24,7 +24,6 @@
 
 namespace Analyzer {
 using namespace cider::jitlib;
-using namespace cider::exec::nextgen;
 
 // change this to pure virtual method after all subclasses support codegen.
 JITExprValue& Expr::codegen(CodegenContext& context) {

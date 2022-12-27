@@ -36,7 +36,6 @@
 #include "util/sqldefs.h"
 
 namespace Analyzer {
-using namespace cider::exec::nextgen;
 
 /*
  * @type BinOper
