@@ -167,6 +167,78 @@ class CiderDoubleSet : public CiderSet {
   robin_hood::unordered_set<double> set_;
 };
 
+class CiderStringSet : public CiderSet {
+ public:
+  CiderStringSet() : CiderSet() {}
+
+  void insert(int8_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support insert int8_t value.");
+  }
+
+  void insert(int16_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support insert int16_t value.");
+  }
+
+  void insert(int32_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support insert int32_t value.");
+  }
+
+  void insert(int64_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support insert int64_t value.");
+  }
+
+  void insert(float key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support insert float value.");
+  }
+
+  void insert(double key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support insert double value.");
+  }
+
+  void insert(std::string key_val) { set_.insert(key_val); }
+
+  bool contains(int8_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support find int8_t value.");
+  }
+
+  bool contains(int16_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support find int16_t value.");
+  }
+
+  bool contains(int32_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support find int32_t value.");
+  }
+
+  bool contains(int64_t key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support find int64_t value.");
+  }
+
+  bool contains(float key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support find float value.");
+  }
+
+  bool contains(double key_val) {
+    CIDER_THROW(CiderRuntimeException,
+                "CiderStringSet doesn't support find double value.");
+  }
+
+  bool contains(std::string key_val) { return set_.contains(key_val); }
+
+ private:
+  robin_hood::unordered_set<std::string> set_;
+};
+
 using CiderSetPtr = std::unique_ptr<CiderSet>;
 
 }  // namespace cider::exec::nextgen::context
