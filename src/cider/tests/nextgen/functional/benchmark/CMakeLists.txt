@@ -23,11 +23,10 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
 file(GLOB nextgen_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
-  string(REGEX MATCH "benchmark/.*" test_relative_path
-               ${nextgen_benchmark_file})
+  string(REGEX MATCH "benchmark/.*" test_relative_path ${nextgen_benchmark_file})
   string(REGEX REPLACE "benchmark/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${nextgen_benchmark_file})
   target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
-                        benchmark::benchmark cider_processor)
+                        benchmark::benchmark cider_processor)         
 endforeach()
