@@ -21,6 +21,7 @@
 
 #include "tests/utils/CiderNextgenQueryRunner.h"
 
+#include <fstream>
 #include <google/protobuf/util/json_util.h>
 
 #include "exec/module/batch/ArrowABI.h"

@@ -72,7 +72,9 @@ build-common:
 build:
 	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
 	cmake --build build-${BUILD_TYPE}
+	@mkdir -p build-${BUILD_TYPE}/src/cider/tests/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider/tests/function/
 	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/function/
+	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/test/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/test/function/
 
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
