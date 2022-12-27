@@ -93,10 +93,8 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
 
   std::vector<std::unique_ptr<operators::NextgenAggExtractor>> non_groupby_agg_extractors;
   non_groupby_agg_extractors.reserve(info.size());
-  auto null_buffer_start_ = info.back().start_offset_ + info.back().byte_size_;
 
   for (size_t i = 0; i < info.size(); ++i) {
-    info[i].null_offset_ = null_buffer_start_ + i;
     std::unique_ptr<operators::NextgenAggExtractor> extractor =
         operators::NextgenAggExtractorBuilder::buildNextgenAggExtractor(buf, info[i]);
     extractor->extract({buf}, arrow_array->children[i]);

@@ -21,6 +21,7 @@ RUN apt-get update && \
     zip \
     ca-certificates \
     python3-sphinx \
+    nasm \
     pkg-config && \
     rm -rf /var/lib/apt/lists/*
 

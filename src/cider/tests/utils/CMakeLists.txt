@@ -24,13 +24,16 @@ set(CIDER_TESTS_UTILS_SOURCE
     DuckDbQueryRunner.cpp
     CiderQueryRunner.cpp
     CiderTestBase.cpp
+    CiderNextgenQueryRunner.cpp
+    CiderNextgenTestBase.cpp
+    CiderArrowChecker.cpp
     CiderBatchChecker.cpp
     CiderBenchmarkRunner.cpp
     CiderRunner.cpp
     CiderInt128.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
-target_link_libraries(test_utils cider_plan_parser)
+target_link_libraries(test_utils cider_plan_parser cider_processor)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
@@ -92,3 +95,13 @@ add_test(CiderRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderRunnerTest ${TEST_ARGS})
 
 set(TEST_PROGRAMS IsthmusTest DuckDbQueryRunnerTest CiderBatchBuilderTest
                   CiderBatchCheckerTest)
+
+add_executable(CiderNextgenQueryRunnerTest CiderNextgenQueryRunnerTest.cpp)
+target_link_libraries(CiderNextgenQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderNextgenQueryRunnerTest
+         ${EXECUTABLE_OUTPUT_PATH}/CiderNextgenQueryRunnerTest ${TEST_ARGS})
+
+add_executable(CiderArrowCheckerTest CiderArrowCheckerTest.cpp)
+target_link_libraries(CiderArrowCheckerTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderArrowCheckerTest ${EXECUTABLE_OUTPUT_PATH}/CiderArrowCheckerTest
+         ${TEST_ARGS})
