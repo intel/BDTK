@@ -95,15 +95,15 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValuePointer& null,
   if (needs_error_check) {
     switch (get_optype()) {
       case kMINUS:
-        return set_expr_value(null, lhs.sub_with_error_check(rhs));
+        return set_expr_value(null, lhs.subWithErrorCheck(rhs));
       case kPLUS:
-        return set_expr_value(null, lhs.add_with_error_check(rhs));
+        return set_expr_value(null, lhs.addWithErrorCheck(rhs));
       case kMULTIPLY:
-        return set_expr_value(null, lhs.mul_with_error_check(rhs));
+        return set_expr_value(null, lhs.mulWithErrorCheck(rhs));
       case kDIVIDE:
-        return set_expr_value(null, lhs.div_with_error_check(rhs));
+        return set_expr_value(null, lhs.divWithErrorCheck(rhs));
       case kMODULO:
-        return set_expr_value(null, lhs.mod_with_error_check(rhs));
+        return set_expr_value(null, lhs.modWithErrorCheck(rhs));
       default:
         UNREACHABLE();
     }
