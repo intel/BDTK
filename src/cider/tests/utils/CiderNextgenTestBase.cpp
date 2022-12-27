@@ -27,7 +27,6 @@ namespace cider::test::util {
 void CiderNextgenTestBase::assertQuery(const std::string& sql,
                                        const std::string& json_file,
                                        const bool ignore_order) {
-  std::cout << "query: " << sql << std::endl;
   auto duck_res = duckdb_query_runner_.runSql(sql);
   auto duck_res_arrow = DuckDbResultConvertor::fetchDataToArrow(duck_res);
 
