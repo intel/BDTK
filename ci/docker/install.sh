@@ -139,7 +139,7 @@ function install_gflags {
 }
 
 function install_protobuf {
-  PROTOBUF_VERS=21.2
+  PROTOBUF_VERS=21.4
   rm -rf protobuf
   wget_and_untar https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERS}/protobuf-all-${PROTOBUF_VERS}.tar.gz protobuf
   pushd protobuf

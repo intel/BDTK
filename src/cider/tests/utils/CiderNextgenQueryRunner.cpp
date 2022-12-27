@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "tests/utils/CiderNextgenQueryRunner.h"
+
+#include <google/protobuf/util/json_util.h>
+
+#include "exec/module/batch/ArrowABI.h"
+#include "tests/utils/Utils.h"
+#include "util/measure.h"
+
+namespace cider::test::util {
+
+namespace {
+
+std::string getSubstraitPlanFilesPath() {
+  const std::string absolute_path = __FILE__;
+  auto const pos = absolute_path.find_last_of('/');
+  return absolute_path.substr(0, pos) + "/../substrait_plan_files/";
+}
+
+bool isJsonFile(const std::string& file_or_sql) {
+  auto const pos = file_or_sql.find_last_of('.');
+  return std::string::npos != pos &&
+         ".json" == file_or_sql.substr(pos, file_or_sql.size() - pos);
+}
+
+std::string getFileContent(const std::string& file_name) {
+  std::ifstream file(getSubstraitPlanFilesPath() + file_name);
+  if (!file.good()) {
+    CIDER_THROW(CiderException, "Substrait JSON file " + file_name + " does not exist.");
+  }
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  std::string content = buffer.str();
+  return content;
+}
+
+}  // namespace
+
+::substrait::Plan CiderNextgenQueryRunner::genSubstraitPlan(
+    const std::string& file_or_sql) {
+  INJECT_TIMER(GenSubstraitPlan);
+  std::string json;
+  if (isJsonFile(file_or_sql)) {
+    json = getFileContent(file_or_sql);
+  } else {
+    json = RunIsthmus::processSql(file_or_sql, create_ddl_);
+  }
+
+  ::substrait::Plan plan;
+  google::protobuf::util::JsonStringToMessage(json, &plan);
+  LOG(DEBUG1) << "substrait json is: " << json << "\n";
+  return std::move(plan);
+}
+
+void CiderNextgenQueryRunner::runQueryOneBatch(const std::string& file_or_sql,
+                                               const struct ArrowArray& input_array,
+                                               const struct ArrowSchema& input_schema,
+                                               struct ArrowArray& output_array,
+                                               struct ArrowSchema& output_schema) {
+  // Step 1: construct substrait plan
+  auto plan = genSubstraitPlan(file_or_sql);
+
+  // Step 2: compile and gen runtime module
+  processor_ = makeBatchProcessor(plan, context_);
+
+  // Step 3: run on this batch
+  processor_->processNextBatch(&input_array, &input_schema);
+
+  // Step 4: fetch data
+  processor_->getResult(output_array, output_schema);
+
+  return;
+}
+
+}  // namespace cider::test::util

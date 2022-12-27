@@ -27,11 +27,12 @@
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/TestHelpers.h"
 #include "tests/utils/ArrowArrayBuilder.h"
-#include "tests/utils/CiderTestBase.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 #include "tests/utils/Utils.h"
 
 using namespace cider::exec::nextgen;
+using namespace cider::test::util;
 
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
@@ -115,15 +116,15 @@ TEST_F(NextgenCompilerTest, FrameworkTest) {
   executeTest("select a + b, a - b from test where a < b");
 }
 
-class CiderNextgenCompilerTestBase : public CiderTestBase {
+class CiderNextgenCompilerTestBase : public CiderNextgenTestBase {
  public:
   CiderNextgenCompilerTestBase() {
     table_name_ = "test";
     create_ddl_ =
         "CREATE TABLE test(col_1 BIGINT NOT NULL, col_2 BIGINT NOT NULL, col_3 BIGINT "
         "NOT NULL)";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   99,
                                                   {"col_1", "col_2", "col_3"},
                                                   {CREATE_SUBSTRAIT_TYPE(I64),
@@ -133,7 +134,7 @@ class CiderNextgenCompilerTestBase : public CiderTestBase {
 };
 
 TEST_F(CiderNextgenCompilerTestBase, integerFilterTest) {
-  assertQueryArrow("SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2");
+  assertQuery("SELECT col_1 + col_2 FROM test WHERE col_1 <= col_2");
 }
 
 int main(int argc, char** argv) {
