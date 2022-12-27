@@ -53,7 +53,7 @@ class LLVMJITModule final : public JITModule {
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);
-  void optimizeIR(llvm::Module* module);
+  void optimizeIR();
   void copyRuntimeModule();
   JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
 

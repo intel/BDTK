@@ -20,15 +20,26 @@
  */
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 
+#include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
+#include <llvm/Transforms/IPO/GlobalOpt.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
-#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/DeadStoreElimination.h>
+#include <llvm/Transforms/Scalar/EarlyCSE.h>
+#include <llvm/Transforms/Scalar/JumpThreading.h>
+#include <llvm/Transforms/Scalar/LICM.h>
+#include <llvm/Transforms/Scalar/LoopPassManager.h>
+#include <llvm/Transforms/Scalar/NewGVN.h>
+#include <llvm/Transforms/Scalar/SROA.h>
+#include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Utils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
+#include <llvm/Transforms/Utils/Mem2Reg.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
@@ -160,7 +171,8 @@ void LLVMJITModule::finish(const std::string& main_func) {
   LLVMJITEngineBuilder builder(*this, tm);
 
   // IR optimization
-  optimizeIR(module_.get());
+  optimizeIR();
+
   if (co_.dump_ir) {
     dumpModuleIR(module_.get(), module_->getModuleIdentifier() + "_opt");
   }
@@ -168,46 +180,53 @@ void LLVMJITModule::finish(const std::string& main_func) {
   engine_ = builder.build();
 }
 
-void LLVMJITModule::optimizeIR(llvm::Module* module) {
-  llvm::legacy::PassManager pass_manager;
-  switch (co_.optimize_level) {
-    case LLVMJITOptimizeLevel::RELEASE:
-      // the always inliner legacy pass must always run first
-      pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
+void LLVMJITModule::optimizeIR() {
+  if (co_.optimize_ir) {
+    llvm::ModuleAnalysisManager module_analysis_mgr;
+    llvm::LoopAnalysisManager loop_analysis_mgr;
+    llvm::FunctionAnalysisManager function_analysis_mgr;
+    llvm::CGSCCAnalysisManager cgscc_analysis_mgr;
 
-      pass_manager.add(llvm::createSROAPass());
-      // mem ssa drops unused load and store instructions, e.g. passing variables directly
-      // where possible
-      pass_manager.add(llvm::createEarlyCSEPass(
-          /*enable_mem_ssa=*/true));  // Catch trivial redundancies
+    llvm::PassBuilder pass_builder;
+    pass_builder.registerModuleAnalyses(module_analysis_mgr);
+    pass_builder.registerFunctionAnalyses(function_analysis_mgr);
+    pass_builder.registerLoopAnalyses(loop_analysis_mgr);
+    pass_builder.registerCGSCCAnalyses(cgscc_analysis_mgr);
+    pass_builder.crossRegisterProxies(loop_analysis_mgr,
+                                      function_analysis_mgr,
+                                      cgscc_analysis_mgr,
+                                      module_analysis_mgr);
 
-      pass_manager.add(llvm::createJumpThreadingPass());  // Thread jumps.
-      pass_manager.add(llvm::createCFGSimplificationPass());
+    llvm::ModulePassManager module_pass_mgr;
+    llvm::FunctionPassManager function_pass_mgr;
+    llvm::LoopPassManager loop_pass_mgr;
 
-      // remove load/stores in PHIs if instructions can be accessed directly post thread
-      // jumps
-      pass_manager.add(llvm::createNewGVNPass());
+    module_pass_mgr.addPass(
+        llvm::AlwaysInlinerPass(false));  // Inline all functions labeled as always_inline
 
-      pass_manager.add(llvm::createDeadStoreEliminationPass());
-      pass_manager.add(llvm::createLICMPass());
+    function_pass_mgr.addPass(
+        llvm::SROA());  // mem ssa drops unused load and store instructions, e.g. passing
+                        // variables directly where possible
+    function_pass_mgr.addPass(llvm::EarlyCSEPass(true));  // Catch trivial redundancies
+    function_pass_mgr.addPass(
+        llvm::SimplifyCFGPass());  // remove load/stores in PHIs if instructions can be
+                                   // accessed directly post thread jumps
+    function_pass_mgr.addPass(llvm::NewGVNPass());
+    function_pass_mgr.addPass(llvm::DSEPass());
 
-      pass_manager.add(llvm::createInstructionCombiningPass());
+    function_pass_mgr.addPass(llvm::InstCombinePass());
+    function_pass_mgr.addPass(llvm::PromotePass());
 
-      // module passes
-      pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
-      pass_manager.add(llvm::createGlobalOptimizerPass());
+    loop_pass_mgr.addPass(llvm::LICMPass());
 
-      pass_manager.add(llvm::createCFGSimplificationPass());  // cleanup after everything
+    function_pass_mgr.addPass(llvm::FunctionToLoopPassAdaptor(std::move(loop_pass_mgr)));
 
-      pass_manager.run(*module);
-      break;
-    // TBD other optimize level to be added
-    case LLVMJITOptimizeLevel::DEBUG:
-      // DEBUG : default optimize level, will not do any optimization
-      break;
-    default:
-      LOG(FATAL) << "Invalid optimize level.";
-      break;
+    module_pass_mgr.addPass(
+        llvm::ModuleToFunctionPassAdaptor(std::move(function_pass_mgr)));
+
+    module_pass_mgr.addPass(llvm::GlobalOptPass());
+
+    module_pass_mgr.run(*module_, module_analysis_mgr);
   }
 }
 
