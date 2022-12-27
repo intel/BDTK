@@ -19,10 +19,10 @@
  * under the License.
  */
 
-#include "DuckDbQueryRunner.h"
 #include <memory>
 #include <utility>
 #include "DuckDbArrowAdaptor.h"
+#include "DuckDbQueryRunner.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
 #include "cider/batch/ScalarBatch.h"
@@ -254,8 +254,8 @@ template <>
   [&]() {                                                                                \
     switch (child_schema->format[0]) {                                                   \
       case 'b': {                                                                        \
-        return ::duckdb::Value(CiderBitUtils::isBitSetAt(                                \
-            static_cast<const uint8_t*>(child_array->buffers[1]), row_idx));             \
+        return ::duckdb::Value(CiderBitUtils::isBitSetAt(                              \
+            static_cast<const uint8_t*>(child_array->buffers[1]), row_idx));              \
       }                                                                                  \
       case 'c': {                                                                        \
         return duckValueAt<int8_t>(static_cast<const int8_t*>(child_array->buffers[1]),  \
