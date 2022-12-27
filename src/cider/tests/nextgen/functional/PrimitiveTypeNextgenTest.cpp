@@ -21,8 +21,8 @@
 
 #include <gtest/gtest.h>
 #include "tests/utils/ArrowArrayBuilder.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderTestBase.h"
+#include "tests/utils/QueryArrowDataGenerator.h"
 
 #define GEN_PRIMITIVETYPE_BASE_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME)  \
   class PrimitiveType##C_TYPE_NAME##Test : public CiderTestBase {                  \
