@@ -154,6 +154,7 @@ TEST_F(CiderFilterRandomTestNG, inTest) {
   assertQuery("SELECT * FROM test WHERE col_2 IS NOT NULL AND col_2 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_3 IS NOT NULL AND col_3 in (24, 25, 26)");
   assertQuery("SELECT* FROM test WHERE col_4 IS NOT NULL AND col_4 in (24, 25, 26) ");
+  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder("SELECT * FROM test WHERE col_1 in (24, 25, 26) and col_2 > 20");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE col_1 in (24 * 2 + 2, (25 + 2) * 10, 26)");
