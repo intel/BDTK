@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "Expr.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "type/data/sqltypes.h"
 #include "util/sqldefs.h"

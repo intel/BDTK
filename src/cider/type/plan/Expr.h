@@ -38,11 +38,7 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 using namespace cider::exec::nextgen::utils;
-<<<<<<< HEAD
 using namespace cider::exec::nextgen::context;
-=======
-using namespace cider::exec::nextgen;
->>>>>>> added support for trim
 
 class Expr;
 class ColumnVar;

@@ -465,8 +465,8 @@ std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-JITExprValue& ConcatStringOper::codegen(JITFunction& func,
-                                        context::CodegenContext& context) {
+JITExprValue& ConcatStringOper::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   // decode input args
   auto lhs = const_cast<Analyzer::Expr*>(getArg(0));
   auto rhs = const_cast<Analyzer::Expr*>(getArg(1));
@@ -474,8 +474,8 @@ JITExprValue& ConcatStringOper::codegen(JITFunction& func,
   CHECK(lhs->get_type_info().is_string());
   CHECK(rhs->get_type_info().is_string());
 
-  auto lhs_val = VarSizeJITExprValue(lhs->codegen(func, context));
-  auto rhs_val = VarSizeJITExprValue(rhs->codegen(func, context));
+  auto lhs_val = VarSizeJITExprValue(lhs->codegen(context));
+  auto rhs_val = VarSizeJITExprValue(rhs->codegen(context));
 
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(
@@ -575,8 +575,8 @@ std::shared_ptr<Analyzer::Expr> TrimStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-JITExprValue& TrimStringOper::codegen(JITFunction& func,
-                                      context::CodegenContext& context) {
+JITExprValue& TrimStringOper::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   // decode input args
   auto input = const_cast<Analyzer::Expr*>(getArg(0));
   auto trim_char = const_cast<Analyzer::Expr*>(getArg(1));
@@ -589,7 +589,7 @@ JITExprValue& TrimStringOper::codegen(JITFunction& func,
     CIDER_THROW(CiderUnsupportedException, "argument 1 of TRIM() must be literal");
   }
 
-  auto input_val = VarSizeJITExprValue(input->codegen(func, context));
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
 
   // register trim chars to context
   std::string trim_char_val = *trim_char_literal->get_constval().stringval;

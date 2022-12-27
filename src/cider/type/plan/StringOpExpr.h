@@ -417,7 +417,7 @@ class ConcatStringOper : public StringOper {
     return names;
   }
 
-  JITExprValue& codegen(JITFunction& func, context::CodegenContext& context) override;
+  JITExprValue& codegen(CodegenContext& context) override;
 
  private:
   // TODO: Deprecated. The following 3 methods are only used in template-based codegen
@@ -474,7 +474,7 @@ class TrimStringOper : public StringOper {
     return names;
   }
 
-  JITExprValue& codegen(JITFunction& func, context::CodegenContext& context) override;
+  JITExprValue& codegen(CodegenContext& context) override;
 
  private:
   SqlStringOpKind checkOpKindValidity(const SqlStringOpKind& op_kind) {
