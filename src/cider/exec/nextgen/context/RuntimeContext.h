@@ -43,6 +43,8 @@ class RuntimeContext {
 
   void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
 
+  void addHashTable(const CodegenContext::HashTableDescriptorPtr& descriptor);
+
   void instantiate(const CiderAllocatorPtr& allocator);
 
   // TBD: Currently, last batch would be output batch under all known scenarios.
@@ -80,6 +82,7 @@ class RuntimeContext {
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
   std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
   std::shared_ptr<StringHeap> string_heap_ptr_;
+  CodegenContext::HashTableDescriptorPtr hashtable_holder_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
