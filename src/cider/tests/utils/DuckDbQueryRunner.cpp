@@ -20,6 +20,8 @@
  */
 
 #include "DuckDbQueryRunner.h"
+#include <memory>
+#include <utility>
 #include "DuckDbArrowAdaptor.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
@@ -248,6 +250,38 @@ template <>
     }                                                                        \
   }
 
+#define GEN_DUCK_DB_VALUE_FROM_ARROW_ARRAY_AND_SCHEMA_FUNC                               \
+  [&]() {                                                                                \
+    switch (child_schema->format[0]) {                                                   \
+      case 'c': {                                                                        \
+        return duckValueAt<int8_t>(static_cast<const int8_t*>(child_array->buffers[1]),  \
+                                   row_idx);                                             \
+      }                                                                                  \
+      case 's': {                                                                        \
+        return duckValueAt<int16_t>(static_cast<const int8_t*>(child_array->buffers[1]), \
+                                    row_idx);                                            \
+      }                                                                                  \
+      case 'i': {                                                                        \
+        return duckValueAt<int32_t>(static_cast<const int8_t*>(child_array->buffers[1]), \
+                                    row_idx);                                            \
+      }                                                                                  \
+      case 'l': {                                                                        \
+        return duckValueAt<int64_t>(static_cast<const int8_t*>(child_array->buffers[1]), \
+                                    row_idx);                                            \
+      }                                                                                  \
+      case 'f': {                                                                        \
+        return duckValueAt<float>(static_cast<const int8_t*>(child_array->buffers[1]),   \
+                                  row_idx);                                              \
+      }                                                                                  \
+      case 'g': {                                                                        \
+        return duckValueAt<double>(static_cast<const int8_t*>(child_array->buffers[1]),  \
+                                   row_idx);                                             \
+      }                                                                                  \
+      default:                                                                           \
+        CIDER_THROW(CiderException, "not supported type to gen duck value");             \
+    }                                                                                    \
+  }
+
 void DuckDbQueryRunner::createTableAndInsertData(
     const std::string& table_name,
     const std::string& create_ddl,
@@ -348,6 +382,36 @@ void DuckDbQueryRunner::createTableAndInsertArrowData(
       }
       appender.EndRow();
     }
+  }
+}
+
+void DuckDbQueryRunner::createTableAndInsertArrowData(const std::string& table_name,
+                                                      const std::string& create_ddl,
+                                                      const ArrowArray& array,
+                                                      const ArrowSchema& schema) {
+  ::duckdb::Connection con(db_);
+  con.Query("DROP TABLE IF EXISTS " + table_name);
+
+  auto res = con.Query(create_ddl);
+  if (!res->success) {
+    LOG(ERROR) << res->error;
+  }
+
+  for (int row_idx = 0; row_idx < array.length; ++row_idx) {
+    ::duckdb::Appender appender(con, table_name);
+    appender.BeginRow();
+    for (int col_idx = 0; col_idx < array.n_children; ++col_idx) {
+      auto child_array = array.children[col_idx];
+      auto child_schema = schema.children[col_idx];
+      const uint8_t* valid_bitmap = static_cast<const uint8_t*>(child_array->buffers[0]);
+      if (!valid_bitmap || CiderBitUtils::isBitSetAt(valid_bitmap, row_idx)) {
+        ::duckdb::Value value = GEN_DUCK_DB_VALUE_FROM_ARROW_ARRAY_AND_SCHEMA_FUNC();
+        appender.Append(value);
+      } else {
+        appender.Append(nullptr);
+      }
+    }
+    appender.EndRow();
   }
 }
 
@@ -656,4 +720,30 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
         std::make_shared<CiderBatch>(fetchOneArrowFormattedBatch(chunk, names)));
   }
   return batch_res;
+}
+
+std::vector<
+    std::pair<std::unique_ptr<struct ArrowArray>, std::unique_ptr<struct ArrowSchema>>>
+DuckDbResultConvertor::fetchDataToArrow(
+    std::unique_ptr<::duckdb::MaterializedQueryResult>& result) {
+  std::vector<
+      std::pair<std::unique_ptr<struct ArrowArray>, std::unique_ptr<struct ArrowSchema>>>
+      arrow_vector;
+  for (;;) {
+    std::unique_ptr<struct ArrowArray> arrow_array =
+        std::make_unique<struct ArrowArray>();
+    std::unique_ptr<struct ArrowSchema> arrow_schema =
+        std::make_unique<struct ArrowSchema>();
+    auto chunk = result->Fetch();
+    if (!chunk || (chunk->size() == 0)) {
+      return arrow_vector;
+    }
+    chunk->ToArrowArray(arrow_array.get());
+    std::string config_timezone{"UTC"};
+    duckdb::QueryResult::ToArrowSchema(
+        arrow_schema.get(), result->types, result->names, config_timezone);
+    arrow_vector.push_back(
+        std::make_pair(std::move(arrow_array), std::move(arrow_schema)));
+  }
+  return arrow_vector;
 }

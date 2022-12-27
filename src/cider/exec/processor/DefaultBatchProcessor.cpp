@@ -64,6 +64,7 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
     // this->inputBatch_ = joinHandler_->onProcessBatch(batch);
   } else {
     input_arrow_array_ = array;
+    input_arrow_schema_ = schema;
   }
 
   query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);
