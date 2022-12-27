@@ -22,7 +22,7 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "tests/utils/CiderNextgenBenchmarkBase.h"
-using  namespace cider::test::util;
+using namespace cider::test::util;
 
 class BenchmarkTest : public CiderNextgenBenchmarkBase {
  public:

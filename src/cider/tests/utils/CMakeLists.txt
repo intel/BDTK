@@ -25,6 +25,8 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderQueryRunner.cpp
     CiderTestBase.cpp
     CiderNextgenQueryRunner.cpp
+    CiderNextgenBenchmarkRunner.cpp
+    CiderNextgenBenchmarkBase.cpp
     CiderNextgenTestBase.cpp
     CiderArrowChecker.cpp
     CiderBatchChecker.cpp
