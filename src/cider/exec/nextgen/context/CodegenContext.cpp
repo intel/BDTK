@@ -109,6 +109,27 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
   return ret;
 }
 
+JITValuePointer CodegenContext::registerHashTable(const std::string& name) {
+  int64_t id = acquireContextID();
+  auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+  JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
+    auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+    auto pointer = this->jit_func_->emitRuntimeFunctionCall(
+        "get_query_context_item_ptr",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {this->jit_func_->getArgument(0).get(), index.get()}});
+
+    return pointer;
+  });
+  ret->setName(name);
+
+  hashtable_descriptor_.first = std::make_shared<HashTableDescriptor>(id, name);
+  hashtable_descriptor_.second.replace(ret);
+  return ret;
+}
+
 RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
     const CiderAllocatorPtr& allocator) const {
   auto runtime_ctx = std::make_unique<RuntimeContext>(getNextContextID());
@@ -120,6 +141,8 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
   for (auto& buffer_desc : buffer_descriptors_) {
     runtime_ctx->addBuffer(buffer_desc.first);
   }
+
+  runtime_ctx->addHashTable(hashtable_descriptor_.first);
 
   runtime_ctx->instantiate(allocator);
   return runtime_ctx;
