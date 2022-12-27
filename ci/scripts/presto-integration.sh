@@ -21,7 +21,7 @@
 # Make sure build-presto-package.sh and presto-bdtk-*.patch are in the same directory
 pushd /workspace/github-workspace/presto/presto-native-execution
 set -e
-pwd
+
 PRESTO_CPP_MODE=release
 BDTK_BUILD_MODE=Release
 
