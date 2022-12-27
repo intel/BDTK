@@ -164,13 +164,10 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
     runtime_ctx->addBuffer(buffer_desc.first);
   }
 
-<<<<<<< HEAD
   runtime_ctx->addHashTable(hashtable_descriptor_.first);
-=======
   for (auto& cider_set_desc : cider_set_descriptors_) {
     runtime_ctx->addCiderSet(cider_set_desc.first);
   }
->>>>>>> [POAE7-2721] IN expr support for primitive type in Nextgen
 
   runtime_ctx->instantiate(allocator);
   return runtime_ctx;

@@ -53,8 +53,6 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     // string binops, should only be comparisons
     const auto optype = get_optype();
     if (IS_COMPARISON(optype)) {
-      std::cout << lhs->toString() << std::endl;
-      std::cout << rhs->toString() << std::endl;
       VarSizeJITExprValue lhs_val(lhs->codegen(context));
       VarSizeJITExprValue rhs_val(rhs->codegen(context));
       JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");

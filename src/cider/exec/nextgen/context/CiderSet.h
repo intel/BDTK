@@ -52,13 +52,13 @@ class CiderInt64Set : public CiderSet {
  public:
   CiderInt64Set() : CiderSet() {}
 
-  void insert(int8_t key_val) { set_.insert(key_val); }
+  void insert(int8_t key_val) { set_.insert((int64_t)key_val); }
 
-  void insert(int16_t key_val) { set_.insert(key_val); }
+  void insert(int16_t key_val) { set_.insert((int64_t)key_val); }
 
-  void insert(int32_t key_val) { set_.insert(key_val); }
+  void insert(int32_t key_val) { set_.insert((int64_t)key_val); }
 
-  void insert(int64_t key_val) { set_.insert(key_val); }
+  void insert(int64_t key_val) { set_.insert((int64_t)key_val); }
 
   void insert(float key_val) {
     CIDER_THROW(CiderRuntimeException,
@@ -75,11 +75,11 @@ class CiderInt64Set : public CiderSet {
                 "CiderInt64Set doesn't support insert string value.");
   }
 
-  bool contains(int8_t key_val) { return set_.contains(key_val); }
+  bool contains(int8_t key_val) { return set_.contains((int64_t)key_val); }
 
-  bool contains(int16_t key_val) { return set_.contains(key_val); }
+  bool contains(int16_t key_val) { return set_.contains((int64_t)key_val); }
 
-  bool contains(int32_t key_val) { return set_.contains(key_val); }
+  bool contains(int32_t key_val) { return set_.contains((int64_t)key_val); }
 
   bool contains(int64_t key_val) { return set_.contains(key_val); }
 
@@ -125,7 +125,7 @@ class CiderDoubleSet : public CiderSet {
                 "CiderDoubleSet doesn't support insert int64_t value.");
   }
 
-  void insert(float key_val) { set_.insert(key_val); }
+  void insert(float key_val) { set_.insert((double)key_val); }
 
   void insert(double key_val) { set_.insert(key_val); }
 
@@ -154,7 +154,7 @@ class CiderDoubleSet : public CiderSet {
                 "CiderDoubleSet doesn't support find int64_t value.");
   }
 
-  bool contains(float key_val) { return set_.contains(key_val); }
+  bool contains(float key_val) { return set_.contains((double)key_val); }
 
   bool contains(double key_val) { return set_.contains(key_val); }
 

@@ -169,11 +169,11 @@ CiderSetPtr insertValuesToSet(
     if (!in_val_const) {
       CIDER_THROW(CiderCompileException, "InValues only support constant value list.");
     }
+    // For case like IN [1, 2, NULL], NULL will be ignored
+    // TODO: (yma11) fot case like NOT IN [1, 2, NULL], should pops up error during
+    // parse?
     switch (in_val_ti.get_type()) {
       case kTINYINT: {
-        // For case like IN [1, 2, NULL], NULL will be ignored
-        // TODO: (yma11) fot case like NOT IN [1, 2, NULL], should pops up error during
-        // parse?
         if (in_val_const->get_type_info().get_notnull()) {
           set->insert(in_val_const->get_constval().tinyintval);
         }
@@ -219,13 +219,13 @@ CiderSetPtr insertValuesToSet(
 std::string get_fn_name(const SQLTypeInfo& type_info) {
   switch (type_info.get_type()) {
     case kTINYINT:
-      return "cider_set_contains_int8_val";
+      return "cider_set_contains_int8_t_val";
     case kSMALLINT:
-      return "cider_set_contains_int16_val";
+      return "cider_set_contains_int16_t_val";
     case kINT:
-      return "cider_set_contains_int32_val";
+      return "cider_set_contains_int32_t_val";
     case kBIGINT:
-      return "cider_set_contains_int64_val";
+      return "cider_set_contains_int64_t_val";
     case kFLOAT:
       return "cider_set_contains_float_val";
     case kDOUBLE:
