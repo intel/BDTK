@@ -105,7 +105,50 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
 
   buffer_descriptors_.emplace_back(
       std::make_shared<AggBufferDescriptor>(id, name, capacity, initializer, info), ret);
+  return ret;
+}
 
+jitlib::JITValuePointer CodegenContext::registerCiderSet(const std::string& name,
+                                                         const SQLTypeInfo& type,
+                                                         CiderSetPtr c_set) {
+  int64_t id = acquireContextID();
+  auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+  JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
+    auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+    auto pointer = this->jit_func_->emitRuntimeFunctionCall(
+        "get_query_context_item_ptr",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {this->jit_func_->getArgument(0).get(), index.get()}});
+
+    return pointer;
+  });
+  ret->setName(name);
+
+  cider_set_descriptors_.emplace_back(
+      std::make_shared<CiderSetDescriptor>(id, name, type, std::move(c_set)), ret);
+  return ret;
+}
+
+JITValuePointer CodegenContext::registerHashTable(const std::string& name) {
+  int64_t id = acquireContextID();
+  auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+  JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
+    auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
+    auto pointer = this->jit_func_->emitRuntimeFunctionCall(
+        "get_query_context_item_ptr",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {this->jit_func_->getArgument(0).get(), index.get()}});
+
+    return pointer;
+  });
+  ret->setName(name);
+
+  hashtable_descriptor_.first = std::make_shared<HashTableDescriptor>(id, name);
+  hashtable_descriptor_.second.replace(ret);
   return ret;
 }
 
@@ -119,6 +162,11 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
 
   for (auto& buffer_desc : buffer_descriptors_) {
     runtime_ctx->addBuffer(buffer_desc.first);
+  }
+
+  runtime_ctx->addHashTable(hashtable_descriptor_.first);
+  for (auto& cider_set_desc : cider_set_descriptors_) {
+    runtime_ctx->addCiderSet(cider_set_desc.first);
   }
 
   runtime_ctx->instantiate(allocator);
