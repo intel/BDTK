@@ -24,7 +24,6 @@
 
 namespace Analyzer {
 using namespace cider::jitlib;
-using namespace cider::exec::nextgen;
 
 JITExprValue& BinOper::codegen(CodegenContext& context) {
   JITFunction& func = *context.getJITFunction();
@@ -75,7 +74,7 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
 
     const auto optype = get_optype();
     if (IS_ARITHMETIC(optype)) {
-      bool needs_error_check = context.getJITCompilationOption().needs_error_check;
+      bool needs_error_check = context.getCodegenOptions().needs_error_check;
       return codegenFixedSizeColArithFun(
           null, lhs_val.getValue(), rhs_val.getValue(), needs_error_check);
     } else if (IS_COMPARISON(optype)) {

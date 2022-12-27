@@ -27,14 +27,17 @@
 
 namespace cider::exec::nextgen {
 
-std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
-                                                 const jitlib::CompilationOptions& co) {
+std::unique_ptr<context::CodegenContext> compile(
+    const RelAlgExecutionUnit& ra_exe_unit,
+    const jitlib::CompilationOptions& co,
+    const context::CodegenOptions& codegen_options) {
   auto codegen_ctx = std::make_unique<context::CodegenContext>();
   auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
 
-  auto builder = [&ra_exe_unit, &codegen_ctx, &co](jitlib::JITFunctionPointer function) {
+  auto builder = [&ra_exe_unit, &codegen_ctx, &codegen_options](
+                     jitlib::JITFunctionPointer function) {
     codegen_ctx->setJITFunction(function);
-    codegen_ctx->setJITCompilationOption(co);
+    codegen_ctx->setCodegenOptions(codegen_options);
     auto pipeline = parsers::toOpPipeline(ra_exe_unit);
     auto translator = transformer::Transformer::toTranslator(pipeline);
     translator->consume(*codegen_ctx);

@@ -23,13 +23,11 @@
 
 #include <llvm/IR/Value.h>
 
-#include "exec/nextgen/Nextgen.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "util/Logger.h"
 
 namespace cider::jitlib {
-
 JITValue& LLVMJITValue::assign(JITValue& value) {
   if (!is_variable_) {
     LOG(FATAL) << "JITValue " << getValueName()
@@ -145,7 +143,7 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "mod", false);
 }
 
-JITValuePointer LLVMJITValue::mod_with_error_check(JITValue& rh) {
+JITValuePointer LLVMJITValue::modWithErrorCheck(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mod");
 
@@ -229,7 +227,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "div", false);
 }
 
-JITValuePointer LLVMJITValue::div_with_error_check(JITValue& rh) {
+JITValuePointer LLVMJITValue::divWithErrorCheck(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "div");
 
@@ -313,7 +311,7 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "mul", false);
 }
 
-JITValuePointer LLVMJITValue::mul_with_error_check(JITValue& rh) {
+JITValuePointer LLVMJITValue::mulWithErrorCheck(JITValue& rh) {
   // only integer type need overflow check
   auto lhs_llvm_type = getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
   if (!lhs_llvm_type->isIntegerTy()) {
@@ -383,7 +381,7 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "sub", false);
 }
 
-JITValuePointer LLVMJITValue::sub_with_error_check(JITValue& rh) {
+JITValuePointer LLVMJITValue::subWithErrorCheck(JITValue& rh) {
   // only integer type need overflow check
   auto lhs_llvm_type = getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
   if (!lhs_llvm_type->isIntegerTy()) {
@@ -471,7 +469,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
       getValueSubTypeTag());
 }
 
-JITValuePointer LLVMJITValue::add_with_error_check(JITValue& rh) {
+JITValuePointer LLVMJITValue::addWithErrorCheck(JITValue& rh) {
   // only integer type need overflow check
   auto lhs_llvm_type = getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
   if (!lhs_llvm_type->isIntegerTy()) {
@@ -490,13 +488,7 @@ JITValuePointer LLVMJITValue::add_with_error_check(JITValue& rh) {
     checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "add");
   }
 
-  llvm::BasicBlock* check_ok{nullptr};
-  llvm::BasicBlock* check_fail{nullptr};
-
-  check_ok = llvm::BasicBlock::Create(
-      parent_function_.getLLVMContext(), "ovf_ok", &parent_function_.func_);
-  check_fail = llvm::BasicBlock::Create(
-      parent_function_.getLLVMContext(), "ovf_detected", &parent_function_.func_);
+  auto llvm_if = parent_function_.createIfBuilder();
 
   // get compute function
   auto llvm_module = parent_function_.func_.getParent();
@@ -512,14 +504,18 @@ JITValuePointer LLVMJITValue::add_with_error_check(JITValue& rh) {
   auto overflow = getFunctionBuilder(parent_function_)
                       .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{1});
 
+  auto overflow_value = makeJITValuePointer<LLVMJITValue>(
+      JITTypeTag::BOOL, parent_function_, overflow, "overflow", false);
+
   // return error
-  getFunctionBuilder(parent_function_).CreateCondBr(overflow, check_fail, check_ok);
-  getFunctionBuilder(parent_function_).SetInsertPoint(check_fail);
-  getFunctionBuilder(parent_function_)
-      .CreateRet(llvm::ConstantInt::get(
-          llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-          ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
-  getFunctionBuilder(parent_function_).SetInsertPoint(check_ok);
+  llvm_if->condition([&]() { return overflow_value; })
+      ->ifTrue([&]() {
+        getFunctionBuilder(parent_function_)
+            .CreateRet(llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+      })
+      ->build();
 
   return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(),
