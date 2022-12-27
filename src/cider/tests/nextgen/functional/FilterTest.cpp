@@ -124,7 +124,6 @@ TEST_F(CiderProjectAllTestNG, filterProjectAllTest) {
 }
 
 TEST_F(CiderFilterSequenceTestNG, inTest) {
-  GTEST_SKIP_("IN is not supportted in nextgen.");
   assertQueryArrow("SELECT * FROM test WHERE col_1 in (24, 25, 26)",
                    "in_int32_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_2 in (24, 25, 26)",
@@ -135,7 +134,6 @@ TEST_F(CiderFilterSequenceTestNG, inTest) {
                    "in_fp64_array.json");
   assertQueryArrow("SELECT * FROM test WHERE col_3 not in (24, 25, 26)",
                    "not_in_fp32_array.json");
-  // TODO: (yma1) add in (str_1, str_2, str_3)
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_1 in (24, 25, 26) and col_2 > 20");
   assertQueryArrowIgnoreOrder(
@@ -143,7 +141,6 @@ TEST_F(CiderFilterSequenceTestNG, inTest) {
 }
 
 TEST_F(CiderFilterRandomTestNG, inTest) {
-  GTEST_SKIP_("IN is not supportted in nextgen.");
   assertQueryArrow(
       "SELECT col_1, col_2, col_3, col_4 FROM test WHERE col_1 in (24, 25, 26)",
       "in_int32_array.json");
@@ -184,7 +181,7 @@ TEST_F(CiderFilterSequenceTestNG, integerFilterTest) {
   assertQueryArrow("SELECT col_1 FROM test WHERE col_1 IS NOT NULL");
 }
 
-TEST_F(CiderFilterSequenceTestNG, constantComparions) {
+TEST_F(CiderFilterSequenceTestNG, constantComparison) {
   assertQueryArrow("SELECT col_1 FROM test WHERE TRUE");
   assertQueryArrow("SELECT col_1 FROM test WHERE FALSE");
 

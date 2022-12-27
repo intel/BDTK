@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 
@@ -76,7 +77,7 @@ class Constant : public Expr {
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
 
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(CodegenContext& context) override;
 
   ExprPtrRefVector get_children_reference() override { return {}; }
 

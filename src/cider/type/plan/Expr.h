@@ -29,6 +29,7 @@
 #include <string>
 #include <vector>
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
@@ -37,6 +38,7 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 using namespace cider::exec::nextgen::utils;
+using namespace cider::exec::nextgen::context;
 
 class Expr;
 class ColumnVar;
@@ -159,7 +161,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
  public:
   // change this to pure virtual method after all subclasses support codegen.
-  virtual JITExprValue& codegen(JITFunction& func);
+  virtual JITExprValue& codegen(CodegenContext& context);
 
   // for {JITValuePointer, ...}
   template <JITExprValueType type = JITExprValueType::ROW, typename... T>
