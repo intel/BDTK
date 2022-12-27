@@ -150,22 +150,23 @@ JITValuePointer LLVMJITValue::modWithErrorCheck(JITValue& rh) {
   llvm::Type* rh_llvm_type =
       getLLVMType(llvm_rh.getValueTypeTag(), parent_function_.getLLVMContext());
 
-  auto zero_const = rh_llvm_type->isIntegerTy()
-                        ? llvm::ConstantInt::get(rh_llvm_type, 0, true)
-                        : llvm::ConstantFP::get(rh_llvm_type, 0.);
-
-  auto not_zero =
-      zero_const->getType()->isFloatingPointTy()
-          ? getFunctionBuilder(parent_function_)
-                .CreateFCmp(llvm::FCmpInst::FCMP_ONE, llvm_rh.load(), zero_const)
-          : getFunctionBuilder(parent_function_)
-                .CreateICmp(llvm::ICmpInst::ICMP_NE, llvm_rh.load(), zero_const);
-  auto not_zero_value = makeJITValuePointer<LLVMJITValue>(
-      JITTypeTag::BOOL, parent_function_, not_zero, "is_zero", false);
+  auto zero_const =
+      rh_llvm_type->isIntegerTy()
+          ? makeJITValuePointer<LLVMJITValue>(
+                llvm_rh.getValueTypeTag(),
+                parent_function_,
+                llvm::ConstantInt::get(rh_llvm_type, 0, true),
+                "zero",
+                false)
+          : makeJITValuePointer<LLVMJITValue>(llvm_rh.getValueTypeTag(),
+                                              parent_function_,
+                                              llvm::ConstantFP::get(rh_llvm_type, 0.),
+                                              "zero",
+                                              false);
 
   auto ifBuilder = parent_function_.createIfBuilder();
-  ifBuilder->condition([&not_zero_value]() { return not_zero_value; })
-      ->ifFalse([this]() {
+  ifBuilder->condition([&zero_const, &llvm_rh]() { return llvm_rh.eq(zero_const); })
+      ->ifTrue([this]() {
         getFunctionBuilder(parent_function_)
             .CreateRet(llvm::ConstantInt::get(
                 llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
@@ -208,22 +209,23 @@ JITValuePointer LLVMJITValue::divWithErrorCheck(JITValue& rh) {
   llvm::Type* rh_llvm_type =
       getLLVMType(llvm_rh.getValueTypeTag(), parent_function_.getLLVMContext());
 
-  auto zero_const = rh_llvm_type->isIntegerTy()
-                        ? llvm::ConstantInt::get(rh_llvm_type, 0, true)
-                        : llvm::ConstantFP::get(rh_llvm_type, 0.);
-
-  auto not_zero =
-      zero_const->getType()->isFloatingPointTy()
-          ? getFunctionBuilder(parent_function_)
-                .CreateFCmp(llvm::FCmpInst::FCMP_ONE, llvm_rh.load(), zero_const)
-          : getFunctionBuilder(parent_function_)
-                .CreateICmp(llvm::ICmpInst::ICMP_NE, llvm_rh.load(), zero_const);
-  auto not_zero_value = makeJITValuePointer<LLVMJITValue>(
-      JITTypeTag::BOOL, parent_function_, not_zero, "is_zero", false);
+  auto zero_const =
+      rh_llvm_type->isIntegerTy()
+          ? makeJITValuePointer<LLVMJITValue>(
+                llvm_rh.getValueTypeTag(),
+                parent_function_,
+                llvm::ConstantInt::get(rh_llvm_type, 0, true),
+                "zero",
+                false)
+          : makeJITValuePointer<LLVMJITValue>(llvm_rh.getValueTypeTag(),
+                                              parent_function_,
+                                              llvm::ConstantFP::get(rh_llvm_type, 0.),
+                                              "zero",
+                                              false);
 
   auto ifBuilder = parent_function_.createIfBuilder();
-  ifBuilder->condition([&not_zero_value]() { return not_zero_value; })
-      ->ifFalse([this]() {
+  ifBuilder->condition([&zero_const, &llvm_rh]() { return llvm_rh.eq(zero_const); })
+      ->ifTrue([this]() {
         getFunctionBuilder(parent_function_)
             .CreateRet(llvm::ConstantInt::get(
                 llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
