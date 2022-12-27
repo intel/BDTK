@@ -58,6 +58,7 @@ RUN yum install -y epel-release \
         libzstd-devel \
         bzip2-devel \
         lzo-devel \
+        nasm \
     && yum clean all \
     && rm -rf /var/cache/yum/*
 
