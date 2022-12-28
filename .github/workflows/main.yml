@@ -55,9 +55,7 @@ jobs:
       - name: Presto Integration
         working-directory: ${{github.workspace}}
         run: |
-          rm -rf /workspace/github-workspace/presto
-          git clone https://github.com/intel-innersource/frameworks.ai.modular-sql.presto.git /workspace/github-workspace/presto
-          mkdir /workspace/github-workspace/presto/presto-native-execution/BDTK/
+          ./ci/scripts/prepare_source_code_cicd.sh
           cp -r . /workspace/github-workspace/presto/presto-native-execution/BDTK/
           ./ci/scripts/presto-integration.sh
 
