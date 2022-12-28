@@ -22,6 +22,7 @@
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
 #include "exec/nextgen/context/Buffer.h"
+#include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
@@ -122,6 +123,9 @@ class CodegenContext {
       bool output_raw_buffer = true);
 
   jitlib::JITValuePointer registerHashTable(const std::string& name = "");
+  jitlib::JITValuePointer registerCiderSet(const std::string& name,
+                                           const SQLTypeInfo& type,
+                                           CiderSetPtr c_set);
 
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
@@ -184,11 +188,24 @@ class CodegenContext {
     hashtable_descriptor_.first->hash_table = &LP_hash_table;
   }
 
+  struct CiderSetDescriptor {
+    int64_t ctx_id;
+    std::string name;
+    SQLTypeInfo type;
+    CiderSetPtr cider_set;
+    CiderSetDescriptor(int64_t id,
+                       const std::string& n,
+                       const SQLTypeInfo& t,
+                       CiderSetPtr c_set)
+        : ctx_id(id), name(n), type(t), cider_set(std::move(c_set)) {}
+  };
+
   void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
 
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
   using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
   using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
+  using CiderSetDescriptorPtr = std::shared_ptr<CiderSetDescriptor>;
 
  private:
   std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
@@ -196,6 +213,8 @@ class CodegenContext {
   std::vector<std::pair<BufferDescriptorPtr, jitlib::JITValuePointer>>
       buffer_descriptors_{};
   std::pair<HashTableDescriptorPtr, jitlib::JITValuePointer> hashtable_descriptor_;
+  std::vector<std::pair<CiderSetDescriptorPtr, jitlib::JITValuePointer>>
+      cider_set_descriptors_{};
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
 

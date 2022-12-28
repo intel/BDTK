@@ -37,6 +37,11 @@ void RuntimeContext::addHashTable(
   hashtable_holder_ = descriptor;
 }
 
+void RuntimeContext::addCiderSet(
+    const CodegenContext::CiderSetDescriptorPtr& descriptor) {
+  cider_set_holder_.emplace_back(descriptor, nullptr);
+}
+
 void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of batches.
   for (auto& batch_desc : batch_holder_) {
@@ -60,6 +65,13 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of hashtable.
   if (hashtable_holder_ != nullptr) {
     runtime_ctx_pointers_[hashtable_holder_->ctx_id] = hashtable_holder_->hash_table;
+  }
+
+  for (auto& cider_set_desc : cider_set_holder_) {
+    if (nullptr == cider_set_desc.second) {
+      runtime_ctx_pointers_[cider_set_desc.first->ctx_id] =
+          cider_set_desc.first->cider_set.get();
+    }
   }
 }
 

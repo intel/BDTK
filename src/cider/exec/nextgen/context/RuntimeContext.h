@@ -20,9 +20,9 @@
  */
 #ifndef NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
 #define NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
-
 #include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/Buffer.h"
+#include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/context/StringHeap.h"
 #include "exec/nextgen/utils/FunctorUtils.h"
@@ -44,6 +44,7 @@ class RuntimeContext {
   void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
 
   void addHashTable(const CodegenContext::HashTableDescriptorPtr& descriptor);
+  void addCiderSet(const CodegenContext::CiderSetDescriptorPtr& descriptor);
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
@@ -81,6 +82,8 @@ class RuntimeContext {
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
   std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
+  std::vector<std::pair<CodegenContext::CiderSetDescriptorPtr, CiderSetPtr>>
+      cider_set_holder_;
   std::shared_ptr<StringHeap> string_heap_ptr_;
   CodegenContext::HashTableDescriptorPtr hashtable_holder_;
 };

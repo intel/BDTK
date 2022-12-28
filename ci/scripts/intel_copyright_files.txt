@@ -26,6 +26,7 @@ src/cider/exec/plan/validator/*
 src/cider/exec/nextgen/*
 src/cider/exec/processor/*
 src/cider/type/plan/*Expr.cpp
+src/cider/type/plan/InValues.cpp
 src/cider/function/FunctionLookupEngine.*
 src/cider/function/SubstraitFunctionCiderMappings.h
 src/cider/function/substrait/*
