@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
 VELOX_COMMIT_ID=`git submodule status -- thirdparty/velox | cut -d' ' -f2`
