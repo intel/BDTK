@@ -24,6 +24,7 @@
 #include <llvm/IR/Value.h>
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "util/Logger.h"
 
@@ -144,28 +145,10 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
 }
 
 JITValuePointer LLVMJITValue::modWithErrorCheck(JITValue& rh) {
-  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mod");
 
-  llvm::Type* rh_llvm_type =
-      getLLVMType(llvm_rh.getValueTypeTag(), parent_function_.getLLVMContext());
-
-  auto zero_const =
-      rh_llvm_type->isIntegerTy()
-          ? makeJITValuePointer<LLVMJITValue>(
-                llvm_rh.getValueTypeTag(),
-                parent_function_,
-                llvm::ConstantInt::get(rh_llvm_type, 0, true),
-                "zero",
-                false)
-          : makeJITValuePointer<LLVMJITValue>(llvm_rh.getValueTypeTag(),
-                                              parent_function_,
-                                              llvm::ConstantFP::get(rh_llvm_type, 0.),
-                                              "zero",
-                                              false);
-
   auto ifBuilder = parent_function_.createIfBuilder();
-  ifBuilder->condition([&zero_const, &llvm_rh]() { return llvm_rh.eq(zero_const); })
+  ifBuilder->condition([&rh]() { return rh == 0; })
       ->ifTrue([this]() {
         getFunctionBuilder(parent_function_)
             .CreateRet(llvm::ConstantInt::get(
@@ -203,28 +186,10 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
 }
 
 JITValuePointer LLVMJITValue::divWithErrorCheck(JITValue& rh) {
-  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "div");
 
-  llvm::Type* rh_llvm_type =
-      getLLVMType(llvm_rh.getValueTypeTag(), parent_function_.getLLVMContext());
-
-  auto zero_const =
-      rh_llvm_type->isIntegerTy()
-          ? makeJITValuePointer<LLVMJITValue>(
-                llvm_rh.getValueTypeTag(),
-                parent_function_,
-                llvm::ConstantInt::get(rh_llvm_type, 0, true),
-                "zero",
-                false)
-          : makeJITValuePointer<LLVMJITValue>(llvm_rh.getValueTypeTag(),
-                                              parent_function_,
-                                              llvm::ConstantFP::get(rh_llvm_type, 0.),
-                                              "zero",
-                                              false);
-
   auto ifBuilder = parent_function_.createIfBuilder();
-  ifBuilder->condition([&zero_const, &llvm_rh]() { return llvm_rh.eq(zero_const); })
+  ifBuilder->condition([&rh]() { return rh == 0; })
       ->ifTrue([this]() {
         getFunctionBuilder(parent_function_)
             .CreateRet(llvm::ConstantInt::get(
