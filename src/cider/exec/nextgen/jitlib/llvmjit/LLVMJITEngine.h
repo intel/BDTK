@@ -29,6 +29,7 @@ class LLVMJITModule;
 // compilation config info
 struct CompilationOptions {
   bool optimize_ir = true;
+  bool enable_vectorize = false;
   bool aggressive_jit_compile = true;
   bool dump_ir = false;
   bool enable_avx2 = true;
