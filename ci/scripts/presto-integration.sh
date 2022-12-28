@@ -39,7 +39,7 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/thirdparty/velox/velox/substrait/libvelox_sub
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/function/libcider_function.a ./presto_cpp/main/lib
 
-make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
+make -j ${CPU_COUNT:-`nproc`} ${PRESTO_CPP_MODE}
 rm -rf ./_build/${PRESTO_CPP_MODE}/presto_cpp/function
 mkdir -p ./_build/${PRESTO_CPP_MODE}/presto_cpp/function
 cp ./BDTK/build-${BDTK_BUILD_MODE}/src/cider/function/RuntimeFunctions.bc ./_build/${PRESTO_CPP_MODE}/presto_cpp/function/
