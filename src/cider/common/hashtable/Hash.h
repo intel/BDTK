@@ -71,8 +71,7 @@ inline uint64_t intHash64(uint64_t x) {
 #endif
 
 template <typename T>
-struct is_big_int  // NOLINT(readability-identifier-naming)
-{
+struct is_big_int {
   static constexpr bool value = false;
 };
 
@@ -342,10 +341,12 @@ struct IntHash32 {
       return intHash32<salt>(key.items[0] ^ key.items[1]);
     } else if constexpr (is_big_int_v<T> && sizeof(T) == 32) {
       return intHash32<salt>(key.items[0] ^ key.items[1] ^ key.items[2] ^ key.items[3]);
-    } else if constexpr (sizeof(T) <= sizeof(uint64_t)) {
-      uint64_t out{0};
-      std::memcpy(&out, &key, sizeof(T));
-      return intHash32<salt>(out);
+    } else {
+      if constexpr (sizeof(T) <= sizeof(uint64_t)) {
+        uint64_t out{0};
+        std::memcpy(&out, &key, sizeof(T));
+        return intHash32<salt>(out);
+      }
     }
 
     UNREACHABLE();
