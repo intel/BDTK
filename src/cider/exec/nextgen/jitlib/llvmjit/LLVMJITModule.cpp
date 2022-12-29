@@ -29,16 +29,13 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 #include <llvm/Transforms/IPO/GlobalOpt.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
-#include <llvm/Transforms/Scalar/DeadStoreElimination.h>
-#include <llvm/Transforms/Scalar/EarlyCSE.h>
-#include <llvm/Transforms/Scalar/JumpThreading.h>
-#include <llvm/Transforms/Scalar/LICM.h>
 #include <llvm/Transforms/Scalar/LoopPassManager.h>
-#include <llvm/Transforms/Scalar/NewGVN.h>
+#include <llvm/Transforms/Scalar/LoopRotation.h>
 #include <llvm/Transforms/Scalar/SROA.h>
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Utils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
+#include <llvm/Transforms/Utils/LoopSimplify.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Vectorize/LoopVectorize.h>
 
@@ -204,33 +201,19 @@ void LLVMJITModule::optimizeIR() {
 
     module_pass_mgr.addPass(
         llvm::AlwaysInlinerPass(false));  // Inline all functions labeled as always_inline
-
-    function_pass_mgr.addPass(
-        llvm::SROA());  // mem ssa drops unused load and store instructions, e.g. passing
-                        // variables directly where possible
-    function_pass_mgr.addPass(llvm::EarlyCSEPass(true));  // Catch trivial redundancies
-    function_pass_mgr.addPass(
-        llvm::SimplifyCFGPass());  // remove load/stores in PHIs if instructions can be
-                                   // accessed directly post thread jumps
-    function_pass_mgr.addPass(llvm::NewGVNPass());
-    function_pass_mgr.addPass(llvm::DSEPass());
-
-    function_pass_mgr.addPass(llvm::InstCombinePass());
-    function_pass_mgr.addPass(llvm::PromotePass());
-
-    loop_pass_mgr.addPass(llvm::LICMPass());
-
-    function_pass_mgr.addPass(llvm::FunctionToLoopPassAdaptor(std::move(loop_pass_mgr)));
+    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass()));
+    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::SROA()));
+    module_pass_mgr.addPass(llvm::GlobalOptPass());
+    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::InstCombinePass()));
+    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(
+        llvm::FunctionToLoopPassAdaptor(llvm::LoopRotatePass())));
+    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass()));
+    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::LoopSimplifyPass()));
 
     if (co_.enable_vectorize) {
-      function_pass_mgr.addPass(
-          llvm::LoopVectorizePass(llvm::LoopVectorizeOptions(false, false)));
+      module_pass_mgr.addPass(
+          llvm::ModuleToFunctionPassAdaptor(llvm::LoopVectorizePass()));
     }
-
-    module_pass_mgr.addPass(
-        llvm::ModuleToFunctionPassAdaptor(std::move(function_pass_mgr)));
-
-    module_pass_mgr.addPass(llvm::GlobalOptPass());
 
     module_pass_mgr.run(*module_, module_analysis_mgr);
   }
