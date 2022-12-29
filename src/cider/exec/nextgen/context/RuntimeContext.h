@@ -48,7 +48,7 @@ class RuntimeContext {
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
-  const int8_t* getTrimStringOperCharMapById(int id);
+  const int8_t* getTrimStringOperCharMapById(int id) const;
 
   void setTrimStringOperCharMaps(const CodegenContext::TrimCharMapsPtr& maps);
 

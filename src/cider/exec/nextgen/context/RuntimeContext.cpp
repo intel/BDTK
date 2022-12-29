@@ -130,7 +130,7 @@ void RuntimeContext::setTrimStringOperCharMaps(
   trim_char_maps_ = maps;
 }
 
-const int8_t* RuntimeContext::getTrimStringOperCharMapById(int id) {
+const int8_t* RuntimeContext::getTrimStringOperCharMapById(int id) const {
   return trim_char_maps_->at(id).data();
 }
 
