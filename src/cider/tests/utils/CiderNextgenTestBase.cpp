@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/CiderArrowChecker.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 
 namespace cider::test::util {
 
@@ -44,10 +44,18 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   if (0 == duck_res_arrow.size()) {
     // result is empty.
   } else {
-    EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
-                                                &output_array,
-                                                duck_res_arrow[0].second.get(),
-                                                &output_schema));
+    if (ignore_order) {
+      EXPECT_TRUE(
+          CiderArrowChecker::checkArrowEqIgnoreOrder(duck_res_arrow[0].first.get(),
+                                                     &output_array,
+                                                     duck_res_arrow[0].second.get(),
+                                                     &output_schema));
+    } else {
+      EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
+                                                  &output_array,
+                                                  duck_res_arrow[0].second.get(),
+                                                  &output_schema));
+    }
   }
 
   output_array.release(&output_array);
