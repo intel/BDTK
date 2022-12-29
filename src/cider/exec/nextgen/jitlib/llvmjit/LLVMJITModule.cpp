@@ -21,6 +21,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 
 #include <llvm/Analysis/CGSCCPassManager.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/PassManager.h>
@@ -166,10 +167,10 @@ void LLVMJITModule::finish(const std::string& main_func) {
     dumpModuleIR(module_.get(), module_->getModuleIdentifier());
   }
 
-  LLVMJITEngineBuilder builder(*this, tm);
-
   // IR optimization
-  optimizeIR();
+  optimizeIR(tm);
+
+  LLVMJITEngineBuilder builder(*this, tm);
 
   if (co_.dump_ir) {
     dumpModuleIR(module_.get(), module_->getModuleIdentifier() + "_opt");
@@ -178,12 +179,22 @@ void LLVMJITModule::finish(const std::string& main_func) {
   engine_ = builder.build();
 }
 
-void LLVMJITModule::optimizeIR() {
+void LLVMJITModule::optimizeIR(llvm::TargetMachine* tm) {
   if (co_.optimize_ir) {
+    llvm::TargetLibraryInfoImpl target_info(llvm::Triple(module_->getTargetTriple()));
+
     llvm::ModuleAnalysisManager module_analysis_mgr;
     llvm::LoopAnalysisManager loop_analysis_mgr;
     llvm::FunctionAnalysisManager function_analysis_mgr;
     llvm::CGSCCAnalysisManager cgscc_analysis_mgr;
+
+    function_analysis_mgr.registerPass([tm]() { return tm->getTargetIRAnalysis(); });
+    function_analysis_mgr.registerPass(
+        [&target_info]() { return llvm::TargetLibraryAnalysis(target_info); });
+
+    llvm::AAManager aam;
+    aam.registerFunctionAnalysis<llvm::BasicAA>();
+    function_analysis_mgr.registerPass([&aam]() { return std::move(aam); });
 
     llvm::PassBuilder pass_builder;
     pass_builder.registerModuleAnalyses(module_analysis_mgr);
@@ -196,24 +207,31 @@ void LLVMJITModule::optimizeIR() {
                                       module_analysis_mgr);
 
     llvm::ModulePassManager module_pass_mgr;
-    llvm::FunctionPassManager function_pass_mgr;
-    llvm::LoopPassManager loop_pass_mgr;
 
     module_pass_mgr.addPass(
         llvm::AlwaysInlinerPass(false));  // Inline all functions labeled as always_inline
-    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass()));
-    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::SROA()));
-    module_pass_mgr.addPass(llvm::GlobalOptPass());
-    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::InstCombinePass()));
-    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(
-        llvm::FunctionToLoopPassAdaptor(llvm::LoopRotatePass())));
-    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass()));
-    module_pass_mgr.addPass(llvm::ModuleToFunctionPassAdaptor(llvm::LoopSimplifyPass()));
+
+    llvm::FunctionPassManager function_pass_mgr1;
+    function_pass_mgr1.addPass(llvm::SimplifyCFGPass());
+    function_pass_mgr1.addPass(llvm::SROA());
+    function_pass_mgr1.addPass(llvm::InstCombinePass());
+
+    llvm::LoopPassManager loop_pass_mgr;
+    loop_pass_mgr.addPass(llvm::LoopRotatePass());
+
+    function_pass_mgr1.addPass(llvm::FunctionToLoopPassAdaptor(std::move(loop_pass_mgr)));
+
+    function_pass_mgr1.addPass(llvm::SimplifyCFGPass());
+    function_pass_mgr1.addPass(llvm::LoopSimplifyPass());
 
     if (co_.enable_vectorize) {
-      module_pass_mgr.addPass(
-          llvm::ModuleToFunctionPassAdaptor(llvm::LoopVectorizePass()));
+      function_pass_mgr1.addPass(llvm::LoopVectorizePass());
     }
+
+    module_pass_mgr.addPass(
+        llvm::ModuleToFunctionPassAdaptor(std::move(function_pass_mgr1)));
+
+    module_pass_mgr.addPass(llvm::GlobalOptPass());
 
     module_pass_mgr.run(*module_, module_analysis_mgr);
   }
