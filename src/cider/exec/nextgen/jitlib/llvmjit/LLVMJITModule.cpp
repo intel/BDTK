@@ -40,6 +40,7 @@
 #include <llvm/Transforms/Utils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
+#include <llvm/Transforms/Vectorize/LoopVectorize.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
@@ -220,6 +221,11 @@ void LLVMJITModule::optimizeIR() {
     loop_pass_mgr.addPass(llvm::LICMPass());
 
     function_pass_mgr.addPass(llvm::FunctionToLoopPassAdaptor(std::move(loop_pass_mgr)));
+
+    if (co_.enable_vectorize) {
+      function_pass_mgr.addPass(
+          llvm::LoopVectorizePass(llvm::LoopVectorizeOptions(false, false)));
+    }
 
     module_pass_mgr.addPass(
         llvm::ModuleToFunctionPassAdaptor(std::move(function_pass_mgr)));
