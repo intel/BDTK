@@ -22,7 +22,6 @@
 #ifndef CIDER_DUCKDBARROWADAPTOR_H
 #define CIDER_DUCKDBARROWADAPTOR_H
 
-#include <list>
 #include <vector>
 #include "cider/CiderBatch.h"
 #include "duckdb.hpp"

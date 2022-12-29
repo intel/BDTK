@@ -23,6 +23,9 @@
 #include "type/data/string/StringDictionary.h"
 
 #include <sys/fcntl.h>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/sort/spreadsort/string_sort.hpp>
 #include <future>
 #include <iostream>
 #include <string_view>
@@ -115,10 +118,10 @@ StringDictionary::StringDictionary(const DictRef& dict_ref,
   // initial capacity must be a power of two for efficient bucket computation
   CHECK_EQ(size_t(0), (initial_capacity & (initial_capacity - 1)));
   if (!isTemp_) {
-    std::filesystem::path storage_path(folder);
-    offsets_path_ = (storage_path / std::filesystem::path("DictOffsets")).string();
+    boost::filesystem::path storage_path(folder);
+    offsets_path_ = (storage_path / boost::filesystem::path("DictOffsets")).string();
     const auto payload_path =
-        (storage_path / std::filesystem::path("DictPayload")).string();
+        (storage_path / boost::filesystem::path("DictPayload")).string();
     payload_fd_ = checked_open(payload_path.c_str(), recover);
     offset_fd_ = checked_open(offsets_path_.c_str(), recover);
     payload_file_size_ = cider::file_size(payload_fd_);

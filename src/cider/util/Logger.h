@@ -44,9 +44,9 @@
 #ifndef NO_BOOST
 
 #include <boost/config.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/log/common.hpp>
 #include <boost/program_options.hpp>
-#include <filesystem>
 
 #include <memory>
 #include <set>
@@ -116,7 +116,7 @@ class LogOptions {
 
  public:
   // Initialize to default values
-  std::filesystem::path log_dir_{"bdtk_log"};
+  boost::filesystem::path log_dir_{"bdtk_log"};
   // file_name_pattern and symlink are prepended with base_name.
   std::string file_name_pattern_{".{SEVERITY}.%Y%m%d-%H%M%S.log"};
   std::string symlink_{".{SEVERITY}"};
@@ -130,7 +130,7 @@ class LogOptions {
   size_t rotation_size_{10 << 20};
 
   LogOptions(char const* argv0);
-  std::filesystem::path full_log_dir() const;
+  boost::filesystem::path full_log_dir() const;
   boost::program_options::options_description const& get_options() const;
   void parse_command_line(int, char const* const*);
   void set_base_path(std::string const& base_path);

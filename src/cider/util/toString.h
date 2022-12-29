@@ -48,7 +48,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <list>
 #include <set>
 #include <sstream>
 #include <tuple>

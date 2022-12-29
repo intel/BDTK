@@ -21,7 +21,6 @@
 
 #include "TestHelpers.h"
 
-#include <fstream>
 #include "cider/CiderCompileModule.h"
 
 #include <google/protobuf/util/json_util.h>
