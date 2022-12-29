@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 #include "type/schema/ColumnInfo.h"
@@ -43,7 +44,7 @@ class ColumnVar : public Expr {
  public:
   ColumnVar(ColumnInfoPtr col_info, int nest_level)
       : Expr(col_info->type), rte_idx(nest_level), col_info_(std::move(col_info)) {}
-  ColumnVar(const SQLTypeInfo& ti)
+  explicit ColumnVar(const SQLTypeInfo& ti)
       : Expr(ti)
       , rte_idx(-1)
       , col_info_(std::make_shared<ColumnInfo>(-1, 0, 0, "", ti, false)) {}
@@ -105,7 +106,7 @@ class ColumnVar : public Expr {
   std::string toString() const override;
 
  public:
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(CodegenContext& context) override;
 
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins

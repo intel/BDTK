@@ -29,6 +29,7 @@
 #include <string>
 #include <vector>
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
@@ -37,6 +38,7 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 using namespace cider::exec::nextgen::utils;
+using namespace cider::exec::nextgen::context;
 
 class Expr;
 class ColumnVar;
@@ -56,7 +58,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
       : type_info(t, d, 0, notnull), contains_agg(false) {}
   Expr(SQLTypes t, int d, int s, bool notnull)
       : type_info(t, d, s, notnull), contains_agg(false) {}
-  Expr(const SQLTypeInfo& ti, bool has_agg = false)
+  explicit Expr(const SQLTypeInfo& ti, bool has_agg = false)
       : type_info(ti), contains_agg(has_agg) {}
   virtual ~Expr() {}
   std::shared_ptr<Analyzer::Expr> get_shared_ptr() { return shared_from_this(); }
@@ -66,7 +68,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   void set_contains_agg(bool a) { contains_agg = a; }
   virtual std::shared_ptr<Analyzer::Expr> add_cast(const SQLTypeInfo& new_type_info);
   virtual void check_group_by(
-      const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {};
+      const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {}
   virtual std::shared_ptr<Analyzer::Expr> deep_copy()
       const = 0;  // make a deep copy of self
                   /*
@@ -110,7 +112,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   virtual std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
     return deep_copy();
-  };
+  }
   /*
    * @brief rewrite_with_child_targetlist rewrite ColumnVar's in expression with entries
    * in a child plan's targetlist. targetlist expressions are expected to be only Var's or
@@ -119,7 +121,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   virtual std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
     return deep_copy();
-  };
+  }
   /*
    * @brief rewrite_agg_to_var rewrite ColumnVar's in expression with entries in an
    * AggPlan's targetlist. targetlist expressions are expected to be only Var's or
@@ -159,7 +161,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
  public:
   // change this to pure virtual method after all subclasses support codegen.
-  virtual JITExprValue& codegen(JITFunction& func);
+  virtual JITExprValue& codegen(CodegenContext& context);
 
   // for {JITValuePointer, ...}
   template <JITExprValueType type = JITExprValueType::ROW, typename... T>
@@ -205,5 +207,9 @@ inline typename std::enable_if<std::is_base_of<Analyzer::Expr, Tp>::value,
 makeExpr(Args&&... args) {
   return std::make_shared<Tp>(std::forward<Args>(args)...);
 }
+
+// Remove a cast operator if present.
+std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr);
+const Analyzer::Expr* remove_cast(const Analyzer::Expr* expr);
 
 #endif  // TYPE_PLAN_EXPR_H

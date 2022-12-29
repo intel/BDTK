@@ -55,11 +55,9 @@ jobs:
       - name: Presto Integration
         working-directory: ${{github.workspace}}
         run: |
-          rm -rf /workspace/github-workspace/presto/presto-native-execution/_build/
-          rm -rf /workspace/github-workspace/presto/presto-native-execution/BDTK/
-          mkdir /workspace/github-workspace/presto/presto-native-execution/BDTK/
+          ./ci/scripts/prepare_source_code_cicd.sh
           cp -r . /workspace/github-workspace/presto/presto-native-execution/BDTK/
-          /workspace/presto-cider-scripts/build-cider-release.sh
+          ./ci/scripts/presto-integration.sh
 
       - name: Run End-to-end Tests
         working-directory: /workspace/presto-cider-scripts

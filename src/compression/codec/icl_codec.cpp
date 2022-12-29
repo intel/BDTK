@@ -23,9 +23,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 
-#include "icl_codec.h"
-#include "icl_codec_internal.h"
+#include "codec/icl_codec.h"
+#include "codec/icl_codec_internal.h"
 
 namespace icl {
 namespace codec {
@@ -38,14 +39,36 @@ std::unique_ptr<IclCompressionCodec> IclCompressionCodec::MakeIclCompressionCode
         return std::toupper(c);
       });
   if (codec_name == "QPL") {
+#ifdef ICL_WITH_QPL
     return internal::MakeQplCodec(compression_level);
+#else
+    goto OUT_NOT_BUILT;
+#endif
   } else if (codec_name == "QAT") {
+#ifdef ICL_WITH_QAT
     return internal::MakeQatCodec(compression_level);
+#else
+    goto OUT_NOT_BUILT;
+#endif
+  } else if (codec_name == "IGZIP") {
+#ifdef ICL_WITH_IGZIP
+    return internal::MakeIgzipCodec(compression_level);
+#else
+    goto OUT_NOT_BUILT;
+#endif
   } else {
-    std::cerr << "Unsupported backend \'" << codec_name << "\', fallback to QPL codec"
+#ifdef ICL_WITH_IGZIP
+    std::cerr << "Unsupported backend \'" << codec_name << "\', fallback to IGZIP codec"
               << std::endl;
-    return internal::MakeQplCodec(compression_level);
+    return internal::MakeIgzipCodec(compression_level);
+#endif
+    std::cerr << "Unsupported backend \'" << codec_name << "\'" << std::endl;
+    return nullptr;
   }
+
+OUT_NOT_BUILT:
+  std::cerr << "Support for backend \'" << codec_name << "\' not built" << std::endl;
+  return nullptr;
 }
 
 }  // namespace codec

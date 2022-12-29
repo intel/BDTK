@@ -29,7 +29,7 @@ class JITModule {
   friend JITFunctionBuilder;
 
  public:
-  virtual void finish() = 0;
+  virtual void finish(const std::string& main_func = "") = 0;
 
  protected:
   virtual JITFunctionPointer createJITFunction(
@@ -40,7 +40,7 @@ using JITModulePointer = std::shared_ptr<JITModule>;
 
 class JITFunctionBuilder {
  public:
-  JITFunctionBuilder() : module_(nullptr){};
+  JITFunctionBuilder() : module_(nullptr) {}
 
   JITFunctionBuilder& setFuncName(const std::string& name) {
     name_ = name;

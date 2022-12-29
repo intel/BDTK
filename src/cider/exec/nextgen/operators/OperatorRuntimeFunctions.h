@@ -25,8 +25,7 @@
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "type/data/funcannotations.h"
 
-/********************* Simple Aggregation Functions For Nextgen
- * *****************************/
+/******************* Simple Aggregation Functions For Nextgen ************************/
 #define DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(width, aggname, aggfunc)         \
   extern "C" ALWAYS_INLINE void nextgen_cider_agg_##aggname##_int##width( \
       int##width##_t* agg_val_addr, const int##width##_t val) {           \
@@ -39,11 +38,25 @@
     aggfunc(*(agg_val_buffer + index), val);                                            \
   }
 
+#define DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(width, aggname, aggfunc)           \
+  extern "C" ALWAYS_INLINE void nextgen_cider_agg_##aggname##_int##width##_nullable( \
+      int##width##_t* agg_val_addr,                                                  \
+      const int##width##_t val,                                                      \
+      uint8_t* agg_null_addr,                                                        \
+      bool is_null) {                                                                \
+    if (!is_null) {                                                                  \
+      aggfunc(*agg_val_addr, val);                                                   \
+      *agg_null_addr = 0;                                                            \
+    }                                                                                \
+  }
+
 #define DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(aggName, aggFunc)         \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(32, aggName, aggFunc)             \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(64, aggName, aggFunc)             \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(32, aggName, aggFunc) \
-  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(64, aggName, aggFunc)
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(64, aggName, aggFunc) \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(32, aggName, aggFunc)    \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(64, aggName, aggFunc)
 
 template <typename T>
 ALWAYS_INLINE void nextgen_cider_agg_sum(T& agg_val, const T& val) {

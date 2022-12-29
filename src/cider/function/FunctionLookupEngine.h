@@ -139,6 +139,8 @@ class FunctionLookupEngine {
       const FunctionSignature& function_signature) const;
   const std::string getRealFunctionName(const std::string& function_name) const;
   const io::substrait::TypePtr getArgueTypePtr(const std::string& argue_type_str) const;
+  const std::string getTypeSignatureRealTypeName(
+      const std::string& argue_type_signature_str) const;
 
   static std::string getDataPath() {
     if (std::filesystem::is_directory(data_path_)) {

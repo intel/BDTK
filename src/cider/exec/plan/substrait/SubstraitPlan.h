@@ -30,7 +30,7 @@ namespace cider::plan {
 /// useful methods for batch processor.
 class SubstraitPlan {
  public:
-  SubstraitPlan(const ::substrait::Plan& plan);
+  explicit SubstraitPlan(const ::substrait::Plan& plan);
 
   bool hasAggregateRel() const;
 

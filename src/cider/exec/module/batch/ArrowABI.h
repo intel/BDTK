@@ -19,14 +19,16 @@
  * under the License.
  */
 
-#ifndef CIDER_ARROW_ABI_H
-#define CIDER_ARROW_ABI_H
+#ifndef ARROW_FLAG_DICTIONARY_ORDERED
 
 #include <cstdint>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef ARROW_C_DATA_INTERFACE
+#define ARROW_C_DATA_INTERFACE
 
 #define ARROW_FLAG_DICTIONARY_ORDERED 1
 #define ARROW_FLAG_NULLABLE 2
@@ -88,6 +90,8 @@ struct ArrowArrayStream {
   // Opaque producer-specific data
   void* private_data;
 };
+
+#endif  // ARROW_C_DATA_INTERFACE
 
 #ifdef __cplusplus
 }

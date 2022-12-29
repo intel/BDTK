@@ -21,5 +21,14 @@
 # common
 #
 
-add_subdirectory(iax)
-add_subdirectory(qat)
+if(ICL_WITH_QPL)
+  add_subdirectory(qpl)
+endif()
+
+if(ICL_WITH_QAT)
+  add_subdirectory(qat)
+endif()
+
+if(ICL_WITH_IGZIP)
+  add_subdirectory(igzip)
+endif()

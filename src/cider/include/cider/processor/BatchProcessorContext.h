@@ -28,7 +28,7 @@
 #include <vector>
 #include "cider/CiderAllocator.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 class JoinHashTable {
  public:
@@ -38,7 +38,8 @@ class JoinHashTable {
 };
 
 struct HashBuildResult {
-  HashBuildResult(std::shared_ptr<JoinHashTable> _table) : table(std::move(_table)) {}
+  explicit HashBuildResult(std::shared_ptr<JoinHashTable> _table)
+      : table(std::move(_table)) {}
   std::shared_ptr<JoinHashTable> table;
 };
 
@@ -46,23 +47,25 @@ using HashBuildTableSupplier = std::function<std::optional<HashBuildResult>()>;
 
 class BatchProcessorContext {
  public:
-  BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
-      : allocator_(allocator){};
+  explicit BatchProcessorContext(const std::shared_ptr<CiderAllocator>& allocator)
+      : allocator_(allocator) {}
 
-  std::shared_ptr<CiderAllocator> allocator() { return allocator_; }
+  const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 
   void setHashBuildTableSupplier(const HashBuildTableSupplier& hashBuildTableSupplier) {
-    this->buildTableSupplier_ = hashBuildTableSupplier;
+    buildTableSupplier_ = hashBuildTableSupplier;
   }
 
-  HashBuildTableSupplier getHashBuildTableSupplier() { return buildTableSupplier_; }
+  const HashBuildTableSupplier& getHashBuildTableSupplier() const {
+    return buildTableSupplier_;
+  }
 
  private:
-  const std::shared_ptr<CiderAllocator> allocator_;
+  std::shared_ptr<CiderAllocator> allocator_;
   HashBuildTableSupplier buildTableSupplier_;
 };
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_BATCH_PROCESSOR_CONTEXT_H

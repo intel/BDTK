@@ -44,7 +44,7 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
   switch (getValueTypeTag()) {
     case JITTypeTag::BOOL: {
       if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_rh.llvm_value_)) {
-        return const_bool->isOne() ? this : &rh;
+        return const_bool->isOne() ? JITValuePointer(this) : JITValuePointer(&rh);
       }
       ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
       break;
@@ -64,7 +64,7 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
   switch (getValueTypeTag()) {
     case JITTypeTag::BOOL: {
       if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_rh.llvm_value_)) {
-        return const_bool->isOne() ? &rh : this;
+        return const_bool->isOne() ? JITValuePointer(&rh) : JITValuePointer(this);
       }
       ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
       break;

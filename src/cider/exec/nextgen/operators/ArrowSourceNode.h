@@ -28,10 +28,10 @@ namespace cider::exec::nextgen::operators {
 
 class ArrowSourceNode : public OpNode {
  public:
-  ArrowSourceNode(ExprPtrVector&& output_exprs)
+  explicit ArrowSourceNode(ExprPtrVector&& output_exprs)
       : OpNode("ArrowSourceNode", std::move(output_exprs), JITExprValueType::BATCH) {}
 
-  ArrowSourceNode(const ExprPtrVector& output_exprs)
+  explicit ArrowSourceNode(const ExprPtrVector& output_exprs)
       : OpNode("ArrowSourceNode", output_exprs, JITExprValueType::BATCH) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;

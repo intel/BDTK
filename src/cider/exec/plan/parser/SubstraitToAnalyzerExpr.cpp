@@ -669,16 +669,16 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExp
         expr_map_ptr) {
   auto extract_field = ExtractExpr::try_map_presto_extract_function(function_name);
   if (extract_field == ExtractField::kNONE) {
-    CHECK(s_scalar_function.arguments_size() == 2);
+    CHECK_EQ(s_scalar_function.arguments_size(), 2);
     CHECK(s_scalar_function.arguments(1).has_value());
     auto from_expr = toAnalyzerExpr(
         s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
     CHECK(s_scalar_function.arguments(0).has_enum_());
     std::string time_unit = s_scalar_function.arguments(0).enum_().specified();
-    CHECK(time_unit != "");
+    CHECK_NE(time_unit, "");
     return ExtractExpr::generate(from_expr, time_unit);
   } else {
-    CHECK(s_scalar_function.arguments_size() == 1);
+    CHECK_EQ(s_scalar_function.arguments_size(), 1);
     auto from_expr = toAnalyzerExpr(
         s_scalar_function.arguments(0).value(), function_map, expr_map_ptr);
     return ExtractExpr::generate(from_expr, extract_field);
@@ -690,7 +690,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildNotNullExp
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  CHECK(s_scalar_function.arguments_size() == 1);
+  CHECK_EQ(s_scalar_function.arguments_size(), 1);
   CHECK(s_scalar_function.arguments(0).has_value());
   const std::shared_ptr<Analyzer::Expr> operand_expr =
       toAnalyzerExpr(s_scalar_function.arguments(0).value(), function_map, expr_map_ptr);
@@ -910,7 +910,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildCoalesceEx
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  CHECK(s_scalar_function.arguments_size() > 0);
+  CHECK_GT(s_scalar_function.arguments_size(), 0);
   std::shared_ptr<Analyzer::Expr> else_expr;
   std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
       expr_list;
@@ -1177,7 +1177,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
         arg_expr,
         s_expr.invocation() ==
                 ::substrait::AggregateFunction_AggregationInvocation::
-                    AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT
+                    AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT  // NOLINT
             ? true
             : false,
         arg1);

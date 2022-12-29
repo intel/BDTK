@@ -28,4 +28,7 @@ add_opnode(ColumnToRowNode)
 add_opnode(AggregationNode)
 add_opnode(RowToColumnNode)
 
+list(APPEND OPERATORS_SOURCE
+     ${CMAKE_CURRENT_LIST_DIR}/extractor/AggExtractorBuilder.cpp)
+
 add_library(cider_operators OBJECT ${OPERATORS_SOURCE})

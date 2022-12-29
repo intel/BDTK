@@ -53,7 +53,8 @@ struct JITFunctionEmitDescriptor {
 
 class JITFunction {
  public:
-  JITFunction(const JITFunctionDescriptor& descriptor) : descriptor_(descriptor) {}
+  explicit JITFunction(const JITFunctionDescriptor& descriptor)
+      : descriptor_(descriptor) {}
 
   const JITFunctionDescriptor* getFunctionDescriptor() const { return &descriptor_; }
 

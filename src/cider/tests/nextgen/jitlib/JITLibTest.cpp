@@ -306,7 +306,7 @@ TEST_F(JITLibTests, CompareOpTest) {
 }
 
 TEST_F(JITLibTests, ExternalModuleTest) {
-  LLVMJITModule module("Test Module", true);
+  LLVMJITModule module("TestModule", true);
   JITFunctionPointer func =
       JITFunctionBuilder()
           .setFuncName("test_func")
@@ -320,6 +320,10 @@ TEST_F(JITLibTests, ExternalModuleTest) {
                 "external_call_test_sum",
                 JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                           .params_vector = {a.get(), b.get()}});
+            function->emitRuntimeFunctionCall(
+                "test_to_string",
+                JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
+                                          .params_vector = {x.get()}});
             function->createReturn(*x);
           })
           .build();

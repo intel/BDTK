@@ -22,54 +22,6 @@
 #include "exec/nextgen/operators/AggregationNode.h"
 
 namespace cider::exec::nextgen::operators {
-static std::unordered_map<SQLTypes, std::string> sql_type_name = {
-    {kNULLT, "null"},
-    {kTINYINT, "int8"},
-    {kSMALLINT, "int16"},
-    {kINT, "int32"},
-    {kBIGINT, "int64"},
-    // not supported
-    //  {SQLTypes::kFLOAT, "float"},
-    //  {SQLTypes::kDOUBLE, "double"},
-    //  {SQLTypes::kDATE, "date"},
-    //  {SQLTypes::kDECIMAL, "decimal"},
-    //  {SQLTypes::kBOOLEAN, "bool"},
-};
-
-jitlib::JITTypeTag AggExprsInfo::getJitValueType(SQLTypes sql_type) {
-  switch (sql_type) {
-    case kTINYINT:
-      return jitlib::JITTypeTag::INT8;
-    case kSMALLINT:
-      return jitlib::JITTypeTag::INT16;
-    case kINT:
-      return jitlib::JITTypeTag::INT32;
-    case kBIGINT:
-      return jitlib::JITTypeTag::INT64;
-    case kFLOAT:
-    case kDOUBLE:
-    case kBOOLEAN:
-    case kDATE:
-    case kDECIMAL:
-    default:
-      return jitlib::JITTypeTag::INVALID;
-  }
-}
-
-std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
-  std::string agg_name = "nextgen_cider_agg";
-  switch (agg_type) {
-    case SQLAgg::kSUM: {
-      agg_name = agg_name + "_sum_" + sql_type_name[sql_type];
-      break;
-    }
-    default:
-      LOG(FATAL) << "unsupport type";
-      break;
-  }
-  return agg_name;
-}
-
 TranslatorPtr AggNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<AggTranslator>(shared_from_this(), succ);
 }
@@ -78,11 +30,11 @@ void AggTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
-  AggExprsInfoVector infos;
-  int32_t start_addr = 0;
+context::AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
+  context::AggExprsInfoVector infos;
+  int8_t start_addr = 0;
   for (const auto& expr : exprs) {
-    int32_t size = 0;
+    int8_t size = 0;
     auto agg_expr = dynamic_cast<const Analyzer::AggExpr*>(expr.get());
     // get value size in buffer
     switch (expr->get_type_info().get_size()) {
@@ -97,15 +49,15 @@ AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
         break;
     }
     infos.emplace_back(
-        agg_expr->get_type_info().get_type(), agg_expr->get_aggtype(), start_addr, size);
+        agg_expr->get_type_info(), agg_expr->get_aggtype(), start_addr, size);
     start_addr += size;
   }
   return infos;
 }
 
-std::vector<int8_t> initOriginValue(AggExprsInfoVector& exprs_info) {
+std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
   std::vector<int8_t> origin_vector(exprs_info.back().start_offset_ +
-                                    exprs_info.back().byte_size_);
+                                    exprs_info.back().byte_size_ + exprs_info.size());
   int8_t* raw_memory = origin_vector.data();
   for (const auto& info : exprs_info) {
     switch (info.agg_type_) {
@@ -129,6 +81,14 @@ std::vector<int8_t> initOriginValue(AggExprsInfoVector& exprs_info) {
         break;
     }
   }
+  // init null value (1--null, 0--not null)
+  auto null_buffer_offset =
+      exprs_info.back().start_offset_ + exprs_info.back().byte_size_;
+  for (size_t i = 0; i < exprs_info.size(); i++) {
+    exprs_info[i].null_offset_ = null_buffer_offset + i;
+    auto null_value = reinterpret_cast<int8_t*>(raw_memory + exprs_info[i].null_offset_);
+    *null_value = exprs_info[i].sql_type_info_.get_notnull() ? 0 : 1;
+  }
   return origin_vector;
 }
 
@@ -138,7 +98,7 @@ void AggTranslator::codegen(context::CodegenContext& context) {
   auto&& [_, exprs] = node_->getOutputExprs();
 
   // arrange buffer initail info
-  AggExprsInfoVector exprs_info = initExpersInfo(exprs);
+  context::AggExprsInfoVector exprs_info = initExpersInfo(exprs);
 
   std::vector<int8_t> origin_value = initOriginValue(exprs_info);
 
@@ -150,29 +110,53 @@ void AggTranslator::codegen(context::CodegenContext& context) {
     LOG(FATAL) << "group-by is not supported now.";
   }
 
+  ExprPtrVector& output_exprs = exprs;
+  auto batch = context.registerBatch(SQLTypeInfo(kSTRUCT, false, [&output_exprs]() {
+    std::vector<SQLTypeInfo> output_types;
+    output_types.reserve(output_exprs.size());
+    for (auto& expr : output_exprs) {
+      output_types.emplace_back(expr->get_type_info());
+    }
+    return output_types;
+  }()));
+
   // non-groupby Agg
-  auto buffer = context.registerBuffer(
-      origin_value.size(), "output_buffer", [origin_value](context::Buffer* buf) {
-        auto raw_buf = buf->getBuffer();
-        memcpy(raw_buf, origin_value.data(), buf->getCapacity());
-      });
+  auto buffer =
+      context.registerBuffer(origin_value.size(),
+                             exprs_info,
+                             "output_buffer",
+                             [origin_value](context::Buffer* buf) {
+                               auto raw_buf = buf->getBuffer();
+                               memcpy(raw_buf, origin_value.data(), buf->getCapacity());
+                             });
 
   int32_t current_expr_idx = 0;
   for (const auto& expr : exprs) {
     auto agg_expr = dynamic_cast<const Analyzer::AggExpr*>(expr.get());
     utils::FixSizeJITExprValue values(agg_expr->get_arg()->get_expr_value());
-    auto real_value = values.getValue();
 
     auto cast_buffer = buffer->castPointerSubType(jitlib::JITTypeTag::INT8);
     auto val_addr_initial = cast_buffer + exprs_info[current_expr_idx].start_offset_;
     auto val_addr = val_addr_initial->castPointerSubType(
         exprs_info[current_expr_idx].jit_value_type_);
 
-    func->emitRuntimeFunctionCall(
-        exprs_info[current_expr_idx].agg_name_,
-        jitlib::JITFunctionEmitDescriptor{
-            .ret_type = exprs_info[current_expr_idx].jit_value_type_,
-            .params_vector = {val_addr.get(), real_value.get()}});
+    if (exprs_info[current_expr_idx].sql_type_info_.get_notnull()) {
+      func->emitRuntimeFunctionCall(
+          exprs_info[current_expr_idx].agg_name_,
+          jitlib::JITFunctionEmitDescriptor{
+              .ret_type = exprs_info[current_expr_idx].jit_value_type_,
+              .params_vector = {val_addr.get(), values.getValue().get()}});
+    } else {
+      auto null_addr = cast_buffer + exprs_info[current_expr_idx].null_offset_;
+      func->emitRuntimeFunctionCall(
+          exprs_info[current_expr_idx].agg_name_ + "_nullable",
+          jitlib::JITFunctionEmitDescriptor{
+              .ret_type = exprs_info[current_expr_idx].jit_value_type_,
+              .params_vector = {val_addr.get(),
+                                values.getValue().get(),
+                                null_addr.get(),
+                                values.getNull().get()}});
+    }
     current_expr_idx += 1;
   }
 }

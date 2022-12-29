@@ -288,8 +288,6 @@ TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
 // stringop: substring
 
 TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   // variable source string
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
@@ -311,8 +309,6 @@ TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
 }
 
 TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -320,8 +316,6 @@ TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
 }
 
 TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -329,8 +323,6 @@ TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
 }
 
 TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (substring) is not supported yet in nextgen");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -340,8 +332,6 @@ TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
 // stringop: upper/lower
 
 TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringops (upper/lower) are not supported yet in nextgen");
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
@@ -380,8 +370,6 @@ TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
 }
 
 TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringops (upper/lower) are not supported yet in nextgen");
   // select column from table
   assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
   assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
@@ -440,8 +428,6 @@ TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
 // stringop: char_length
 
 TEST_F(CiderStringTestNextGen, CharLengthTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (char-length) is not supported yet in nextgen");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
                    "stringop_charlen_project_2.json");
@@ -449,15 +435,14 @@ TEST_F(CiderStringTestNextGen, CharLengthTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
                    "stringop_charlen_filter.json");
 
-  assertQueryArrow(
-      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
-      "WHERE LENGTH(col_2 || 'boo') = 13;",
-      "stringop_charlen_nested.json");
+  // TODO: (YBRua) Enable this after nextgen supports concat
+  // assertQueryArrow(
+  //     "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
+  //     "WHERE LENGTH(col_2 || 'boo') = 13;",
+  //     "stringop_charlen_nested.json");
 }
 
 TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (char-length) is not supported yet in nextgen");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test;",
                    "stringop_charlen_project_1_null.json");
   assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
@@ -466,10 +451,11 @@ TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
                    "stringop_charlen_filter_null.json");
 
-  assertQueryArrow(
-      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
-      "WHERE LENGTH(col_2 || 'boo') = 13;",
-      "stringop_charlen_nested_null.json");
+  // TODO: (YBRua) Enable this after nextgen supports concat
+  // assertQueryArrow(
+  //     "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
+  //     "WHERE LENGTH(col_2 || 'boo') = 13;",
+  //     "stringop_charlen_nested_null.json");
 }
 
 // stringop: trim

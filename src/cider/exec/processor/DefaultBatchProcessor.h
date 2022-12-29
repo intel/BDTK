@@ -22,21 +22,24 @@
 #ifndef CIDER_DEFAULT_BATCH_PROCESSOR_H
 #define CIDER_DEFAULT_BATCH_PROCESSOR_H
 
-#include "JoinHandler.h"
 #include "cider/processor/BatchProcessor.h"
-#include "exec/module/batch/ArrowABI.h"
+#include "exec/nextgen/Nextgen.h"
 #include "exec/plan/substrait/SubstraitPlan.h"
+#include "exec/processor/JoinHandler.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
-class DefaultBatchProcessor : public BatchProcessor,
-                              std::enable_shared_from_this<DefaultBatchProcessor> {
+class DefaultBatchProcessor : public BatchProcessor {
  public:
+  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
+                        const BatchProcessorContextPtr& context);
+
   virtual ~DefaultBatchProcessor() = default;
 
-  BatchProcessorContextPtr context() override { return context_; }
+  const BatchProcessorContextPtr& getContext() const override { return context_; }
 
-  void processNextBatch(std::shared_ptr<CiderBatch> batch) override;
+  void processNextBatch(const struct ArrowArray* array,
+                        const struct ArrowSchema* schema = nullptr) override;
 
   void finish() override;
 
@@ -45,22 +48,26 @@ class DefaultBatchProcessor : public BatchProcessor,
   void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hashTable) override;
 
  protected:
-  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
-                        const BatchProcessorContextPtr& context);
+  plan::SubstraitPlanPtr plan_;
 
-  const plan::SubstraitPlanPtr plan_;
-
-  const BatchProcessorContextPtr context_;
+  BatchProcessorContextPtr context_;
 
   BatchProcessorState state_{BatchProcessorState::kRunning};
 
-  std::shared_ptr<CiderBatch> inputBatch_;
+  const struct ArrowArray* input_arrow_array_{nullptr};
+  const struct ArrowSchema* input_arrow_schema_{nullptr};
 
-  bool noMoreBatch_{false};
+  struct ArrowSchema* output_arrow_schema_{nullptr};
+
+  bool no_more_batch_{false};
 
   JoinHandlerPtr joinHandler_;
+
+  nextgen::context::CodegenCtxPtr codegen_context_;
+  nextgen::context::RuntimeCtxPtr runtime_context_;
+  nextgen::QueryFunc query_func_;
 };
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_DEFAULT_BATCH_PROCESSOR_H

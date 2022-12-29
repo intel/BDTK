@@ -22,23 +22,31 @@
 #ifndef _ICL_COMPRESSION_COMMON_QAT_WRAPPER_H_
 #define _ICL_COMPRESSION_COMMON_QAT_WRAPPER_H_
 
-#include <cstdint>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int32_t qat_wrapper_max_compress_len(int32_t input_length);
+int64_t qat_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
 
-int32_t qat_wrapper_compress(const uint8_t* pSrc,
-                             int32_t srcLen,
-                             uint8_t* pDst,
-                             int32_t* pDstLen);
+int64_t qat_wrapper_compress(void* context,
+                             int64_t input_length,
+                             const uint8_t* input,
+                             int64_t output_length,
+                             uint8_t* output);
 
-int32_t qat_wrapper_decompress(const uint8_t* pSrc,
-                               int32_t srcLen,
-                               uint8_t* pDst,
-                               int32_t* pDstLen);
+int64_t qat_wrapper_decompress(void* context,
+                               int64_t input_length,
+                               const uint8_t* input,
+                               int64_t output_length,
+                               uint8_t* output);
+
+int qat_wrapper_minimum_compression_level();
+
+int qat_wrapper_maximum_compression_level();
+
+int qat_wrapper_default_compression_level();
 
 #ifdef __cplusplus
 }

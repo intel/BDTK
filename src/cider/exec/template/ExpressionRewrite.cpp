@@ -700,6 +700,10 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
     const auto& return_ti = string_oper->get_type_info();
 
     if (string_oper->getArity() == rewritten_arg_literal_arity) {
+      // NOTE (YBRua): OmniSci applies runtime stringops at compile time to pre-compute
+      // stringops on pure literals as an optimization, this may need to be removed or
+      // updated after full migration to nextgen because nextgen framework will not have
+      // runtime StringOp operators
       Analyzer::StringOper literal_string_oper(
           kind, string_oper->get_type_info(), rewritten_args);
       const auto literal_args = literal_string_oper.getLiteralArgs();
@@ -735,11 +739,13 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
       // However, Cider does not handle chained_string_op_exprs_
       // so we should return the original stringop here
       // or otherwise the folded stringops will be mistakenly dropped and never processed
-      return makeExpr<Analyzer::StringOper>(kind, return_ti, rewritten_args);
+      // NOTE: (YBRua) do not instantiate StringOper base class, it breaks virtual
+      // functions such as codegen() in nextgen framework.
+      // construct derived classes instead
+      return makeStringOperExpr(kind, return_ti, rewritten_args);
     } else {
       CHECK(!in_string_op_chain_);
-      return makeExpr<Analyzer::StringOper>(
-          kind, return_ti, rewritten_args, chained_string_op_exprs_);
+      return makeStringOperExpr(kind, return_ti, rewritten_args);
     }
   }
 
@@ -748,6 +754,44 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
   mutable std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
   mutable std::unordered_map<const Analyzer::Expr*, const SQLTypeInfo> casts_;
   mutable int32_t num_overflows_;
+
+  std::shared_ptr<Analyzer::Expr> makeStringOperExpr(
+      SqlStringOpKind kind,
+      const SQLTypeInfo& return_type,
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& args) const {
+    switch (kind) {
+      case SqlStringOpKind::SUBSTRING:
+        return makeExpr<Analyzer::SubstringStringOper>(args);
+      case SqlStringOpKind::UPPER:
+        return makeExpr<Analyzer::UpperStringOper>(args);
+      case SqlStringOpKind::LOWER:
+        return makeExpr<Analyzer::LowerStringOper>(args);
+      case SqlStringOpKind::CHAR_LENGTH:
+        return makeExpr<Analyzer::CharLengthStringOper>(args);
+      case SqlStringOpKind::CONCAT:
+      case SqlStringOpKind::RCONCAT:
+        return makeExpr<Analyzer::ConcatStringOper>(args);
+      case SqlStringOpKind::TRIM:
+      case SqlStringOpKind::LTRIM:
+      case SqlStringOpKind::RTRIM:
+        return makeExpr<Analyzer::TrimStringOper>(kind, args);
+      case SqlStringOpKind::STRING_SPLIT:
+      case SqlStringOpKind::SPLIT_PART:
+        return makeExpr<Analyzer::SplitPartStringOper>(args);
+      case SqlStringOpKind::REGEXP_REPLACE:
+        return makeExpr<Analyzer::RegexpReplaceStringOper>(args);
+      case SqlStringOpKind::REGEXP_SUBSTR:
+        return makeExpr<Analyzer::RegexpSubstrStringOper>(args);
+      case SqlStringOpKind::REGEXP_EXTRACT:
+        return makeExpr<Analyzer::RegexpExtractStringOper>(args);
+      case SqlStringOpKind::TRY_STRING_CAST:
+        return makeExpr<Analyzer::TryStringCastOper>(return_type, args);
+      default:
+        CIDER_THROW(CiderUnsupportedException,
+                    fmt::format("StringOp {} is not supported in constant folding",
+                                ::toString(kind)));
+    }
+  }
 
  public:
   ConstantFoldingVisitor() : num_overflows_(0) {}

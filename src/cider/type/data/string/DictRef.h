@@ -41,7 +41,7 @@ struct dict_ref_t {
     this->dbId = rhs.dbId;
     this->dictId = rhs.dictId;
     return *this;
-  };
+  }
 
   inline bool operator<(const struct dict_ref_t& rhs) const {
     return (this->dbId < rhs.dbId)

@@ -36,6 +36,27 @@ set(LIBRARY_OUTPUT_DIRECTORY "${BUILD_OUTPUT_ROOT_DIRECTORY}")
 # where to put generated binaries
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}")
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+if(ICL_WITH_QPL)
+  add_definitions(-DICL_WITH_QPL)
+endif()
+
+if(ICL_WITH_QAT)
+  add_definitions(-DICL_WITH_QAT)
+endif()
+
+if(ICL_WITH_IGZIP)
+  add_definitions(-DICL_WITH_IGZIP)
+  include(igzip)
+endif()
+
 # Additional parts
 add_subdirectory(common)
 add_subdirectory(codec)
+if(ICL_BUILD_TESTS)
+  add_subdirectory(test)
+endif()
+if(ICL_BUILD_BENCHMARKS)
+  add_subdirectory(benchmark)
+endif()

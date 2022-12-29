@@ -31,6 +31,12 @@ extern "C" ALWAYS_INLINE int8_t* get_query_context_item_ptr(int8_t* context, siz
   return reinterpret_cast<int8_t*>(context_ptr->getContextItem(id));
 }
 
+extern "C" ALWAYS_INLINE int8_t* get_query_context_string_heap_ptr(int8_t* context) {
+  auto context_ptr =
+      reinterpret_cast<cider::exec::nextgen::context::RuntimeContext*>(context);
+  return reinterpret_cast<int8_t*>(context_ptr->getStringHeapPtr());
+}
+
 extern "C" ALWAYS_INLINE int8_t* get_arrow_array_ptr(int8_t* batch) {
   auto batch_ptr = reinterpret_cast<cider::exec::nextgen::context::Batch*>(batch);
   return reinterpret_cast<int8_t*>(batch_ptr->getArray());

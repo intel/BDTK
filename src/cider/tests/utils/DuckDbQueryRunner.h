@@ -62,6 +62,11 @@ class DuckDbQueryRunner {
     createTableAndInsertArrowData(table_name, create_ddl, batches);
   }
 
+  void createTableAndInsertArrowData(const std::string& table_name,
+                                     const std::string& create_ddl,
+                                     const ArrowArray& array,
+                                     const ArrowSchema& schema);
+
   std::unique_ptr<::duckdb::MaterializedQueryResult> runSql(const std::string& sql);
 
  private:
@@ -87,6 +92,10 @@ class DuckDbResultConvertor {
   /// Will be appended as-is after the colon character.
   static std::vector<std::shared_ptr<CiderBatch>> fetchDataToArrowFormattedCiderBatch(
       std::unique_ptr<::duckdb::MaterializedQueryResult>& result);
+
+  static std::vector<
+      std::pair<std::unique_ptr<struct ArrowArray>, std::unique_ptr<struct ArrowSchema>>>
+  fetchDataToArrow(std::unique_ptr<::duckdb::MaterializedQueryResult>& result);
 
  private:
   static CiderBatch fetchOneBatch(std::unique_ptr<duckdb::DataChunk>& chunk);

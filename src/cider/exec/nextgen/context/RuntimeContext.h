@@ -20,24 +20,31 @@
  */
 #ifndef NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
 #define NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
-
 #include "exec/nextgen/context/Batch.h"
 #include "exec/nextgen/context/Buffer.h"
+#include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/context/StringHeap.h"
+#include "exec/nextgen/utils/FunctorUtils.h"
+#include "util/CiderBitUtils.h"
 
 namespace cider::exec::nextgen::context {
 class RuntimeContext {
  public:
-  RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {}
+  explicit RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {}
 
   size_t getContextItemNum() const { return runtime_ctx_pointers_.size(); }
 
   void* getContextItem(size_t id) { return runtime_ctx_pointers_[id]; }
 
+  void* getStringHeapPtr() { return string_heap_ptr_.get(); }
+
   void addBatch(const CodegenContext::BatchDescriptorPtr& descriptor);
 
   void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
+
+  void addHashTable(const CodegenContext::HashTableDescriptorPtr& descriptor);
+  void addCiderSet(const CodegenContext::CiderSetDescriptorPtr& descriptor);
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
@@ -46,13 +53,39 @@ class RuntimeContext {
     if (batch_holder_.empty()) {
       return nullptr;
     }
-    return batch_holder_.back().second.get();
+    auto batch = batch_holder_.back().second.get();
+    auto arrow_array = batch->getArray();
+    auto length = arrow_array->length;
+    auto arrow_schema = batch->getSchema();
+
+    auto set_null_count_function =
+        utils::RecursiveFunctor{[&length](auto&& set_null_count_function,
+                                          ArrowArray* arrow_array,
+                                          ArrowSchema* arrow_schema) -> void {
+          if (arrow_array->buffers[0]) {
+            arrow_array->null_count =
+                length -
+                CiderBitUtils::countSetBits(
+                    reinterpret_cast<const uint8_t*>(arrow_array->buffers[0]), length);
+          }
+          for (size_t i = 0; i < arrow_schema->n_children; ++i) {
+            set_null_count_function(arrow_array->children[i], arrow_schema->children[i]);
+          }
+        }};
+    set_null_count_function(arrow_array, arrow_schema);
+    return batch;
   }
+
+  Batch* getNonGroupByAggOutputBatch();
 
  private:
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
   std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
+  std::vector<std::pair<CodegenContext::CiderSetDescriptorPtr, CiderSetPtr>>
+      cider_set_holder_;
+  std::shared_ptr<StringHeap> string_heap_ptr_;
+  CodegenContext::HashTableDescriptorPtr hashtable_holder_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;

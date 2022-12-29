@@ -47,7 +47,7 @@ inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
 template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator&&(JITValue& lh, T rh) {
   if (rh) {
-    return &lh;
+    return JITValuePointer(&lh);
   }
   auto& func = lh.getParentJITFunction();
   return func.createLiteral(JITTypeTag::BOOL, false);
@@ -67,7 +67,7 @@ inline JITValuePointer operator||(JITValue& lh, JITValue& rh) {
 template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
 inline JITValuePointer operator||(JITValue& lh, T rh) {
   if (!rh) {
-    return &lh;
+    return JITValuePointer(&lh);
   }
   auto& func = lh.getParentJITFunction();
   return func.createLiteral(JITTypeTag::BOOL, true);

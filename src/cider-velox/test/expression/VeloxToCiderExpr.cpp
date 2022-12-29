@@ -22,6 +22,7 @@
 #include "VeloxToCiderExpr.h"
 #include <cstdint>
 #include "exec/plan/parser/ConverterHelper.h"
+#include "function/FunctionLookupEngine.h"
 #include "type/data/sqltypes.h"
 
 using namespace facebook::velox::core;
@@ -176,12 +177,20 @@ std::shared_ptr<Analyzer::Expr> VeloxToCiderExprConverter::toCiderExpr(
     auto leftExpr = toCiderExpr(inputs[0], colInfo);
     auto rightExpr = toCiderExpr(inputs[1], colInfo);
     if (leftExpr && rightExpr) {
-      return std::make_shared<Analyzer::BinOper>(type,
-                                                 false,
-                                                 generator::getCiderSqlOps(vExpr->name()),
-                                                 qualifier,
-                                                 leftExpr,
-                                                 rightExpr);
+      std::string function_name_in_cider = vExpr->name();
+      io::substrait::FunctionMappingPtr func_mappings =
+          std::make_shared<io::substrait::PrestoFunctionMappings>();
+      auto iter = func_mappings->scalaMapping().find(vExpr->name());
+      if (iter != func_mappings->scalaMapping().end()) {
+        function_name_in_cider = iter->second;
+      }
+      return std::make_shared<Analyzer::BinOper>(
+          type,
+          false,
+          generator::getCiderSqlOps(function_name_in_cider),
+          qualifier,
+          leftExpr,
+          rightExpr);
     }
     return nullptr;
   }

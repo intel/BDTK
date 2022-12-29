@@ -37,6 +37,7 @@
 /// \brief This class will be data/table format interface/protocol
 class CiderBatch {
 #ifdef CIDER_BATCH_ARROW_IMPL
+
  public:
   // Both constructors will take over the ownership of ArrowSchema & ArrowArray and
   // buffers they hold, so ArrowSchema and ArrowArray should allocated from
@@ -160,6 +161,7 @@ class CiderBatch {
 #endif
 
 #ifdef CIDER_BATCH_CIDER_IMPL
+
  public:
   /// \brief Constructs CiderBatch that will use row memory layout with self memory
   /// manager. It will allocate row_num * row_size memory internally and the allocated

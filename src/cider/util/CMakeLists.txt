@@ -17,6 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+find_package(FMT REQUIRED)
+
 set(cider_util_source_files
     encode/Encoder.cpp
     encode/StringNoneEncoder.cpp
@@ -38,5 +40,5 @@ set(cider_util_source_files
 
 add_library(cider_util ${cider_util_source_files})
 target_link_libraries(cider_util ${BLOSC_LIBRARIES} ${CMAKE_DL_LIBS}
-                      ${Boost_LIBRARIES})
+                      ${Boost_LIBRARIES} fmt::fmt)
 add_subdirectory(memory)

@@ -44,23 +44,28 @@ Below comes the view from personas for this project.
 ![BDTK-Personas](docs/images/Personas.PNG)
 
 # Introduction
-The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator, QATCodec - compression codec wrapper based on Intel QAT accelerator. 
-
- - [Cider](https://github.com/intel/BDTK/tree/main/cider):
-
-   a modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
-
- - [Velox Plugin](https://github.com/intel/BDTK/tree/main/cider-velox):
-
-   a Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
-
- - [Intel Codec Library](https://github.com/Intel-bigdata/IntelCodecLibrary):
-
-   Intel Codec Library for BigData provides compression and decompression library for Apache Hadoop/Spark to make use of the acceleration hardware for compression/decompression.
+The following diagram shows the design architecture. Currently, it offers a few building blocks including a lightweight LLVM based SQL compiler(Cider) on top of Arrow data format, ICL - a compression codec leveraging Intel IAA accelerator, QATCodec - compression codec wrapper based on Intel QAT accelerator. 
 
 ![BDTK-INTRODUCTION](docs/images/BDTK-arch.PNG)
 
-# BDTK Functional Module
+## Solutions Introduction
+
+  - [Presto E2E Solution](https://intel.github.io/BDTK/user/quick-start.html):
+
+    BDTK could provide a Presto End-to-End accelaration solution via Velox and Velox-Plugin.
+     - [Velox Plugin](https://github.com/intel/BDTK/tree/main/src/cider-velox):
+
+        Velox-plugin is a bridge to enable Big Data Analytic Toolkit onto [Velox](https://github.com/facebookincubator/velox). It introduces hybrid execution mode for both compilation and vectorization (existed in Velox). It works as a plugin to Velox seamlessly without changing Velox code.
+
+     - [Cider](https://github.com/intel/BDTK/tree/main/src/cider):
+
+        A modularized and general-purposed Just-In-Time (JIT) compiler for data analytic query engine. It employs [Substrait](https://github.com/substrait-io/substrait) as a protocol allowing to support multiple front-end engines. Currently it provides a LLVM based implementation based on [HeavyDB](https://github.com/heavyai/heavydb).
+
+  - [Analytic Cache Solution](https://github.com/oap-project/sql-ds-cache/tree/ape/oap-ape)
+
+     Analytic Cache targets to improve data source side performance for multiple bigdata analytic framework such as Apache Spark and Apache Flink. Compare to other row based execution engine, Analytic Cache could utilize column format and do batch computation, which will boost performance in Ad-hoc queries. Meanwhile, Analytic Cache provide QAT codec accelaration and IAA predicition pushing down.
+
+## Reusable Modules
 BDTK provides several functional modules for user to use or integrate into their product. Here are breif description for each module. Details can be found on [Module Page](https://intel.github.io/BDTK/user/modules.html)
 
  - [Intel Codec Library Module](https://intel.github.io/BDTK/user/modules/icl-module.html)
@@ -73,11 +78,15 @@ BDTK provides several functional modules for user to use or integrate into their
 
   Hash table module will provide a bunch of hash table implementations, which are **easy to use**, leverage **state of art hardware technology** like AVX-512, will be **optimized for query-specific scenarios**.
 
+ - [JIT Lib Module](https://intel.github.io/BDTK/user/modules/jit-lib-module.html)
+   
+  JIT Lib module provides unified JIT interfaces like Value, Ptr, control flow and .etc to isolate operator logic and IR generation
+
  - [Expression Evaluation Module](https://intel.github.io/BDTK/user/modules/expr-eval-module.html)
 
   Expression evaluation module could do Projection/Filter computation effectively. It provides a runtime expression evaluation API which accept Substrait based expression representation and Apache Arrow based column format data representation. It only handles projection and filters currently. 
 
- - [Operator Module](https://intel.github.io/BDTK/user/modules/operators-module.html)
+ - [Relational Algebra Operator](https://intel.github.io/BDTK/user/modules/operators-module.html)
 
   BDTK implements typical SQL operators based on JitLib, provide a batch-at-a-time execution model. Each operator support plug and play, could easily integrated into other existing sql-engines. Operators BDTK target to supported includes: HashAggregation, HashJoin(HashBuild and HashProbe), etc.
 

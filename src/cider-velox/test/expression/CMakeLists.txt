@@ -19,6 +19,9 @@
 
 set(SRC_FILE ExprEvalUtils.cpp VeloxToCiderExpr.cpp)
 add_library(eu_mocker ${SRC_FILE})
+if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR OR NOT LIBSUBSTRAITCPP_LIB)
+  add_dependencies(eu_mocker SUBSTRAITCPP)
+endif()
 find_package(gflags COMPONENTS shared)
 find_library(GLOG glog)
 find_package(folly CONFIG REQUIRED)

@@ -56,7 +56,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
-option(BDTK_ENABLE_COMPRESSION "Build compression library for BDTK " OFF)
+option(BDTK_ENABLE_ICL "Build ICL compression library for BDTK" OFF)
+option(ICL_WITH_QPL "Build ICL with QPL codec" OFF)
+option(ICL_WITH_QAT "Build ICL with QAT codec" OFF)
+option(ICL_WITH_IGZIP "Build ICL with IGZIP codec" ON)
+option(ICL_BUILD_TESTS "Build the ICL googletest unit tests" ON)
+option(ICL_BUILD_BENCHMARKS "Build the ICL micro benchmarks" ON)
+option(BDTK_ENABLE_CIDER "Build Cider library for BDTK" ON)
 option(CIDER_ENABLE_TESTS "Build unit tests" ON)
 option(CIDER_ENABLE_GOOGLETEST "Build GoogleTest for Cider." ON)
 option(CIDER_ENABLE_DUCKDB "Build DuckDB for Cider." ON)
@@ -64,72 +70,86 @@ option(CIDER_ENABLE_VELOX "Build Velox Plugin for Cider." ON)
 option(CIDER_ENABLE_SUBSTRAIT "Build Substrait for Cider." ON)
 option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." ON)
 
-if(CIDER_ENABLE_VELOX)
-  # Disable components when enable velox build
-  set(CIDER_ENABLE_GOOGLETEST OFF)
-  set(CIDER_ENABLE_DUCKDB OFF)
-  set(CIDER_ENABLE_SUBSTRAIT OFF)
+if(BDTK_ENABLE_CIDER)
+  if(CIDER_ENABLE_VELOX)
+    # Disable components when enable velox build
+    set(CIDER_ENABLE_GOOGLETEST OFF)
+    set(CIDER_ENABLE_DUCKDB OFF)
+    set(CIDER_ENABLE_SUBSTRAIT OFF)
+  endif()
+
+  if(CIDER_ENABLE_TESTS)
+    enable_testing()
+  endif()
+
+  if(CIDER_ENABLE_GOOGLETEST)
+    # googletest
+    add_subdirectory(thirdparty/googletest)
+    include_directories(thirdparty/googletest/googletest/include)
+  else()
+    include_directories(
+      thirdparty/velox/third_party/googletest/googletest/include)
+  endif()
+
+  if(CIDER_ENABLE_BENCHMARK)
+    set(BENCHMARK_ENABLE_INSTALL OFF)
+    set(BENCHMARK_ENABLE_TESTING OFF)
+    add_subdirectory(thirdparty/benchmark)
+    include_directories(thirdparty/benchmark/include)
+  endif()
+
+  if(CIDER_ENABLE_DUCKDB)
+    add_subdirectory(thirdparty/duckdb-amalgamation)
+    include_directories(${CMAKE_BINARY_DIR}/thirdparty/duckdb-amalgamation)
+  else()
+    include_directories(thirdparty/velox/velox/external/duckdb)
+  endif()
+
+  if(CIDER_ENABLE_SUBSTRAIT)
+    set(substrait_directory ${CMAKE_SOURCE_DIR}/thirdparty/substrait/proto)
+    include_directories(thirdparty/substrait/proto)
+  else()
+    set(substrait_directory
+        ${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto)
+    include_directories(thirdparty/velox/velox/substrait/proto)
+  endif()
+
+  # TODO: remove after cleanup public API dependency RapidJSON
+  include_directories(thirdparty/rapidjson/include)
+  add_definitions(-DRAPIDJSON_HAS_STDSTRING)
+
+  # robin-hood-hashing
+  include_directories(thirdparty/robin-hood-hashing/src/include)
+
+  # substrait-cpp
+  include(substrait-cpp)
+  include_directories(${SUBSTRAITCPP_INCLUDE_DIR})
+
+  #
+  # Subdirectories
+  #
+  include_directories(src/cider)
+  include_directories(src/cider/include)
+  add_subdirectory(src/cider)
+
+  if(CIDER_ENABLE_VELOX)
+    add_subdirectory(thirdparty/velox)
+    add_subdirectory(src/cider-velox)
+  endif()
 endif()
 
-if(CIDER_ENABLE_TESTS)
-  enable_testing()
-endif()
-
-if(CIDER_ENABLE_GOOGLETEST)
-  # googletest
-  add_subdirectory(thirdparty/googletest)
-  include_directories(thirdparty/googletest/googletest/include)
-else()
-  include_directories(
-    thirdparty/velox/third_party/googletest/googletest/include)
-endif()
-
-if(CIDER_ENABLE_BENCHMARK)
-  set(BENCHMARK_ENABLE_INSTALL OFF)
-  set(BENCHMARK_ENABLE_TESTING OFF)
-  add_subdirectory(thirdparty/benchmark)
-  include_directories(thirdparty/benchmark/include)
-endif()
-
-if(CIDER_ENABLE_DUCKDB)
-  add_subdirectory(thirdparty/duckdb-amalgamation)
-  include_directories(${CMAKE_BINARY_DIR}/thirdparty/duckdb-amalgamation)
-else()
-  include_directories(thirdparty/velox/velox/external/duckdb)
-endif()
-
-if(CIDER_ENABLE_SUBSTRAIT)
-  set(substrait_directory ${CMAKE_SOURCE_DIR}/thirdparty/substrait/proto)
-  include_directories(thirdparty/substrait/proto)
-else()
-  set(substrait_directory
-      ${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto)
-  include_directories(thirdparty/velox/velox/substrait/proto)
-endif()
-
-# TODO: remove after cleanup public API dependency RapidJSON
-include_directories(thirdparty/rapidjson/include)
-add_definitions(-DRAPIDJSON_HAS_STDSTRING)
-
-# robin-hood-hashing
-include_directories(thirdparty/robin-hood-hashing/src/include)
-
-# substrait-cpp
-include(substrait-cpp)
-include_directories(${SUBSTRAITCPP_INCLUDE_DIR})
-
-#
-# Subdirectories
-#
-include_directories(src/cider)
-include_directories(src/cider/include)
-add_subdirectory(src/cider)
-
-if(CIDER_ENABLE_VELOX)
-  add_subdirectory(thirdparty/velox)
-  add_subdirectory(src/cider-velox)
-endif()
-
-if(BDTK_ENABLE_COMPRESSION)
+if(BDTK_ENABLE_ICL)
+  if(NOT BDTK_ENABLE_CIDER)
+    if(ICL_BUILD_TESTS)
+      add_subdirectory(thirdparty/googletest)
+      include_directories(thirdparty/googletest/googletest/include)
+    endif()
+    if(ICL_BUILD_BENCHMARKS)
+      set(BENCHMARK_ENABLE_INSTALL OFF)
+      set(BENCHMARK_ENABLE_TESTING OFF)
+      add_subdirectory(thirdparty/benchmark)
+      include_directories(thirdparty/benchmark/include)
+    endif()
+  endif()
   add_subdirectory(src/compression)
 endif()

@@ -19,24 +19,33 @@
  * under the License.
  */
 
-#include "StatelessProcessor.h"
+#include "exec/processor/StatelessProcessor.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
-StatelessProcessor::StatelessProcessor(const plan::SubstraitPlanPtr& plan,
-                                       const BatchProcessorContextPtr& context)
-    : DefaultBatchProcessor(plan, context) {}
-
-std::shared_ptr<CiderBatch> StatelessProcessor::getResult() {
-  if (!inputBatch_) {
-    if (noMoreBatch_) {
+void StatelessProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
+  if (!input_arrow_array_) {
+    if (no_more_batch_) {
       // set state as finish if last batch has been processed and no more batch
       state_ = BatchProcessorState::kFinished;
     }
-    return nullptr;
+    array.length = 0;
+    return;
   }
-  // TODO: getResult through nextGen runtime api
-  return std::move(inputBatch_);
+
+  if (input_arrow_array_->release) {
+    input_arrow_array_->release(const_cast<struct ArrowArray*>(input_arrow_array_));
+  }
+  input_arrow_array_ = nullptr;
+
+  if (input_arrow_schema_ && input_arrow_schema_->release) {
+    input_arrow_schema_->release(const_cast<struct ArrowSchema*>(input_arrow_schema_));
+  }
+  input_arrow_schema_ = nullptr;
+
+  auto output_batch = runtime_context_->getOutputBatch();
+  output_batch->move(schema, array);
+  return;
 }
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor

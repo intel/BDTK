@@ -1,3 +1,12 @@
-cider/exec/module
-cider/tests
-cider-velox/
+src/cider/benchmarks/
+src/cider/examples/
+src/cider/exec/module/
+src/cider/exec/nextgen/
+src/cider/exec/plan/
+src/cider/exec/plan/validator/
+src/cider/exec/processor/
+src/cider/include/
+src/cider/tests/
+src/cider/type/
+src/cider-velox/
+src/compression/

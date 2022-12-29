@@ -26,13 +26,13 @@
 #include "include/cider/batch/CiderBatch.h"
 #include "substrait/algebra.pb.h"
 
-namespace cider::processor {
+namespace cider::exec::processor {
 
 class JoinHashTable;
 
 class JoinHashTableBuildContext {
  public:
-  JoinHashTableBuildContext(const std::shared_ptr<CiderAllocator>& allocator)
+  explicit JoinHashTableBuildContext(const std::shared_ptr<CiderAllocator>& allocator)
       : allocator_(allocator) {}
 
   std::shared_ptr<CiderAllocator> allocator() { return allocator_; }
@@ -53,6 +53,6 @@ std::shared_ptr<JoinHashTableBuilder> makeJoinHashTableBuilder(
     const ::substrait::JoinRel& joinRel,
     const std::shared_ptr<JoinHashTableBuildContext>& context);
 
-}  // namespace cider::processor
+}  // namespace cider::exec::processor
 
 #endif  // CIDER_JOIN_HASH_TABLE_BUILDER_H

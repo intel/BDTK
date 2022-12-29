@@ -41,19 +41,17 @@ void CiderPipelineOperator::addInput(RowVectorPtr input) {
   ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
   exportToArrow(input_, *inputArrowSchema);
 
-  auto inBatch =
-      CiderBatchUtils::createCiderBatch(allocator_, inputArrowSchema, inputArrowArray);
-  batchProcessor_->processNextBatch(std::move(inBatch));
+  batchProcessor_->processNextBatch(inputArrowArray, inputArrowSchema);
 }
 
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(
     facebook::velox::ContinueFuture* future) {
   auto batchProcessState = batchProcessor_->getState();
-  if (cider::processor::BatchProcessorState::kWaiting == batchProcessState &&
+  if (cider::exec::processor::BatchProcessorState::kWaiting == batchProcessState &&
       ciderPlanNode_->isKindOf(CiderPlanNodeKind::kJoin)) {
     return exec::BlockingReason::kWaitForJoinBuild;
   }
-  if (cider::processor::BatchProcessorState::kFinished == batchProcessState) {
+  if (cider::exec::processor::BatchProcessorState::kFinished == batchProcessState) {
     finished_ = true;
   }
 
@@ -69,11 +67,11 @@ bool CiderPipelineOperator::isFinished() {
 }
 
 facebook::velox::RowVectorPtr CiderPipelineOperator::getOutput() {
-  auto output_ = batchProcessor_->getResult();
-  if (output_) {
-    ArrowSchema schema;
-    ArrowArray array;
-    output_->move(schema, array);
+  struct ArrowArray array;
+  struct ArrowSchema schema;
+
+  batchProcessor_->getResult(array, schema);
+  if (array.length) {
     VectorPtr baseVec = importFromArrowAsOwner(schema, array, operatorCtx_->pool());
     return std::reinterpret_pointer_cast<RowVector>(baseVec);
   }
@@ -95,8 +93,9 @@ CiderPipelineOperator::CiderPipelineOperator(
                "CiderOp")
     , ciderPlanNode_(ciderPlanNode)
     , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
-  auto context = std::make_shared<cider::processor::BatchProcessorContext>(allocator_);
-  cider::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
+  auto context =
+      std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
+  cider::exec::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
     auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
         operatorCtx_->driverCtx()->splitGroupId, planNodeId());
     auto ciderJoinBridge = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);
@@ -104,8 +103,8 @@ CiderPipelineOperator::CiderPipelineOperator(
   };
   context->setHashBuildTableSupplier(buildTableSupplier);
 
-  batchProcessor_ =
-      cider::processor::makeBatchProcessor(ciderPlanNode->getSubstraitPlan(), context);
+  batchProcessor_ = cider::exec::processor::makeBatchProcessor(
+      ciderPlanNode->getSubstraitPlan(), context);
 }
 
 }  // namespace facebook::velox::plugin

@@ -35,7 +35,7 @@ namespace generator {
 
 class VariableContext {
  public:
-  VariableContext(int max_join_depth);
+  explicit VariableContext(int max_join_depth);
   void convert(std::shared_ptr<GeneratorContext> ctx_ptr);
   int getMaxJoinDepth();
   int getCurJoinDepth();

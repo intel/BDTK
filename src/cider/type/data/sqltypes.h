@@ -73,7 +73,7 @@ enum SQLTypes {
   kSQLTYPE_LAST
 };
 
-inline std::string toString(const SQLTypes& type) {
+[[deprecated]] inline std::string toString(const SQLTypes& type) {
   switch (type) {
     case kNULLT:
       return "NULL";
@@ -153,7 +153,7 @@ struct HostArrayDatum : public VarlenDatum {
       : VarlenDatum(l, p.get(), n), data_ptr(p) {}
 
   HostArrayDatum(size_t const l, int8_t* p, bool const n)
-      : VarlenDatum(l, p, n), data_ptr(p, FreeDeleter()){};
+      : VarlenDatum(l, p, n), data_ptr(p, FreeDeleter()) {}
 
   template <typename CUSTOM_DELETER,
             typename = std::enable_if_t<
@@ -277,7 +277,7 @@ class SQLTypeInfo {
       , compression(kENCODING_NONE)
       , comp_param(0)
       , size(get_storage_size()) {}
-  SQLTypeInfo(SQLTypes t) : SQLTypeInfo(t, false) {}
+  SQLTypeInfo(SQLTypes t) : SQLTypeInfo(t, false) {}  // NOLINT
   SQLTypeInfo(SQLTypes t, bool n, EncodingType c)
       : type(t)
       , subtype(kNULLT)

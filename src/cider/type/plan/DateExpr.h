@@ -23,6 +23,7 @@
 #ifndef TYPE_PLAN_DATE_EXPR_H
 #define TYPE_PLAN_DATE_EXPR_H
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 #include "util/sqldefs.h"
@@ -68,7 +69,7 @@ class DateaddExpr : public Expr {
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
 
  public:
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(CodegenContext& context) override;
   ExprPtrRefVector get_children_reference() override {
     return {&(number_), &(datetime_)};
   }

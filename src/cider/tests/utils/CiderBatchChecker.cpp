@@ -350,6 +350,7 @@ bool CiderBatchChecker::checkArrowEq(
   bool schema_check = true;  // this flag indicates whether we pass step 1
   int expected_col_num = expected_batches[0]->getChildrenNum();
 
+  // FIXME: (yma11) For empty batch, cider has schema while duckdb doesn't have
   schema_check &= colNumCheck(expected_batches, expected_col_num);
   schema_check &= colNumCheck(actual_batches, expected_col_num);
 

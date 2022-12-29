@@ -29,11 +29,11 @@
 
 namespace facebook::velox::plugin {
 
-using CiderHashBuildResult = cider::processor::HashBuildResult;
-using CiderHashJoinTable = cider::processor::JoinHashTable;
-using CiderJoinHashTableBuilder = cider::processor::JoinHashTableBuilder;
+using CiderHashBuildResult = cider::exec::processor::HashBuildResult;
+using CiderHashJoinTable = cider::exec::processor::JoinHashTable;
+using CiderJoinHashTableBuilder = cider::exec::processor::JoinHashTableBuilder;
 using CiderJoinHashTableBuilderPtr = std::shared_ptr<CiderJoinHashTableBuilder>;
-using CiderJoinHashTableBuildContext = cider::processor::JoinHashTableBuildContext;
+using CiderJoinHashTableBuildContext = cider::exec::processor::JoinHashTableBuildContext;
 
 // Hands over all batches from a multi-threaded build pipeline to a
 // multi-threaded probe pipeline.
@@ -44,7 +44,7 @@ class CiderHashJoinBridge : public exec::JoinBridge {
   std::optional<CiderHashBuildResult> hashBuildResultOrFuture(ContinueFuture* future);
 
  private:
-  std::optional<cider::processor::HashBuildResult> buildResult_;
+  std::optional<cider::exec::processor::HashBuildResult> buildResult_;
 };
 
 class CiderHashJoinBuild : public exec::Operator {
