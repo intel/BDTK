@@ -275,6 +275,10 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
       if (expect_schema->format[1] == 't' && expect_schema->format[2] == 'u') {
         return checkArrowBuffer<int64_t>(expect_array, actual_array);
       }
+      if (expect_schema->format[1] == 's' && expect_schema->format[2] == 'u') {
+        return checkArrowBuffer<int64_t>(expect_array, actual_array);
+      }
+      LOG(ERROR) << "Not supported time type";
     }
     case 'u':
       return checkArrowStringBuffer(expect_array, actual_array);

@@ -295,7 +295,14 @@ template <>
         if (child_schema->format[1] == 'd' && child_schema->format[2] == 'D') {          \
           return duckValueAt<int32_t>(                                                   \
               static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
+        } else if (child_schema->format[1] == 't' && child_schema->format[2] == 'u') {   \
+          return duckValueAt<int64_t>(                                                   \
+              static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
+        } else if (child_schema->format[1] == 's' && child_schema->format[2] == 'u') {   \
+          return duckValueAt<int64_t>(                                                   \
+              static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
         }                                                                                \
+        CIDER_THROW(CiderException, "not supported time type to gen duck value");        \
       }                                                                                  \
       case 'u': {                                                                        \
         return duckValueVarcharAt(static_cast<const int8_t*>(child_array->buffers[2]),   \
