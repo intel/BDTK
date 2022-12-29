@@ -19,10 +19,10 @@
  * under the License.
  */
 
+#include "DuckDbQueryRunner.h"
 #include <memory>
 #include <utility>
 #include "DuckDbArrowAdaptor.h"
-#include "DuckDbQueryRunner.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
 #include "cider/batch/ScalarBatch.h"
@@ -299,8 +299,8 @@ template <>
       }                                                                                  \
       case 'u': {                                                                        \
         return duckValueVarcharAt(static_cast<const int8_t*>(child_array->buffers[2]),   \
-                                  static_cast<const int32_t*>(child_array->buffers[1]),   \
-                                  row_idx);                                               \
+                                  static_cast<const int32_t*>(child_array->buffers[1]),  \
+                                  row_idx);                                              \
       }                                                                                  \
       default:                                                                           \
         CIDER_THROW(CiderException, "not supported type to gen duck value");             \

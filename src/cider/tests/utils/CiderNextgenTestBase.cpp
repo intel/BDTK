@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "tests/utils/CiderArrowChecker.h"
 #include "tests/utils/CiderNextgenTestBase.h"
+#include "tests/utils/CiderArrowChecker.h"
 
 namespace cider::test::util {
 

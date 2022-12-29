@@ -49,7 +49,10 @@ class CiderNextgenTestBase : public testing::Test {
                    const std::string& json_file_or_sql = "",
                    const bool ignore_order = false);
 
-  void assertQuery(const std::string& sql, const struct ArrowArray* array, const struct  ArrowSchema* schema, bool ignore_order = false);
+  void assertQuery(const std::string& sql,
+                   const struct ArrowArray* array,
+                   const struct ArrowSchema* schema,
+                   bool ignore_order = false);
 
   void assertQueryIgnoreOrder(const std::string& sql,
                               const std::string& json_file_or_sql = "") {
