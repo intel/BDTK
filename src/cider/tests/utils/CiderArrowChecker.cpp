@@ -132,9 +132,9 @@ bool checkStringEq(const int8_t* expect_data_buffer,
   int32_t actual_offset = actual_offset_buffer[idx];
   int32_t actual_length = actual_offset_buffer[idx + 1] - actual_offset_buffer[idx];
 
-  if (expect_length != actual_length || !memcmp(expect_data_buffer + expect_offset,
-                                                actual_data_buffer + actual_offset,
-                                                expect_length)) {
+  if (expect_length != actual_length || memcmp(expect_data_buffer + expect_offset,
+                                               actual_data_buffer + actual_offset,
+                                               expect_length)) {
     return false;
   }
   return true;
@@ -276,10 +276,12 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
         return checkArrowBuffer<int64_t>(expect_array, actual_array);
       }
     }
+    case 'u':
+      return checkArrowStringBuffer(expect_array, actual_array);
     case 'e':
     case 'z':
     case 'Z':
-    case 'u':
+
     case 'U':
     case 'd':
     case 'w':

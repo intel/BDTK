@@ -23,6 +23,7 @@
 #define CIDER_TESTS_UTILS_NEXTGEN_TEST_BASE_H_
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 
 #include <string>
 
@@ -47,6 +48,8 @@ class CiderNextgenTestBase : public testing::Test {
   void assertQuery(const std::string& sql,
                    const std::string& json_file_or_sql = "",
                    const bool ignore_order = false);
+
+  void assertQuery(const std::string& sql, const struct ArrowArray* array, const struct  ArrowSchema* schema, bool ignore_order = false);
 
   void assertQueryIgnoreOrder(const std::string& sql,
                               const std::string& json_file_or_sql = "") {

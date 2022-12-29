@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/CiderArrowChecker.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 
 namespace cider::test::util {
 
@@ -43,6 +43,7 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
       file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
   if (0 == duck_res_arrow.size()) {
     // result is empty.
+    CHECK(0 == output_array.length);
   } else {
     if (ignore_order) {
       EXPECT_TRUE(
@@ -60,6 +61,29 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
 
   output_array.release(&output_array);
   output_schema.release(&output_schema);
+}
+
+void CiderNextgenTestBase::assertQuery(const std::string& sql,
+                                       const struct ArrowArray* expect_array,
+                                       const struct ArrowSchema* expect_schema,
+                                       bool ignore_order) {
+  struct ArrowArray output_array;
+  struct ArrowSchema output_schema;
+  auto file_or_sql = sql;
+  cider_nextgen_query_runner_->runQueryOneBatch(
+      file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
+  // if (0 == duck_res_arrow.size()) {
+  //   // result is empty.
+  //   CHECK((!array || 0 == array->length));
+  // } else {
+  if (ignore_order) {
+    EXPECT_TRUE(CiderArrowChecker::checkArrowEqIgnoreOrder(
+        expect_array, &output_array, expect_schema, &output_schema));
+  } else {
+    EXPECT_TRUE(CiderArrowChecker::checkArrowEq(
+        expect_array, &output_array, expect_schema, &output_schema));
+  }
+  // }
 }
 
 }  // namespace cider::test::util
