@@ -23,19 +23,22 @@
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/ArrowArrayBuilder.h"
-#include "tests/utils/CiderTestBase.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 
+using namespace cider::test::util;
+using namespace cider::exec::nextgen;
+
 #define GEN_PRIMITIVETYPE_BASE_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME)  \
-  class PrimitiveType##C_TYPE_NAME##QueryTest : public CiderTestBase {             \
+  class PrimitiveType##C_TYPE_NAME##QueryTest : public CiderNextgenTestBase {      \
    public:                                                                         \
     PrimitiveType##C_TYPE_NAME##QueryTest() {                                      \
       table_name_ = "test";                                                        \
       create_ddl_ =                                                                \
           "CREATE TABLE test(col_a " #TYPE ", col_b " #TYPE ", col_c " #TYPE ");"; \
       QueryArrowDataGenerator::generateBatchByTypes(                               \
-          schema_,                                                                 \
-          array_,                                                                  \
+          input_schema_,                                                           \
+          input_array_,                                                            \
           100,                                                                     \
           {"col_a", "col_b", "col_c"},                                             \
           {CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                             \
@@ -48,15 +51,15 @@
 
 #define GEN_PRIMITIVETYPE_BOUNDARY_TEST_CLASS(                                     \
     C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME, BOUNDARY_VALUE)                        \
-  class PrimitiveType##C_TYPE_NAME##QueryTest : public CiderTestBase {             \
+  class PrimitiveType##C_TYPE_NAME##QueryTest : public CiderNextgenTestBase {      \
    public:                                                                         \
     PrimitiveType##C_TYPE_NAME##QueryTest() {                                      \
       table_name_ = "test";                                                        \
       create_ddl_ =                                                                \
           "CREATE TABLE test(col_a " #TYPE ", col_b " #TYPE ", col_c " #TYPE ");"; \
       QueryArrowDataGenerator::generateBatchByTypes(                               \
-          schema_,                                                                 \
-          array_,                                                                  \
+          input_schema_,                                                           \
+          input_array_,                                                            \
           100,                                                                     \
           {"col_a", "col_b", "col_c"},                                             \
           {CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                             \
@@ -69,16 +72,16 @@
     }                                                                              \
   };
 
-#define TEST_UNIT(TEST_CLASS, UNIT_NAME)                      \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                             \
-    assertQueryArrow("SELECT * FROM test");                   \
-    assertQueryArrow("SELECT col_a, col_b, col_c FROM test"); \
-    assertQueryArrow("SELECT col_c, col_b, col_a FROM test"); \
-    assertQueryArrow("SELECT col_b, col_c FROM test");        \
-    assertQueryArrow("SELECT col_b, col_a FROM test");        \
-    assertQueryArrow("SELECT col_a FROM test");               \
-    assertQueryArrow("SELECT col_b FROM test");               \
-    assertQueryArrow("SELECT col_c FROM test");               \
+#define TEST_UNIT(TEST_CLASS, UNIT_NAME)                 \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                        \
+    assertQuery("SELECT * FROM test");                   \
+    assertQuery("SELECT col_a, col_b, col_c FROM test"); \
+    assertQuery("SELECT col_c, col_b, col_a FROM test"); \
+    assertQuery("SELECT col_b, col_c FROM test");        \
+    assertQuery("SELECT col_b, col_a FROM test");        \
+    assertQuery("SELECT col_a FROM test");               \
+    assertQuery("SELECT col_b FROM test");               \
+    assertQuery("SELECT col_c FROM test");               \
   }
 
 GEN_PRIMITIVETYPE_BASE_TEST_CLASS(Float, FLOAT, Fp32)
@@ -117,13 +120,13 @@ GEN_PRIMITIVETYPE_BOUNDARY_TEST_CLASS(BigintMin, BIGINT, I64, INT64_MIN)
 
 GEN_PRIMITIVETYPE_BOUNDARY_TEST_CLASS(BigintMax, BIGINT, I64, INT64_MAX)
 
-class PrimitiveTypeBooleanQueryTest : public CiderTestBase {
+class PrimitiveTypeBooleanQueryTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeBooleanQueryTest() {
     table_name_ = "test";
     create_ddl_ = "CREATE TABLE test(col_a BOOLEAN, col_b BOOLEAN, col_c BOOLEAN);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   100,
                                                   {"col_a", "col_b", "col_c"},
                                                   {CREATE_SUBSTRAIT_TYPE(Bool),
@@ -136,14 +139,14 @@ class PrimitiveTypeBooleanQueryTest : public CiderTestBase {
   }
 };
 
-class PrimitiveTypeMixQueryTest : public CiderTestBase {
+class PrimitiveTypeMixQueryTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeMixQueryTest() {
     table_name_ = "test";
     create_ddl_ =
         "CREATE TABLE test(col_a FLOAT, col_b DOUBLE, col_c INTEGER, col_d BIGINT);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   100,
                                                   {"col_a", "col_b", "col_c", "col_d"},
                                                   {CREATE_SUBSTRAIT_TYPE(Fp32),
@@ -192,22 +195,21 @@ TEST_UNIT(PrimitiveTypeBigintMinQueryTest, bigintMinArrowCompareTest)
 TEST_UNIT(PrimitiveTypeBigintMaxQueryTest, bigintMaxArrowCompareTest)
 
 TEST_F(PrimitiveTypeMixQueryTest, mixTypeArrowCompareTest) {
-  assertQueryArrow("SELECT * FROM test");
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test");
-  assertQueryArrow("SELECT col_c, col_b, col_a FROM test");
-  assertQueryArrow("SELECT col_c, col_b, col_d FROM test");
-  assertQueryArrow("SELECT col_b, col_c FROM test");
-  assertQueryArrow("SELECT col_b, col_a FROM test");
-  assertQueryArrow("SELECT col_d, col_a FROM test");
-  assertQueryArrow("SELECT col_a FROM test");
-  assertQueryArrow("SELECT col_b FROM test");
-  assertQueryArrow("SELECT col_c FROM test");
-  assertQueryArrow("SELECT col_d FROM test");
+  assertQuery("SELECT * FROM test");
+  assertQuery("SELECT col_a, col_b, col_c FROM test");
+  assertQuery("SELECT col_c, col_b, col_a FROM test");
+  assertQuery("SELECT col_c, col_b, col_d FROM test");
+  assertQuery("SELECT col_b, col_c FROM test");
+  assertQuery("SELECT col_b, col_a FROM test");
+  assertQuery("SELECT col_d, col_a FROM test");
+  assertQuery("SELECT col_a FROM test");
+  assertQuery("SELECT col_b FROM test");
+  assertQuery("SELECT col_c FROM test");
+  assertQuery("SELECT col_d FROM test");
 }
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {
