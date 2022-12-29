@@ -23,7 +23,7 @@
 #include "util/filesystem/cider_path.h"
 #include <linux/limits.h>
 #include <unistd.h>
-#include <filesystem>
+#include <boost/filesystem/path.hpp>
 
 #include "util/Logger.h"
 #ifdef ENABLE_EMBEDDED_DATABASE
@@ -51,8 +51,8 @@ std::string get_root_abs_path() {
     /* Despite the dlinfo man page claim that l_name is absolute path,
        it is so only when the location path to the library is absolute,
        say, as specified in LD_LIBRARY_PATH. */
-    std::filesystem::path abs_exe_dir(std::filesystem::absolute(
-        std::filesystem::canonical(std::string(link_map->l_name))));
+    boost::filesystem::path abs_exe_dir(boost::filesystem::absolute(
+        boost::filesystem::canonical(std::string(link_map->l_name))));
     abs_exe_dir.remove_filename();
 #ifdef XCODE
     const auto mapd_root = abs_exe_dir.parent_path().parent_path();
@@ -66,7 +66,7 @@ std::string get_root_abs_path() {
   auto path_len = readlink("/proc/self/exe", abs_exe_path, sizeof(abs_exe_path));
   CHECK_GT(path_len, 0);
   CHECK_LT(static_cast<size_t>(path_len), sizeof(abs_exe_path));
-  std::filesystem::path abs_exe_dir(std::string(abs_exe_path, path_len));
+  boost::filesystem::path abs_exe_dir(std::string(abs_exe_path, path_len));
   abs_exe_dir.remove_filename();
 #ifdef XCODE
   const auto mapd_root = abs_exe_dir.parent_path().parent_path();

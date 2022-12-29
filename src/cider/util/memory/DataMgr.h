@@ -37,7 +37,6 @@
 #include "util/memory/BufferMgr/Buffer.h"
 #include "util/memory/BufferMgr/BufferMgr.h"
 
-#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>

@@ -21,6 +21,7 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include <boost/filesystem.hpp>
 #include <string>
 #include "TestHelpers.h"
 #include "cider/CiderBatch.h"
@@ -33,6 +34,8 @@
 #include "exec/template/Execute.h"
 #include "exec/template/InputMetadata.h"
 #include "util/Logger.h"
+
+namespace bf = boost::filesystem;
 
 std::string getDataFilesPath() {
   const std::string absolute_path = __FILE__;

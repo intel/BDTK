@@ -21,7 +21,6 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <fstream>
 
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"

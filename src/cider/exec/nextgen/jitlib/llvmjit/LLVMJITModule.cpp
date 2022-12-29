@@ -60,7 +60,7 @@ static llvm::MemoryBuffer* getRuntimeBuffer() {
   std::call_once(has_set_buffer, [&]() {
     auto root_path = cider::get_root_abs_path();
     auto template_path = root_path + "/function/RuntimeFunctions.bc";
-    CHECK(std::filesystem::exists(template_path));
+    CHECK(boost::filesystem::exists(template_path));
 
     auto buffer_or_error = llvm::MemoryBuffer::getFile(template_path);
     CHECK(!buffer_or_error.getError()) << "bc_filename=" << template_path;

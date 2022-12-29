@@ -21,7 +21,7 @@
  */
 
 #include "Regexp.h"
-#include <regex>
+#include <boost/regex.hpp>
 #include <stdexcept>
 #include "cider/CiderException.h"
 
@@ -41,9 +41,9 @@ extern "C" RUNTIME_EXPORT bool regexp_like(const char* str,
                                            const char escape_char) {
   bool result;
   try {
-    std::regex re(pattern, pat_len, std::regex::extended);
-    std::cmatch what;
-    result = std::regex_match(str, str + str_len, what, re);
+    boost::regex re(pattern, pat_len, boost::regex::extended);
+    boost::cmatch what;
+    result = boost::regex_match(str, str + str_len, what, re);
   } catch (std::runtime_error& error) {
     // LOG(ERROR) << "Regexp match error: " << error.what();
     result = false;
