@@ -48,9 +48,15 @@ endif()
 
 if(ICL_WITH_IGZIP)
   add_definitions(-DICL_WITH_IGZIP)
+  include(igzip)
 endif()
 
 # Additional parts
 add_subdirectory(common)
 add_subdirectory(codec)
-add_subdirectory(test)
+if(ICL_BUILD_TESTS)
+  add_subdirectory(test)
+endif()
+if(ICL_BUILD_BENCHMARKS)
+  add_subdirectory(benchmark)
+endif()

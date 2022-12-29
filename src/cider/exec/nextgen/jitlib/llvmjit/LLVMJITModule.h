@@ -49,7 +49,7 @@ class LLVMJITModule final : public JITModule {
 
   std::string getName() const { return module_->getModuleIdentifier(); }
 
-  void finish() override;
+  void finish(const std::string& main_func = "") override;
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);

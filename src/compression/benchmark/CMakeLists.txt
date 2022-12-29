@@ -16,13 +16,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(LLVMJIT_SOURCE
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITEngine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITFunction.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITControlFlow.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITModule.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITTargets.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITValue.cpp)
 
-add_library(jitlib STATIC ${LLVMJIT_SOURCE})
-target_link_libraries(jitlib ${llvm_libs} ${NEXTGEN_DEPS})
+project(icl-benchmark)
+
+find_package(Arrow REQUIRED)
+if(${Arrow_FOUND})
+  message(STATUS "arrow library found: ${ARROW_STATIC_LIB}")
+
+endif()
+set(ICL_COMPRESSION_BENCHMARK_SRCS BenchmarkMain.cpp CompressionBenchmark.cpp)
+add_executable(IclCompressionBenchmark ${ICL_COMPRESSION_BENCHMARK_SRCS})
+target_link_libraries(IclCompressionBenchmark benchmark icl_codec
+                      ${ARROW_TESTING_STATIC_LIB})

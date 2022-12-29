@@ -48,7 +48,6 @@ class IgzipCodec : public IclCompressionCodec {
                      uint8_t* output_buffer) override {
     int64_t decompressed_size = igzip_wrapper_decompress(
         context, input_len, input, output_buffer_len, output_buffer);
-
     return decompressed_size;
   }
 
@@ -62,7 +61,6 @@ class IgzipCodec : public IclCompressionCodec {
                    uint8_t* output_buffer) override {
     int64_t compressed_size = igzip_wrapper_compress(
         context, input_len, input, output_buffer_len, output_buffer);
-
     return compressed_size;
   }
 

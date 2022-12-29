@@ -29,7 +29,7 @@ class JITModule {
   friend JITFunctionBuilder;
 
  public:
-  virtual void finish() = 0;
+  virtual void finish(const std::string& main_func = "") = 0;
 
  protected:
   virtual JITFunctionPointer createJITFunction(

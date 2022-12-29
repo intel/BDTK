@@ -76,6 +76,18 @@ build:
 	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/function/
 	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/test/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/test/function/
 
+icl:
+	@mkdir -p build-${BUILD_TYPE}
+	@cd build-${BUILD_TYPE} && \
+	cmake -Wno-dev \
+		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+		  -DBDTK_ENABLE_ICL=ON \
+		  -DBDTK_ENABLE_CIDER=OFF \
+		  $(FORCE_COLOR) \
+		  ..
+	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
+	cmake --build build-${BUILD_TYPE}
+
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
 	@$(MAKE) build BUILD_TYPE=Debug

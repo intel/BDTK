@@ -1,5 +1,6 @@
+#!/bin/bash
 # Copyright (c) 2022 Intel Corporation.
-#
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,13 +17,21 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(LLVMJIT_SOURCE
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITEngine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITFunction.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITControlFlow.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITModule.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITTargets.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/llvmjit/LLVMJITValue.cpp)
 
-add_library(jitlib STATIC ${LLVMJIT_SOURCE})
-target_link_libraries(jitlib ${llvm_libs} ${NEXTGEN_DEPS})
+CODE_BASE_PATH=/workspace/code
+PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
+VELOX_COMMIT_ID=`git submodule status -- thirdparty/velox | cut -d' ' -f2`
+echo "velox commit id: ${VELOX_COMMIT_ID}"
+
+pushd ${CODE_BASE_PATH}/velox
+git pull --rebase
+VELOX_BRANCH_NAME=`git branch -r --contains ${VELOX_COMMIT_ID} | cut -d' ' -f3`
+echo "branch name: ${VELOX_BRANCH_NAME}"
+popd
+
+PRESTO_LOCAL_BRANCH_NAME=`echo ${VELOX_BRANCH_NAME} | cut -d '/' -f2`
+if [ -d $PRESTO_LOCAL_PATH ]; then
+    rm -rf $PRESTO_LOCAL_PATH
+fi
+git clone -b $PRESTO_LOCAL_BRANCH_NAME https://github.com/intel-innersource/frameworks.ai.modular-sql.presto.git $PRESTO_LOCAL_PATH
+mkdir $PRESTO_LOCAL_PATH/presto-native-execution/BDTK
