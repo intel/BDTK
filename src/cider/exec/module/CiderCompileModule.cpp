@@ -244,55 +244,24 @@ class CiderCompileModule::Impl {
   std::shared_ptr<CiderCompilationResult> compile(
       const RelAlgExecutionUnit& ra_exe_unit,
       const std::vector<InputTableInfo>& table_infos,
-      CiderCompilationOption cco,
-      CiderExecutionOption ceo) {
-    auto co = CiderCompilationOptionToCo(cco);
-    auto eo = CiderExecutionOptionToEo(ceo);
-    ra_exe_unit_ = std::make_shared<RelAlgExecutionUnit>(ra_exe_unit);
-
-    if (co.use_default_col_range) {
-      setDefaultColRangeCache(co.use_cider_data_format);
-    }
-
-    const bool allow_lazy_fetch = co.allow_lazy_fetch;
-    std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner = nullptr;
-    const size_t max_groups_buffer_entry_guess = cco.max_groups_buffer_entry_guess;
-    const int8_t crt_min_byte_width = cco.crt_min_byte_width;
-    const bool has_cardinality_estimation = cco.has_cardinality_estimation;
-    ColumnCacheMap column_cache;
-    CompilationResult compilation_result;
-    std::unique_ptr<QueryMemoryDescriptor> query_mem_desc;
-    std::tie(compilation_result, query_mem_desc) =
-        executor_->compileWorkUnit(table_infos,
-                                   *ra_exe_unit_,
-                                   co,
-                                   eo,
-                                   allow_lazy_fetch,
-                                   row_set_mem_owner,
-                                   max_groups_buffer_entry_guess,
-                                   crt_min_byte_width,
-                                   has_cardinality_estimation,
-                                   nullptr,
-                                   column_cache);
-    auto ciderCompilationResult = std::make_shared<CiderCompilationResult>();
-    ciderCompilationResult->impl_->compilation_result_ = compilation_result;
-    ciderCompilationResult->impl_->query_mem_desc_ = std::move(query_mem_desc);
-    ciderCompilationResult->impl_->hoist_literals_ = co.hoist_literals;
-    ciderCompilationResult->impl_->hoist_buf =
-        executor_->serializeLiterals(compilation_result.literal_values, 0);
-    ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
-    return ciderCompilationResult;
-  }
-
-  std::shared_ptr<CiderCompilationResult> compile(
-      const RelAlgExecutionUnit& ra_exe_unit,
-      const std::vector<InputTableInfo>& table_infos,
       std::shared_ptr<CiderTableSchema> schema,
       CiderCompilationOption cco,
       CiderExecutionOption ceo) {
     auto co = CiderCompilationOptionToCo(cco);
     auto eo = CiderExecutionOptionToEo(ceo);
     ra_exe_unit_ = std::make_shared<RelAlgExecutionUnit>(ra_exe_unit);
+
+    if (co.use_nextgen_compiler) {
+      auto ciderCompilationResult = std::make_shared<CiderCompilationResult>();
+      ciderCompilationResult->impl_->co = co;
+      ciderCompilationResult->impl_->rel_alg_exe_unit_ = ra_exe_unit_;
+      ciderCompilationResult->impl_->outputSchema_ = schema;
+
+      ciderCompilationResult->impl_->codegen_ctx_ =
+          cider::exec::nextgen::compile(*ra_exe_unit_);
+
+      return ciderCompilationResult;
+    }
 
     if (co.use_default_col_range) {
       setDefaultColRangeCache(co.use_cider_data_format);
@@ -605,16 +574,17 @@ std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
   return impl_->compile(exprs, schema, func_infos, expr_type, cco, ceo);
 }
 
-std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
-    void* ra_exe_unit_,
-    void* table_infos_,
-    CiderCompilationOption cco,
-    CiderExecutionOption ceo) {
-  RelAlgExecutionUnit ra_exe_unit = *(RelAlgExecutionUnit*)ra_exe_unit_;
-  std::vector<InputTableInfo> table_infos = *(std::vector<InputTableInfo>*)table_infos_;
+// std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
+//     void* ra_exe_unit_,
+//     void* table_infos_,
+//     CiderCompilationOption cco,
+//     CiderExecutionOption ceo) {
+//   RelAlgExecutionUnit ra_exe_unit = *(RelAlgExecutionUnit*)ra_exe_unit_;
+//   std::vector<InputTableInfo> table_infos =
+//   *(std::vector<InputTableInfo>*)table_infos_;
 
-  return impl_->compile(ra_exe_unit, table_infos, cco, ceo);
-}
+//   return impl_->compile(ra_exe_unit, table_infos, cco, ceo);
+// }
 
 // TODO: to be removed if test framework ready
 std::shared_ptr<CiderCompilationResult> CiderCompileModule::compile(
