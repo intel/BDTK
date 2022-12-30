@@ -30,17 +30,10 @@
 
 using namespace facebook::velox::core;
 
-#define BENCHMARK_GROUP(name, expr)                                             \
-  BENCHMARK(name##Velox) { benchmark->runVelox(expr); }                         \
-  BENCHMARK_RELATIVE(name##Cider) { benchmark->runCiderCompute(expr); }         \
-  BENCHMARK_RELATIVE(name##Nextgen) { benchmark->runCiderCompute(expr, true); } \
-  BENCHMARK(name##CiderCompile) { benchmark->runCiderCompile(expr); }           \
-  BENCHMARK(name##NextgenCompile) { benchmark->runCiderCompile(expr, true); }   \
-  BENCHMARK_DRAW_LINE()
-
 namespace facebook::velox::plugin {
 
-std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec);
+std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
+                                                        velox::memory::MemoryPool* pool);
 
 std::unique_ptr<CiderBatch> veloxVectorToCiderBatch(RowVectorPtr vec,
                                                     velox::memory::MemoryPool* pool);

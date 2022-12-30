@@ -73,6 +73,7 @@ set(VELOX_BENCHMARKS_DEPENDENCIES
     velox_vector
     velox_vector_fuzzer
     velox_vector_test_lib
+    velox_exec_test_lib
     gtest
     gtest_main
     ${FOLLY_WITH_DEPENDENCIES}

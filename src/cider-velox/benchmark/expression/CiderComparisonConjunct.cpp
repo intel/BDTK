@@ -181,6 +181,14 @@ class ComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
 
 std::unique_ptr<ComparisonBenchmark> benchmark;
 
+#define BENCHMARK_GROUP(name, expr)                                                    \
+  BENCHMARK(name##Velox) { benchmark->runVelox(expr); }                                \
+  BENCHMARK_RELATIVE(name##Cider) { benchmark->runCiderCompute(expr); }                \
+  BENCHMARK_RELATIVE(name##Nextgen) { benchmark->runCiderCompute(expr, true); }        \
+  BENCHMARK(name##CiderCompile) { benchmark->runCiderCompile(expr); }                  \
+  BENCHMARK_RELATIVE(name##NextgenCompile) { benchmark->runCiderCompile(expr, true); } \
+  BENCHMARK_DRAW_LINE()
+
 // Use Velox execution as a baseline.
 BENCHMARK_GROUP(eq, "eq(a, b)");
 BENCHMARK_GROUP(neq, "neq(a, b)");
