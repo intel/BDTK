@@ -27,24 +27,29 @@
 
 namespace cider::exec::nextgen {
 
-std::unique_ptr<context::CodegenContext> compile(const RelAlgExecutionUnit& ra_exe_unit,
-                                                 const jitlib::CompilationOptions& co) {
+std::unique_ptr<context::CodegenContext> compile(
+    const RelAlgExecutionUnit& ra_exe_unit,
+    const jitlib::CompilationOptions& co,
+    const context::CodegenOptions& codegen_options) {
   auto codegen_ctx = std::make_unique<context::CodegenContext>();
   auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
 
-  auto builder = [&ra_exe_unit, &codegen_ctx](jitlib::JITFunctionPointer function) {
+  auto builder = [&ra_exe_unit, &codegen_ctx, &codegen_options](
+                     jitlib::JITFunctionPointer function) {
     codegen_ctx->setJITFunction(function);
+    codegen_ctx->setCodegenOptions(codegen_options);
     auto pipeline = parsers::toOpPipeline(ra_exe_unit);
     auto translator = transformer::Transformer::toTranslator(pipeline);
     translator->consume(*codegen_ctx);
-    function->createReturn();
+    auto ret_val = function->createVariable(cider::jitlib::JITTypeTag::INT32, "ret", 0);
+    function->createReturn(*ret_val.get());
   };
 
   jitlib::JITFunctionPointer func =
       jitlib::JITFunctionBuilder()
           .registerModule(*module)
           .setFuncName("query_func")
-          .addReturn(jitlib::JITTypeTag::VOID)
+          .addReturn(jitlib::JITTypeTag::INT32)
           .addParameter(jitlib::JITTypeTag::POINTER, "context", jitlib::JITTypeTag::INT8)
           .addParameter(jitlib::JITTypeTag::POINTER, "input", jitlib::JITTypeTag::INT8)
           .addProcedureBuilder(builder)

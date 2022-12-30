@@ -57,16 +57,28 @@ void LLVMIfBuilder::build() {
   builder_.SetInsertPoint(true_bb);
   if (if_true_) {
     if_true_();
+    if (!builder_.GetInsertBlock()->back().isTerminator()) {
+      builder_.CreateBr(after_bb);
+    }
+  } else {
+    builder_.CreateBr(after_bb);
   }
-  builder_.CreateBr(after_bb);
 
   builder_.SetInsertPoint(false_bb);
   if (if_false_) {
     if_false_();
+    if (!builder_.GetInsertBlock()->back().isTerminator()) {
+      builder_.CreateBr(after_bb);
+    }
+  } else {
+    builder_.CreateBr(after_bb);
   }
-  builder_.CreateBr(after_bb);
 
-  builder_.SetInsertPoint(after_bb);
+  if (after_bb->hasNPredecessorsOrMore(1)) {
+    builder_.SetInsertPoint(after_bb);
+  } else {
+    after_bb->removeFromParent();
+  }
 }
 
 void LLVMLoopBuilder::build() {
