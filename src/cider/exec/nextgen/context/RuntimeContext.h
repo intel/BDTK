@@ -78,6 +78,14 @@ class RuntimeContext {
 
   Batch* getNonGroupByAggOutputBatch();
 
+  // TODO: batch and buffer should be self-managed
+  void resetBatch(const CiderAllocatorPtr& allocator) {
+    if (!batch_holder_.empty()) {
+      auto& [descriptor, batch] = batch_holder_.back();
+      batch->reset(descriptor->type, allocator);
+    }
+  }
+
  private:
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;

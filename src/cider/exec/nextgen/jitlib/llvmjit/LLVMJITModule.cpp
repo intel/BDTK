@@ -30,6 +30,7 @@
 #include <llvm/Transforms/Utils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
 #include "util/filesystem/cider_path.h"
@@ -134,12 +135,27 @@ JITFunctionPointer LLVMJITModule::createJITFunction(
   return std::make_shared<LLVMJITFunction>(descriptor, *this, *func);
 }
 
-void LLVMJITModule::finish() {
+void LLVMJITModule::finish(const std::string& main_func) {
+  llvm::TargetMachine* tm = buildTargetMachine(co_);
+  module_->setTargetTriple(tm->getTargetTriple().str());
+  module_->setDataLayout(tm->createDataLayout());
+
+  llvm::Function* main_func_ptr = module_->getFunction(main_func);
+  if (main_func_ptr) {
+    main_func_ptr->addFnAttr("target-features", tm->getTargetFeatureString());
+    main_func_ptr->addFnAttr("target-cpu", tm->getTargetCPU());
+  } else {
+    for (auto& func : module_->getFunctionList()) {
+      func.addFnAttr("target-features", tm->getTargetFeatureString());
+      func.addFnAttr("target-cpu", tm->getTargetCPU());
+    }
+  }
+
   if (co_.dump_ir) {
     dumpModuleIR(module_.get(), module_->getModuleIdentifier());
   }
 
-  LLVMJITEngineBuilder builder(*this);
+  LLVMJITEngineBuilder builder(*this, tm);
 
   // IR optimization
   optimizeIR(module_.get());

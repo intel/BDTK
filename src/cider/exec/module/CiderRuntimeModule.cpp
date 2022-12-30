@@ -598,12 +598,14 @@ std::pair<CiderRuntimeModule::ReturnCode, std::unique_ptr<CiderBatch>>
 CiderRuntimeModule::fetchResults(int32_t max_row) {
   INJECT_TIMER(CiderRuntimeModule_FetchResult);
   if (ciderCompilationOption_.use_nextgen_compiler) {
-    auto output_batch = ciderCompilationResult_->impl_->runtime_ctx_->getOutputBatch();
     struct ArrowArray* output_arrow_array = CiderBatchUtils::allocateArrowArray();
     struct ArrowSchema* output_arrow_schema = CiderBatchUtils::allocateArrowSchema();
+    auto output_batch = ciderCompilationResult_->impl_->runtime_ctx_->getOutputBatch();
     output_batch->move(*output_arrow_schema, *output_arrow_array);
+    ciderCompilationResult_->impl_->runtime_ctx_->resetBatch(allocator_);
     auto output_cider_batch = CiderBatchUtils::createCiderBatch(
         allocator_, output_arrow_schema, output_arrow_array);
+
     // Only for filter/project now
     return std::make_pair(kNoMoreOutput, std::move(output_cider_batch));
   }

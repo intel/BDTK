@@ -941,7 +941,7 @@ inline SQLTypes get_int_type_by_size(size_t const nbytes) {
       return kBIGINT;
     default:
 #ifndef NO_BOOST
-      UNREACHABLE() << "Invalid number of bytes=" << nbytes;
+      UNREACHABLE();
 #endif
       return {};
   }

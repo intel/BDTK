@@ -47,7 +47,7 @@ struct PairNoInit {
   First first;
   Second second;
 
-  PairNoInit() {}  /// NOLINT
+  PairNoInit() {}
 
   template <typename FirstValue>
   PairNoInit(FirstValue&& first_, NoInitTag) : first(std::forward<FirstValue>(first_)) {}
