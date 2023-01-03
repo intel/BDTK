@@ -739,13 +739,8 @@ void updateChildrenNullCnt(struct ArrowArray* array) {
     auto child = array->children[i];
     const uint8_t* validity_map = reinterpret_cast<const uint8_t*>(child->buffers[0]);
     if (validity_map) {
-      for (int j = 0; j < length; j++) {
-        if (!CiderBitUtils::isBitSetAt(validity_map, j)) {
-          ++null_count;
-        }
-      }
+      child->null_count = length - CiderBitUtils::countSetBits(validity_map, length);
     }
-    child->null_count = null_count;
   }
 }
 
