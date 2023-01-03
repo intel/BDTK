@@ -21,9 +21,11 @@
 
 #include "type/plan/StringOpExpr.h"
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace Analyzer {
+using namespace cider::exec::nextgen;
 using LiteralArgMap = std::map<size_t, std::pair<SQLTypes, Datum>>;
 
 LiteralArgMap StringOper::getLiteralArgs() const {
@@ -262,10 +264,12 @@ void StringOper::check_operand_types(
     }
 
     if (cols_first_arg_only && !is_arg_constant && arg_idx >= 1UL) {
-      oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
-          << "Currently only column inputs allowed for the primary argument, "
-          << "but a column input was received for argument " << arg_idx + 1 << ".";
-      CIDER_THROW(CiderCompileException, oss.str());
+      if (get_kind() != SqlStringOpKind::CONCAT) {
+        oss << "Error instantiating " << ::toString(get_kind()) << " operator. "
+            << "Currently only column inputs allowed for the primary argument, "
+            << "but a column input was received for argument " << arg_idx + 1 << ".";
+        CIDER_THROW(CiderCompileException, oss.str());
+      }
     }
     switch (expected_type_family) {
       case OperandTypeFamily::STRING_FAMILY: {
@@ -455,4 +459,185 @@ JITExprValue& CharLengthStringOper::codegen(CodegenContext& context) {
       arg_val.getLength()->castJITValuePrimitiveType(JITTypeTag::INT64));
 }
 
+// ConcatStringOper: CONCAT
+std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
+  return makeExpr<Analyzer::ConcatStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& ConcatStringOper::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
+  // decode input args
+  auto lhs = const_cast<Analyzer::Expr*>(getArg(0));
+  auto rhs = const_cast<Analyzer::Expr*>(getArg(1));
+
+  CHECK(lhs->get_type_info().is_string());
+  CHECK(rhs->get_type_info().is_string());
+
+  auto lhs_val = VarSizeJITExprValue(lhs->codegen(context));
+  auto rhs_val = VarSizeJITExprValue(rhs->codegen(context));
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+
+  // call external function
+  auto emit_desc =
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                .params_vector = {string_heap_ptr.get(),
+                                                  lhs_val.getValue().get(),
+                                                  lhs_val.getLength().get(),
+                                                  rhs_val.getValue().get(),
+                                                  rhs_val.getLength().get()}};
+  // TODO (YBRua): deprecate cider_rconcat after full migration to nextgen
+  // rconcat is a workaround used in template codegen for cases such as constant || var
+  std::string fn_name =
+      get_kind() == SqlStringOpKind::CONCAT ? "cider_concat" : "cider_rconcat";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_str_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_str_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(lhs_val.getNull() || rhs_val.getNull(), ret_len, ret_ptr);
+}
+
+// to be deprecated. Can be removed after full migration to nextgen
+bool ConcatStringOper::isLiteralOrCastLiteral(const Analyzer::Expr* operand) {
+  // literals may exist in a CAST op (casted from fixedchar to varchar)
+  auto literal_arg = dynamic_cast<const Analyzer::Constant*>(remove_cast(operand));
+  if (literal_arg) {
+    // is a literal or a casted literal
+    return true;
+  }
+  return false;
+}
+
+// to be deprecated. Can be removed after full migration to nextgen.
+// Anything else related with RCONCAT can also be removed after migration to nextgen
+SqlStringOpKind ConcatStringOper::getConcatOpKind(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+  CHECK_EQ(operands.size(), 2);
+  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
+  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
+
+  if (is_constant_arg1) {
+    // concat(col, literal) or concat(literal, literal)
+    return SqlStringOpKind::CONCAT;
+  } else if (is_constant_arg0) {
+    // concat(literal, col)
+    return SqlStringOpKind::RCONCAT;
+  } else {
+    return SqlStringOpKind::CONCAT;
+    // NOTE: (YBRua) the error check here is not needed in nextgen, because nextgen
+    // supports concatenating two variable inputs. However, templated codegen still does
+    // not support two variable inputs and will have errors in these cases
+    // CIDER_THROW(CiderCompileException,
+    //             "concat() currently does not support two variable operands.");
+  }
+}
+
+// to be deprecated. Can be removed after full migration to nextgen
+std::vector<std::shared_ptr<Analyzer::Expr>> ConcatStringOper::rearrangeOperands(
+    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
+  // ensures non-literal operand (if any) is not at arg1
+  // as stringops expect non-literals to be the first arg at runtime
+  CHECK_EQ(operands.size(), 2);
+  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
+  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
+
+  if (is_constant_arg1) {
+    // concat(col, literal) or concat(literal, literal)
+    return {operands[0], remove_cast(operands[1].get())->deep_copy()};
+  } else if (is_constant_arg0) {
+    // concat(literal, col)
+    return {operands[1], remove_cast(operands[0].get())->deep_copy()};
+  } else {
+    return operands;
+    // error check is disabled for the same reason as above
+    // CIDER_THROW(CiderCompileException,
+    //             "concat() currently does not support two variable operands.");
+  }
+}
+
+// TrimStringOper: LTRIM / TRIM / RTRIM
+std::shared_ptr<Analyzer::Expr> TrimStringOper::deep_copy() const {
+  return makeExpr<Analyzer::TrimStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& TrimStringOper::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
+  // decode input args
+  auto input = const_cast<Analyzer::Expr*>(getArg(0));
+  auto trim_char = const_cast<Analyzer::Expr*>(getArg(1));
+
+  CHECK(input->get_type_info().is_string());
+  CHECK(trim_char->get_type_info().is_string());
+
+  auto trim_char_literal = dynamic_cast<Analyzer::Constant*>(trim_char);
+  if (!trim_char_literal) {
+    CIDER_THROW(CiderUnsupportedException, "argument 1 of TRIM() must be literal");
+  }
+
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
+
+  // register trim chars to context
+  std::string trim_char_val = *trim_char_literal->get_constval().stringval;
+  int trim_char_map_idx = context.registerTrimStringOperCharMap(trim_char_val);
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+  // get runtime trim_char_map ptr
+  auto trim_char_map_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_trim_char_map_by_id",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::POINTER,
+          .ret_sub_type = JITTypeTag::INT8,
+          .params_vector = {
+              func.getArgument(0).get(),
+              func.createLiteral<int32_t>(JITTypeTag::INT32, trim_char_map_idx).get()}});
+
+  // call external function
+  bool do_ltrim =
+      get_kind() == SqlStringOpKind::LTRIM || get_kind() == SqlStringOpKind::TRIM;
+  bool do_rtrim =
+      get_kind() == SqlStringOpKind::RTRIM || get_kind() == SqlStringOpKind::TRIM;
+  std::string fn_name = "cider_trim";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(
+      fn_name,
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT64,
+          .params_vector = {string_heap_ptr.get(),
+                            input_val.getValue().get(),
+                            input_val.getLength().get(),
+                            trim_char_map_ptr.get(),
+                            func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
+                            func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_string_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_string_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+}
 }  // namespace Analyzer

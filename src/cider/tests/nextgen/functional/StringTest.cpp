@@ -390,8 +390,6 @@ TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
 // stringop: concat
 
 TEST_F(CiderStringTestNextGen, ConcatTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
   // Skipped because Isthmus does not support concatenating two literals
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
@@ -405,12 +403,13 @@ TEST_F(CiderStringTestNextGen, ConcatTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
                    "stringop_concat_filter.json");
+
+  // nextgen also supports concatenating two variable columns
+  assertQueryArrow("SELECT col_2 || col_2 FROM test;");
+  assertQueryArrow("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (concat) is not supported yet in nextgen");
-
   // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
 
   assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
@@ -423,6 +422,10 @@ TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
   assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
   assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2 || 'yo') <> col_2;",
                    "stringop_concat_filter_null.json");
+
+  // nextgen also supports concatenating two variable columns
+  assertQueryArrow("SELECT col_2 || col_2 FROM test;");
+  assertQueryArrow("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 // stringop: char_length
@@ -435,11 +438,10 @@ TEST_F(CiderStringTestNextGen, CharLengthTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
                    "stringop_charlen_filter.json");
 
-  // TODO: (YBRua) Enable this after nextgen supports concat
-  // assertQueryArrow(
-  //     "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
-  //     "WHERE LENGTH(col_2 || 'boo') = 13;",
-  //     "stringop_charlen_nested.json");
+  assertQueryArrow(
+      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
+      "WHERE LENGTH(col_2 || 'boo') = 13;",
+      "stringop_charlen_nested.json");
 }
 
 TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
@@ -451,11 +453,10 @@ TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
   assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
                    "stringop_charlen_filter_null.json");
 
-  // TODO: (YBRua) Enable this after nextgen supports concat
-  // assertQueryArrow(
-  //     "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
-  //     "WHERE LENGTH(col_2 || 'boo') = 13;",
-  //     "stringop_charlen_nested_null.json");
+  assertQueryArrow(
+      "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
+      "WHERE LENGTH(col_2 || 'boo') = 13;",
+      "stringop_charlen_nested_null.json");
 }
 
 // stringop: trim
@@ -472,8 +473,8 @@ class CiderTrimOpTestNextGen : public CiderTestBase {
                                                "xxxxxxxxxx",
                                                "   3456789",
                                                "   3456789",
-                                               "   3456   ",
-                                               "   3456   ",
+                                               "   3      ",
+                                               "   3      ",
                                                "0123456   ",
                                                "0123456   ",
                                                "xxx3456   ",
@@ -495,8 +496,6 @@ class CiderTrimOpTestNextGen : public CiderTestBase {
 };
 
 TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (trim) is not supported yet in nextgen");
   // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
   // basic trim (defaults to trim spaces)
   assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
@@ -510,8 +509,6 @@ TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
 }
 
 TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (trim) is not supported yet in nextgen");
   assertQueryArrow("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
   assertQueryArrow("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
                    "stringop_trim_2.json");
@@ -528,8 +525,6 @@ TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
 }
 
 TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (trim) is not supported yet in nextgen");
   assertQueryArrow("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
                    "stringop_trim_nested_1.json");
   assertQueryArrow(

@@ -79,7 +79,6 @@ class ColumnWriter {
     auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
       auto bytes = (arrow_array_len_ + 1) *
                    context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
-      // TODO: should set memory to 0.
       return allocateRawDataBuffer(1, bytes);
     });
     auto actual_raw_length_buffer =
@@ -87,15 +86,18 @@ class ColumnWriter {
     actual_raw_length_buffer[index_ + 1] =
         actual_raw_length_buffer[index_] + *values.getLength();
 
-    // value, buffer size is variable.
-    auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
-      // FIXME(jikunshang): try add re-allocate for string type buffer.
-      auto bytes = arrow_array_len_ *
-                   context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 10);
-      return allocateRawDataBuffer(2, bytes);
-    });
+    // get latest pointer to data buffer, will allocate data buffer on first call,
+    // and will reallocate buffer if more capacity is needed
+    auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
+        "get_data_buffer_with_realloc_on_demand",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {arrow_array_.get(),
+                              actual_raw_length_buffer[index_].get()}});
     auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
     auto cur_pointer = actual_raw_data_buffer + *actual_raw_length_buffer[index_];
+
     context_.getJITFunction()->emitRuntimeFunctionCall(
         "do_memcpy",
         JITFunctionEmitDescriptor{

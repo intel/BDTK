@@ -37,6 +37,13 @@ extern "C" ALWAYS_INLINE int8_t* get_query_context_string_heap_ptr(int8_t* conte
   return reinterpret_cast<int8_t*>(context_ptr->getStringHeapPtr());
 }
 
+extern "C" ALWAYS_INLINE int8_t* get_query_context_trim_char_map_by_id(int8_t* context,
+                                                                       int id) {
+  auto context_ptr =
+      reinterpret_cast<cider::exec::nextgen::context::RuntimeContext*>(context);
+  return const_cast<int8_t*>(context_ptr->getTrimStringOperCharMapById(id));
+}
+
 extern "C" ALWAYS_INLINE int8_t* get_arrow_array_ptr(int8_t* batch) {
   auto batch_ptr = reinterpret_cast<cider::exec::nextgen::context::Batch*>(batch);
   return reinterpret_cast<int8_t*>(batch_ptr->getArray());

@@ -48,6 +48,10 @@ class RuntimeContext {
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
+  const int8_t* getTrimStringOperCharMapById(int id) const;
+
+  void setTrimStringOperCharMaps(const CodegenContext::TrimCharMapsPtr& maps);
+
   // TBD: Currently, last batch would be output batch under all known scenarios.
   Batch* getOutputBatch() {
     if (batch_holder_.empty()) {
@@ -94,6 +98,7 @@ class RuntimeContext {
       cider_set_holder_;
   std::shared_ptr<StringHeap> string_heap_ptr_;
   CodegenContext::HashTableDescriptorPtr hashtable_holder_;
+  CodegenContext::TrimCharMapsPtr trim_char_maps_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;

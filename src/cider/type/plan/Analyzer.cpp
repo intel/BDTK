@@ -129,18 +129,8 @@ std::shared_ptr<Analyzer::Expr> RegexpSubstrStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-std::shared_ptr<Analyzer::Expr> TrimStringOper::deep_copy() const {
-  return makeExpr<Analyzer::TrimStringOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
 std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
   return makeExpr<Analyzer::TryStringCastOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
-std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
-  return makeExpr<Analyzer::ConcatStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
@@ -174,54 +164,6 @@ std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
     }
   }
   return folded_operands;
-}
-
-bool ConcatStringOper::isLiteralOrCastLiteral(const Analyzer::Expr* operand) {
-  // literals may exist in a CAST op (casted from fixedchar to varchar)
-  auto literal_arg = dynamic_cast<const Analyzer::Constant*>(remove_cast(operand));
-  if (literal_arg) {
-    // is a literal or a casted literal
-    return true;
-  }
-  return false;
-}
-
-SqlStringOpKind ConcatStringOper::getConcatOpKind(
-    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-  CHECK_EQ(operands.size(), 2);
-  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
-  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
-
-  if (is_constant_arg1) {
-    // concat(col, literal) or concat(literal, literal)
-    return SqlStringOpKind::CONCAT;
-  } else if (is_constant_arg0) {
-    // concat(literal, col)
-    return SqlStringOpKind::RCONCAT;
-  } else {
-    CIDER_THROW(CiderCompileException,
-                "concat() currently does not support two variable operands.");
-  }
-}
-
-std::vector<std::shared_ptr<Analyzer::Expr>> ConcatStringOper::rearrangeOperands(
-    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-  // ensures non-literal operand (if any) is not at arg1
-  // as stringops expect non-literals to be the first arg at runtime
-  CHECK_EQ(operands.size(), 2);
-  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
-  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
-
-  if (is_constant_arg1) {
-    // concat(col, literal) or concat(literal, literal)
-    return {operands[0], remove_cast(operands[1].get())->deep_copy()};
-  } else if (is_constant_arg0) {
-    // concat(literal, col)
-    return {operands[1], remove_cast(operands[0].get())->deep_copy()};
-  } else {
-    CIDER_THROW(CiderCompileException,
-                "concat() currently does not support two variable operands.");
-  }
 }
 
 std::shared_ptr<Analyzer::Expr> LowerExpr::deep_copy() const {
@@ -1965,7 +1907,6 @@ std::shared_ptr<Analyzer::Expr> ExtractExpr::rewrite_agg_to_var(
       type_info, contains_agg, field_, from_expr_->rewrite_agg_to_var(tlist));
 }
 
-
 std::shared_ptr<Analyzer::Expr> DatediffExpr::rewrite_agg_to_var(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
   return makeExpr<DatediffExpr>(type_info,
@@ -2236,7 +2177,6 @@ bool ExtractExpr::operator==(const Expr& rhs) const {
   const ExtractExpr& rhs_ee = dynamic_cast<const ExtractExpr&>(rhs);
   return field_ == rhs_ee.get_field() && *from_expr_ == *rhs_ee.get_from_expr();
 }
-
 
 bool DatediffExpr::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(DatediffExpr)) {
@@ -2754,7 +2694,6 @@ void ExtractExpr::find_expr(bool (*f)(const Expr*),
   }
   from_expr_->find_expr(f, expr_list);
 }
-
 
 void DatediffExpr::find_expr(bool (*f)(const Expr*),
                              std::list<const Expr*>& expr_list) const {
