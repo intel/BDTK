@@ -21,7 +21,6 @@
 
 #include "benchmark/benchmark.h"
 
-#include <iostream>
 #include <string>
 
 #include <arrow/api.h>
@@ -32,7 +31,7 @@
 
 class ParquetBenchamarkReader {
  public:
-  ParquetBenchamarkReader(const std::string& file_name = std::string("tpch")) {
+  explicit ParquetBenchamarkReader(const std::string& file_name = std::string("tpch")) {
     PARQUET_ASSIGN_OR_THROW(
         parquet_file_,
         arrow::io::ReadableFile::Open(file_name, arrow::default_memory_pool()));
