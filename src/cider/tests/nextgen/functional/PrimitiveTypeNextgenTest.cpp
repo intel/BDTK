@@ -30,7 +30,7 @@
     PrimitiveType##C_TYPE_NAME##Test() {                                           \
       table_name_ = "test";                                                        \
       create_ddl_ =                                                                \
-          "CREATE TABLE test(col_a " #TYPE ", col_b " #TYPE ", col_c " #TYPE ");"; \
+          "CREATE TABLE test(col_a " #TYPE " NOT NULL, col_b " #TYPE ", col_c " #TYPE ");"; \
       QueryArrowDataGenerator::generateBatchByTypes(                               \
           schema_,                                                                 \
           array_,                                                                  \
@@ -86,7 +86,7 @@ class PrimitiveTypeIntegerMaxTest : public CiderTestBase {
  public:
   PrimitiveTypeIntegerMaxTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a INTEGER, col_b INTEGER, col_c INTEGER);";
+    create_ddl_ = "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   10,
@@ -105,7 +105,7 @@ class PrimitiveTypeIntegerMINTest : public CiderTestBase {
  public:
   PrimitiveTypeIntegerMINTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a INTEGER, col_b INTEGER, col_c INTEGER);";
+    create_ddl_ = "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   10,
