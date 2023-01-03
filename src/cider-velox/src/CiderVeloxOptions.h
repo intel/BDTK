@@ -18,32 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 #pragma once
 
-#include "VeloxToCiderExpr.h"
-#include "cider/CiderRuntimeModule.h"
-#include "velox/core/ITypedExpr.h"
-#include "velox/type/Type.h"
+#include <gflags/gflags.h>
 
-using namespace facebook::velox;
-
-namespace facebook::velox::plugin {
-using RowTypePtr = std::shared_ptr<const RowType>;
-
-class ExprEvalUtils {
- public:
-  static RelAlgExecutionUnit getMockedRelAlgEU(
-      std::shared_ptr<const core::ITypedExpr> v_expr,
-      RowTypePtr row_type,
-      std::string eu_group);
-  static std::vector<InputTableInfo> buildInputTableInfo();
-
-  static AggregatedColRange buildDefaultColRangeCache(RowTypePtr row_type);
-
- private:
-  static SQLTypeInfo getCiderType(const std::shared_ptr<const velox::Type> expr_type,
-                                  bool isNullable);
-  static Analyzer::Expr* getExpr(std::shared_ptr<const Analyzer::Expr> expr);
-};
-}  // namespace facebook::velox::plugin
+DECLARE_bool(enable_batch_processor);

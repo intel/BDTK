@@ -266,8 +266,11 @@ void CiderRuntimeModule::processNextBatch(const CiderBatch& in_batch) {
     auto query_func = reinterpret_cast<cider::exec::nextgen::QueryFunc>(
         ciderCompilationResult_->func());
     const ArrowArray& input_arrow_array = in_batch.getArrowArray();
-    query_func((int8_t*)ciderCompilationResult_->impl_->runtime_ctx_.get(),
-               (int8_t*)&input_arrow_array);
+    int32_t ret = query_func((int8_t*)ciderCompilationResult_->impl_->runtime_ctx_.get(),
+                             (int8_t*)&input_arrow_array);
+    if (ret != 0) {
+      CIDER_THROW(CiderRuntimeException, getErrorMessageFromCode(ret));
+    }
     return;
   }
   fetched_rows_ = 0;
@@ -598,12 +601,14 @@ std::pair<CiderRuntimeModule::ReturnCode, std::unique_ptr<CiderBatch>>
 CiderRuntimeModule::fetchResults(int32_t max_row) {
   INJECT_TIMER(CiderRuntimeModule_FetchResult);
   if (ciderCompilationOption_.use_nextgen_compiler) {
-    auto output_batch = ciderCompilationResult_->impl_->runtime_ctx_->getOutputBatch();
     struct ArrowArray* output_arrow_array = CiderBatchUtils::allocateArrowArray();
     struct ArrowSchema* output_arrow_schema = CiderBatchUtils::allocateArrowSchema();
+    auto output_batch = ciderCompilationResult_->impl_->runtime_ctx_->getOutputBatch();
     output_batch->move(*output_arrow_schema, *output_arrow_array);
+    ciderCompilationResult_->impl_->runtime_ctx_->resetBatch(allocator_);
     auto output_cider_batch = CiderBatchUtils::createCiderBatch(
         allocator_, output_arrow_schema, output_arrow_array);
+
     // Only for filter/project now
     return std::make_pair(kNoMoreOutput, std::move(output_cider_batch));
   }

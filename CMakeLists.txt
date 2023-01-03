@@ -91,6 +91,10 @@ if(BDTK_ENABLE_CIDER)
       thirdparty/velox/third_party/googletest/googletest/include)
   endif()
 
+  if(CIDER_ENABLE_BENCHMARK OR ENABLE_BENCHMARK)
+    set(CMAKE_CXX_FLAGS "-g -ggdb -fno-omit-frame-pointer")
+  endif()
+
   if(CIDER_ENABLE_BENCHMARK)
     set(BENCHMARK_ENABLE_INSTALL OFF)
     set(BENCHMARK_ENABLE_TESTING OFF)

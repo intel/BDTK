@@ -80,6 +80,10 @@ struct AggExprsInfo {
 
 using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
+struct CodegenOptions {
+  bool needs_error_check = false;
+};
+
 class CodegenContext {
  public:
   CodegenContext() : jit_func_(nullptr) {}
@@ -90,6 +94,8 @@ class CodegenContext {
   }
 
   jitlib::JITFunctionPointer getJITFunction() { return jit_func_; }
+
+  CodegenOptions getCodegenOptions() { return codegen_options_; }
 
   std::pair<jitlib::JITValuePointer, utils::JITExprValue>& getArrowArrayValues(
       size_t local_offset) {
@@ -202,6 +208,10 @@ class CodegenContext {
 
   void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
 
+  void setCodegenOptions(CodegenOptions codegen_options) {
+    codegen_options_ = codegen_options;
+  }
+
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
   using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
   using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
@@ -221,6 +231,7 @@ class CodegenContext {
   jitlib::JITFunctionPointer jit_func_;
   int64_t id_counter_{0};
   jitlib::JITModulePointer jit_module_;
+  CodegenOptions codegen_options_;
 
   int64_t acquireContextID() { return id_counter_++; }
   int64_t getNextContextID() const { return id_counter_; }

@@ -24,11 +24,11 @@
 #include <llvm/IR/Value.h>
 
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "util/Logger.h"
 
 namespace cider::jitlib {
-
 JITValue& LLVMJITValue::assign(JITValue& value) {
   if (!is_variable_) {
     LOG(FATAL) << "JITValue " << getValueName()
@@ -144,6 +144,22 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "mod", false);
 }
 
+JITValuePointer LLVMJITValue::modWithErrorCheck(JITValue& rh) {
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mod");
+
+  auto ifBuilder = parent_function_.createIfBuilder();
+  ifBuilder->condition([&rh]() { return rh == 0; })
+      ->ifTrue([this]() {
+        getFunctionBuilder(parent_function_)
+            .CreateRet(llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+                ERROR_CODE::ERR_DIV_BY_ZERO));
+      })
+      ->build();
+
+  return mod(rh);
+}
+
 JITValuePointer LLVMJITValue::div(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "div");
@@ -167,6 +183,22 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
 
   return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "div", false);
+}
+
+JITValuePointer LLVMJITValue::divWithErrorCheck(JITValue& rh) {
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "div");
+
+  auto ifBuilder = parent_function_.createIfBuilder();
+  ifBuilder->condition([&rh]() { return rh == 0; })
+      ->ifTrue([this]() {
+        getFunctionBuilder(parent_function_)
+            .CreateRet(llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+                ERROR_CODE::ERR_DIV_BY_ZERO));
+      })
+      ->build();
+
+  return div(rh);
 }
 
 JITValuePointer LLVMJITValue::mul(JITValue& rh) {
@@ -194,6 +226,47 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "mul", false);
 }
 
+JITValuePointer LLVMJITValue::mulWithErrorCheck(JITValue& rh) {
+  // only integer type need overflow check
+  auto lhs_llvm_type = getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
+  if (!lhs_llvm_type->isIntegerTy()) {
+    return mul(rh);
+  }
+
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "mul");
+
+  // get compute function
+  auto llvm_module = parent_function_.func_.getParent();
+  auto func = llvm::Intrinsic::getDeclaration(
+      llvm_module, llvm::Intrinsic::smul_with_overflow, lhs_llvm_type);
+
+  // compute result and overflow
+  auto ret_and_overflow =
+      getFunctionBuilder(parent_function_)
+          .CreateCall(func, std::vector<llvm::Value*>{load(), llvm_rh.load()});
+  auto ret = getFunctionBuilder(parent_function_)
+                 .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{0});
+  auto overflow = getFunctionBuilder(parent_function_)
+                      .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{1});
+  auto overflow_value = makeJITValuePointer<LLVMJITValue>(
+      JITTypeTag::BOOL, parent_function_, overflow, "overflow", false);
+
+  // return error
+  auto ifBuilder = parent_function_.createIfBuilder();
+  ifBuilder->condition([&overflow_value]() { return overflow_value; })
+      ->ifTrue([this]() {
+        getFunctionBuilder(parent_function_)
+            .CreateRet(llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+      })
+      ->build();
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ret, "mul", false);
+}
+
 JITValuePointer LLVMJITValue::sub(JITValue& rh) {
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "sub");
@@ -217,6 +290,47 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
 
   return makeJITValuePointer<LLVMJITValue>(
       getValueTypeTag(), parent_function_, ans, "sub", false);
+}
+
+JITValuePointer LLVMJITValue::subWithErrorCheck(JITValue& rh) {
+  // only integer type need overflow check
+  auto lhs_llvm_type = getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
+  if (!lhs_llvm_type->isIntegerTy()) {
+    return sub(rh);
+  }
+
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "sub");
+
+  // get compute function
+  auto llvm_module = parent_function_.func_.getParent();
+  auto func = llvm::Intrinsic::getDeclaration(
+      llvm_module, llvm::Intrinsic::ssub_with_overflow, lhs_llvm_type);
+
+  // compute result and overflow
+  auto ret_and_overflow =
+      getFunctionBuilder(parent_function_)
+          .CreateCall(func, std::vector<llvm::Value*>{load(), llvm_rh.load()});
+  auto ret = getFunctionBuilder(parent_function_)
+                 .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{0});
+  auto overflow = getFunctionBuilder(parent_function_)
+                      .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{1});
+  auto overflow_value = makeJITValuePointer<LLVMJITValue>(
+      JITTypeTag::BOOL, parent_function_, overflow, "overflow", false);
+
+  // return error
+  auto ifBuilder = parent_function_.createIfBuilder();
+  ifBuilder->condition([&overflow_value]() { return overflow_value; })
+      ->ifTrue([this]() {
+        getFunctionBuilder(parent_function_)
+            .CreateRet(llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+      })
+      ->build();
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ret, "sub", false);
 }
 
 JITValuePointer LLVMJITValue::add(JITValue& rh) {
@@ -257,6 +371,61 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
       getValueTypeTag(),
       parent_function_,
       ans,
+      JITTypeTag::POINTER == getValueTypeTag() ? "add_ptr" : "add",
+      false,
+      getValueSubTypeTag());
+}
+
+JITValuePointer LLVMJITValue::addWithErrorCheck(JITValue& rh) {
+  // only integer type need overflow check
+  auto lhs_llvm_type = getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
+  if (!lhs_llvm_type->isIntegerTy()) {
+    return add(rh);
+  }
+
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  if (JITTypeTag::POINTER == getValueTypeTag()) {
+    auto rh_type = rh.getValueTypeTag();
+    if (rh_type != JITTypeTag::INT8 && rh_type != JITTypeTag::INT16 &&
+        rh_type != JITTypeTag::INT32 && rh_type != JITTypeTag::INT64) {
+      LOG(FATAL) << "Invalid index type for pointer offset operation. Name="
+                 << rh.getValueName() << ", Type=" << getJITTypeName(rh_type);
+    }
+  } else {
+    checkOprandsType(this->getValueTypeTag(), rh.getValueTypeTag(), "add");
+  }
+
+  // get compute function
+  auto llvm_module = parent_function_.func_.getParent();
+  auto func = llvm::Intrinsic::getDeclaration(
+      llvm_module, llvm::Intrinsic::sadd_with_overflow, lhs_llvm_type);
+
+  // compute result and overflow
+  auto ret_and_overflow =
+      getFunctionBuilder(parent_function_)
+          .CreateCall(func, std::vector<llvm::Value*>{load(), llvm_rh.load()});
+  auto ret = getFunctionBuilder(parent_function_)
+                 .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{0});
+  auto overflow = getFunctionBuilder(parent_function_)
+                      .CreateExtractValue(ret_and_overflow, std::vector<unsigned>{1});
+  auto overflow_value = makeJITValuePointer<LLVMJITValue>(
+      JITTypeTag::BOOL, parent_function_, overflow, "overflow", false);
+
+  // return error
+  auto ifBuilder = parent_function_.createIfBuilder();
+  ifBuilder->condition([&overflow_value]() { return overflow_value; })
+      ->ifTrue([this]() {
+        getFunctionBuilder(parent_function_)
+            .CreateRet(llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
+                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+      })
+      ->build();
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(),
+      parent_function_,
+      ret,
       JITTypeTag::POINTER == getValueTypeTag() ? "add_ptr" : "add",
       false,
       getValueSubTypeTag());
