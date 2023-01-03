@@ -24,26 +24,26 @@
 #include "tests/utils/CiderTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 
-#define GEN_PRIMITIVETYPE_BASE_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME)  \
-  class PrimitiveType##C_TYPE_NAME##Test : public CiderTestBase {                  \
-   public:                                                                         \
-    PrimitiveType##C_TYPE_NAME##Test() {                                           \
-      table_name_ = "test";                                                        \
-      create_ddl_ =                                                                \
-          "CREATE TABLE test(col_a " #TYPE " NOT NULL, col_b " #TYPE ", col_c " #TYPE ");"; \
-      QueryArrowDataGenerator::generateBatchByTypes(                               \
-          schema_,                                                                 \
-          array_,                                                                  \
-          10,                                                                      \
-          {"col_a", "col_b", "col_c"},                                             \
-          {CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                             \
-           CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                             \
-           CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME)},                            \
-          {0, 1, 2},                                                               \
-          GeneratePattern::Random,                                                 \
-          0,                                                                       \
-          0);                                                                      \
-    }                                                                              \
+#define GEN_PRIMITIVETYPE_BASE_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME) \
+  class PrimitiveType##C_TYPE_NAME##Test : public CiderTestBase {                 \
+   public:                                                                        \
+    PrimitiveType##C_TYPE_NAME##Test() {                                          \
+      table_name_ = "test";                                                       \
+      create_ddl_ = "CREATE TABLE test(col_a " #TYPE " NOT NULL, col_b " #TYPE    \
+                    ", col_c " #TYPE ");";                                        \
+      QueryArrowDataGenerator::generateBatchByTypes(                              \
+          schema_,                                                                \
+          array_,                                                                 \
+          10,                                                                     \
+          {"col_a", "col_b", "col_c"},                                            \
+          {CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                            \
+           CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                            \
+           CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME)},                           \
+          {0, 1, 2},                                                              \
+          GeneratePattern::Random,                                                \
+          0,                                                                      \
+          0);                                                                     \
+    }                                                                             \
   };
 
 #define TEST_UNIT(TEST_CLASS, UNIT_NAME)                                              \
@@ -86,7 +86,8 @@ class PrimitiveTypeIntegerMaxTest : public CiderTestBase {
  public:
   PrimitiveTypeIntegerMaxTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
+    create_ddl_ =
+        "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   10,
@@ -105,7 +106,8 @@ class PrimitiveTypeIntegerMINTest : public CiderTestBase {
  public:
   PrimitiveTypeIntegerMINTest() {
     table_name_ = "test";
-    create_ddl_ = "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
+    create_ddl_ =
+        "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   10,
