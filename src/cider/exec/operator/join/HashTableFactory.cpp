@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "cider/CiderException.h"
 
 template <class HashTableType_t, class HashTableImpl_t>
 std::unique_ptr<HashTableType_t>
@@ -38,8 +39,6 @@ cider_hashtable::HashTableFactory<HashTableType_t>::getHashTable(std::string nam
   if (m_HashTableRegistry.find(name) != m_HashTableRegistry.end()) {
     return m_HashTableRegistry[name]->createHashTable();
   }
-
-  std::cout << "No hashtable found for " << name << std::endl;
-
+  CIDER_THROW(CiderRuntimeException, "No hashtable found for " + name);
   return NULL;
 }

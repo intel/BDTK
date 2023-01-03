@@ -39,7 +39,6 @@ Disadvantages:
 #include <limits>
 #include <stdexcept>
 #include <vector>
-#include "cider/CiderException.h"
 
 namespace cider_hashtable {
 

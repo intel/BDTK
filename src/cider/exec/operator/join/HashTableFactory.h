@@ -18,6 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+#include <map>
+#include <memory>
+#include <string>
+
 namespace cider_hashtable {
 template <class HashTableType_t>
 class IHashTableRegistrar {
@@ -43,6 +48,7 @@ class HashTableFactory {
 
   void registerHashTable(IHashTableRegistrar<HashTableType_t>* registrar,
                          std::string name);
+
   std::unique_ptr<HashTableType_t> getHashTable(std::string name);
 
  private:

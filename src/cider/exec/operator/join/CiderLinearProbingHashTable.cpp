@@ -32,14 +32,6 @@ Disadvantages:
  */
 #pragma once
 
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
-#include <limits>
-#include <stdexcept>
-#include <vector>
-#include "cider/CiderException.h"
-
 template <typename Key,
           typename Value,
           typename Hash,
