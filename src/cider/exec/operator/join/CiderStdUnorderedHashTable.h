@@ -18,32 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include <folly/FBVector.h>
 
 // used as test
 template <typename Key, typename Value>
 class StdMapDuplicateKeyWrapper {
  public:
   StdMapDuplicateKeyWrapper(){};
-  folly::fbvector<Value> find(Key key) {
+  std::vector<Value> findAll(Key key) {
     auto iter = umap_.find(key);
     if (iter != umap_.end()) {
       return iter->second;
     }
-    folly::fbvector<Value> empty_res;
+    std::vector<Value> empty_res;
     return empty_res;
   }
 
   void insert(Key&& key, Value&& value) {
     if (umap_.count(key) == 0) {
-      umap_[key] = folly::fbvector<Value>{value};
+      umap_[key] = std::vector<Value>{value};
     } else {
       auto tmp_value = &umap_[key];
       tmp_value->push_back(value);
     }
   }
-  std::unordered_map<Key, folly::fbvector<Value>>& getMap() { return umap_; }
+  std::unordered_map<Key, std::vector<Value>>& getMap() { return umap_; }
 
  private:
-  std::unordered_map<Key, folly::fbvector<Value>> umap_;
+  std::unordered_map<Key, std::vector<Value>> umap_;
 };

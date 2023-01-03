@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <exec/operator/join/HashTableFactory.h>
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
@@ -26,9 +27,13 @@
 #include <random>
 #include <unordered_map>
 #include <vector>
+#include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderF14HashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
+#include "exec/plan/parser/TypeUtils.h"
+#include "tests/utils/ArrowArrayBuilder.h"
+#include "type/data/sqltypes.h"
 #include "util/Logger.h"
 
 // hash function for test collision
@@ -58,6 +63,43 @@ std::mt19937 gen(rd());
 int random(int low, int high) {
   std::uniform_int_distribution<> dist(low, high);
   return dist(gen);
+}
+
+cider_hashtable::HashTableRegistrar<
+    cider_hashtable::BaseHashTable<
+        int,
+        int,
+        MurmurHash,
+        Equal,
+        void,
+        std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>,
+    cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>
+    linear_hashtable("linear_int");
+cider_hashtable::HashTableRegistrar<
+    cider_hashtable::BaseHashTable<
+        int,
+        std::pair<cider::exec::nextgen::context::Batch*, int>,
+        MurmurHash,
+        Equal,
+        void,
+        std::allocator<std::pair<cider_hashtable::table_key<int>,
+                                 std::pair<cider::exec::nextgen::context::Batch*, int>>>>,
+    cider_hashtable::LinearProbeHashTable<
+        int,
+        std::pair<cider::exec::nextgen::context::Batch*, int>,
+        MurmurHash,
+        Equal>>
+    linear_hashtable_batch("linear_batch");
+
+TEST(CiderHashTableTest, factoryTest) {
+  auto ht = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+      int,
+      int,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
+                .getHashTable("linear_int");
 }
 
 TEST(CiderHashTableTest, mergeTest) {
@@ -90,38 +132,68 @@ TEST(CiderHashTableTest, mergeTest) {
 }
 
 // test value type for probe
-TEST(CiderHashTableTest, pairAsValueTest) {
-  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, std::pair<int*, int>, MurmurHash, Equal> hm(
-      16, NULL);
-  StdMapDuplicateKeyWrapper<int, std::pair<int*, int>> dup_map;
-  for (int i = 0; i < 10000; i++) {
-    int key = random(-1000, 1000);
-    int value = random(-1000, 1000);
-    // fake ptr
-    int* fake_ptr = &key;
-    hm.insert(key, std::make_pair(fake_ptr, value));
-    dup_map.insert(std::move(key), std::move(std::make_pair(fake_ptr, value)));
+TEST(CiderHashTableTest, batchAsValueTest) {
+  using namespace cider::exec::nextgen::context;
+  auto input_builder = ArrowArrayBuilder();
+
+  auto&& [schema, array] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "l_bigint", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
+          .addColumn<int32_t>(
+              "l_int", CREATE_SUBSTRAIT_TYPE(I32), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+          .build();
+
+  Batch build_batch(*schema, *array);
+  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using factory
+  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+      int,
+      std::pair<Batch*, int>,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>,
+                               std::pair<Batch*, int>>>>>::Instance()
+                .getHashTable("linear_batch");
+
+  StdMapDuplicateKeyWrapper<int, std::pair<Batch*, int>> dup_map;
+
+  for (int i = 0; i < 10; i++) {
+    int key = *(
+        (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
+    hm->emplace(key, std::make_pair(&build_batch, i));
+    dup_map.insert(std::move(key), std::make_pair(&build_batch, i));
   }
   for (auto key_iter : dup_map.getMap()) {
-    auto dup_res_vec = dup_map.find(key_iter.first);
-    auto hm_res_vec = hm.find(key_iter.first);
+    auto dup_res_vec = dup_map.findAll(key_iter.first);
+    auto hm_res_vec = hm->findAll(key_iter.first);
+    // this is the same logic in codegen
+    auto hm_res_vec_ptr =
+        std::make_shared<std::vector<std::pair<Batch*, int>>>(hm_res_vec);
+    auto hm_res_vec_value = *hm_res_vec_ptr;
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
-    std::sort(hm_res_vec.begin(), hm_res_vec.end());
-    EXPECT_TRUE(dup_res_vec == hm_res_vec);
+    std::sort(hm_res_vec_value.begin(), hm_res_vec_value.end());
+    EXPECT_TRUE(dup_res_vec == hm_res_vec_value);
   }
 }
 
 TEST(CiderHashTableTest, keyCollisionTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, int, Hash, Equal> hm(16, NULL);
+  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+      int,
+      int,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
+                .getHashTable("linear_int");
   StdMapDuplicateKeyWrapper<int, int> udup_map;
-  hm.insert(1, 1);
-  hm.insert(1, 2);
-  hm.insert(15, 1515);
-  hm.insert(8, 88);
-  hm.insert(1, 5);
-  hm.insert(1, 6);
+  hm->emplace(1, 1);
+  hm->emplace(1, 2);
+  hm->emplace(15, 1515);
+  hm->emplace(8, 88);
+  hm->emplace(1, 5);
+  hm->emplace(1, 6);
   udup_map.insert(1, 1);
   udup_map.insert(1, 2);
   udup_map.insert(15, 1515);
@@ -130,8 +202,8 @@ TEST(CiderHashTableTest, keyCollisionTest) {
   udup_map.insert(1, 6);
 
   for (auto key_iter : udup_map.getMap()) {
-    auto dup_res_vec = udup_map.find(key_iter.first);
-    auto hm_res_vec = hm.find(key_iter.first);
+    auto dup_res_vec = udup_map.findAll(key_iter.first);
+    auto hm_res_vec = hm->findAll(key_iter.first);
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
     std::sort(hm_res_vec.begin(), hm_res_vec.end());
     EXPECT_TRUE(dup_res_vec == hm_res_vec);
@@ -140,17 +212,24 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 
 TEST(CiderHashTableTest, randomInsertAndfindTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm(16, NULL);
+  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+      int,
+      int,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
+                .getHashTable("linear_int");
   StdMapDuplicateKeyWrapper<int, int> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
     int value = random(-1000, 1000);
-    hm.insert(key, value);
+    hm->emplace(key, value);
     dup_map.insert(std::move(key), std::move(value));
   }
   for (auto key_iter : dup_map.getMap()) {
-    auto dup_res_vec = dup_map.find(key_iter.first);
-    auto hm_res_vec = hm.find(key_iter.first);
+    auto dup_res_vec = dup_map.findAll(key_iter.first);
+    auto hm_res_vec = hm->findAll(key_iter.first);
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
     std::sort(hm_res_vec.begin(), hm_res_vec.end());
     EXPECT_TRUE(dup_res_vec == hm_res_vec);
@@ -159,15 +238,22 @@ TEST(CiderHashTableTest, randomInsertAndfindTest) {
 
 TEST(CiderHashTableTest, LPHashMapTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm(1024, NULL);
+  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+      int,
+      int,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
+                .getHashTable("linear_int");
   for (int i = 0; i < 10000; i++) {
     int key = random(-100000, 10000);
     int value = random(-10000, 10000);
-    hm.insert(key, value);
+    hm->emplace(key, value);
   }
   for (int i = 0; i < 1000000; i++) {
     int key = random(-10000, 10000);
-    auto hm_res_vec = hm.find(key);
+    auto hm_res_vec = hm->findAll(key);
   }
 }
 
@@ -180,7 +266,7 @@ TEST(CiderHashTableTest, dupMapTest) {
   }
   for (int i = 0; i < 1000000; i++) {
     int key = random(-10000, 10000);
-    auto dup_res_vec = dup_map.find(key);
+    auto dup_res_vec = dup_map.findAll(key);
   }
 }
 
@@ -193,7 +279,7 @@ TEST(CiderHashTableTest, f14MapTest) {
   }
   for (int i = 0; i < 1000000; i++) {
     int key = random(-10000, 10000);
-    auto f14_res_vec = f14_map.find(key);
+    auto f14_res_vec = f14_map.findAll(key);
   }
 }
 

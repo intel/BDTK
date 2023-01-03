@@ -19,33 +19,27 @@
  * under the License.
  */
 
-#include <folly/FBVector.h>
-#include <folly/container/F14Map.h>
+template <class HashTableType_t, class HashTableImpl_t>
+std::unique_ptr<HashTableType_t>
+cider_hashtable::HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHashTable() {
+  return std::make_unique<HashTableImpl_t>();
+}
 
-// used as test
-template <typename Key, typename Value>
-class F14MapDuplicateKeyWrapper {
- public:
-  F14MapDuplicateKeyWrapper(){};
-  folly::fbvector<Value> findAll(Key key) {
-    auto iter = f14_map_.find(key);
-    if (iter != f14_map_.end()) {
-      return iter->second;
-    }
-    folly::fbvector<Value> empty_res;
-    return empty_res;
+template <class HashTableType_t>
+void cider_hashtable::HashTableFactory<HashTableType_t>::registerHashTable(
+    IHashTableRegistrar<HashTableType_t>* registrar,
+    std::string name) {
+  m_HashTableRegistry[name] = registrar;
+}
+
+template <class HashTableType_t>
+std::unique_ptr<HashTableType_t>
+cider_hashtable::HashTableFactory<HashTableType_t>::getHashTable(std::string name) {
+  if (m_HashTableRegistry.find(name) != m_HashTableRegistry.end()) {
+    return m_HashTableRegistry[name]->createHashTable();
   }
 
-  void insert(Key&& key, Value&& value) {
-    if (f14_map_.count(key) == 0) {
-      f14_map_[key] = folly::fbvector<Value>{value};
-    } else {
-      auto tmp_value = &f14_map_[key];
-      tmp_value->push_back(value);
-    }
-  }
-  folly::F14FastMap<Key, folly::fbvector<Value>>& getMap() { return f14_map_; }
+  std::cout << "No hashtable found for " << name << std::endl;
 
- private:
-  folly::F14FastMap<Key, folly::fbvector<Value>> f14_map_;
-};
+  return NULL;
+}
