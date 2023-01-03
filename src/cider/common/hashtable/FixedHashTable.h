@@ -147,7 +147,7 @@ class FixedHashTable : private boost::noncopyable,
   Cell* buf;  /// A piece of memory for all elements.
 
   void alloc() {
-    buf = reinterpret_cast<Cell*>(Allocator::allocate(8 * NUM_CELLS * sizeof(Cell)));
+    buf = reinterpret_cast<Cell*>(Allocator::allocate(NUM_CELLS * sizeof(Cell)));
   }
 
   void free() {
