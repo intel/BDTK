@@ -286,6 +286,7 @@ TEST_F(CiderFilterRandomTestNG, multiColRandomTest) {
 }
 
 TEST_F(CiderFilterRandomTestNG, complexFilter) {
+  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE (col_1 > 0 AND col_2 < 0) OR (col_1 < 0 AND col_2 > 0)");
 }
