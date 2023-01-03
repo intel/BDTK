@@ -25,7 +25,6 @@
 #include <memory>
 #include "cider/processor/BatchProcessorContext.h"
 #include "cider/processor/JoinHashTableBuilder.h"
-#include "exec/module/batch/ArrowABI.h"
 
 namespace cider::exec::processor {
 

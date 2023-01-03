@@ -392,6 +392,37 @@ TEST_F(JITLibTests, BasicIFControlFlowWithElseTest) {
   EXPECT_EQ(func_ptr(123, true), 124);
 }
 
+TEST_F(JITLibTests, BasicIFControlFlowWithRetTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addParameter(JITTypeTag::BOOL, "condition")
+          .addReturn(JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunctionPointer function) {
+            auto if_builder = function->createIfBuilder();
+            if_builder
+                ->condition([&]() {
+                  auto condition = function->getArgument(0);
+                  return condition;
+                })
+                ->ifTrue([&]() {
+                  function->createReturn(function->createLiteral(JITTypeTag::INT32, 1));
+                })
+                ->ifFalse([&]() {
+                  function->createReturn(function->createLiteral(JITTypeTag::INT32, 2));
+                })
+                ->build();
+          })
+          .build();
+  module.finish();
+
+  auto func_ptr = func->getFunctionPointer<int32_t, bool>();
+  EXPECT_EQ(func_ptr(true), 1);
+  EXPECT_EQ(func_ptr(false), 2);
+}
+
 TEST_F(JITLibTests, NestedIFControlFlowTest) {
   LLVMJITModule module("TestModule");
   JITFunctionPointer func = JITFunctionBuilder()

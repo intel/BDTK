@@ -18,22 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef EXEC_NEXTGEN_NEXTGEN_H
-#define EXEC_NEXTGEN_NEXTGEN_H
+#pragma once
 
-#include "exec/nextgen/context/RuntimeContext.h"
-#include "exec/nextgen/parsers/Parser.h"
-#include "exec/nextgen/transformer/Transformer.h"
+#include <gflags/gflags.h>
 
-namespace cider::exec::nextgen {
-
-using QueryFunc = int32_t (*)(int8_t*, int8_t*);
-
-std::unique_ptr<context::CodegenContext> compile(
-    const RelAlgExecutionUnit& eu,
-    const jitlib::CompilationOptions& co = jitlib::CompilationOptions{},
-    const context::CodegenOptions& codegen_options = context::CodegenOptions{});
-
-}  // namespace cider::exec::nextgen
-
-#endif  // EXEC_NEXTGEN_NEXTGEN_H
+DECLARE_bool(enable_batch_processor);

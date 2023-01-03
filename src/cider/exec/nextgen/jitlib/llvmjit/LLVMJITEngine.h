@@ -26,15 +26,9 @@
 namespace cider::jitlib {
 class LLVMJITModule;
 
-enum class LLVMJITOptimizeLevel {
-  DEBUG,
-  RELEASE
-  // TBD other optimizeLevel to be added
-};
-
 // compilation config info
 struct CompilationOptions {
-  LLVMJITOptimizeLevel optimize_level = LLVMJITOptimizeLevel::RELEASE;
+  bool optimize_ir = true;
   bool aggressive_jit_compile = true;
   bool dump_ir = false;
   bool enable_avx2 = true;

@@ -20,9 +20,7 @@
  */
 
 #include "exec/processor/DefaultBatchProcessor.h"
-
 #include <memory>
-
 #include "cider/CiderException.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/processor/StatefulProcessor.h"

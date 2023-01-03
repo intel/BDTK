@@ -74,7 +74,9 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
 
     const auto optype = get_optype();
     if (IS_ARITHMETIC(optype)) {
-      return codegenFixedSizeColArithFun(null, lhs_val.getValue(), rhs_val.getValue());
+      bool needs_error_check = context.getCodegenOptions().needs_error_check;
+      return codegenFixedSizeColArithFun(
+          null, lhs_val.getValue(), rhs_val.getValue(), needs_error_check);
     } else if (IS_COMPARISON(optype)) {
       return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
     } else if (IS_LOGIC(optype)) {
@@ -87,21 +89,39 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
 
 JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValuePointer& null,
                                                    JITValue& lhs,
-                                                   JITValue& rhs) {
+                                                   JITValue& rhs,
+                                                   bool needs_error_check) {
   // TODO: Null Process
-  switch (get_optype()) {
-    case kMINUS:
-      return set_expr_value(null, lhs - rhs);
-    case kPLUS:
-      return set_expr_value(null, lhs + rhs);
-    case kMULTIPLY:
-      return set_expr_value(null, lhs * rhs);
-    case kDIVIDE:
-      return set_expr_value(null, lhs / rhs);
-    case kMODULO:
-      return set_expr_value(null, lhs % rhs);
-    default:
-      UNREACHABLE();
+  if (needs_error_check) {
+    switch (get_optype()) {
+      case kMINUS:
+        return set_expr_value(null, lhs.subWithErrorCheck(rhs));
+      case kPLUS:
+        return set_expr_value(null, lhs.addWithErrorCheck(rhs));
+      case kMULTIPLY:
+        return set_expr_value(null, lhs.mulWithErrorCheck(rhs));
+      case kDIVIDE:
+        return set_expr_value(null, lhs.divWithErrorCheck(rhs));
+      case kMODULO:
+        return set_expr_value(null, lhs.modWithErrorCheck(rhs));
+      default:
+        UNREACHABLE();
+    }
+  } else {
+    switch (get_optype()) {
+      case kMINUS:
+        return set_expr_value(null, lhs - rhs);
+      case kPLUS:
+        return set_expr_value(null, lhs + rhs);
+      case kMULTIPLY:
+        return set_expr_value(null, lhs * rhs);
+      case kDIVIDE:
+        return set_expr_value(null, lhs / rhs);
+      case kMODULO:
+        return set_expr_value(null, lhs % rhs);
+      default:
+        UNREACHABLE();
+    }
   }
 
   return expr_var_;
