@@ -46,103 +46,103 @@ TEST_F(CiderNewAggTest, aggInt8Test) {
 
   // value of HT: SUM(int8)-int64 + COUNT(int8)-int32 + MIN(int8)-int8 +
   // MAX(int8)-int8
-  uint32_t init_value_len = 112;
+  uint32_t init_value_len = 14;
   int8_t* init_value_ptr = allocator->allocate(init_value_len);
   reinterpret_cast<int64_t*>(init_value_ptr)[0] = (int64_t)0;
-  reinterpret_cast<int32_t*>(init_value_ptr + 64)[0] = (int32_t)0;
-  reinterpret_cast<int8_t*>(init_value_ptr + 96)[0] = std::numeric_limits<int8_t>::max();
-  reinterpret_cast<int8_t*>(init_value_ptr + 104)[0] = std::numeric_limits<int8_t>::min();
+  reinterpret_cast<int32_t*>(init_value_ptr + 8)[0] = (int32_t)0;
+  reinterpret_cast<int8_t*>(init_value_ptr + 12)[0] = std::numeric_limits<int8_t>::max();
+  reinterpret_cast<int8_t*>(init_value_ptr + 13)[0] = std::numeric_limits<int8_t>::min();
 
   Cider::AggregationHashTable aggregator(key_types, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
-  int8_t* key1_ptr = allocator->allocate(32);
+  int8_t* key1_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key1_ptr)[0] = (bool)false;
-  reinterpret_cast<int8_t*>(key1_ptr + 16)[0] = (int8_t)1;
+  reinterpret_cast<uint8_t*>(key1_ptr + 2)[0] = (uint8_t)1;
   // Use get api and return value address
   int8_t* value1_ptr = aggregator.get(key1_ptr);
 
   // Check init value
   CHECK_EQ(reinterpret_cast<int64_t*>(value1_ptr)[0], 0);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value1_ptr + 64)[0], 0);
-  CHECK_EQ(reinterpret_cast<int8_t*>(value1_ptr + 96)[0],
+  CHECK_EQ(reinterpret_cast<int32_t*>(value1_ptr + 8)[0], 0);
+  CHECK_EQ(reinterpret_cast<int8_t*>(value1_ptr + 12)[0],
            std::numeric_limits<int8_t>::max());
-  CHECK_EQ(reinterpret_cast<int8_t*>(value1_ptr + 104)[0],
+  CHECK_EQ(reinterpret_cast<int8_t*>(value1_ptr + 13)[0],
            std::numeric_limits<int8_t>::min());
 
   // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
   reinterpret_cast<int64_t*>(value1_ptr)[0] += 10;
-  reinterpret_cast<int32_t*>(value1_ptr + 64)[0] += 1;
-  reinterpret_cast<int8_t*>(value1_ptr + 96)[0] =
-      std::min(reinterpret_cast<int8_t*>(value1_ptr + 96)[0], (int8_t)10);
-  reinterpret_cast<int8_t*>(value1_ptr + 104)[0] =
-      std::max(reinterpret_cast<int8_t*>(value1_ptr + 104)[0], (int8_t)10);
+  reinterpret_cast<int32_t*>(value1_ptr + 8)[0] += 1;
+  reinterpret_cast<int8_t*>(value1_ptr + 12)[0] =
+      std::min(reinterpret_cast<int8_t*>(value1_ptr + 12)[0], (int8_t)10);
+  reinterpret_cast<int8_t*>(value1_ptr + 13)[0] =
+      std::max(reinterpret_cast<int8_t*>(value1_ptr + 13)[0], (int8_t)10);
 
   // Row1:
-  int8_t* key2_ptr = allocator->allocate(32);
+  int8_t* key2_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key2_ptr)[0] = (bool)false;
-  reinterpret_cast<int8_t*>(key2_ptr + 16)[0] = (int8_t)2;
+  reinterpret_cast<uint8_t*>(key2_ptr + 2)[0] = (uint8_t)2;
   // Use get api and return value address
   int8_t* value2_ptr = aggregator.get(key2_ptr);
 
   // Check init value
   CHECK_EQ(reinterpret_cast<int64_t*>(value2_ptr)[0], 0);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value2_ptr + 64)[0], 0);
-  CHECK_EQ(reinterpret_cast<int8_t*>(value2_ptr + 96)[0],
+  CHECK_EQ(reinterpret_cast<int32_t*>(value2_ptr + 8)[0], 0);
+  CHECK_EQ(reinterpret_cast<int8_t*>(value2_ptr + 12)[0],
            std::numeric_limits<int8_t>::max());
-  CHECK_EQ(reinterpret_cast<int8_t*>(value2_ptr + 104)[0],
+  CHECK_EQ(reinterpret_cast<int8_t*>(value2_ptr + 13)[0],
            std::numeric_limits<int8_t>::min());
 
   // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
   reinterpret_cast<int64_t*>(value2_ptr)[0] += 20;
-  reinterpret_cast<int32_t*>(value2_ptr + 64)[0] += 1;
-  reinterpret_cast<int8_t*>(value2_ptr + 96)[0] =
-      std::min(reinterpret_cast<int8_t*>(value2_ptr + 96)[0], (int8_t)20);
-  reinterpret_cast<int8_t*>(value2_ptr + 104)[0] =
-      std::max(reinterpret_cast<int8_t*>(value2_ptr + 104)[0], (int8_t)20);
+  reinterpret_cast<int32_t*>(value2_ptr + 8)[0] += 1;
+  reinterpret_cast<int8_t*>(value2_ptr + 12)[0] =
+      std::min(reinterpret_cast<int8_t*>(value2_ptr + 12)[0], (int8_t)20);
+  reinterpret_cast<int8_t*>(value2_ptr + 13)[0] =
+      std::max(reinterpret_cast<int8_t*>(value2_ptr + 13)[0], (int8_t)20);
 
   // Row2:
-  int8_t* key3_ptr = allocator->allocate(32);
+  int8_t* key3_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key3_ptr)[0] = (bool)false;
-  reinterpret_cast<int16_t*>(key3_ptr + 16)[0] = (int8_t)1;
+  reinterpret_cast<uint16_t*>(key3_ptr + 2)[0] = (uint8_t)1;
   // Use get api and return value address
   int8_t* value3_ptr = aggregator.get(key3_ptr);
 
   // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
   reinterpret_cast<int64_t*>(value3_ptr)[0] += 30;
-  reinterpret_cast<int32_t*>(value3_ptr + 64)[0] += 1;
-  reinterpret_cast<int8_t*>(value3_ptr + 96)[0] =
-      std::min(reinterpret_cast<int8_t*>(value3_ptr + 96)[0], (int8_t)30);
-  reinterpret_cast<int8_t*>(value3_ptr + 104)[0] =
-      std::max(reinterpret_cast<int8_t*>(value3_ptr + 104)[0], (int8_t)30);
+  reinterpret_cast<int32_t*>(value3_ptr + 8)[0] += 1;
+  reinterpret_cast<int8_t*>(value3_ptr + 12)[0] =
+      std::min(reinterpret_cast<int8_t*>(value3_ptr + 12)[0], (int8_t)30);
+  reinterpret_cast<int8_t*>(value3_ptr + 13)[0] =
+      std::max(reinterpret_cast<int8_t*>(value3_ptr + 13)[0], (int8_t)30);
 
   // Final check
   // Check key = 1
-  int8_t* key1_check_ptr = allocator->allocate(32);
+  int8_t* key1_check_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key1_check_ptr)[0] = (bool)false;
-  reinterpret_cast<int8_t*>(key1_check_ptr + 16)[0] = (int8_t)1;
+  reinterpret_cast<uint8_t*>(key1_check_ptr + 2)[0] = (uint8_t)1;
   // Use get api and return value address
   int8_t* value1_check_ptr = aggregator.get(key1_check_ptr);
 
   // Check agg result value
   CHECK_EQ(reinterpret_cast<int64_t*>(value1_check_ptr)[0], 40);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value1_check_ptr + 64)[0], 2);
-  CHECK_EQ(reinterpret_cast<int8_t*>(value1_check_ptr + 96)[0], 10);
-  CHECK_EQ(reinterpret_cast<int8_t*>(value1_check_ptr + 104)[0], 30);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value1_check_ptr + 8)[0], 2);
+  CHECK_EQ(reinterpret_cast<int8_t*>(value1_check_ptr + 12)[0], 10);
+  CHECK_EQ(reinterpret_cast<int8_t*>(value1_check_ptr + 13)[0], 30);
 
   // Check key = 2
-  int8_t* key2_check_ptr = allocator->allocate(32);
+  int8_t* key2_check_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key2_check_ptr)[0] = (bool)false;
-  reinterpret_cast<int8_t*>(key2_check_ptr + 16)[0] = (int8_t)2;
+  reinterpret_cast<uint8_t*>(key2_check_ptr + 2)[0] = (uint8_t)2;
   // Use get api and return value address
   int8_t* value2_check_ptr = aggregator.get(key2_check_ptr);
 
   // Check agg result value
   CHECK_EQ(reinterpret_cast<int64_t*>(value2_check_ptr)[0], 20);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value2_check_ptr + 64)[0], 1);
-  CHECK_EQ(reinterpret_cast<int8_t*>(value2_check_ptr + 96)[0], 20);
-  CHECK_EQ(reinterpret_cast<int8_t*>(value2_check_ptr + 104)[0], 20);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value2_check_ptr + 8)[0], 1);
+  CHECK_EQ(reinterpret_cast<int8_t*>(value2_check_ptr + 12)[0], 20);
+  CHECK_EQ(reinterpret_cast<int8_t*>(value2_check_ptr + 13)[0], 20);
 }
 
 TEST_F(CiderNewAggTest, aggInt16Test) {
@@ -159,105 +159,105 @@ TEST_F(CiderNewAggTest, aggInt16Test) {
 
   // value of HT: SUM(int16)-int64 + COUNT(int16)-int32 + MIN(int16)-int16 +
   // MAX(int16)-int16
-  uint32_t init_value_len = 128;
+  uint32_t init_value_len = 16;
   int8_t* init_value_ptr = allocator->allocate(init_value_len);
   reinterpret_cast<int64_t*>(init_value_ptr)[0] = (int64_t)0;
-  reinterpret_cast<int32_t*>(init_value_ptr + 64)[0] = (int32_t)0;
-  reinterpret_cast<int16_t*>(init_value_ptr + 96)[0] =
+  reinterpret_cast<int32_t*>(init_value_ptr + 8)[0] = (int32_t)0;
+  reinterpret_cast<int16_t*>(init_value_ptr + 12)[0] =
       std::numeric_limits<int16_t>::max();
-  reinterpret_cast<int16_t*>(init_value_ptr + 112)[0] =
+  reinterpret_cast<int16_t*>(init_value_ptr + 14)[0] =
       std::numeric_limits<int16_t>::min();
 
   Cider::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
-  int8_t* key1_ptr = allocator->allocate(32);
+  int8_t* key1_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key1_ptr)[0] = (bool)false;
-  reinterpret_cast<int16_t*>(key1_ptr + 16)[0] = (int16_t)1;
+  reinterpret_cast<uint16_t*>(key1_ptr + 2)[0] = (uint16_t)1;
   // Use get api and return value address
   int8_t* value1_ptr = aggregator.get(key1_ptr);
 
   // Check init value
   CHECK_EQ(reinterpret_cast<int64_t*>(value1_ptr)[0], 0);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value1_ptr + 64)[0], 0);
-  CHECK_EQ(reinterpret_cast<int16_t*>(value1_ptr + 96)[0],
+  CHECK_EQ(reinterpret_cast<int32_t*>(value1_ptr + 8)[0], 0);
+  CHECK_EQ(reinterpret_cast<int16_t*>(value1_ptr + 12)[0],
            std::numeric_limits<int16_t>::max());
-  CHECK_EQ(reinterpret_cast<int16_t*>(value1_ptr + 112)[0],
+  CHECK_EQ(reinterpret_cast<int16_t*>(value1_ptr + 14)[0],
            std::numeric_limits<int16_t>::min());
 
   // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
   reinterpret_cast<int64_t*>(value1_ptr)[0] += 10;
-  reinterpret_cast<int32_t*>(value1_ptr + 64)[0] += 1;
-  reinterpret_cast<int16_t*>(value1_ptr + 96)[0] =
-      std::min(reinterpret_cast<int16_t*>(value1_ptr + 96)[0], (int16_t)10);
-  reinterpret_cast<int16_t*>(value1_ptr + 112)[0] =
-      std::max(reinterpret_cast<int16_t*>(value1_ptr + 112)[0], (int16_t)10);
+  reinterpret_cast<int32_t*>(value1_ptr + 8)[0] += 1;
+  reinterpret_cast<int16_t*>(value1_ptr + 12)[0] =
+      std::min(reinterpret_cast<int16_t*>(value1_ptr + 12)[0], (int16_t)10);
+  reinterpret_cast<int16_t*>(value1_ptr + 14)[0] =
+      std::max(reinterpret_cast<int16_t*>(value1_ptr + 14)[0], (int16_t)10);
 
   // Row1:
-  int8_t* key2_ptr = allocator->allocate(32);
+  int8_t* key2_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key2_ptr)[0] = (bool)false;
-  reinterpret_cast<int16_t*>(key2_ptr + 16)[0] = (int16_t)2;
+  reinterpret_cast<uint16_t*>(key2_ptr + 2)[0] = (uint16_t)2;
   // Use get api and return value address
   int8_t* value2_ptr = aggregator.get(key2_ptr);
 
   // Check init value
   CHECK_EQ(reinterpret_cast<int64_t*>(value2_ptr)[0], 0);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value2_ptr + 64)[0], 0);
-  CHECK_EQ(reinterpret_cast<int16_t*>(value2_ptr + 96)[0],
+  CHECK_EQ(reinterpret_cast<int32_t*>(value2_ptr + 8)[0], 0);
+  CHECK_EQ(reinterpret_cast<int16_t*>(value2_ptr + 12)[0],
            std::numeric_limits<int16_t>::max());
-  CHECK_EQ(reinterpret_cast<int16_t*>(value2_ptr + 112)[0],
+  CHECK_EQ(reinterpret_cast<int16_t*>(value2_ptr + 14)[0],
            std::numeric_limits<int16_t>::min());
 
   // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
   reinterpret_cast<int64_t*>(value2_ptr)[0] += 20;
-  reinterpret_cast<int32_t*>(value2_ptr + 64)[0] += 1;
-  reinterpret_cast<int16_t*>(value2_ptr + 96)[0] =
-      std::min(reinterpret_cast<int16_t*>(value2_ptr + 96)[0], (int16_t)20);
-  reinterpret_cast<int16_t*>(value2_ptr + 112)[0] =
-      std::max(reinterpret_cast<int16_t*>(value2_ptr + 112)[0], (int16_t)20);
+  reinterpret_cast<int32_t*>(value2_ptr + 8)[0] += 1;
+  reinterpret_cast<int16_t*>(value2_ptr + 12)[0] =
+      std::min(reinterpret_cast<int16_t*>(value2_ptr + 12)[0], (int16_t)20);
+  reinterpret_cast<int16_t*>(value2_ptr + 14)[0] =
+      std::max(reinterpret_cast<int16_t*>(value2_ptr + 14)[0], (int16_t)20);
 
   // Row2:
-  int8_t* key3_ptr = allocator->allocate(32);
+  int8_t* key3_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key3_ptr)[0] = (bool)false;
-  reinterpret_cast<int16_t*>(key3_ptr + 16)[0] = (int16_t)1;
+  reinterpret_cast<uint16_t*>(key3_ptr + 2)[0] = (uint16_t)1;
   // Use get api and return value address
   int8_t* value3_ptr = aggregator.get(key3_ptr);
 
   // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
   reinterpret_cast<int64_t*>(value3_ptr)[0] += 30;
-  reinterpret_cast<int32_t*>(value3_ptr + 64)[0] += 1;
-  reinterpret_cast<int16_t*>(value3_ptr + 96)[0] =
-      std::min(reinterpret_cast<int16_t*>(value3_ptr + 96)[0], (int16_t)30);
-  reinterpret_cast<int16_t*>(value3_ptr + 112)[0] =
-      std::max(reinterpret_cast<int16_t*>(value3_ptr + 112)[0], (int16_t)30);
+  reinterpret_cast<int32_t*>(value3_ptr + 8)[0] += 1;
+  reinterpret_cast<int16_t*>(value3_ptr + 12)[0] =
+      std::min(reinterpret_cast<int16_t*>(value3_ptr + 12)[0], (int16_t)30);
+  reinterpret_cast<int16_t*>(value3_ptr + 14)[0] =
+      std::max(reinterpret_cast<int16_t*>(value3_ptr + 14)[0], (int16_t)30);
 
   // Final check
   // Check key = 1
-  int8_t* key1_check_ptr = allocator->allocate(32);
+  int8_t* key1_check_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key1_check_ptr)[0] = (bool)false;
-  reinterpret_cast<int16_t*>(key1_check_ptr + 16)[0] = (int16_t)1;
+  reinterpret_cast<uint16_t*>(key1_check_ptr + 2)[0] = (uint16_t)1;
   // Use get api and return value address
   int8_t* value1_check_ptr = aggregator.get(key1_check_ptr);
 
   // Check agg result value
   CHECK_EQ(reinterpret_cast<int64_t*>(value1_check_ptr)[0], 40);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value1_check_ptr + 64)[0], 2);
-  CHECK_EQ(reinterpret_cast<int16_t*>(value1_check_ptr + 96)[0], 10);
-  CHECK_EQ(reinterpret_cast<int16_t*>(value1_check_ptr + 112)[0], 30);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value1_check_ptr + 8)[0], 2);
+  CHECK_EQ(reinterpret_cast<int16_t*>(value1_check_ptr + 12)[0], 10);
+  CHECK_EQ(reinterpret_cast<int16_t*>(value1_check_ptr + 14)[0], 30);
 
   // Check key = 2
-  int8_t* key2_check_ptr = allocator->allocate(32);
+  int8_t* key2_check_ptr = allocator->allocate(4);
   reinterpret_cast<bool*>(key2_check_ptr)[0] = (bool)false;
-  reinterpret_cast<int16_t*>(key2_check_ptr + 16)[0] = (int16_t)2;
+  reinterpret_cast<uint16_t*>(key2_check_ptr + 2)[0] = (uint16_t)2;
   // Use get api and return value address
   int8_t* value2_check_ptr = aggregator.get(key2_check_ptr);
 
   // Check agg result value
   CHECK_EQ(reinterpret_cast<int64_t*>(value2_check_ptr)[0], 20);
-  CHECK_EQ(reinterpret_cast<int32_t*>(value2_check_ptr + 64)[0], 1);
-  CHECK_EQ(reinterpret_cast<int16_t*>(value2_check_ptr + 96)[0], 20);
-  CHECK_EQ(reinterpret_cast<int16_t*>(value2_check_ptr + 112)[0], 20);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value2_check_ptr + 8)[0], 1);
+  CHECK_EQ(reinterpret_cast<int16_t*>(value2_check_ptr + 12)[0], 20);
+  CHECK_EQ(reinterpret_cast<int16_t*>(value2_check_ptr + 14)[0], 20);
 }
 
 int main(int argc, char** argv) {
