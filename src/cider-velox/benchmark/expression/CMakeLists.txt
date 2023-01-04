@@ -17,34 +17,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(SRC_FILE ExprEvalUtils.cpp VeloxToCiderExpr.cpp)
-add_library(eu_mocker ${SRC_FILE})
-target_link_libraries(eu_mocker velox_arrow_bridge)
-if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR OR NOT LIBSUBSTRAITCPP_LIB)
-  add_dependencies(eu_mocker SUBSTRAITCPP)
-endif()
 find_package(gflags COMPONENTS shared)
 find_library(GLOG glog)
 find_package(folly CONFIG REQUIRED)
 
-set(FOLLY_WITH_DEPENDENCIES
-    ${FOLLY_LIBRARIES} ${Boost_LIBRARIES} ${DOUBLE_CONVERSION_LIBRARIES}
-    ${EVENT} ${SNAPPY} ${CMAKE_DL_LIBS})
-set(FOLLY ${FOLLY_LIBRARIES})
 set(FOLLY_BENCHMARK Folly::follybenchmark)
 
 set(EXPRESSION_TEST_LIBS
-    velox_vector_fuzzer
-    eu_mocker
-    cider
-    cider_processor
-    ${FOLLY_BENCHMARK}
+    velox_vector_fuzzer cider cider_processor ${FOLLY_BENCHMARK}
     ${VELOX_BENCHMARKS_DEPENDENCIES}
     ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
 set(TEST_ARGS "")
 
 add_executable(CiderSimpleArithmetic CiderSimpleArithmetic.cpp)
 target_link_libraries(CiderSimpleArithmetic ${EXPRESSION_TEST_LIBS})
-
-add_executable(CiderComparisonConjunct CiderComparisonConjunct.cpp)
-target_link_libraries(CiderComparisonConjunct ${EXPRESSION_TEST_LIBS})

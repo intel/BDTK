@@ -24,8 +24,6 @@
 #include <gflags/gflags.h>
 
 #include "Allocator.h"
-// #include "ExprEvalUtils.h"
-#include "VeloxToCiderExpr.h"
 #include "cider/processor/BatchProcessor.h"
 #include "exec/module/batch/ArrowABI.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
@@ -35,6 +33,7 @@
 #include "velox/functions/prestosql/Arithmetic.h"
 #include "velox/functions/prestosql/CheckedArithmetic.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
+#include "velox/vector/arrow/Bridge.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
 
 // #include "velox/functions/Udf.h"
@@ -42,15 +41,16 @@
 
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
-DEFINE_int64(batch_size, 1000, "batch size for one loop");
-DEFINE_int64(loop_count, 1000000, "loop count for benchmark");
+DEFINE_int64(batch_size, 1'000, "batch size for one loop");
+DEFINE_int64(loop_count, 10'000'000, "loop count for benchmark");
 
+using namespace cider::exec::processor;
 using namespace facebook::velox;
+using namespace facebook::velox::memory;
 using namespace facebook::velox::exec;
 using namespace facebook::velox::test;
 using namespace facebook::velox::plugin;
 using namespace facebook::velox::functions;
-using namespace cider::exec::processor;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::substrait;
 
@@ -58,6 +58,19 @@ static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
 namespace {
+
+std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
+                                                        MemoryPool* pool) {
+  for (size_t i = 0; i < vec->childrenSize(); i++) {
+    vec->childAt(i)->mutableRawNulls();
+  }
+  ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
+  exportToArrow(vec, *inputArrowArray, pool);
+  ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
+  exportToArrow(vec, *inputArrowSchema);
+
+  return {inputArrowArray, inputArrowSchema};
+}
 
 class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
