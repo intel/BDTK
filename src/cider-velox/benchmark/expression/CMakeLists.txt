@@ -33,8 +33,14 @@ set(FOLLY_WITH_DEPENDENCIES
 set(FOLLY ${FOLLY_LIBRARIES})
 set(FOLLY_BENCHMARK Folly::follybenchmark)
 
-set(EXPRESSION_TEST_LIBS velox_vector_fuzzer eu_mocker cider cider_processor 
-                         ${FOLLY_BENCHMARK} ${VELOX_BENCHMARKS_DEPENDENCIES} ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
+set(EXPRESSION_TEST_LIBS
+    velox_vector_fuzzer
+    eu_mocker
+    cider
+    cider_processor
+    ${FOLLY_BENCHMARK}
+    ${VELOX_BENCHMARKS_DEPENDENCIES}
+    ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
 set(TEST_ARGS "")
 
 add_executable(CiderSimpleArithmetic CiderSimpleArithmetic.cpp)
