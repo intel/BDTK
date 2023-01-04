@@ -36,7 +36,7 @@ benchmark_file=`echo $file_name| cut -d "." -f 1,3`
 result_csv=$benchmark_file".csv"
 
 # csv header
-echo "duckdb_runtime(ms),bdtk_prepare_time(ms),bdtk_run_time(ms),bdtk_total_time(ms)">>$result_csv
+echo "SQL,duckdb_runtime(ms),bdtk_prepare_time(ms),bdtk_run_time(ms),bdtk_total_time(ms)">>$result_csv
 
 # process each benchmark case
 for ((idx=1; idx<=cnt; idx++))
@@ -67,8 +67,7 @@ bdtk_run_time=`sed -n "${cur_line_number},${next_line_number}p" $file_name|grep 
 bdtk_total_time=`sed -n "${cur_line_number},${next_line_number}p" $file_name|grep "Timer end * Nextgen" | rev | cut -d " " -f 2 | rev`  
 
 # to csv
-echo "${bench_sql}" >> ${result_csv}
-echo "${duck_time},${bdtk_prepare_time},${bdtk_run_time},${bdtk_total_time}" >> ${result_csv}
+echo "\"${bench_sql}\",${duck_time},${bdtk_prepare_time},${bdtk_run_time},${bdtk_total_time}" >> ${result_csv}
 done
 
 done

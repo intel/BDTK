@@ -59,7 +59,6 @@ std::string getFileContent(const std::string& file_name) {
 
 ::substrait::Plan CiderNextgenQueryRunner::genSubstraitPlan(
     const std::string& file_or_sql) {
-  // INJECT_TIMER(GenSubstraitPlan);
   std::string json;
   if (isJsonFile(file_or_sql)) {
     json = getFileContent(file_or_sql);
