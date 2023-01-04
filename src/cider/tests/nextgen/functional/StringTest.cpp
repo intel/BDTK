@@ -160,21 +160,20 @@ class CiderStringNullableTestNextGen : public CiderTestBase {
   }
 };
 
-// TODO: (YBRua) enable inStringTest after nextgen supports IN
 BASIC_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, BasicStringTest)
 LIKE_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, LikeStringTest)
 ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, EscapeStringTest)
-// IN_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, InStringTest)
+IN_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, InStringTest)
 
 BASIC_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, BasicRandomStringTest)
 LIKE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, LikeRandomStringTest)
 ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, EscapeRandomStringTest)
-// IN_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, InRandomStringTest)
+IN_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, InRandomStringTest)
 
 BASIC_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, BasicStringTest)
 LIKE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, LikeStringTest)
 ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, EscapeStringTest)
-// IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, InStringTest)
+IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, InStringTest)
 
 // duplicate string
 

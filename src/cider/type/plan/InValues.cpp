@@ -209,8 +209,16 @@ CiderSetPtr insertValuesToSet(
         }
         break;
       }
+      case kVARCHAR:
+      case kCHAR:
+      case kTEXT: {
+        if (in_val_const->get_type_info().get_notnull()) {
+          set->insert(*in_val_const->get_constval().stringval);
+        }
+        break;
+      }
       default:
-        UNREACHABLE();
+        UNIMPLEMENTED();
     }
   }
   return std::move(set);
@@ -230,8 +238,12 @@ std::string get_fn_name(const SQLTypeInfo& type_info) {
       return "cider_set_contains_float_val";
     case kDOUBLE:
       return "cider_set_contains_double_val";
+    case kVARCHAR:
+    case kCHAR:
+    case kTEXT:
+      return "cider_set_contains_string_val";
     default:
-      UNREACHABLE();
+      UNIMPLEMENTED();
   }
 }
 
@@ -244,6 +256,9 @@ JITExprValue& InValues::codegen(CodegenContext& context) {
   }
   const auto& expr_ti = get_type_info();
   CHECK(expr_ti.is_boolean());
+  if (in_arg->get_type_info().is_string()) {
+    return codegenForString(context);
+  }
   FixSizeJITExprValue in_arg_val(in_arg->codegen(context));
   auto null_value = in_arg_val.getNull();
   // For values count >= 3, use CiderSet for evaluation
@@ -276,6 +291,53 @@ JITExprValue& InValues::codegen(CodegenContext& context) {
       if (in_val_const->get_type_info().get_notnull()) {
         FixSizeJITExprValue in_val_const_jit(in_val_const->codegen(context));
         val.replace(val || (in_arg_val.getValue() == in_val_const_jit.getValue()));
+      }
+    }
+    return set_expr_value(null_value, val);
+  }
+  UNREACHABLE();
+}
+
+JITExprValue& InValues::codegenForString(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
+  auto in_arg = const_cast<Analyzer::Expr*>(get_arg());
+  VarSizeJITExprValue in_arg_val(in_arg->codegen(context));
+  auto null_value = in_arg_val.getNull();
+  // For values count >= 3, use CiderSet for evaluation
+  // Otherwise, translate it into OR exprs
+  if (get_value_list().size() >= 3) {
+    CiderSetPtr cider_set = std::make_unique<CiderStringSet>();
+    auto filled_set = insertValuesToSet(std::move(cider_set), get_value_list());
+    auto set_ptr =
+        context.registerCiderSet("in_set", get_type_info(), std::move(filled_set));
+    auto emit_desc = JITFunctionEmitDescriptor{
+        .ret_type = JITTypeTag::BOOL,
+        .params_vector = {
+            set_ptr.get(), in_arg_val.getValue().get(), in_arg_val.getLength().get()}};
+    // call corresponding contains function
+    auto value =
+        func.emitRuntimeFunctionCall(get_fn_name(in_arg->get_type_info()), emit_desc);
+    return set_expr_value(null_value, value);
+  } else {
+    JITValuePointer val = func.createVariable(JITTypeTag::BOOL, "null_val", false);
+    for (auto in_val : get_value_list()) {
+      std::cout << in_val->toString() << std::endl;
+      auto in_val_const = dynamic_cast<Analyzer::Constant*>(
+          const_cast<Analyzer::Expr*>(extract_cast_arg(in_val.get())));
+      if (!in_val_const) {
+        CIDER_THROW(CiderCompileException, "InValues only support constant value list.");
+      }
+      if (in_val_const->get_type_info().get_notnull()) {
+        VarSizeJITExprValue in_val_const_jit(in_val_const->codegen(context));
+        auto cmp_res = func.emitRuntimeFunctionCall(
+            "string_eq",
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::BOOL,
+                .params_vector = {in_arg_val.getValue().get(),
+                                  in_arg_val.getLength().get(),
+                                  in_val_const_jit.getValue().get(),
+                                  in_val_const_jit.getLength().get()}});
+        val.replace(val || cmp_res);
       }
     }
     return set_expr_value(null_value, val);

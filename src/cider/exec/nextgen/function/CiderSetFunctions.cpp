@@ -44,3 +44,12 @@ DEF_CIDER_INT64_SET_CONTAINS(int64_t)
 
 DEF_CIDER_DOUBLE_SET_CONTAINS(float)
 DEF_CIDER_DOUBLE_SET_CONTAINS(double)
+
+extern "C" ALWAYS_INLINE bool cider_set_contains_string_val(int8_t* set_ptr,
+                                                            const char* str,
+                                                            int len) {
+  auto cider_set =
+      reinterpret_cast<cider::exec::nextgen::context::CiderStringSet*>(set_ptr);
+  std::string val_str(str, len);
+  return cider_set->contains(val_str);
+}
