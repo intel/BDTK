@@ -51,14 +51,14 @@ struct MurmurHash {
 };
 
 // Different data types should have different equal functions like float and double may
-// compare only partial precision Different data types equal functions would be in a
+// compare only partial precision Different data types. Equal functions would be in a
 // sepearete lib. This is INT equal function.
 struct IntEqual {
   bool operator()(int lhs, int rhs) { return lhs == rhs; }
 };
 
 // this part should be done in future hashtable selector's code with strategy, right now
-// is hardcode BaseHashTable is the base class and LinearProbeHashTable is the impl in
+// is hardcode. BaseHashTable is the base class and LinearProbeHashTable is the impl in
 // this case. key(int) and value(int) data type should be decided by input data type. Hash
 // function(MurmurHash) and equal function(IntEqual) would have default in selector for
 // each data type. Grower and allocator would be default in impl but currently need to
@@ -77,7 +77,7 @@ cider_hashtable::HashTableRegistrar<
 int main(int argc, char** argv) {
   // consturct hashtable from factory
   // BaseHashTable is base hashtable interface
-  // all template arguments for basehashtable would be decided during selector's IntEqual
+  // all template arguments for basehashtable would be decided during selector
   auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
       int,
       int,
