@@ -165,6 +165,10 @@ class BinOper : public Expr {
                                      VarSizeJITExprValue& lhs,
                                      VarSizeJITExprValue& rhs);
 
+  JITExprValue& codegenVarcharDistinctFrom(JITFunction& func,
+                                           VarSizeJITExprValue& lhs,
+                                           VarSizeJITExprValue& rhs);
+
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.
   SQLQualifier qualifier;  // qualifier kANY, kALL or kONE.  Only relevant with
