@@ -24,6 +24,15 @@
 #include <string>
 
 namespace cider_hashtable {
+
+// to be added
+enum hashtableName {
+  LINEAR_PROBING_INT,
+  LINEAR_PROBING_BATCH,
+  CHAINED_INT,
+  CHAINED_BATCH
+};
+
 template <class HashTableType_t>
 class IHashTableRegistrar {
  public:
@@ -47,9 +56,9 @@ class HashTableFactory {
   }
 
   void registerHashTable(IHashTableRegistrar<HashTableType_t>* registrar,
-                         std::string name);
+                         hashtableName name);
 
-  std::unique_ptr<HashTableType_t> getHashTable(std::string name);
+  std::unique_ptr<HashTableType_t> getHashTable(hashtableName name);
 
  private:
   HashTableFactory() {}
@@ -58,13 +67,13 @@ class HashTableFactory {
   HashTableFactory(const HashTableFactory&);
   const HashTableFactory& operator=(const HashTableFactory&);
 
-  std::map<std::string, IHashTableRegistrar<HashTableType_t>*> m_HashTableRegistry;
+  std::map<hashtableName, IHashTableRegistrar<HashTableType_t>*> m_HashTableRegistry;
 };
 
 template <class HashTableType_t, class HashTableImpl_t>
 class HashTableRegistrar : public IHashTableRegistrar<HashTableType_t> {
  public:
-  explicit HashTableRegistrar(std::string name) {
+  explicit HashTableRegistrar(hashtableName name) {
     HashTableFactory<HashTableType_t>::Instance().registerHashTable(this, name);
   }
 

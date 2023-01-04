@@ -29,13 +29,13 @@ cider_hashtable::HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHas
 template <class HashTableType_t>
 void cider_hashtable::HashTableFactory<HashTableType_t>::registerHashTable(
     IHashTableRegistrar<HashTableType_t>* registrar,
-    std::string name) {
+    hashtableName name) {
   m_HashTableRegistry[name] = registrar;
 }
 
 template <class HashTableType_t>
 std::unique_ptr<HashTableType_t>
-cider_hashtable::HashTableFactory<HashTableType_t>::getHashTable(std::string name) {
+cider_hashtable::HashTableFactory<HashTableType_t>::getHashTable(hashtableName name) {
   if (m_HashTableRegistry.find(name) != m_HashTableRegistry.end()) {
     return m_HashTableRegistry[name]->createHashTable();
   }

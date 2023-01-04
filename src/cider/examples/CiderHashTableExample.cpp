@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <string>
 #include <vector>
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "util/Logger.h"
@@ -66,38 +67,64 @@ struct IntEqual {
 cider_hashtable::HashTableRegistrar<
     cider_hashtable::BaseHashTable<
         int,
-        int,
+        std::string,
         MurmurHash,
         IntEqual,
         void,
-        std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>,
-    cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, IntEqual>>
-    linear_hashtable("linear_int");
+        std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>,
+    cider_hashtable::LinearProbeHashTable<int, std::string, MurmurHash, IntEqual>>
+    linear_hashtable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
 
 int main(int argc, char** argv) {
-  // consturct hashtable from factory
-  // BaseHashTable is base hashtable interface
-  // all template arguments for basehashtable would be decided during selector
+  // query: SELECT t_right.col_2 FROM t_left JOIN t_right ON t_left.col_1 = t_right.col_1;
+
+  // input data
+  // left table has 200 rows; we use it as probe table
+  const int left_table_row_num = 200;
+  std::vector<int> table_left_col_1(left_table_row_num);
+  for (int i = 0; i < left_table_row_num; i++) {
+    table_left_col_1[i] = random(-50, 50);
+  }
+  // right table has 100 rows and two columns; we use it as build table
+  const int right_table_row_num = 100;
+  std::vector<int> table_right_col_1(right_table_row_num);
+  std::vector<std::string> table_right_col_2(right_table_row_num);
+  for (int i = 0; i < right_table_row_num; i++) {
+    int tmp = random(-25, 25);
+    table_right_col_1[i] = tmp;
+    table_right_col_2[i] = std::to_string(tmp);
+  }
+
+  // consturct hashtable from factory.
+  // BaseHashTable is base hashtable interface.
+  // All template arguments for basehashtable would be decided during selector.
+  // int is the key's data type, and since the project is string the value type is string.
   auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
       int,
-      int,
+      std::string,
       MurmurHash,
       IntEqual,
       void,
-      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
-                .getHashTable("linear_int");
+      std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>>::
+                Instance()
+                    .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
 
-  // build hashtable
-  for (int i = 0; i < 100; i++) {
-    int key = random(-25, 25);
-    int value = random(-1000, 1000);
-    hm->emplace(key, value);
+  // build hashtable based on right table, key is col_1, value is col_2
+  // For multi project cols in join, the value type can be vector<col1,col2...> or
+  // tuple<col1, col2..> for row databases. While for column stored databases, the value
+  // can be column's pointer and offset instead of true value. See Uts named
+  // batchAsValueTest in CiderHashTableTest.cpp
+  for (int i = 0; i < right_table_row_num; i++) {
+    hm->emplace(table_right_col_1[i], table_right_col_2[i]);
   }
-
-  // probe hashtable
-  for (int i = 0; i < 100; i++) {
-    int probe_key = random(-100, 100);
+  // do probe
+  for (int i = 0; i < left_table_row_num; i++) {
+    auto probe_key = table_left_col_1[i];
     auto hm_res_vec = hm->findAll(probe_key);
+    // matched one ore more key in build table.
+    // if the value is part of projected columns, it needs to combine with other columns.
+    // if the value is pointer and offset, the true result need further extraction.
+    // in this case, the value is just the project column, so just print it.
     if (hm_res_vec.size() > 0) {
       std::cout << "key:" << probe_key << " value:";
       for (auto value : hm_res_vec) {

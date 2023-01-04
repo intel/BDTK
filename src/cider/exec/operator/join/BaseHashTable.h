@@ -19,6 +19,7 @@
  * under the License.
  */
 namespace cider_hashtable {
+
 template <typename Key,
           typename Value,
           typename Hash,
