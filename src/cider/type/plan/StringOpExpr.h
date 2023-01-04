@@ -23,6 +23,7 @@
 #ifndef TYPE_PLAN_STRING_OP_EXPR_H
 #define TYPE_PLAN_STRING_OP_EXPR_H
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/ColumnExpr.h"
@@ -381,6 +382,106 @@ class CharLengthStringOper : public StringOper {
   }
 
   JITExprValue& codegen(CodegenContext& context) override;
+};
+
+class ConcatStringOper : public StringOper {
+ public:
+  ConcatStringOper(const std::shared_ptr<Analyzer::Expr>& former,
+                   const std::shared_ptr<Analyzer::Expr>& latter)
+      : StringOper(getConcatOpKind({former, latter}),
+                   rearrangeOperands({former, latter}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(getConcatOpKind(operands),
+                   rearrangeOperands(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"lhs", "rhs"};
+    return names;
+  }
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+ private:
+  // TODO: Deprecated. The following 3 methods are only used in template-based codegen
+  // the templated interface supports at most one variable column input in stringop
+  // these methods are used to ensure that the variable input is always the first arg
+  // they are not required in nextgen because nextgen supports two variable inputs
+
+  // To be removed after migration to nextgen.
+  bool isLiteralOrCastLiteral(const Analyzer::Expr* operand);
+
+  // To be removed after migration to nextgen.
+  SqlStringOpKind getConcatOpKind(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
+
+  // To be removed after migration to nextgen.
+  std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
+};
+
+class TrimStringOper : public StringOper {
+ public:
+  TrimStringOper(const SqlStringOpKind& op_kind,
+                 const std::shared_ptr<Analyzer::Expr>& input,
+                 const std::shared_ptr<Analyzer::Expr>& characters)
+      : StringOper(checkOpKindValidity(op_kind),
+                   {input, characters},
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  TrimStringOper(const SqlStringOpKind& op_kind,
+                 const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(checkOpKindValidity(op_kind),
+                   operands,
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 2UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    // args[0]: the string to remove characters from
+    // args[1]: the set of characters to remove
+    static std::vector<std::string> names{"input", "characters"};
+    return names;
+  }
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+ private:
+  SqlStringOpKind checkOpKindValidity(const SqlStringOpKind& op_kind) {
+    CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
+          op_kind == SqlStringOpKind::RTRIM);
+    return op_kind;
+  }
 };
 }  // namespace Analyzer
 

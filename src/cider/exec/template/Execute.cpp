@@ -23,8 +23,6 @@
 #include "exec/template/Execute.h"
 
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <chrono>
 #include <ctime>
 #include <future>
@@ -170,7 +168,7 @@ void Executor::initialize_extension_module_sources() {
       extension_module_sources.end()) {
     auto root_path = cider::get_root_abs_path();
     auto template_path = root_path + "/function/RuntimeFunctions.bc";
-    CHECK(boost::filesystem::exists(template_path));
+    CHECK(std::filesystem::exists(template_path));
     extension_module_sources[Executor::ExtModuleKinds::template_module] = template_path;
   }
 }

@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <cerrno>
 
-#include <boost/filesystem.hpp>
 #include <ctime>
 #include <exception>
 #include <string>
@@ -181,14 +180,14 @@ CiderAggSpillFile::CiderAggSpillFile(const std::string& fname, size_t partition_
     , partition_size_(partition_size)
     , partition_num_(1)
     , file_size_(partition_size) {
-  using namespace boost::filesystem;
-  if (!exists(getBasePath()) || !is_directory(getBasePath())) {
-    if (!create_directory(getBasePath())) {
+  if (!std::filesystem::exists(getBasePath()) ||
+      !std::filesystem::is_directory(getBasePath())) {
+    if (!std::filesystem::create_directory(getBasePath())) {
       LOG(ERROR) << "Create spill file dictionary: " << getBasePath() << " failed.";
     }
   }
 
-  auto file_path = canonical(getBasePath()) / fname_;
+  auto file_path = std::filesystem::canonical(getBasePath()) / fname_;
   fd_ = open(file_path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
   if (fd_ < 0) {
@@ -202,8 +201,7 @@ CiderAggSpillFile::CiderAggSpillFile(const std::string& fname, size_t partition_
 }
 
 CiderAggSpillFile::~CiderAggSpillFile() {
-  using namespace boost::filesystem;
-  auto file_path = canonical(getBasePath()) / fname_;
+  auto file_path = std::filesystem::canonical(getBasePath()) / fname_;
 
   if (close(fd_) < 0) {
     LOG(ERROR) << "Close spill file: " << file_path.native()

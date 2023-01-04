@@ -1026,51 +1026,6 @@ class RegexpSubstrStringOper : public StringOper {
   }
 };
 
-class TrimStringOper : public StringOper {
- public:
-  TrimStringOper(const SqlStringOpKind& op_kind,
-                 const std::shared_ptr<Analyzer::Expr>& input,
-                 const std::shared_ptr<Analyzer::Expr>& characters)
-      : StringOper(checkOpKindValidity(op_kind),
-                   {input, characters},
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  TrimStringOper(const SqlStringOpKind& op_kind,
-                 const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
-      : StringOper(checkOpKindValidity(op_kind),
-                   operands,
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
-      : StringOper(string_oper) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  size_t getMinArgs() const override { return 2UL; }
-
-  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
-    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
-  }
-
-  const std::vector<std::string>& getArgNames() const override {
-    // args[0]: the string to remove characters from
-    // args[1]: the set of characters to remove
-    static std::vector<std::string> names{"input", "characters"};
-    return names;
-  }
-
- private:
-  SqlStringOpKind checkOpKindValidity(const SqlStringOpKind& op_kind) {
-    CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
-          op_kind == SqlStringOpKind::RTRIM);
-    return op_kind;
-  }
-};
-
 class SplitPartStringOper : public StringOper {
  public:
   /**
@@ -1128,48 +1083,6 @@ class SplitPartStringOper : public StringOper {
   }
 };
 
-class ConcatStringOper : public StringOper {
- public:
-  ConcatStringOper(const std::shared_ptr<Analyzer::Expr>& former,
-                   const std::shared_ptr<Analyzer::Expr>& latter)
-      : StringOper(getConcatOpKind({former, latter}),
-                   rearrangeOperands({former, latter}),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
-      : StringOper(getConcatOpKind(operands),
-                   rearrangeOperands(operands),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
-      : StringOper(string_oper) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  size_t getMinArgs() const override { return 2UL; }
-
-  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
-    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
-  }
-
-  const std::vector<std::string>& getArgNames() const override {
-    static std::vector<std::string> names{"operand_0", "operand_1"};
-    return names;
-  }
-
- private:
-  bool isLiteralOrCastLiteral(const Analyzer::Expr* operand);
-
-  SqlStringOpKind getConcatOpKind(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
-
-  std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
-};
 
 class RegexpReplaceStringOper : public StringOper {
  public:

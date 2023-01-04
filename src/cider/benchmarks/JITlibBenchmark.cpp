@@ -88,6 +88,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
         false,                                                                           \
         CompilationOptions{.aggressive_jit_compile = true,                               \
                            .dump_ir = true,                                              \
+                           .enable_vectorize = false,                                    \
                            .enable_avx2 = false,                                         \
                            .enable_avx512 = false});                                     \
     auto func =                                                                          \
@@ -242,6 +243,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
         false,                                                                           \
         CompilationOptions{.aggressive_jit_compile = true,                               \
                            .dump_ir = true,                                              \
+                           .enable_vectorize = true,                                     \
                            .enable_avx2 = false,                                         \
                            .enable_avx512 = false});                                     \
     auto func =                                                                          \

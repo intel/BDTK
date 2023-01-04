@@ -22,12 +22,10 @@
 #include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <boost/filesystem.hpp>
+#include <fstream>
 #include <string>
 #include "exec/plan/validator/CiderPlanValidator.h"
 #include "util/Logger.h"
-
-namespace bf = boost::filesystem;
 
 std::string getDataFilesPath() {
   const std::string absolute_path = __FILE__;

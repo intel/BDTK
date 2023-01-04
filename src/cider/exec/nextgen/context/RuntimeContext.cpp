@@ -125,4 +125,13 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
   return batch;
 }
 
+void RuntimeContext::setTrimStringOperCharMaps(
+    const CodegenContext::TrimCharMapsPtr& maps) {
+  trim_char_maps_ = maps;
+}
+
+const int8_t* RuntimeContext::getTrimStringOperCharMapById(int id) const {
+  return trim_char_maps_->at(id).data();
+}
+
 }  // namespace cider::exec::nextgen::context

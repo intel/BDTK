@@ -19,6 +19,8 @@
  * under the License.
  */
 
+#include "exec/module/batch/ArrowABI.h"
+#include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/context/StringHeap.h"
 
 ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
@@ -127,9 +129,9 @@ const uint8_t ascii_char_lower_map[] = {
     224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
     240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255};
 
-extern "C" RUNTIME_EXPORT int64_t cider_ascii_lower(int8_t* string_heap_ptr,
-                                                    const char* str,
-                                                    int str_len) {
+extern "C" ALWAYS_INLINE int64_t cider_ascii_lower(int8_t* string_heap_ptr,
+                                                   const char* str,
+                                                   int str_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(str_len);
   char* sout = s.getDataWriteable();
@@ -139,9 +141,9 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_lower(int8_t* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
-                                                    const char* str,
-                                                    int str_len) {
+extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
+                                                   const char* str,
+                                                   int str_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(str_len);
   char* sout = s.getDataWriteable();
@@ -153,4 +155,98 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
 
 extern "C" void test_to_string(int value) {
   std::printf("test_to_string: %s\n", std::to_string(value).c_str());
+}
+
+extern "C" ALWAYS_INLINE int64_t cider_concat(char* string_heap_ptr,
+                                              const char* lhs,
+                                              int lhs_len,
+                                              const char* rhs,
+                                              int rhs_len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->emptyString(lhs_len + rhs_len);
+
+  char* buffer_ptr = s.getDataWriteable();
+  memcpy(buffer_ptr, lhs, lhs_len);
+  memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
+
+  return pack_string_t(s);
+}
+
+// to be deprecated.
+// rconcat is only used for backward compatibility with template codegen, which only
+// supports cases where the first arg is a variable.
+// for concat ops like "constant || var", it will be converted to "var || constant" and
+// then concatenated in the REVERSED order (RCONCAT).
+// However, nextgen allows both arguments to be variables, so this function can be removed
+// after full migration to nextgen
+extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
+                                               const char* lhs,
+                                               int lhs_len,
+                                               const char* rhs,
+                                               int rhs_len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->emptyString(lhs_len + rhs_len);
+
+  char* buffer_ptr = s.getDataWriteable();
+  memcpy(buffer_ptr, rhs, rhs_len);
+  memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
+
+  return pack_string_t(s);
+}
+
+extern "C" ALWAYS_INLINE int8_t* get_data_buffer_with_realloc_on_demand(
+    const int8_t* input_desc_ptr,
+    const int32_t current_bytes) {
+  const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
+
+  // assumes arrow_array is an array for var-size binary (with 3 buffers)
+  size_t capacity = holder->getBufferSizeAt(2);
+  if (capacity == 0) {
+    // initialize buffer with a capacity of 4096 bytes
+    holder->allocBuffer(2, 4096);
+  } else if (current_bytes >= 0.9 * capacity) {
+    // double capacity if current bytes take up 90% of capacity
+    // assumes we would have enough space for next input after at most one resize op
+    holder->allocBuffer(2, capacity * 2);
+  }
+
+  return holder->getBufferAs<int8_t>(2);
+}
+
+extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
+                                            const char* str_ptr,
+                                            int str_len,
+                                            const int8_t* trim_char_map,
+                                            bool ltrim,
+                                            bool rtrim) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+
+  int start_idx = 0;
+  if (ltrim) {
+    while (start_idx < str_len &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[start_idx]]) {
+      start_idx++;
+    }
+  }
+
+  int end_idx = str_len - 1;
+  if (rtrim) {
+    while (end_idx >= start_idx &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[end_idx]]) {
+      end_idx--;
+    }
+  }
+
+  int len = 0;
+  if (start_idx > end_idx) {
+    // all chars are trimmed away, return an empty string
+    len = 0;
+  } else {
+    len = end_idx - start_idx + 1;
+  }
+
+  string_t s = ptr->addString(str_ptr + start_idx, len);
+  return pack_string_t(s);
 }

@@ -46,4 +46,4 @@ class PoolAllocator : public CiderAllocator {
 };
 
 }  // namespace facebook::velox::plugin
-#endif
+#endif  // CIDER_VELOX_ALLOCATOR_H
