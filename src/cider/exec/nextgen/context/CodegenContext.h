@@ -135,7 +135,6 @@ class CodegenContext {
       bool output_raw_buffer = true);
 
   jitlib::JITValuePointer registerHashTable(const std::string& name = "");
-  
   jitlib::JITValuePointer registerCiderSet(const std::string& name,
                                            const SQLTypeInfo& type,
                                            CiderSetPtr c_set);

@@ -42,11 +42,10 @@ class Buffer {
   void allocateBuffer(int32_t size) {
     if (capacity_) {
       buffer_ = allocator_->reallocate(buffer_, capacity_, size);
-      capacity_ = size;
     } else {
       buffer_ = allocator_->allocate(size);
-      capacity_ = size;
     }
+    capacity_ = size;
   }
 
   int8_t* getBuffer() { return buffer_; }

@@ -152,6 +152,7 @@ void traverse(ExprPtr expr,
               std::vector<JITValuePointer>& nulls,
               context::CodegenContext& context) {
   if (Analyzer::ColumnVar* col_var = dynamic_cast<Analyzer::ColumnVar*>(expr.get())) {
+    // FIXME (qiuyang):: 100 is not always used as right table id.
     if (col_var->get_table_id() == 100) {
       utils::FixSizeJITExprValue jit_value(expr->codegen(context));
       keys.emplace_back(jit_value.getValue());

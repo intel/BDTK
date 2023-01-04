@@ -80,10 +80,10 @@ extern "C" ALWAYS_INLINE void nextgen_cider_agg_count_nullable(int64_t* agg_val_
 }
 
 // HashJoin functions For Nextgen
-extern "C" NEVER_INLINE int64_t look_up_value_by_key(int8_t* hashtable,
-                                                     int8_t* keys,
-                                                     int8_t* nulls,
-                                                     int8_t* buffer) {
+extern "C" ALWAYS_INLINE int64_t look_up_value_by_key(int8_t* hashtable,
+                                                      int8_t* keys,
+                                                      int8_t* nulls,
+                                                      int8_t* buffer) {
   auto LP_hashtable = reinterpret_cast<cider_hashtable::LinearProbeHashTable<
       int,
       std::pair<cider::exec::nextgen::context::Batch*, int64_t>,
@@ -92,10 +92,10 @@ extern "C" NEVER_INLINE int64_t look_up_value_by_key(int8_t* hashtable,
   auto context_buffer = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(buffer);
   // TODO(qiuyang) : now hashtable only support one key
   // hash join probe
-  auto bit_vector = reinterpret_cast<uint8_t*>(nulls);
-  auto key_offset = reinterpret_cast<int64_t*>(keys);
-  if (!CiderBitUtils::isBitSetAt(bit_vector, 0)) {
-    auto join_res = LP_hashtable->find(*key_offset);
+  auto join_key_is_null = reinterpret_cast<bool*>(nulls);
+  auto join_key_val = reinterpret_cast<int64_t*>(keys);
+  if (!*join_key_is_null) {
+    auto join_res = LP_hashtable->findAll(*join_key_val);
     context_buffer->allocateBuffer(join_res.size() * 16);
     auto join_res_buffer =
         reinterpret_cast<std::pair<cider::exec::nextgen::context::Batch*, int64_t>*>(
