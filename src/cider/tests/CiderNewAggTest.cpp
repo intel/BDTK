@@ -53,7 +53,7 @@ TEST_F(CiderNewAggTest, aggInt8Test) {
   reinterpret_cast<int8_t*>(init_value_ptr + 12)[0] = std::numeric_limits<int8_t>::max();
   reinterpret_cast<int8_t*>(init_value_ptr + 13)[0] = std::numeric_limits<int8_t>::min();
 
-  Cider::AggregationHashTable aggregator(key_types, init_value_ptr, init_value_len);
+  cider::AggregationHashTable aggregator(key_types, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
@@ -168,7 +168,7 @@ TEST_F(CiderNewAggTest, aggInt16Test) {
   reinterpret_cast<int16_t*>(init_value_ptr + 14)[0] =
       std::numeric_limits<int16_t>::min();
 
-  Cider::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
+  cider::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1

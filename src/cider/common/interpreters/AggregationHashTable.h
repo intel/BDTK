@@ -35,45 +35,48 @@
 
 #include "cider/CiderException.h"
 
-namespace Cider {
+namespace cider {
 
 using AggregateDataPtr = int8_t*;
 
-using AggregatedDataWithUInt8Key =
-    FixedImplicitZeroHashMapWithCalculatedSize<uint8_t, AggregateDataPtr>;
-using AggregatedDataWithUInt16Key = FixedImplicitZeroHashMap<uint16_t, AggregateDataPtr>;
-
+// It's a wrap for null key, "base" should be one of the HashTables.
 template <typename Base>
-struct AggregationDataWithNullKey : public Base {
+struct AggregatedHashTableWithNullKey : public Base {
   using Base::Base;
 
-  bool& hasNullKeyData() { return has_null_key_data; }
-  AggregateDataPtr& getNullKeyData() { return null_key_data; }
-  bool hasNullKeyData() const { return has_null_key_data; }
-  const AggregateDataPtr& getNullKeyData() const { return null_key_data; }
-  size_t size() const { return Base::size() + (has_null_key_data ? 1 : 0); }
-  bool empty() const { return Base::empty() && !has_null_key_data; }
+  bool& hasNullKeyData() { return has_null_key_data_; }
+  AggregateDataPtr& getNullKeyData() { return null_key_data_; }
+  bool hasNullKeyData() const { return has_null_key_data_; }
+  const AggregateDataPtr& getNullKeyData() const { return null_key_data_; }
+  size_t size() const { return Base::size() + (has_null_key_data_ ? 1 : 0); }
+  bool empty() const { return Base::empty() && !has_null_key_data_; }
   void clear() {
     Base::clear();
-    has_null_key_data = false;
+    has_null_key_data_ = false;
   }
   void clearAndShrink() {
     Base::clearAndShrink();
-    has_null_key_data = false;
+    has_null_key_data_ = false;
   }
 
  private:
-  bool has_null_key_data = false;
-  AggregateDataPtr null_key_data = nullptr;
+  bool has_null_key_data_ = false;
+  AggregateDataPtr null_key_data_ = nullptr;
 };
 
-template <typename... Types>
-using HashTableWithNullKey = AggregationDataWithNullKey<HashMapTable<Types...>>;
+using AggregatedHashTableWithUInt8Key =
+    FixedImplicitZeroHashMapWithCalculatedSize<uint8_t, AggregateDataPtr>;
+using AggregatedHashTableWithUInt16Key =
+    FixedImplicitZeroHashMap<uint16_t, AggregateDataPtr>;
 
-using AggregatedDataWithNullableUInt8Key =
-    AggregationDataWithNullKey<AggregatedDataWithUInt8Key>;
+template <typename... Types>
+using HashTableWithNullKey = AggregatedHashTableWithNullKey<HashMapTable<Types...>>;
+
+using AggregatedHashTableWithNullableUInt8Key =
+    AggregatedHashTableWithNullKey<AggregatedHashTableWithUInt8Key>;
+
 using AggregatedDataWithNullableUInt16Key =
-    AggregationDataWithNullKey<AggregatedDataWithUInt16Key>;
+    AggregatedHashTableWithNullKey<AggregatedHashTableWithUInt16Key>;
 
 class AggregationHashTable;
 HashTableAllocator allocator;
@@ -223,8 +226,8 @@ class AggregationHashTable final {
   uint32_t init_len_;
   // std::unordered_set<AggKey> key_set_;
   AggregationMethod::Type agg_method_;
-  AggregatedDataWithUInt8Key agg_ht_uint8_;
-  AggregatedDataWithUInt16Key agg_ht_uint16_;
+  AggregatedHashTableWithUInt8Key agg_ht_uint8_;
+  AggregatedHashTableWithUInt16Key agg_ht_uint16_;
 
   // Select the aggregation method based on the number and types of keys.
   AggregationMethod::Type chooseAggregationMethod() {
@@ -242,4 +245,4 @@ class AggregationHashTable final {
     return AggregationMethod::Type::EMPTY;
   }
 };
-}  // namespace Cider
+}  // namespace cider
