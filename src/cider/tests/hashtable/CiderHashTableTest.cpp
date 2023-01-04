@@ -179,21 +179,14 @@ TEST(CiderHashTableTest, batchAsValueTest) {
 
 TEST(CiderHashTableTest, keyCollisionTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
-      int,
-      int,
-      MurmurHash,
-      Equal,
-      void,
-      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
-                .getHashTable("linear_int");
+  cider_hashtable::LinearProbeHashTable<int, int, Hash, Equal> hm(16, NULL);
   StdMapDuplicateKeyWrapper<int, int> udup_map;
-  hm->emplace(1, 1);
-  hm->emplace(1, 2);
-  hm->emplace(15, 1515);
-  hm->emplace(8, 88);
-  hm->emplace(1, 5);
-  hm->emplace(1, 6);
+  hm.emplace(1, 1);
+  hm.emplace(1, 2);
+  hm.emplace(15, 1515);
+  hm.emplace(8, 88);
+  hm.emplace(1, 5);
+  hm.emplace(1, 6);
   udup_map.insert(1, 1);
   udup_map.insert(1, 2);
   udup_map.insert(15, 1515);
@@ -203,7 +196,7 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 
   for (auto key_iter : udup_map.getMap()) {
     auto dup_res_vec = udup_map.findAll(key_iter.first);
-    auto hm_res_vec = hm->findAll(key_iter.first);
+    auto hm_res_vec = hm.findAll(key_iter.first);
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
     std::sort(hm_res_vec.begin(), hm_res_vec.end());
     EXPECT_TRUE(dup_res_vec == hm_res_vec);
