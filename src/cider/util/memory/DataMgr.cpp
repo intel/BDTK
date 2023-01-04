@@ -26,7 +26,6 @@
 
 #include "DataMgr.h"
 #include <algorithm>
-#include <boost/filesystem.hpp>
 #include <limits>
 #include "util/memory/BufferMgr/CpuBufferMgr/CpuBufferMgr.h"
 #include "util/memory/BufferMgr/CpuBufferMgr/TieredCpuBufferMgr.h"
