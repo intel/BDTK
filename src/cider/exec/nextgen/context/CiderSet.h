@@ -31,71 +31,53 @@ class CiderSet {
  public:
   CiderSet() {}
   virtual ~CiderSet() = default;
-  virtual void insert(int8_t key_val) = 0;
-  virtual void insert(int16_t key_val) = 0;
-  virtual void insert(int32_t key_val) = 0;
-  virtual void insert(int64_t key_val) = 0;
-  virtual void insert(float key_val) = 0;
-  virtual void insert(double key_val) = 0;
-  virtual void insert(std::string key_val) = 0;
 
-  virtual bool contains(int8_t key_val) = 0;
-  virtual bool contains(int16_t key_val) = 0;
-  virtual bool contains(int32_t key_val) = 0;
-  virtual bool contains(int64_t key_val) = 0;
-  virtual bool contains(float key_val) = 0;
-  virtual bool contains(double key_val) = 0;
-  virtual bool contains(std::string key_val) = 0;
+#define DEF_CIDER_SET_INSERT(type)                                                 \
+  virtual void insert(type key_val) {                                              \
+    std::string name(typeid(*this).name());                                        \
+    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert " + #type); \
+  }
+  DEF_CIDER_SET_INSERT(int8_t)
+  DEF_CIDER_SET_INSERT(int16_t)
+  DEF_CIDER_SET_INSERT(int32_t)
+  DEF_CIDER_SET_INSERT(int64_t)
+  DEF_CIDER_SET_INSERT(float)
+  DEF_CIDER_SET_INSERT(double)
+  DEF_CIDER_SET_INSERT(std::string)
+
+#define DEF_CIDER_SET_CONTAINS(type)                                               \
+  virtual bool contains(type key_val) {                                            \
+    std::string name(typeid(*this).name());                                        \
+    CIDER_THROW(CiderRuntimeException, name + " doesn't support search " + #type); \
+  }
+  DEF_CIDER_SET_CONTAINS(int8_t)
+  DEF_CIDER_SET_CONTAINS(int16_t)
+  DEF_CIDER_SET_CONTAINS(int32_t)
+  DEF_CIDER_SET_CONTAINS(int64_t)
+  DEF_CIDER_SET_CONTAINS(float)
+  DEF_CIDER_SET_CONTAINS(double)
+  DEF_CIDER_SET_CONTAINS(std::string)
 };
 
 class CiderInt64Set : public CiderSet {
  public:
   CiderInt64Set() : CiderSet() {}
 
-  void insert(int8_t key_val) { set_.insert((int64_t)key_val); }
+  void insert(int8_t key_val) override { set_.insert((int64_t)key_val); }
 
-  void insert(int16_t key_val) { set_.insert((int64_t)key_val); }
+  void insert(int16_t key_val) override { set_.insert((int64_t)key_val); }
 
-  void insert(int32_t key_val) { set_.insert((int64_t)key_val); }
+  void insert(int32_t key_val) override { set_.insert((int64_t)key_val); }
 
-  void insert(int64_t key_val) { set_.insert((int64_t)key_val); }
+  void insert(int64_t key_val) override { set_.insert((int64_t)key_val); }
 
-  void insert(float key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderInt64Set doesn't support insert float value.");
-  }
+  bool contains(int8_t key_val) override { return set_.contains((int64_t)key_val); }
 
-  void insert(double key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderInt64Set doesn't support insert double value.");
-  }
+  bool contains(int16_t key_val) override { return set_.contains((int64_t)key_val); }
 
-  void insert(std::string key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderInt64Set doesn't support insert string value.");
-  }
+  bool contains(int32_t key_val) override { return set_.contains((int64_t)key_val); }
 
-  bool contains(int8_t key_val) { return set_.contains((int64_t)key_val); }
-
-  bool contains(int16_t key_val) { return set_.contains((int64_t)key_val); }
-
-  bool contains(int32_t key_val) { return set_.contains((int64_t)key_val); }
-
-  bool contains(int64_t key_val) { return set_.contains(key_val); }
-
-  bool contains(float key_val) {
-    CIDER_THROW(CiderRuntimeException, "CiderInt64Set doesn't support find float value.");
-  }
-
-  bool contains(double key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderInt64Set doesn't support find double value.");
-  }
-
-  bool contains(std::string key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderInt64Set doesn't support find string value.");
-  }
+  bool contains(int64_t key_val) override { return set_.contains(key_val); }
 
  private:
   robin_hood::unordered_set<int64_t> set_;
@@ -105,66 +87,28 @@ class CiderDoubleSet : public CiderSet {
  public:
   CiderDoubleSet() : CiderSet() {}
 
-  void insert(int8_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support insert int8_t value.");
-  }
+  void insert(float key_val) override { set_.insert((double)key_val); }
 
-  void insert(int16_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support insert int16_t value.");
-  }
+  void insert(double key_val) override { set_.insert(key_val); }
 
-  void insert(int32_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support insert int32_t value.");
-  }
+  bool contains(float key_val) override { return set_.contains((double)key_val); }
 
-  void insert(int64_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support insert int64_t value.");
-  }
-
-  void insert(float key_val) { set_.insert((double)key_val); }
-
-  void insert(double key_val) { set_.insert(key_val); }
-
-  void insert(std::string key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support insert string value.");
-  }
-
-  bool contains(int8_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support find int8_t value.");
-  }
-
-  bool contains(int16_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support find int16_t value.");
-  }
-
-  bool contains(int32_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support find int32_t value.");
-  }
-
-  bool contains(int64_t key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support find int64_t value.");
-  }
-
-  bool contains(float key_val) { return set_.contains((double)key_val); }
-
-  bool contains(double key_val) { return set_.contains(key_val); }
-
-  bool contains(std::string key_val) {
-    CIDER_THROW(CiderRuntimeException,
-                "CiderDoubleSet doesn't support find string value.");
-  }
+  bool contains(double key_val) override { return set_.contains(key_val); }
 
  private:
   robin_hood::unordered_set<double> set_;
+};
+
+class CiderStringSet : public CiderSet {
+ public:
+  CiderStringSet() : CiderSet() {}
+
+  void insert(std::string key_val) override { set_.insert(key_val); }
+
+  bool contains(std::string key_val) override { return set_.contains(key_val); }
+
+ private:
+  robin_hood::unordered_set<std::string> set_;
 };
 
 using CiderSetPtr = std::unique_ptr<CiderSet>;
