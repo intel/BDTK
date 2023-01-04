@@ -824,47 +824,6 @@ class CaseExpr : public Expr {
 };
 
 /*
- * @type ExtractExpr
- * @brief the EXTRACT expression
- */
-class ExtractExpr : public Expr {
- public:
-  ExtractExpr(const SQLTypeInfo& ti,
-              bool has_agg,
-              ExtractField f,
-              std::shared_ptr<Analyzer::Expr> e)
-      : Expr(ti, has_agg), field_(f), from_expr_(e) {}
-  ExtractField get_field() const { return field_; }
-  const Expr* get_from_expr() const { return from_expr_.get(); }
-  const std::shared_ptr<Analyzer::Expr> get_own_from_expr() const { return from_expr_; }
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-  void check_group_by(
-      const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const override;
-  void group_predicates(std::list<const Expr*>& scan_predicates,
-                        std::list<const Expr*>& join_predicates,
-                        std::list<const Expr*>& const_predicates) const override;
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override;
-  void collect_column_var(
-      std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
-          colvar_set,
-      bool include_agg) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  bool operator==(const Expr& rhs) const override;
-  std::string toString() const override;
-  void find_expr(bool (*f)(const Expr*),
-                 std::list<const Expr*>& expr_list) const override;
-
- private:
-  ExtractField field_;
-  std::shared_ptr<Analyzer::Expr> from_expr_;
-};
-
-/*
  * @type DatediffExpr
  * @brief the DATEDIFF expression
  */
