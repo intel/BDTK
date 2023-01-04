@@ -106,16 +106,17 @@ set(CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES
     cider_plan_transformer
     cider_plan_parser)
 
-add_executable(tpch_benchmark_velox_plugin TpchBenchmarkCompare.cpp)
+# add_executable(tpch_benchmark_velox_plugin TpchBenchmarkCompare.cpp)
 
-target_link_libraries(
-  tpch_benchmark_velox_plugin ${VELOX_BENCHMARKS_DEPENDENCIES}
-  ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
+# target_link_libraries( tpch_benchmark_velox_plugin
+# ${VELOX_BENCHMARKS_DEPENDENCIES} ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
 
-add_executable(CiderOperatorBenchmark CiderOperatorBenchmark.cpp)
-target_link_libraries(CiderOperatorBenchmark ${VELOX_BENCHMARKS_DEPENDENCIES}
-                      ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
+# add_executable(CiderOperatorBenchmark CiderOperatorBenchmark.cpp)
+# target_link_libraries(CiderOperatorBenchmark ${VELOX_BENCHMARKS_DEPENDENCIES}
+# ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
 
-add_executable(CiderDataTypesBenchmark CiderDataTypesBenchmark.cpp)
-target_link_libraries(CiderDataTypesBenchmark ${VELOX_BENCHMARKS_DEPENDENCIES}
-                      ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
+# add_executable(CiderDataTypesBenchmark CiderDataTypesBenchmark.cpp)
+# target_link_libraries(CiderDataTypesBenchmark ${VELOX_BENCHMARKS_DEPENDENCIES}
+# ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
+
+add_subdirectory(expression)

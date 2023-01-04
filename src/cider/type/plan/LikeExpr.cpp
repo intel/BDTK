@@ -25,7 +25,8 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
-JITExprValue& LikeExpr::codegen(JITFunction& func) {
+JITExprValue& LikeExpr::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   if (auto expr_val = get_expr_value()) {
     return expr_val;
   }
@@ -41,8 +42,8 @@ JITExprValue& LikeExpr::codegen(JITFunction& func) {
   CHECK(arg->get_type_info().is_string());
   CHECK(pattern->get_type_info().is_string());
 
-  auto arg_val = VarSizeJITExprValue(arg->codegen(func));
-  auto pattern_val = VarSizeJITExprValue(pattern->codegen(func));
+  auto arg_val = VarSizeJITExprValue(arg->codegen(context));
+  auto pattern_val = VarSizeJITExprValue(pattern->codegen(context));
 
   std::string fn_name{get_is_ilike() ? "string_ilike" : "string_like"};
   auto emit_desc =

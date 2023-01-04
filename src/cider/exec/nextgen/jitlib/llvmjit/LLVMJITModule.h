@@ -49,26 +49,22 @@ class LLVMJITModule final : public JITModule {
 
   std::string getName() const { return module_->getModuleIdentifier(); }
 
-  void finish() override;
+  void finish(const std::string& main_func = "") override;
 
  protected:
   void* getFunctionPtrImpl(LLVMJITFunction& function);
-  void optimizeIR(llvm::Module* module);
+  void optimizeIR(llvm::TargetMachine* tm);
+  void copyRuntimeModule();
+  JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
 
  private:
   std::unique_ptr<llvm::LLVMContext> context_;
   std::unique_ptr<llvm::Module> module_;
   std::unique_ptr<LLVMJITEngine> engine_;
-
-  // runtime module
- private:
-  void copyRuntimeModule();
-
-  JITFunctionPointer createJITFunction(const JITFunctionDescriptor& descriptor) override;
-
   llvm::ValueToValueMapTy vmap_;
   std::unique_ptr<llvm::Module> runtime_module_;
   CompilationOptions co_;
+  llvm::SmallVector<llvm::Function*, 1> owned_functions_;
 };
 };  // namespace cider::jitlib
 

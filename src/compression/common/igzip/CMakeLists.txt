@@ -23,8 +23,6 @@
 
 project(igzip_common)
 
-include(igzip)
-
 set(IGZIP_COMMON_SOURCES igzip_wrapper.c)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")

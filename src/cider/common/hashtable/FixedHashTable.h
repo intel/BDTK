@@ -38,10 +38,10 @@ struct FixedHashTableCell {
   using mapped_type = VoidMapped;
   bool full;
 
-  FixedHashTableCell() {}  //-V730 /// NOLINT
+  FixedHashTableCell() {}
   FixedHashTableCell(const Key&, const State&) : full(true) {}
 
-  const VoidKey getKey() const { return {}; }  /// NOLINT
+  const VoidKey getKey() const { return {}; }
   VoidMapped getMapped() const { return {}; }
 
   bool isZero(const State&) const { return !full; }
@@ -57,7 +57,7 @@ struct FixedHashTableCell {
   struct CellExt {
     Key key;
 
-    const VoidKey getKey() const { return {}; }  /// NOLINT
+    const VoidKey getKey() const { return {}; }
     VoidMapped getMapped() const { return {}; }
     const value_type& getValue() const { return key; }
     void update(Key&& key_, FixedHashTableCell*) { key = key_; }
@@ -158,14 +158,15 @@ class FixedHashTable : private boost::noncopyable,
   }
 
   void destroyElements() {
-    if (!std::is_trivially_destructible_v<Cell>)
-      for (iterator it = begin(), it_end = end(); it != it_end; ++it)
+    if (!std::is_trivially_destructible_v<Cell>) {
+      for (iterator it = begin(), it_end = end(); it != it_end; ++it) {
         it.ptr->~Cell();
+      }
+    }
   }
 
   template <typename Derived, bool is_const>
-  class iterator_base  /// NOLINT
-  {
+  class iterator_base {
     using Container = std::conditional_t<is_const, const Self, Self>;
     using cell_type = std::conditional_t<is_const, const Cell, Cell>;
 
@@ -175,7 +176,7 @@ class FixedHashTable : private boost::noncopyable,
     friend class FixedHashTable;
 
    public:
-    iterator_base() {}  /// NOLINT
+    iterator_base() {}
     iterator_base(Container* container_, cell_type* ptr_)
         : container(container_), ptr(ptr_) {
       cell.update(ptr - container->buf, ptr);
@@ -225,9 +226,7 @@ class FixedHashTable : private boost::noncopyable,
 
   FixedHashTable() { alloc(); }
 
-  FixedHashTable(FixedHashTable&& rhs) noexcept : buf(nullptr) {
-    *this = std::move(rhs);
-  }  /// NOLINT
+  FixedHashTable(FixedHashTable&& rhs) noexcept : buf(nullptr) { *this = std::move(rhs); }
 
   ~FixedHashTable() {
     destroyElements();
@@ -295,14 +294,12 @@ class FixedHashTable : private boost::noncopyable,
   //     bool is_initialized = false;
   // };
 
-  class iterator : public iterator_base<iterator, false>  /// NOLINT
-  {
+  class iterator : public iterator_base<iterator, false> {
    public:
     using iterator_base<iterator, false>::iterator_base;
   };
 
-  class const_iterator : public iterator_base<const_iterator, true>  /// NOLINT
-  {
+  class const_iterator : public iterator_base<const_iterator, true> {
    public:
     using iterator_base<const_iterator, true>::iterator_base;
   };

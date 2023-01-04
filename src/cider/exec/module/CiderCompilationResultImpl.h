@@ -38,7 +38,8 @@ class CiderCompilationResult::Impl {
   void* func() {
     if (co.use_nextgen_compiler) {
       return reinterpret_cast<void*>(
-          codegen_ctx_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
+          codegen_ctx_->getJITFunction()
+              ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
     }
     auto cpu_generated_code = std::dynamic_pointer_cast<CpuCompilationContext>(
         compilation_result_.generated_code);

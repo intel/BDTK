@@ -22,15 +22,36 @@
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
 #include "exec/nextgen/context/Buffer.h"
+#include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
+#include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "util/sqldefs.h"
 
 namespace cider::exec::nextgen::context {
 
 class RuntimeContext;
+class Batch;
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
+using namespace cider_hashtable;
+
+// TODO(qiuyang) : will be removed after hashtable being refactored and won't include
+// CiderLinearProbingHashTable.h file
+struct murmurHash {
+  size_t operator()(int64_t rawHash) {
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xff51afd7ed558ccdL;
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xc4ceb9fe1a85ec53L;
+    rawHash ^= unsigned(rawHash) >> 33;
+    return rawHash;
+  }
+};
+
+struct Equal {
+  bool operator()(int lhs, int rhs) { return lhs == rhs; }
+};
 struct AggExprsInfo {
  public:
   SQLTypeInfo sql_type_info_;
@@ -59,6 +80,10 @@ struct AggExprsInfo {
 
 using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
+struct CodegenOptions {
+  bool needs_error_check = false;
+};
+
 class CodegenContext {
  public:
   CodegenContext() : jit_func_(nullptr) {}
@@ -69,6 +94,8 @@ class CodegenContext {
   }
 
   jitlib::JITFunctionPointer getJITFunction() { return jit_func_; }
+
+  CodegenOptions getCodegenOptions() { return codegen_options_; }
 
   std::pair<jitlib::JITValuePointer, utils::JITExprValue>& getArrowArrayValues(
       size_t local_offset) {
@@ -100,6 +127,11 @@ class CodegenContext {
       const BufferInitializer& initializer =
           [](Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
       bool output_raw_buffer = true);
+
+  jitlib::JITValuePointer registerHashTable(const std::string& name = "");
+  jitlib::JITValuePointer registerCiderSet(const std::string& name,
+                                           const SQLTypeInfo& type,
+                                           CiderSetPtr c_set);
 
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
@@ -139,22 +171,72 @@ class CodegenContext {
         : BufferDescriptor(id, n, c, initializer), info_(info) {}
   };
 
+  struct HashTableDescriptor {
+    int64_t ctx_id;
+    std::string name;
+    // TODO(qiuyang) : LinearProbeHashTable will provide the default template
+    LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>* hash_table;
+
+    HashTableDescriptor(
+        int64_t id,
+        const std::string& n,
+        // TODO(qiuyang) : LinearProbeHashTable will provide the default template
+        LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>* table =
+            new LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>(
+                16,
+                0))
+        : ctx_id(id), name(n), hash_table(table) {}
+  };
+
+  void setHashTable(
+      LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>&
+          LP_hash_table) {
+    hashtable_descriptor_.first->hash_table = &LP_hash_table;
+  }
+
+  struct CiderSetDescriptor {
+    int64_t ctx_id;
+    std::string name;
+    SQLTypeInfo type;
+    CiderSetPtr cider_set;
+    CiderSetDescriptor(int64_t id,
+                       const std::string& n,
+                       const SQLTypeInfo& t,
+                       CiderSetPtr c_set)
+        : ctx_id(id), name(n), type(t), cider_set(std::move(c_set)) {}
+  };
+
   void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
+
+  void setCodegenOptions(CodegenOptions codegen_options) {
+    codegen_options_ = codegen_options;
+  }
 
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
   using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
+  using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
+  using CiderSetDescriptorPtr = std::shared_ptr<CiderSetDescriptor>;
+  using TrimCharMapsPtr = std::shared_ptr<std::vector<std::vector<int8_t>>>;
+
+  // registers a set of trim characters for TrimStringOper, to be used at runtime
+  // returns an index used for retrieving the charset at runtime
+  int registerTrimStringOperCharMap(const std::string& trim_chars);
 
  private:
   std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
       batch_descriptors_{};
   std::vector<std::pair<BufferDescriptorPtr, jitlib::JITValuePointer>>
       buffer_descriptors_{};
+  std::pair<HashTableDescriptorPtr, jitlib::JITValuePointer> hashtable_descriptor_;
+  std::vector<std::pair<CiderSetDescriptorPtr, jitlib::JITValuePointer>>
+      cider_set_descriptors_{};
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
 
   jitlib::JITFunctionPointer jit_func_;
   int64_t id_counter_{0};
   jitlib::JITModulePointer jit_module_;
+  CodegenOptions codegen_options_;
 
   int64_t acquireContextID() { return id_counter_++; }
   int64_t getNextContextID() const { return id_counter_; }
@@ -162,6 +244,9 @@ class CodegenContext {
       int64_t id,
       bool output_raw_buffer = false,
       const std::string& raw_buffer_func_name = "");
+
+  // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
+  TrimCharMapsPtr trim_char_maps_;
 };
 
 using CodegenCtxPtr = std::unique_ptr<CodegenContext>;

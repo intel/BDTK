@@ -63,6 +63,12 @@ class LLVMJITValue final : public JITValue {
   JITValuePointer mod(JITValue& rh) override;
   JITValuePointer uminus() override;
 
+  JITValuePointer addWithErrorCheck(JITValue& rh) override;
+  JITValuePointer subWithErrorCheck(JITValue& rh) override;
+  JITValuePointer mulWithErrorCheck(JITValue& rh) override;
+  JITValuePointer divWithErrorCheck(JITValue& rh) override;
+  JITValuePointer modWithErrorCheck(JITValue& rh) override;
+
   JITValuePointer eq(JITValue& rh) override;
   JITValuePointer ne(JITValue& rh) override;
   JITValuePointer lt(JITValue& rh) override;

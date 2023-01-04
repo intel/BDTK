@@ -105,14 +105,6 @@ std::shared_ptr<Analyzer::Expr> Subquery::deep_copy() const {
   return nullptr;
 }
 
-std::shared_ptr<Analyzer::Expr> InValues::deep_copy() const {
-  std::list<std::shared_ptr<Analyzer::Expr>> new_value_list;
-  for (auto p : value_list) {
-    new_value_list.push_back(p->deep_copy());
-  }
-  return makeExpr<InValues>(arg->deep_copy(), new_value_list);
-}
-
 std::shared_ptr<Analyzer::Expr> CharLengthExpr::deep_copy() const {
   return makeExpr<CharLengthExpr>(arg->deep_copy(), calc_encoded_length);
 }
@@ -137,18 +129,8 @@ std::shared_ptr<Analyzer::Expr> RegexpSubstrStringOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-std::shared_ptr<Analyzer::Expr> TrimStringOper::deep_copy() const {
-  return makeExpr<Analyzer::TrimStringOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
 std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
   return makeExpr<Analyzer::TryStringCastOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
-std::shared_ptr<Analyzer::Expr> ConcatStringOper::deep_copy() const {
-  return makeExpr<Analyzer::ConcatStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
@@ -182,54 +164,6 @@ std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
     }
   }
   return folded_operands;
-}
-
-bool ConcatStringOper::isLiteralOrCastLiteral(const Analyzer::Expr* operand) {
-  // literals may exist in a CAST op (casted from fixedchar to varchar)
-  auto literal_arg = dynamic_cast<const Analyzer::Constant*>(remove_cast(operand));
-  if (literal_arg) {
-    // is a literal or a casted literal
-    return true;
-  }
-  return false;
-}
-
-SqlStringOpKind ConcatStringOper::getConcatOpKind(
-    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-  CHECK_EQ(operands.size(), 2);
-  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
-  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
-
-  if (is_constant_arg1) {
-    // concat(col, literal) or concat(literal, literal)
-    return SqlStringOpKind::CONCAT;
-  } else if (is_constant_arg0) {
-    // concat(literal, col)
-    return SqlStringOpKind::RCONCAT;
-  } else {
-    CIDER_THROW(CiderCompileException,
-                "concat() currently does not support two variable operands.");
-  }
-}
-
-std::vector<std::shared_ptr<Analyzer::Expr>> ConcatStringOper::rearrangeOperands(
-    const std::vector<std::shared_ptr<Analyzer::Expr>>& operands) {
-  // ensures non-literal operand (if any) is not at arg1
-  // as stringops expect non-literals to be the first arg at runtime
-  CHECK_EQ(operands.size(), 2);
-  auto is_constant_arg0 = isLiteralOrCastLiteral(operands[0].get());
-  auto is_constant_arg1 = isLiteralOrCastLiteral(operands[1].get());
-
-  if (is_constant_arg1) {
-    // concat(col, literal) or concat(literal, literal)
-    return {operands[0], remove_cast(operands[1].get())->deep_copy()};
-  } else if (is_constant_arg0) {
-    // concat(literal, col)
-    return {operands[1], remove_cast(operands[0].get())->deep_copy()};
-  } else {
-    CIDER_THROW(CiderCompileException,
-                "concat() currently does not support two variable operands.");
-  }
 }
 
 std::shared_ptr<Analyzer::Expr> LowerExpr::deep_copy() const {
@@ -1570,50 +1504,6 @@ void BinOper::group_predicates(std::list<const Expr*>& scan_predicates,
   }
 }
 
-namespace {
-
-bool is_expr_nullable(const Analyzer::Expr* expr) {
-  const auto const_expr = dynamic_cast<const Analyzer::Constant*>(expr);
-  if (const_expr) {
-    return const_expr->get_is_null();
-  }
-  const auto& expr_ti = expr->get_type_info();
-  return !expr_ti.get_notnull();
-}
-
-bool is_in_values_nullable(const std::shared_ptr<Analyzer::Expr>& a,
-                           const std::list<std::shared_ptr<Analyzer::Expr>>& l) {
-  if (is_expr_nullable(a.get())) {
-    return true;
-  }
-  for (const auto& v : l) {
-    if (is_expr_nullable(v.get())) {
-      return true;
-    }
-  }
-  return false;
-}
-
-}  // namespace
-
-InValues::InValues(std::shared_ptr<Analyzer::Expr> a,
-                   const std::list<std::shared_ptr<Analyzer::Expr>>& l)
-    : Expr(kBOOLEAN, !is_in_values_nullable(a, l)), arg(a), value_list(l) {}
-
-void InValues::group_predicates(std::list<const Expr*>& scan_predicates,
-                                std::list<const Expr*>& join_predicates,
-                                std::list<const Expr*>& const_predicates) const {
-  std::set<int> rte_idx_set;
-  arg->collect_rte_idx(rte_idx_set);
-  if (rte_idx_set.size() > 1) {
-    join_predicates.push_back(this);
-  } else if (rte_idx_set.size() == 1) {
-    scan_predicates.push_back(this);
-  } else {
-    const_predicates.push_back(this);
-  }
-}
-
 InIntegerSet::InIntegerSet(const std::shared_ptr<const Analyzer::Expr> a,
                            const std::vector<int64_t>& l,
                            const bool not_null)
@@ -1886,33 +1776,6 @@ std::shared_ptr<Analyzer::Expr> Var::rewrite_agg_to_var(
               "Internal error: cannot find Var from having clause in targetlist.");
 }
 
-std::shared_ptr<Analyzer::Expr> InValues::rewrite_with_targetlist(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  std::list<std::shared_ptr<Analyzer::Expr>> new_value_list;
-  for (auto v : value_list) {
-    new_value_list.push_back(v->deep_copy());
-  }
-  return makeExpr<InValues>(arg->rewrite_with_targetlist(tlist), new_value_list);
-}
-
-std::shared_ptr<Analyzer::Expr> InValues::rewrite_with_child_targetlist(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  std::list<std::shared_ptr<Analyzer::Expr>> new_value_list;
-  for (auto v : value_list) {
-    new_value_list.push_back(v->deep_copy());
-  }
-  return makeExpr<InValues>(arg->rewrite_with_child_targetlist(tlist), new_value_list);
-}
-
-std::shared_ptr<Analyzer::Expr> InValues::rewrite_agg_to_var(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  std::list<std::shared_ptr<Analyzer::Expr>> new_value_list;
-  for (auto v : value_list) {
-    new_value_list.push_back(v->rewrite_agg_to_var(tlist));
-  }
-  return makeExpr<InValues>(arg->rewrite_agg_to_var(tlist), new_value_list);
-}
-
 std::shared_ptr<Analyzer::Expr> AggExpr::rewrite_with_targetlist(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
   for (auto tle : tlist) {
@@ -2043,7 +1906,6 @@ std::shared_ptr<Analyzer::Expr> ExtractExpr::rewrite_agg_to_var(
   return makeExpr<ExtractExpr>(
       type_info, contains_agg, field_, from_expr_->rewrite_agg_to_var(tlist));
 }
-
 
 std::shared_ptr<Analyzer::Expr> DatediffExpr::rewrite_agg_to_var(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
@@ -2268,27 +2130,6 @@ bool LikelihoodExpr::operator==(const Expr& rhs) const {
   return true;
 }
 
-bool InValues::operator==(const Expr& rhs) const {
-  if (typeid(rhs) != typeid(InValues)) {
-    return false;
-  }
-  const InValues& rhs_iv = dynamic_cast<const InValues&>(rhs);
-  if (!(*arg == *rhs_iv.get_arg())) {
-    return false;
-  }
-  if (value_list.size() != rhs_iv.get_value_list().size()) {
-    return false;
-  }
-  auto q = rhs_iv.get_value_list().begin();
-  for (auto p : value_list) {
-    if (!(*p == **q)) {
-      return false;
-    }
-    q++;
-  }
-  return true;
-}
-
 bool AggExpr::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(AggExpr)) {
     return false;
@@ -2336,7 +2177,6 @@ bool ExtractExpr::operator==(const Expr& rhs) const {
   const ExtractExpr& rhs_ee = dynamic_cast<const ExtractExpr&>(rhs);
   return field_ == rhs_ee.get_field() && *from_expr_ == *rhs_ee.get_from_expr();
 }
-
 
 bool DatediffExpr::operator==(const Expr& rhs) const {
   if (typeid(rhs) != typeid(DatediffExpr)) {
@@ -2501,29 +2341,6 @@ std::string RangeOper::toString() const {
 
 std::string Subquery::toString() const {
   return "(Subquery ) ";
-}
-
-std::string InValues::toString() const {
-  std::string str{"(IN "};
-  str += arg->toString();
-  str += "(";
-  int cnt = 0;
-  bool shorted_value_list_str = false;
-  for (auto e : value_list) {
-    str += e->toString();
-    cnt++;
-    if (cnt > 4) {
-      shorted_value_list_str = true;
-      break;
-    }
-  }
-  if (shorted_value_list_str) {
-    str += "... | ";
-    str += "Total # values: ";
-    str += std::to_string(value_list.size());
-  }
-  str += ") ";
-  return str;
 }
 
 std::shared_ptr<Analyzer::Expr> InIntegerSet::deep_copy() const {
@@ -2765,18 +2582,6 @@ void BinOper::find_expr(bool (*f)(const Expr*), std::list<const Expr*>& expr_lis
   right_operand->find_expr(f, expr_list);
 }
 
-void InValues::find_expr(bool (*f)(const Expr*),
-                         std::list<const Expr*>& expr_list) const {
-  if (f(this)) {
-    add_unique(expr_list);
-    return;
-  }
-  arg->find_expr(f, expr_list);
-  for (auto e : value_list) {
-    e->find_expr(f, expr_list);
-  }
-}
-
 void CharLengthExpr::find_expr(bool (*f)(const Expr*),
                                std::list<const Expr*>& expr_list) const {
   if (f(this)) {
@@ -2889,7 +2694,6 @@ void ExtractExpr::find_expr(bool (*f)(const Expr*),
   }
   from_expr_->find_expr(f, expr_list);
 }
-
 
 void DatediffExpr::find_expr(bool (*f)(const Expr*),
                              std::list<const Expr*>& expr_list) const {

@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/data/sqltypes.h"
@@ -35,6 +36,7 @@
 #include "util/sqldefs.h"
 
 namespace Analyzer {
+using namespace cider::exec::nextgen;
 
 /*
  * @type BinOper
@@ -143,10 +145,11 @@ class BinOper : public Expr {
   ExprPtrRefVector get_children_reference() override {
     return {&left_operand, &right_operand};
   }
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(CodegenContext& context) override;
   JITExprValue& codegenFixedSizeColArithFun(JITValuePointer& null,
                                             JITValue& lhs,
-                                            JITValue& rhs);
+                                            JITValue& rhs,
+                                            bool needs_error_check = false);
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
                                           JITValue& rhs);

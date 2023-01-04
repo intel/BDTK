@@ -20,9 +20,7 @@
  */
 
 #include "exec/processor/DefaultBatchProcessor.h"
-
 #include <memory>
-
 #include "cider/CiderException.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/processor/StatefulProcessor.h"
@@ -64,6 +62,7 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
     // this->inputBatch_ = joinHandler_->onProcessBatch(batch);
   } else {
     input_arrow_array_ = array;
+    input_arrow_schema_ = schema;
   }
 
   query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);

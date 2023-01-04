@@ -24,11 +24,16 @@
 
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/operator/join/CiderLinearProbingHashTable.h"
+#include "exec/operator/join/CiderStdUnorderedHashTable.h"
+#include "exec/plan/parser/TypeUtils.h"
 #include "tests/TestHelpers.h"
+#include "tests/utils/ArrowArrayBuilder.h"
 #include "type/data/sqltypes.h"
 
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
+using namespace cider::exec::nextgen::context;
 
 class ContextTests : public ::testing::Test {};
 
@@ -118,6 +123,89 @@ TEST_F(ContextTests, ContextBufferTest) {
       runtime_ctx->getContextItem(1));
   auto raw_buffer2 = reinterpret_cast<int64_t*>(output_buffer2->getBuffer());
   EXPECT_EQ(raw_buffer2[1], 2);
+}
+
+TEST_F(ContextTests, RegisterHashTableTest) {
+  CodegenContext codegen_ctx;
+  auto module = cider::jitlib::LLVMJITModule("test_register_hashtable", true);
+  cider::jitlib::JITFunctionPointer function =
+      cider::jitlib::JITFunctionBuilder()
+          .registerModule(module)
+          .setFuncName("register_hashtable")
+          .addReturn(cider::jitlib::JITTypeTag::VOID)
+          .addParameter(cider::jitlib::JITTypeTag::POINTER,
+                        "context",
+                        cider::jitlib::JITTypeTag::INT8)
+          .addProcedureBuilder([&codegen_ctx](cider::jitlib::JITFunctionPointer func) {
+            codegen_ctx.setJITFunction(func);
+            auto ret = codegen_ctx.registerHashTable("hash_table");
+            func->createReturn();
+          })
+          .build();
+  module.finish();
+
+  auto query_func = function->getFunctionPointer<void, int8_t*>();
+
+  auto input_builder = ArrowArrayBuilder();
+  auto&& [schema, array] =
+      input_builder.setRowNum(10)
+          .addColumn<int32_t>(
+              "a", CREATE_SUBSTRAIT_TYPE(I32), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
+          .addColumn<int32_t>(
+              "b", CREATE_SUBSTRAIT_TYPE(I32), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+          .addColumn<int32_t>("c",
+                              CREATE_SUBSTRAIT_TYPE(I32),
+                              {100, 111, 222, 333, 444, 555, 666, 777, 888, 999})
+          .build();
+  StdMapDuplicateKeyWrapper<int, std::pair<Batch*, int>> dup_map;
+
+  Batch build_batch(*schema, *array);
+  cider_hashtable::
+      LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>
+          hm(16, 0);
+  auto batch = new Batch(build_batch);
+  for (int i = 0; i < 10; i++) {
+    int key = *(
+        (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
+    hm.insert(key, std::make_pair(batch, i));
+    dup_map.insert(std::move(key), std::make_pair(batch, i));
+  }
+
+  // TODO(Xinyi) : sethashtable in velox hashjoinbuild
+  codegen_ctx.setHashTable(hm);
+  auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
+
+  query_func((int8_t*)runtime_ctx.get());
+
+  EXPECT_EQ(runtime_ctx->getContextItemNum(), 1);
+  EXPECT_NE(runtime_ctx->getContextItem(0), nullptr);
+
+  auto hash_table = reinterpret_cast<
+      cider_hashtable::
+          LinearProbeHashTable<int, std::pair<Batch*, int>, murmurHash, Equal>*>(
+      runtime_ctx->getContextItem(0));
+
+  auto check_array = [](ArrowArray* array, size_t expect_len) {
+    EXPECT_EQ(array->length, expect_len);
+    int32_t* data_buffer = (int32_t*)array->buffers[1];
+    for (size_t i = 0; i < expect_len; ++i) {
+      std::cout << data_buffer[i] << " ";
+    }
+    std::cout << std::endl;
+  };
+
+  for (auto key_iter : dup_map.getMap()) {
+    auto dup_res_vec = dup_map.find(key_iter.first);
+    auto hm_res_vec = hash_table->find(key_iter.first);
+
+    for (int i = 0; i < hm_res_vec.size(); ++i) {
+      auto pair = hm_res_vec.at(i);
+      auto batch = pair.first;
+      check_array(batch->getArray()->children[0], 10);
+      check_array(batch->getArray()->children[1], 10);
+      check_array(batch->getArray()->children[2], 10);
+    }
+  }
 }
 
 int main(int argc, char** argv) {

@@ -60,6 +60,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
         libzstd-dev \
         libbz2-dev \
         liblzo2-dev \
+        nasm \
     && apt-get remove --purge -y \
     && rm -rf /var/lib/apt/lists/*
 

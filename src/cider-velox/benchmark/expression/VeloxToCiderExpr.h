@@ -21,13 +21,29 @@
 
 #pragma once
 
-#include <cstdint>
+#include <memory>
+
+#include "cider/batch/CiderBatch.h"
 #include "type/plan/Analyzer.h"
 #include "velox/core/Expressions.h"
+#include "velox/vector/ComplexVector.h"
 
 using namespace facebook::velox::core;
 
+#define BENCHMARK_GROUP(name, expr)                                             \
+  BENCHMARK(name##Velox) { benchmark->runVelox(expr); }                         \
+  BENCHMARK_RELATIVE(name##Cider) { benchmark->runCiderCompute(expr); }         \
+  BENCHMARK_RELATIVE(name##Nextgen) { benchmark->runCiderCompute(expr, true); } \
+  BENCHMARK(name##CiderCompile) { benchmark->runCiderCompile(expr); }           \
+  BENCHMARK(name##NextgenCompile) { benchmark->runCiderCompile(expr, true); }   \
+  BENCHMARK_DRAW_LINE()
+
 namespace facebook::velox::plugin {
+
+std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec);
+
+std::unique_ptr<CiderBatch> veloxVectorToCiderBatch(RowVectorPtr vec,
+                                                    velox::memory::MemoryPool* pool);
 
 class VeloxToCiderExprConverter {
  public:

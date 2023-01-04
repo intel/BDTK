@@ -44,6 +44,7 @@
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/DateExpr.h"
 #include "type/plan/Expr.h"
+#include "type/plan/InValues.h"
 #include "type/plan/LikeExpr.h"
 #include "type/plan/StringOpExpr.h"
 #include "type/plan/UnaryExpr.h"
@@ -219,50 +220,6 @@ class Subquery : public Expr {
 
  private:
   Query* parsetree;  // parse tree of the subquery
-};
-
-/*
- * @type InValues
- * @brief represents predicate expr IN (v1, v2, ...)
- * v1, v2, ... are can be either Constant or Parameter.
- */
-class InValues : public Expr {
- public:
-  InValues(std::shared_ptr<Analyzer::Expr> a,
-           const std::list<std::shared_ptr<Analyzer::Expr>>& l);
-  const Expr* get_arg() const { return arg.get(); }
-  const std::shared_ptr<Analyzer::Expr> get_own_arg() const { return arg; }
-  const std::list<std::shared_ptr<Analyzer::Expr>>& get_value_list() const {
-    return value_list;
-  }
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-  void group_predicates(std::list<const Expr*>& scan_predicates,
-                        std::list<const Expr*>& join_predicates,
-                        std::list<const Expr*>& const_predicates) const override;
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override {
-    arg->collect_rte_idx(rte_idx_set);
-  }
-  void collect_column_var(
-      std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
-          colvar_set,
-      bool include_agg) const override {
-    arg->collect_column_var(colvar_set, include_agg);
-  }
-  std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
-      const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  bool operator==(const Expr& rhs) const override;
-  std::string toString() const override;
-  void find_expr(bool (*f)(const Expr*),
-                 std::list<const Expr*>& expr_list) const override;
-
- private:
-  std::shared_ptr<Analyzer::Expr> arg;  // the argument left of IN
-  const std::list<std::shared_ptr<Analyzer::Expr>>
-      value_list;  // the list of values right of IN
 };
 
 /*
@@ -1066,51 +1023,6 @@ class RegexpSubstrStringOper : public StringOper {
   }
 };
 
-class TrimStringOper : public StringOper {
- public:
-  TrimStringOper(const SqlStringOpKind& op_kind,
-                 const std::shared_ptr<Analyzer::Expr>& input,
-                 const std::shared_ptr<Analyzer::Expr>& characters)
-      : StringOper(checkOpKindValidity(op_kind),
-                   {input, characters},
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  TrimStringOper(const SqlStringOpKind& op_kind,
-                 const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
-      : StringOper(checkOpKindValidity(op_kind),
-                   operands,
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  TrimStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
-      : StringOper(string_oper) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  size_t getMinArgs() const override { return 2UL; }
-
-  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
-    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
-  }
-
-  const std::vector<std::string>& getArgNames() const override {
-    // args[0]: the string to remove characters from
-    // args[1]: the set of characters to remove
-    static std::vector<std::string> names{"input", "characters"};
-    return names;
-  }
-
- private:
-  SqlStringOpKind checkOpKindValidity(const SqlStringOpKind& op_kind) {
-    CHECK(op_kind == SqlStringOpKind::TRIM || op_kind == SqlStringOpKind::LTRIM ||
-          op_kind == SqlStringOpKind::RTRIM);
-    return op_kind;
-  }
-};
-
 class SplitPartStringOper : public StringOper {
  public:
   /**
@@ -1168,48 +1080,6 @@ class SplitPartStringOper : public StringOper {
   }
 };
 
-class ConcatStringOper : public StringOper {
- public:
-  ConcatStringOper(const std::shared_ptr<Analyzer::Expr>& former,
-                   const std::shared_ptr<Analyzer::Expr>& latter)
-      : StringOper(getConcatOpKind({former, latter}),
-                   rearrangeOperands({former, latter}),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  ConcatStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
-      : StringOper(getConcatOpKind(operands),
-                   rearrangeOperands(operands),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  ConcatStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
-      : StringOper(string_oper) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  size_t getMinArgs() const override { return 2UL; }
-
-  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
-    return {OperandTypeFamily::STRING_FAMILY, OperandTypeFamily::STRING_FAMILY};
-  }
-
-  const std::vector<std::string>& getArgNames() const override {
-    static std::vector<std::string> names{"operand_0", "operand_1"};
-    return names;
-  }
-
- private:
-  bool isLiteralOrCastLiteral(const Analyzer::Expr* operand);
-
-  SqlStringOpKind getConcatOpKind(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
-
-  std::vector<std::shared_ptr<Analyzer::Expr>> rearrangeOperands(
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands);
-};
 
 class RegexpReplaceStringOper : public StringOper {
  public:

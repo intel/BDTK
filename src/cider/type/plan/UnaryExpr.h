@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "Expr.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "type/data/sqltypes.h"
 #include "util/sqldefs.h"
@@ -89,14 +90,14 @@ class UOper : public Expr {
 
  public:
   ExprPtrRefVector get_children_reference() override { return {&operand}; }
-  JITExprValue& codegen(JITFunction& func) override;
-  JITExprValue& codegenIsNull(JITFunction& func,
+  JITExprValue& codegen(CodegenContext& context) override;
+  JITExprValue& codegenIsNull(CodegenContext& context,
                               Analyzer::Expr* operand_expr_val,
                               SQLOps optype);
-  JITExprValue& codegenNot(JITFunction& func, Analyzer::Expr* operand_expr_val);
-  JITExprValue& codegenCast(JITFunction& func, Analyzer::Expr* operand_expr_val);
-  JITExprValue& codegenUminus(JITFunction& func, Analyzer::Expr* operand_expr_val);
-  JITValuePointer codegenCastFunc(JITFunction& func, JITValue& lhs);
+  JITExprValue& codegenNot(CodegenContext& context, Analyzer::Expr* operand_expr_val);
+  JITExprValue& codegenCast(CodegenContext& context, Analyzer::Expr* operand_expr_val);
+  JITExprValue& codegenUminus(CodegenContext& context, Analyzer::Expr* operand_expr_val);
+  JITValuePointer codegenCastFunc(CodegenContext& context, JITValue& lhs);
 
  protected:
   SQLOps optype;  // operator type, e.g., kUMINUS, kISNULL, kEXISTS

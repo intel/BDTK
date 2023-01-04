@@ -32,6 +32,16 @@ void RuntimeContext::addBuffer(const CodegenContext::BufferDescriptorPtr& descri
   buffer_holder_.emplace_back(descriptor, nullptr);
 }
 
+void RuntimeContext::addHashTable(
+    const CodegenContext::HashTableDescriptorPtr& descriptor) {
+  hashtable_holder_ = descriptor;
+}
+
+void RuntimeContext::addCiderSet(
+    const CodegenContext::CiderSetDescriptorPtr& descriptor) {
+  cider_set_holder_.emplace_back(descriptor, nullptr);
+}
+
 void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of batches.
   for (auto& batch_desc : batch_holder_) {
@@ -51,6 +61,18 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   }
 
   string_heap_ptr_ = std::make_shared<StringHeap>(allocator);
+
+  // Instantiation of hashtable.
+  if (hashtable_holder_ != nullptr) {
+    runtime_ctx_pointers_[hashtable_holder_->ctx_id] = hashtable_holder_->hash_table;
+  }
+
+  for (auto& cider_set_desc : cider_set_holder_) {
+    if (nullptr == cider_set_desc.second) {
+      runtime_ctx_pointers_[cider_set_desc.first->ctx_id] =
+          cider_set_desc.first->cider_set.get();
+    }
+  }
 }
 
 void allocateBatchMem(ArrowArray* array,
@@ -93,16 +115,23 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
 
   std::vector<std::unique_ptr<operators::NextgenAggExtractor>> non_groupby_agg_extractors;
   non_groupby_agg_extractors.reserve(info.size());
-  auto null_buffer_start_ = info.back().start_offset_ + info.back().byte_size_;
 
   for (size_t i = 0; i < info.size(); ++i) {
-    info[i].null_offset_ = null_buffer_start_ + i;
     std::unique_ptr<operators::NextgenAggExtractor> extractor =
         operators::NextgenAggExtractorBuilder::buildNextgenAggExtractor(buf, info[i]);
     extractor->extract({buf}, arrow_array->children[i]);
   }
 
   return batch;
+}
+
+void RuntimeContext::setTrimStringOperCharMaps(
+    const CodegenContext::TrimCharMapsPtr& maps) {
+  trim_char_maps_ = maps;
+}
+
+const int8_t* RuntimeContext::getTrimStringOperCharMapById(int id) const {
+  return trim_char_maps_->at(id).data();
 }
 
 }  // namespace cider::exec::nextgen::context

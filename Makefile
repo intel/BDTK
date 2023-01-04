@@ -63,7 +63,7 @@ build-common:
 		  -DENABLE_PERF_JIT_LISTENER=OFF\
 		  -DENABLE_INTEL_JIT_LISTENER=OFF \
 		  -DPREFER_STATIC_LIBS=OFF \
-			-DENABLE_ASN=OFF \
+		  -DENABLE_ASN=OFF \
 		  -DVELOX_ENABLE_SUBSTRAIT=ON \
 		  -DVELOX_ENABLE_PARQUET=ON \
 		  $(FORCE_COLOR) \
@@ -74,9 +74,25 @@ build:
 	cmake --build build-${BUILD_TYPE}
 	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/function/
 
+icl:
+	@mkdir -p build-${BUILD_TYPE}
+	@cd build-${BUILD_TYPE} && \
+	cmake -Wno-dev \
+		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+		  -DBDTK_ENABLE_ICL=ON \
+		  -DBDTK_ENABLE_CIDER=OFF \
+		  $(FORCE_COLOR) \
+		  ..
+	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
+	cmake --build build-${BUILD_TYPE}
+
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
 	@$(MAKE) build BUILD_TYPE=Debug
+
+reldeb:
+	@$(MAKE) build-common BUILD_TYPE=RelWithDebInfo
+	@$(MAKE) build BUILD_TYPE=RelWithDebInfo
 
 release:
 	@$(MAKE) build-common BUILD_TYPE=Release

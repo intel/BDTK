@@ -23,18 +23,17 @@
 #ifndef SHARED_STRINGTRANSFORM_H
 #define SHARED_STRINGTRANSFORM_H
 #include <algorithm>
-#include <boost/config.hpp>
-#include <boost/regex.hpp>
 #include <iomanip>
 #include <optional>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
 
 void apply_shim(std::string& result,
-                const boost::regex& reg_expr,
-                const std::function<void(std::string&, const boost::smatch&)>& shim_fn);
+                const std::regex& reg_expr,
+                const std::function<void(std::string&, const std::smatch&)>& shim_fn);
 
 // cat - Concatenate values of arbitrary types into a string.
 template <typename... Ts>

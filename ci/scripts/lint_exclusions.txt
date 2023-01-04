@@ -7,3 +7,4 @@
 *src/cider/exec/plan/parser/ParserNode*
 *src/cider/type/data/sqltypes.h
 */src/cider/type/data/InlineNullValues.h
+*/src/cider/common/contrib/*

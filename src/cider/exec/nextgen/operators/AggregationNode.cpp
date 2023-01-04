@@ -81,11 +81,13 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
         break;
     }
   }
-  // init null value as false(not null)
+  // init null value (1--null, 0--not null)
+  auto null_buffer_offset =
+      exprs_info.back().start_offset_ + exprs_info.back().byte_size_;
   for (size_t i = 0; i < exprs_info.size(); i++) {
-    auto null_value = reinterpret_cast<int8_t*>(
-        raw_memory + exprs_info.back().start_offset_ + exprs_info.back().byte_size_ + i);
-    *null_value = 0;
+    exprs_info[i].null_offset_ = null_buffer_offset + i;
+    auto null_value = reinterpret_cast<int8_t*>(raw_memory + exprs_info[i].null_offset_);
+    *null_value = exprs_info[i].sql_type_info_.get_notnull() ? 0 : 1;
   }
   return origin_vector;
 }
@@ -132,18 +134,29 @@ void AggTranslator::codegen(context::CodegenContext& context) {
   for (const auto& expr : exprs) {
     auto agg_expr = dynamic_cast<const Analyzer::AggExpr*>(expr.get());
     utils::FixSizeJITExprValue values(agg_expr->get_arg()->get_expr_value());
-    auto real_value = values.getValue();
 
     auto cast_buffer = buffer->castPointerSubType(jitlib::JITTypeTag::INT8);
     auto val_addr_initial = cast_buffer + exprs_info[current_expr_idx].start_offset_;
     auto val_addr = val_addr_initial->castPointerSubType(
         exprs_info[current_expr_idx].jit_value_type_);
 
-    func->emitRuntimeFunctionCall(
-        exprs_info[current_expr_idx].agg_name_,
-        jitlib::JITFunctionEmitDescriptor{
-            .ret_type = exprs_info[current_expr_idx].jit_value_type_,
-            .params_vector = {val_addr.get(), real_value.get()}});
+    if (exprs_info[current_expr_idx].sql_type_info_.get_notnull()) {
+      func->emitRuntimeFunctionCall(
+          exprs_info[current_expr_idx].agg_name_,
+          jitlib::JITFunctionEmitDescriptor{
+              .ret_type = exprs_info[current_expr_idx].jit_value_type_,
+              .params_vector = {val_addr.get(), values.getValue().get()}});
+    } else {
+      auto null_addr = cast_buffer + exprs_info[current_expr_idx].null_offset_;
+      func->emitRuntimeFunctionCall(
+          exprs_info[current_expr_idx].agg_name_ + "_nullable",
+          jitlib::JITFunctionEmitDescriptor{
+              .ret_type = exprs_info[current_expr_idx].jit_value_type_,
+              .params_vector = {val_addr.get(),
+                                values.getValue().get(),
+                                null_addr.get(),
+                                values.getNull().get()}});
+    }
     current_expr_idx += 1;
   }
 }

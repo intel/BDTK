@@ -28,7 +28,7 @@ export COMPILER_FLAGS="-mavx2 -mfma -mavx -mf16c -mlzcnt"
 FB_OS_VERSION=v2022.03.14.00
 NPROC=$(getconf _NPROCESSORS_ONLN)
 DEPENDENCY_DIR=${DEPENDENCY_DIR:-$(pwd)}
-PROTOBUF_VERS=21.2
+PROTOBUF_VERS=21.4
 PROTOBUF_INSTALL_DIR=/opt
 
 # Install all velox and folly dependencies.
@@ -108,6 +108,7 @@ function cmake_install {
   # CMAKE_POSITION_INDEPENDENT_CODE is required so that Velox can be built into dynamic libraries \
   cmake -Wno-dev -B"${BINARY_DIR}" \
     -GNinja \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_CXX_STANDARD=17 \
     "${INSTALL_PREFIX+-DCMAKE_PREFIX_PATH=}${INSTALL_PREFIX-}" \
@@ -129,7 +130,7 @@ function install_folly {
 }
 
 
-# install 21.2 protobuf to /opt
+# install 21.4 protobuf to /opt
 function install_protobuf {
   wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERS}/protobuf-all-${PROTOBUF_VERS}.tar.gz
   tar -xzf protobuf-all-${PROTOBUF_VERS}.tar.gz -C ${PROTOBUF_INSTALL_DIR}
