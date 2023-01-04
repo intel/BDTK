@@ -329,10 +329,14 @@ gen_string_from_date(const int32_t operand, char* string_heap_ptr) {
   extern "C" RUNTIME_EXPORT value_type convert_string_to_##value_name( \
       const char* str_ptr, const int32_t str_len) {                    \
     std::string from_str(str_ptr, str_len);                            \
-    value_type res = std::stoi(from_str);                              \
-    if (res >= std::numeric_limits<value_type>::min() &&               \
-        res <= std::numeric_limits<value_type>::max())                 \
-      return res;                                                      \
+    try {                                                              \
+      value_type res = std::stoi(from_str);                            \
+      if (res >= std::numeric_limits<value_type>::min() &&             \
+          res <= std::numeric_limits<value_type>::max())               \
+        return res;                                                    \
+    } catch (std::exception & err) {                                   \
+      CIDER_THROW(CiderRuntimeException, err.what());                  \
+    }                                                                  \
     CIDER_THROW(CiderRuntimeException,                                 \
                 "runtime error:cast from string to " #value_type);     \
   }
