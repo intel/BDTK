@@ -31,6 +31,7 @@ struct CompilationOptions {
   bool optimize_ir = true;
   bool aggressive_jit_compile = true;
   bool dump_ir = false;
+  bool enable_vectorize = false;
   bool enable_avx2 = true;
   bool enable_avx512 = false;
 };
