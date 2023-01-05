@@ -196,6 +196,10 @@ std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
       agg_name = agg_name + "_sum_" + utils::getSQLTypeName(sql_type);
       break;
     }
+    case SQLAgg::kCOUNT: {
+      agg_name = agg_name + "_count";
+      break;
+    }
     default:
       LOG(FATAL) << "unsupport agg function type: " << toString(agg_type);
       break;

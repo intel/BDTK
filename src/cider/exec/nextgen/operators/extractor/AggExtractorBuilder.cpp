@@ -27,8 +27,6 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildNextgenAgg
   switch (info.agg_type_) {
     case SQLAgg::kAVG:
       return buildAVGAggExtractor(buffer);
-    case SQLAgg::kCOUNT:
-      return buildCountAggExtractor(buffer);
     default:
       return buildBasicAggExtractor(buffer, info);
   }
@@ -109,12 +107,6 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildBasicAggEx
 std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildAVGAggExtractor(
     const int8_t* buffer) {
   LOG(FATAL) << "Avg agg extractor is not support yet";
-  return nullptr;
-}
-
-std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildCountAggExtractor(
-    const int8_t* buffer) {
-  LOG(FATAL) << "Sum agg extractor is not support yet";
   return nullptr;
 }
 }  // namespace cider::exec::nextgen::operators

@@ -62,6 +62,21 @@ template <typename T>
 ALWAYS_INLINE void nextgen_cider_agg_sum(T& agg_val, const T& val) {
   agg_val += val;
 }
+
 DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(sum, nextgen_cider_agg_sum)
+
+/******************* Simple Aggregation COUNT For Nextgen ************************/
+extern "C" ALWAYS_INLINE void nextgen_cider_agg_count(int64_t* agg_val_addr) {
+  ++(*agg_val_addr);
+}
+
+extern "C" ALWAYS_INLINE void nextgen_cider_agg_count_nullable(int64_t* agg_val_addr,
+                                                               uint8_t* agg_null_addr,
+                                                               bool is_null) {
+  if (!is_null) {
+    ++(*agg_val_addr);
+    *agg_null_addr = 0;
+  }
+}
 
 #endif  // NEXTEGN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H

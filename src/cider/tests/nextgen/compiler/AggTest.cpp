@@ -188,6 +188,70 @@ TEST_F(NonGroupbyAggTest, TestResultSumInt64Nullable) {
                              {22, 1293});
 }
 
+TEST_F(NonGroupbyAggTest, TestResultCountNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(I64),
+              {1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999, 10000},
+              {true, false, false, false, false, false, false, false, false, false})
+          .addColumn<int32_t>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(I32),
+              {111, 222, 333, 444, 555, 666, 777, 888, 999, 1000},
+              {false, true, false, true, false, true, false, true, false, true})
+          .addColumn<int16_t>(
+              "c",
+              CREATE_SUBSTRAIT_TYPE(I16),
+              {11, 22, 33, 44, 55, 66, 77, 88, 99, 100},
+              {true, true, true, true, true, true, true, true, true, false})
+          .addColumn<int8_t>("d",
+                             CREATE_SUBSTRAIT_TYPE(I8),
+                             {1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                             {true, true, true, true, true, true, true, true, true, true})
+          .build();
+
+  executeTestResult<int64_t>("CREATE TABLE test(a BIGINT, b INT, c SMALLINT, d TINYINT);",
+                             "select count(a), count(b), count(c), count(d) from test",
+                             input_data,
+                             {9, 5, 1, 0});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultCountNotNull) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(I64),
+              {1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999, 10000},
+              {true, false, false, false, false, false, false, false, false, false})
+          .addColumn<int32_t>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(I32),
+              {111, 222, 333, 444, 555, 666, 777, 888, 999, 1000},
+              {false, true, false, true, false, true, false, true, false, true})
+          .addColumn<int16_t>(
+              "c",
+              CREATE_SUBSTRAIT_TYPE(I16),
+              {11, 22, 33, 44, 55, 66, 77, 88, 99, 100},
+              {true, true, true, true, true, true, true, true, true, false})
+          .addColumn<int8_t>("d",
+                             CREATE_SUBSTRAIT_TYPE(I8),
+                             {1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                             {true, true, true, true, true, true, true, true, true, true})
+          .build();
+
+  executeTestResult<int64_t>(
+      "CREATE TABLE test(a BIGINT NOT NULL, b INT NOT NULL, c SMALLINT NOT NULL, d "
+      "TINYINT NOT NULL);",
+      "select count(a), count(b), count(c), count(d) from test",
+      input_data,
+      {10, 10, 10, 10});
+}
+
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);

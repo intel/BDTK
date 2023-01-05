@@ -74,6 +74,11 @@ struct AggExprsInfo {
       , null_offset_(-1)
       , agg_name_(getAggName(agg_type, sql_type_info_.get_type())) {}
 
+  void setNotNull(bool n) {
+    // true -- not null, flase -- nullable
+    sql_type_info_.set_notnull(n);
+  }
+
  private:
   std::string getAggName(SQLAgg agg_type, SQLTypes sql_type);
 };
