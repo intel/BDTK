@@ -89,7 +89,8 @@ struct Block {
 };
 
 TEST_F(CiderNewHashTableTest, aggInt8Test) {
-  using AggregatedDataWithUInt8Key = FixedImplicitZeroHashMap<int8_t, Block>;
+  using AggregatedDataWithUInt8Key =
+      FixedImplicitZeroHashMapWithStoredSize<int8_t, Block>;
   AggregatedDataWithUInt8Key map;
 
   std::vector<int8_t> keys{1, 2, 3, 4, 5};

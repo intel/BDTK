@@ -67,7 +67,7 @@ struct AggregatedHashTableWithNullKey : public Base {
 using AggregatedHashTableWithUInt8Key =
     FixedImplicitZeroHashMapWithCalculatedSize<uint8_t, AggregateDataPtr>;
 using AggregatedHashTableWithUInt16Key =
-    FixedImplicitZeroHashMap<uint16_t, AggregateDataPtr>;
+    FixedImplicitZeroHashMapWithStoredSize<uint16_t, AggregateDataPtr>;
 
 template <typename... Types>
 using HashTableWithNullKey = AggregatedHashTableWithNullKey<HashMapTable<Types...>>;
