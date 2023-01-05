@@ -2739,7 +2739,8 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
   const auto& expr_pair_list = get_expr_pair_list();
   const auto& else_expr = get_else_ref();
   CHECK_GT(expr_pair_list.size(), 0);
-  JITValuePointer value;
+  JITValuePointer value = func.createVariable(JITTypeTag::INT32, "case_when_value_init");
+  *value = func.createLiteral(JITTypeTag::INT32, 0);
   JITValuePointer null;
   for (const auto& expr_pair : expr_pair_list) {
     func.createIfBuilder()
@@ -2751,15 +2752,15 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
         })
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
-              expr_pair.second->codegen(func));
-          return set_expr_value(then_jit_expr_value.getNull(),
-                                then_jit_expr_value.getValue());
+              expr_pair.second->codegen(context));
+          *value = *then_jit_expr_value.getValue();
+          null.replace(then_jit_expr_value.getNull());
         })
         ->ifFalse([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
-              else_expr->codegen(func));
-          return set_expr_value(else_jit_expr_value.getNull(),
-                                else_jit_expr_value.getValue());
+              else_expr->codegen(context));
+          *value = *else_jit_expr_value.getValue();
+          null.replace(else_jit_expr_value.getNull());
         })
         ->build();
   }
