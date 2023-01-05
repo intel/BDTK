@@ -27,12 +27,12 @@
 
 using namespace TestHelpers;
 
-class CiderNewAggTest : public ::testing::Test {};
+class CiderNewAggHashTableTest : public ::testing::Test {};
 
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();
 
-TEST_F(CiderNewAggTest, aggInt8Test) {
+TEST_F(CiderNewAggHashTableTest, aggInt8Test) {
   // SQL: SELECT SUM(int8), COUNT(int8), MIN(int8), MAX(int8) FROM table GROUP BY int8
   // The example below has 3 rows of data.
   // Row number   key    value
@@ -145,7 +145,7 @@ TEST_F(CiderNewAggTest, aggInt8Test) {
   CHECK_EQ(reinterpret_cast<int8_t*>(value2_check_ptr + 13)[0], 20);
 }
 
-TEST_F(CiderNewAggTest, aggInt16Test) {
+TEST_F(CiderNewAggHashTableTest, aggInt16Test) {
   // SQL:
   // SELECT SUM(int16), COUNT(int16), MIN(int16), MAX(int16) FROM table GROUP BY int16.
   // The example below has 3 rows of data. Row number   key    value
