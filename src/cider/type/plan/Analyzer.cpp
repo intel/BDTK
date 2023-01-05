@@ -2776,11 +2776,6 @@ ExprPtrRefVector CaseExpr::get_children_reference() {
   return result;
 }
 
-void ExtractExpr::check_group_by(
-    const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
-  from_expr_->check_group_by(groupby);
-}
-
 void DatediffExpr::check_group_by(
     const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
   start_->check_group_by(groupby);
