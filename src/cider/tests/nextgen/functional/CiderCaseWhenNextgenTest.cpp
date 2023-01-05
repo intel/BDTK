@@ -40,6 +40,17 @@ std::string getDataFilesPath() {
   return absolute_path.substr(0, pos) + "/jsons/";
 }
 
+<<<<<<< HEAD
+=======
+std::string get_json_data(std::string file_name) {
+  auto json_file = getDataFilesPath() + file_name;
+  std::ifstream sub_json(json_file);
+  std::stringstream buffer;
+  buffer << sub_json.rdbuf();
+  return buffer.str();
+}
+
+>>>>>>> 0fa23243aa475665e13b8039e48dda161e905f86
 class CiderCaseWhenNextgenTest : public ::testing::Test {
  public:
   void executeTest(ArrowArray* array,
@@ -64,9 +75,13 @@ class CiderCaseWhenNextgenTest : public ::testing::Test {
 
     // Codegen
     context::CodegenContext codegen_ctx;
+<<<<<<< HEAD
     cider::jitlib::CompilationOptions co;
     co.dump_ir = true;
     auto module = cider::jitlib::LLVMJITModule("test", true, co);
+=======
+    auto module = cider::jitlib::LLVMJITModule("test", true);
+>>>>>>> 0fa23243aa475665e13b8039e48dda161e905f86
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
             .registerModule(module)
