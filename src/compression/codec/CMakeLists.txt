@@ -23,8 +23,9 @@
 
 project(IclCodec)
 
-set(ICL_CODEC_SOURCES icl_codec.cpp)
 set(ICL_CODEC_LIBRATY)
+set(ICL_BUNDLED_STATIC_LIBS)
+set(ICL_CODEC_SOURCES icl_codec.cpp)
 if(ICL_WITH_QPL)
   list(APPEND ICL_CODEC_SOURCES qpl_codec.cpp)
 endif()
@@ -34,7 +35,27 @@ endif()
 if(ICL_WITH_IGZIP)
   list(APPEND ICL_CODEC_SOURCES igzip_codec.cpp)
   list(APPEND ICL_CODEC_LINK_LIBS igzip_common)
+  list(APPEND ICL_BUNDLED_STATIC_LIBS igzip_common)
+  list(APPEND ICL_BUNDLED_STATIC_LIBS ISAL::igzip)
 endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 add_library(icl_codec SHARED ${ICL_CODEC_SOURCES})
 target_link_libraries(icl_codec ${ICL_CODEC_LINK_LIBS})
+
+add_library(icl_codec_static ${ICL_CODEC_SOURCES})
+target_link_libraries(icl_codec_static ${ICL_CODEC_LINK_LIBS})
+
+list(APPEND ICL_BUNDLED_STATIC_LIBS icl_codec_static)
+
+icl_car(_FIRST_LIB ${ICL_BUNDLED_STATIC_LIBS})
+icl_cdr(_OTHER_LIBS ${ICL_BUNDLED_STATIC_LIBS})
+create_merged_static_lib(
+  icl_bundled_dependencies
+  NAME
+  icl_codec
+  ROOT
+  ${_FIRST_LIB}
+  TO_MERGE
+  ${_OTHER_LIBS})

@@ -152,8 +152,8 @@ static void SetBenchmarkArgs(benchmark::internal::Benchmark* b) {
       ->RangeMultiplier(2)                                            \
       ->ThreadRange(1, 128);
 
-COMPRESSION_BENCHMARK(Compression, arrow::Compression::GZIP);
 COMPRESSION_BENCHMARK(Compression, arrow::Compression::SNAPPY);
+COMPRESSION_BENCHMARK(Compression, arrow::Compression::GZIP);
 COMPRESSION_BENCHMARK(Compression, arrow::Compression::ZSTD);
 COMPRESSION_BENCHMARK(Decompression, arrow::Compression::GZIP);
 COMPRESSION_BENCHMARK(Decompression, arrow::Compression::SNAPPY);
