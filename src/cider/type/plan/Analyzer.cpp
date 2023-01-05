@@ -2755,7 +2755,8 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
   const auto& expr_pair_list = get_expr_pair_list();
   const auto& else_expr = get_else_ref();
   CHECK_GT(expr_pair_list.size(), 0);
-  JITValuePointer value;
+  JITValuePointer value = func.createVariable(JITTypeTag::INT32, "case_when_value_init");
+  *value = func.createLiteral(JITTypeTag::INT32, 0);
   JITValuePointer null;
   for (const auto& expr_pair : expr_pair_list) {
     func.createIfBuilder()
@@ -2768,32 +2769,13 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
               expr_pair.second->codegen(context));
-          std::cout << then_jit_expr_value.getValue().get()->getValueName() << std::endl;
-          // std::cout << then_jit_expr_value.getValue().get()->getValueTypeTag() <<
-          // std::endl; std::cout <<
-          // then_jit_expr_value.getValue().get()->getValueSubTypeTag() << std::endl;
-          if (then_jit_expr_value.getValue().get() == nullptr) {
-            std::cout << "nullptr1" << std::endl;
-          }
-          if (then_jit_expr_value.getNull().get() == nullptr) {
-            std::cout << "nullptr2" << std::endl;
-          }
-          value.replace(then_jit_expr_value.getValue());
+          *value = *then_jit_expr_value.getValue();
           null.replace(then_jit_expr_value.getNull());
         })
         ->ifFalse([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
               else_expr->codegen(context));
-          std::cout << else_jit_expr_value.getValue().get()->getValueName() << std::endl;
-          // std::cout << else_jit_expr_value.getValue().get()->getValueTypeTag() <<
-          // std::endl;
-          if (else_jit_expr_value.getValue().get() == nullptr) {
-            std::cout << "nullptr3" << std::endl;
-          }
-          if (else_jit_expr_value.getNull().get() == nullptr) {
-            std::cout << "nullptr4" << std::endl;
-          }
-          value.replace(else_jit_expr_value.getValue());
+          *value = *else_jit_expr_value.getValue();
           null.replace(else_jit_expr_value.getNull());
         })
         ->build();
