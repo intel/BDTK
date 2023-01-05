@@ -47,29 +47,23 @@ class CiderFilterRandomTestNG : public CiderTestBase {
  public:
   CiderFilterRandomTestNG() {
     table_name_ = "test";
-    // FIXME: (yma11) revert string columns when supported length is not fixed
-    // create_ddl_ =
-    //     R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
-    //        col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10),
-    //        col_10 VARCHAR(10));)";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
-           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE);)";
+           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10),
+           col_10 VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(schema_,
                                                   array_,
                                                   99,
-                                                  {
-                                                      "col_1",
-                                                      "col_2",
-                                                      "col_3",
-                                                      "col_4",
-                                                      "col_5",
-                                                      "col_6",
-                                                      "col_7",
-                                                      "col_8",
-                                                  },
-                                                  //  "col_9",
-                                                  //  "col_10"},
+                                                  {"col_1",
+                                                   "col_2",
+                                                   "col_3",
+                                                   "col_4",
+                                                   "col_5",
+                                                   "col_6",
+                                                   "col_7",
+                                                   "col_8",
+                                                   "col_9",
+                                                   "col_10"},
                                                   {CREATE_SUBSTRAIT_TYPE(I32),
                                                    CREATE_SUBSTRAIT_TYPE(I64),
                                                    CREATE_SUBSTRAIT_TYPE(Fp32),
@@ -77,10 +71,10 @@ class CiderFilterRandomTestNG : public CiderTestBase {
                                                    CREATE_SUBSTRAIT_TYPE(I32),
                                                    CREATE_SUBSTRAIT_TYPE(I64),
                                                    CREATE_SUBSTRAIT_TYPE(Fp32),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
-                                                  //  CREATE_SUBSTRAIT_TYPE(Varchar),
-                                                  //  CREATE_SUBSTRAIT_TYPE(Varchar)},
-                                                  {2, 2, 2, 2, 2, 2, 2, 2},
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
                                                   GeneratePattern::Random,
                                                   1,
                                                   100);
@@ -317,7 +311,6 @@ TEST_F(CiderFilterRandomTestNG, integerNullFilterTest) {
 }
 
 TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
-  GTEST_SKIP_("Temproraily skipped for string columns not added");
   // IS DISTINCT FROM
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_4 IS DISTINCT FROM "
@@ -334,8 +327,6 @@ TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
       "FROM col_5",
       "mixed_distinct_from.json");
   // mixed case with string
-
-  GTEST_SKIP_("String is not supportted in nextgen.");
   assertQueryArrowIgnoreOrder(
       "SELECT * FROM test WHERE col_9 IS DISTINCT FROM col_10 OR col_10 IS NOT DISTINCT "
       "FROM col_9",

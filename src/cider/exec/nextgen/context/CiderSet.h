@@ -32,75 +32,31 @@ class CiderSet {
   CiderSet() {}
   virtual ~CiderSet() = default;
 
-  virtual void insert(int8_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert int8_t value.");
+#define DEF_CIDER_SET_INSERT(type)                                                 \
+  virtual void insert(type key_val) {                                              \
+    std::string name(typeid(*this).name());                                        \
+    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert " + #type); \
   }
+  DEF_CIDER_SET_INSERT(int8_t)
+  DEF_CIDER_SET_INSERT(int16_t)
+  DEF_CIDER_SET_INSERT(int32_t)
+  DEF_CIDER_SET_INSERT(int64_t)
+  DEF_CIDER_SET_INSERT(float)
+  DEF_CIDER_SET_INSERT(double)
+  DEF_CIDER_SET_INSERT(std::string)
 
-  virtual void insert(int16_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert int16_t value.");
+#define DEF_CIDER_SET_CONTAINS(type)                                               \
+  virtual bool contains(type key_val) {                                            \
+    std::string name(typeid(*this).name());                                        \
+    CIDER_THROW(CiderRuntimeException, name + " doesn't support search " + #type); \
   }
-
-  virtual void insert(int32_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert int32_t value.");
-  }
-
-  virtual void insert(int64_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert int64_t value.");
-  }
-
-  virtual void insert(float key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert float value.");
-  }
-
-  virtual void insert(double key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert double value.");
-  }
-
-  virtual void insert(std::string key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert string value.");
-  }
-
-  virtual bool contains(int8_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search int8_t value.");
-  }
-
-  virtual bool contains(int16_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search int16_t value.");
-  }
-
-  virtual bool contains(int32_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search int32_t value.");
-  }
-
-  virtual bool contains(int64_t key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search int64_t value.");
-  }
-
-  virtual bool contains(float key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search float value.");
-  }
-
-  virtual bool contains(double key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search double value.");
-  }
-
-  virtual bool contains(std::string key_val) {
-    std::string name(typeid(*this).name());
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search string value.");
-  }
+  DEF_CIDER_SET_CONTAINS(int8_t)
+  DEF_CIDER_SET_CONTAINS(int16_t)
+  DEF_CIDER_SET_CONTAINS(int32_t)
+  DEF_CIDER_SET_CONTAINS(int64_t)
+  DEF_CIDER_SET_CONTAINS(float)
+  DEF_CIDER_SET_CONTAINS(double)
+  DEF_CIDER_SET_CONTAINS(std::string)
 };
 
 class CiderInt64Set : public CiderSet {
