@@ -75,17 +75,17 @@ using namespace cider::exec::nextgen;
         "SELECT * FROM test WHERE col_2 IN ('0000000000', '1111111111', '2222222222')", \
         "in_string_array.json");                                                        \
     ASSERT_FUNC("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111')",  \
-                "in_string_2_input_array_with_substr.json");                            \
+                "in_string_2_array_with_substr.json");                                  \
     ASSERT_FUNC("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111')",  \
-                "in_string_2_input_array_with_substring.json");                         \
+                "in_string_2_array_with_substring.json");                               \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
-        "in_string_input_array_with_substr.json");                                      \
+        "in_string_array_with_substr.json");                                            \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
-        "in_string_input_array_with_substring.json");                                   \
+        "in_string_array_with_substring.json");                                         \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE col_1 >= 0 and SUBSTRING(col_2, 1, 4) IN "            \
         "('0000', '1111', '2222', '3333')",                                             \

@@ -78,14 +78,14 @@ class DateRandomAndNullQueryTest : public CiderNextgenTestBase {
 // using year 2009 for week extracting test to avoid the conficts of
 // ISO week date calendar (eg. YYYY-Www-dd)
 // and Gregorian calendar (eg. YYYY-MM-dd)
-class DateRandomAndNullQueryOf2009Test : public CiderTestBase {
+class DateRandomAndNullQueryOf2009Test : public CiderNextgenTestBase {
  public:
   DateRandomAndNullQueryOf2009Test() {
     table_name_ = "test";
     create_ddl_ = "CREATE TABLE test(col_a DATE, col_b DATE);";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         500,
         {"col_a", "col_b"},
         {CREATE_SUBSTRAIT_TYPE(Date), CREATE_SUBSTRAIT_TYPE(Date)},
@@ -113,31 +113,29 @@ TEST_F(DateTypeQueryTest, SimpleDateTest) {
 }
 
 TEST_F(DateRandomAndNullQueryTest, FunctionTest) {
-  assertQuery("SELECT extract(year from col_b) FROM test",
-                   "functions/date/year.json");
+  assertQuery("SELECT extract(year from col_b) FROM test", "functions/date/year.json");
   assertQuery("SELECT extract(quarter from col_b) FROM test",
-                   "functions/date/quarter.json");
-  assertQuery("SELECT extract(month from col_b) FROM test",
-                   "functions/date/month.json");
+              "functions/date/quarter.json");
+  assertQuery("SELECT extract(month from col_b) FROM test", "functions/date/month.json");
   assertQuery("SELECT extract(day from col_b) FROM test", "functions/date/day.json");
   assertQuery("SELECT extract(dayofweek from col_b) FROM test",
-                   "functions/date/day_of_week.json");
+              "functions/date/day_of_week.json");
   assertQuery("SELECT extract(doy from col_b) FROM test",
-                   "functions/date/day_of_year.json");
+              "functions/date/day_of_year.json");
 }
 
 TEST_F(DateTypeQueryTest, SimpleExtractDateTest) {
   assertQuery("SELECT extract(year from col_b) FROM test");
   assertQuery("SELECT extract(quarter from col_b) FROM test",
-                   "extract/quarter_not_null.json");
+              "extract/quarter_not_null.json");
   assertQuery("SELECT extract(month from col_b) FROM test");
   assertQuery("SELECT extract(day from col_b) FROM test");
   assertQuery("SELECT extract(dayofweek from col_b) FROM test",
-                   "extract/day_of_week_not_null.json");
+              "extract/day_of_week_not_null.json");
   assertQuery("SELECT extract(isodow from col_b) FROM test",
-                   "extract/iso_day_of_week_not_null.json");
+              "extract/iso_day_of_week_not_null.json");
   assertQuery("SELECT extract(doy from col_b) FROM test",
-                   "extract/day_of_year_not_null.json");
+              "extract/day_of_year_not_null.json");
 }
 
 // extract function of week in cider is based on Gregorian calendar (eg. YYYY-MM-dd).
@@ -147,36 +145,33 @@ TEST_F(DateTypeQueryTest, SimpleExtractDateTest) {
 // using 2009 for test because ISO week calendar covers Gregorian calendar in 2009
 TEST_F(DateRandomAndNullQueryOf2009Test, SimpleExtractDateTest2) {
   assertQuery("SELECT extract(week from col_b) FROM test", "extract/week.json");
-  assertQuery("SELECT extract(week from col_b) FROM test",
-                   "functions/date/week.json");
+  assertQuery("SELECT extract(week from col_b) FROM test", "functions/date/week.json");
 }
 
 TEST_F(DateRandomQueryTest, SimpleExtractDateTest2) {
   assertQuery("SELECT extract(year from col_b) FROM test");
   assertQuery("SELECT extract(quarter from col_b) FROM test",
-                   "extract/quarter_not_null.json");
+              "extract/quarter_not_null.json");
   assertQuery("SELECT extract(month from col_b) FROM test");
   assertQuery("SELECT extract(day from col_b) FROM test");
   assertQuery("SELECT extract(dayofweek from col_b) FROM test",
-                   "extract/day_of_week_not_null.json");
+              "extract/day_of_week_not_null.json");
   assertQuery("SELECT extract(isodow from col_b) FROM test",
-                   "extract/iso_day_of_week_not_null.json");
+              "extract/iso_day_of_week_not_null.json");
   assertQuery("SELECT extract(doy from col_b) FROM test",
-                   "extract/day_of_year_not_null.json");
+              "extract/day_of_year_not_null.json");
 }
 
 TEST_F(DateRandomAndNullQueryTest, SimpleExtractDateTest3) {
   assertQuery("SELECT extract(year from col_b) FROM test");
-  assertQuery("SELECT extract(quarter from col_b) FROM test",
-                   "extract/quarter.json");
+  assertQuery("SELECT extract(quarter from col_b) FROM test", "extract/quarter.json");
   assertQuery("SELECT extract(month from col_b) FROM test");
   assertQuery("SELECT extract(day from col_b) FROM test");
   assertQuery("SELECT extract(dayofweek from col_b) FROM test",
-                   "extract/day_of_week.json");
+              "extract/day_of_week.json");
   assertQuery("SELECT extract(isodow from col_b) FROM test",
-                   "extract/iso_day_of_week.json");
-  assertQuery("SELECT extract(doy from col_b) FROM test",
-                   "extract/day_of_year.json");
+              "extract/iso_day_of_week.json");
+  assertQuery("SELECT extract(doy from col_b) FROM test", "extract/day_of_year.json");
 }
 
 TEST_F(DateRandomAndNullQueryTest, ExtractDateWithAggTest) {
@@ -305,11 +300,11 @@ class TimeTypeQueryTest : public CiderNextgenTestBase {
 
 TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
   assertQuery("SELECT col_timestamp + INTERVAL '1' MONTH FROM test",
-                   "add_timestamp_interval_month.json");
+              "add_timestamp_interval_month.json");
   assertQuery("SELECT col_timestamp + INTERVAL '1' DAY FROM test",
-                   "add_timestamp_interval_day.json");
+              "add_timestamp_interval_day.json");
   assertQuery("SELECT col_timestamp + INTERVAL '1' SECOND FROM test",
-                   "add_timestamp_interval_second.json");
+              "add_timestamp_interval_second.json");
   // multiple columns with carry-out
   assertQuery(
       "SELECT col_timestamp + INTERVAL '20' MONTH, col_timestamp + INTERVAL '50' DAY, "
@@ -322,21 +317,20 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
   assertQuery("SELECT CAST(CAST(col_time AS VARCHAR) as TIME) FROM test",
                    "cast_string_to_time.json");
   assertQuery("SELECT EXTRACT(microsecond FROM col_timestamp) FROM test",
-                   "extract/microsecond_of_timestamp.json");
+              "extract/microsecond_of_timestamp.json");
   assertQuery("SELECT EXTRACT(second FROM col_time) FROM test",
-                   "extract/second_of_time.json");
+              "extract/second_of_time.json");
   assertQuery("SELECT EXTRACT(quarter FROM col_timestamp) FROM test",
-                   "extract/quarter_of_timestamp.json");
+              "extract/quarter_of_timestamp.json");
   assertQuery("SELECT EXTRACT(month FROM col_timestamp) FROM test",
-                   "extract/month_of_timestamp.json");
+              "extract/month_of_timestamp.json");
   assertQuery("SELECT EXTRACT(year FROM col_timestamp) FROM test",
-                   "extract/year_of_timestamp.json");
+              "extract/year_of_timestamp.json");
   // equals to date trunc
   assertQuery("SELECT CAST(col_timestamp AS DATE) FROM test",
-                   "cast_timestamp_as_date.json");
-  assertQuery(
-      "SELECT col_timestamp FROM test WHERE col_timestamp > DATE '1970-01-01'",
-      "cast_literal_timestamp.json");
+              "cast_timestamp_as_date.json");
+  assertQuery("SELECT col_timestamp FROM test WHERE col_timestamp > DATE '1970-01-01'",
+              "cast_literal_timestamp.json");
 }
 
 int main(int argc, char** argv) {
