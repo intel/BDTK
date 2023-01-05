@@ -44,8 +44,6 @@ template <typename Base>
 struct AggregatedHashTableWithNullKey : public Base {
   using Base::Base;
 
-  bool& hasNullKeyData() { return has_null_key_data_; }
-  AggregateDataPtr& getNullKeyData() { return null_key_data_; }
   bool hasNullKeyData() const { return has_null_key_data_; }
   const AggregateDataPtr& getNullKeyData() const { return null_key_data_; }
   size_t size() const { return Base::size() + (has_null_key_data_ ? 1 : 0); }
