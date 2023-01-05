@@ -29,5 +29,5 @@ set(EXPRESSION_TEST_LIBS
     ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
 set(TEST_ARGS "")
 
-add_executable(CiderSimpleArithmetic CiderSimpleArithmetic.cpp)
-target_link_libraries(CiderSimpleArithmetic ${EXPRESSION_TEST_LIBS})
+add_executable(ArithmeticAndComparison ArithmeticAndComparison.cpp)
+target_link_libraries(ArithmeticAndComparison ${EXPRESSION_TEST_LIBS})

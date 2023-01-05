@@ -29,9 +29,11 @@
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/expression/Expr.h"
 #include "velox/functions/Registerer.h"
+#include "velox/functions/lib/RegistrationHelpers.h"
 #include "velox/functions/lib/benchmarks/FunctionBenchmarkBase.h"
 #include "velox/functions/prestosql/Arithmetic.h"
 #include "velox/functions/prestosql/CheckedArithmetic.h"
+#include "velox/functions/prestosql/Comparisons.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 #include "velox/vector/arrow/Bridge.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
@@ -87,9 +89,17 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     registerFunction<PlusFunction, int32_t, int32_t, int32_t>({"plus"});
     registerFunction<PlusFunction, int64_t, int64_t, int64_t>({"plus"});
     registerFunction<PlusFunction, double, double, double>({"plus"});
-
     // compare with uncheck plus
     registerFunction<CheckedPlusFunction, int64_t, int64_t, int64_t>({"checkedPlus"});
+
+    // for comparision
+    registerBinaryScalar<EqFunction, bool>({"eq"});
+    registerBinaryScalar<NeqFunction, bool>({"neq"});
+    registerBinaryScalar<LtFunction, bool>({"lt"});
+    registerBinaryScalar<GtFunction, bool>({"gt"});
+    registerBinaryScalar<LteFunction, bool>({"lte"});
+    registerBinaryScalar<GteFunction, bool>({"gte"});
+    registerFunction<BetweenFunction, bool, double, double, double>({"btw"});
 
     // Set input schema.
     inputType_ = ROW({
@@ -100,6 +110,8 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
         {"a", DOUBLE()},
         {"b", DOUBLE()},
         {"constant", DOUBLE()},
+        {"d", BOOLEAN()},
+        {"e", BOOLEAN()},
     });
     vectorSize_ = vectorSize;
     // Generate input data.
@@ -116,6 +128,8 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // A
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // B
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // fake constant
+    children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // D
+    children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // E
 
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, vectorSize, std::move(children));
@@ -223,6 +237,17 @@ BENCHMARK_GROUP(multiplyNestedDeep,
                 "multiply(a, multiply(a, b)))");
 
 BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+
+// comparison
+BENCHMARK_GROUP(eq, "eq(a, b)");
+BENCHMARK_GROUP(neq, "neq(a, b)");
+BENCHMARK_GROUP(gt, "gt(a, b)");
+BENCHMARK_GROUP(lt, "lt(a, b)");
+BENCHMARK_GROUP(eqBool, "eq(d, e)");
+BENCHMARK_GROUP(and, "d AND e");
+BENCHMARK_GROUP(or, "d or e");
+BENCHMARK_GROUP(conjunctsNested,
+                "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
 }  // namespace
 
 int main(int argc, char* argv[]) {
