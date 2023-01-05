@@ -70,7 +70,6 @@ int main(int argc, char** argv) {
   log_options.parse_command_line(argc, argv);
   logger::init(log_options);
 
-  // std::vector<int> row_nums{100'000, 1'000'000, 10'000'000};
   std::vector<int> row_nums{1000, 2'000, 3'000};
 
   int err{0};

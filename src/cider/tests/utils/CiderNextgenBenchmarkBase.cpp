@@ -38,7 +38,6 @@ void CiderNextgenBenchmarkBase::benchSQL(const std::string& sql) {
   {
     INJECT_TIMER(DuckDb);
     auto duck_res = duckdb_query_runner_.runSql(sql);
-    auto duck_res_batch = DuckDbResultConvertor::fetchDataToCiderBatch(duck_res);
   }
   {
     INJECT_TIMER(Nextgen);
