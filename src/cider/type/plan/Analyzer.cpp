@@ -2685,13 +2685,6 @@ void ArrayExpr::collect_rte_idx(std::set<int>& rte_idx_set) const {
   }
 }
 
-void FunctionOper::collect_rte_idx(std::set<int>& rte_idx_set) const {
-  for (unsigned i = 0; i < getArity(); i++) {
-    const auto expr = getArg(i);
-    expr->collect_rte_idx(rte_idx_set);
-  }
-}
-
 void CaseExpr::collect_column_var(
     std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>& colvar_set,
     bool include_agg) const {
@@ -2723,15 +2716,6 @@ void ArrayExpr::collect_column_var(
     bool include_agg) const {
   for (unsigned i = 0; i < getElementCount(); i++) {
     const auto expr = getElement(i);
-    expr->collect_column_var(colvar_set, include_agg);
-  }
-}
-
-void FunctionOper::collect_column_var(
-    std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>& colvar_set,
-    bool include_agg) const {
-  for (unsigned i = 0; i < getArity(); i++) {
-    const auto expr = getArg(i);
     expr->collect_column_var(colvar_set, include_agg);
   }
 }
@@ -2815,77 +2799,6 @@ void CaseExpr::get_domain(DomainSet& domain_set) const {
       }
     }
   }
-}
-
-std::shared_ptr<Analyzer::Expr> FunctionOper::deep_copy() const {
-  std::vector<std::shared_ptr<Analyzer::Expr>> args_copy;
-  for (size_t i = 0; i < getArity(); ++i) {
-    args_copy.push_back(getArg(i)->deep_copy());
-  }
-  return makeExpr<Analyzer::FunctionOper>(type_info, getName(), args_copy);
-}
-
-bool FunctionOper::operator==(const Expr& rhs) const {
-  if (type_info != rhs.get_type_info()) {
-    return false;
-  }
-  const auto rhs_func_oper = dynamic_cast<const FunctionOper*>(&rhs);
-  if (!rhs_func_oper) {
-    return false;
-  }
-  if (getName() != rhs_func_oper->getName()) {
-    return false;
-  }
-  if (getArity() != rhs_func_oper->getArity()) {
-    return false;
-  }
-  for (size_t i = 0; i < getArity(); ++i) {
-    if (!(*getArg(i) == *(rhs_func_oper->getArg(i)))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-std::string FunctionOper::toString() const {
-  std::string str{"(" + name_ + " "};
-  for (const auto& arg : args_) {
-    str += arg->toString();
-  }
-  str += ")";
-  return str;
-}
-
-std::shared_ptr<Analyzer::Expr> FunctionOperWithCustomTypeHandling::deep_copy() const {
-  std::vector<std::shared_ptr<Analyzer::Expr>> args_copy;
-  for (size_t i = 0; i < getArity(); ++i) {
-    args_copy.push_back(getArg(i)->deep_copy());
-  }
-  return makeExpr<Analyzer::FunctionOperWithCustomTypeHandling>(
-      type_info, getName(), args_copy);
-}
-
-bool FunctionOperWithCustomTypeHandling::operator==(const Expr& rhs) const {
-  if (type_info != rhs.get_type_info()) {
-    return false;
-  }
-  const auto rhs_func_oper =
-      dynamic_cast<const FunctionOperWithCustomTypeHandling*>(&rhs);
-  if (!rhs_func_oper) {
-    return false;
-  }
-  if (getName() != rhs_func_oper->getName()) {
-    return false;
-  }
-  if (getArity() != rhs_func_oper->getArity()) {
-    return false;
-  }
-  for (size_t i = 0; i < getArity(); ++i) {
-    if (!(*getArg(i) == *(rhs_func_oper->getArg(i)))) {
-      return false;
-    }
-  }
-  return true;
 }
 
 double WidthBucketExpr::get_bound_val(const Analyzer::Expr* bound_expr) const {
