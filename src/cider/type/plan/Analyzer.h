@@ -815,7 +815,7 @@ class CaseExpr : public Expr {
   std::shared_ptr<Analyzer::Expr> add_cast(const SQLTypeInfo& new_type_info) override;
   void get_domain(DomainSet& domain_set) const override;
 
-  JITExprValue& codegen(JITFunction& func) override;
+  JITExprValue& codegen(CodegenContext& context) override;
   ExprPtrRefVector get_children_reference() override;
 
  private:

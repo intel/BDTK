@@ -40,14 +40,6 @@ std::string getDataFilesPath() {
   return absolute_path.substr(0, pos) + "/jsons/";
 }
 
-std::string get_json_data(std::string file_name) {
-  auto json_file = getDataFilesPath() + file_name;
-  std::ifstream sub_json(json_file);
-  std::stringstream buffer;
-  buffer << sub_json.rdbuf();
-  return buffer.str();
-}
-
 class CiderCaseWhenNextgenTest : public ::testing::Test {
  public:
   void executeTest(ArrowArray* array,
@@ -72,7 +64,9 @@ class CiderCaseWhenNextgenTest : public ::testing::Test {
 
     // Codegen
     context::CodegenContext codegen_ctx;
-    auto module = cider::jitlib::LLVMJITModule("test", true);
+    cider::jitlib::CompilationOptions co;
+    co.dump_ir = true;
+    auto module = cider::jitlib::LLVMJITModule("test", true, co);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
             .registerModule(module)
@@ -171,6 +165,13 @@ TEST_F(CiderCaseWhenNextgenTest, primitiveTypeCaseWhenTest) {
 int main(int argc, char** argv) {
   TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  int err = RUN_ALL_TESTS();
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  int err{0};
+  try {
+    err = RUN_ALL_TESTS();
+  } catch (const std::exception& e) {
+    LOG(ERROR) << e.what();
+  }
   return err;
 }

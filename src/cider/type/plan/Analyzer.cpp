@@ -2750,33 +2750,55 @@ void CaseExpr::check_group_by(
   }
 }
 
-JITExprValue& CaseExpr::codegen(JITFunction& func) {
+JITExprValue& CaseExpr::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
   const auto& expr_pair_list = get_expr_pair_list();
   const auto& else_expr = get_else_ref();
   CHECK_GT(expr_pair_list.size(), 0);
+  JITValuePointer value;
+  JITValuePointer null;
   for (const auto& expr_pair : expr_pair_list) {
     func.createIfBuilder()
         ->condition([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue cond(
-              expr_pair.first->codegen(func));
+              expr_pair.first->codegen(context));
           auto condition = !cond.getNull() && cond.getValue();
           return condition;
         })
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
-              expr_pair.second->codegen(func));
-          return set_expr_value(then_jit_expr_value.getNull(),
-                                then_jit_expr_value.getValue());
+              expr_pair.second->codegen(context));
+          std::cout << then_jit_expr_value.getValue().get()->getValueName() << std::endl;
+          // std::cout << then_jit_expr_value.getValue().get()->getValueTypeTag() <<
+          // std::endl; std::cout <<
+          // then_jit_expr_value.getValue().get()->getValueSubTypeTag() << std::endl;
+          if (then_jit_expr_value.getValue().get() == nullptr) {
+            std::cout << "nullptr1" << std::endl;
+          }
+          if (then_jit_expr_value.getNull().get() == nullptr) {
+            std::cout << "nullptr2" << std::endl;
+          }
+          value.replace(then_jit_expr_value.getValue());
+          null.replace(then_jit_expr_value.getNull());
         })
         ->ifFalse([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
-              else_expr->codegen(func));
-          return set_expr_value(else_jit_expr_value.getNull(),
-                                else_jit_expr_value.getValue());
+              else_expr->codegen(context));
+          std::cout << else_jit_expr_value.getValue().get()->getValueName() << std::endl;
+          // std::cout << else_jit_expr_value.getValue().get()->getValueTypeTag() <<
+          // std::endl;
+          if (else_jit_expr_value.getValue().get() == nullptr) {
+            std::cout << "nullptr3" << std::endl;
+          }
+          if (else_jit_expr_value.getNull().get() == nullptr) {
+            std::cout << "nullptr4" << std::endl;
+          }
+          value.replace(else_jit_expr_value.getValue());
+          null.replace(else_jit_expr_value.getNull());
         })
         ->build();
   }
-  return expr_var_;
+  return set_expr_value(null, value);
 }
 
 ExprPtrRefVector CaseExpr::get_children_reference() {
