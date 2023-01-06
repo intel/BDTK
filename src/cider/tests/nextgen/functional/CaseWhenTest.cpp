@@ -110,7 +110,7 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   }
 
 IF_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, ifNotNullTestForArrow);
-// IF_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, ifSeqNullTestForArrow);
+IF_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, ifSeqNullTestForArrow);
 // IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifRandomNullTestForArrow);
 
 #define CASE_WHEN_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                     \
