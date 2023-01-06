@@ -25,8 +25,13 @@
 #include <functional>
 #include <memory>
 #include <optional>
+
 #include "cider/CiderAllocator.h"
+#include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderJoinHashTable.h"
+
+using namespace cider::exec::nextgen::context;
+
 namespace cider::exec::processor {
 
 struct HashBuildResult {
@@ -36,6 +41,8 @@ struct HashBuildResult {
 };
 
 using HashBuildTableSupplier = std::function<std::optional<HashBuildResult>()>;
+using CrossJoinColumnBatchSupplier =
+    std::function<std::optional<cider::exec::nextgen::context::Batch>()>;
 
 class BatchProcessorContext {
  public:
@@ -52,9 +59,19 @@ class BatchProcessorContext {
     return buildTableSupplier_;
   }
 
+  void setCrossJoinColumnBatchSupplier(
+      const CrossJoinColumnBatchSupplier& columnBatchSupplier) {
+    columnBatchSupplier_ = columnBatchSupplier;
+  }
+
+  const CrossJoinColumnBatchSupplier& getCrossJoinColumnBatchSupplier() const {
+    return columnBatchSupplier_;
+  }
+
  private:
   std::shared_ptr<CiderAllocator> allocator_;
   HashBuildTableSupplier buildTableSupplier_;
+  CrossJoinColumnBatchSupplier columnBatchSupplier_;
 };
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;

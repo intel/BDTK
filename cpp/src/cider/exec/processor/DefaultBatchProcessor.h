@@ -49,6 +49,8 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hashTable) override;
 
+  void feedCrossBuildData(Batch crossData) override;
+
  protected:
   plan::SubstraitPlanPtr plan_;
 

@@ -61,6 +61,9 @@ DefaultBatchProcessor::DefaultBatchProcessor(
     // initialize joinHandler accordingly once the
     joinHandler_ = std::make_shared<HashProbeHandler>(shared_from_this());
     this->state_ = BatchProcessorState::kWaiting;
+  } else if (plan_->hasCrossRel()) {
+    joinHandler_ = std::make_shared<CrossProbeHandler>(shared_from_this());
+    this->state_ = BatchProcessorState::kWaiting;
   }
 
   auto translator =
@@ -126,6 +129,12 @@ void DefaultBatchProcessor::feedHashBuildTable(
   // switch state from waiting to running once hashTable is ready
   this->state_ = BatchProcessorState::kRunning;
   this->codegen_context_->setHashTable(hashTable.get());
+}
+
+void DefaultBatchProcessor::feedCrossBuildData(Batch crossData) {
+  // switch state from waiting to running once cross build data is ready
+  this->state_ = BatchProcessorState::kRunning;
+  // TODO: feed cross build data into nextGen context
 }
 
 std::unique_ptr<BatchProcessor> makeBatchProcessor(

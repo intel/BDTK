@@ -54,6 +54,19 @@ class HashProbeHandler : public JoinHandler {
   BatchProcessorPtr batchProcessor_;
 };
 
+class CrossProbeHandler : public JoinHandler {
+ public:
+  explicit CrossProbeHandler(const BatchProcessorPtr& batchProcessor)
+      : batchProcessor_(batchProcessor) {}
+
+  std::shared_ptr<CiderBatch> onProcessBatch(std::shared_ptr<CiderBatch> batch) override;
+
+  void onState(BatchProcessorState state) override;
+
+ private:
+  BatchProcessorPtr batchProcessor_;
+};
+
 }  // namespace cider::exec::processor
 
 #endif  // CIDER_JOINHANDLER_H
