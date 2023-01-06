@@ -24,6 +24,35 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
+void codegenCastOverflowCheck(CodegenContext& context,
+                              JITValuePointer operand_val,
+                              JITValuePointer null_val,
+                              const SQLTypeInfo& operand_ti,
+                              const SQLTypeInfo& target_ti) {
+  bool integer_ovf =
+      target_ti.is_integer() && operand_ti.get_size() >= target_ti.get_size();
+  if (context.getCodegenOptions().needs_error_check && integer_ovf) {
+    JITFunction& func = *context.getJITFunction();
+    auto jit_target_tag = getJITTypeTag(target_ti.get_type());
+    auto jit_source_tag = getJITTypeTag(operand_ti.get_type());
+    JITValuePointer type_max_val =
+        func.createLiteral(jit_target_tag, get_max_value(target_ti.get_type()))
+            ->castJITValuePrimitiveType(jit_source_tag);
+    JITValuePointer type_min_val =
+        func.createLiteral(jit_target_tag, get_min_value(target_ti.get_type()))
+            ->castJITValuePrimitiveType(jit_source_tag);
+    // overflow check before cast
+    func.createIfBuilder()
+        ->condition([&]() {
+          return !null_val && (operand_val > type_max_val || operand_val <= type_min_val);
+        })
+        ->ifTrue([&]() {
+          func.createReturn(func.createLiteral(JITTypeTag::INT32,
+                                               ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+        })
+        ->build();
+  }
+}
 JITValuePointer codegenCastBetweenDateAndTime(CodegenContext& context,
                                               JITValuePointer operand_val,
                                               const SQLTypeInfo& operand_ti,
@@ -305,8 +334,10 @@ JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operan
         codegenCastStringToNumeric(
             context, str_val.getValue(), str_val.getLength(), target_ti));
   } else {
-    // input is primitive type
+    // cast between numeric type
     FixSizeJITExprValue operand_val(operand->codegen(context));
+    codegenCastOverflowCheck(
+        context, operand_val.getValue(), operand_val.getNull(), operand_ti, target_ti);
     return set_expr_value(
         operand_val.getNull(),
         codegenCastFixedSize(context, operand_val.getValue(), operand_ti, target_ti));

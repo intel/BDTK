@@ -256,7 +256,7 @@ extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
 #define DEF_CONVERT_INTEGER_TO_STRING(value_type, value_name)                         \
   extern "C" RUNTIME_EXPORT int64_t gen_string_from_##value_name(                     \
       const value_type operand, char* string_heap_ptr) {                              \
-    std::string_view str = std::to_string(operand);                                   \
+    std::string str = std::to_string(operand);                                        \
     StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);                 \
     string_t s = ptr->addString(str.data(), str.length());                            \
     return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize()); \
@@ -325,28 +325,28 @@ gen_string_from_date(const int32_t operand, char* string_heap_ptr) {
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
 
-#define DEF_CONVERT_STRING_TO_INTEGER(value_type, value_name)          \
-  extern "C" RUNTIME_EXPORT value_type convert_string_to_##value_name( \
-      const char* str_ptr, const int32_t str_len) {                    \
-    std::string from_str(str_ptr, str_len);                            \
-    try {                                                              \
-      value_type res = std::stoi(from_str);                            \
-      if (res >= std::numeric_limits<value_type>::min() &&             \
-          res <= std::numeric_limits<value_type>::max())               \
-        return res;                                                    \
-    } catch (std::exception & err) {                                   \
-      CIDER_THROW(CiderRuntimeException, err.what());                  \
-    }                                                                  \
-    CIDER_THROW(CiderRuntimeException,                                 \
-                "runtime error:cast from string to " #value_type);     \
+#define DEF_CONVERT_STRING_TO_INTEGER(value_type, value_name)                   \
+  extern "C" RUNTIME_EXPORT value_type convert_string_to_##value_name(          \
+      const char* str_ptr, const int32_t str_len) {                             \
+    std::string from_str(str_ptr, str_len);                                     \
+    value_type res = std::stoi(from_str);                                       \
+    if (res > std::numeric_limits<value_type>::min() &&                         \
+        res <= std::numeric_limits<value_type>::max())                          \
+      return res;                                                               \
+    CIDER_THROW(CiderRuntimeException,                                          \
+                "value is out of range when cast from string to " #value_type); \
   }
 
 DEF_CONVERT_STRING_TO_INTEGER(int8_t, tinyint)
 DEF_CONVERT_STRING_TO_INTEGER(int16_t, smallint)
 DEF_CONVERT_STRING_TO_INTEGER(int32_t, int)
-DEF_CONVERT_STRING_TO_INTEGER(int64_t, bigint)
-
 #undef DEF_CONVERT_STRING_TO_INTEGER
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+convert_string_to_bigint(const char* str_ptr, const int32_t str_len) {
+  std::string from_str(str_ptr, str_len);
+  return std::stoll(from_str);
+}
 
 extern "C" RUNTIME_EXPORT ALWAYS_INLINE float convert_string_to_float(
     const char* str_ptr,
