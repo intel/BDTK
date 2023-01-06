@@ -336,7 +336,7 @@ JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operan
   } else {
     // cast between numeric type
     // If arg type is same as target type, erase the cast directly
-    if (get_type_info().get_type() == get_operand()->get_type_info().get_type()) {
+    if (get_type_info() == get_operand()->get_type_info()) {
       return set_expr_value(operand_val.getNull(), operand_val.getValue());
     }
     FixSizeJITExprValue operand_val(operand->codegen(context));
