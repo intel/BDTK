@@ -2755,32 +2755,43 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
   const auto& expr_pair_list = get_expr_pair_list();
   const auto& else_expr = get_else_ref();
   CHECK_GT(expr_pair_list.size(), 0);
-  JITValuePointer value = func.createVariable(JITTypeTag::INT32, "case_when_value_init");
-  *value = func.createLiteral(JITTypeTag::INT32, 0);
-  JITValuePointer null;
-  for (const auto& expr_pair : expr_pair_list) {
-    func.createIfBuilder()
-        ->condition([&]() {
-          cider::exec::nextgen::utils::FixSizeJITExprValue cond(
-              expr_pair.first->codegen(context));
-          auto condition = !cond.getNull() && cond.getValue();
-          return condition;
-        })
-        ->ifTrue([&]() {
-          cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
-              expr_pair.second->codegen(context));
-          *value = *then_jit_expr_value.getValue();
-          null.replace(then_jit_expr_value.getNull());
-        })
-        ->ifFalse([&]() {
-          cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
-              else_expr->codegen(context));
-          *value = *else_jit_expr_value.getValue();
-          null.replace(else_jit_expr_value.getNull());
-        })
-        ->build();
+  const auto case_ti = get_type_info();
+  if (case_ti.is_integer() || case_ti.is_time() || case_ti.is_decimal() ||
+      case_ti.is_fp() || case_ti.is_boolean()) {
+    const auto type =
+        case_ti.is_decimal() ? decimal_to_int_type(case_ti) : case_ti.get_type();
+    JITValuePointer value = func.createVariable(getJITTag(type), "case_when_value_init");
+    *value = func.createLiteral(getJITTag(type), 0);
+    JITValuePointer null;
+    for (const auto& expr_pair : expr_pair_list) {
+      func.createIfBuilder()
+          ->condition([&]() {
+            cider::exec::nextgen::utils::FixSizeJITExprValue cond(
+                expr_pair.first->codegen(context));
+            auto condition = !cond.getNull() && cond.getValue();
+            return condition;
+          })
+          ->ifTrue([&]() {
+            cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
+                expr_pair.second->codegen(context));
+            *value = *then_jit_expr_value.getValue();
+            null.replace(then_jit_expr_value.getNull());
+          })
+          ->ifFalse([&]() {
+            cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
+                else_expr->codegen(context));
+            *value = *else_jit_expr_value.getValue();
+            null.replace(else_jit_expr_value.getNull());
+          })
+          ->build();
+    }
+    return set_expr_value(null, value);
+  } else if (case_ti.is_string()) {
+    UNIMPLEMENTED();
+  } else {
+    UNREACHABLE();
   }
-  return set_expr_value(null, value);
+  return get_expr_value();
 }
 
 ExprPtrRefVector CaseExpr::get_children_reference() {

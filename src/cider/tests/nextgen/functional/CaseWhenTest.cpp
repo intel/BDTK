@@ -95,10 +95,12 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     assertQueryArrow("SELECT IF(col_int = 1 ,10, 1) FROM test",                         \
                      "SELECT CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test");      \
-    GTEST_SKIP();                                                                       \
     assertQueryArrow(                                                                   \
         "SELECT IF(col_int > 20, col_bigint, col_double) FROM test",                    \
         "SELECT CASE WHEN col_int > 20 THEN col_bigint ELSE col_double END FROM test"); \
+    GTEST_SKIP_(                                                                        \
+        "TODO(Haiwei) Agg is not supported now, require future validation of the "      \
+        "following case.");                                                             \
     assertQueryArrow(                                                                   \
         "SELECT SUM(IF(col_int > 20, col_double, 5)) FROM test",                        \
         "SELECT SUM(CASE WHEN col_int > 20 THEN col_double ELSE 5 END) FROM test");     \
