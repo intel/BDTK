@@ -227,8 +227,8 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
     *value = func.createLiteral(getJITTag(type), 0);
     JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "case_when_null_init");
     *null = func.createLiteral(JITTypeTag::BOOL, false);
-    // TODO(Haiwei): should rewrite this for loop by nested IfBuilder because of multiple
-    // case-when
+    JITValuePointer is_case = func.createVariable(JITTypeTag::BOOL, "is_case_init");
+    *is_case = func.createLiteral(JITTypeTag::BOOL, false);
     for (const auto& expr_pair : expr_pair_list) {
       func.createIfBuilder()
           ->condition([&]() {
@@ -242,15 +242,19 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
                 expr_pair.second->codegen(context));
             *value = *then_jit_expr_value.getValue();
             *null = *then_jit_expr_value.getNull();
-          })
-          ->ifFalse([&]() {
-            cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
-                else_expr->codegen(context));
-            *value = *else_jit_expr_value.getValue();
-            *null = *else_jit_expr_value.getNull();
+            *is_case = func.createLiteral(JITTypeTag::BOOL, true);
           })
           ->build();
     }
+    func.createIfBuilder()
+        ->condition([&]() { return !is_case; })
+        ->ifTrue([&]() {
+          cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
+              else_expr->codegen(context));
+          *value = *else_jit_expr_value.getValue();
+          *null = *else_jit_expr_value.getNull();
+        })
+        ->build();
     return set_expr_value(null, value);
   } else if (case_ti.is_string()) {
     UNIMPLEMENTED();
