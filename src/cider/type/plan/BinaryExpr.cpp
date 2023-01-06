@@ -232,6 +232,9 @@ JITExprValue& BinOper::codegenVarcharCmpFun(JITFunction& func,
                                             JITValuePointer& null,
                                             VarSizeJITExprValue& lhs,
                                             VarSizeJITExprValue& rhs) {
+  if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
+    return codegenVarcharDistinctFrom(func, lhs, rhs);
+  }
   const std::unordered_map<SQLOps, std::string> op_to_func_map{{kEQ, "string_eq"},
                                                                {kNE, "string_ne"},
                                                                {kLT, "string_lt"},
@@ -254,6 +257,33 @@ JITExprValue& BinOper::codegenVarcharCmpFun(JITFunction& func,
                                                   rhs.getLength().get()}});
 
   return set_expr_value(null, cmp_res);
+}
+
+JITExprValue& BinOper::codegenVarcharDistinctFrom(JITFunction& func,
+                                                  VarSizeJITExprValue& lhs,
+                                                  VarSizeJITExprValue& rhs) {
+  JITValuePointer value = func.createVariable(JITTypeTag::BOOL, "bw_cmp");
+
+  auto cmp_res = func.emitRuntimeFunctionCall(
+      "string_ne",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::BOOL,
+                                .params_vector = {lhs.getValue().get(),
+                                                  lhs.getLength().get(),
+                                                  rhs.getValue().get(),
+                                                  rhs.getLength().get()}});
+  // both not null and value not equal, or have different null property
+  value =
+      (!lhs.getNull() && !rhs.getNull() && cmp_res) || (lhs.getNull() != rhs.getNull());
+  switch (get_optype()) {
+    case kBW_NE: {
+      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
+    }
+    case kBW_EQ: {
+      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), !value);
+    }
+    default:
+      UNREACHABLE();
+  }
 }
 
 }  // namespace Analyzer
