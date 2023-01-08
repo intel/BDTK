@@ -75,6 +75,7 @@ cider_hashtable::HashTableRegistrar<
         std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>,
     cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>
     linear_hashtable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
+
 cider_hashtable::HashTableRegistrar<
     cider_hashtable::BaseHashTable<
         int,
@@ -154,7 +155,7 @@ TEST(CiderHashTableTest, batchAsValueTest) {
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>,
                                std::pair<Batch*, int>>>>>::Instance()
-                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_BATCH);
+                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_BATCH, 20);
 
   StdMapDuplicateKeyWrapper<int, std::pair<Batch*, int>> dup_map;
 
@@ -238,7 +239,7 @@ TEST(CiderHashTableTest, LPHashMapTest) {
       Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
-                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
+                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT, 5000);
   for (int i = 0; i < 10000; i++) {
     int key = random(-100000, 10000);
     int value = random(-10000, 10000);

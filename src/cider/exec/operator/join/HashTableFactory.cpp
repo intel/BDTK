@@ -20,25 +20,37 @@
  */
 #include "cider/CiderException.h"
 
-template <class HashTableType_t, class HashTableImpl_t>
+namespace cider_hashtable {
+
+template <typename HashTableType_t, typename HashTableImpl_t>
 std::unique_ptr<HashTableType_t>
-cider_hashtable::HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHashTable() {
+HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHashTable() {
   return std::make_unique<HashTableImpl_t>();
 }
 
-template <class HashTableType_t>
-void cider_hashtable::HashTableFactory<HashTableType_t>::registerHashTable(
+template <typename HashTableType_t, typename HashTableImpl_t>
+std::unique_ptr<HashTableType_t>
+HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHashTable(int initial_size) {
+  return std::make_unique<HashTableImpl_t>(initial_size);
+}
+
+template <typename HashTableType_t>
+void HashTableFactory<HashTableType_t>::registerHashTable(
     IHashTableRegistrar<HashTableType_t>* registrar,
     hashtableName name) {
   m_HashTableRegistry[name] = registrar;
 }
 
-template <class HashTableType_t>
-std::unique_ptr<HashTableType_t>
-cider_hashtable::HashTableFactory<HashTableType_t>::getHashTable(hashtableName name) {
+template <typename HashTableType_t>
+template <typename... Args>
+std::unique_ptr<HashTableType_t> HashTableFactory<HashTableType_t>::getHashTable(
+    hashtableName name,
+    Args&&... args) {
   if (m_HashTableRegistry.find(name) != m_HashTableRegistry.end()) {
-    return m_HashTableRegistry[name]->createHashTable();
+    // todo: based on name, use different override createhashtable() function
+    return m_HashTableRegistry[name]->createHashTable(std::forward<Args>(args)...);
   }
   CIDER_THROW(CiderRuntimeException, "No hashtable found for " + name);
   return NULL;
 }
+}  // namespace cider_hashtable

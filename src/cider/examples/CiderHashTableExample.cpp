@@ -73,7 +73,7 @@ cider_hashtable::HashTableRegistrar<
         void,
         std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>,
     cider_hashtable::LinearProbeHashTable<int, std::string, MurmurHash, IntEqual>>
-    linear_hashtable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
+    linear_hashtable(cider_hashtable::hashtableName::LINEAR_PROBING_STRING);
 
 int main(int argc, char** argv) {
   // query: SELECT t_right.col_2 FROM t_left JOIN t_right ON t_left.col_1 = t_right.col_1;
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>>::
                 Instance()
-                    .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
+                    .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_STRING);
 
   // build hashtable based on right table, key is col_1, value is col_2
   // For multi project cols in join, the value type can be vector<col1,col2...> or

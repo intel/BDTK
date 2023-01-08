@@ -32,6 +32,7 @@ Disadvantages:
  */
 #pragma once
 
+namespace cider_hashtable {
 template <typename Key,
           typename Value,
           typename Hash,
@@ -39,10 +40,9 @@ template <typename Key,
           typename Grower,
           typename Allocator>
 template <typename K, typename... Args>
-bool cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::emplace_impl(
-        const K& key,
-        Args&&... args) {
+bool LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::emplace_impl(
+    const K& key,
+    Args&&... args) {
   reserve(size_ + 1);
   for (size_t idx = key_to_idx(key);; idx = probe_next(idx)) {
     if (!buckets_[idx].first.is_not_null) {
@@ -65,10 +65,9 @@ template <typename Key,
           typename KeyEqual,
           typename Grower,
           typename Allocator>
-void cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::
-        merge_other_hashtables(
-            const std::vector<std::unique_ptr<LinearProbeHashTable>>& otherTables) {
+void LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::
+    merge_other_hashtables(
+        const std::vector<std::unique_ptr<LinearProbeHashTable>>& otherTables) {
   int total_size = 0;
   for (const auto& table_ptr : otherTables) {
     total_size += table_ptr->size();
@@ -86,9 +85,8 @@ template <typename Key,
           typename KeyEqual,
           typename Grower,
           typename Allocator>
-void cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::swap(
-        LinearProbeHashTable& other) noexcept {
+void LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::swap(
+    LinearProbeHashTable& other) noexcept {
   std::swap(buckets_, other.buckets_);
   std::swap(size_, other.size_);
   std::swap(empty_key_, other.empty_key_);
@@ -101,9 +99,8 @@ template <typename Key,
           typename Grower,
           typename Allocator>
 template <typename K>
-bool cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::contains_impl(
-        const K& key) {
+bool LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::contains_impl(
+    const K& key) {
   for (size_t idx = key_to_idx(key);; idx = probe_next(idx)) {
     if (key_equal()(buckets_[idx].first.key, key) && buckets_[idx].first.is_not_null) {
       return true;
@@ -122,9 +119,8 @@ template <typename Key,
           typename Grower,
           typename Allocator>
 template <typename K>
-Value cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::find_impl(
-        const K& key) {
+Value LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::find_impl(
+    const K& key) {
   for (size_t idx = key_to_idx(key);; idx = probe_next(idx)) {
     if (key_equal()(buckets_[idx].first.key, key) && buckets_[idx].first.is_not_null) {
       return buckets_[idx].second;
@@ -142,9 +138,9 @@ template <typename Key,
           typename Grower,
           typename Allocator>
 template <typename K>
-std::vector<Value> cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::find_all_impl(
-        const K& key) {
+std::vector<Value>
+LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::find_all_impl(
+    const K& key) {
   std::vector<Value> vec;
   int duplicate_num = 0;
   for (size_t idx = key_to_idx(key);; idx = probe_next(idx)) {
@@ -170,9 +166,8 @@ template <typename Key,
           typename Grower,
           typename Allocator>
 template <typename K>
-size_t cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::key_to_idx(
-        const K& key) const noexcept(noexcept(hasher()(key))) {
+size_t LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::key_to_idx(
+    const K& key) const noexcept(noexcept(hasher()(key))) {
   const size_t mask = buckets_.size() - 1;
   return hasher()(key) & mask;
 }
@@ -182,9 +177,9 @@ template <typename Key,
           typename KeyEqual,
           typename Grower,
           typename Allocator>
-size_t cider_hashtable::
-    LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::probe_next(
-        size_t idx) const noexcept {
+size_t LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::probe_next(
+    size_t idx) const noexcept {
   const size_t mask = buckets_.size() - 1;
   return (idx + 1) & mask;
 }
+}  // namespace cider_hashtable

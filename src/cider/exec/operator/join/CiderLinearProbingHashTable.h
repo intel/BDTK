@@ -22,7 +22,7 @@
 /*
 A hash map for join. Uses open addressing with linear probing.
 Advantages:
-  - Predictable performance. Doesn'Value use the allocator unless load factor
+  - Predictable performance. Doesn't use the allocator unless load factor
     grows beyond 50%. Linear probing ensures cash efficency.
   - Desgin for no delete/erase action, makes it faster on insert and find
   - Allow duplicate keys
@@ -124,7 +124,7 @@ class LinearProbeHashTable
 
  public:
   LinearProbeHashTable(size_type bucket_count = 16,
-                       Key empty_key = NULL,
+                       Key empty_key = Key(),
                        const allocator_type& alloc = allocator_type())
       : empty_key_({empty_key, false, 0}), buckets_(alloc) {
     size_t pow2 = 1;
@@ -263,4 +263,8 @@ class LinearProbeHashTable
 };
 }  // namespace cider_hashtable
 
-#include <exec/operator/join/CiderLinearProbingHashTable.cpp>
+// separate the implementations into cpp files instead of h file
+// to isolate the implementation from codegen.
+// use include cpp as a method to avoid maintaining too many template
+// declaration in cpp file.
+#include "exec/operator/join/CiderLinearProbingHashTable.cpp"

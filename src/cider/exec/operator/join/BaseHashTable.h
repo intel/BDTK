@@ -28,38 +28,48 @@ template <typename Key,
           typename Allocator>
 class BaseHashTable {
  public:
-  // (Recommended) Should be automatically inlined
-  virtual void emplace(Key key, Value value, bool inserted) = 0;
-  // Improve performance for string cases
-  virtual void emplace(Key key, Value value, size_t hash_value, bool inserted) = 0;
-  // For single call
+  // insert data
   virtual bool emplace(Key key, Value value) = 0;
-  // Improve performance for string cases
+  // inserted is the flag used to indicate whether the insertion result is successful or
+  // not
+  virtual void emplace(Key key, Value value, bool inserted) = 0;
+  // hash_value is the hash result of the key
   virtual bool emplace(Key key, Value value, size_t hash_value) = 0;
+  // hash_value is the hash result of the key
+  // inserted is the flag used to indicate whether the insertion result is successful or
+  // not
+  virtual void emplace(Key key, Value value, size_t hash_value, bool inserted) = 0;
 
-  // For agg and non-duplicated value cases
+  // find one result that matched the key, for agg and non-duplicated value cases
   virtual Value find(const Key key) = 0;
+  // hash_value is the hash result of the key
   virtual Value find(const Key key, size_t hash_value) = 0;
 
-  // For join and duplicated value cases (Values is an internal data structure, for now in
-  // join Values is vector<Value>)
+  // find all results that matched the key, for join and duplicated value cases
   virtual std::vector<Value> findAll(const Key key) = 0;
+  // hash_value is the hash result of the key
   virtual std::vector<Value> findAll(const Key key, size_t hash_value) = 0;
 
-  // For spill cases
+  // Earse the data that match the key
   virtual bool erase(const Key key) = 0;
+  // hash_value is the hash result of the key
   virtual bool erase(const Key key, size_t hash_value) = 0;
 
+  // judge whether this key is included
   virtual bool contains(const Key key) = 0;
+  // hash_value is the hash result of the key
   virtual bool contains(const Key key, size_t hash_value) = 0;
 
+  // return the elements number in this hashtable
   virtual std::size_t size() const = 0;
 
-  // check and call rehash if needed
+  // check size and call rehash if needed
   virtual void reserve(size_t num_elements) = 0;
 
+  // judge whether the hashtable is empty
   virtual bool empty() const = 0;
 
+  // delete elements in this hashtable
   virtual void clear() = 0;
 };
 }  // namespace cider_hashtable
