@@ -67,13 +67,18 @@ template <typename Key,
           typename Allocator>
 void LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::
     merge_other_hashtables(
-        const std::vector<std::unique_ptr<LinearProbeHashTable>>& otherTables) {
+        const std::vector<std::unique_ptr<
+            BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>& otherTables) {
   int total_size = 0;
-  for (const auto& table_ptr : otherTables) {
+  for (const auto& table_ptr_tmp : otherTables) {
+    LinearProbeHashTable* table_ptr =
+        dynamic_cast<LinearProbeHashTable*>(table_ptr_tmp.get());
     total_size += table_ptr->size();
   }
   rehash(total_size);
-  for (const auto& table_ptr : otherTables) {
+  for (const auto& table_ptr_tmp : otherTables) {
+    LinearProbeHashTable* table_ptr =
+        dynamic_cast<LinearProbeHashTable*>(table_ptr_tmp.get());
     for (auto it = table_ptr->begin(); it != table_ptr->end(); ++it)
       insert((*it).first.key, (*it).second);
   }

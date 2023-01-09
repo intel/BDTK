@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#include <exec/operator/join/HashTableFactory.h>
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
@@ -29,8 +28,8 @@
 #include <vector>
 #include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderF14HashTable.h"
-#include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
+#include "exec/operator/join/HashTableFactory.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "type/data/sqltypes.h"
@@ -65,67 +64,54 @@ int random(int low, int high) {
   return dist(gen);
 }
 
-cider_hashtable::HashTableRegistrar<
-    cider_hashtable::BaseHashTable<
-        int,
-        int,
-        MurmurHash,
-        Equal,
-        void,
-        std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>,
-    cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>
-    linear_hashtable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
-
-cider_hashtable::HashTableRegistrar<
-    cider_hashtable::BaseHashTable<
-        int,
-        std::pair<cider::exec::nextgen::context::Batch*, int>,
-        MurmurHash,
-        Equal,
-        void,
-        std::allocator<std::pair<cider_hashtable::table_key<int>,
-                                 std::pair<cider::exec::nextgen::context::Batch*, int>>>>,
-    cider_hashtable::LinearProbeHashTable<
-        int,
-        std::pair<cider::exec::nextgen::context::Batch*, int>,
-        MurmurHash,
-        Equal>>
-    linear_hashtable_batch(cider_hashtable::hashtableName::LINEAR_PROBING_BATCH);
-
 TEST(CiderHashTableTest, factoryTest) {
-  auto ht = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+  cider_hashtable::HashTableSelector<
       int,
       int,
       MurmurHash,
       Equal,
       void,
-      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
-                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
+      hashTableSelector;
+  auto hm =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
 }
 
 TEST(CiderHashTableTest, mergeTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm1(16, NULL);
-  cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm2(16, NULL);
-  cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm3(16, NULL);
+  cider_hashtable::HashTableSelector<
+      int,
+      int,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
+      hashTableSelector;
+  auto hm1 =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hm2 =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hm3 =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+
   for (int i = 0; i < 100; i++) {
     int value = random(-1000, 1000);
-    hm1.insert(random(-10, 10), value);
-    hm2.insert(random(-10, 10), value);
-    hm3.insert(random(-10, 10), value);
+    hm1->emplace(random(-10, 10), value);
+    hm2->emplace(random(-10, 10), value);
+    hm3->emplace(random(-10, 10), value);
   }
-  std::vector<
-      std::unique_ptr<cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>>
+  // cider_hashtable::BaseHashTable<int, int, MurmurHash, Equal> hb1 = hm1;
+  std::vector<std::unique_ptr<cider_hashtable::BaseHashTable<
+      int,
+      int,
+      MurmurHash,
+      Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>>
       other_tables;
-  other_tables.push_back(
-      std::make_unique<
-          cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>(hm1));
-  other_tables.push_back(
-      std::make_unique<
-          cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>(hm2));
-  other_tables.push_back(
-      std::make_unique<
-          cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal>>(hm3));
+  other_tables.emplace_back(std::move(hm1));
+  other_tables.emplace_back(std::move(hm2));
+  other_tables.emplace_back(std::move(hm3));
 
   cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm_final(16, NULL);
   hm_final.merge_other_hashtables(std::move(other_tables));
@@ -147,15 +133,17 @@ TEST(CiderHashTableTest, batchAsValueTest) {
 
   Batch build_batch(*schema, *array);
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using factory
-  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+  cider_hashtable::HashTableSelector<
       int,
-      std::pair<Batch*, int>,
+      std::pair<cider::exec::nextgen::context::Batch*, int>,
       MurmurHash,
       Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>,
-                               std::pair<Batch*, int>>>>>::Instance()
-                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_BATCH, 20);
+                               std::pair<cider::exec::nextgen::context::Batch*, int>>>>
+      hashTableSelector;
+  auto hm =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
 
   StdMapDuplicateKeyWrapper<int, std::pair<Batch*, int>> dup_map;
 
@@ -206,14 +194,16 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 
 TEST(CiderHashTableTest, randomInsertAndfindTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+  cider_hashtable::HashTableSelector<
       int,
       int,
       MurmurHash,
       Equal,
       void,
-      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
-                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT);
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
+      hashTableSelector;
+  auto hm =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
   StdMapDuplicateKeyWrapper<int, int> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
@@ -232,14 +222,16 @@ TEST(CiderHashTableTest, randomInsertAndfindTest) {
 
 TEST(CiderHashTableTest, LPHashMapTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+  cider_hashtable::HashTableSelector<
       int,
       int,
       MurmurHash,
       Equal,
       void,
-      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>::Instance()
-                .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_INT, 5000);
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
+      hashTableSelector;
+  auto hm =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
   for (int i = 0; i < 10000; i++) {
     int key = random(-100000, 10000);
     int value = random(-10000, 10000);

@@ -18,82 +18,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#pragma once
 
 #include <map>
-#include <memory>
 #include <string>
+
+#ifndef CIDER_HASHTABLE_BASE_H
+#define CIDER_HASHTABLE_BASE_H
+#include <memory>
+#include "exec/operator/join/BaseHashTable.h"
+#endif
+#include "exec/operator/join/CiderLinearProbingHashTable.h"
 
 namespace cider_hashtable {
 
 // To be added
 // This enum is used for cider internal only
 // Outside cider will need to define their own enum
-enum hashtableName {
-  // value type is INT, used for test
-  LINEAR_PROBING_INT,
-  // value type is BATCH, used for codegen
-  LINEAR_PROBING_BATCH,
-  LINEAR_PROBING_STRING,
-  CHAINED_INT,
-  CHAINED_BATCH
+enum HashTableType {
+  LINEAR_PROBING,
+  CHAINED,
+  CK_INT8,
 };
 
-template <typename HashTableType_t>
-class IHashTableRegistrar {
+template <typename Key,
+          typename Value,
+          typename Hash,
+          typename KeyEqual,
+          typename Grower,
+          typename Allocator>
+class HashTableSelector {
  public:
-  virtual std::unique_ptr<HashTableType_t> createHashTable() = 0;
+  // TODO: Define hashtable selection strategy in here
+  HashTableType getHashTableTypeForJoin(std::string data_type,
+                                        int initial_size,
+                                        double ratio) {}
 
-  virtual std::unique_ptr<HashTableType_t> createHashTable(int initial_size) = 0;
-
- protected:
-  IHashTableRegistrar() {}
-  virtual ~IHashTableRegistrar() {}
-
- private:
-  IHashTableRegistrar(const IHashTableRegistrar&);
-  const IHashTableRegistrar& operator=(const IHashTableRegistrar&);
-};
-
-template <typename HashTableType_t>
-class HashTableFactory {
- public:
-  static HashTableFactory<HashTableType_t>& Instance() {
-    static HashTableFactory<HashTableType_t> instance;
-    return instance;
-  }
-
-  void registerHashTable(IHashTableRegistrar<HashTableType_t>* registrar,
-                         hashtableName name);
-
-  // may add getHashTableForJoin and getHashTableForAgg
   template <typename... Args>
-  std::unique_ptr<HashTableType_t> getHashTable(hashtableName name, Args&&... args);
-
- private:
-  HashTableFactory() {}
-  ~HashTableFactory() { m_HashTableRegistry.clear(); }
-
-  HashTableFactory(const HashTableFactory&);
-  const HashTableFactory& operator=(const HashTableFactory&);
-
-  std::map<hashtableName, IHashTableRegistrar<HashTableType_t>*> m_HashTableRegistry;
+  std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>
+  createForJoin(HashTableType hashtable_type, Args&&... args);
 };
 
-template <typename HashTableType_t, typename HashTableImpl_t>
-class HashTableRegistrar : public IHashTableRegistrar<HashTableType_t> {
- public:
-  explicit HashTableRegistrar(hashtableName name) {
-    HashTableFactory<HashTableType_t>::Instance().registerHashTable(this, name);
-  }
-
-  std::unique_ptr<HashTableType_t> createHashTable();
-
-  std::unique_ptr<HashTableType_t> createHashTable(int initial_size);
-};
 }  // namespace cider_hashtable
 
 // separate the implementations into cpp files instead of h file
 // to isolate the implementation from codegen.
 // use include cpp as a method to avoid maintaining too many template
 // declaration in cpp file.
-#include <exec/operator/join/HashTableFactory.cpp>
+#include "exec/operator/join/HashTableFactory.cpp"

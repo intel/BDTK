@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#include <exec/operator/join/HashTableFactory.h>
 #include <gflags/gflags.h>
 #include <algorithm>
 #include <iostream>
@@ -27,6 +26,7 @@
 #include <string>
 #include <vector>
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
+#include "exec/operator/join/HashTableFactory.h"
 #include "util/Logger.h"
 
 // utils for generate datas
@@ -58,23 +58,6 @@ struct IntEqual {
   bool operator()(int lhs, int rhs) { return lhs == rhs; }
 };
 
-// this part should be done in future hashtable selector's code with strategy, right now
-// is hardcode. BaseHashTable is the base class and LinearProbeHashTable is the impl in
-// this case. key(int) and value(int) data type should be decided by input data type. Hash
-// function(MurmurHash) and equal function(IntEqual) would have default in selector for
-// each data type. Grower and allocator would be default in impl but currently need to
-// copy from impl to set basehashtable
-cider_hashtable::HashTableRegistrar<
-    cider_hashtable::BaseHashTable<
-        int,
-        std::string,
-        MurmurHash,
-        IntEqual,
-        void,
-        std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>,
-    cider_hashtable::LinearProbeHashTable<int, std::string, MurmurHash, IntEqual>>
-    linear_hashtable(cider_hashtable::hashtableName::LINEAR_PROBING_STRING);
-
 int main(int argc, char** argv) {
   // query: SELECT t_right.col_2 FROM t_left JOIN t_right ON t_left.col_1 = t_right.col_1;
 
@@ -95,19 +78,22 @@ int main(int argc, char** argv) {
     table_right_col_2[i] = std::to_string(tmp);
   }
 
-  // consturct hashtable from factory.
-  // BaseHashTable is base hashtable interface.
-  // All template arguments for basehashtable would be decided during selector.
-  // int is the key's data type, and since the project is string the value type is string.
-  auto hm = cider_hashtable::HashTableFactory<cider_hashtable::BaseHashTable<
+  // this part should be done in future hashtable selector's code with strategy, right now
+  // is hardcode. BaseHashTable is the base class and LinearProbeHashTable is the impl in
+  // this case. key(int) and value(int) data type should be decided by input data type.
+  // Hash function(MurmurHash) and equal function(IntEqual) would have default in selector
+  // for each data type. Grower and allocator would be default in impl but currently need
+  // to copy from impl to set basehashtable
+  cider_hashtable::HashTableSelector<
       int,
       std::string,
       MurmurHash,
       IntEqual,
       void,
-      std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>>::
-                Instance()
-                    .getHashTable(cider_hashtable::hashtableName::LINEAR_PROBING_STRING);
+      std::allocator<std::pair<cider_hashtable::table_key<int>, std::string>>>
+      hashTableSelector;
+  auto hm =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
 
   // build hashtable based on right table, key is col_1, value is col_2
   // For multi project cols in join, the value type can be vector<col1,col2...> or

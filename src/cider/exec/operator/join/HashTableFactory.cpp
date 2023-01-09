@@ -21,36 +21,24 @@
 #include "cider/CiderException.h"
 
 namespace cider_hashtable {
-
-template <typename HashTableType_t, typename HashTableImpl_t>
-std::unique_ptr<HashTableType_t>
-HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHashTable() {
-  return std::make_unique<HashTableImpl_t>();
-}
-
-template <typename HashTableType_t, typename HashTableImpl_t>
-std::unique_ptr<HashTableType_t>
-HashTableRegistrar<HashTableType_t, HashTableImpl_t>::createHashTable(int initial_size) {
-  return std::make_unique<HashTableImpl_t>(initial_size);
-}
-
-template <typename HashTableType_t>
-void HashTableFactory<HashTableType_t>::registerHashTable(
-    IHashTableRegistrar<HashTableType_t>* registrar,
-    hashtableName name) {
-  m_HashTableRegistry[name] = registrar;
-}
-
-template <typename HashTableType_t>
+template <typename Key,
+          typename Value,
+          typename Hash,
+          typename KeyEqual,
+          typename Grower,
+          typename Allocator>
 template <typename... Args>
-std::unique_ptr<HashTableType_t> HashTableFactory<HashTableType_t>::getHashTable(
-    hashtableName name,
+std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>
+HashTableSelector<Key, Value, Hash, KeyEqual, Grower, Allocator>::createForJoin(
+    HashTableType hashtable_type,
     Args&&... args) {
-  if (m_HashTableRegistry.find(name) != m_HashTableRegistry.end()) {
-    // todo: based on name, use different override createhashtable() function
-    return m_HashTableRegistry[name]->createHashTable(std::forward<Args>(args)...);
+  switch (hashtable_type) {
+    case LINEAR_PROBING:
+      return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
+          std::forward<Args>(args)...);
+    default:
+      return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
+          std::forward<Args>(args)...);
   }
-  CIDER_THROW(CiderRuntimeException, "No hashtable found for " + name);
-  return NULL;
 }
 }  // namespace cider_hashtable

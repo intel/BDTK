@@ -31,8 +31,10 @@ Disadvantages:
   - Maximum load factor hard coded to 50%, memory inefficient.
  */
 #pragma once
-
-#include <exec/operator/join/BaseHashTable.h>
+#ifndef CIDER_HASHTABLE_BASE_H
+#define CIDER_HASHTABLE_BASE_H
+#include "exec/operator/join/BaseHashTable.h"
+#endif
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -196,7 +198,7 @@ class LinearProbeHashTable
 
   // TODO: assert key and value types
   void merge_other_hashtables(
-      const std::vector<std::unique_ptr<LinearProbeHashTable>>& otherTables);
+      const std::vector<std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>& otherTables);
 
   void swap(LinearProbeHashTable& other) noexcept;
 
