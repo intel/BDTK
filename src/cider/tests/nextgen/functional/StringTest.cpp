@@ -579,7 +579,7 @@ class CiderSplitPartTestNextGen : public CiderNextgenTestBase {
 
 TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (string-split) is not supported yet in nextgen");
+  // GTEST_SKIP_("stringop (string-split) is not supported yet in nextgen");
   // note that duckdb array indexing is one-based, so [2] references the second element
   assertQuery(
       "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
@@ -611,9 +611,148 @@ TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
       "stringop_split_index_not_found.json");
 }
 
+static const size_t npos = -1;
+extern "C" ALWAYS_INLINE size_t cider_find_str_from_left(const char* str1,
+                                                         size_t str1_len,
+                                                         const char* str2,
+                                                         size_t str2_len,
+                                                         size_t start_pos = npos) {
+  if (str1_len < str2_len) {
+    return npos;
+  }
+  size_t real_start_pos = (start_pos == npos) ? 0 : start_pos;
+  for (size_t i = real_start_pos; i < str1_len - str2_len; ++i) {
+    if (!std::memcmp(str1 + i, str2, str2_len)) {
+      return i;
+    }
+  }
+  return npos;
+}
+
+extern "C" ALWAYS_INLINE size_t cider_find_str_from_right(const char* str1,
+                                                          size_t str1_len,
+                                                          const char* str2,
+                                                          size_t str2_len,
+                                                          size_t start_pos = npos) {
+  if (str1_len < str2_len) {
+    return npos;
+  }
+  size_t real_start_pos = (start_pos == npos) ? 0 : start_pos;
+  for (size_t i = real_start_pos; i >= str2_len; --i) {
+    if (!std::memcmp(str1 + i - str2_len, str2, str2_len)) {
+      return i - str2_len;
+    }
+  }
+  return npos;
+}
+
+extern "C" ALWAYS_INLINE int64_t cider_split(const char* str_ptr,
+                                             int str_len,
+                                             const char* delimiter_ptr,
+                                             int delimiter_len,
+                                             bool reverse,
+                                             int limit,
+                                             int split_part) {
+  // If split_part is negative then it is taken as the number
+  // of split parts from the end of the string
+  printf("str:%s,str_len:%d,del_ptr:%s, del_len:%d\n",
+         str_ptr,
+         str_len,
+         delimiter_ptr,
+         delimiter_len);
+  printf("reverse:%d, limit:%d, split_part:%d\n", reverse, limit, split_part);
+  split_part = split_part == 0 ? 1UL : std::abs(split_part);
+  // StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  if (delimiter_len == 0) {
+    // string_t s = ptr->addString(str_ptr, str_len);
+    // return pack_string_t(s);
+  }
+
+  if (limit == 1) {
+    // should return a list with only 1 string (which should not be splitted)
+    if (split_part == 1) {
+      // string_t s = ptr->addString(str_ptr, str_len);
+      // return pack_string_t(s);
+      return 0;
+    } else {
+      // out of range, should return null;
+      return 0;
+    }
+  }
+  size_t delimiter_pos = reverse ? str_len : 0UL;
+  size_t last_delimiter_pos;
+  size_t delimiter_idx = 0UL;
+  size_t limit_counter = 0UL;
+
+  do {
+    last_delimiter_pos = delimiter_pos;
+    delimiter_pos =
+        reverse ? cider_find_str_from_right(
+                      str_ptr, str_len, delimiter_ptr, delimiter_len, delimiter_pos )
+                : cider_find_str_from_left(
+                      str_ptr,
+                      str_len,
+                      delimiter_ptr,
+                      delimiter_len,
+                      // shouldn't skip delimiter length on first search attempt
+                      delimiter_pos == 0 ? 0 : delimiter_pos + delimiter_len);
+    // do ++limit_counter in the loop to prevent bugs caused by shortcut execution
+    ++limit_counter;
+    // however, we still keep ++delimiter_idx in while condition check to ensure
+    // the property that delimiter_idx == 0 iff delimiter does not exist in input string
+  } while (delimiter_pos != npos && ++delimiter_idx < split_part &&
+           (limit == 0 || limit_counter < limit));
+
+  if (limit && limit_counter == limit) {
+    // split has reached maximum split limit
+    // treat whatever remains as a whole by extending delimiter_pos to end-of-string
+    delimiter_pos = npos;
+  }
+
+  if (delimiter_idx == 0 && split_part == 1) {
+    // delimiter does not exist, but the first split is requested, return the entire str
+    return 0;
+    // string_t s = ptr->addString(str_ptr, str_len);
+    // return pack_string_t(s);
+  }
+
+  if (delimiter_pos == npos &&
+      (delimiter_idx < split_part - 1UL || delimiter_idx < 1UL)) {
+    // split_part_ was out of range
+    return 0;  // null string
+  }
+
+  if (reverse) {
+    const size_t substr_start =
+        delimiter_pos == npos ? 0UL : delimiter_pos + delimiter_len;
+    return 0;
+    // string_t s =
+    // ptr->addString(str_ptr + substr_start, last_delimiter_pos - substr_start);
+    // return pack_string_t(s);
+  } else {
+    const size_t substr_start =
+        split_part == 1UL ? 0UL : last_delimiter_pos + delimiter_len;
+    return 0;
+    // string_t s = ptr->addString(str_ptr + substr_start, delimiter_pos - substr_start);
+    // return pack_string_t(s);
+  }
+}
+
+TEST(CiderSplitPartFunc, func) {
+  char* str_ptr = ",";  //"foobar,boo";//" foobar,boo foo,bar,boo foo,bar,boo,,VU";
+  int str_len = 1;
+  char* del_ptr = ",";
+  int del_len = 1;
+  bool reverse = true;
+  int limit = 0;
+  int split_part = -1;
+
+  auto res = cider_split(str_ptr, str_len, del_ptr, del_len, reverse, limit, split_part);
+}
+
 TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (split) is not supported yet in nextgen");
+  // GTEST_SKIP_("stringop (split) is not supported yet in nextgen");
   // test for prestodb extension split(input, delimiter, limit)
   auto is_null = std::vector<bool>{false, true, false, true, false, true};
   {
@@ -650,7 +789,7 @@ TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
 
 TEST_F(CiderSplitPartTestNextGen, SplitPartTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (split-part) is not supported yet in nextgen");
+  // GTEST_SKIP_("stringop (split-part) is not supported yet in nextgen");
   // test for prestodb extension split_part(input, delimiter, part)
   // the underlying codegen and runtime function are the same as split-with-index
   // so a basic test for verifying runnability should suffice for now

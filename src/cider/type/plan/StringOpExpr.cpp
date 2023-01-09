@@ -640,4 +640,73 @@ JITExprValue& TrimStringOper::codegen(CodegenContext& context) {
 
   return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
 }
+
+std::shared_ptr<Analyzer::Expr> SplitPartStringOper::deep_copy() const {
+  return makeExpr<Analyzer::SplitPartStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
+  CHECK_GE(getArity(), 3);
+  CHECK_LE(getArity(), 4);
+  JITFunction& func = *context.getJITFunction();
+  // decode input args
+  auto input = const_cast<Analyzer::Expr*>(getArg(0));
+  auto delimiter = const_cast<Analyzer::Expr*>(getArg(1));
+  // Analyzer::Expr* limit; = const_cast<Analyzer::Expr*>(getArg(2));
+  // Analyzer::Expr* splitpart; = const_cast<Analyzer::Expr*>(getArg(3));
+  int limit_val = 0;
+  int splitpart_val = 0;
+  if (getArity() == 3) {  // no limit
+    splitpart_val =
+        dynamic_cast<const Analyzer::Constant*>(getArg(2))->get_constval().intval;
+  } else if (getArity() == 4) {
+    limit_val = dynamic_cast<const Analyzer::Constant*>(getArg(2))->get_constval().intval;
+    splitpart_val =
+        dynamic_cast<const Analyzer::Constant*>(getArg(3))->get_constval().intval;
+  }
+  bool reverse = splitpart_val < 0;
+  splitpart_val = splitpart_val == 0 ? 1 : std::abs(splitpart_val);
+
+  auto delimiter_literal = dynamic_cast<Analyzer::Constant*>(delimiter);
+  std::string dilimiter_val = *delimiter_literal->get_constval().stringval;
+
+  auto delimiter_val = VarSizeJITExprValue(delimiter->codegen(context));
+
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+  std::string fn_name = "cider_split";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(
+      fn_name,
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT64,
+          .params_vector = {
+              string_heap_ptr.get(),
+              input_val.getValue().get(),
+              input_val.getLength().get(),
+              delimiter_val.getValue().get(),
+              delimiter_val.getLength().get(),
+              func.createLiteral<bool>(JITTypeTag::BOOL, reverse).get(),
+              func.createLiteral<int>(JITTypeTag::INT32, limit_val).get(),
+              func.createLiteral<int>(JITTypeTag::INT32, splitpart_val).get()}});
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_string_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_string_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+}
+
 }  // namespace Analyzer
