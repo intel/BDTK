@@ -164,8 +164,8 @@ std::string ArrowVarcharStringifier::stringifyValueAt(const struct ArrowArray* a
   if (isNullAt(array, row_index)) {
     return NULL_VALUE;
   }
-  const uint8_t* offset_buffer = reinterpret_cast<const uint8_t*>(array->buffers[1]);
-  const int32_t* data_buffer = reinterpret_cast<const int32_t*>(array->buffers[2]);
+  const int32_t* offset_buffer = reinterpret_cast<const int32_t*>(array->buffers[1]);
+  const uint8_t* data_buffer = reinterpret_cast<const uint8_t*>(array->buffers[2]);
   int32_t start = offset_buffer[row_index];
   int32_t end = offset_buffer[row_index + 1];
   int32_t len = end - start;

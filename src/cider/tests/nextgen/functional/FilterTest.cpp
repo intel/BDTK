@@ -323,7 +323,6 @@ TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
       "mixed_distinct_from.json");
   // mixed case with string
 
-  GTEST_SKIP_("String is not supportted in nextgen.");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE col_9 IS DISTINCT FROM col_10 OR col_10 IS NOT DISTINCT "
       "FROM col_9",
