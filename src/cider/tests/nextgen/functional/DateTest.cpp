@@ -316,6 +316,10 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
       "add_timestamp_interval_mixed.json");
   assertQueryArrow("SELECT CAST(col_date AS TIMESTAMP) FROM test",
                    "cast_date_as_timestamp.json");
+  assertQueryArrow("SELECT CAST(CAST(col_timestamp AS VARCHAR) as TIMESTAMP) FROM test",
+                   "cast_string_to_timestamp.json");
+  assertQueryArrow("SELECT CAST(CAST(col_time AS VARCHAR) as TIME) FROM test",
+                   "cast_string_to_time.json");
   assertQueryArrow("SELECT EXTRACT(microsecond FROM col_timestamp) FROM test",
                    "extract/microsecond_of_timestamp.json");
   assertQueryArrow("SELECT EXTRACT(second FROM col_time) FROM test",

@@ -1086,10 +1086,6 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  // TODO: (spevenhe) this branch should only cover cast_string_to_date case.
-  // encapsulate and support nested function like cast(cast(xx as String) AS Date).
-  // CAST(SUBSTRING(col_string, 0, 5) AS DATE
-  // Now only supports cast(col_string AS Date)
   if (s_cast_expr.type().kind_case() == substrait::Type::kDate) {
     SQLTypeInfo sqlTypeInfo = getSQLTypeInfo(s_cast_expr.type());
     if (!s_cast_expr.input().literal().fixed_char().empty()) {
@@ -1128,7 +1124,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       CIDER_THROW(CiderCompileException, "Can not get the origin type of CAST to DATE.");
     }
   }
-  // CAST is a normal UOper expr in Analyzer
+  // The if-else branch above is a old workaround method(to be removed after migration),
+  // just make cast simple expr as below.
   return std::make_shared<Analyzer::UOper>(
       getSQLTypeInfo(s_cast_expr.type()),
       false,

@@ -161,8 +161,11 @@ size_t formatDateTime(char* buf,
                       int64_t const timestamp,
                       int const dimension);
 
-// Write unixtime in seconds since epoch as "HH:MM:SS" format.
-size_t formatHMS(char* buf, size_t const max, int64_t const unixtime);
+// Write unixtime as "HH:MM:SS.ssssss" format.
+size_t formatHMS(char* buf,
+                 size_t const max,
+                 int64_t const unixtime,
+                 int const dimension = 0);
 
 size_t formatDays(char* buf, size_t const max, int32_t const day);
 
