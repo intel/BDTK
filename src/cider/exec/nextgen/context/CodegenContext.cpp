@@ -200,6 +200,14 @@ std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
       agg_name = agg_name + "_count";
       break;
     }
+    case SQLAgg::kMIN: {
+      agg_name = agg_name + "_min_" + utils::getSQLTypeName(sql_type);
+      break;
+    }
+    case SQLAgg::kMAX: {
+      agg_name = agg_name + "_max_" + utils::getSQLTypeName(sql_type);
+      break;
+    }
     default:
       LOG(FATAL) << "unsupport agg function type: " << toString(agg_type);
       break;

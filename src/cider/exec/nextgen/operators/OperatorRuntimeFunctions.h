@@ -51,10 +51,16 @@
   }
 
 #define DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(aggName, aggFunc)         \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(8, aggName, aggFunc)              \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(16, aggName, aggFunc)             \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(32, aggName, aggFunc)             \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(64, aggName, aggFunc)             \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(8, aggName, aggFunc)  \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(16, aggName, aggFunc) \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(32, aggName, aggFunc) \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_WITH_OFFSET(64, aggName, aggFunc) \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(8, aggName, aggFunc)     \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(16, aggName, aggFunc)    \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(32, aggName, aggFunc)    \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(64, aggName, aggFunc)
 
@@ -62,8 +68,19 @@ template <typename T>
 ALWAYS_INLINE void nextgen_cider_agg_sum(T& agg_val, const T& val) {
   agg_val += val;
 }
-
 DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(sum, nextgen_cider_agg_sum)
+
+template <typename T>
+ALWAYS_INLINE void nextgen_cider_agg_min(T& agg_val, const T& val) {
+  agg_val = std::min(agg_val, val);
+}
+DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(min, nextgen_cider_agg_min)
+
+template <typename T>
+ALWAYS_INLINE void nextgen_cider_agg_max(T& agg_val, const T& val) {
+  agg_val = std::max(agg_val, val);
+}
+DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(max, nextgen_cider_agg_max)
 
 /******************* Simple Aggregation COUNT For Nextgen ************************/
 extern "C" ALWAYS_INLINE void nextgen_cider_agg_count(int64_t* agg_val_addr) {

@@ -58,19 +58,14 @@ struct AggExprsInfo {
   jitlib::JITTypeTag jit_value_type_;
   SQLAgg agg_type_;
   int8_t start_offset_;
-  int8_t byte_size_;
   int8_t null_offset_;
   std::string agg_name_;
 
-  AggExprsInfo(SQLTypeInfo sql_type_info,
-               SQLAgg agg_type,
-               int8_t start_offset,
-               int8_t byte_size)
+  AggExprsInfo(SQLTypeInfo sql_type_info, SQLAgg agg_type, int8_t start_offset)
       : sql_type_info_(sql_type_info)
       , jit_value_type_(utils::getJITTypeTag(sql_type_info_.get_type()))
       , agg_type_(agg_type)
       , start_offset_(start_offset)
-      , byte_size_(byte_size)
       , null_offset_(-1)
       , agg_name_(getAggName(agg_type, sql_type_info_.get_type())) {}
 
