@@ -37,7 +37,7 @@ namespace cider_hashtable {
 enum HashTableType {
   LINEAR_PROBING,
   CHAINED,
-  CK_INT8,
+  CK_INT8
 };
 
 template <typename Key,
