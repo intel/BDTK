@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 namespace icl {
 namespace codec {
@@ -32,8 +33,12 @@ class IclCompressionCodec {
  public:
   virtual ~IclCompressionCodec() = default;
 
+  /// \brief Create a ICL codec for the given codec name and compression level.
+  ///
+  /// \param[in] codec_name the name of the backend codec used by ICL, supported codec can be "igzip", "qpl", "qat"  
+  /// \param[in] compression_level the compression level for the given codec 
   static std::unique_ptr<IclCompressionCodec> MakeIclCompressionCodec(
-      std::string codec_name,
+      const std::string& codec_name,
       int compression_level);
 
   /// \brief One-shot decompression function
@@ -54,6 +59,7 @@ class IclCompressionCodec {
                            int64_t output_buffer_len,
                            uint8_t* output_buffer) = 0;
 
+  /// \brief Return the max required compressed buffer length for the given input length
   virtual int64_t MaxCompressedLen(int64_t input_len, const uint8_t* input) = 0;
 
   /// \brief Return the smallest supported compression level

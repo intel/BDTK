@@ -68,7 +68,7 @@ The following diagram shows the design architecture. Currently, it offers a few 
 ## Reusable Modules
 BDTK provides several functional modules for user to use or integrate into their product. Here are breif description for each module. Details can be found on [Module Page](https://intel.github.io/BDTK/user/modules.html)
 
- - [Intel Codec Library Module](https://intel.github.io/BDTK/user/modules/icl-module.html)
+ - [Intel Codec Library Module](https://intel.github.io/BDTK/user/modules/ICL-module.html)
 
   Intel Codec Library module provides compression and decompression library for Apache Hadoop/Spark to make use of the acceleration hardware for compression/decompression. It not only can leverage QAT/IAA hardware to accelerate deflate-compatible data compression algorithms but also supports the use of Intel software optimized solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.
 
