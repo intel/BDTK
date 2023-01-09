@@ -198,7 +198,9 @@ class LinearProbeHashTable
 
   // TODO: assert key and value types
   void merge_other_hashtables(
-      const std::vector<std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>& otherTables);
+      const std::vector<
+          std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
+          otherTables);
 
   void swap(LinearProbeHashTable& other) noexcept;
 

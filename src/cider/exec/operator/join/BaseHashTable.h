@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include <vector>
 #include <memory>
+#include <vector>
 namespace cider_hashtable {
 
 template <typename Key,
@@ -76,6 +76,8 @@ class BaseHashTable {
 
   // merge other hashtables
   virtual void merge_other_hashtables(
-      const std::vector<std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>& otherTables) = 0;
+      const std::vector<
+          std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
+          otherTables) = 0;
 };
 }  // namespace cider_hashtable

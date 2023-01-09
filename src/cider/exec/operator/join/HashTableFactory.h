@@ -25,7 +25,6 @@
 
 #ifndef CIDER_HASHTABLE_BASE_H
 #define CIDER_HASHTABLE_BASE_H
-#include <memory>
 #include "exec/operator/join/BaseHashTable.h"
 #endif
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
