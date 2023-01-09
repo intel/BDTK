@@ -28,11 +28,11 @@
 
 /* `../` is required for UDFCompiler */
 #include "cider/CiderException.h"
-#include "type/data/InlineNullValues.h"
 #include "type/data/funcannotations.h"
+#include "type/data/sqltypes.h"
 
-#define EXTENSION_INLINE extern "C" RUNTIME_EXPORT ALWAYS_INLINE
-#define EXTENSION_NOINLINE extern "C" RUNTIME_EXPORT NEVER_INLINE
+#define EXTENSION_INLINE extern "C" inline RUNTIME_EXPORT ALWAYS_INLINE
+#define EXTENSION_NOINLINE extern "C" inline RUNTIME_EXPORT NEVER_INLINE
 #define TEMPLATE_INLINE ALWAYS_INLINE
 #define TEMPLATE_NOINLINE NEVER_INLINE
 

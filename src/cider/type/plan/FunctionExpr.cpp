@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #include "type/plan/FunctionExpr.h"
-#include "exec/template/IRCodegenUtils.h"
 #include "function/ExtensionFunctionsBinding.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "type/data/sqltypes.h"
@@ -115,7 +114,7 @@ bool FunctionOperWithCustomTypeHandling::operator==(const Expr& rhs) const {
   return true;
 }
 
-JITTypeTag ext_arg_type_to_JIT_type_tag(const ExtArgumentType ext_arg_type) {
+inline JITTypeTag ext_arg_type_to_JIT_type_tag(const ExtArgumentType ext_arg_type) {
   switch (ext_arg_type) {
     case ExtArgumentType::Bool:  // pass thru to Int8
     case ExtArgumentType::Int8:
@@ -181,31 +180,8 @@ bool ext_func_call_requires_nullcheck(const Analyzer::FunctionOper* function_ope
   return false;
 }
 
-inline SQLTypeInfo get_sql_type_from_JIT_type_tag(const JITTypeTag jit_type) {
-  switch (jit_type) {
-    case JITTypeTag::FLOAT:
-      return SQLTypeInfo(kFLOAT, false);
-    case JITTypeTag::DOUBLE:
-      return SQLTypeInfo(kDOUBLE, false);
-    case JITTypeTag::BOOL:
-      return SQLTypeInfo(kBOOLEAN, false);
-    case JITTypeTag::INT8:
-      return SQLTypeInfo(kTINYINT, false);
-    case JITTypeTag::INT16:
-      return SQLTypeInfo(kSMALLINT, false);
-    case JITTypeTag::INT32:
-      return SQLTypeInfo(kINT, false);
-    case JITTypeTag::INT64:
-      return SQLTypeInfo(kBIGINT, false);
-    default:
-      LOG(FATAL) << "Unrecognized jit type for SQL type";
-  }
-  UNREACHABLE();
-  return SQLTypeInfo();
-}
-
 // Generates code which returns true if at least one of the arguments is NULL.
-JITValue* codegenFunctionOperNullArgForArrow(
+JITValuePointer codegenFunctionOperNullArgForArrow(
     JITFunction& func,
     const Analyzer::FunctionOper* function_oper,
     const std::vector<JITValue*>& orig_arg_lv_nulls) {
@@ -219,18 +195,17 @@ JITValue* codegenFunctionOperNullArgForArrow(
     if (arg_ti.get_notnull()) {
       continue;
     }
-    // TODO:(yma11) add string support
     CHECK(arg_ti.is_number() or arg_ti.is_boolean());
     one_arg_null = one_arg_null->orOp(*orig_arg_lv_nulls[j]);
   }
-  return one_arg_null.get();
+  return one_arg_null;
 }
 
-const Analyzer::Expr* expr_rewrite_to_cast(const Analyzer::Expr* orig_expr,
-                                           SQLTypes target_type) {
-  std::shared_ptr<Analyzer::Expr> ptr(const_cast<Analyzer::Expr*>(orig_expr));
-  return std::make_shared<Analyzer::UOper>(SQLTypeInfo(target_type), false, kCAST, ptr)
-      .get();
+std::shared_ptr<Analyzer::Expr> expr_rewrite_to_cast(
+    const std::shared_ptr<Analyzer::Expr> orig_expr,
+    SQLTypes target_type) {
+  return std::make_shared<Analyzer::UOper>(
+      SQLTypeInfo(target_type), false, kCAST, orig_expr);
 }
 
 JITExprValue& FunctionOper::codegen(CodegenContext& context) {
@@ -257,40 +232,52 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
 
     // origin arg type
     const auto arg = this->getArg(i);
+    const auto arg_ptr = this->getOwnArg(i);
     const auto& arg_ti = arg->get_type_info();
 
     // Arguments must be converted to the types the extension function can handle.
-    const Analyzer::Expr* arg_with_cast = nullptr;
+    Analyzer::Expr* arg_expr = nullptr;
+    // need cast
     if (arg_ti.get_type() != arg_target_ti.get_type()) {
-      arg_with_cast = expr_rewrite_to_cast(arg, arg_target_ti.get_type());
+      auto arg_casted_ptr = expr_rewrite_to_cast(arg_ptr, arg_target_ti.get_type());
+      arg_expr = arg_casted_ptr.get();
+      if (!is_rewritten_) {
+        rewrote_args_.push_back(arg_casted_ptr);
+      } else {
+        arg_expr = const_cast<Analyzer::Expr*>(this->getReworteArg(i));
+      }
+      // no need to cast
     } else {
-      arg_with_cast = const_cast<Analyzer::Expr*>(arg);
+      arg_expr = const_cast<Analyzer::Expr*>(arg);
+      if (!is_rewritten_) {
+        rewrote_args_.push_back(arg_ptr);
+      }
     }
-
-    auto arg_lv = const_cast<Analyzer::Expr*>(arg_with_cast)->codegen(context);
+    auto arg_lv = arg_expr->codegen(context);
     auto arg_lv_fixedsize = FixSizeJITExprValue(arg_lv);
-    // TODO: (yma11) add support for bytes/array arguments
     arg_lv_values.emplace_back(arg_lv_fixedsize.getValue().get());
     arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull().get());
   }
-  JITValuePointer null;
+
+  // get null value
+  JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "ret_null", false);
   bool is_nullable = ext_func_call_requires_nullcheck(this);
   // null is true when at least one argument is null.
   if (is_nullable) {
-    null = JITValuePointer(codegenFunctionOperNullArgForArrow(func, this, arg_lv_nulls));
-  } else {
-    null = func.createConstant(JITTypeTag::BOOL, false);
+    null = codegenFunctionOperNullArgForArrow(func, this, arg_lv_nulls);
   }
 
   // Cast the return of the extension function to match the FunctionOper
-  if (!(ret_ti.is_buffer()) && !is_written_) {
-    const auto extension_ret_ti = get_sql_type_from_JIT_type_tag(ret_ty);
+  if (!(ret_ti.is_buffer()) && !is_rewritten_) {
+    const auto extension_ret_ti = ext_arg_type_to_type_info(ext_func_sig.getRet());
     if (is_nullable && extension_ret_ti.get_type() != this->get_type_info().get_type()) {
-      // TODO: (yma11) need to switch to new codegenCast for arrow
-      is_written_ = true;
-      return const_cast<Analyzer::Expr*>(
-                 expr_rewrite_to_cast(this, this->get_type_info().get_type()))
-          ->codegen(context);
+      is_rewritten_ = true;
+      std::shared_ptr<Analyzer::Expr> this_ptr(nullptr);
+      this_ptr.reset(this);
+      auto ret = expr_rewrite_to_cast(this_ptr, this->get_type_info().get_type())
+                     ->codegen(context);
+      auto ret_fixedsize = FixSizeJITExprValue(ret);
+      return set_expr_value(ret_fixedsize.getNull(), ret_fixedsize.getValue());
     }
   }
   boost::container::small_vector<JITValue*, 8> args;

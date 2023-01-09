@@ -25,6 +25,7 @@
 #include "exec/template/HyperLogLogRank.h"
 #include "exec/template/TypePunning.h"
 #include "function/hash/MurmurHash.h"
+#include "function/scalar/ExtensionFunctions.hpp"
 #include "type/data/funcannotations.h"
 #include "util/CiderBitUtils.h"
 #include "util/quantile.h"

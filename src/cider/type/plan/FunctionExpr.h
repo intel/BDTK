@@ -47,6 +47,12 @@ class FunctionOper : public Expr {
     return args_[i].get();
   }
 
+  const Analyzer::Expr* getReworteArg(const size_t i) const {
+    CHECK_LT(i, rewrote_args_.size());
+    CHECK_EQ(args_.size(), rewrote_args_.size());
+    return rewrote_args_[i].get();
+  }
+
   std::shared_ptr<Analyzer::Expr> getOwnArg(const size_t i) const {
     CHECK_LT(i, args_.size());
     return args_[i];
@@ -65,8 +71,8 @@ class FunctionOper : public Expr {
 
   ExprPtrRefVector get_children_reference() override {
     ExprPtrRefVector children_ref;
-    for (auto arg : args_) {
-      children_ref.push_back(&arg);
+    for (auto&& arg : args_) {
+      children_ref.push_back(const_cast<ExprPtr*>(&arg));
     }
     return children_ref;
   }
@@ -74,7 +80,8 @@ class FunctionOper : public Expr {
  private:
   const std::string name_;
   const std::vector<std::shared_ptr<Analyzer::Expr>> args_;
-  bool is_written_ = false;
+  std::vector<std::shared_ptr<Analyzer::Expr>> rewrote_args_;  // casted args
+  bool is_rewritten_ = false;
 };
 
 class FunctionOperWithCustomTypeHandling : public FunctionOper {
