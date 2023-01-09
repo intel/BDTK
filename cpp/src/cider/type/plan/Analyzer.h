@@ -933,64 +933,6 @@ class RegexpSubstrStringOper : public StringOper {
   }
 };
 
-class SplitPartStringOper : public StringOper {
- public:
-  /**
-   * split(input, delimiter)[split_part]
-   * split_part(input, delimiter, split_part)
-   */
-  SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
-                      const std::shared_ptr<Analyzer::Expr>& delimiter,
-                      const std::shared_ptr<Analyzer::Expr>& split_part)
-      : StringOper(SqlStringOpKind::SPLIT_PART,
-                   foldLiteralStrCasts({operand, delimiter, split_part}),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  /**
-   * split(input, delimiter, limit)[split_part]
-   * returns a list of size at most `limit`, the last element always contains everything
-   * left in the string
-   */
-  SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
-                      const std::shared_ptr<Analyzer::Expr>& delimiter,
-                      const std::shared_ptr<Analyzer::Expr>& limit,
-                      const std::shared_ptr<Analyzer::Expr>& split_part)
-      : StringOper(SqlStringOpKind::SPLIT_PART,
-                   foldLiteralStrCasts({operand, delimiter, limit, split_part}),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  SplitPartStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
-      : StringOper(SqlStringOpKind::SPLIT_PART,
-                   foldLiteralStrCasts(operands),
-                   getMinArgs(),
-                   getExpectedTypeFamilies(),
-                   getArgNames()) {}
-
-  SplitPartStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
-      : StringOper(string_oper) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  size_t getMinArgs() const override { return 3UL; }
-
-  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
-    return {OperandTypeFamily::STRING_FAMILY,
-            OperandTypeFamily::STRING_FAMILY,
-            OperandTypeFamily::INT_FAMILY,
-            OperandTypeFamily::INT_FAMILY};
-  }
-  const std::vector<std::string>& getArgNames() const override {
-    static std::vector<std::string> names{
-        "operand", "delimiter", "limit_or_splitpart", "splitpart"};
-    return names;
-  }
-};
-
-
 class RegexpReplaceStringOper : public StringOper {
  public:
   RegexpReplaceStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
