@@ -17,18 +17,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_FUNCTIONAL_TEST_LIBS gtest cider_util test_utils duckdb substrait
-                                 cider)
+set(TEST_ARGS "--gtest_output=xml:../")
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
-file(GLOB next_gen_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-foreach(next_gen_test_file ${next_gen_test_files})
-  string(REGEX MATCH "functional/.*" test_relative_path ${next_gen_test_file})
-  string(REGEX REPLACE "functional/" "" target_name ${test_relative_path})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
+file(GLOB nextgen_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
+  string(REGEX MATCH "benchmark/.*" test_relative_path
+               ${nextgen_benchmark_file})
+  string(REGEX REPLACE "benchmark/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
-  add_executable(${target_name} ${next_gen_test_file})
-  target_link_libraries(${target_name} ${NEXTGEN_FUNCTIONAL_TEST_LIBS})
-  add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name}
-           --use_nextgen_compiler)
+  add_executable(${target_name} ${nextgen_benchmark_file})
+  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
+                        benchmark::benchmark cider_processor)
 endforeach()
-
-add_subdirectory(benchmark)

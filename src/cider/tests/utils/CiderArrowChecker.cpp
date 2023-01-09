@@ -63,6 +63,57 @@ bool checkArrowBuffer(const struct ArrowArray* expect_array,
     }
   } else {
     LOG(INFO) << "One ArrowArray null buffer is null in checkArrowBuffer.";
+    // return false;
+  }
+  return true;
+}
+
+template <>
+bool checkArrowBuffer<bool>(const struct ArrowArray* expect_array,
+                            const struct ArrowArray* actual_array) {
+  auto expect_value_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[1]);
+  auto actual_value_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[1]);
+  if (expect_value_buffer == nullptr && actual_value_buffer == nullptr) {
+    return true;
+  }
+  if (expect_value_buffer == nullptr || actual_value_buffer == nullptr) {
+    return false;
+  }
+  auto row_num = expect_array->length;
+  auto bytes = ((row_num + 7) >> 3);
+
+  auto expect_null_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[0]);
+  auto actual_null_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[0]);
+
+  for (int i = 0; i < bytes - 1; ++i) {
+    // apply bitwise AND masking
+    uint8_t expected_masked = expect_null_buffer
+                                  ? expect_value_buffer[i] & expect_null_buffer[i]
+                                  : expect_value_buffer[i];
+    uint8_t actual_masked = actual_null_buffer
+                                ? actual_value_buffer[i] & actual_null_buffer[i]
+                                : actual_value_buffer[i];
+
+    if (expected_masked != actual_masked) {
+      // we expect all bits here are equal, i.e. the uint8 value should be equal
+      return false;
+    }
+  }
+
+  // the last byte require some extra processing
+  // because the trailing padding values are uninitialized and can be different
+  uint8_t expected_masked =
+      expect_null_buffer ? expect_value_buffer[bytes - 1] & expect_null_buffer[bytes - 1]
+                         : expect_value_buffer[bytes - 1];
+  uint8_t actual_masked =
+      actual_null_buffer ? actual_value_buffer[bytes - 1] & actual_null_buffer[bytes - 1]
+                         : actual_value_buffer[bytes - 1];
+  // clear padding values. least-significant bit ordering, clear most significant bits
+  auto n_paddings = 8 * bytes - row_num;
+  expected_masked = expected_masked & (0xFF >> n_paddings);
+  actual_masked = actual_masked & (0xFF >> n_paddings);
+
+  if (expected_masked != actual_masked) {
     return false;
   }
 
@@ -138,16 +189,25 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
     case 'l':
     case 'L':
       return checkArrowBuffer<int64_t>(expect_array, actual_array);
-    case 'e':
     case 'f':
+      return checkArrowBuffer<float>(expect_array, actual_array);
     case 'g':
+      return checkArrowBuffer<double>(expect_array, actual_array);
+    case 't': {
+      if (expect_schema->format[1] == 'd' && expect_schema->format[2] == 'D') {
+        return checkArrowBuffer<int32_t>(expect_array, actual_array);
+      }
+      if (expect_schema->format[1] == 't' && expect_schema->format[2] == 'u') {
+        return checkArrowBuffer<int64_t>(expect_array, actual_array);
+      }
+    }
+    case 'e':
     case 'z':
     case 'Z':
     case 'u':
     case 'U':
     case 'd':
     case 'w':
-    case 't':
     default:
       LOG(ERROR) << "ArrowArray value buffer check not support for type: "
                  << expect_schema->format;

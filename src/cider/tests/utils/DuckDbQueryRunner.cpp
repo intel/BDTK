@@ -253,6 +253,10 @@ template <>
 #define GEN_DUCK_DB_VALUE_FROM_ARROW_ARRAY_AND_SCHEMA_FUNC                               \
   [&]() {                                                                                \
     switch (child_schema->format[0]) {                                                   \
+      case 'b': {                                                                        \
+        return ::duckdb::Value(CiderBitUtils::isBitSetAt(                                \
+            static_cast<const uint8_t*>(child_array->buffers[1]), row_idx));             \
+      }                                                                                  \
       case 'c': {                                                                        \
         return duckValueAt<int8_t>(static_cast<const int8_t*>(child_array->buffers[1]),  \
                                    row_idx);                                             \
@@ -276,6 +280,12 @@ template <>
       case 'g': {                                                                        \
         return duckValueAt<double>(static_cast<const int8_t*>(child_array->buffers[1]),  \
                                    row_idx);                                             \
+      }                                                                                  \
+      case 't': {                                                                        \
+        if (child_schema->format[1] == 'd' && child_schema->format[2] == 'D') {          \
+          return duckValueAt<int32_t>(                                                   \
+              static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
+        }                                                                                \
       }                                                                                  \
       default:                                                                           \
         CIDER_THROW(CiderException, "not supported type to gen duck value");             \
@@ -722,6 +732,18 @@ DuckDbResultConvertor::fetchDataToArrowFormattedCiderBatch(
   return batch_res;
 }
 
+void updateChildrenNullCnt(struct ArrowArray* array) {
+  int64_t length = array->length;
+  for (int i = 0; i < array->n_children; i++) {
+    int null_count = 0;
+    auto child = array->children[i];
+    const uint8_t* validity_map = reinterpret_cast<const uint8_t*>(child->buffers[0]);
+    if (validity_map) {
+      child->null_count = length - CiderBitUtils::countSetBits(validity_map, length);
+    }
+  }
+}
+
 std::vector<
     std::pair<std::unique_ptr<struct ArrowArray>, std::unique_ptr<struct ArrowSchema>>>
 DuckDbResultConvertor::fetchDataToArrow(
@@ -739,6 +761,7 @@ DuckDbResultConvertor::fetchDataToArrow(
       return arrow_vector;
     }
     chunk->ToArrowArray(arrow_array.get());
+    updateChildrenNullCnt(arrow_array.get());
     std::string config_timezone{"UTC"};
     duckdb::QueryResult::ToArrowSchema(
         arrow_schema.get(), result->types, result->names, config_timezone);

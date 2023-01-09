@@ -47,13 +47,13 @@ class CiderNextgenQueryRunner {
 
   const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 
-  void runQueryOneBatch(const std::string& file_or_sql,
-                        const struct ArrowArray& input_array,
-                        const struct ArrowSchema& input_schema,
-                        struct ArrowArray& output_array,
-                        struct ArrowSchema& output_schema);
+  virtual void runQueryOneBatch(const std::string& file_or_sql,
+                                const struct ArrowArray& input_array,
+                                const struct ArrowSchema& input_schema,
+                                struct ArrowArray& output_array,
+                                struct ArrowSchema& output_schema);
 
- private:
+ protected:
   std::shared_ptr<CiderAllocator> allocator_;
   exec::processor::BatchProcessorContextPtr context_;
   std::unique_ptr<exec::processor::BatchProcessor> processor_;

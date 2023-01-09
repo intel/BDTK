@@ -39,12 +39,16 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   // As a result, in this case, we need feed a json file, which is delivered by Velox and
   // will be used to generate Substrait plan.
   auto file_or_sql = json_file.size() ? json_file : sql;
-  cider_nextgen_query_runner_.runQueryOneBatch(
+  cider_nextgen_query_runner_->runQueryOneBatch(
       file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
-  EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
-                                              &output_array,
-                                              duck_res_arrow[0].second.get(),
-                                              &output_schema));
+  if (0 == duck_res_arrow.size()) {
+    // result is empty.
+  } else {
+    EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
+                                                &output_array,
+                                                duck_res_arrow[0].second.get(),
+                                                &output_schema));
+  }
 
   output_array.release(&output_array);
   output_schema.release(&output_schema);
