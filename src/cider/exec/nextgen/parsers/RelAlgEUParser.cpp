@@ -137,7 +137,9 @@ OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
   for (auto& filter_expr : eu.quals) {
     filters.push_back(filter_expr);
   }
-  ops.emplace_back(createOpNode<operators::FilterNode>(filters));
+  if (filters.size() > 0) {
+    ops.emplace_back(createOpNode<operators::FilterNode>(filters));
+  }
 
   ExprPtrVector projs;
   ExprPtrVector aggs;
@@ -150,7 +152,9 @@ OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
       projs.push_back(targets_expr);
     }
   }
-  ops.emplace_back(createOpNode<operators::ProjectNode>(projs));
+  if (projs.size() > 0) {
+    ops.emplace_back(createOpNode<operators::ProjectNode>(projs));
+  }
 
   if (!eu.groupby_exprs.empty() && eu.groupby_exprs.front()) {
     for (auto& groupby_expr : eu.groupby_exprs) {
