@@ -34,10 +34,21 @@ namespace cider_hashtable {
 // To be added
 // This enum is used for cider internal only
 // Outside cider will need to define their own enum
-enum HashTableType {
-  LINEAR_PROBING,
-  CHAINED,
-  CK_INT8
+enum HashTableType { LINEAR_PROBING, CHAINED, CK_INT8 };
+
+struct MurmurHash {
+  size_t operator()(int64_t rawHash) {
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xff51afd7ed558ccdL;
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xc4ceb9fe1a85ec53L;
+    rawHash ^= unsigned(rawHash) >> 33;
+    return rawHash;
+  }
+};
+
+struct Equal {
+  bool operator()(int lhs, int rhs) { return lhs == rhs; }
 };
 
 template <typename Key,
