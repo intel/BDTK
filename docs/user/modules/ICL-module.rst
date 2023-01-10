@@ -23,12 +23,12 @@
 Intel Codec Library User Guide
 ==============================
 
-.. _icl_introduction_reference_link:
+.. _icl_description_reference_link:
 
-Module descritption
-*******************
+Module description
+******************
 
-The Intel Codec Library (ICL) provides compression and decompression library for Apache Hadoop/Spark to make use of the hardware accelerator, and/or software for compression/decompression. It not only supports the use of Intel hardware accelerator such as QAT and IAA to accelerate the deflate-compatible data compression algorithm but also supports the use of Intel optimized software solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library) and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.
+The Intel Codec Library (ICL) provides compression and decompression library for Apache Hadoop/Spark/Parquet and so on to make use of the hardware accelerator, and/or software for compression/decompression. It not only supports the use of Intel hardware accelerator such as QAT and IAA to accelerate the deflate-compatible data compression algorithm but also supports the use of Intel optimized software solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library) and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.
 
 Currently the Intel Codec Library supports the following backends:
 
