@@ -159,6 +159,7 @@ inline JITTypeTag ext_arg_type_to_JIT_type_tag(const ExtArgumentType ext_arg_typ
   return JITTypeTag::INVALID;
 }
 
+// Return true if any arg is nullable
 bool ext_func_call_requires_nullcheck(const Analyzer::FunctionOper* function_oper) {
   const auto& func_ti = function_oper->get_type_info();
   for (size_t i = 0; i < function_oper->getArity(); ++i) {
@@ -201,6 +202,7 @@ JITValuePointer codegenFunctionOperNullArgForArrow(
   return one_arg_null;
 }
 
+// Build an UnaryExpr for origin expr which needs to cast
 std::shared_ptr<Analyzer::Expr> expr_rewrite_to_cast(
     const std::shared_ptr<Analyzer::Expr> orig_expr,
     SQLTypes target_type) {
@@ -224,39 +226,42 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
   std::vector<JITValue*> arg_lv_values;
   std::vector<JITValue*> arg_lv_nulls;
 
-  const auto& ext_func_args = ext_func_sig.getArgs();
-  for (size_t i = 0; i < this->getArity(); ++i) {
-    // target arg type
-    const auto ext_func_arg = ext_func_args[i];
-    const auto arg_target_ti = ext_arg_type_to_type_info(ext_func_arg);
+  // first call
+  if (!is_rewritten_) {
+    const auto& ext_func_args = ext_func_sig.getArgs();
+    for (size_t i = 0; i < this->getArity(); ++i) {
+      // target arg type
+      const auto ext_func_arg = ext_func_args[i];
+      const auto arg_target_ti = ext_arg_type_to_type_info(ext_func_arg);
 
-    // origin arg type
-    const auto arg = this->getArg(i);
-    const auto arg_ptr = this->getOwnArg(i);
-    const auto& arg_ti = arg->get_type_info();
+      // origin arg type
+      const auto arg = this->getArg(i);
+      const auto arg_ptr = this->getOwnArg(i);
+      const auto& arg_ti = arg->get_type_info();
 
-    // Arguments must be converted to the types the extension function can handle.
-    Analyzer::Expr* arg_expr = nullptr;
-    // need cast
-    if (arg_ti.get_type() != arg_target_ti.get_type()) {
-      auto arg_casted_ptr = expr_rewrite_to_cast(arg_ptr, arg_target_ti.get_type());
-      arg_expr = arg_casted_ptr.get();
-      if (!is_rewritten_) {
+      // Arguments must be converted to the types the extension function can handle.
+      Analyzer::Expr* arg_expr = nullptr;
+      // need cast
+      if (arg_ti.get_type() != arg_target_ti.get_type()) {
+        auto arg_casted_ptr = expr_rewrite_to_cast(arg_ptr, arg_target_ti.get_type());
+        arg_expr = arg_casted_ptr.get();
         rewrote_args_.push_back(arg_casted_ptr);
       } else {
-        arg_expr = const_cast<Analyzer::Expr*>(this->getReworteArg(i));
-      }
-      // no need to cast
-    } else {
-      arg_expr = const_cast<Analyzer::Expr*>(arg);
-      if (!is_rewritten_) {
+        arg_expr = const_cast<Analyzer::Expr*>(arg);
         rewrote_args_.push_back(arg_ptr);
       }
+      FixSizeJITExprValue arg_lv_fixedsize(arg_expr->codegen(context));
+      arg_lv_values.emplace_back(arg_lv_fixedsize.getValue().get());
+      arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull().get());
     }
-    auto arg_lv = arg_expr->codegen(context);
-    auto arg_lv_fixedsize = FixSizeJITExprValue(arg_lv);
-    arg_lv_values.emplace_back(arg_lv_fixedsize.getValue().get());
-    arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull().get());
+  } else {
+    // second call
+    CHECK_EQ(this->getArity(), rewrote_args_.size());
+    for (size_t i = 0; i < this->getArity(); ++i) {
+      FixSizeJITExprValue arg_lv_fixedsize(rewrote_args_[i]->codegen(context));
+      arg_lv_values.emplace_back(arg_lv_fixedsize.getValue().get());
+      arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull().get());
+    }
   }
 
   // get null value
@@ -285,7 +290,7 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
     args.push_back(arg);
   }
   auto ext_call = func.emitRuntimeFunctionCall(
-      ext_func_sig.getName(),
+      "cider_" + ext_func_sig.getName(),
       JITFunctionEmitDescriptor{.ret_type = ret_ty, .params_vector = args});
   return set_expr_value(null, ext_call);
 }

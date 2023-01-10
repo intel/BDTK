@@ -47,12 +47,6 @@ class FunctionOper : public Expr {
     return args_[i].get();
   }
 
-  const Analyzer::Expr* getReworteArg(const size_t i) const {
-    CHECK_LT(i, rewrote_args_.size());
-    CHECK_EQ(args_.size(), rewrote_args_.size());
-    return rewrote_args_[i].get();
-  }
-
   std::shared_ptr<Analyzer::Expr> getOwnArg(const size_t i) const {
     CHECK_LT(i, args_.size());
     return args_[i];
