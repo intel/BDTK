@@ -43,7 +43,7 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
       file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
   if (0 == duck_res_arrow.size()) {
     // result is empty.
-    CHECK(0 == output_array.length);
+    CHECK_EQ(0, output_array.length);
   } else {
     if (ignore_order) {
       EXPECT_TRUE(
