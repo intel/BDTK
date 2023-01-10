@@ -31,16 +31,14 @@ Disadvantages:
   - Maximum load factor hard coded to 50%, memory inefficient.
  */
 #pragma once
-#ifndef CIDER_HASHTABLE_BASE_H
-#define CIDER_HASHTABLE_BASE_H
-#include "exec/operator/join/BaseHashTable.h"
-#endif
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
 #include <vector>
+#include "exec/operator/join/BaseHashTable.h"
 
 namespace cider_hashtable {
 

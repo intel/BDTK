@@ -40,22 +40,6 @@ struct Hash {
   size_t operator()(int v) { return v % 7; }
 };
 
-// classic simple MurmurHash
-struct MurmurHash {
-  size_t operator()(int64_t rawHash) {
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xff51afd7ed558ccdL;
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xc4ceb9fe1a85ec53L;
-    rawHash ^= unsigned(rawHash) >> 33;
-    return rawHash;
-  }
-};
-
-struct Equal {
-  bool operator()(int lhs, int rhs) { return lhs == rhs; }
-};
-
 std::random_device rd;
 std::mt19937 gen(rd());
 
@@ -68,8 +52,8 @@ TEST(CiderHashTableTest, factoryTest) {
   cider_hashtable::HashTableSelector<
       int,
       int,
-      MurmurHash,
-      Equal,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
       hashTableSelector;
@@ -82,8 +66,8 @@ TEST(CiderHashTableTest, mergeTest) {
   cider_hashtable::HashTableSelector<
       int,
       int,
-      MurmurHash,
-      Equal,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
       hashTableSelector;
@@ -104,8 +88,8 @@ TEST(CiderHashTableTest, mergeTest) {
   std::vector<std::unique_ptr<cider_hashtable::BaseHashTable<
       int,
       int,
-      MurmurHash,
-      Equal,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>>>
       other_tables;
@@ -113,7 +97,9 @@ TEST(CiderHashTableTest, mergeTest) {
   other_tables.emplace_back(std::move(hm2));
   other_tables.emplace_back(std::move(hm3));
 
-  cider_hashtable::LinearProbeHashTable<int, int, MurmurHash, Equal> hm_final(16, NULL);
+  cider_hashtable::
+      LinearProbeHashTable<int, int, cider_hashtable::MurmurHash, cider_hashtable::Equal>
+          hm_final(16, NULL);
   hm_final.merge_other_hashtables(std::move(other_tables));
   EXPECT_EQ(hm_final.size(), 300);
 }
@@ -136,8 +122,8 @@ TEST(CiderHashTableTest, batchAsValueTest) {
   cider_hashtable::HashTableSelector<
       int,
       std::pair<cider::exec::nextgen::context::Batch*, int>,
-      MurmurHash,
-      Equal,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>,
                                std::pair<cider::exec::nextgen::context::Batch*, int>>>>
@@ -168,7 +154,8 @@ TEST(CiderHashTableTest, batchAsValueTest) {
 
 TEST(CiderHashTableTest, keyCollisionTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, int, Hash, Equal> hm(16, NULL);
+  cider_hashtable::LinearProbeHashTable<int, int, Hash, cider_hashtable::Equal> hm(16,
+                                                                                   NULL);
   StdMapDuplicateKeyWrapper<int, int> udup_map;
   hm.emplace(1, 1);
   hm.emplace(1, 2);
@@ -197,8 +184,8 @@ TEST(CiderHashTableTest, randomInsertAndfindTest) {
   cider_hashtable::HashTableSelector<
       int,
       int,
-      MurmurHash,
-      Equal,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
       hashTableSelector;
@@ -225,8 +212,8 @@ TEST(CiderHashTableTest, LPHashMapTest) {
   cider_hashtable::HashTableSelector<
       int,
       int,
-      MurmurHash,
-      Equal,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
       hashTableSelector;

@@ -25,7 +25,6 @@
 #include <random>
 #include <string>
 #include <vector>
-#include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "exec/operator/join/HashTableFactory.h"
 #include "util/Logger.h"
 
