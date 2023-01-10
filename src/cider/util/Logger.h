@@ -107,47 +107,6 @@ static_assert(Severity::_NSEVERITIES == SeveritySymbols.size(),
 
 using Channels = std::set<Channel>;
 
-// Filled by boost::program_options
-class LogOptions {
-  std::string base_path_{"."};  // ignored if log_dir_ is absolute.
-  // boost::program_options::options_description is not copyable so unique_ptr
-  // allows for modification after initialization (e.g. changing default values.)
-  std::unique_ptr<boost::program_options::options_description> options_;
-
- public:
-  // Initialize to default values
-  std::filesystem::path log_dir_{"bdtk_log"};
-  // file_name_pattern and symlink are prepended with base_name.
-  std::string file_name_pattern_{".{SEVERITY}.%Y%m%d-%H%M%S.log"};
-  std::string symlink_{".{SEVERITY}"};
-  Severity severity_{Severity::INFO};
-  Severity severity_clog_{Severity::ERROR};
-  Channels channels_;
-  bool auto_flush_{true};
-  size_t max_files_{100};
-  size_t min_free_space_{20 << 20};
-  bool rotate_daily_{true};
-  size_t rotation_size_{10 << 20};
-
-  LogOptions(char const* argv0);
-  std::filesystem::path full_log_dir() const;
-  boost::program_options::options_description const& get_options() const;
-  void parse_command_line(int, char const* const*);
-  void set_base_path(std::string const& base_path);
-  void set_options();
-};
-
-// Execute once in main() to initialize boost loggers.
-void init(LogOptions const&);
-
-// Flush all sinks.
-// https://www.boost.org/libs/log/doc/html/log/rationale/why_crash_on_term.html
-void shutdown();
-
-struct LogShutdown {
-  inline ~LogShutdown() { shutdown(); }
-};
-
 // Optional pointer to function to call on LOG(FATAL).
 using FatalFunc = void (*)() noexcept;
 void set_once_fatal_func(FatalFunc);
