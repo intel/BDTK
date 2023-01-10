@@ -1,1 +1,1 @@
-src/cider/common/contrib/*
+cpp/src/cider/common/contrib/*

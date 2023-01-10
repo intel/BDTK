@@ -22,6 +22,10 @@
 
 BUILD_TYPE := Release
 
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+CPP_SOURCE_DIR := ${ROOT_DIR}/cpp
+CPP_BUILD_DIR := ${ROOT_DIR}/build-${BUILD_TYPE}/cpp
+
 all: release
 
 format-fix:
@@ -47,15 +51,15 @@ clean:
 	@rm -rf build-*
 
 build-common:
-	@sed -i "s/COMMAND protoc --proto_path \$${CMAKE_SOURCE_DIR}\/ --cpp_out \$${CMAKE_SOURCE_DIR}/COMMAND protoc --proto_path \$${proto_directory}\/ --cpp_out \$${PROTO_OUTPUT_DIR}/g" ./thirdparty/velox/velox/substrait/CMakeLists.txt
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/algebra.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/function.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/plan.proto
-	@sed -i "s/velox\/substrait\/proto\///g" ./thirdparty/velox/velox/substrait/proto/substrait/type_expressions.proto
+	@sed -i "s/COMMAND protoc --proto_path \$${CMAKE_SOURCE_DIR}\/ --cpp_out \$${CMAKE_SOURCE_DIR}/COMMAND protoc --proto_path \$${proto_directory}\/ --cpp_out \$${PROTO_OUTPUT_DIR}/g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/CMakeLists.txt
+	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/algebra.proto
+	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/function.proto
+	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
+	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/plan.proto
+	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/type_expressions.proto
 
-	@mkdir -p build-${BUILD_TYPE}
-	@cd build-${BUILD_TYPE} && \
+	@mkdir -p ${CPP_BUILD_DIR}
+	@cd ${CPP_BUILD_DIR} && \
 	cmake -Wno-dev \
 		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 		  -DENABLE_FOLLY=OFF \
@@ -68,24 +72,24 @@ build-common:
 		  -DVELOX_ENABLE_SUBSTRAIT=ON \
 		  -DVELOX_ENABLE_PARQUET=ON \
 		  $(FORCE_COLOR) \
-		  ..
+		  ${CPP_SOURCE_DIR}
 
 build:
-	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
-	cmake --build build-${BUILD_TYPE}
-	@mkdir -p build-${BUILD_TYPE}/src/cider-velox/function/ && cp -r build-${BUILD_TYPE}/src/cider/function/*.bc build-${BUILD_TYPE}/src/cider-velox/function/
+	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} || \
+	cmake --build ${CPP_BUILD_DIR}
+	@mkdir -p ${CPP_BUILD_DIR}/src/cider-velox/function/ && cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/function/
 
 icl:
-	@mkdir -p build-${BUILD_TYPE}
-	@cd build-${BUILD_TYPE} && \
+	@mkdir -p ${CPP_BUILD_DIR}
+	@cd ${CPP_BUILD_DIR} && \
 	cmake -Wno-dev \
 		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 		  -DBDTK_ENABLE_ICL=ON \
 		  -DBDTK_ENABLE_CIDER=OFF \
 		  $(FORCE_COLOR) \
-		  ..
-	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
-	cmake --build build-${BUILD_TYPE}
+			${CPP_SOURCE_DIR}
+	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} || \
+	cmake --build ${CPP_BUILD_DIR}
 
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
@@ -100,11 +104,11 @@ release:
 	@$(MAKE) build BUILD_TYPE=Release
 
 test-cider:
-	@cd build-${BUILD_TYPE}/src/cider/tests && \
+	@cd ${CPP_BUILD_DIR}/src/cider/tests && \
 	ctest -j $${CPU_COUNT:-`nproc`} -V
 
 test-cider-velox:
-	@cd build-${BUILD_TYPE}/src/cider-velox/test && \
+	@cd ${CPP_BUILD_DIR}/src/cider-velox/test && \
 	ctest -j $${CPU_COUNT:-`nproc`} -V
 
 test-with-arrow-format:
