@@ -376,19 +376,18 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
   }
 }
 
-#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                    \
-  void basic_arith_avx256_##OPNAME##_cpp(benchmark::State& state) {                    \
-    basicArithmeticExecFunc<JITTYPE>(                                                  \
-        state,                                                                         \
-        [](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX256 -> auto { \
-          for (int64_t i = 0; i < len; ++i) {                                          \
-            out[i] = a[i] OP b[i];                                                     \
-          }                                                                            \
-          return out[len - 1];                                                         \
-        });                                                                            \
-  }                                                                                    \
-  BENCHMARK(basic_arith_avx256_##OPNAME##_cpp)                                         \
-      ->RangeMultiplier(1 << 10)                                                       \
+#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)               \
+  void basic_arith_avx256_##OPNAME##_cpp(benchmark::State& state) {               \
+    basicArithmeticExecFunc<JITTYPE>(state, [                                     \
+    ](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX256 -> auto { \
+      for (int64_t i = 0; i < len; ++i) {                                         \
+        out[i] = a[i] OP b[i];                                                    \
+      }                                                                           \
+      return out[len - 1];                                                        \
+    });                                                                           \
+  }                                                                               \
+  BENCHMARK(basic_arith_avx256_##OPNAME##_cpp)                                    \
+      ->RangeMultiplier(1 << 10)                                                  \
       ->Range(1 << 10, 1 << 25);
 
 #define CREATE_JIT_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                      \
@@ -552,19 +551,18 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
   std::free(out_col);
 }
 
-#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                    \
-  void basic_arith_avx256_align_##OPNAME##_cpp(benchmark::State& state) {              \
-    basicArithmeticExecFunc<JITTYPE>(                                                  \
-        state,                                                                         \
-        [](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX256 -> auto { \
-          for (int64_t i = 0; i < len; ++i) {                                          \
-            out[i] = a[i] OP b[i];                                                     \
-          }                                                                            \
-          return out[len - 1];                                                         \
-        });                                                                            \
-  }                                                                                    \
-  BENCHMARK(basic_arith_avx256_align_##OPNAME##_cpp)                                   \
-      ->RangeMultiplier(1 << 10)                                                       \
+#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)               \
+  void basic_arith_avx256_align_##OPNAME##_cpp(benchmark::State& state) {         \
+    basicArithmeticExecFunc<JITTYPE>(state, [                                     \
+    ](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX256 -> auto { \
+      for (int64_t i = 0; i < len; ++i) {                                         \
+        out[i] = a[i] OP b[i];                                                    \
+      }                                                                           \
+      return out[len - 1];                                                        \
+    });                                                                           \
+  }                                                                               \
+  BENCHMARK(basic_arith_avx256_align_##OPNAME##_cpp)                              \
+      ->RangeMultiplier(1 << 10)                                                  \
       ->Range(1 << 10, 1 << 25);
 
 #define CREATE_JIT_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                      \
@@ -707,19 +705,18 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
   }
 }
 
-#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                    \
-  void basic_arith_avx512_##OPNAME##_cpp(benchmark::State& state) {                    \
-    basicArithmeticExecFunc<JITTYPE>(                                                  \
-        state,                                                                         \
-        [](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX512 -> auto { \
-          for (int64_t i = 0; i < len; ++i) {                                          \
-            out[i] = a[i] OP b[i];                                                     \
-          }                                                                            \
-          return out[len - 1];                                                         \
-        });                                                                            \
-  }                                                                                    \
-  BENCHMARK(basic_arith_avx512_##OPNAME##_cpp)                                         \
-      ->RangeMultiplier(1 << 10)                                                       \
+#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)               \
+  void basic_arith_avx512_##OPNAME##_cpp(benchmark::State& state) {               \
+    basicArithmeticExecFunc<JITTYPE>(state, [                                     \
+    ](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX512 -> auto { \
+      for (int64_t i = 0; i < len; ++i) {                                         \
+        out[i] = a[i] OP b[i];                                                    \
+      }                                                                           \
+      return out[len - 1];                                                        \
+    });                                                                           \
+  }                                                                               \
+  BENCHMARK(basic_arith_avx512_##OPNAME##_cpp)                                    \
+      ->RangeMultiplier(1 << 10)                                                  \
       ->Range(1 << 10, 1 << 25);
 
 #define CREATE_JIT_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                      \
@@ -883,19 +880,18 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
   std::free(out_col);
 }
 
-#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                    \
-  void basic_arith_avx512_align_##OPNAME##_cpp(benchmark::State& state) {              \
-    basicArithmeticExecFunc<JITTYPE>(                                                  \
-        state,                                                                         \
-        [](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX512 -> auto { \
-          for (int64_t i = 0; i < len; ++i) {                                          \
-            out[i] = a[i] OP b[i];                                                     \
-          }                                                                            \
-          return out[len - 1];                                                         \
-        });                                                                            \
-  }                                                                                    \
-  BENCHMARK(basic_arith_avx512_align_##OPNAME##_cpp)                                   \
-      ->RangeMultiplier(1 << 10)                                                       \
+#define CREATE_CPP_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)               \
+  void basic_arith_avx512_align_##OPNAME##_cpp(benchmark::State& state) {         \
+    basicArithmeticExecFunc<JITTYPE>(state, [                                     \
+    ](auto a, auto b, auto out, int64_t len) NEVER_INLINE ENABLE_AVX512 -> auto { \
+      for (int64_t i = 0; i < len; ++i) {                                         \
+        out[i] = a[i] OP b[i];                                                    \
+      }                                                                           \
+      return out[len - 1];                                                        \
+    });                                                                           \
+  }                                                                               \
+  BENCHMARK(basic_arith_avx512_align_##OPNAME##_cpp)                              \
+      ->RangeMultiplier(1 << 10)                                                  \
       ->Range(1 << 10, 1 << 25);
 
 #define CREATE_JIT_BASIC_ARITHMETRIC_BENCHMARK(JITTYPE, OP, OPNAME)                      \

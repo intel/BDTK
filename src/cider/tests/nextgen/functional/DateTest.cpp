@@ -311,11 +311,11 @@ TEST_F(TimeTypeQueryTest, MultiTimeTypeTest) {
       "col_timestamp + INTERVAL '5000' SECOND FROM test",
       "add_timestamp_interval_mixed.json");
   assertQuery("SELECT CAST(col_date AS TIMESTAMP) FROM test",
-                   "cast_date_as_timestamp.json");
+              "cast_date_as_timestamp.json");
   assertQuery("SELECT CAST(CAST(col_timestamp AS VARCHAR) as TIMESTAMP) FROM test",
-                   "cast_string_to_timestamp.json");
+              "cast_string_to_timestamp.json");
   assertQuery("SELECT CAST(CAST(col_time AS VARCHAR) as TIME) FROM test",
-                   "cast_string_to_time.json");
+              "cast_string_to_time.json");
   assertQuery("SELECT EXTRACT(microsecond FROM col_timestamp) FROM test",
               "extract/microsecond_of_timestamp.json");
   assertQuery("SELECT EXTRACT(second FROM col_time) FROM test",
