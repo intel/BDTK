@@ -46,8 +46,8 @@ bool checkArrowBuffer(const struct ArrowArray* expect_array,
 
   if (expect_null_buffer && actual_null_buffer) {
     for (int64_t i = 0; i < expect_array->length; i++) {
-      int expect_valid = expect_null_buffer[i / 8] & (1 << (i % 8));
-      int actual_valid = actual_null_buffer[i / 8] & (1 << (i % 8));
+      bool expect_valid = CiderBitUtils::isBitSetAt(expect_null_buffer, i);
+      bool actual_valid = CiderBitUtils::isBitSetAt(actual_null_buffer, i);
       if (expect_valid != actual_valid) {
         LOG(INFO) << "ArrowArray null bit not equal: "
                   << "Expected: " << expect_valid << ". Actual: " << actual_valid;
@@ -65,6 +65,59 @@ bool checkArrowBuffer(const struct ArrowArray* expect_array,
     }
     return !memcmp(
         expect_value_buffer, actual_value_buffer, sizeof(T) * expect_array->length);
+  }
+  return true;
+}
+
+template <typename T>
+bool absoluteToleranceCompare(T x, T y) {
+  if (x == std::numeric_limits<T>::infinity() &&
+      y == std::numeric_limits<T>::infinity()) {
+    return true;
+  }
+  return std::fabs(x - y) <= std::numeric_limits<T>::epsilon();
+}
+
+template <typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
+bool checkArrowBufferFp(const struct ArrowArray* expect_array,
+                        const struct ArrowArray* actual_array) {
+  auto expect_value_buffer = reinterpret_cast<const T*>(expect_array->buffers[1]);
+  auto actual_value_buffer = reinterpret_cast<const T*>(actual_array->buffers[1]);
+  if (expect_value_buffer == nullptr && actual_value_buffer == nullptr) {
+    return true;
+  }
+  if (expect_value_buffer == nullptr || actual_value_buffer == nullptr) {
+    return false;
+  }
+
+  auto expect_null_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[0]);
+  auto actual_null_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[0]);
+
+  if (expect_null_buffer && actual_null_buffer) {
+    for (int64_t i = 0; i < expect_array->length; i++) {
+      bool expect_valid = CiderBitUtils::isBitSetAt(expect_null_buffer, i);
+      bool actual_valid = CiderBitUtils::isBitSetAt(actual_null_buffer, i);
+      if (expect_valid != actual_valid) {
+        LOG(INFO) << "ArrowArray null bit not equal: "
+                  << "Expected: " << expect_valid << ". Actual: " << actual_valid;
+        return false;
+      }
+      if (expect_valid) {
+        if (!absoluteToleranceCompare<T>(expect_value_buffer[i],
+                                         actual_value_buffer[i])) {
+          return false;
+        }
+      }
+    }
+  } else {
+    if (!(expect_null_buffer == nullptr && actual_null_buffer == nullptr)) {
+      LOG(INFO) << "One ArrowArray null buffer is null in checkArrowBuffer.";
+    }
+    for (int64_t i = 0; i < expect_array->length; i++) {
+      if (!absoluteToleranceCompare<T>(expect_value_buffer[i], actual_value_buffer[i])) {
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -159,8 +212,8 @@ bool checkArrowStringBuffer(const struct ArrowArray* expect_array,
   auto actual_null_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[0]);
   if (expect_null_buffer && actual_null_buffer) {
     for (int64_t i = 0; i < expect_array->length; i++) {
-      int expect_valid = expect_null_buffer[i / 8] & (1 << (i % 8));
-      int actual_valid = actual_null_buffer[i / 8] & (1 << (i % 8));
+      bool expect_valid = CiderBitUtils::isBitSetAt(expect_null_buffer, i);
+      bool actual_valid = CiderBitUtils::isBitSetAt(actual_null_buffer, i);
       if (expect_valid != actual_valid) {
         LOG(INFO) << "ArrowArray null bit not equal: "
                   << "Expected: " << expect_valid << ". Actual: " << actual_valid;
@@ -265,9 +318,9 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
     case 'L':
       return checkArrowBuffer<int64_t>(expect_array, actual_array);
     case 'f':
-      return checkArrowBuffer<float>(expect_array, actual_array);
+      return checkArrowBufferFp<float>(expect_array, actual_array);
     case 'g':
-      return checkArrowBuffer<double>(expect_array, actual_array);
+      return checkArrowBufferFp<double>(expect_array, actual_array);
     case 't': {
       if (expect_schema->format[1] == 'd' && expect_schema->format[2] == 'D') {
         return checkArrowBuffer<int32_t>(expect_array, actual_array);
@@ -285,7 +338,6 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
     case 'e':
     case 'z':
     case 'Z':
-
     case 'U':
     case 'd':
     case 'w':
