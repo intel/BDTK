@@ -187,22 +187,19 @@ JITValuePointer codegenFunctionOperNullArgForArrow(
     const Analyzer::FunctionOper* function_oper,
     const std::vector<JITValuePointer>& orig_arg_lv_nulls) {
   auto one_arg_null = func.createVariable(JITTypeTag::BOOL, "one_arg_null", false);
-  size_t physical_coord_cols = 0;
-  for (size_t i = 0, j = 0; i < function_oper->getArity();
-       ++i, j += std::max(size_t(1), physical_coord_cols)) {
+  for (size_t i = 0; i < function_oper->getArity(); ++i) {
     const auto arg = function_oper->getArg(i);
     const auto& arg_ti = arg->get_type_info();
-    physical_coord_cols = arg_ti.get_physical_coord_cols();
     if (arg_ti.get_notnull()) {
       continue;
     }
     CHECK(arg_ti.is_number() or arg_ti.is_boolean());
-    one_arg_null = one_arg_null->orOp(*orig_arg_lv_nulls[j].get());
+    one_arg_null.replace(one_arg_null || orig_arg_lv_nulls[i]);
   }
   return one_arg_null;
 }
 
-// Build an UnaryExpr for origin expr which needs to cast
+// Build a UnaryExpr for origin expr which needs to cast
 std::shared_ptr<Analyzer::Expr> expr_rewrite_to_cast(
     const std::shared_ptr<Analyzer::Expr> orig_expr,
     SQLTypes target_type) {
@@ -265,7 +262,7 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
   }
 
   // get null value
-  JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "ret_null", false);
+  auto null = func.createVariable(JITTypeTag::BOOL, "ret_null", false);
   bool is_nullable = ext_func_call_requires_nullcheck(this);
   // null is true when at least one argument is null.
   if (is_nullable) {
@@ -292,7 +289,7 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
   auto ext_call = func.emitRuntimeFunctionCall(
       "cider_" + ext_func_sig.getName(),
       JITFunctionEmitDescriptor{.ret_type = ret_ty, .params_vector = args});
-  return set_expr_value(arg_lv_nulls[0], ext_call);
+  return set_expr_value(null, ext_call);
 }
 
 }  // namespace Analyzer
