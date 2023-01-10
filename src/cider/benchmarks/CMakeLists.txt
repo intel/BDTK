@@ -20,5 +20,11 @@
 set(DEP_LIBS benchmark::benchmark nextgen)
 
 add_executable(jitlib_benchmark JITlibBenchmark.cpp)
-target_compile_options(jitlib_benchmark PRIVATE -g)
+
+set(JITlibBenchmarkCompileFlag -g)
+if(CIDER_ENABLE_AVX512)
+  list(APPEND JITlibBenchmarkCompileFlag -mavx512f)
+endif()
+
+target_compile_options(jitlib_benchmark PRIVATE ${JITlibBenchmarkCompileFlag})
 target_link_libraries(jitlib_benchmark ${DEP_LIBS})
