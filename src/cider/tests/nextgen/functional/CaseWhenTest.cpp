@@ -84,6 +84,113 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   }
 };
 
+#define COALESCE_FUNCTION_ARROW_TEST(TEST_CLASS, UNIT_NAME)                        \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                  \
+    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, 7) from test",          \
+                     "functions/conditional/coalesce.json");                       \
+    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test", \
+                     "functions/conditional/coalesce_null.json");                  \
+    assertQueryArrow(                                                              \
+        "select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test",      \
+        "functions/conditional/coalesce_sum.json");                                \
+  }
+
+COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
+                             coalesceFunctionNotNullTestForArrow);
+COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                             coalesceFunctionSeqNullTestForArrow);
+COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                             coalesceFunctionRandomNullTestForArrow);
+
+// COALESCE expression is a syntactic shortcut for the CASE expression
+// the code COALESCE(expression1,...n) is same as the following CASE expression:
+// CASE
+// WHEN (expression1 IS NOT NULL) THEN expression1
+// WHEN (expression2 IS NOT NULL) THEN expression2
+// ...
+// ELSE expressionN
+// END
+#define COALESCE_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                       \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_int, col_bigint, 777) FROM test",                           \
+        "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not "      \
+        "null THEN col_bigint ELSE 777 END from test");                                  \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_int, col_double, 777) FROM test",                           \
+        "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_double is not "      \
+        "null THEN col_double ELSE 777 END from test");                                  \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_int, col_bigint, col_double, 777) FROM test",               \
+        "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not null " \
+        "THEN col_bigint "                                                               \
+        "WHEN col_double is not null THEN col_double ELSE 777 END from test");           \
+    GTEST_SKIP_(                                                                         \
+        "TODO(Haiwei): NULL type literals are not currently supported, require future "  \
+        "validation of the following case.");                                            \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_float) FROM test",                                          \
+        "SELECT CASE WHEN col_float is not null THEN col_float ELSE null END "           \
+        "from test");                                                                    \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_double, col_int) FROM test",                                \
+        "SELECT CASE WHEN col_double is not null THEN col_double WHEN col_int is not "   \
+        "null THEN col_int ELSE null END from test");                                    \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_int, col_double) FROM test",                                \
+        "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_double is not "      \
+        "null THEN col_double ELSE null END from test");                                 \
+    assertQueryArrow(                                                                    \
+        "SELECT COALESCE(col_int, col_bigint, col_double, col_float) FROM test",         \
+        "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not "      \
+        "null THEN col_bigint WHEN col_double is not null THEN col_double WHEN "         \
+        "col_float "                                                                     \
+        "is not null THEN col_float ELSE null END from test");                           \
+  }
+
+COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, coalesceNotNullTestForArrow);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                    coalesceSeqNullTestForArrow);
+COALESCE_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                    coalesceRandomNullTestForArrow);
+
+#define COALESCE_WITH_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                              \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
+    GTEST_SKIP_(                                                                         \
+        "TODO(Haiwei): Agg is not supported now, require future validation of the "      \
+        "following case.");                                                              \
+    assertQueryArrow(                                                                    \
+        "SELECT SUM(COALESCE(col_int, 777)) FROM test",                                  \
+        "SELECT SUM(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "           \
+        "from test");                                                                    \
+    assertQueryArrow("SELECT count(COALESCE(col_double, 777)) FROM test",                \
+                     "SELECT count(CASE WHEN col_double is not null THEN col_double "    \
+                     "ELSE 777 END) from test");                                         \
+    assertQueryArrow("SELECT SUM(COALESCE(col_double, 777)) FROM test",                  \
+                     "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE " \
+                     "777 END) from test");                                              \
+    assertQueryArrow(                                                                    \
+        "SELECT SUM(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",          \
+        "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
+        "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
+        "col_double ELSE 777 END) from test");                                           \
+    assertQueryArrow("SELECT SUM(COALESCE(col_double)) FROM test",                       \
+                     "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE " \
+                     "null END) from test");                                             \
+    assertQueryArrow(                                                                    \
+        "SELECT SUM(COALESCE(col_int, col_bigint, col_double)) FROM test",               \
+        "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
+        "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
+        "col_double ELSE null END) from test");                                          \
+  }
+
+COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
+                             coalescewithAggNotNullTestForArrow);
+COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
+                             coalescewithAggSeqNullTestForArrow);
+COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
+                             coalescewithAggRandomNullTestForArrow);
+
 // The IF function is actually a language construct that is equivalent to the following
 // CASE expression: CASE
 //    WHEN condition THEN true_value
