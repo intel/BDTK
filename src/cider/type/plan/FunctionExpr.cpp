@@ -185,7 +185,7 @@ bool ext_func_call_requires_nullcheck(const Analyzer::FunctionOper* function_ope
 JITValuePointer codegenFunctionOperNullArgForArrow(
     JITFunction& func,
     const Analyzer::FunctionOper* function_oper,
-    const std::vector<JITValue*>& orig_arg_lv_nulls) {
+    const std::vector<JITValuePointer>& orig_arg_lv_nulls) {
   auto one_arg_null = func.createVariable(JITTypeTag::BOOL, "one_arg_null", false);
   size_t physical_coord_cols = 0;
   for (size_t i = 0, j = 0; i < function_oper->getArity();
@@ -197,7 +197,7 @@ JITValuePointer codegenFunctionOperNullArgForArrow(
       continue;
     }
     CHECK(arg_ti.is_number() or arg_ti.is_boolean());
-    one_arg_null = one_arg_null->orOp(*orig_arg_lv_nulls[j]);
+    one_arg_null = one_arg_null->orOp(*orig_arg_lv_nulls[j].get());
   }
   return one_arg_null;
 }
@@ -223,8 +223,8 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
   const auto& ret_ti = this->get_type_info();
   CHECK(ret_ti.is_integer() || ret_ti.is_fp() || ret_ti.is_boolean());
   auto ret_ty = ext_arg_type_to_JIT_type_tag(ext_func_sig.getRet());
-  std::vector<JITValue*> arg_lv_values;
-  std::vector<JITValue*> arg_lv_nulls;
+  std::vector<JITValuePointer> arg_lv_values;
+  std::vector<JITValuePointer> arg_lv_nulls;
 
   // first call
   if (!is_rewritten_) {
@@ -251,16 +251,16 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
         rewrote_args_.push_back(arg_ptr);
       }
       FixSizeJITExprValue arg_lv_fixedsize(arg_expr->codegen(context));
-      arg_lv_values.emplace_back(arg_lv_fixedsize.getValue().get());
-      arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull().get());
+      arg_lv_values.emplace_back(arg_lv_fixedsize.getValue());
+      arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull());
     }
   } else {
     // second call
     CHECK_EQ(this->getArity(), rewrote_args_.size());
     for (size_t i = 0; i < this->getArity(); ++i) {
       FixSizeJITExprValue arg_lv_fixedsize(rewrote_args_[i]->codegen(context));
-      arg_lv_values.emplace_back(arg_lv_fixedsize.getValue().get());
-      arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull().get());
+      arg_lv_values.emplace_back(arg_lv_fixedsize.getValue());
+      arg_lv_nulls.emplace_back(arg_lv_fixedsize.getNull());
     }
   }
 
@@ -287,12 +287,12 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
   }
   boost::container::small_vector<JITValue*, 8> args;
   for (auto arg : arg_lv_values) {
-    args.push_back(arg);
+    args.push_back(arg.get());
   }
   auto ext_call = func.emitRuntimeFunctionCall(
       "cider_" + ext_func_sig.getName(),
       JITFunctionEmitDescriptor{.ret_type = ret_ty, .params_vector = args});
-  return set_expr_value(null, ext_call);
+  return set_expr_value(arg_lv_nulls[0], ext_call);
 }
 
 }  // namespace Analyzer
