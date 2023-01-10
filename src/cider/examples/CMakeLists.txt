@@ -26,3 +26,6 @@ target_link_libraries(ExpressionEvalExample test_utils cider substrait)
 
 add_executable(CiderRuntimeModuleExample CiderRuntimeModuleExample.cpp)
 target_link_libraries(CiderRuntimeModuleExample test_utils cider substrait)
+
+add_executable(CiderHashTableExample CiderHashTableExample.cpp)
+target_link_libraries(CiderHashTableExample cider)

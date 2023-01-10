@@ -18,34 +18,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "cider/CiderException.h"
 
-#include <folly/FBVector.h>
-#include <folly/container/F14Map.h>
-
-// used as test
-template <typename Key, typename Value>
-class F14MapDuplicateKeyWrapper {
- public:
-  F14MapDuplicateKeyWrapper(){};
-  folly::fbvector<Value> findAll(Key key) {
-    auto iter = f14_map_.find(key);
-    if (iter != f14_map_.end()) {
-      return iter->second;
-    }
-    folly::fbvector<Value> empty_res;
-    return empty_res;
+namespace cider_hashtable {
+template <typename Key,
+          typename Value,
+          typename Hash,
+          typename KeyEqual,
+          typename Grower,
+          typename Allocator>
+template <typename... Args>
+std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>
+HashTableSelector<Key, Value, Hash, KeyEqual, Grower, Allocator>::createForJoin(
+    HashTableType hashtable_type,
+    Args&&... args) {
+  switch (hashtable_type) {
+    case LINEAR_PROBING:
+      return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
+          std::forward<Args>(args)...);
+    default:
+      return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
+          std::forward<Args>(args)...);
   }
-
-  void insert(Key&& key, Value&& value) {
-    if (f14_map_.count(key) == 0) {
-      f14_map_[key] = folly::fbvector<Value>{value};
-    } else {
-      auto tmp_value = &f14_map_[key];
-      tmp_value->push_back(value);
-    }
-  }
-  folly::F14FastMap<Key, folly::fbvector<Value>>& getMap() { return f14_map_; }
-
- private:
-  folly::F14FastMap<Key, folly::fbvector<Value>> f14_map_;
-};
+}
+}  // namespace cider_hashtable

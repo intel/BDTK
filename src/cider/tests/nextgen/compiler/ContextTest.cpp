@@ -195,8 +195,8 @@ TEST_F(ContextTests, RegisterHashTableTest) {
   };
 
   for (auto key_iter : dup_map.getMap()) {
-    auto dup_res_vec = dup_map.find(key_iter.first);
-    auto hm_res_vec = hash_table->find(key_iter.first);
+    auto dup_res_vec = dup_map.findAll(key_iter.first);
+    auto hm_res_vec = hash_table->findAll(key_iter.first);
 
     for (int i = 0; i < hm_res_vec.size(); ++i) {
       auto pair = hm_res_vec.at(i);
