@@ -38,9 +38,6 @@ class NextgenAggExtractorBuilder {
       context::AggExprsInfo& info);
 
   static std::unique_ptr<NextgenAggExtractor> buildAVGAggExtractor(const int8_t* buffer);
-
-  static std::unique_ptr<NextgenAggExtractor> buildCountAggExtractor(
-      const int8_t* buffer);
 };
 }  // namespace cider::exec::nextgen::operators
 

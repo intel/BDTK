@@ -22,32 +22,11 @@
 #ifndef NEXTGEN_OPERATORS_AGGNODE_H
 #define NEXTGEN_OPERATORS_AGGNODE_H
 
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::operators {
-struct AggExprsInfo {
-  jitlib::JITTypeTag jit_value_type_;
-  SQLAgg agg_type_;
-  int32_t start_offset_;
-  int32_t byte_size_;
-  std::string agg_name_;
-
-  AggExprsInfo(SQLTypes sql_type,
-               SQLAgg agg_type,
-               int32_t start_offset,
-               int32_t byte_size)
-      : jit_value_type_(getJitValueType(sql_type))
-      , agg_type_(agg_type)
-      , start_offset_(start_offset)
-      , byte_size_(byte_size)
-      , agg_name_(getAggName(agg_type, sql_type)) {}
-
-  jitlib::JITTypeTag getJitValueType(SQLTypes sql_type);
-
-  std::string getAggName(SQLAgg agg_type, SQLTypes sql_type);
-};
-
-using AggExprsInfoVector = std::vector<AggExprsInfo>;
+using AggExprsInfoVector = std::vector<context::AggExprsInfo>;
 
 class AggNode : public OpNode {
  public:
