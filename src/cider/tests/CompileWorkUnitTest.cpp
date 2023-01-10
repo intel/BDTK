@@ -178,28 +178,7 @@ TEST(APITest, case1) {
 }
 
 int main(int argc, char** argv) {
-  int err = 0;
-  TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  namespace po = boost::program_options;
-
-  po::options_description desc("Options");
-
-  desc.add_options()("enable-columnar-output",
-                     po::value<bool>(&g_enable_columnar_output)
-                         ->default_value(g_enable_columnar_output)
-                         ->implicit_value(true),
-                     "Enable/disable using columnar output format.");
-
-  logger::LogOptions log_options(argv[0]);
-  logger::init(log_options);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
-  }
-
-  return err;
+  return RUN_ALL_TESTS();
 }
