@@ -58,6 +58,7 @@ class CiderNextgenTestBase : public testing::Test {
                               const std::string& json_file_or_sql = "") {
     assertQuery(sql, json_file_or_sql, true);
   }
+  bool executeIncorrectQuery(const std::string& wrong_sql);
 
   void setupDdl(std::string& table_name, std::string& create_ddl) {
     table_name_ = table_name;

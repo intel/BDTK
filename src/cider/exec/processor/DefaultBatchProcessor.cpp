@@ -28,6 +28,25 @@
 
 namespace cider::exec::processor {
 
+std::string getErrorMessageFromErrCode(const cider::jitlib::ERROR_CODE error_code) {
+  switch (error_code) {
+    case cider::jitlib::ERROR_CODE::ERR_DIV_BY_ZERO:
+      return "Division by zero";
+    case cider::jitlib::ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW:
+      return "Overflow or underflow";
+    case cider::jitlib::ERROR_CODE::ERR_OUT_OF_TIME:
+      return "Query execution has exceeded the time limit";
+    case cider::jitlib::ERROR_CODE::ERR_INTERRUPTED:
+      return "Query execution has been interrupted";
+    case cider::jitlib::ERROR_CODE::ERR_SINGLE_VALUE_FOUND_MULTIPLE_VALUES:
+      return "Multiple distinct values encountered";
+    case cider::jitlib::ERROR_CODE::ERR_WIDTH_BUCKET_INVALID_ARGUMENT:
+      return "Arguments of WIDTH_BUCKET function does not satisfy the condition";
+    default:
+      return "Cider Runtime Other error: code " + std::to_string(error_code);
+  }
+}
+
 DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
                                              const BatchProcessorContextPtr& context)
     : plan_(plan), context_(context) {
@@ -44,7 +63,8 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
       std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan_->getPlan());
   RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
   jitlib::CompilationOptions co;
-  codegen_context_ = nextgen::compile(ra_exe_unit, co);
+  cider::exec::nextgen::context::CodegenOptions codegen_options{true};
+  codegen_context_ = nextgen::compile(ra_exe_unit, co, codegen_options);
   runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(
       codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
@@ -64,7 +84,11 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
     input_arrow_schema_ = schema;
   }
 
-  query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);
+  int ret = query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);
+  if (ret != 0) {
+    CIDER_THROW(CiderRuntimeException,
+                getErrorMessageFromErrCode(static_cast<cider::jitlib::ERROR_CODE>(ret)));
+  }
 }
 
 BatchProcessorState DefaultBatchProcessor::getState() {

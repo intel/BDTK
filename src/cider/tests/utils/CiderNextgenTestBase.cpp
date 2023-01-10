@@ -63,6 +63,18 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   output_schema.release(&output_schema);
 }
 
+bool CiderNextgenTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
+  try {
+    struct ArrowArray output_array;
+    struct ArrowSchema output_schema;
+    cider_nextgen_query_runner_->runQueryOneBatch(
+        wrong_sql, *input_array_, *input_schema_, output_array, output_schema);
+  } catch (const CiderException& e) {
+    LOG(ERROR) << e.what();
+    return true;
+  }
+  return false;
+}
 void CiderNextgenTestBase::assertQuery(const std::string& sql,
                                        const struct ArrowArray* expect_array,
                                        const struct ArrowSchema* expect_schema,
