@@ -30,7 +30,7 @@ void AggTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void outputNullableCkeck(const Analyzer::AggExpr* agg_expr, context::AggExprsInfo& info) {
+void outputNullableCheck(const Analyzer::AggExpr* agg_expr, context::AggExprsInfo& info) {
   if (info.agg_type_ == SQLAgg::kCOUNT) {
     info.setNotNull(true);
     return;
@@ -65,7 +65,7 @@ context::AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
     }
     infos.emplace_back(
         agg_expr->get_type_info(), agg_expr->get_aggtype(), start_addr, size);
-    outputNullableCkeck(agg_expr, infos.back());
+    outputNullableCheck(agg_expr, infos.back());
     start_addr += size;
   }
   return infos;
@@ -154,9 +154,10 @@ void AggTranslator::codegen(context::CodegenContext& context) {
     auto val_addr = val_addr_initial->castPointerSubType(
         exprs_info[current_expr_idx].jit_value_type_);
 
-    // count special case, cause count not null dont have arguments
+    // count(*/1) and count(col) are different
+    // The former will count all input rows and dont have argument in expression,
+    // But the latter only counts not-null rows and need to refer argument info.
     if (exprs_info[current_expr_idx].agg_type_ == SQLAgg::kCOUNT) {
-      // not null dont have argument
       if (!agg_expr->get_arg() || agg_expr->get_arg()->get_type_info().get_notnull()) {
         func->emitRuntimeFunctionCall(
             exprs_info[current_expr_idx].agg_name_,
