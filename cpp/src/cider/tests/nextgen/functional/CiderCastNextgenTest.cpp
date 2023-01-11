@@ -154,7 +154,6 @@ TEST_F(CiderCastNextgenTest, castIntegerTest) {
 }
 
 int main(int argc, char** argv) {
-  TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
