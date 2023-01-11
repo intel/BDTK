@@ -44,6 +44,7 @@
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/DateExpr.h"
 #include "type/plan/Expr.h"
+#include "type/plan/FunctionExpr.h"
 #include "type/plan/InValues.h"
 #include "type/plan/LikeExpr.h"
 #include "type/plan/StringOpExpr.h"
@@ -1116,55 +1117,6 @@ class TryStringCastOper : public StringOper {
     static std::vector<std::string> names{"operand"};
     return names;
   }
-};
-
-class FunctionOper : public Expr {
- public:
-  FunctionOper(const SQLTypeInfo& ti,
-               const std::string& name,
-               const std::vector<std::shared_ptr<Analyzer::Expr>>& args)
-      : Expr(ti, false), name_(name), args_(args) {}
-
-  std::string getName() const { return name_; }
-
-  size_t getArity() const { return args_.size(); }
-
-  const Analyzer::Expr* getArg(const size_t i) const {
-    CHECK_LT(i, args_.size());
-    return args_[i].get();
-  }
-
-  std::shared_ptr<Analyzer::Expr> getOwnArg(const size_t i) const {
-    CHECK_LT(i, args_.size());
-    return args_[i];
-  }
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override;
-  void collect_column_var(
-      std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
-          colvar_set,
-      bool include_agg) const override;
-
-  bool operator==(const Expr& rhs) const override;
-  std::string toString() const override;
-
- private:
-  const std::string name_;
-  const std::vector<std::shared_ptr<Analyzer::Expr>> args_;
-};
-
-class FunctionOperWithCustomTypeHandling : public FunctionOper {
- public:
-  FunctionOperWithCustomTypeHandling(
-      const SQLTypeInfo& ti,
-      const std::string& name,
-      const std::vector<std::shared_ptr<Analyzer::Expr>>& args)
-      : FunctionOper(ti, name, args) {}
-
-  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
-  bool operator==(const Expr& rhs) const override;
 };
 
 /*

@@ -222,7 +222,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
 
 void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
   CHECK(fn);
-  if (!fn->isDeclaration()) {
+  if (!fn->isDeclaration() || !fn->hasFnAttribute(llvm::Attribute::AlwaysInline)) {
     // Function has been cloned.
     return;
   }

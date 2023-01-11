@@ -42,24 +42,7 @@ TEST_F(CiderLogTest, log) {
  * bdtk_log --log-file-name bdtk_log
  */
 int main(int argc, char** argv) {
-  std::cout << "argc = " << argc << std::endl;
-  for (size_t i = 0; i < argc; i++) {
-    std::cout << "argc[" << i << "] = " << argv[i] << std::endl;
-  }
-
   testing::InitGoogleTest(&argc, argv);
-  logger::LogOptions log_options(argv[0]);
-  log_options.parse_command_line(argc, argv);
-  std::cout << log_options.full_log_dir() << std::endl;
-  logger::init(log_options);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
-  }
-
-  return err;
+  return RUN_ALL_TESTS();
 }

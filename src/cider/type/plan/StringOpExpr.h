@@ -226,9 +226,7 @@ class StringOper : public Expr {
   std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;
 
  public:
-  JITExprValue& codegen(CodegenContext& context) override {
-    UNREACHABLE() << "Base String Op should not do codegen";
-  }
+  JITExprValue& codegen(CodegenContext& context) override { UNREACHABLE(); }
 };
 
 class SubstringStringOper : public StringOper {

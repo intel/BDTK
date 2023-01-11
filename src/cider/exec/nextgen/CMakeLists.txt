@@ -35,5 +35,6 @@ add_library(
   nextgen STATIC
   Nextgen.cpp $<TARGET_OBJECTS:cider_operators> $<TARGET_OBJECTS:cider_context>
   $<TARGET_OBJECTS:cider_parsers> $<TARGET_OBJECTS:cider_transformer>)
-# TODO(qiuyang) : folly will deleted after hashtable refactoring
-target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib folly)
+# TODO(qiuyang) : folly and ${CMAKE_DL_LIBS} will deleted after hashtable
+# refactoring
+target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib folly ${CMAKE_DL_LIBS})

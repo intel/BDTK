@@ -27,7 +27,7 @@ template <typename Key, typename Value>
 class F14MapDuplicateKeyWrapper {
  public:
   F14MapDuplicateKeyWrapper(){};
-  folly::fbvector<Value> find(Key key) {
+  folly::fbvector<Value> findAll(Key key) {
     auto iter = f14_map_.find(key);
     if (iter != f14_map_.end()) {
       return iter->second;

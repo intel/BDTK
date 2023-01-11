@@ -1086,18 +1086,18 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     const std::unordered_map<int, std::string> function_map,
     std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>
         expr_map_ptr) {
-  // TODO: (spevenhe) this branch should only cover cast_string_to_date case.
-  // encapsulate and support nested function like cast(cast(xx as String) AS Date).
-  // CAST(SUBSTRING(col_string, 0, 5) AS DATE
-  // Now only supports cast(col_string AS Date)
   if (s_cast_expr.type().kind_case() == substrait::Type::kDate) {
-    SQLTypeInfo sqlTypeInfo = getSQLTypeInfo(s_cast_expr.type());
+    // Note: in some cases, like sql parsed by sustrait_java, the output type
+    // notnull is not matched with cast arg, so add an extra step to
+    // force it to comply with cast arg
+    auto sql_type_info = getSQLTypeInfo(s_cast_expr.type());
     if (!s_cast_expr.input().literal().fixed_char().empty()) {
       // Default is none encoding
       // sqlTypeInfo.set_compression(EncodingType::kENCODING_NONE);
       Datum v;
       v.intval = parseDateInDays(s_cast_expr.input().literal().fixed_char());
-      return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
+      sql_type_info.set_notnull(true);
+      return std::make_shared<Analyzer::Constant>(sql_type_info, false, v);
     } else if (isColumnVar(s_cast_expr.input().selection())) {
       int col_id =
           s_cast_expr.input().selection().direct_reference().struct_field().field();
@@ -1109,14 +1109,13 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
             std::vector<std::shared_ptr<Analyzer::Expr>> args;
             args.push_back(toAnalyzerExpr(
                 s_cast_expr.input().selection(), function_map, expr_map_ptr));
-
             return makeExpr<Analyzer::TryStringCastOper>(SQLTypes::kDATE, args);
-          } else if (sqlTypeInfo.is_time()) {
+          } else if (sql_type_info.is_time()) {
+            auto cast_arg =
+                toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr);
+            sql_type_info.set_notnull(cast_arg->get_type_info().get_notnull());
             return std::make_shared<Analyzer::UOper>(
-                sqlTypeInfo,
-                false,
-                SQLOps::kCAST,
-                toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr));
+                sql_type_info, false, SQLOps::kCAST, cast_arg);
           } else {
             CIDER_THROW(CiderCompileException,
                         "Not supported date cast type other than string.");
@@ -1129,11 +1128,10 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
     }
   }
   // CAST is a normal UOper expr in Analyzer
-  return std::make_shared<Analyzer::UOper>(
-      getSQLTypeInfo(s_cast_expr.type()),
-      false,
-      SQLOps::kCAST,
-      toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr));
+  auto cast_arg = toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr);
+  auto sql_type_info = getSQLTypeInfo(s_cast_expr.type());
+  sql_type_info.set_notnull(cast_arg->get_type_info().get_notnull());
+  return std::make_shared<Analyzer::UOper>(sql_type_info, false, SQLOps::kCAST, cast_arg);
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(

@@ -47,4 +47,9 @@
 #define DISABLE_AVX256 __attribute__((target("no-avx,no-avx2")))
 #define ENABLE_AVX256 __attribute__((target("avx,avx2")))
 
+#if defined(__AVX512F__)
+#define ENABLE_AVX512 __attribute__((target("avx512f")))
+#define DISABLE_AVX512 __attribute__((target("no-avx512f")))
+#endif
+
 #endif

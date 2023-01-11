@@ -44,7 +44,6 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
       std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan_->getPlan());
   RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
   jitlib::CompilationOptions co;
-  co.dump_ir = true;
   codegen_context_ = nextgen::compile(ra_exe_unit, co);
   runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(

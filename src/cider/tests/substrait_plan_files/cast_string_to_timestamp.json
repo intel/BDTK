@@ -1,0 +1,87 @@
+{
+    "extensionUris": [],
+    "extensions": [],
+    "relations": [{
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [3]
+              }
+            },
+            "input": {
+              "read": {
+                "common": {
+                  "direct": {
+                  }
+                },
+                "baseSchema": {
+                  "names": ["COL_DATE", "COL_TIME", "COL_TIMESTAMP"],
+                  "struct": {
+                    "types": [{
+                      "date": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "time": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "timestamp": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }],
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": {
+                  "names": ["TEST"]
+                }
+              }
+            },
+            "expressions": [{
+              "cast": {
+                "type": {
+                  "timestamp": {
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_NULLABLE"
+                  }
+                },
+                "input": {
+                  "cast": {
+                    "type": {
+                      "string": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    },
+                    "input": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {
+                            "field": 2
+                          }
+                        },
+                        "rootReference": {
+                        }
+                      }
+                    },
+                    "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+                  }
+                },
+                "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+              }
+            }]
+          }
+        },
+        "names": ["EXPR$0"]
+      }
+    }],
+    "expectedTypeUrls": []
+  }
+  

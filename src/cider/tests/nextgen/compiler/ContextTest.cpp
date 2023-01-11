@@ -195,8 +195,8 @@ TEST_F(ContextTests, RegisterHashTableTest) {
   };
 
   for (auto key_iter : dup_map.getMap()) {
-    auto dup_res_vec = dup_map.find(key_iter.first);
-    auto hm_res_vec = hash_table->find(key_iter.first);
+    auto dup_res_vec = dup_map.findAll(key_iter.first);
+    auto hm_res_vec = hash_table->findAll(key_iter.first);
 
     for (int i = 0; i < hm_res_vec.size(); ++i) {
       auto pair = hm_res_vec.at(i);
@@ -209,15 +209,7 @@ TEST_F(ContextTests, RegisterHashTableTest) {
 }
 
 int main(int argc, char** argv) {
-  TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
-  }
-  return err;
+  return RUN_ALL_TESTS();
 }

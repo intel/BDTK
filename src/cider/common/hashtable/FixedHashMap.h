@@ -174,7 +174,7 @@ class FixedHashMap : public FixedHashTable<Key, Cell, Size, Allocator> {
 
 // It is mainly used for 1-bytes key, like int8 etc.
 template <typename Key, typename Mapped, typename Allocator = HashTableAllocator>
-using FixedImplicitZeroHashMap =
+using FixedImplicitZeroHashMapWithStoredSize =
     FixedHashMap<Key,
                  Mapped,
                  FixedHashMapImplicitZeroCell<Key, Mapped>,

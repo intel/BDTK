@@ -97,7 +97,6 @@ class UOper : public Expr {
   JITExprValue& codegenNot(CodegenContext& context, Analyzer::Expr* operand_expr_val);
   JITExprValue& codegenCast(CodegenContext& context, Analyzer::Expr* operand_expr_val);
   JITExprValue& codegenUminus(CodegenContext& context, Analyzer::Expr* operand_expr_val);
-  JITValuePointer codegenCastFunc(CodegenContext& context, JITValue& lhs);
 
  protected:
   SQLOps optype;  // operator type, e.g., kUMINUS, kISNULL, kEXISTS

@@ -69,6 +69,7 @@ endif()
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs -fdiagnostics-color=auto -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -fPIC"
 )
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
 endif()
@@ -153,8 +154,7 @@ add_subdirectory(tests)
 add_subdirectory(type)
 add_subdirectory(util)
 
-option(ENABLE_NEXGEN_BENCHMARK "Enable Benchmark for Nextgen Project." OFF)
-if(ENABLE_NEXGEN_BENCHMARK)
+if(CIDER_ENABLE_BENCHMARK)
   add_subdirectory(benchmarks)
 endif()
 

@@ -69,6 +69,7 @@ option(CIDER_ENABLE_DUCKDB "Build DuckDB for Cider." ON)
 option(CIDER_ENABLE_VELOX "Build Velox Plugin for Cider." ON)
 option(CIDER_ENABLE_SUBSTRAIT "Build Substrait for Cider." ON)
 option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." ON)
+option(CIDER_ENABLE_AVX512 "Enable avx512 instructions." OFF)
 
 if(BDTK_ENABLE_CIDER)
   if(CIDER_ENABLE_VELOX)

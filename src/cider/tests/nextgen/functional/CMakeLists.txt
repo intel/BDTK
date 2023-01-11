@@ -30,3 +30,5 @@ foreach(next_gen_test_file ${next_gen_test_files})
   add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name}
            --use_nextgen_compiler)
 endforeach()
+
+add_subdirectory(benchmark)
