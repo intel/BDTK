@@ -20,6 +20,7 @@
 
 set -x
 
+echo `pwd`
 CODE_BASE_PATH=/workspace/code
 PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
 VELOX_COMMIT_ID=`git submodule status -- cpp/thirdparty/velox | cut -d' ' -f2`
