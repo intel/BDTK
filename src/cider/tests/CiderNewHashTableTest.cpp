@@ -192,25 +192,7 @@ TEST_F(CiderNewHashTableTest, hashTableTest) {
 }
 
 int main(int argc, char** argv) {
-  TestHelpers::init_logger_stderr_only(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  namespace po = boost::program_options;
-
-  po::options_description desc("Options");
-
-  logger::LogOptions log_options(argv[0]);
-  log_options.max_files_ = 0;  // stderr only by default
-  desc.add(log_options.get_options());
-
-  po::variables_map vm;
-  po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
-  po::notify(vm);
-
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
-  }
-  return err;
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  return RUN_ALL_TESTS();
 }
