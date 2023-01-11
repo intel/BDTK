@@ -709,4 +709,12 @@ JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
   return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
 }
 
+std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
+  return makeExpr<Analyzer::RegexpReplaceStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& RegexpReplaceStringOper::codegen(CodegenContext& context) {
+
+}
 }  // namespace Analyzer
