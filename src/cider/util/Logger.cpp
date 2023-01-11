@@ -74,91 +74,6 @@ std::string filename(char const* path) {
   return std::filesystem::path(path).filename().string();
 }
 
-LogOptions::LogOptions(char const* argv0) {
-  // Log file base_name matches name of program.
-  std::string const base_name = argv0 == nullptr ? std::string("cider") : filename(argv0);
-  file_name_pattern_ = base_name + file_name_pattern_;
-  symlink_ = base_name + symlink_;
-  set_options();
-}
-
-std::filesystem::path LogOptions::full_log_dir() const {
-  return log_dir_.has_root_directory() ? log_dir_ : base_path_ / log_dir_;
-}
-
-po::options_description const& LogOptions::get_options() const {
-  return *options_;
-}
-
-// Typical usage calls either get_options() or parse_command_line() but not both.
-void LogOptions::parse_command_line(int argc, char const* const* argv) {
-  po::variables_map vm;
-  po::store(
-      po::command_line_parser(argc, argv).options(*options_).allow_unregistered().run(),
-      vm);
-  po::notify(vm);  // Sets LogOptions member variables.
-}
-
-// Must be called before init() to take effect.
-void LogOptions::set_base_path(std::string const& base_path) {
-  base_path_ = base_path;
-}
-
-// May be called to update default values based on updated member variables.
-void LogOptions::set_options() {
-  options_ = std::make_unique<boost::program_options::options_description>("Logging");
-  std::string const channels =
-      std::accumulate(ChannelNames.cbegin() + 1,
-                      ChannelNames.cend(),
-                      std::string(ChannelNames.front()),
-                      [](auto a, auto channel) { return a + ' ' + channel; });
-  // Filter out DEBUG[1-4] severities from --help options
-  std::string severities;
-  for (auto const& name : SeverityNames) {
-    if (!boost::algorithm::starts_with(name, "DEBUG")) {
-      (severities += (severities.empty() ? "" : " ")) += name;
-    }
-  }
-  options_->add_options()(
-      "log-directory",
-      po::value<std::filesystem::path>(&log_dir_)->default_value(log_dir_),
-      "Logging directory. May be relative to data directory, or absolute.");
-  options_->add_options()(
-      "log-file-name",
-      po::value<std::string>(&file_name_pattern_)->default_value(file_name_pattern_),
-      "Log file name relative to log-directory.");
-  options_->add_options()("log-symlink",
-                          po::value<std::string>(&symlink_)->default_value(symlink_),
-                          "Symlink to active log.");
-  options_->add_options()("log-severity",
-                          po::value<Severity>(&severity_)->default_value(severity_),
-                          ("Log to file severity level: " + severities).c_str());
-  options_->add_options()(
-      "log-severity-clog",
-      po::value<Severity>(&severity_clog_)->default_value(severity_clog_),
-      ("Log to console severity level: " + severities).c_str());
-  options_->add_options()("log-channels",
-                          po::value<Channels>(&channels_)->default_value(channels_),
-                          ("Log channel debug info: " + channels).c_str());
-  options_->add_options()("log-auto-flush",
-                          po::value<bool>(&auto_flush_)->default_value(auto_flush_),
-                          "Flush logging buffer to file after each message.");
-  options_->add_options()("log-max-files",
-                          po::value<size_t>(&max_files_)->default_value(max_files_),
-                          "Maximum number of log files to keep.");
-  options_->add_options()(
-      "log-min-free-space",
-      po::value<size_t>(&min_free_space_)->default_value(min_free_space_),
-      "Minimum number of bytes left on device before oldest log files are deleted.");
-  options_->add_options()("log-rotate-daily",
-                          po::value<bool>(&rotate_daily_)->default_value(rotate_daily_),
-                          "Start new log files at midnight.");
-  options_->add_options()(
-      "log-rotation-size",
-      po::value<size_t>(&rotation_size_)->default_value(rotation_size_),
-      "Maximum file size in bytes before new log files are started.");
-}
-
 template <typename TAG>
 std::string replace_braces(std::string const& str, TAG const tag) {
   constexpr std::regex::flag_type flags = std::regex::ECMAScript | std::regex::optimize;
@@ -231,99 +146,20 @@ void set_formatter(SINK& sink) {
   }
 }
 
-template <typename FILE_SINK, typename TAG>
-boost::shared_ptr<FILE_SINK> make_sink(LogOptions const& log_opts,
-                                       std::filesystem::path const& full_log_dir,
-                                       TAG const tag) {
-  auto sink = boost::make_shared<FILE_SINK>(
-      keywords::file_name =
-          full_log_dir / replace_braces(log_opts.file_name_pattern_, tag),
-      keywords::auto_flush = log_opts.auto_flush_,
-      keywords::rotation_size = log_opts.rotation_size_);
-  if /*constexpr*/ (std::is_same<TAG, Channel>::value) {
-    sink->set_filter(channel == static_cast<Channel>(tag));
-    set_formatter<Channel>(sink);
-  } else {
-    // INFO sink logs all other levels. Other sinks only log at their level or higher.
-    Severity const min_filter_level = static_cast<Severity>(tag) == Severity::INFO
-                                          ? log_opts.severity_
-                                          : static_cast<Severity>(tag);
-    sink->set_filter(min_filter_level <= severity);
-    set_formatter<Severity>(sink);
-  }
-  typename FILE_SINK::locked_backend_ptr backend = sink->locked_backend();
-  if (log_opts.rotate_daily_) {
-    backend->set_time_based_rotation(sinks::file::rotation_at_time_point(0, 0, 0));
-  }
-  backend->set_file_collector(
-      sinks::file::make_collector(keywords::target = full_log_dir,
-                                  keywords::max_files = log_opts.max_files_,
-                                  keywords::min_free_space = log_opts.min_free_space_));
-  backend->set_open_handler(create_or_replace_symlink(
-      boost::weak_ptr<FILE_SINK>(sink), replace_braces(log_opts.symlink_, tag)));
-  backend->scan_for_files();
-  return sink;
-}
-
 // Pointer to function to optionally call on LOG(FATAL).
 std::atomic<FatalFunc> g_fatal_func{nullptr};
 std::once_flag g_fatal_func_flag;
-
-using ClogSync = sinks::synchronous_sink<sinks::text_ostream_backend>;
-using FileSync = sinks::synchronous_sink<sinks::text_file_backend>;
-
-template <typename CONSOLE_SINK>
-boost::shared_ptr<CONSOLE_SINK> make_sink(LogOptions const& log_opts) {
-  auto sink = boost::make_shared<CONSOLE_SINK>();
-  boost::shared_ptr<std::ostream> clog(&std::clog, boost::null_deleter());
-  sink->locked_backend()->add_stream(clog);
-  sink->set_filter(log_opts.severity_clog_ <= severity);
-  set_formatter<Severity>(sink);
-  return sink;
-}
 
 // Locking/atomicity not needed for g_any_active_channels or g_min_active_severity
 // as they are modifed by init() once.
 bool g_any_active_channels{false};
 Severity g_min_active_severity{Severity::FATAL};
 
-void init(LogOptions const& log_opts) {
-  boost::shared_ptr<boost::log::core> core = boost::log::core::get();
-  // boost::log::add_common_attributes(); // LineID TimeStamp ProcessID ThreadID
-  core->add_global_attribute("TimeStamp", attr::local_clock());
-  core->add_global_attribute("ProcessID", attr::current_process_id());
-  if (0 < log_opts.max_files_) {
-    std::filesystem::path const full_log_dir = log_opts.full_log_dir();
-    bool const log_dir_was_created = std::filesystem::create_directory(full_log_dir);
-    // Don't create separate log sinks for anything less than Severity::INFO.
-    Severity const min_sink_level = std::max(Severity::INFO, log_opts.severity_);
-    for (int i = min_sink_level; i < Severity::_NSEVERITIES; ++i) {
-      Severity const level = static_cast<Severity>(i);
-      core->add_sink(make_sink<FileSync>(log_opts, full_log_dir, level));
-    }
-    g_min_active_severity = std::min(g_min_active_severity, log_opts.severity_);
-    if (log_dir_was_created) {
-      LOG(INFO) << "Log directory(" << full_log_dir.native() << ") created.";
-    }
-    for (auto const channel : log_opts.channels_) {
-      core->add_sink(make_sink<FileSync>(log_opts, full_log_dir, channel));
-    }
-    g_any_active_channels = !log_opts.channels_.empty();
-  }
-  core->add_sink(make_sink<ClogSync>(log_opts));
-  g_min_active_severity = std::min(g_min_active_severity, log_opts.severity_clog_);
-}
-
 void set_once_fatal_func(FatalFunc fatal_func) {
   if (g_fatal_func.exchange(fatal_func)) {
     CIDER_THROW(CiderCompileException,
                 "logger::set_once_fatal_func() should not be called more than once.");
   }
-}
-
-void shutdown() {
-  static std::once_flag logger_flag;
-  std::call_once(logger_flag, []() { boost::log::core::get()->remove_all_sinks(); });
 }
 
 namespace {

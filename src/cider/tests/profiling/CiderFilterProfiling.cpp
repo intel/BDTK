@@ -61,17 +61,6 @@ TEST_F(CiderFilterProfiling, multipleFilter) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-
-  logger::LogOptions log_options(argv[0]);
-  log_options.parse_command_line(argc, argv);
-  logger::init(log_options);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
-  }
-  return err;
+  return RUN_ALL_TESTS();
 }
