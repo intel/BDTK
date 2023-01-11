@@ -453,14 +453,6 @@ class HashTable : private boost::noncopyable,
                   protected Allocator,
                   protected Cell::State,
                   public ZeroValueStorage<Cell::need_zero_value_storage, Cell> {
-  // public:
-  //     // If we use an allocator with inline memory, check that the initial
-  //     // size of the hash table is in sync with the amount of this memory.
-  //     static constexpr size_t initial_buffer_bytes
-  //         = Grower::initial_count * sizeof(Cell);
-  //     static_assert(allocatorInitialBytes<Allocator> == 0
-  //         || allocatorInitialBytes<Allocator> == initial_buffer_bytes);
-
  protected:
   friend class const_iterator;
   friend class iterator;
@@ -517,6 +509,8 @@ class HashTable : private boost::noncopyable,
 
   void alloc(const Grower& new_grower) {
     buf = reinterpret_cast<Cell*>(Allocator::alloc(new_grower.bufSize() * sizeof(Cell)));
+    // Initialize all bits to mark as empty.
+    std::memset(buf, 0, new_grower.bufSize() * sizeof(Cell));
     grower = new_grower;
   }
 

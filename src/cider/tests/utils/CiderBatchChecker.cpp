@@ -382,7 +382,7 @@ bool CiderBatchChecker::checkArrowEq(
   // This check is only a shortcut
   // even if it fails, it does not necessarily mean the results are wrong
   // we can goto step 4 and check the results row-by-row
-  if (expected_batches.size() == 1 && actual_batches.size() == 1) {
+  if (!ignore_order && expected_batches.size() == 1 && actual_batches.size() == 1) {
     bool one_batch_check =
         checkOneStructBatchEqual(expected_batches[0].get(), actual_batches[0].get());
     if (one_batch_check) {
