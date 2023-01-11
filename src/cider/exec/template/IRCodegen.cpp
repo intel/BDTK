@@ -266,16 +266,18 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenConstantExpr(
       return std::make_unique<TwoValueColValues>(
           constant_value[1],
           constant_value[2],
-          constant_expr->get_is_null() ? llvm::ConstantInt::getTrue(cgen_state_->context_)
-                                       : nullptr);
+          constant_expr->get_is_null()
+              ? llvm::ConstantInt::getTrue(cgen_state_->context_)
+              : llvm::ConstantInt::getFalse(cgen_state_->context_));
     case kARRAY:
       UNREACHABLE();
     default:
       CHECK_EQ(constant_value.size(), 1);
       return std::make_unique<FixedSizeColValues>(
           constant_value[0],
-          constant_expr->get_is_null() ? llvm::ConstantInt::getTrue(cgen_state_->context_)
-                                       : nullptr);
+          constant_expr->get_is_null()
+              ? llvm::ConstantInt::getTrue(cgen_state_->context_)
+              : llvm::ConstantInt::getFalse(cgen_state_->context_));
   }
 }
 
