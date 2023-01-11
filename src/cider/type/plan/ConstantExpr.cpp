@@ -29,7 +29,7 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
     return expr_var;
   }
 
-  auto null = func.createLiteral(JITTypeTag::BOOL, false);
+  auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
 
   const auto& ti = get_type_info();
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
