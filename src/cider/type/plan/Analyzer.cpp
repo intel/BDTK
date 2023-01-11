@@ -20,12 +20,9 @@
  * under the License.
  */
 #include "type/plan/Analyzer.h"
-#include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/template/DateTimeUtils.h"
-#include "exec/template/IRCodegenUtils.h"
 #include "type/data/sqltypes.h"
 #include "util/DateConverters.h"
-#include "util/SqlTypesLayout.h"
 #include "util/misc.h"
 
 #include <algorithm>
