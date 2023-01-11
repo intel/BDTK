@@ -240,8 +240,8 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
           ->ifTrue([&]() {
             cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
                 expr_pair.second->codegen(context));
-            *value = *then_jit_expr_value.getValue();
-            *null = *then_jit_expr_value.getNull();
+            value.replace(then_jit_expr_value.getValue());
+            null.replace(then_jit_expr_value.getNull());
             *is_case = func.createLiteral(JITTypeTag::BOOL, true);
           })
           ->build();
@@ -251,12 +251,13 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
               else_expr->codegen(context));
-          *value = *else_jit_expr_value.getValue();
-          *null = *else_jit_expr_value.getNull();
+          value.replace(else_jit_expr_value.getValue());
+          null.replace(else_jit_expr_value.getNull());
         })
         ->build();
     return set_expr_value(null, value);
   } else if (case_ti.is_string()) {
+    // TODO(haiwei): [POAE7-2782] string type if/case expr support in next codegen
     UNIMPLEMENTED();
   } else {
     UNREACHABLE();

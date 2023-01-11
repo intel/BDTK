@@ -51,19 +51,20 @@ class CaseExpr : public Expr {
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
   void check_group_by(
       const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const override;
-  void group_predicates(std::list<const Expr*>& scan_predicates,
-                        std::list<const Expr*>& join_predicates,
-                        std::list<const Expr*>& const_predicates) const override;
-  void collect_rte_idx(std::set<int>& rte_idx_set) const override;
-  void collect_column_var(
+  [[deprecated]] void group_predicates(
+      std::list<const Expr*>& scan_predicates,
+      std::list<const Expr*>& join_predicates,
+      std::list<const Expr*>& const_predicates) const override;
+  [[deprecated]] void collect_rte_idx(std::set<int>& rte_idx_set) const override;
+  [[deprecated]] void collect_column_var(
       std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>&
           colvar_set,
       bool include_agg) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_with_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_with_child_targetlist(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
-  std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
+  [[deprecated]] std::shared_ptr<Analyzer::Expr> rewrite_agg_to_var(
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
   bool operator==(const Expr& rhs) const override;
   std::string toString() const override;
