@@ -1479,6 +1479,27 @@ extern "C" ALWAYS_INLINE int32_t extract_str_len_arrow(int8_t* offset_buffer,
   return offset[pos + 1] - offset[pos];
 }
 
+extern "C" RUNTIME_EXPORT NEVER_INLINE bool Between(const double x,
+                                                    const double low,
+                                                    const double high);
+
+extern "C" RUNTIME_EXPORT NEVER_INLINE bool Between__3(const int64_t x,
+                                                       const int64_t low,
+                                                       const int64_t high);
+
+// Clang compiler will automatically optimize away unused functions.
+extern "C" RUNTIME_EXPORT NEVER_INLINE bool cider_Between(const double x,
+                                                          const double low,
+                                                          const double high) {
+  return Between(x, low, high);
+}
+
+extern "C" RUNTIME_EXPORT NEVER_INLINE bool cider_Between__3(const int64_t x,
+                                                             const int64_t low,
+                                                             const int64_t high) {
+  return Between__3(x, low, high);
+}
+
 #include "exec/nextgen/context/ContextRuntimeFunctions.h"
 #include "exec/nextgen/function/CiderDateFunctions.cpp"
 #include "exec/nextgen/function/CiderSetFunctions.cpp"
