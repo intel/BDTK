@@ -225,6 +225,9 @@ class CiderMathOpArrowTest : public CiderNextgenTestBase {
 };
 
 TEST_F(CiderMathOpArrowTest, ConstantValueMathOpTest) {
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   assertQuery("SELECT 2 + 1 FROM test");
   assertQuery("SELECT 2 - 1 FROM test");
   assertQuery("SELECT 2 * 1 FROM test");
@@ -285,12 +288,16 @@ TEST_F(CiderMathOpArrowTest, ColumnBasicMathOpTest) {
   assertQuery("SELECT double_col / 2 FROM test");
 
   // Test divide zero exception
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   EXPECT_TRUE(executeIncorrectQuery("SELECT integer_col / 0 FROM test"));
 }
-TEST_F(CiderMathOpArrowTest, ColumnBasicMathOpTest1111) {
-  EXPECT_TRUE(executeIncorrectQuery("SELECT integer_col / 0 FROM test"));
-}
+
 TEST_F(CiderMathOpArrowTest, ColumnMathOpBoundaryTest) {
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   // Test out of boundary exception
   EXPECT_TRUE(executeIncorrectQuery("SELECT bigint_col + 9223372036854775807 FROM test"));
   EXPECT_TRUE(executeIncorrectQuery("SELECT bigint_col - 9223372036854775807 FROM test"));

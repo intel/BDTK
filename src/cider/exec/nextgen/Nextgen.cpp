@@ -28,11 +28,11 @@
 namespace cider::exec::nextgen {
 
 std::unique_ptr<context::CodegenContext> compile(
-    RelAlgExecutionUnit& ra_exe_unit,
-    const jitlib::CompilationOptions& co,
+    const RelAlgExecutionUnit& ra_exe_unit,
     const context::CodegenOptions& codegen_options) {
   auto codegen_ctx = std::make_unique<context::CodegenContext>();
-  auto module = std::make_shared<jitlib::LLVMJITModule>("codegen", true, co);
+  auto module =
+      std::make_shared<jitlib::LLVMJITModule>("codegen", true, codegen_options.co);
 
   auto builder = [&ra_exe_unit, &codegen_ctx, &codegen_options](
                      jitlib::JITFunctionPointer function) {

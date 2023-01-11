@@ -72,16 +72,18 @@ std::string getFileContent(const std::string& file_name) {
   return std::move(plan);
 }
 
-void CiderNextgenQueryRunner::runQueryOneBatch(const std::string& file_or_sql,
-                                               const struct ArrowArray& input_array,
-                                               const struct ArrowSchema& input_schema,
-                                               struct ArrowArray& output_array,
-                                               struct ArrowSchema& output_schema) {
+void CiderNextgenQueryRunner::runQueryOneBatch(
+    const std::string& file_or_sql,
+    const struct ArrowArray& input_array,
+    const struct ArrowSchema& input_schema,
+    struct ArrowArray& output_array,
+    struct ArrowSchema& output_schema,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options) {
   // Step 1: construct substrait plan
   auto plan = genSubstraitPlan(file_or_sql);
 
   // Step 2: compile and gen runtime module
-  processor_ = makeBatchProcessor(plan, context_);
+  processor_ = makeBatchProcessor(plan, context_, codegen_options);
 
   // Step 3: run on this batch
   processor_->processNextBatch(&input_array, &input_schema);

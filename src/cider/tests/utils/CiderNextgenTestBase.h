@@ -22,8 +22,8 @@
 #ifndef CIDER_TESTS_UTILS_NEXTGEN_TEST_BASE_H_
 #define CIDER_TESTS_UTILS_NEXTGEN_TEST_BASE_H_
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
+#include <gtest/gtest.h>
 
 #include <string>
 
@@ -65,6 +65,10 @@ class CiderNextgenTestBase : public testing::Test {
     create_ddl_ = create_ddl;
   }
 
+  void setCodegenOptions(cider::exec::nextgen::context::CodegenOptions& codegen_options) {
+    codegen_options_ = codegen_options;
+  }
+
  protected:
   std::string table_name_;
   std::string create_ddl_;
@@ -73,6 +77,7 @@ class CiderNextgenTestBase : public testing::Test {
   DuckDbQueryRunner duckdb_query_runner_;
   CiderNextgenQueryRunnerPtr cider_nextgen_query_runner_ =
       std::make_shared<CiderNextgenQueryRunner>();
+  cider::exec::nextgen::context::CodegenOptions codegen_options_ = {};
 };
 
 }  // namespace cider::test::util

@@ -39,8 +39,12 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   // As a result, in this case, we need feed a json file, which is delivered by Velox and
   // will be used to generate Substrait plan.
   auto file_or_sql = json_file.size() ? json_file : sql;
-  cider_nextgen_query_runner_->runQueryOneBatch(
-      file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
+  cider_nextgen_query_runner_->runQueryOneBatch(file_or_sql,
+                                                *input_array_,
+                                                *input_schema_,
+                                                output_array,
+                                                output_schema,
+                                                codegen_options_);
   if (0 == duck_res_arrow.size()) {
     // result is empty.
     CHECK_EQ(0, output_array.length);
@@ -67,8 +71,12 @@ bool CiderNextgenTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
   try {
     struct ArrowArray output_array;
     struct ArrowSchema output_schema;
-    cider_nextgen_query_runner_->runQueryOneBatch(
-        wrong_sql, *input_array_, *input_schema_, output_array, output_schema);
+    cider_nextgen_query_runner_->runQueryOneBatch(wrong_sql,
+                                                  *input_array_,
+                                                  *input_schema_,
+                                                  output_array,
+                                                  output_schema,
+                                                  codegen_options_);
   } catch (const CiderException& e) {
     LOG(ERROR) << e.what();
     return true;
@@ -82,8 +90,12 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   struct ArrowArray output_array;
   struct ArrowSchema output_schema;
   auto file_or_sql = sql;
-  cider_nextgen_query_runner_->runQueryOneBatch(
-      file_or_sql, *input_array_, *input_schema_, output_array, output_schema);
+  cider_nextgen_query_runner_->runQueryOneBatch(file_or_sql,
+                                                *input_array_,
+                                                *input_schema_,
+                                                output_array,
+                                                output_schema,
+                                                codegen_options_);
   // if (0 == duck_res_arrow.size()) {
   //   // result is empty.
   //   CHECK((!array || 0 == array->length));

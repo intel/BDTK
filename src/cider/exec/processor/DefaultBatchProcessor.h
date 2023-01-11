@@ -31,8 +31,11 @@ namespace cider::exec::processor {
 
 class DefaultBatchProcessor : public BatchProcessor {
  public:
-  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
-                        const BatchProcessorContextPtr& context);
+  DefaultBatchProcessor(
+      const plan::SubstraitPlanPtr& plan,
+      const BatchProcessorContextPtr& context,
+
+      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
   virtual ~DefaultBatchProcessor() = default;
 

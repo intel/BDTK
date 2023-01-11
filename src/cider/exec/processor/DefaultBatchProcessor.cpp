@@ -47,8 +47,10 @@ std::string getErrorMessageFromErrCode(const cider::jitlib::ERROR_CODE error_cod
   }
 }
 
-DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
-                                             const BatchProcessorContextPtr& context)
+DefaultBatchProcessor::DefaultBatchProcessor(
+    const plan::SubstraitPlanPtr& plan,
+    const BatchProcessorContextPtr& context,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options)
     : plan_(plan), context_(context) {
   auto allocator = context->getAllocator();
   if (plan_->hasJoinRel()) {
@@ -62,9 +64,7 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
   auto translator =
       std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan_->getPlan());
   RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
-  jitlib::CompilationOptions co;
-  cider::exec::nextgen::context::CodegenOptions codegen_options{true};
-  codegen_context_ = nextgen::compile(ra_exe_unit, co, codegen_options);
+  codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
   runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(
       codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
@@ -114,12 +114,13 @@ void DefaultBatchProcessor::feedHashBuildTable(
 
 std::unique_ptr<BatchProcessor> makeBatchProcessor(
     const ::substrait::Plan& plan,
-    const BatchProcessorContextPtr& context) {
+    const BatchProcessorContextPtr& context,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options) {
   auto substraitPlan = std::make_shared<plan::SubstraitPlan>(plan);
   if (substraitPlan->hasAggregateRel()) {
-    return std::make_unique<StatefulProcessor>(substraitPlan, context);
+    return std::make_unique<StatefulProcessor>(substraitPlan, context, codegen_options);
   } else {
-    return std::make_unique<StatelessProcessor>(substraitPlan, context);
+    return std::make_unique<StatelessProcessor>(substraitPlan, context, codegen_options);
   }
 }
 

@@ -27,11 +27,13 @@
 namespace cider::test::util {
 class CiderNextgenBenchmarkRunner : public CiderNextgenQueryRunner {
  public:
-  void runQueryOneBatch(const std::string& file_or_sql,
-                        const struct ArrowArray& input_array,
-                        const struct ArrowSchema& input_schema,
-                        struct ArrowArray& output_array,
-                        struct ArrowSchema& output_schema) override;
+  void runQueryOneBatch(
+      const std::string& file_or_sql,
+      const struct ArrowArray& input_array,
+      const struct ArrowSchema& input_schema,
+      struct ArrowArray& output_array,
+      struct ArrowSchema& output_schema,
+      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {}) override;
 };
 }  // namespace cider::test::util
 #endif
