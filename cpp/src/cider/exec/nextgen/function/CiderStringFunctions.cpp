@@ -525,3 +525,10 @@ extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
     return pack_string_t(s);
   }
 }
+
+extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr) {
+
+
+  return 0;
+}
+
