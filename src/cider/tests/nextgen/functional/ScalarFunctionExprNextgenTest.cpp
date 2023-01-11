@@ -125,6 +125,7 @@ TEST_F(BetweenAndArrowDateTest, DateNotNullTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  generator::registerExtensionFunctions();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   return RUN_ALL_TESTS();
 }
