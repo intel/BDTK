@@ -18,9 +18,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -x
+
 CODE_BASE_PATH=/workspace/code
 PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
-VELOX_COMMIT_ID=`git submodule status -- thirdparty/velox | cut -d' ' -f2`
+VELOX_COMMIT_ID=`git submodule status -- cpp/thirdparty/velox | cut -d' ' -f2`
 echo "velox commit id: ${VELOX_COMMIT_ID}"
 
 pushd ${CODE_BASE_PATH}/velox
