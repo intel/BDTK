@@ -221,16 +221,7 @@ TEST_F(BetweenAndArrowDateTest, DateNotNullTest) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   generator::registerExtensionFunctions();
-  logger::LogOptions log_options(argv[0]);
-  log_options.parse_command_line(argc, argv);
-  log_options.max_files_ = 0;  // stderr only by default
-  logger::init(log_options);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-  }
-  return err;
+  return RUN_ALL_TESTS();
 }

@@ -79,4 +79,51 @@ extern "C" ALWAYS_INLINE void nextgen_cider_agg_count_nullable(int64_t* agg_val_
   }
 }
 
+// HashJoin functions For Nextgen
+extern "C" ALWAYS_INLINE int64_t look_up_value_by_key(int8_t* hashtable,
+                                                      int8_t* keys,
+                                                      int8_t* nulls,
+                                                      int8_t* buffer) {
+  auto LP_hashtable = reinterpret_cast<cider_hashtable::LinearProbeHashTable<
+      int,
+      std::pair<cider::exec::nextgen::context::Batch*, int64_t>,
+      cider::exec::nextgen::context::murmurHash,
+      cider::exec::nextgen::context::Equal>*>(hashtable);
+  auto context_buffer = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(buffer);
+  // TODO(qiuyang) : now hashtable only support one key
+  // hash join probe
+  auto join_key_is_null = reinterpret_cast<bool*>(nulls);
+  auto join_key_val = reinterpret_cast<int64_t*>(keys);
+  if (!*join_key_is_null) {
+    auto join_res = LP_hashtable->findAll(*join_key_val);
+    context_buffer->allocateBuffer(join_res.size() * 16);
+    auto join_res_buffer =
+        reinterpret_cast<std::pair<cider::exec::nextgen::context::Batch*, int64_t>*>(
+            context_buffer->getBuffer());
+    for (int i = 0; i < join_res.size(); ++i) {
+      join_res_buffer[i] = join_res[i];
+    }
+    return join_res.size();
+    // if key is null, no result
+  } else {
+    return 0;
+  }
+}
+
+extern "C" ALWAYS_INLINE int8_t* extract_join_res_array(int8_t* buffer, int64_t index) {
+  auto join_res_buffer = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(buffer);
+  auto pair =
+      reinterpret_cast<std::pair<cider::exec::nextgen::context::Batch*, int64_t>*>(
+          join_res_buffer->getBuffer());
+  return reinterpret_cast<int8_t*>(pair[index].first->getArray());
+}
+
+extern "C" ALWAYS_INLINE int64_t extract_join_row_id(int8_t* buffer, int64_t index) {
+  auto join_res_buffer = reinterpret_cast<cider::exec::nextgen::context::Buffer*>(buffer);
+  auto pair =
+      reinterpret_cast<std::pair<cider::exec::nextgen::context::Batch*, int64_t>*>(
+          join_res_buffer->getBuffer());
+  return pair[index].second;
+}
+
 #endif  // NEXTEGN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H

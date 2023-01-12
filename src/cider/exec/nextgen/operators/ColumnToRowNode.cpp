@@ -75,7 +75,7 @@ class ColumnReader {
     auto row_data = value_pointer + cur_offset;  // still char*
 
     if (expr_->get_type_info().get_notnull()) {
-      expr_->set_expr_value(func.createConstant(JITTypeTag::BOOL, false), len, row_data);
+      expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), len, row_data);
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.
@@ -95,7 +95,7 @@ class ColumnReader {
     auto& func = batch->getParentJITFunction();
     auto row_data = getFixSizeRowData(func, fixsize_values);
     if (expr_->get_type_info().get_notnull()) {
-      expr_->set_expr_value(func.createConstant(JITTypeTag::BOOL, false), row_data);
+      expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), row_data);
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.
@@ -152,7 +152,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
   // get input row num from input arrow array
   // assumes signature be like: query_func(context, array)
   auto input_array = func->getArgument(1);  // array
-  auto len = func->createLocalJITValue([&context, &input_array]() {
+  auto len = func->createLocalJITValue([&input_array]() {
     return context::codegen_utils::getArrowArrayLength(input_array);
   });
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);

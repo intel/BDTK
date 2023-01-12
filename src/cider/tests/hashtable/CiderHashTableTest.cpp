@@ -258,16 +258,6 @@ TEST(CiderHashTableTest, f14MapTest) {
 
 int main(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
-  int err{0};
-  logger::LogOptions log_options(argv[0]);
-  log_options.severity_ = logger::Severity::INFO;
-  log_options.set_options();  // update default values
-  logger::init(log_options);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-  }
-  return err;
+  return RUN_ALL_TESTS();
 }

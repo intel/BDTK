@@ -84,7 +84,7 @@ JITValuePointer LLVMJITValue::notOp() {
     case JITTypeTag::BOOL: {
       if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_value_)) {
         bool literal = const_bool->isOne() ? false : true;
-        return parent_function_.createConstant(JITTypeTag::BOOL, literal);
+        return parent_function_.createLiteral(JITTypeTag::BOOL, literal);
       }
       ans = getFunctionBuilder(parent_function_).CreateNot(load());
       break;

@@ -211,49 +211,10 @@ inline size_t DefaultHash64(T key) {
   return intHash64(out);
 }
 
-// TODO: Implement and enable later
-// template <typename T>
-// requires (sizeof(T) > sizeof(uint64_t))
-// inline size_t DefaultHash64(T key)
-// {
-//     if constexpr (is_big_int_v<T> && sizeof(T) == 16)
-//     {
-//         /// TODO This is classical antipattern.
-//         return intHash64(
-//             static_cast<uint64_t>(key) ^
-//             static_cast<uint64_t>(key >> 64));
-//     }
-//     else if constexpr (std::is_same_v<T, DB::UUID>)
-//     {
-//         return intHash64(
-//             static_cast<uint64_t>(key.toUnderType()) ^
-//             static_cast<uint64_t>(key.toUnderType() >> 64));
-//     }
-//     else if constexpr (is_big_int_v<T> && sizeof(T) == 32)
-//     {
-//         return intHash64(
-//             static_cast<uint64_t>(key) ^
-//             static_cast<uint64_t>(key >> 64) ^
-//             static_cast<uint64_t>(key >> 128) ^
-//             static_cast<uint64_t>(key >> 256));
-//     }
-//     UNREACHABLE();
-// }
-
 template <typename T>
 struct DefaultHash {
   size_t operator()(T key) const { return DefaultHash64<T>(key); }
 };
-
-// template <typename T>
-// template <DB::is_decimal T>
-// struct DefaultHash<T>
-// {
-//     size_t operator() (T key) const
-//     {
-//         return DefaultHash64<typename T::NativeType>(key.value);
-//     }
-// };
 
 template <typename T>
 struct HashCRC32;
@@ -265,13 +226,6 @@ inline size_t hashCRC32(T key, uint64_t updated_value = -1) {
   std::memcpy(&out, &key, sizeof(T));
   return intHashCRC32(out, updated_value);
 }
-
-// template <typename T>
-// requires (sizeof(T) > sizeof(uint64_t))
-// inline size_t hashCRC32(T key, uint64_t updated_value = -1)
-// {
-//     return intHashCRC32(key, updated_value);
-// }
 
 #define DEFINE_HASH(T)                                           \
   template <>                                                    \
@@ -291,14 +245,6 @@ DEFINE_HASH(float)
 DEFINE_HASH(double)
 
 #undef DEFINE_HASH
-
-/// It is reasonable to use for uint8_t, uint16_t with sufficient hash table size.
-struct TrivialHash {
-  template <typename T>
-  size_t operator()(T key) const {
-    return key;
-  }
-};
 
 /** A relatively good non-cryptographic hash function from uint64_t to uint32_t.
  * But worse (both in quality and speed) than just cutting intHash64.
