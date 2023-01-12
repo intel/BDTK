@@ -74,9 +74,8 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
 
     const auto optype = get_optype();
     if (IS_ARITHMETIC(optype)) {
-      bool needs_error_check = context.getCodegenOptions().needs_error_check;
       return codegenFixedSizeColArithFun(
-          null, lhs_val.getValue(), rhs_val.getValue(), needs_error_check);
+          context, null, lhs_val.getValue(), rhs_val.getValue());
     } else if (IS_COMPARISON(optype)) {
       return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
     } else if (IS_LOGIC(optype)) {
@@ -87,26 +86,39 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
   return expr_var_;
 }
 
-JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValuePointer& null,
-                                                   JITValue& lhs,
-                                                   JITValue& rhs,
-                                                   bool needs_error_check) {
-  // TODO: Null Process
+JITValuePointer BinOper::codegenArithWithErrorCheck(JITValuePointer lhs,
+                                                    JITValuePointer rhs) {
+  switch (get_optype()) {
+    case kMINUS:
+      return lhs->subWithErrorCheck(rhs);
+    case kPLUS:
+      return lhs->addWithErrorCheck(rhs);
+    case kMULTIPLY:
+      return lhs->mulWithErrorCheck(rhs);
+    case kDIVIDE:
+      return lhs->divWithErrorCheck(rhs);
+    case kMODULO:
+      return lhs->modWithErrorCheck(rhs);
+    default:
+      UNREACHABLE();
+  }
+}
+
+JITExprValue& BinOper::codegenFixedSizeColArithFun(CodegenContext& context,
+                                                   JITValuePointer null,
+                                                   JITValuePointer lhs,
+                                                   JITValuePointer rhs) {
+  bool needs_error_check = context.getCodegenOptions().needs_error_check;
+  JITFunction& func = *context.getJITFunction();
   if (needs_error_check) {
-    switch (get_optype()) {
-      case kMINUS:
-        return set_expr_value(null, lhs.subWithErrorCheck(rhs));
-      case kPLUS:
-        return set_expr_value(null, lhs.addWithErrorCheck(rhs));
-      case kMULTIPLY:
-        return set_expr_value(null, lhs.mulWithErrorCheck(rhs));
-      case kDIVIDE:
-        return set_expr_value(null, lhs.divWithErrorCheck(rhs));
-      case kMODULO:
-        return set_expr_value(null, lhs.modWithErrorCheck(rhs));
-      default:
-        UNREACHABLE();
-    }
+    JITValuePointer res_val = func.createVariable(lhs->getValueTypeTag(), "res_val");
+    // pass null value error check
+    func.createIfBuilder()
+        ->condition([&]() { return null; })
+        ->ifTrue([&]() { *res_val = *lhs; })
+        ->ifFalse([&]() { res_val = codegenArithWithErrorCheck(lhs, rhs); })
+        ->build();
+    return set_expr_value(null, res_val);
   } else {
     switch (get_optype()) {
       case kMINUS:
@@ -123,7 +135,6 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(JITValuePointer& null,
         UNREACHABLE();
     }
   }
-
   return expr_var_;
 }
 

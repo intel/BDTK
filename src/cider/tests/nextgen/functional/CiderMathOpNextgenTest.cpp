@@ -366,6 +366,35 @@ TEST_F(CiderMathOpArrowTest, DecimalMathOpArrowTest) {
                    "decimal_bigint_cast_scale_fixed.json");
 }
 
+class CiderMathOpNullTest : public CiderTestBase {
+ public:
+  CiderMathOpNullTest() {
+    table_name_ = "test";
+    create_ddl_ =
+        R"(CREATE TABLE test(integer_col INTEGER, bigint_col BIGINT,
+        float_col FLOAT);)";
+    QueryArrowDataGenerator::generateBatchByTypes(schema_,
+                                                  array_,
+                                                  100,
+                                                  {
+                                                      "integer_col",
+                                                      "bigint_col",
+                                                      "float_col",
+                                                  },
+                                                  {CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32)},
+                                                  {1, 1, 1});
+  }
+};
+
+TEST_F(CiderMathOpNullTest, NullValueErrorCheckTest) {
+  assertQueryArrow("SELECT bigint_col + 9223372036854775807 FROM test");
+  assertQueryArrow("SELECT bigint_col - 9223372036854775807 FROM test");
+  assertQueryArrow("SELECT CAST(float_col + 500 as TINYINT) FROM test");
+  assertQueryArrow("SELECT CAST(bigint_col - 5000000000 as INTEGER) FROM test");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
