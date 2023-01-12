@@ -28,7 +28,7 @@
 
 #include <boost/noncopyable.hpp>
 
-namespace DB {
+namespace cider {
 
 /** Memory pool to append something. For example, short strings.
  * Usage scenario:
@@ -119,4 +119,4 @@ class Arena : private boost::noncopyable {
   size_t remainingSpaceInCurrentMemoryChunk() const { return 0; }
 };
 
-}  // namespace DB
+}  // namespace cider

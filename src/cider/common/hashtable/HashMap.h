@@ -33,11 +33,11 @@
  * zero key.
  */
 
-namespace DB {
+namespace cider {
 namespace ErrorCodes {
 extern const int LOGICAL_ERROR;
 }
-}  // namespace DB
+}  // namespace cider
 
 struct NoInitTag {};
 
@@ -238,7 +238,7 @@ class HashMapTable : public HashTable<Key, Cell, Hash, Grower, Allocator> {
   ///  emplaced is set to false.
   template <typename Func, bool prefetch = false>
   void ALWAYS_INLINE mergeToViaEmplace(Self& that, Func&& func) {
-    DB::PrefetchingHelper prefetching;
+    cider::PrefetchingHelper prefetching;
     size_t prefetch_look_ahead = prefetching.getInitialLookAheadValue();
 
     size_t i = 0;
