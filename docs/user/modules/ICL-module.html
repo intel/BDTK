@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Intel Codec Library Module Introduction &#8212; Cider 1.0 documentation</title>
+    <title>Intel Codec Library User Guide &#8212; Cider 1.0 documentation</title>
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -42,15 +42,258 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="intel-codec-library-module-introduction">
-<h1>Intel Codec Library Module Introduction<a class="headerlink" href="#intel-codec-library-module-introduction" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-descritption">
-<h2>Module descritption<a class="headerlink" href="#module-descritption" title="Permalink to this headline">¶</a></h2>
-<p>Intel Codec Library provides compression and decompression library for Apache Hadoop/Spark to make use of the acceleration hardware for compression/decompression. It not only can leverage QAT/IAA hardware to accelerate deflate-compatible data compression algorithms but also supports the use of Intel software optimized solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.</p>
+  <div class="section" id="intel-codec-library-user-guide">
+<span id="icl-user-guide-reference-link"></span><h1>Intel Codec Library User Guide<a class="headerlink" href="#intel-codec-library-user-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-description">
+<span id="icl-description-reference-link"></span><h2>Module description<a class="headerlink" href="#module-description" title="Permalink to this headline">¶</a></h2>
+<p>The Intel Codec Library (ICL) provides compression and decompression library for Apache Hadoop/Spark/Parquet and so on to make use of the hardware accelerator, and/or software for compression/decompression. It not only supports the use of Intel hardware accelerator such as QAT and IAA to accelerate the deflate-compatible data compression algorithm but also supports the use of Intel optimized software solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library) and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.</p>
+<p>Currently the Intel Codec Library supports the following backends:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">IGZIP</span></code> - use ISA-L software to accelerate the compression</li>
+<li><code class="docutils literal notranslate"><span class="pre">QPL</span></code> - use IAA hardware accelerator to accelerate the compression</li>
+<li><code class="docutils literal notranslate"><span class="pre">QAT</span></code> - use QAT hardware accelerator to accelerate the compression</li>
+<li><code class="docutils literal notranslate"><span class="pre">IPP</span></code> - use IPP software to accelerate the compression. <strong>Note:</strong> <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">license</span> <span class="pre">is</span> <span class="pre">needed</span> <span class="pre">to</span> <span class="pre">use</span> <span class="pre">IPP</span></code></li>
+</ul>
 </div>
 <div class="section" id="sdk-api">
-<h2>SDK API<a class="headerlink" href="#sdk-api" title="Permalink to this headline">¶</a></h2>
-<p>To be added.</p>
+<span id="icl-sdk-api-reference-link"></span><h2>SDK API<a class="headerlink" href="#sdk-api" title="Permalink to this headline">¶</a></h2>
+<p>The class diagram of Intel Codec Library is shown below:</p>
+<img alt="../../_images/ICL-class.png" src="../../_images/ICL-class.png" />
+</div>
+<div class="section" id="building-the-library">
+<h2>Building the Library<a class="headerlink" href="#building-the-library" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h3>
+<p>Before building Intel Codec Library, install and set up the following tools:</p>
+<ul class="simple">
+<li>nasm 2.14.0 or higher (e.g., can be obtained from <a class="reference external" href="https://www.nasm.us">https://www.nasm.us</a>)</li>
+<li>A C++17-enabled compiler. GCC 8 and higher should be sufficient</li>
+<li>CMake version 3.16 or higher</li>
+<li><code class="docutils literal notranslate"><span class="pre">libaccel-config</span></code> library version 3.2 or higher is required for building Intel Codec Library with QPL support. Refer to <a class="reference external" href="https://github.com/intel/idxd-config/">accel-config releases</a> for how to install.</li>
+</ul>
+</div>
+<div class="section" id="build">
+<h3>Build<a class="headerlink" href="#build" title="Permalink to this headline">¶</a></h3>
+<p>To build Intel Codec Library, complete the following step:</p>
+<ol class="arabic">
+<li><p class="first">Get the Source using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone --recursive https://github.com/intel/BDTK.git &lt;BDTK&gt;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Build the library and tests by executing the following commands in <code class="docutils literal notranslate"><span class="pre">&lt;BDTK&gt;</span></code></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir build
+<span class="nb">cd</span> build
+cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF -DCMAKE_INSTALL_PREFIX<span class="o">=</span>&lt;install_dir&gt; ..
+cmake --build . --target install
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You need to see more options to customize your build. See <a class="reference internal" href="#icl-build-options-reference-link"><span class="std std-ref">Build Options</span></a> for details.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="build-options">
+<span id="icl-build-options-reference-link"></span><h3>Build Options<a class="headerlink" href="#build-options" title="Permalink to this headline">¶</a></h3>
+<p>By default, the C++ build system creates a fairly minimal build. Intel Codec Library supports the following build options which you can opt into building by passing
+boolean flags to <code class="docutils literal notranslate"><span class="pre">cmake</span></code>.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_QPL=[ON|OFF]</span></code> - Build ICL with QPL codec (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_QAT=[ON|OFF]</span></code> - Build ICL with QAT codec (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_IGZIP=[ON|OFF]</span></code> - Build ICL with IGZIP codec (<code class="docutils literal notranslate"><span class="pre">ON</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_TESTS=[ON|OFF]</span></code> - Build the ICL googletest unit tests (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=[ON|OFF]</span></code> - Build the ICL micro benchmarks (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
+</ul>
+</div>
+<div class="section" id="modular-build-target">
+<h3>Modular Build Target<a class="headerlink" href="#modular-build-target" title="Permalink to this headline">¶</a></h3>
+<p>Since there are several suport codes of the ICL, we have provided
+modular CMake target for building each supported codecs, group of unit tests
+and benchmarks:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl</span></code> for ICL libraries which enable only <em>igzip</em> codec support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-qpl</span></code> for ICL libraries which enable only <em>qpl</em> codec support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-qat</span></code> for ICL libraries which enable only <em>qat</em> codec support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-all</span></code> for ICL libraries which enable all supported codes.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="how-to-use-intel-codec-library">
+<span id="icl-how-to-use-the-library-reference-link"></span><h2>How to use Intel Codec Library<a class="headerlink" href="#how-to-use-intel-codec-library" title="Permalink to this headline">¶</a></h2>
+<p>We provided several ways to use Intel Codec Library:</p>
+<ul class="simple">
+<li>ICL C++ API</li>
+<li>ICL JAVA API</li>
+<li>ICL <a class="reference external" href="https://github.com/apache/arrow/blob/master/cpp/src/arrow/util/compression.h">Arrow Compression Codec API</a></li>
+</ul>
+<div class="section" id="icl-c-api">
+<h3>ICL C++ API<a class="headerlink" href="#icl-c-api" title="Permalink to this headline">¶</a></h3>
+<p>Intel Codec Library provides C++ API that the end users can directly call the C++ API to integrate into their own applications.</p>
+<p>Let’s walk through the below example that compresses and decompresses data with <cite>igzip</cite> codec to learn the basic workflow of Intel Codec Library C++ API.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;icl/icl.h&quot;</span><span class="cp"></span>
+
+<span class="k">auto</span> <span class="n">codec</span> <span class="o">=</span> <span class="n">IclCompressionCodec</span><span class="o">::</span><span class="n">MakeIclCompressionCodec</span><span class="p">(</span><span class="s">&quot;igzip&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+<span class="kt">int</span> <span class="n">max_compressed_len</span> <span class="o">=</span>
+   <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">MaxCompressedLen</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">data</span><span class="p">.</span><span class="n">data</span><span class="p">()));</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="o">&gt;</span> <span class="n">compressed</span><span class="p">(</span><span class="n">max_compressed_len</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="o">&gt;</span> <span class="n">decompressed</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+
+<span class="kt">int64_t</span> <span class="n">actual_size</span> <span class="o">=</span>
+   <span class="n">codec</span><span class="o">-&gt;</span><span class="n">Compress</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">data</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span> <span class="n">max_compressed_len</span><span class="p">,</span> <span class="n">compressed</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+<span class="n">compressed</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">actual_size</span><span class="p">);</span>
+
+<span class="kt">int64_t</span> <span class="n">actual_decompressed_size</span> <span class="o">=</span> <span class="n">codec</span><span class="o">-&gt;</span><span class="n">Decompress</span><span class="p">(</span>
+   <span class="n">compressed</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">compressed</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span> <span class="n">decompressed</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">decompressed</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+</pre></div>
+</div>
+<p>To work with Intel Codec Library C++ API, the application will need to:</p>
+<ol class="arabic simple">
+<li>The application only needs to include one header file <code class="docutils literal notranslate"><span class="pre">icl/icl.h</span></code>, which specifies the prototypes of all the functions.</li>
+<li>Call <cite>IclCompressionCodec::MakeIclCompressionCodec()</cite> to create the instance of IclCompressionCodec, you can pass the required underlying codec and the compression level as parameters to this function.</li>
+<li>Call <cite>MaxCompressedLen()</cite> to query the required compressed buffer size</li>
+<li>Allocate compressed buffer according to the returned value of step 3.</li>
+<li>Call <cite>Compress()</cite> to perform a compression operation for the input data buffer and return the actual compressed size.</li>
+<li>Or call <cite>Decompress()</cite> to perform a decompression operation.</li>
+<li>Free resources.</li>
+</ol>
+</div>
+<div class="section" id="icl-java-api">
+<h3>ICL JAVA API<a class="headerlink" href="#icl-java-api" title="Permalink to this headline">¶</a></h3>
+<p>To Be Added.</p>
+</div>
+<div class="section" id="icl-arrow-compression-codec-api">
+<span id="icl-arrow-reference-link"></span><h3>ICL Arrow Compression Codec API<a class="headerlink" href="#icl-arrow-compression-codec-api" title="Permalink to this headline">¶</a></h3>
+<p>We also provides an Arrow patch that enable the Arrow Compression Codec to leverage the Intel Codec Library to accelerate the Arrow GzipCodec. Softwares(e.g., the native parquet reader, the Arrow IPC, the Arrow Flight etc.) that use Arrow Compression Codec can get performance boost without any code modify and simply replacing the Arrow library.</p>
+<p>To use Arrow Compression Codec with Intel Codec Library, users need rebuild Arrow following the below guide:</p>
+<ol class="arabic">
+<li><p class="first">Build Intel Codec Library using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>make icl
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Please see <span class="xref std std-ref">icl_building_the_library_reference_link</span> for how to customize your build and enable required codec.</li>
+<li>Please make sure to turn off the option <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_TESTS=OFF</span></code> and <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=OFF</span></code> when build</li>
+</ul>
+</div>
+</li>
+<li><p class="first">Download the Arrow patch <a class="reference external" href="https://github.com/intel/BDTK/src/compression/build-support/0001-Add-ICL-support.patch">here</a>.</p>
+</li>
+<li><p class="first">Get the Arrow Source using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone -b apache-arrow-10.0.0 https://github.com/apache/arrow.git
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Currently, we only provide the patch for Arrow version <em>10.0.0</em>, other versions please make corresponding modifications based on this patch.</p>
+</div>
+</li>
+<li><p class="first">Apply the patch using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> arrow
+git am <span class="m">0001</span>-Add-ICL-support.patch
+</pre></div>
+</div>
+</li>
+<li><p class="first">Build Arrow with <code class="docutils literal notranslate"><span class="pre">-DARROW_WITH_ICL=ON</span></code> option</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Please ref <a class="reference external" href="https://arrow.apache.org/docs/developers/cpp/building.html">here</a> for how to build arrow.</li>
+</ul>
+</div>
+</li>
+<li><p class="first">Set the environment <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> to enable Intel Codec Library, for example, to enable <code class="docutils literal notranslate"><span class="pre">igzip</span></code> codec, you can set <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">GZIP_BACKEND</span><span class="o">=</span><span class="s2">&quot;igzip&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>The supported <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> can be set  to one of <code class="docutils literal notranslate"><span class="pre">igzip</span></code>, <code class="docutils literal notranslate"><span class="pre">qpl</span></code>, or <code class="docutils literal notranslate"><span class="pre">qat</span></code></li>
+<li>The Arrow Codec must be set to <code class="docutils literal notranslate"><span class="pre">Compression::GZIP</span></code></li>
+</ul>
+</div>
+</li>
+<li><p class="first">Use Arrow Codec API as below example:</p>
+</li>
+</ol>
+<blockquote>
+<div><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;arrow/util/compression.h&quot;</span><span class="cp"></span>
+
+<span class="n">ARROW_ASSIGN_OR_RAISE</span><span class="p">(</span><span class="k">auto</span> <span class="n">codec</span><span class="p">,</span> <span class="n">Codec</span><span class="o">::</span><span class="n">Create</span><span class="p">(</span><span class="n">Compression</span><span class="o">::</span><span class="n">GZIP</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="o">&gt;</span> <span class="n">compressed</span><span class="p">(</span><span class="n">max_compressed_len</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="o">&gt;</span> <span class="n">decompressed</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<span class="kt">int</span> <span class="n">max_compressed_len</span> <span class="o">=</span>
+   <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">MaxCompressedLen</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">data</span><span class="p">.</span><span class="n">data</span><span class="p">()));</span>
+
+<span class="n">ARROW_ASSIGN_OR_RAISE</span><span class="p">(</span>
+   <span class="k">auto</span> <span class="n">compressed_size</span><span class="p">,</span>
+   <span class="n">codec</span><span class="o">-&gt;</span><span class="n">Compress</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">data</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span> <span class="n">max_compressed_len</span><span class="p">,</span> <span class="n">compressed_data</span><span class="p">.</span><span class="n">data</span><span class="p">()));</span>
+
+<span class="n">ARROW_ASSIGN_OR_RAISE</span><span class="p">(</span>
+   <span class="k">auto</span> <span class="n">decompressed_size</span><span class="p">,</span>
+   <span class="n">codec</span><span class="o">-&gt;</span><span class="n">Decompress</span><span class="p">(</span><span class="n">compressed</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">compressed</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span> <span class="n">decompressed</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">decompressed</span><span class="p">.</span><span class="n">data</span><span class="p">()));</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="how-to-run-benchmark">
+<h2>How to run benchmark<a class="headerlink" href="#how-to-run-benchmark" title="Permalink to this headline">¶</a></h2>
+<p>Intel Codec Library provided two types of benchmarks:</p>
+<ul class="simple">
+<li>Benchmark for normal file</li>
+<li>Benchmark for Parquet file</li>
+</ul>
+<div class="section" id="benchmark-for-normal-file">
+<h3>Benchmark for normal file<a class="headerlink" href="#benchmark-for-normal-file" title="Permalink to this headline">¶</a></h3>
+<p>This benchmark will read <code class="docutils literal notranslate"><span class="pre">Calgary</span> <span class="pre">corpus</span></code> data which commonly used for comparing data compression algorithms as input and use different compressors supported by Arrow to compress and decompress that data to benchmark different codec’s performance.</p>
+<p>To run the benchmark following the below guide:</p>
+<ol class="arabic">
+<li><p class="first">Build Intel Codec Library with benchmark option on:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir build
+<span class="nb">cd</span> build
+cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DICL_BUILD_BENCHMARKS<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF ..
+cmake --build .
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>To build benchmark, you need build Arrow first, please see <a class="reference internal" href="#icl-arrow-reference-link"><span class="std std-ref">ICL Arrow Compression Codec API</span></a> for how to build Arrow.</li>
+<li>Please see <span class="xref std std-ref">icl_building_the_library_reference_link</span> for how to customize your build and enable required codec.</li>
+<li>Please make sure to turn on the option <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=ON</span></code> when build</li>
+<li>Please make sure build ICL with the correct Arrow package which build with ICL patch, you can set the environment <code class="docutils literal notranslate"><span class="pre">ARROW_HOME</span></code> to the folder where installed the Arrow with ICL patch.</li>
+</ul>
+</div>
+</li>
+<li><p class="first">Prepare the <code class="docutils literal notranslate"><span class="pre">Calgary</span> <span class="pre">corpus</span></code> data for benchmark
+You can download the data from <a class="reference external" href="http://www.data-compression.info/files/corpora/largecalgarycorpus.zip">here</a>, then unzip it and tar these files to a tar file <code class="docutils literal notranslate"><span class="pre">calgary.tar</span></code></p>
+</li>
+<li><p class="first">Copy the calgary.tar to folder where you run the CompressionBenchmark which generated in step 1.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>To enable ICL, you need set the environment <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> when run the benchmark.</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="benchmark-for-parquet-file">
+<h3>Benchmark for parquet file<a class="headerlink" href="#benchmark-for-parquet-file" title="Permalink to this headline">¶</a></h3>
+<p>To be Added</p>
+</div>
+</div>
+<div class="section" id="limitation">
+<h2>Limitation<a class="headerlink" href="#limitation" title="Permalink to this headline">¶</a></h2>
+<p>In order to take full advantage of hardware acceleration, Intel Codec Library only supports block-based interface for compression, aka “one shot”, so the data compressed by ICL can’t be decompressed by stream-based software like Gzip.</p>
 </div>
 </div>
 
@@ -62,9 +305,28 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="../../index.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Intel Codec Library Module Introduction</a><ul>
-<li><a class="reference internal" href="#module-descritption">Module descritption</a></li>
+<li><a class="reference internal" href="#">Intel Codec Library User Guide</a><ul>
+<li><a class="reference internal" href="#module-description">Module description</a></li>
 <li><a class="reference internal" href="#sdk-api">SDK API</a></li>
+<li><a class="reference internal" href="#building-the-library">Building the Library</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#build">Build</a></li>
+<li><a class="reference internal" href="#build-options">Build Options</a></li>
+<li><a class="reference internal" href="#modular-build-target">Modular Build Target</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-use-intel-codec-library">How to use Intel Codec Library</a><ul>
+<li><a class="reference internal" href="#icl-c-api">ICL C++ API</a></li>
+<li><a class="reference internal" href="#icl-java-api">ICL JAVA API</a></li>
+<li><a class="reference internal" href="#icl-arrow-compression-codec-api">ICL Arrow Compression Codec API</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-run-benchmark">How to run benchmark</a><ul>
+<li><a class="reference internal" href="#benchmark-for-normal-file">Benchmark for normal file</a></li>
+<li><a class="reference internal" href="#benchmark-for-parquet-file">Benchmark for parquet file</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#limitation">Limitation</a></li>
 </ul>
 </li>
 </ul>
