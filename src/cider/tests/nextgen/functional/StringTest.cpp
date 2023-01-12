@@ -688,7 +688,7 @@ extern "C" ALWAYS_INLINE int64_t cider_split(const char* str_ptr,
     last_delimiter_pos = delimiter_pos;
     delimiter_pos =
         reverse ? cider_find_str_from_right(
-                      str_ptr, str_len, delimiter_ptr, delimiter_len, delimiter_pos )
+                      str_ptr, str_len, delimiter_ptr, delimiter_len, delimiter_pos)
                 : cider_find_str_from_left(
                       str_ptr,
                       str_len,
@@ -847,8 +847,6 @@ class CiderRegexpTestNextGen : public CiderNextgenTestBase {
 };
 
 TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (regexp-replace) is not supported yet in nextgen");
   // replace first
   assertQuery(
       "SELECT "
@@ -922,6 +920,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
     assertQuery("stringop_regexp_replace_position.json", expect_array, expect_schema);
   }
   {
+    GTEST_SKIP_("re2 lib do not support such semantic($n)");
     // replace with capturing groups
     // substrait specification states that the replacement can refer to capturing groups
     // the n-th capturing group can be refererenced by $n in the replacement
@@ -953,7 +952,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
 
 TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (regexp-replace) is not supported yet in nextgen");
+  // GTEST_SKIP_("stringop (regexp-replace) is not supported yet in nextgen");
   /// NOTE: (YBRua) substrait requires occurrence >= 0 & position > 0
   /// but currently implementation also handled cases where occurence < 0 or position < 0
   /// these cases are also tested here for completeness

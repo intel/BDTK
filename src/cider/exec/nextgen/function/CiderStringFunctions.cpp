@@ -19,7 +19,9 @@
  * under the License.
  */
 
+#include <re2/re2.h>
 #include <string.h>
+#include <algorithm>
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/context/StringHeap.h"
@@ -472,7 +474,7 @@ extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
 
     delimiter_pos =
         reverse ? cider_find_str_from_right(
-                      str_ptr, str_len, delimiter_ptr, delimiter_len, delimiter_pos )
+                      str_ptr, str_len, delimiter_ptr, delimiter_len, delimiter_pos)
                 : cider_find_str_from_left(
                       str_ptr,
                       str_len,
@@ -526,9 +528,108 @@ extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
   }
 }
 
-extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr) {
+std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
+                                                     int input_len,
+                                                     const re2::StringPiece& pattern,
+                                                     int start_pos,
+                                                     int occurrence) {
+  RE2 re(pattern);
 
+  // record start_pos and length for each matched substring
+  std::vector<std::pair<size_t, size_t>> matched_pos;
+  int string_pos = start_pos;
+  int matched_index = 0;
+  while (string_pos < input_len) {
+    re2::StringPiece submatch;
+    printf("string pos: %d\n", string_pos);
+    re.Match(re2::StringPiece(input_ptr, input_len),
+             string_pos,
+             input_len,
+             RE2::UNANCHORED,
+             &submatch,
+             1);
+
+    if (submatch.data() == nullptr) {
+      // not found
+      break;
+    } else {
+      size_t matched_start_pos = submatch.data() - input_ptr;  // addr - addr
+      matched_pos.push_back({matched_start_pos, submatch.size()});
+      if (matched_index++ == occurrence) {
+        return matched_pos.back();
+      }
+      printf("str: %s, len: %d, start: %d\n",
+             submatch.data(),
+             submatch.size(),
+             matched_start_pos);
+      string_pos = matched_start_pos + submatch.size();  // ??
+    }
+  }
+  int wrapped_match = occurrence >= 0 ? occurrence : matched_index + occurrence;
+  if (wrapped_match < 0 || wrapped_match >= matched_index) {
+    return std::make_pair(npos, npos);
+  }
+  return matched_pos[wrapped_match];
+}
+
+extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
+                                                      const char* str_ptr,
+                                                      int str_len,
+                                                      const char* regex_pattern_ptr,
+                                                      int regex_pattern_len,
+                                                      const char* replace_ptr,
+                                                      const int replace_len,
+                                                      int start_pos,
+                                                      int occurrence) {
+  printf(
+      "str_ptr:%s,str_len:%d,regex_pattern_ptr:%s,regex_pattern_len:%d,replace_ptr:%s,"
+      "replace_len:%d, start_pos:%d, occurrence:%d\n",
+      str_ptr,
+      str_len,
+      regex_pattern_ptr,
+      regex_pattern_len,
+      replace_ptr,
+      replace_len,
+      start_pos,
+      occurrence);
+  start_pos = start_pos > 0 ? start_pos - 1 : start_pos;
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  const size_t wrapped_start = static_cast<size_t>(
+      std::min(start_pos >= 0 ? start_pos : std::max(str_len + start_pos, 0), str_len));
+  // construct for re2 lib - first memory copy
+  std::string input(str_ptr + wrapped_start, str_len - wrapped_start);
+  re2::StringPiece pattern(regex_pattern_ptr, regex_pattern_len);
+  re2::StringPiece replace(replace_ptr, replace_len);
+  if (occurrence == 0L) {
+    // occurrence_ == 0: replace all occurrences
+    int cnt = RE2::GlobalReplace(&input, pattern, replace);
+    string_t res = ptr->emptyString(wrapped_start + input.length());
+    // construct result string - second memory copy
+    std::memcpy(res.getDataWriteable(), str_ptr, wrapped_start);
+    std::memcpy(res.getDataWriteable() + wrapped_start, input.c_str(), input.length());
+    return pack_string_t(res);
+  } else {
+    // only replace n-th occurrence
+    std::pair<size_t, size_t> match_pos =
+        cider_find_nth_regex_match(str_ptr,
+                                   str_len,
+                                   pattern,
+                                   start_pos,
+                                   occurrence > 0 ? occurrence - 1 : occurrence);
+    if (match_pos.first == npos) {
+      // no match found, return origin string
+      string_t res = ptr->addString(str_ptr, str_len);
+      return pack_string_t(res);
+    } else {
+      string_t res = ptr->emptyString(str_len - match_pos.second + replace_len);
+      std::memcpy(res.getDataWriteable(), str_ptr, match_pos.first);
+      std::memcpy(res.getDataWriteable() + match_pos.first, replace_ptr, replace_len);
+      std::memcpy(res.getDataWriteable() + match_pos.first + replace_len,
+                  str_ptr + match_pos.first + match_pos.second,
+                  str_len - (match_pos.first + match_pos.second));
+      return pack_string_t(res);
+    }
+  }
 
   return 0;
 }
-

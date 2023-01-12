@@ -81,10 +81,19 @@ class ColumnWriter {
                    context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
       return allocateRawDataBuffer(1, bytes);
     });
+
     auto actual_raw_length_buffer =
         raw_length_buffer->castPointerSubType(JITTypeTag::INT32);
-    actual_raw_length_buffer[index_ + 1] =
-        actual_raw_length_buffer[index_] + *values.getLength();
+    auto ifBuilder = context_.getJITFunction()->createIfBuilder();
+    ifBuilder->condition([&values]() { return values.getNull(); })
+        ->ifTrue([&]() {
+          actual_raw_length_buffer[index_ + 1] = actual_raw_length_buffer[index_];
+        })
+        ->ifFalse([&]() {
+          actual_raw_length_buffer[index_ + 1] =
+              actual_raw_length_buffer[index_] + *values.getLength();
+        })
+        ->build();
 
     // get latest pointer to data buffer, will allocate data buffer on first call,
     // and will reallocate buffer if more capacity is needed

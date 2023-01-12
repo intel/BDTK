@@ -220,7 +220,7 @@ bool CiderBatchChecker::checkOneVarcharBatchEqual(const VarcharBatch* expected_b
   const int32_t* expected_offsets = expected_batch->getRawOffset();
   const int32_t* actual_offsets = actual_batch->getRawOffset();
   bool offset_buffer_eq =
-      !memcmp(expected_offsets, actual_offsets, row_num * sizeof(int32_t));
+      !memcmp(expected_offsets, actual_offsets, (row_num + 1) * sizeof(int32_t));
   if (!offset_buffer_eq) {
     std::cout << "Offset buffer memcmp failed." << std::endl;
     return false;
