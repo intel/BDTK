@@ -37,6 +37,7 @@
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
+#include "exec/operator/join/CiderJoinHashTable.h"
 
 // hash function for test collision
 struct Hash {
@@ -74,6 +75,47 @@ TEST(CiderHashTableTest, AnyTest) {
   EXPECT_EQ(hash_a, hash_b);
 }
 
+// test build and probe for cider
+TEST(CiderHashTableTest, JoinHashTableTest) {
+   using namespace cider::exec::nextgen::context;
+
+  auto joinHashTable1 = new cider::exec::processor::JoinHashTable(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hashTable1 = joinHashTable1->getHashTable();
+  auto joinHashTable2 = new cider::exec::processor::JoinHashTable(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hashTable2 = joinHashTable2->getHashTable();
+  auto joinHashTable3 = new cider::exec::processor::JoinHashTable(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hashTable3 = joinHashTable3->getHashTable();
+   
+  auto input_builder = ArrowArrayBuilder();
+
+  auto&& [schema, array] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "l_bigint", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
+          .addColumn<int32_t>(
+              "l_int", CREATE_SUBSTRAIT_TYPE(I32), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+          .build();
+  Batch build_batch(*schema, *array);
+
+  for (int i = 0; i < 10; i++) {
+    int key = *(
+        (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
+    hashTable1->emplace(key, {&build_batch, i});
+    hashTable2->emplace(key, {&build_batch, i});
+    hashTable3->emplace(key, {&build_batch, i});
+  }
+  for (auto key : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+    auto hm_res_vec = joinHashTable1->getHashTable()->findAll(key);
+    EXPECT_EQ(hm_res_vec.size(), 1);
+    EXPECT_EQ(hm_res_vec[0].batch_offset, key);
+  }
+  std::vector<std::unique_ptr<cider::exec::processor::JoinHashTable>> otherTables;
+  otherTables.emplace_back(std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable2)));
+  otherTables.emplace_back(std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable3)));
+  joinHashTable1->merge_other_hashtables(otherTables);
+  EXPECT_EQ(joinHashTable1->getHashTable()->size(), 30);
+}
+
 TEST(CiderHashTableTest, mergeTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
   cider_hashtable::HashTableSelector<
@@ -98,7 +140,7 @@ TEST(CiderHashTableTest, mergeTest) {
     hm3->emplace(random(-10, 10), value);
   }
   // cider_hashtable::BaseHashTable<int, int, MurmurHash, Equal> hb1 = hm1;
-  std::vector<std::unique_ptr<cider_hashtable::BaseHashTable<
+  std::vector<std::shared_ptr<cider_hashtable::BaseHashTable<
       int,
       int,
       cider_hashtable::MurmurHash,
@@ -162,45 +204,6 @@ TEST(CiderHashTableTest, batchAsValueTest) {
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
     std::sort(hm_res_vec_value.begin(), hm_res_vec_value.end());
     EXPECT_TRUE(dup_res_vec == hm_res_vec_value);
-  }
-}
-
-// test value type for probe
-TEST(CiderHashTableTest, stdAnyAsKeyAndbatchAsValueTest) {
-  using namespace cider::exec::nextgen::context;
-  auto input_builder = ArrowArrayBuilder();
-
-  auto&& [schema, array] =
-      input_builder.setRowNum(10)
-          .addColumn<int64_t>(
-              "l_bigint", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-          .addColumn<int32_t>(
-              "l_int", CREATE_SUBSTRAIT_TYPE(I32), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
-          .build();
-
-  Batch build_batch(*schema, *array);
-  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using factory
-  cider_hashtable::HashTableSelector<
-      std::any,
-      std::pair<cider::exec::nextgen::context::Batch*, int>,
-      cider_hashtable::AnyMurmurHash,
-      cider_hashtable::AnyEqual,
-      void,
-      std::allocator<std::pair<cider_hashtable::table_key<std::any>,
-                               std::pair<cider::exec::nextgen::context::Batch*, int>>>>
-      hashTableSelector;
-  auto hm =
-      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING, 16);
-
-  for (int i = 0; i < 10; i++) {
-    std::any key = *(
-        (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
-    hm->emplace(key, std::make_pair(&build_batch, i));
-  }
-  for (auto key : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
-    auto hm_res_vec = hm->findAll(key);
-    EXPECT_EQ(hm_res_vec.size(), 1);
-    EXPECT_EQ(hm_res_vec[0].second, key);
   }
 }
 
