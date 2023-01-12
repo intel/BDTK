@@ -1,21 +1,21 @@
 [submodule "thirdparty/substrait"]
-	path = thirdparty/substrait
+	path = cpp/thirdparty/substrait
 	url = https://github.com/substrait-io/substrait.git
 [submodule "thirdparty/velox"]
-	path = thirdparty/velox
+	path = cpp/thirdparty/velox
 	url = https://github.com/Intel-bigdata/velox.git
 [submodule "thirdparty/rapidjson"]
-	path = thirdparty/rapidjson
+	path = cpp/thirdparty/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
 [submodule "thirdparty/robin-hood-hashing"]
-	path = thirdparty/robin-hood-hashing
+	path = cpp/thirdparty/robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing.git
 [submodule "thirdparty/googletest"]
-	path = thirdparty/googletest
+	path = cpp/thirdparty/googletest
 	url = https://github.com/google/googletest.git
 [submodule "thirdparty/duckdb"]
-	path = thirdparty/duckdb
+	path = cpp/thirdparty/duckdb
 	url = https://github.com/duckdb/duckdb.git
 [submodule "thirdparty/benchmark"]
-	path = thirdparty/benchmark
+	path = cpp/thirdparty/benchmark
 	url = https://github.com/google/benchmark.git
