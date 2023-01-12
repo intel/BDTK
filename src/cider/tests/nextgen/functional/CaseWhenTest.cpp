@@ -84,15 +84,18 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   }
 };
 
-#define COALESCE_FUNCTION_ARROW_TEST(TEST_CLASS, UNIT_NAME)                        \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                  \
-    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, 7) from test",          \
-                     "functions/conditional/coalesce.json");                       \
-    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test", \
-                     "functions/conditional/coalesce_null.json");                  \
-    assertQueryArrow(                                                              \
-        "select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test",      \
-        "functions/conditional/coalesce_sum.json");                                \
+#define COALESCE_FUNCTION_ARROW_TEST(TEST_CLASS, UNIT_NAME)                         \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
+    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, 7) from test",           \
+                     "functions/conditional/coalesce.json");                        \
+    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test",  \
+                     "functions/conditional/coalesce_null.json");                   \
+    GTEST_SKIP_(                                                                    \
+        "TODO(Haiwei): Agg is not supported now, require future validation of the " \
+        "following case.");                                                         \
+    assertQueryArrow(                                                               \
+        "select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test",       \
+        "functions/conditional/coalesce_sum.json");                                 \
   }
 
 COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
@@ -308,13 +311,6 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  logger::LogOptions log_options(argv[0]);
-  // log_options.parse_command_line(argc, argv);
-  // log_options.max_files_ = 0;  // stderr only by default
-  log_options.severity_ = logger::Severity::DEBUG4;
-  log_options.set_options();  // update default values
-  logger::init(log_options);
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

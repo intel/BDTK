@@ -223,9 +223,12 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
       case_ti.is_fp() || case_ti.is_boolean()) {
     const auto type =
         case_ti.is_decimal() ? decimal_to_int_type(case_ti) : case_ti.get_type();
-    JITValuePointer value = func.createVariable(getJITTag(type), "case_when_value_init", 0);
-    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "case_when_null_init", false);
-    JITValuePointer is_case = func.createVariable(JITTypeTag::BOOL, "is_case_init", false);
+    JITValuePointer value =
+        func.createVariable(getJITTag(type), "case_when_value_init", 0);
+    JITValuePointer null =
+        func.createVariable(JITTypeTag::BOOL, "case_when_null_init", false);
+    JITValuePointer is_case =
+        func.createVariable(JITTypeTag::BOOL, "is_case_init", false);
     for (const auto& expr_pair : expr_pair_list) {
       func.createIfBuilder()
           ->condition([&]() {
@@ -239,7 +242,7 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
                 expr_pair.second->codegen(context));
             value.replace(then_jit_expr_value.getValue());
             null.replace(then_jit_expr_value.getNull());
-            *is_case = func.createLiteral(JITTypeTag::BOOL, true);
+            is_case = func.createLiteral(JITTypeTag::BOOL, true);
           })
           ->build();
     }
