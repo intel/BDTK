@@ -24,6 +24,7 @@
 #include "exec/nextgen/operators/AggregationNode.h"
 #include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
+#include "exec/nextgen/operators/HashJoinNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "util/Logger.h"
 
@@ -32,10 +33,6 @@ namespace cider::exec::nextgen::parsers {
 using namespace cider::exec::nextgen::operators;
 
 static bool isParseable(const RelAlgExecutionUnit& eu) {
-  if (!eu.join_quals.empty()) {
-    LOG(ERROR) << "JOIN is not supported in RelAlgExecutionUnitParser.";
-    return false;
-  }
   if (eu.groupby_exprs.size() > 1 || *eu.groupby_exprs.begin() != nullptr) {
     LOG(ERROR) << "GroupBy is not supported in RelAlgExecutionUnitParser.";
     return false;
@@ -47,23 +44,44 @@ static bool isParseable(const RelAlgExecutionUnit& eu) {
 // Used for input columnVar collection and combination
 class InputAnalyzer {
  public:
-  InputAnalyzer(const std::vector<InputColDescriptor>& input_desc, OpPipeline& pipeline)
-      : input_desc_(input_desc)
-      , pipeline_(pipeline)
-      , input_exprs_(input_desc.size(), nullptr) {}
+  explicit InputAnalyzer(RelAlgExecutionUnit& eu)
+      : eu_(eu), input_exprs_(eu.input_col_descs.size(), nullptr) {}
 
   void run() {
-    if (pipeline_.empty()) {
-      return;
+    size_t index = 0;
+    bool tag = true;
+    for (auto iter = eu_.input_col_descs.begin(); iter != eu_.input_col_descs.end();
+         ++iter) {
+      // record build table first column index
+      if (iter->get()->getTableId() == 101 && tag) {
+        build_table_offset_ = index;
+        tag = false;
+      }
+      input_desc_to_index_.insert({**iter, index++});
     }
 
-    for (size_t i = 0; i < input_desc_.size(); ++i) {
-      input_desc_to_index_.insert({input_desc_[i], i});
+    if (!eu_.simple_quals.empty()) {
+      for (auto& expr : eu_.simple_quals) {
+        traverse(&expr);
+      }
     }
 
-    for (auto& op : pipeline_) {
-      auto&& [type, exprs] = op->getOutputExprs();
-      for (auto& expr : exprs) {
+    if (!eu_.quals.empty()) {
+      for (auto& expr : eu_.quals) {
+        traverse(&expr);
+      }
+    }
+
+    if (!eu_.join_quals.empty()) {
+      for (auto& join_condition : eu_.join_quals) {
+        for (auto join_expr : join_condition.quals) {
+          traverse(&join_expr);
+        }
+      }
+    }
+
+    if (!eu_.shared_target_exprs.empty()) {
+      for (auto& expr : eu_.shared_target_exprs) {
         traverse(&expr);
       }
     }
@@ -73,9 +91,11 @@ class InputAnalyzer {
                        input_exprs_.end(),
                        [](const ExprPtr& input_expr) { return input_expr == nullptr; }),
         input_exprs_.end());
-
-    pipeline_.insert(pipeline_.begin(), createOpNode<ArrowSourceNode>(input_exprs_));
   }
+
+  ExprPtrVector& getInputExprs() { return input_exprs_; }
+
+  std::map<ExprPtr, size_t>& getBuildTableMap() { return build_table_map_; }
 
  private:
   void traverse(ExprPtr* curr) {
@@ -84,11 +104,15 @@ class InputAnalyzer {
           InputColDescriptor(col_var_ptr->get_column_info(), col_var_ptr->get_rte_idx()));
       CHECK(iter != input_desc_to_index_.end());
 
-      size_t index = iter->second;
-      if (input_exprs_[index]) {
-        *curr = input_exprs_[index];
+      size_t input_exprs_index = iter->second;
+      if (input_exprs_[input_exprs_index]) {
+        *curr = input_exprs_[input_exprs_index];
       } else {
-        input_exprs_[index] = *curr;
+        // insert build table expr
+        if (col_var_ptr->get_table_id() == 101) {
+          build_table_map_.insert({*curr, input_exprs_index - build_table_offset_});
+        }
+        input_exprs_[input_exprs_index] = *curr;
       }
     } else {
       auto children = (*curr)->get_children_reference();
@@ -103,32 +127,39 @@ class InputAnalyzer {
     }
   }
 
-  const std::vector<InputColDescriptor>& input_desc_;
-  OpPipeline& pipeline_;
+  RelAlgExecutionUnit& eu_;
   ExprPtrVector input_exprs_;
+  std::map<ExprPtr, size_t> build_table_map_;
+  // record build table index
+  size_t build_table_offset_;
   std::unordered_map<InputColDescriptor, size_t> input_desc_to_index_;
 };
 
-static void insertSourceNode(const RelAlgExecutionUnit& eu, OpPipeline& pipeline) {
-  std::vector<InputColDescriptor> input_desc;
-  input_desc.reserve(eu.input_col_descs.size());
-  for (auto& desc : eu.input_col_descs) {
-    input_desc.push_back(*desc);
-  }
-
-  InputAnalyzer analyzer(input_desc, pipeline);
-  analyzer.run();
-}
-
-OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
+OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   // TODO (bigPYJ1151): Only support filter and project now.
   // TODO (bigPYJ1151): Only naive expression dispatch now, need to analyze expression
   // trees and dispatch more fine-grained.
   if (!isParseable(eu)) {
     return {};
   }
-
   OpPipeline ops;
+
+  InputAnalyzer analyzer(eu);
+  analyzer.run();
+
+  ops.insert(ops.begin(), createOpNode<ArrowSourceNode>(analyzer.getInputExprs()));
+
+  ExprPtrVector join_quals;
+  for (auto& join_condition : eu.join_quals) {
+    for (auto& join_expr : join_condition.quals) {
+      join_quals.push_back(join_expr);
+    }
+  }
+
+  if (!join_quals.empty()) {
+    ops.emplace_back(createOpNode<HashJoinNode>(
+        analyzer.getInputExprs(), join_quals, analyzer.getBuildTableMap()));
+  }
 
   ExprPtrVector filters;
   for (auto& filter_expr : eu.simple_quals) {
@@ -165,8 +196,6 @@ OpPipeline toOpPipeline(const RelAlgExecutionUnit& eu) {
   if (!groupbys.empty() || !aggs.empty()) {
     ops.emplace_back(createOpNode<operators::AggNode>(groupbys, aggs));
   }
-
-  insertSourceNode(eu, ops);
 
   return ops;
 }

@@ -52,6 +52,7 @@ struct murmurHash {
 struct Equal {
   bool operator()(int lhs, int rhs) { return lhs == rhs; }
 };
+
 struct AggExprsInfo {
  public:
   SQLTypeInfo sql_type_info_;

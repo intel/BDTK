@@ -28,7 +28,7 @@
 namespace cider::exec::nextgen {
 
 std::unique_ptr<context::CodegenContext> compile(
-    const RelAlgExecutionUnit& ra_exe_unit,
+    RelAlgExecutionUnit& ra_exe_unit,
     const jitlib::CompilationOptions& co,
     const context::CodegenOptions& codegen_options) {
   auto codegen_ctx = std::make_unique<context::CodegenContext>();
