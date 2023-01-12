@@ -257,8 +257,43 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
         ->build();
     return set_expr_value(null, value);
   } else if (case_ti.is_string()) {
-    // TODO(haiwei): [POAE7-2782] string type if/case expr support in next codegen
-    UNIMPLEMENTED();
+    JITValuePointer value =
+        func.createVariable(JITTypeTag::POINTER, "case_when_value_init", 0);
+    JITValuePointer length =
+        func.createVariable(JITTypeTag::INT64, "case_when_value_init", 0);
+    JITValuePointer null =
+        func.createVariable(JITTypeTag::BOOL, "case_when_null_init", false);
+    JITValuePointer is_case =
+        func.createVariable(JITTypeTag::BOOL, "is_case_init", false);
+    for (const auto& expr_pair : expr_pair_list) {
+      func.createIfBuilder()
+          ->condition([&]() {
+            cider::exec::nextgen::utils::VarSizeJITExprValue cond(
+                expr_pair.first->codegen(context));
+            auto condition = !cond.getNull() && cond.getValue();
+            return condition;
+          })
+          ->ifTrue([&]() {
+            cider::exec::nextgen::utils::VarSizeJITExprValue then_jit_expr_value(
+                expr_pair.second->codegen(context));
+            value.replace(then_jit_expr_value.getValue());
+            length.replace(then_jit_expr_value.getLength());
+            null.replace(then_jit_expr_value.getNull());
+            is_case = func.createLiteral(JITTypeTag::BOOL, true);
+          })
+          ->build();
+    }
+    func.createIfBuilder()
+        ->condition([&]() { return !is_case; })
+        ->ifTrue([&]() {
+          cider::exec::nextgen::utils::VarSizeJITExprValue else_jit_expr_value(
+              else_expr->codegen(context));
+          value.replace(else_jit_expr_value.getValue());
+          length.replace(else_jit_expr_value.getLength());
+          null.replace(else_jit_expr_value.getNull());
+        })
+        ->build();
+    return set_expr_value(null, length, value);
   } else {
     UNREACHABLE();
   }
