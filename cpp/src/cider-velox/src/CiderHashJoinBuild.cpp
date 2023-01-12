@@ -78,8 +78,6 @@ void CiderHashJoinBuild::addInput(RowVectorPtr input) {
   ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
   exportToArrow(input_, *inputArrowSchema);
 
-  // auto inBatch =
-  //     CiderBatchUtils::createCiderBatch(allocator_, inputArrowSchema, inputArrowArray);
   cider::exec::nextgen::context::Batch inBatch(*inputArrowSchema, *inputArrowArray);
   joinHashTableBuilder_->appendBatch(
       std::make_shared<cider::exec::nextgen::context::Batch>(inBatch));
