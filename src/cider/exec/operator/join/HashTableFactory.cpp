@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "cider/CiderException.h"
 
 namespace cider_hashtable {
 template <typename Key,

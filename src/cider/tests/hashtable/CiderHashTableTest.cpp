@@ -18,14 +18,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#pragma once
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <any>
 #include <iostream>
 #include <random>
 #include <unordered_map>
 #include <vector>
+#include "cider/CiderException.h"
 #include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderF14HashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
@@ -59,6 +62,16 @@ TEST(CiderHashTableTest, factoryTest) {
       hashTableSelector;
   auto hm =
       hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+}
+
+TEST(CiderHashTableTest, AnyTest) {
+  std::any a = 1;  // a is empty
+  std::any b = 1;
+  bool is_equal = cider_hashtable::AnyEqual()(a, b);
+  EXPECT_EQ(is_equal, true);
+  size_t hash_a = cider_hashtable::AnyMurmurHash()(a);
+  size_t hash_b = cider_hashtable::AnyMurmurHash()(b);
+  EXPECT_EQ(hash_a, hash_b);
 }
 
 TEST(CiderHashTableTest, mergeTest) {
@@ -118,7 +131,7 @@ TEST(CiderHashTableTest, batchAsValueTest) {
           .build();
 
   Batch build_batch(*schema, *array);
-  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using factory
+  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using
   cider_hashtable::HashTableSelector<
       int,
       std::pair<cider::exec::nextgen::context::Batch*, int>,
@@ -149,6 +162,45 @@ TEST(CiderHashTableTest, batchAsValueTest) {
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
     std::sort(hm_res_vec_value.begin(), hm_res_vec_value.end());
     EXPECT_TRUE(dup_res_vec == hm_res_vec_value);
+  }
+}
+
+// test value type for probe
+TEST(CiderHashTableTest, stdAnyAsKeyAndbatchAsValueTest) {
+  using namespace cider::exec::nextgen::context;
+  auto input_builder = ArrowArrayBuilder();
+
+  auto&& [schema, array] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "l_bigint", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+          .addColumn<int32_t>(
+              "l_int", CREATE_SUBSTRAIT_TYPE(I32), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+          .build();
+
+  Batch build_batch(*schema, *array);
+  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using factory
+  cider_hashtable::HashTableSelector<
+      std::any,
+      std::pair<cider::exec::nextgen::context::Batch*, int>,
+      cider_hashtable::AnyMurmurHash,
+      cider_hashtable::AnyEqual,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<std::any>,
+                               std::pair<cider::exec::nextgen::context::Batch*, int>>>>
+      hashTableSelector;
+  auto hm =
+      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING, 16);
+
+  for (int i = 0; i < 10; i++) {
+    std::any key = *(
+        (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
+    hm->emplace(key, std::make_pair(&build_batch, i));
+  }
+  for (auto key : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+    auto hm_res_vec = hm->findAll(key);
+    EXPECT_EQ(hm_res_vec.size(), 1);
+    EXPECT_EQ(hm_res_vec[0].second, key);
   }
 }
 
