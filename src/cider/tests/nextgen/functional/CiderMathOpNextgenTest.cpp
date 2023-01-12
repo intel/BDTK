@@ -57,7 +57,9 @@ class CiderMathOpNullableArrowTest : public CiderNextgenTestBase {
 };
 
 TEST_F(CiderMathOpNullableArrowTest, ConstantValueMathOpTest) {
-  GTEST_SKIP();
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   assertQuery("SELECT 2 + 1 FROM test");
   assertQuery("SELECT 2 - 1 FROM test");
   assertQuery("SELECT 2 * 1 FROM test");
@@ -75,7 +77,9 @@ TEST_F(CiderMathOpNullableArrowTest, ConstantValueMathOpTest) {
 }
 
 TEST_F(CiderMathOpNullableArrowTest, ColumnBasicMathOpTest) {
-  GTEST_SKIP();
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   // TINYINT Col Math op
   assertQuery("SELECT tinyint_col + 2 FROM test");
   assertQuery("SELECT tinyint_col - 2 FROM test");
@@ -123,7 +127,9 @@ TEST_F(CiderMathOpNullableArrowTest, ColumnBasicMathOpTest) {
 }
 
 TEST_F(CiderMathOpNullableArrowTest, ColumnMathOpBoundaryTest) {
-  GTEST_SKIP();
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   // Test out of boundary exception
   EXPECT_TRUE(executeIncorrectQuery("SELECT bigint_col + 9223372036854775807 FROM test"));
   EXPECT_TRUE(executeIncorrectQuery("SELECT bigint_col - 9223372036854775807 FROM test"));
@@ -131,7 +137,6 @@ TEST_F(CiderMathOpNullableArrowTest, ColumnMathOpBoundaryTest) {
 }
 
 TEST_F(CiderMathOpNullableArrowTest, ColumnMathMixOpTest) {
-  GTEST_SKIP();
   assertQuery("SELECT double_col + float_col,  double_col - float_col FROM test");
   assertQuery(
       "SELECT integer_col * bigint_col,  bigint_col / integer_col FROM test where "
@@ -167,7 +172,6 @@ TEST_F(CiderMathOpNullableArrowTest, ColumnMathMixOpTest) {
 }
 
 TEST_F(CiderMathOpNullableArrowTest, ConstantMathOpTest) {
-  GTEST_SKIP();
   assertQuery("SELECT double_col + 1.23e1, double_col - 1.23e1 FROM test");
   assertQuery("SELECT bigint_col * 1.23e1,  bigint_col / 1.23e1 FROM test");
   assertQuery("SELECT 3 * (1.23e1 + bigint_col) / 2 FROM test");
