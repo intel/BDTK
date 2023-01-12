@@ -38,7 +38,8 @@ void DefaultJoinHashTableBuilder::appendBatch(
     std::any key = *((reinterpret_cast<int*>(
                          const_cast<void*>(batch->getArray()->children[0]->buffers[1]))) +
                      i);
-    hashTable_->getHashTable()->emplace(key, std::make_pair(batch.get(), i));
+    
+    hashTable_->getHashTable()->emplace(key, {batch.get(), i});
   }
 }
 

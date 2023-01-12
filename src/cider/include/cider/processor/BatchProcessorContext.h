@@ -23,56 +23,12 @@
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #define CIDER_BATCH_PROCESSOR_CONTEXT_H
 
-#include <any>
 #include <functional>
 #include <memory>
 #include <optional>
-#include <vector>
 #include "cider/CiderAllocator.h"
-#include "exec/nextgen/context/Batch.h"
-#include "exec/operator/join/HashTableFactory.h"
+#include "exec/operator/join/CiderJoinHashTable.h"
 namespace cider::exec::processor {
-using CiderJoinBaseHashTableTemplate = cider_hashtable::BaseHashTable<
-    std::any,
-    std::pair<cider::exec::nextgen::context::Batch*, int>,
-    cider_hashtable::AnyMurmurHash,
-    cider_hashtable::AnyEqual,
-    void,
-    std::allocator<std::pair<cider_hashtable::table_key<std::any>,
-                             std::pair<cider::exec::nextgen::context::Batch*, int>>>>;
-
-class JoinHashTable {
- public:
-  JoinHashTable(cider_hashtable::HashTableType hashTableType =
-                    cider_hashtable::HashTableType::LINEAR_PROBING) {
-    cider_hashtable::HashTableSelector<
-        std::any,
-        std::pair<cider::exec::nextgen::context::Batch*, int>,
-        cider_hashtable::AnyMurmurHash,
-        cider_hashtable::AnyEqual,
-        void,
-        std::allocator<std::pair<cider_hashtable::table_key<std::any>,
-                                 std::pair<cider::exec::nextgen::context::Batch*, int>>>>
-        hashTableSelector;
-    hashTableInstance_ = std::move(hashTableSelector.createForJoin(hashTableType));
-  }
-  // choose hashtable, right now just one
-  std::unique_ptr<CiderJoinBaseHashTableTemplate> getHashTable() {
-    return std::move(hashTableInstance_);
-  }
-
-  void merge_other_hashtables(
-      std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables) {
-    std::vector<std::unique_ptr<CiderJoinBaseHashTableTemplate>> otherHashTables;
-    for (auto& otherJoinTable : otherJoinTables) {
-      otherHashTables.emplace_back(otherJoinTable->getHashTable());
-    }
-    hashTableInstance_->merge_other_hashtables(otherHashTables);
-  }
-
- private:
-  std::unique_ptr<CiderJoinBaseHashTableTemplate> hashTableInstance_;
-};
 
 struct HashBuildResult {
   explicit HashBuildResult(std::shared_ptr<JoinHashTable> _table)
