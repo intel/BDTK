@@ -25,13 +25,9 @@ find_package(
   Boost
   1.66.0
   REQUIRED
-  program_options
   context
-  filesystem
-  regex
   thread
   system
-  date_time
   atomic)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 find_package(gflags COMPONENTS shared)
@@ -49,14 +45,14 @@ find_library(SNAPPY snappy)
 find_package(folly CONFIG REQUIRED)
 find_library(LLVM_LIB LLVM)
 
-set(FOLLY_WITH_DEPENDENCIES
-    ${FOLLY_LIBRARIES} ${Boost_LIBRARIES} ${DOUBLE_CONVERSION_LIBRARIES}
-    ${EVENT} ${SNAPPY} ${CMAKE_DL_LIBS})
+set(FOLLY_WITH_DEPENDENCIES ${FOLLY_LIBRARIES} ${Boost_LIBRARIES}
+                            ${DOUBLE_CONVERSION_LIBRARIES} ${EVENT} ${SNAPPY})
 set(FOLLY_BENCHMARK Folly::follybenchmark)
 set(FOLLY ${FOLLY_LIBRARIES})
 set(VELOX_BENCHMARKS_DEPENDENCIES
     velox_aggregates
     velox_exec
+    velox_exec_test_lib
     velox_dwio_common
     velox_dwio_common_exception
     velox_dwio_parquet_reader

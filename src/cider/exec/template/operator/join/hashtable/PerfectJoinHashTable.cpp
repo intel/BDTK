@@ -173,9 +173,7 @@ std::shared_ptr<PerfectJoinHashTable> PerfectJoinHashTable::getInstance(
                                               executor);
   auto hash_key = hashtable_cache_key.first;
   decltype(std::chrono::steady_clock::now()) ts1, ts2;
-  if (VLOGGING(1)) {
-    ts1 = std::chrono::steady_clock::now();
-  }
+  ts1 = std::chrono::steady_clock::now();
   auto join_hash_table = std::shared_ptr<PerfectJoinHashTable>(
       new PerfectJoinHashTable(qual_bin_oper,
                                inner_col,
@@ -197,13 +195,11 @@ std::shared_ptr<PerfectJoinHashTable> PerfectJoinHashTable::getInstance(
     join_hash_table->freeHashBufferMemory();
     throw;
   }
-  if (VLOGGING(1)) {
-    ts2 = std::chrono::steady_clock::now();
-    VLOG(1) << "Built perfect hash table "
-            << getHashTypeString(join_hash_table->getHashType()) << " in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count()
-            << " ms";
-  }
+  ts2 = std::chrono::steady_clock::now();
+  VLOG(1) << "Built perfect hash table "
+          << getHashTypeString(join_hash_table->getHashType()) << " in "
+          << std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count()
+          << " ms";
   return join_hash_table;
 }
 

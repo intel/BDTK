@@ -17,6 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+find_package(FMT REQUIRED)
+
 set(DEP_LIBS benchmark::benchmark nextgen)
 
 add_executable(jitlib_benchmark JITlibBenchmark.cpp)
@@ -27,4 +29,4 @@ if(CIDER_ENABLE_AVX512)
 endif()
 
 target_compile_options(jitlib_benchmark PRIVATE ${JITlibBenchmarkCompileFlag})
-target_link_libraries(jitlib_benchmark ${DEP_LIBS})
+target_link_libraries(jitlib_benchmark ${DEP_LIBS} folly fmt::fmt)

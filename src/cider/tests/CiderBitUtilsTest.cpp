@@ -22,7 +22,6 @@
 #include <gflags/gflags.h>
 #include <glob.h>
 #include <gtest/gtest.h>
-#include <boost/program_options.hpp>
 #include "util/CiderBitUtils.h"
 
 #include <cstdint>
@@ -149,19 +148,6 @@ TEST_F(CiderBitUtilsTest, CheckEqTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  namespace po = boost::program_options;
-
-  po::options_description desc("Options");
-
-  po::variables_map vm;
-  po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
-  po::notify(vm);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-  }
-  return err;
+  return RUN_ALL_TESTS();
 }

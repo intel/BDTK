@@ -35,7 +35,6 @@ target_link_libraries(
   memory
   cider_plan_parser
   ${Boost_LIBRARIES}
-  ${CMAKE_DL_LIBS}
   ${GFLAGS_LIBRARIES}
   ${TBB_LIBS}
   yaml-cpp)

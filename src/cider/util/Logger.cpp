@@ -26,20 +26,13 @@ bool g_enable_debug_timer{false};
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks.hpp>
-#include <boost/log/sources/global_logger_storage.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/severity_feature.hpp>
-#include <boost/log/support/date_time.hpp>
-#include <boost/log/utility/setup.hpp>
 #include <boost/phoenix.hpp>
 #include <boost/smart_ptr/weak_ptr.hpp>
 #include <boost/variant.hpp>
 
 #include <atomic>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <mutex>
 #include <regex>
@@ -47,238 +40,9 @@ bool g_enable_debug_timer{false};
 
 namespace logger {
 
-namespace attr = boost::log::attributes;
-namespace expr = boost::log::expressions;
-namespace keywords = boost::log::keywords;
-namespace sinks = boost::log::sinks;
-namespace sources = boost::log::sources;
-namespace po = boost::program_options;
-
-BOOST_LOG_ATTRIBUTE_KEYWORD(process_id, "ProcessID", attr::current_process_id::value_type)
-BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", Channel)
-BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", Severity)
-
-BOOST_LOG_GLOBAL_LOGGER_CTOR_ARGS(gChannelLogger_IR,
-                                  ChannelLogger,
-                                  (keywords::channel = IR))
-BOOST_LOG_GLOBAL_LOGGER_CTOR_ARGS(gChannelLogger_PTX,
-                                  ChannelLogger,
-                                  (keywords::channel = PTX))
-BOOST_LOG_GLOBAL_LOGGER_CTOR_ARGS(gChannelLogger_ASM,
-                                  ChannelLogger,
-                                  (keywords::channel = ASM))
-BOOST_LOG_GLOBAL_LOGGER_DEFAULT(gSeverityLogger, SeverityLogger)
-
 // Return last component of path
 std::string filename(char const* path) {
   return std::filesystem::path(path).filename().string();
-}
-
-template <typename TAG>
-std::string replace_braces(std::string const& str, TAG const tag) {
-  constexpr std::regex::flag_type flags = std::regex::ECMAScript | std::regex::optimize;
-  static std::regex const regex(R"(\{SEVERITY\})", flags);
-  if /*constexpr*/ (std::is_same<TAG, Channel>::value) {
-    return std::regex_replace(str, regex, ChannelNames[tag]);
-  } else {
-    return std::regex_replace(str, regex, SeverityNames[tag]);
-  }
-}
-
-// Print decimal value for process_id (14620) instead of hex (0x0000391c)
-boost::log::attributes::current_process_id::value_type::native_type get_native_process_id(
-    boost::log::value_ref<boost::log::attributes::current_process_id::value_type,
-                          tag::process_id> const& pid) {
-  return pid ? pid->native_id() : 0;
-}
-
-template <typename SINK>
-sinks::text_file_backend::open_handler_type create_or_replace_symlink(
-    boost::weak_ptr<SINK> weak_ptr,
-    std::string&& symlink) {
-  return [weak_ptr,
-          symlink = std::move(symlink)](sinks::text_file_backend::stream_type& stream) {
-    if (boost::shared_ptr<SINK> sink = weak_ptr.lock()) {
-      std::error_code ec;
-      std::filesystem::path const file_name =
-          sink->locked_backend()->get_current_file_name().string();
-      std::filesystem::path const symlink_path = file_name.parent_path() / symlink;
-      std::filesystem::remove(symlink_path, ec);
-      if (ec) {
-        stream << filename(__FILE__) << ':' << __LINE__ << ' ' << ec.message() << '\n';
-      }
-      std::filesystem::create_symlink(file_name.filename(), symlink_path, ec);
-      if (ec) {
-        stream << filename(__FILE__) << ':' << __LINE__ << ' ' << ec.message() << '\n';
-      }
-    }
-  };
-}
-
-boost::log::formatting_ostream& operator<<(
-    boost::log::formatting_ostream& strm,
-    boost::log::to_log_manip<Channel, tag::channel> const& manip) {
-  return strm << ChannelSymbols[manip.get()];
-}
-
-boost::log::formatting_ostream& operator<<(
-    boost::log::formatting_ostream& strm,
-    boost::log::to_log_manip<Severity, tag::severity> const& manip) {
-  return strm << SeveritySymbols[manip.get()];
-}
-
-template <typename TAG, typename SINK>
-void set_formatter(SINK& sink) {
-  if /*constexpr*/ (std::is_same<TAG, Channel>::value) {
-    sink->set_formatter(
-        expr::stream << expr::format_date_time<boost::posix_time::ptime>(
-                            "TimeStamp", "%Y-%m-%dT%H:%M:%S.%f")
-                     << ' ' << channel << ' '
-                     << boost::phoenix::bind(&get_native_process_id, process_id.or_none())
-                     << ' ' << expr::smessage);
-  } else {
-    sink->set_formatter(
-        expr::stream << expr::format_date_time<boost::posix_time::ptime>(
-                            "TimeStamp", "%Y-%m-%dT%H:%M:%S.%f")
-                     << ' ' << severity << ' '
-                     << boost::phoenix::bind(&get_native_process_id, process_id.or_none())
-                     << ' ' << expr::smessage);
-  }
-}
-
-// Pointer to function to optionally call on LOG(FATAL).
-std::atomic<FatalFunc> g_fatal_func{nullptr};
-std::once_flag g_fatal_func_flag;
-
-// Locking/atomicity not needed for g_any_active_channels or g_min_active_severity
-// as they are modifed by init() once.
-bool g_any_active_channels{false};
-Severity g_min_active_severity{Severity::FATAL};
-
-void set_once_fatal_func(FatalFunc fatal_func) {
-  if (g_fatal_func.exchange(fatal_func)) {
-    CIDER_THROW(CiderCompileException,
-                "logger::set_once_fatal_func() should not be called more than once.");
-  }
-}
-
-namespace {
-
-// Remove quotes if they match from beginning and end of string.
-// Does not check for escaped quotes within string.
-void unquote(std::string& str) {
-  if (1 < str.size() && (str.front() == '\'' || str.front() == '"') &&
-      str.front() == str.back()) {
-    str.erase(str.size() - 1, 1);
-    str.erase(0, 1);
-  }
-}
-
-}  // namespace
-
-// Used by boost::program_options when parsing enum Channel.
-std::istream& operator>>(std::istream& in, Channels& channels) {
-  std::string line;
-  std::getline(in, line);
-  unquote(line);
-  std::regex const rex(R"(\w+)");
-  using TokenItr = std::regex_token_iterator<std::string::iterator>;
-  TokenItr const end;
-  for (TokenItr tok(line.begin(), line.end(), rex); tok != end; ++tok) {
-    auto itr = std::find(ChannelNames.cbegin(), ChannelNames.cend(), *tok);
-    if (itr == ChannelNames.cend()) {
-      in.setstate(std::ios_base::failbit);
-      break;
-    } else {
-      channels.emplace(static_cast<Channel>(itr - ChannelNames.cbegin()));
-    }
-  }
-  return in;
-}
-
-// Used by boost::program_options when stringifying Channels.
-std::ostream& operator<<(std::ostream& out, Channels const& channels) {
-  int i = 0;
-  for (auto const channel : channels) {
-    out << (i++ ? " " : "") << ChannelNames.at(channel);
-  }
-  return out;
-}
-
-// Used by boost::program_options when parsing enum Severity.
-std::istream& operator>>(std::istream& in, Severity& sev) {
-  std::string token;
-  in >> token;
-  unquote(token);
-  auto itr = std::find(SeverityNames.cbegin(), SeverityNames.cend(), token);
-  if (itr == SeverityNames.cend()) {
-    in.setstate(std::ios_base::failbit);
-  } else {
-    sev = static_cast<Severity>(itr - SeverityNames.cbegin());
-  }
-  return in;
-}
-
-// Used by boost::program_options when stringifying enum Severity.
-std::ostream& operator<<(std::ostream& out, Severity const& sev) {
-  return out << SeverityNames.at(sev);
-}
-
-namespace {
-ChannelLogger& get_channel_logger(Channel const channel) {
-  switch (channel) {
-    default:
-    case IR:
-      return gChannelLogger_IR::get();
-    case PTX:
-      return gChannelLogger_PTX::get();
-    case ASM:
-      return gChannelLogger_ASM::get();
-  }
-}
-}  // namespace
-
-Logger::Logger(Channel channel)
-    : is_channel_(true)
-    , enum_value_(channel)
-    , record_(std::make_unique<boost::log::record>(
-          get_channel_logger(channel).open_record())) {
-  if (*record_) {
-    stream_ = std::make_unique<boost::log::record_ostream>(*record_);
-  }
-}
-
-Logger::Logger(Severity severity)
-    : is_channel_(false)
-    , enum_value_(severity)
-    , record_(std::make_unique<boost::log::record>(
-          gSeverityLogger::get().open_record(keywords::severity = severity))) {
-  if (*record_) {
-    stream_ = std::make_unique<boost::log::record_ostream>(*record_);
-  }
-}
-
-Logger::~Logger() noexcept(false) {
-  if (stream_) {
-    if (is_channel_) {
-      get_channel_logger(static_cast<Channel>(enum_value_))
-          .push_record(boost::move(stream_->get_record()));
-    } else {
-      gSeverityLogger::get().push_record(boost::move(stream_->get_record()));
-    }
-  }
-  if (!is_channel_ && static_cast<Severity>(enum_value_) == Severity::FATAL) {
-    if (FatalFunc fatal_func = g_fatal_func.load()) {
-      // set_once_fatal_func() prevents race condition.
-      // Exceptions thrown by (*fatal_func)() are propagated here.
-      std::call_once(g_fatal_func_flag, *fatal_func);
-    }
-    CIDER_THROW(CheckFatalException, "");
-  }
-}
-
-Logger::operator bool() const {
-  return static_cast<bool>(stream_);
 }
 
 thread_local std::atomic<QueryId> g_query_id{0};
@@ -301,11 +65,6 @@ QidScopeGuard set_thread_local_query_id(QueryId const query_id) {
   QueryId expected = 0;
   return g_query_id.compare_exchange_strong(expected, query_id) ? QidScopeGuard(query_id)
                                                                 : QidScopeGuard(0);
-}
-
-boost::log::record_ostream& Logger::stream(char const* file, int line) {
-  return *stream_ << query_id() << ' ' << thread_id() << ' ' << filename(file) << ':'
-                  << line << ' ';
 }
 
 // DebugTimer-related classes and functions.
@@ -424,37 +183,6 @@ Duration* newDuration(Severity severity, Ts&&... args) {
   return nullptr;  // Inactive - don't measure or report timing.
 }
 
-std::ostream& operator<<(std::ostream& os, Duration const& duration) {
-  return os << std::setw(2 * duration.depth_) << ' ' << duration.value() << "ms start("
-            << duration.relative_start_time() << "ms) " << duration.name_ << ' '
-            << filename(duration.file_) << ':' << duration.line_;
-}
-
-std::ostream& operator<<(std::ostream& os, DurationTree const& duration_tree) {
-  os << std::setw(2 * duration_tree.depth_) << ' ' << "New thread("
-     << duration_tree.thread_id_ << ')';
-  for (auto const& duration_tree_node : duration_tree.durations()) {
-    os << '\n' << duration_tree_node;
-  }
-  return os << '\n'
-            << std::setw(2 * duration_tree.depth_) << ' ' << "End thread("
-            << duration_tree.thread_id_ << ')';
-}
-
-// Only called by logAndEraseDurationTree() on root tree
-boost::log::record_ostream& operator<<(boost::log::record_ostream& os,
-                                       DurationTreeMap::const_reference kv_pair) {
-  auto itr = kv_pair.second->durations().cbegin();
-  auto const end = kv_pair.second->durations().cend();
-  auto const& root_duration = boost::get<Duration>(*itr);
-  os << "DEBUG_TIMER thread_id(" << kv_pair.first << ")\n"
-     << root_duration.value() << "ms total duration for " << root_duration.name_;
-  for (++itr; itr != end; ++itr) {
-    os << '\n' << *itr;
-  }
-  return os;
-}
-
 // Encode DurationTree into json.
 // DurationTrees encode parent/child relationships using a combination
 // of ordered descendents, and an int depth member value for each node.
@@ -562,9 +290,11 @@ void logAndEraseDurationTree(std::string* json_str) {
   DurationTreeMap::const_iterator const itr = g_duration_tree_map.find(g_thread_id);
   CHECK(itr != g_duration_tree_map.cend());
   auto const& root_duration = itr->second->rootDuration();
+#if 0
   if (auto log = Logger(root_duration.severity_)) {
     log.stream(root_duration.file_, root_duration.line_) << *itr;
   }
+#endif
   if (json_str) {
     JsonEncoder json_encoder;
     *json_str = json_encoder.str(*itr);

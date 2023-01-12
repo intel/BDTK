@@ -104,11 +104,7 @@ set(llvm_libs ${LLVM_LIB})
 # Boost
 find_package(
   Boost
-  COMPONENTS log
-             log_setup
-             filesystem
-             program_options
-             regex
+  COMPONENTS program_options
              system
              thread
              timer

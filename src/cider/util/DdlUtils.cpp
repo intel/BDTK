@@ -21,7 +21,6 @@
  */
 
 #include "DdlUtils.h"
-#include <boost/program_options.hpp>
 
 #include "cider/CiderException.h"
 #include "rapidjson/document.h"
@@ -74,25 +73,25 @@ std::string SqlType::to_string() const {
       str = "BOOLEAN";
       break;
     case kCHAR:
-      str = "CHAR(" + boost::lexical_cast<std::string>(param1) + ")";
+      str = "CHAR(" + std::to_string(param1) + ")";
       break;
     case kVARCHAR:
-      str = "VARCHAR(" + boost::lexical_cast<std::string>(param1) + ")";
+      str = "VARCHAR(" + std::to_string(param1) + ")";
       break;
     case kTEXT:
       str = "TEXT";
       break;
     case kNUMERIC:
-      str = "NUMERIC(" + boost::lexical_cast<std::string>(param1);
+      str = "NUMERIC(" + std::to_string(param1);
       if (param2 > 0) {
-        str += ", " + boost::lexical_cast<std::string>(param2);
+        str += ", " + std::to_string(param2);
       }
       str += ")";
       break;
     case kDECIMAL:
-      str = "DECIMAL(" + boost::lexical_cast<std::string>(param1);
+      str = "DECIMAL(" + std::to_string(param1);
       if (param2 > 0) {
-        str += ", " + boost::lexical_cast<std::string>(param2);
+        str += ", " + std::to_string(param2);
       }
       str += ")";
       break;
@@ -117,13 +116,13 @@ std::string SqlType::to_string() const {
     case kTIME:
       str = "TIME";
       if (param1 < 6) {
-        str += "(" + boost::lexical_cast<std::string>(param1) + ")";
+        str += "(" + std::to_string(param1) + ")";
       }
       break;
     case kTIMESTAMP:
       str = "TIMESTAMP";
       if (param1 <= 9) {
-        str += "(" + boost::lexical_cast<std::string>(param1) + ")";
+        str += "(" + std::to_string(param1) + ")";
       }
       break;
     case kDATE:
@@ -136,7 +135,7 @@ std::string SqlType::to_string() const {
   if (is_array) {
     str += "[";
     if (array_size > 0) {
-      str += boost::lexical_cast<std::string>(array_size);
+      str += std::to_string(array_size);
     }
     str += "]";
   }

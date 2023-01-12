@@ -19,7 +19,6 @@
 
 set(TEST_ARGS "--gtest_output=xml:../")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
 file(GLOB nextgen_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
@@ -29,5 +28,5 @@ foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${nextgen_benchmark_file})
   target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
-                        benchmark::benchmark cider_processor)
+                        cider_processor)
 endforeach()
