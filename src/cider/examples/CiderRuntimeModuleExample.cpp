@@ -23,8 +23,8 @@
 #include "cider/CiderAllocator.h"
 #include "cider/CiderCompileModule.h"
 #include "cider/CiderRuntimeModule.h"
+#include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/LiteralUtils.h"
-#include "exec/plan/parser/SubstraitExprBuilder.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/function.pb.h"
@@ -45,21 +45,15 @@ class UserAllocator : public CiderAllocator {
 
 int main(int argc, char** argv) {
   // generate for expression "a * b + b"
-  SubstraitExprBuilder* builder = new SubstraitExprBuilder();
-  ::substrait::NamedStruct* schema =
-      SubstraitExprBuilder::makeNamedStruct(builder,
-                                            {"a", "b"},
-                                            {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
-                                             CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
-  ::substrait::Expression* field0 = SubstraitExprBuilder::makeFieldReference(0);
-  ::substrait::Expression* field1 = SubstraitExprBuilder::makeFieldReference(1);
-  ::substrait::Expression* multiply_expr = SubstraitExprBuilder::makeExpr(
-      builder, "multiply", {field0, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  ::substrait::Expression* add_expr =
-      SubstraitExprBuilder::makeExpr(builder,
-                                     "add",
-                                     {multiply_expr, field1},
-                                     CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  SubstraitExprBuilder builder({"a", "b"},
+                               {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
+                                CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
+  ::substrait::Expression* field0 = builder.makeFieldReference(0);
+  ::substrait::Expression* field1 = builder.makeFieldReference("b");
+  ::substrait::Expression* multiply_expr = builder.makeScalarExpr(
+      "multiply", {field0, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  ::substrait::Expression* add_expr = builder.makeScalarExpr(
+      "add", {multiply_expr, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
   // Set up exec option and compilation option
   auto exec_option = CiderExecutionOption::defaults();
   auto compile_option = CiderCompilationOption::defaults();
@@ -69,8 +63,8 @@ int main(int argc, char** argv) {
 
   auto ciderCompileModule = CiderCompileModule::Make(allocator);
   auto result = ciderCompileModule->compile({add_expr},
-                                            *schema,
-                                            builder->funcsInfo(),
+                                            *builder.getSchema(),
+                                            builder.funcsInfo(),
                                             generator::ExprType::ProjectExpr,
                                             compile_option,
                                             exec_option);

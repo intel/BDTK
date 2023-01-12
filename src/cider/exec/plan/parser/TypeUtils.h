@@ -23,6 +23,7 @@
 #define CIDER_TYPEUTILS_H
 
 #include "cider/CiderException.h"
+#include "substrait/algebra.pb.h"
 #include "substrait/type.pb.h"
 
 // Public to make substrait type easier
@@ -147,6 +148,47 @@ class TypeUtils {
       default:
         CIDER_THROW(CiderCompileException,
                     "Failed to get arg type when trying to make func");
+    }
+  }
+
+  static std::string getStringType(const substrait::Expression_Literal& s_literal_expr) {
+    switch (s_literal_expr.literal_type_case()) {
+      case substrait::Expression_Literal::LiteralTypeCase::kBoolean:
+        return "boolean";
+      case substrait::Expression_Literal::LiteralTypeCase::kDecimal:
+        return "dec";
+      case substrait::Expression_Literal::LiteralTypeCase::kFp32:
+        return "fp32";
+      case substrait::Expression_Literal::LiteralTypeCase::kFp64:
+        return "fp64";
+      case substrait::Expression_Literal::LiteralTypeCase::kI8:
+        return "i8";
+      case substrait::Expression_Literal::LiteralTypeCase::kI16:
+        return "i16";
+      case substrait::Expression_Literal::LiteralTypeCase::kI32:
+        return "i32";
+      case substrait::Expression_Literal::LiteralTypeCase::kI64:
+        return "i64";
+      case substrait::Expression_Literal::LiteralTypeCase::kDate:
+        return "date";
+      case substrait::Expression_Literal::LiteralTypeCase::kTime:
+        return "time";
+      case substrait::Expression_Literal::LiteralTypeCase::kTimestamp:
+        return "ts";
+      case substrait::Expression_Literal::LiteralTypeCase::kFixedChar:
+        return "fchar";
+      case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
+        return "vchar";
+      case substrait::Expression_Literal::LiteralTypeCase::kString:
+        return "str";
+      case substrait::Expression_Literal::LiteralTypeCase::kIntervalYearToMonth:
+        return "iyear";
+      case substrait::Expression_Literal::LiteralTypeCase::kIntervalDayToSecond:
+        return "iday";
+      default:
+        CIDER_THROW(
+            CiderCompileException,
+            fmt::format("Unsupported type {}", s_literal_expr.literal_type_case()));
     }
   }
 
