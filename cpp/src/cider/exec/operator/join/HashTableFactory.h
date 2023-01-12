@@ -20,12 +20,12 @@
  */
 #pragma once
 
+#include <any>
 #include <map>
 #include <string>
-
+#include "cider/CiderException.h"
 #include "exec/operator/join/BaseHashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
-
 namespace cider_hashtable {
 
 // To be added
@@ -46,6 +46,37 @@ struct MurmurHash {
 
 struct Equal {
   bool operator()(int lhs, int rhs) { return lhs == rhs; }
+};
+
+struct AnyEqual {
+  bool operator()(std::any lhs, std::any rhs) {
+    if (lhs.type() != rhs.type()) {
+      return false;
+    }
+    if (lhs.type() == typeid(int)) {
+      int lhs_tmp = std::any_cast<int>(lhs);
+      int rhs_tmp = std::any_cast<int>(rhs);
+      return lhs_tmp == rhs_tmp;
+    }
+    return false;
+  }
+};
+
+struct AnyMurmurHash {
+  size_t operator()(std::any rawAny) {
+    if (rawAny.type() == typeid(int)) {
+      int intHash = std::any_cast<int>(rawAny);
+      int64_t rawHash = intHash;
+      rawHash ^= unsigned(rawHash) >> 33;
+      rawHash *= 0xff51afd7ed558ccdL;
+      rawHash ^= unsigned(rawHash) >> 33;
+      rawHash *= 0xc4ceb9fe1a85ec53L;
+      rawHash ^= unsigned(rawHash) >> 33;
+      return rawHash;
+    } else {
+      CIDER_THROW(CiderRuntimeException, "unsupported type");
+    }
+  }
 };
 
 template <typename Key,

@@ -22,7 +22,12 @@
 #include "CiderHashJoinBuild.h"
 #include "Allocator.h"
 #include "velox/exec/Task.h"
+
+#ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
+#define CIDER_BATCH_PROCESSOR_CONTEXT_H
 #include "velox/vector/arrow/Abi.h"
+#endif
+
 #include "velox/vector/arrow/Bridge.h"
 
 namespace facebook::velox::plugin {
@@ -73,9 +78,11 @@ void CiderHashJoinBuild::addInput(RowVectorPtr input) {
   ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
   exportToArrow(input_, *inputArrowSchema);
 
-  auto inBatch =
-      CiderBatchUtils::createCiderBatch(allocator_, inputArrowSchema, inputArrowArray);
-  joinHashTableBuilder_->appendBatch(std::move(inBatch));
+  // auto inBatch =
+  //     CiderBatchUtils::createCiderBatch(allocator_, inputArrowSchema, inputArrowArray);
+  cider::exec::nextgen::context::Batch inBatch(*inputArrowSchema, *inputArrowArray);
+  joinHashTableBuilder_->appendBatch(
+      std::make_shared<cider::exec::nextgen::context::Batch>(inBatch));
 }
 
 void CiderHashJoinBuild::noMoreInput() {
@@ -127,7 +134,8 @@ bool CiderHashJoinBuild::finishHashBuild() {
     otherTables.push_back(std::move(build->joinHashTableBuilder_->build()));
   }
   // merge other tables into one table
-  auto joinTable = joinHashTableBuilder_->build()->merge(std::move(otherTables));
+  auto joinTable = joinHashTableBuilder_->build();
+  joinTable->merge_other_hashtables(otherTables);
 
   joinBridge_->setHashTable(std::move(joinTable));
 
