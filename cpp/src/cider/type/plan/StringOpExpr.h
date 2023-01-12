@@ -586,7 +586,6 @@ class RegexpReplaceStringOper : public StringOper {
   }
 };
 
-
 }  // namespace Analyzer
 
 #endif

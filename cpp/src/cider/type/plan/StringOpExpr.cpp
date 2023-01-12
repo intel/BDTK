@@ -653,8 +653,12 @@ JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
   // decode input args
   auto input = const_cast<Analyzer::Expr*>(getArg(0));
   auto delimiter = const_cast<Analyzer::Expr*>(getArg(1));
-  // Analyzer::Expr* limit; = const_cast<Analyzer::Expr*>(getArg(2));
-  // Analyzer::Expr* splitpart; = const_cast<Analyzer::Expr*>(getArg(3));
+
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
+
+  auto delimiter_literal = dynamic_cast<Analyzer::Constant*>(delimiter);
+  auto delimiter_val = VarSizeJITExprValue(delimiter->codegen(context));
+
   int limit_val = 0;
   int splitpart_val = 0;
   if (getArity() == 3) {  // no limit
@@ -667,13 +671,6 @@ JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
   }
   bool reverse = splitpart_val < 0;
   splitpart_val = splitpart_val == 0 ? 1 : std::abs(splitpart_val);
-
-  auto delimiter_literal = dynamic_cast<Analyzer::Constant*>(delimiter);
-  std::string dilimiter_val = *delimiter_literal->get_constval().stringval;
-
-  auto delimiter_val = VarSizeJITExprValue(delimiter->codegen(context));
-
-  auto input_val = VarSizeJITExprValue(input->codegen(context));
 
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(
@@ -715,6 +712,57 @@ std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
 }
 
 JITExprValue& RegexpReplaceStringOper::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
+  // decode input args
+  auto input = const_cast<Analyzer::Expr*>(getArg(0));
+  auto regex_pattern = const_cast<Analyzer::Expr*>(getArg(1));
+  auto replace = const_cast<Analyzer::Expr*>(getArg(2));
 
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
+
+  auto regex_pattern_literal = dynamic_cast<Analyzer::Constant*>(regex_pattern);
+  auto regex_pattern_val = VarSizeJITExprValue(regex_pattern_literal->codegen(context));
+
+  auto replace_literal = dynamic_cast<Analyzer::Constant*>(replace);
+  auto replace_val = VarSizeJITExprValue(replace_literal->codegen(context));
+
+  int start_pos_val =
+      dynamic_cast<const Analyzer::Constant*>(getArg(3))->get_constval().intval;
+  int occurence_val =
+      dynamic_cast<const Analyzer::Constant*>(getArg(4))->get_constval().intval;
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+  std::string fn_name = "cider_regexp_replace";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(
+      fn_name,
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT64,
+          .params_vector = {
+              string_heap_ptr.get(),
+              input_val.getValue().get(),
+              input_val.getLength().get(),
+              regex_pattern_val.getValue().get(),
+              regex_pattern_val.getLength().get(),
+              replace_val.getValue().get(),
+              replace_val.getLength().get(),
+              func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get(),
+              func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get()}});
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_string_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_string_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
 }
 }  // namespace Analyzer
