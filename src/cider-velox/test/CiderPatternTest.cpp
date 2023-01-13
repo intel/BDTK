@@ -41,6 +41,7 @@ using namespace facebook::velox::plugin::plantransformer::test;
 class CiderPatternTest : public OperatorTestBase {
   void SetUp() override {
     FLAGS_partial_agg_pattern = true;
+    FLAGS_compound_pattern = true;
     // TODO: Enable this after TopN/OrderBy Node supported by cider-velox and cider.
     // FLAGS_order_by_pattern = true;
     // FLAGS_top_n_pattern = true;

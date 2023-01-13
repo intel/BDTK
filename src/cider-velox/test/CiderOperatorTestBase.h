@@ -37,6 +37,7 @@ class CiderOperatorTestBase : public OperatorTestBase {
   void SetUp() override {
     FLAGS_left_deep_join_pattern = true;
     FLAGS_partial_agg_pattern = true;
+    FLAGS_compound_pattern = true;
     // TODO: Enable this after feature fully supported. So that we could enable all
     // supported patterns in our tests.
     // FLAGS_top_n_pattern = true;
