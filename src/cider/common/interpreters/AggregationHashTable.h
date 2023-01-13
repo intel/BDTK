@@ -64,8 +64,15 @@ struct AggregatedHashTableWithNullKey : public Base {
 
 using AggregatedHashTableWithUInt8Key =
     FixedImplicitZeroHashMapWithCalculatedSize<uint8_t, AggregateDataPtr>;
+
 using AggregatedHashTableWithUInt16Key =
     FixedImplicitZeroHashMapWithStoredSize<uint16_t, AggregateDataPtr>;
+
+using AggregatedHashTableWithUInt32Key =
+    HashMap<uint32_t, AggregateDataPtr, HashCRC32<uint32_t>>;
+
+using AggregatedHashTableWithUInt64Key =
+    HashMap<uint64_t, AggregateDataPtr, HashCRC32<uint64_t>>;
 
 template <typename... Types>
 using HashTableWithNullKey = AggregatedHashTableWithNullKey<HashMapTable<Types...>>;
@@ -73,7 +80,7 @@ using HashTableWithNullKey = AggregatedHashTableWithNullKey<HashMapTable<Types..
 using AggregatedHashTableWithNullableUInt8Key =
     AggregatedHashTableWithNullKey<AggregatedHashTableWithUInt8Key>;
 
-using AggregatedDataWithNullableUInt16Key =
+using AggregatedHashTableWithNullableUInt16Key =
     AggregatedHashTableWithNullKey<AggregatedHashTableWithUInt16Key>;
 
 class AggregationHashTable;
@@ -82,9 +89,11 @@ HashTableAllocator allocator;
 struct AggregationMethod : private boost::noncopyable {
   enum class Type {
     EMPTY = 0,
-    INT8 = 1,
-    INT16 = 2,
-    SERIALIZED = 3,
+    SERIALIZED = 1,
+    INT8 = 2,
+    INT16 = 3,
+    INT32 = 4,
+    INT64 = 5,
     without_key,
   };
   Type type = Type::EMPTY;
@@ -96,26 +105,27 @@ struct AggregationMethod : private boost::noncopyable {
 
 class AggKey {
  public:
-  bool is_null;
-  int8_t* addr;
-  uint32_t len;
-
   AggKey(bool is_null, int8_t* addr, uint32_t len) {
-    this->is_null = is_null;
-    this->addr = addr;
-    this->len = len;
+    this->is_null_ = is_null;
+    this->addr_ = addr;
+    this->len_ = len;
   }
 
-  bool isNull() const { return is_null; }
+  bool isNull() const { return is_null_; }
 
-  int8_t* getAddr() const { return addr; }
+  int8_t* getAddr() const { return addr_; }
 
-  uint32_t getLen() const { return len; }
+  uint32_t getLen() const { return len_; }
 
   const bool operator==(const AggKey& key) const {
-    return this->is_null == key.is_null &&
-           std::memcmp(this->addr, key.addr, std::min(this->len, key.len));
+    return this->is_null_ == key.isNull() &&
+           std::memcmp(this->addr_, key.getAddr(), std::min(this->len_, key.getLen()));
   }
+
+ private:
+  bool is_null_;
+  int8_t* addr_;
+  uint32_t len_;
 };
 
 class AggregationHashTable final {
@@ -141,12 +151,13 @@ class AggregationHashTable final {
   // |<- 8bit ->|<- 8bit ->| or |<--- 32bit  --->| or |<- 8bit ->|<- 8bit ->|
   // return: start position of value
   AggregateDataPtr get(int8_t* raw_key) {
-    std::vector<AggKey> keys = transferToAggKey(raw_key);
+    // Transfer all keys to one AggKey
+    AggKey key = transferToAggKey(raw_key);
     // key_set_.emplace(key);
 
     for (int i = 0; i < key_types_.size(); i++) {
       if (SQLTypes::kTINYINT == key_types_[i]) {
-        uint8_t key_v = (reinterpret_cast<uint8_t*>(keys[0].addr))[0];
+        uint8_t key_v = (reinterpret_cast<uint8_t*>(key.getAddr()))[0];
         if (agg_ht_uint8_[key_v] == nullptr) {
           // Allocate memory of values here since value type like non-fixed length address
           // cannot be new in hash table. This case should be manually handled and it's
@@ -155,9 +166,8 @@ class AggregationHashTable final {
           std::memcpy(agg_ht_uint8_[key_v], init_val_, init_len_);
         }
         return agg_ht_uint8_[key_v];
-      }
-      if (SQLTypes::kSMALLINT == key_types_[i]) {
-        uint16_t key_v = (reinterpret_cast<uint16_t*>(keys[0].addr))[0];
+      } else if (SQLTypes::kSMALLINT == key_types_[i]) {
+        uint16_t key_v = (reinterpret_cast<uint16_t*>(key.getAddr()))[0];
         if (agg_ht_uint16_[key_v] == nullptr) {
           // Allocate memory of values here since value type like non-fixed length address
           // cannot be new in hash table. This case should be manually handled and it's
@@ -166,6 +176,20 @@ class AggregationHashTable final {
           std::memcpy(agg_ht_uint16_[key_v], init_val_, init_len_);
         }
         return agg_ht_uint16_[key_v];
+      } else if (SQLTypes::kINT == key_types_[i]) {
+        uint32_t key_v = (reinterpret_cast<uint32_t*>(key.getAddr()))[0];
+        if (agg_ht_uint32_[key_v] == nullptr) {
+          agg_ht_uint32_[key_v] = allocator.allocate(init_len_);
+          std::memcpy(agg_ht_uint32_[key_v], init_val_, init_len_);
+        }
+        return agg_ht_uint32_[key_v];
+      } else if (SQLTypes::kBIGINT == key_types_[i]) {
+        uint64_t key_v = (reinterpret_cast<uint64_t*>(key.getAddr()))[0];
+        if (agg_ht_uint64_[key_v] == nullptr) {
+          agg_ht_uint64_[key_v] = allocator.allocate(init_len_);
+          std::memcpy(agg_ht_uint64_[key_v], init_val_, init_len_);
+        }
+        return agg_ht_uint64_[key_v];
       }
     }
     CIDER_THROW(CiderRuntimeException, "Unsupported key type");
@@ -180,18 +204,28 @@ class AggregationHashTable final {
   // This function is to transfer keys formatted in codegen to AggKey in HashTable.
   // It will try to merge keys to a primitive type in multiple key cases.
   // If failed, serialize all keys to one key in Type::SERIALIZED.
-  std::vector<AggKey> transferToAggKey(int8_t* key_addr) {
+  AggKey transferToAggKey(int8_t* key_addr) {
     // Single key
     if (1 == key_types_.size()) {
       if (SQLTypes::kTINYINT == key_types_[0]) {
         bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
         AggKey key(is_null, key_addr + 2, 1);
-        return std::vector<AggKey>{key};
+        return key;
       }
       if (SQLTypes::kSMALLINT == key_types_[0]) {
         bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
         AggKey key(is_null, key_addr + 2, 2);
-        return std::vector<AggKey>{key};
+        return key;
+      }
+      if (SQLTypes::kINT == key_types_[0]) {
+        bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
+        AggKey key(is_null, key_addr + 2, 4);
+        return key;
+      }
+      if (SQLTypes::kBIGINT == key_types_[0]) {
+        bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
+        AggKey key(is_null, key_addr + 2, 8);
+        return key;
       }
       // TODO: Support more types.
     }
@@ -226,6 +260,8 @@ class AggregationHashTable final {
   AggregationMethod::Type agg_method_;
   AggregatedHashTableWithUInt8Key agg_ht_uint8_;
   AggregatedHashTableWithUInt16Key agg_ht_uint16_;
+  AggregatedHashTableWithUInt32Key agg_ht_uint32_;
+  AggregatedHashTableWithUInt64Key agg_ht_uint64_;
 
   // Select the aggregation method based on the number and types of keys.
   AggregationMethod::Type chooseAggregationMethod() {
@@ -233,9 +269,12 @@ class AggregationHashTable final {
     if (1 == key_types_.size()) {
       if (SQLTypes::kTINYINT == key_types_[0]) {
         return AggregationMethod::Type::INT8;
-      }
-      if (SQLTypes::kSMALLINT == key_types_[0]) {
+      } else if (SQLTypes::kSMALLINT == key_types_[0]) {
         return AggregationMethod::Type::INT16;
+      } else if (SQLTypes::kINT == key_types_[0]) {
+        return AggregationMethod::Type::INT32;
+      } else if (SQLTypes::kBIGINT == key_types_[0]) {
+        return AggregationMethod::Type::INT64;
       }
       // TODO: Support more types.
     }

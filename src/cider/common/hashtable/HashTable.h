@@ -32,6 +32,7 @@
 #include <boost/noncopyable.hpp>
 
 #include <common/hashtable/HashTableAllocator.h>
+#include <common/hashtable/HashTableKeyHolder.h>
 
 #ifdef DBMS_HASH_MAP_DEBUG_RESIZES
 #include <Common/Stopwatch.h>
@@ -45,12 +46,12 @@
  * zero key.
  */
 
-namespace DB {
+namespace cider {
 namespace ErrorCodes {
 extern const int LOGICAL_ERROR;
 extern const int NO_AVAILABLE_DATA;
 }  // namespace ErrorCodes
-}  // namespace DB
+}  // namespace cider
 
 /** The state of the hash table that affects the properties of its cells.
  * Used as a template parameter.
@@ -446,6 +447,15 @@ struct AllocatorBufferDeleter<true, Allocator, Cell> {
   size_t size;
 };
 
+#if !defined(likely)
+#define likely(x) (__builtin_expect(!!(x), 1))
+#endif
+#if !defined(unlikely)
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+#endif
+
+#define __msan_unpoison(X, Y)  /// NOLINT
+
 // The HashTable
 template <typename Key, typename Cell, typename Hash, typename Grower, typename Allocator>
 class HashTable : private boost::noncopyable,
@@ -508,7 +518,8 @@ class HashTable : private boost::noncopyable,
   }
 
   void alloc(const Grower& new_grower) {
-    buf = reinterpret_cast<Cell*>(Allocator::alloc(new_grower.bufSize() * sizeof(Cell)));
+    buf =
+        reinterpret_cast<Cell*>(Allocator::allocate(new_grower.bufSize() * sizeof(Cell)));
     // Initialize all bits to mark as empty.
     std::memset(buf, 0, new_grower.bufSize() * sizeof(Cell));
     grower = new_grower;
@@ -516,7 +527,7 @@ class HashTable : private boost::noncopyable,
 
   void free() {
     if (buf) {
-      Allocator::free(buf, getBufferSizeInBytes());
+      Allocator::deallocate(reinterpret_cast<int8_t*>(buf), getBufferSizeInBytes());
       buf = nullptr;
     }
   }
@@ -565,8 +576,13 @@ class HashTable : private boost::noncopyable,
              reinterpret_cast<const void*>(old_buffer.get()),
              old_buffer_size);
     } else {
+      // TODO: Use realloc after new allocator is implemented.
+      // buf = reinterpret_cast<Cell*>(
+      // Allocator::realloc(buf, old_buffer_size, new_grower.bufSize() * sizeof(Cell)));
+
+      free();
       buf = reinterpret_cast<Cell*>(
-          Allocator::realloc(buf, old_buffer_size, new_grower.bufSize() * sizeof(Cell)));
+          Allocator::allocate(new_grower.bufSize() * sizeof(Cell)));
     }
 
     grower = new_grower;
