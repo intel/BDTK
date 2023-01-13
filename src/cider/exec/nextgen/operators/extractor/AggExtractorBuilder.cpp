@@ -35,11 +35,17 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildNextgenAgg
 std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildBasicAggExtractor(
     const int8_t* buffer,
     context::AggExprsInfo& info) {
-  size_t actual_size = info.byte_size_;
+  size_t actual_size = info.sql_type_info_.get_size();
 
   switch (info.sql_type_info_.get_type()) {
     case kTINYINT:
       switch (actual_size) {
+        case 1:
+          return std::make_unique<NextgenBasicAggExtractor<int8_t, int8_t>>(
+              "INT8_INT8", buffer, info);
+        case 2:
+          return std::make_unique<NextgenBasicAggExtractor<int16_t, int8_t>>(
+              "INT16_INT8", buffer, info);
         case 4:
           return std::make_unique<NextgenBasicAggExtractor<int32_t, int8_t>>(
               "INT32_INT8", buffer, info);
@@ -49,6 +55,12 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildBasicAggEx
       }
     case kSMALLINT:
       switch (actual_size) {
+        case 1:
+          return std::make_unique<NextgenBasicAggExtractor<int8_t, int16_t>>(
+              "INT8_INT16", buffer, info);
+        case 2:
+          return std::make_unique<NextgenBasicAggExtractor<int16_t, int16_t>>(
+              "INT16_INT16", buffer, info);
         case 4:
           return std::make_unique<NextgenBasicAggExtractor<int32_t, int16_t>>(
               "INT32_INT16", buffer, info);
@@ -58,6 +70,12 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildBasicAggEx
       }
     case kINT:
       switch (actual_size) {
+        case 1:
+          return std::make_unique<NextgenBasicAggExtractor<int8_t, int32_t>>(
+              "INT8_INT32", buffer, info);
+        case 2:
+          return std::make_unique<NextgenBasicAggExtractor<int16_t, int32_t>>(
+              "INT16_INT32", buffer, info);
         case 4:
           return std::make_unique<NextgenBasicAggExtractor<int32_t, int32_t>>(
               "INT32_INT32", buffer, info);
@@ -68,6 +86,12 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildBasicAggEx
 
     case kBIGINT:
       switch (actual_size) {
+        case 1:
+          return std::make_unique<NextgenBasicAggExtractor<int8_t, int64_t>>(
+              "INT8_INT64", buffer, info);
+        case 2:
+          return std::make_unique<NextgenBasicAggExtractor<int16_t, int64_t>>(
+              "INT16_INT64", buffer, info);
         case 4:
           return std::make_unique<NextgenBasicAggExtractor<int32_t, int64_t>>(
               "INT32_INT64", buffer, info);

@@ -49,45 +49,99 @@ context::AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
   context::AggExprsInfoVector infos;
   int8_t start_addr = 0;
   for (const auto& expr : exprs) {
-    int8_t size = 0;
     auto agg_expr = dynamic_cast<const Analyzer::AggExpr*>(expr.get());
-    // get value size in buffer
-    switch (expr->get_type_info().get_size()) {
-      case 1:
-      case 2:
-      case 4:
-      case 8:
-        size = 8;
-        break;
-      default:
-        size = 8;
-        break;
-    }
-    infos.emplace_back(
-        agg_expr->get_type_info(), agg_expr->get_aggtype(), start_addr, size);
+    infos.emplace_back(agg_expr->get_type_info(), agg_expr->get_aggtype(), start_addr);
     outputNullableCheck(agg_expr, infos.back());
-    start_addr += size;
+    start_addr += expr->get_type_info().get_size();
   }
   return infos;
 }
 
+template <typename TYPE>
+void makeSumInitialValue(int8_t* value_addr, int8_t offset) {
+  auto cast_memory = reinterpret_cast<TYPE*>(value_addr + offset);
+  *cast_memory = 0;
+}
+
+template <typename TYPE>
+void makeMinInitialValue(int8_t* value_addr, int8_t offset) {
+  auto cast_memory = reinterpret_cast<TYPE*>(value_addr + offset);
+  *cast_memory = std::numeric_limits<TYPE>::max();
+}
+
+template <typename TYPE>
+void makeMaxInitialValue(int8_t* value_addr, int8_t offset) {
+  auto cast_memory = reinterpret_cast<TYPE*>(value_addr + offset);
+  *cast_memory = std::numeric_limits<TYPE>::min();
+}
+
 std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
   std::vector<int8_t> origin_vector(exprs_info.back().start_offset_ +
-                                    exprs_info.back().byte_size_ + exprs_info.size());
+                                    exprs_info.back().sql_type_info_.get_size() +
+                                    exprs_info.size());
   int8_t* raw_memory = origin_vector.data();
   for (const auto& info : exprs_info) {
     switch (info.agg_type_) {
       case SQLAgg::kSUM:
       case SQLAgg::kCOUNT: {
-        switch (info.byte_size_) {
-          case 8: {
-            auto cast_memory =
-                reinterpret_cast<int64_t*>(raw_memory + info.start_offset_);
-            *cast_memory = 0;
+        switch (info.sql_type_info_.get_size()) {
+          case 1:
+            makeSumInitialValue<int8_t>(raw_memory, info.start_offset_);
             break;
-          }
+          case 2:
+            makeSumInitialValue<int16_t>(raw_memory, info.start_offset_);
+            break;
+          case 4:
+            makeSumInitialValue<int32_t>(raw_memory, info.start_offset_);
+            break;
+          case 8:
+            makeSumInitialValue<int64_t>(raw_memory, info.start_offset_);
+            break;
           default:
-            LOG(FATAL) << info.byte_size_ << " size is not support for sum yet";
+            LOG(FATAL) << info.sql_type_info_.get_size()
+                       << " size is not support for sum/count yet";
+            break;
+        }
+        break;
+      }
+      case SQLAgg::kMIN: {
+        switch (info.sql_type_info_.get_size()) {
+          case 1:
+            makeMinInitialValue<int8_t>(raw_memory, info.start_offset_);
+            break;
+          case 2:
+            makeMinInitialValue<int16_t>(raw_memory, info.start_offset_);
+            break;
+          case 4:
+            makeMinInitialValue<int32_t>(raw_memory, info.start_offset_);
+            break;
+          case 8:
+            makeMinInitialValue<int64_t>(raw_memory, info.start_offset_);
+            break;
+          default:
+            LOG(FATAL) << info.sql_type_info_.get_size()
+                       << " size is not support for min yet";
+            break;
+        }
+        break;
+      }
+      case SQLAgg::kMAX: {
+        switch (info.sql_type_info_.get_size()) {
+          case 1:
+            makeMaxInitialValue<int8_t>(raw_memory, info.start_offset_);
+            break;
+          case 2:
+            makeMaxInitialValue<int16_t>(raw_memory, info.start_offset_);
+            break;
+          case 4:
+            makeMaxInitialValue<int32_t>(raw_memory, info.start_offset_);
+            break;
+          case 8:
+            makeMaxInitialValue<int64_t>(raw_memory, info.start_offset_);
+            break;
+          default:
+            LOG(FATAL) << info.sql_type_info_.get_size()
+                       << " size is not support for max yet";
             break;
         }
         break;
@@ -99,7 +153,7 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
   }
   // init null value (1--null, 0--not null)
   auto null_buffer_offset =
-      exprs_info.back().start_offset_ + exprs_info.back().byte_size_;
+      exprs_info.back().start_offset_ + exprs_info.back().sql_type_info_.get_size();
   for (size_t i = 0; i < exprs_info.size(); i++) {
     exprs_info[i].null_offset_ = null_buffer_offset + i;
     auto null_value = reinterpret_cast<int8_t*>(raw_memory + exprs_info[i].null_offset_);

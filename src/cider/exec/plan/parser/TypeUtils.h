@@ -176,6 +176,10 @@ class TypeUtils {
         return getIsNullable(type.i64().nullability());
       case substrait::Type::kI32:
         return getIsNullable(type.i32().nullability());
+      case substrait::Type::kI16:
+        return getIsNullable(type.i16().nullability());
+      case substrait::Type::kI8:
+        return getIsNullable(type.i8().nullability());
       case substrait::Type::kDecimal:
         return getIsNullable(type.decimal().nullability());
       case substrait::Type::kFp64:
