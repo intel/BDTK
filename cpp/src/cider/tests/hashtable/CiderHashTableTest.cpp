@@ -31,13 +31,13 @@
 #include "cider/CiderException.h"
 #include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderF14HashTable.h"
+#include "exec/operator/join/CiderJoinHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "exec/operator/join/HashTableFactory.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
-#include "exec/operator/join/CiderJoinHashTable.h"
 
 // hash function for test collision
 struct Hash {
@@ -77,15 +77,18 @@ TEST(CiderHashTableTest, AnyTest) {
 
 // test build and probe for cider
 TEST(CiderHashTableTest, JoinHashTableTest) {
-   using namespace cider::exec::nextgen::context;
+  using namespace cider::exec::nextgen::context;
 
-  auto joinHashTable1 = new cider::exec::processor::JoinHashTable(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto joinHashTable1 = new cider::exec::processor::JoinHashTable(
+      cider_hashtable::HashTableType::LINEAR_PROBING);
   auto hashTable1 = joinHashTable1->getHashTable();
-  auto joinHashTable2 = new cider::exec::processor::JoinHashTable(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto joinHashTable2 = new cider::exec::processor::JoinHashTable(
+      cider_hashtable::HashTableType::LINEAR_PROBING);
   auto hashTable2 = joinHashTable2->getHashTable();
-  auto joinHashTable3 = new cider::exec::processor::JoinHashTable(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto joinHashTable3 = new cider::exec::processor::JoinHashTable(
+      cider_hashtable::HashTableType::LINEAR_PROBING);
   auto hashTable3 = joinHashTable3->getHashTable();
-   
+
   auto input_builder = ArrowArrayBuilder();
 
   auto&& [schema, array] =
@@ -110,8 +113,10 @@ TEST(CiderHashTableTest, JoinHashTableTest) {
     EXPECT_EQ(hm_res_vec[0].batch_offset, key);
   }
   std::vector<std::unique_ptr<cider::exec::processor::JoinHashTable>> otherTables;
-  otherTables.emplace_back(std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable2)));
-  otherTables.emplace_back(std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable3)));
+  otherTables.emplace_back(
+      std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable2)));
+  otherTables.emplace_back(
+      std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable3)));
   joinHashTable1->merge_other_hashtables(otherTables);
   EXPECT_EQ(joinHashTable1->getHashTable()->size(), 30);
 }
