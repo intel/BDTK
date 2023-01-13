@@ -57,30 +57,35 @@ class CiderFilterRandomTestNG : public CiderNextgenTestBase {
     //        col_10 VARCHAR(10));)";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER, col_2 BIGINT, col_3 FLOAT, col_4 DOUBLE,
-           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE);)";
-    QueryArrowDataGenerator::generateBatchByTypes(
-        input_schema_,
-        input_array_,
-        99,
-        {"col_1", "col_2", "col_3", "col_4", "col_5", "col_6", "col_7", "col_8"},
-        // ,"col_9",
-        //  "col_10"},
-        {
-            CREATE_SUBSTRAIT_TYPE(I32),
-            CREATE_SUBSTRAIT_TYPE(I64),
-            CREATE_SUBSTRAIT_TYPE(Fp32),
-            CREATE_SUBSTRAIT_TYPE(Fp64),
-            CREATE_SUBSTRAIT_TYPE(I32),
-            CREATE_SUBSTRAIT_TYPE(I64),
-            CREATE_SUBSTRAIT_TYPE(Fp32),
-            CREATE_SUBSTRAIT_TYPE(Fp64),
-            //  CREATE_SUBSTRAIT_TYPE(Varchar),
-            //  CREATE_SUBSTRAIT_TYPE(Varchar)
-        },
-        {2, 2, 2, 2, 2, 2, 2, 2},
-        GeneratePattern::Random,
-        1,
-        100);
+           col_5 INTEGER, col_6 BIGINT, col_7 FLOAT, col_8 DOUBLE, col_9 VARCHAR(10),
+           col_10 VARCHAR(10));)";
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
+                                                  99,
+                                                  {"col_1",
+                                                   "col_2",
+                                                   "col_3",
+                                                   "col_4",
+                                                   "col_5",
+                                                   "col_6",
+                                                   "col_7",
+                                                   "col_8",
+                                                   "col_9",
+                                                   "col_10"},
+                                                  {CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(I32),
+                                                   CREATE_SUBSTRAIT_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar),
+                                                   CREATE_SUBSTRAIT_TYPE(Varchar)},
+                                                  {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+                                                  GeneratePattern::Random,
+                                                  1,
+                                                  100);
   }
 };
 
@@ -128,7 +133,6 @@ TEST_F(CiderFilterSequenceTestNG, inTest) {
   assertQuery("SELECT * FROM test WHERE col_3 not in (24, 25, 26)",
               "not_in_fp32_array.json");
   // TODO: (yma1) add in (str_1, str_2, str_3)
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder("SELECT * FROM test WHERE col_1 in (24, 25, 26) and col_2 > 20");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE col_1 in (24 * 2 + 2, (25 + 2) * 10, 26)");
@@ -150,7 +154,6 @@ TEST_F(CiderFilterRandomTestNG, inTest) {
   assertQuery("SELECT * FROM test WHERE col_2 IS NOT NULL AND col_2 in (24, 25, 26)");
   assertQuery("SELECT * FROM test WHERE col_3 IS NOT NULL AND col_3 in (24, 25, 26)");
   assertQuery("SELECT* FROM test WHERE col_4 IS NOT NULL AND col_4 in (24, 25, 26) ");
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder("SELECT * FROM test WHERE col_1 in (24, 25, 26) and col_2 > 20");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE col_1 in (24 * 2 + 2, (25 + 2) * 10, 26)");
@@ -239,7 +242,6 @@ TEST_F(CiderFilterSequenceTestNG, doubleFilterTest) {
 }
 
 TEST_F(CiderFilterSequenceTestNG, multiFilterWithOrTest) {
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder("SELECT col_1 FROM test WHERE col_1 > 50 or col_1 < 5");
   assertQueryIgnoreOrder("SELECT col_1 FROM test WHERE col_1 IS NULL or col_1 < 5");
   assertQueryIgnoreOrder("SELECT col_2 FROM test WHERE col_2 > 50 or col_2 < 5");
@@ -269,8 +271,6 @@ TEST_F(CiderFilterSequenceTestNG, multiColEqualTest) {
 }
 
 TEST_F(CiderFilterRandomTestNG, multiColRandomTest) {
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
-
   assertQuery("SELECT col_1, col_5 FROM test WHERE col_1 < col_5");
   assertQuery("SELECT col_2, col_6 FROM test WHERE col_2 < col_6");
   assertQuery("SELECT col_3, col_7 FROM test WHERE col_3 <= col_7");
@@ -285,14 +285,12 @@ TEST_F(CiderFilterRandomTestNG, multiColRandomTest) {
 }
 
 TEST_F(CiderFilterRandomTestNG, complexFilter) {
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE (col_1 > 0 AND col_2 < 0) OR (col_1 < 0 AND col_2 > 0)");
 }
 
 // isthmus will convert to lt and gt.
 TEST_F(CiderFilterRandomTestNG, betweenAnd) {
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   assertQueryIgnoreOrder("SELECT * FROM test WHERE col_1 between 0 AND 1000 ");
 }
 
@@ -308,7 +306,6 @@ TEST_F(CiderFilterRandomTestNG, integerNullFilterTest) {
 }
 
 TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
-  GTEST_SKIP_("assertQueryIgnoreOrder method not supported yet.");
   // IS DISTINCT FROM
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE col_3 IS DISTINCT FROM col_7 OR col_4 IS DISTINCT FROM "
@@ -326,7 +323,6 @@ TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
       "mixed_distinct_from.json");
   // mixed case with string
 
-  GTEST_SKIP_("String is not supportted in nextgen.");
   assertQueryIgnoreOrder(
       "SELECT * FROM test WHERE col_9 IS DISTINCT FROM col_10 OR col_10 IS NOT DISTINCT "
       "FROM col_9",

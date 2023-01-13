@@ -23,6 +23,7 @@
 #define CIDER_TESTS_UTILS_ARROW_CHECKER_H_
 
 #include "exec/module/batch/ArrowABI.h"
+#include "tests/utils/CiderArrowStringifier.h"
 
 namespace cider::test::util {
 
@@ -32,6 +33,20 @@ class CiderArrowChecker {
                            const struct ArrowArray* actual_array,
                            const struct ArrowSchema* expect_schema,
                            const struct ArrowSchema* actual_schema);
+
+  static bool checkArrowEqIgnoreOrder(const struct ArrowArray* expect_array,
+                                      const struct ArrowArray* actual_array,
+                                      const struct ArrowSchema* expect_schema,
+                                      const struct ArrowSchema* actual_schema);
+
+ private:
+  static bool compareRowVectors(std::vector<ConcatenatedRow>& expected_row_vector,
+                                std::vector<ConcatenatedRow>& actual_row_vector,
+                                bool ignore_order = true);
+
+  static std::vector<ConcatenatedRow> toConcatenatedRowVector(
+      const struct ArrowArray* array,
+      const struct ArrowSchema* schema);
 };
 
 }  // namespace cider::test::util

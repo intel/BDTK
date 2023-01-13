@@ -22,6 +22,7 @@
 #ifndef CIDER_TESTS_UTILS_NEXTGEN_TEST_BASE_H_
 #define CIDER_TESTS_UTILS_NEXTGEN_TEST_BASE_H_
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
 #include <string>
@@ -48,14 +49,24 @@ class CiderNextgenTestBase : public testing::Test {
                    const std::string& json_file_or_sql = "",
                    const bool ignore_order = false);
 
+  void assertQuery(const std::string& sql,
+                   const struct ArrowArray* array,
+                   const struct ArrowSchema* schema,
+                   bool ignore_order = false);
+
   void assertQueryIgnoreOrder(const std::string& sql,
                               const std::string& json_file_or_sql = "") {
     assertQuery(sql, json_file_or_sql, true);
   }
+  bool executeIncorrectQuery(const std::string& wrong_sql);
 
   void setupDdl(std::string& table_name, std::string& create_ddl) {
     table_name_ = table_name;
     create_ddl_ = create_ddl;
+  }
+
+  void setCodegenOptions(cider::exec::nextgen::context::CodegenOptions& codegen_options) {
+    codegen_options_ = codegen_options;
   }
 
  protected:
@@ -66,6 +77,7 @@ class CiderNextgenTestBase : public testing::Test {
   DuckDbQueryRunner duckdb_query_runner_;
   CiderNextgenQueryRunnerPtr cider_nextgen_query_runner_ =
       std::make_shared<CiderNextgenQueryRunner>();
+  cider::exec::nextgen::context::CodegenOptions codegen_options_ = {};
 };
 
 }  // namespace cider::test::util

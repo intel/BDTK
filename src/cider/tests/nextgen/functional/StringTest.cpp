@@ -20,7 +20,11 @@
  */
 
 #include <gtest/gtest.h>
-#include "tests/utils/CiderTestBase.h"
+#include "exec/nextgen/Nextgen.h"
+#include "tests/utils/CiderNextgenTestBase.h"
+
+using namespace cider::test::util;
+using namespace cider::exec::nextgen;
 
 #define BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, ASSERT_FUNC)       \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                             \
@@ -89,20 +93,20 @@
   }
 
 #define BASIC_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
-  BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+  BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
 #define LIKE_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
-  LIKE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+  LIKE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
 #define ESCAPE_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
-  ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+  ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
 #define IN_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
-  IN_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQueryArrow)
+  IN_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
 // basic string functionalities
 
-class CiderStringTestNextGen : public CiderTestBase {
+class CiderStringTestNextGen : public CiderNextgenTestBase {
  public:
   CiderStringTestNextGen() {
     table_name_ = "test";
@@ -110,8 +114,8 @@ class CiderStringTestNextGen : public CiderTestBase {
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
 
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         50,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
@@ -122,15 +126,15 @@ class CiderStringTestNextGen : public CiderTestBase {
   }
 };
 
-class CiderStringRandomTestNextGen : public CiderTestBase {
+class CiderStringRandomTestNextGen : public CiderNextgenTestBase {
  public:
   CiderStringRandomTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER, col_2 VARCHAR(10));)";
 
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         30,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
@@ -141,15 +145,15 @@ class CiderStringRandomTestNextGen : public CiderTestBase {
   }
 };
 
-class CiderStringNullableTestNextGen : public CiderTestBase {
+class CiderStringNullableTestNextGen : public CiderNextgenTestBase {
  public:
   CiderStringNullableTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
 
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         50,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
@@ -177,7 +181,7 @@ IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, InStringTest)
 
 // duplicate string
 
-class CiderDuplicateStringTestNextGen : public CiderTestBase {
+class CiderDuplicateStringTestNextGen : public CiderNextgenTestBase {
  public:
   CiderDuplicateStringTestNextGen() {
     table_name_ = "test";
@@ -189,11 +193,11 @@ class CiderDuplicateStringTestNextGen : public CiderTestBase {
     std::string str2 = "123456";
     std::vector<int> offset2{0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-    std::tie(schema_, array_) = ArrowArrayBuilder()
-                                    .setRowNum(8)
-                                    .addUTF8Column("col_1", str1, offset1)
-                                    .addUTF8Column("col_2", str2, offset2)
-                                    .build();
+    std::tie(input_schema_, input_array_) = ArrowArrayBuilder()
+                                                .setRowNum(8)
+                                                .addUTF8Column("col_1", str1, offset1)
+                                                .addUTF8Column("col_2", str2, offset2)
+                                                .build();
   }
 };
 
@@ -214,7 +218,7 @@ TEST_F(CiderDuplicateStringTestNextGen, SingleGroupKeyTest) {
   std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
       schema, array, std::make_shared<CiderDefaultAllocator>());
 
-  assertQueryArrow("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", res_batch, true);
+  assertQuery("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", array, schema, true);
 }
 
 TEST_F(CiderDuplicateStringTestNextGen, MultiGroupKeyTest) {
@@ -239,13 +243,15 @@ TEST_F(CiderDuplicateStringTestNextGen, MultiGroupKeyTest) {
           .build();
   std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
       schema, array, std::make_shared<CiderDefaultAllocator>());
-  assertQuery(
-      "SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2", res_batch, true);
+  assertQuery("SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2",
+              array,
+              schema,
+              true);
 }
 
 // constant string
 
-class CiderConstantStringTestNextGen : public CiderTestBase {
+class CiderConstantStringTestNextGen : public CiderNextgenTestBase {
  public:
   CiderConstantStringTestNextGen() {
     table_name_ = "test";
@@ -255,7 +261,7 @@ class CiderConstantStringTestNextGen : public CiderTestBase {
         std::vector<std::string>{"1111111", "1112222", "aaaaaaa", "bbbbbbbb", "aabbccdd"};
 
     auto [data, offset] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
-    std::tie(schema_, array_) =
+    std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder().setRowNum(5).addUTF8Column("col_1", data, offset).build();
   }
 };
@@ -263,10 +269,14 @@ class CiderConstantStringTestNextGen : public CiderTestBase {
 TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
   auto expected_vec = std::vector<std::string>{"aaaaaaa", "aabbccdd"};
   auto [data, offset] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(expected_vec);
-  auto expected_batch_2 = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
-      ArrowArrayBuilder().setRowNum(2).addUTF8Column("col_1", data, offset).build());
 
-  assertQueryArrow("SELECT col_1 FROM test where col_1 LIKE '[aa]%'", expected_batch_2);
+  struct ArrowArray* expect_array{nullptr};
+  struct ArrowSchema* expect_schema{nullptr};
+  std::tie(expect_schema, expect_array) =
+      ArrowArrayBuilder().setRowNum(2).addUTF8Column("col_1", data, offset).build();
+
+  assertQuery(
+      "SELECT col_1 FROM test where col_1 LIKE '[aa]%'", expect_array, expect_schema);
 
   // FIXME(jikunshang): Cider only support [],%,_ pattern, !/^ is not supported yet.
   // listed on document.
@@ -288,72 +298,70 @@ TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
 
 TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
   // variable source string
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
 
   // out of range
-  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
-  assertQueryArrow("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 4, 8) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 0, 12) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 12, 0) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 12, 2) FROM test ");
 
   // from for
-  assertQueryArrow("SELECT SUBSTRING(col_2 from 2 for 8) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2 from 2 for 8) FROM test ");
 
   // zero length
-  assertQueryArrow("SELECT SUBSTRING(col_2, 4, 0) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, 4, 0) FROM test ");
 
   // negative wrap
-  assertQueryArrow("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
+  assertQuery("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
 }
 
 TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
-  assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
+  assertQuery("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
 TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
-  assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
+  assertQuery("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
 TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
-  assertQueryArrow("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
-  assertQueryArrow("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
+  assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
+  assertQuery("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
 // stringop: upper/lower
 
 TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
   // select column from table
-  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
-  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
+  assertQuery("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
+  assertQuery("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
 
   // select literal from table
-  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
-                   "stringop_lower_literal.json");
-  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
-                   "stringop_upper_literal.json");
+  assertQuery("SELECT LOWER('aAbBcCdD12') FROM test;", "stringop_lower_literal.json");
+  assertQuery("SELECT UPPER('aAbBcCdD12') FROM test;", "stringop_upper_literal.json");
 
   // string op on filter clause
-  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
-                   "stringop_lower_condition.json");
-  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
-                   "stringop_upper_condition.json");
+  assertQuery("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
+              "stringop_lower_condition.json");
+  assertQuery("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+              "stringop_upper_condition.json");
 
   // nested stringops
-  assertQueryArrow(
+  assertQuery(
       "SELECT col_2 FROM test "
       "WHERE UPPER(SUBSTRING(col_2, 1, 4)) = LOWER(SUBSTRING(col_2, 1, 4));",
       "stringop_upper_nested_1.json");
-  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(LOWER(col_2)) = col_2;",
-                   "stringop_upper_nested_2.json");
+  assertQuery("SELECT col_2 FROM test WHERE UPPER(LOWER(col_2)) = col_2;",
+              "stringop_upper_nested_2.json");
 
   /// NOTE: (YBRua) Skipped for now because we dont expect queries without FROM clauses.
   /// 1. Behaviors of Cider and DuckDb are different w.r.t. this query.
@@ -364,95 +372,94 @@ TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
   ///    have a "virtualTable" (instead of a "namedTable") as a placeholder input.
   ///    <https://substrait.io/relations/logical_relations/#virtual-table>
   // select literal
-  // assertQueryArrow("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
-  // assertQueryArrow("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
+  // assertQuery("SELECT LOWER('ABCDEFG');", "stringop_lower_constexpr_null.json");
+  // assertQuery("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
 }
 
 TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
   // select column from table
-  assertQueryArrow("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
-  assertQueryArrow("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
+  assertQuery("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
+  assertQuery("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
 
   // select literal from table
-  assertQueryArrow("SELECT LOWER('aAbBcCdD12') FROM test;",
-                   "stringop_lower_literal_null.json");
-  assertQueryArrow("SELECT UPPER('aAbBcCdD12') FROM test;",
-                   "stringop_upper_literal_null.json");
+  assertQuery("SELECT LOWER('aAbBcCdD12') FROM test;",
+              "stringop_lower_literal_null.json");
+  assertQuery("SELECT UPPER('aAbBcCdD12') FROM test;",
+              "stringop_upper_literal_null.json");
 
   // string op on filter clause
-  assertQueryArrow("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
-                   "stringop_lower_condition_null.json");
-  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
-                   "stringop_upper_condition_null.json");
+  assertQuery("SELECT col_2 FROM test WHERE LOWER(col_2) = 'aaaaaaaaaa'",
+              "stringop_lower_condition_null.json");
+  assertQuery("SELECT col_2 FROM test WHERE UPPER(col_2) = 'AAAAAAAAAA'",
+              "stringop_upper_condition_null.json");
 }
 
 // stringop: concat
 
 TEST_F(CiderStringTestNextGen, ConcatTest) {
   // Skipped because Isthmus does not support concatenating two literals
-  // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
+  // assertQuery("SELECT 'foo' || 'bar' FROM test;");
 
-  assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
-  assertQueryArrow("SELECT 'foobar' || col_2 FROM test;");
+  assertQuery("SELECT col_2 || 'foobar' FROM test;");
+  assertQuery("SELECT 'foobar' || col_2 FROM test;");
 
-  // assertQueryArrow("SELECT 'foo' || 'bar' || col_2 FROM test;");
-  assertQueryArrow("SELECT 'foo' || col_2 || 'bar' FROM test;");
-  assertQueryArrow("SELECT col_2 || 'foo' || 'bar' FROM test;");
+  // assertQuery("SELECT 'foo' || 'bar' || col_2 FROM test;");
+  assertQuery("SELECT 'foo' || col_2 || 'bar' FROM test;");
+  assertQuery("SELECT col_2 || 'foo' || 'bar' FROM test;");
 
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
-  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
-                   "stringop_concat_filter.json");
+  assertQuery("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
+  assertQuery("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
+              "stringop_concat_filter.json");
 
   // nextgen also supports concatenating two variable columns
-  assertQueryArrow("SELECT col_2 || col_2 FROM test;");
-  assertQueryArrow("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
+  assertQuery("SELECT col_2 || col_2 FROM test;");
+  assertQuery("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
-  // assertQueryArrow("SELECT 'foo' || 'bar' FROM test;");
+  // assertQuery("SELECT 'foo' || 'bar' FROM test;");
 
-  assertQueryArrow("SELECT col_2 || 'foobar' FROM test;");
-  assertQueryArrow("SELECT 'foobar' || col_2 FROM test;");
+  assertQuery("SELECT col_2 || 'foobar' FROM test;");
+  assertQuery("SELECT 'foobar' || col_2 FROM test;");
 
-  // assertQueryArrow("SELECT 'foo' || 'bar' || col_2 FROM test;");
-  assertQueryArrow("SELECT 'foo' || col_2 || 'bar' FROM test;");
-  assertQueryArrow("SELECT col_2 || 'foo' || 'bar' FROM test;");
+  // assertQuery("SELECT 'foo' || 'bar' || col_2 FROM test;");
+  assertQuery("SELECT 'foo' || col_2 || 'bar' FROM test;");
+  assertQuery("SELECT col_2 || 'foo' || 'bar' FROM test;");
 
-  assertQueryArrow("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
-  assertQueryArrow("SELECT col_2 FROM test WHERE UPPER(col_2 || 'yo') <> col_2;",
-                   "stringop_concat_filter_null.json");
+  assertQuery("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
+  assertQuery("SELECT col_2 FROM test WHERE UPPER(col_2 || 'yo') <> col_2;",
+              "stringop_concat_filter_null.json");
 
   // nextgen also supports concatenating two variable columns
-  assertQueryArrow("SELECT col_2 || col_2 FROM test;");
-  assertQueryArrow("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
+  assertQuery("SELECT col_2 || col_2 FROM test;");
+  assertQuery("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 // stringop: char_length
 
 TEST_F(CiderStringTestNextGen, CharLengthTest) {
-  assertQueryArrow("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
-  assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
-                   "stringop_charlen_project_2.json");
+  assertQuery("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
+  assertQuery("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
+              "stringop_charlen_project_2.json");
 
-  assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
-                   "stringop_charlen_filter.json");
+  assertQuery("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
+              "stringop_charlen_filter.json");
 
-  assertQueryArrow(
+  assertQuery(
       "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
       "WHERE LENGTH(col_2 || 'boo') = 13;",
       "stringop_charlen_nested.json");
 }
 
 TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
-  assertQueryArrow("SELECT LENGTH(col_2) FROM test;",
-                   "stringop_charlen_project_1_null.json");
-  assertQueryArrow("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
-                   "stringop_charlen_project_2_null.json");
+  assertQuery("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1_null.json");
+  assertQuery("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
+              "stringop_charlen_project_2_null.json");
 
-  assertQueryArrow("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
-                   "stringop_charlen_filter_null.json");
+  assertQuery("SELECT col_2 FROM test WHERE LENGTH(col_2) <> 0;",
+              "stringop_charlen_filter_null.json");
 
-  assertQueryArrow(
+  assertQuery(
       "SELECT LENGTH(SUBSTRING(col_2, 1, 5)) FROM test "
       "WHERE LENGTH(col_2 || 'boo') = 13;",
       "stringop_charlen_nested_null.json");
@@ -460,7 +467,7 @@ TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
 
 // stringop: trim
 
-class CiderTrimOpTestNextGen : public CiderTestBase {
+class CiderTrimOpTestNextGen : public CiderNextgenTestBase {
  public:
   CiderTrimOpTestNextGen() {
     table_name_ = "test";
@@ -485,7 +492,7 @@ class CiderTrimOpTestNextGen : public CiderTestBase {
     auto [vc_data, vc_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
 
-    std::tie(schema_, array_) =
+    std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder()
             .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
             .addUTF8Column("col_2", vc_data, vc_offsets)
@@ -497,61 +504,57 @@ class CiderTrimOpTestNextGen : public CiderTestBase {
 TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
   // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
   // basic trim (defaults to trim spaces)
-  assertQueryArrow("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
+  assertQuery("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
   // trim other characters
-  assertQueryArrow("SELECT TRIM('xxx3456   ', ' x') FROM test",
-                   "stringop_trim_literal_2.json");
-  assertQueryArrow("SELECT LTRIM('xxx3456xxx', 'x') FROM test",
-                   "stringop_ltrim_literal.json");
-  assertQueryArrow("SELECT RTRIM('xxx3456xxx', 'x') FROM test",
-                   "stringop_rtrim_literal.json");
+  assertQuery("SELECT TRIM('xxx3456   ', ' x') FROM test",
+              "stringop_trim_literal_2.json");
+  assertQuery("SELECT LTRIM('xxx3456xxx', 'x') FROM test", "stringop_ltrim_literal.json");
+  assertQuery("SELECT RTRIM('xxx3456xxx', 'x') FROM test", "stringop_rtrim_literal.json");
 }
 
 TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
-  assertQueryArrow("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
-  assertQueryArrow("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
-                   "stringop_trim_2.json");
+  assertQuery("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
+  assertQuery("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
+              "stringop_trim_2.json");
 
-  assertQueryArrow("SELECT LTRIM(col_2), LTRIM(col_3) FROM test",
-                   "stringop_ltrim_1.json");
-  assertQueryArrow("SELECT LTRIM(col_2, ' x'), LTRIM(col_3, ' x') FROM test",
-                   "stringop_ltrim_2.json");
+  assertQuery("SELECT LTRIM(col_2), LTRIM(col_3) FROM test", "stringop_ltrim_1.json");
+  assertQuery("SELECT LTRIM(col_2, ' x'), LTRIM(col_3, ' x') FROM test",
+              "stringop_ltrim_2.json");
 
-  assertQueryArrow("SELECT RTRIM(col_2), RTRIM(col_3) FROM test",
-                   "stringop_rtrim_1.json");
-  assertQueryArrow("SELECT RTRIM(col_2, ' x'), RTRIM(col_3, ' x') FROM test",
-                   "stringop_rtrim_2.json");
+  assertQuery("SELECT RTRIM(col_2), RTRIM(col_3) FROM test", "stringop_rtrim_1.json");
+  assertQuery("SELECT RTRIM(col_2, ' x'), RTRIM(col_3, ' x') FROM test",
+              "stringop_rtrim_2.json");
 }
 
 TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
-  assertQueryArrow("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
-                   "stringop_trim_nested_1.json");
-  assertQueryArrow(
+  assertQuery("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
+              "stringop_trim_nested_1.json");
+  assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR TRIM(col_3) = 'xxx3456'",
       "stringop_trim_nested_2.json");
 
-  assertQueryArrow("SELECT LTRIM(UPPER(col_2), ' X'), UPPER(LTRIM(col_3, 'x')) FROM test",
-                   "stringop_ltrim_nested_1.json");
-  assertQueryArrow(
+  assertQuery("SELECT LTRIM(UPPER(col_2), ' X'), UPPER(LTRIM(col_3, 'x')) FROM test",
+              "stringop_ltrim_nested_1.json");
+  assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR LTRIM(col_3) = 'xxx3456'",
       "stringop_ltrim_nested_2.json");
 
-  assertQueryArrow("SELECT RTRIM(UPPER(col_2), ' X'), UPPER(RTRIM(col_3, 'x')) FROM test",
-                   "stringop_rtrim_nested_1.json");
-  assertQueryArrow(
+  assertQuery("SELECT RTRIM(UPPER(col_2), ' X'), UPPER(RTRIM(col_3, 'x')) FROM test",
+              "stringop_rtrim_nested_1.json");
+  assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR RTRIM(col_3) = 'xxx3456'",
       "stringop_rtrim_nested_2.json");
 
-  assertQueryArrow("SELECT col_3 FROM test WHERE TRIM(TRIM(col_3, ' '), 'x') = '3456'",
-                   "stringop_trim_nested_3.json");
+  assertQuery("SELECT col_3 FROM test WHERE TRIM(TRIM(col_3, ' '), 'x') = '3456'",
+              "stringop_trim_nested_3.json");
 }
 
 // stringop: split
 
-class CiderSplitPartTestNextGen : public CiderTestBase {
+class CiderSplitPartTestNextGen : public CiderNextgenTestBase {
  public:
   CiderSplitPartTestNextGen() {
     table_name_ = "test";
@@ -565,7 +568,7 @@ class CiderSplitPartTestNextGen : public CiderTestBase {
     auto [data, offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
 
-    std::tie(schema_, array_) =
+    std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder()
             .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
             .addUTF8Column("col_2", data, offsets)
@@ -578,32 +581,32 @@ TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
   GTEST_SKIP_("stringop (string-split) is not supported yet in nextgen");
   // note that duckdb array indexing is one-based, so [2] references the second element
-  assertQueryArrow(
+  assertQuery(
       "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
       "stringop_split_index_indexing.json");
-  assertQueryArrow(
+  assertQuery(
       "SELECT STRING_SPLIT(col_2, ',')[-1], STRING_SPLIT(col_3, ',')[-1] FROM test;",
       "stringop_split_index_indexing_reversed.json");
 
   // filter
-  assertQueryArrow("SELECT col_2 FROM test WHERE STRING_SPLIT(col_2, ',')[1] = 'foo';",
-                   "stringop_split_index_filter.json");
-  assertQueryArrow("SELECT col_3 FROM test WHERE STRING_SPLIT(col_3, ',')[1] = 'foo';",
-                   "stringop_split_index_filter_null.json");
+  assertQuery("SELECT col_2 FROM test WHERE STRING_SPLIT(col_2, ',')[1] = 'foo';",
+              "stringop_split_index_filter.json");
+  assertQuery("SELECT col_3 FROM test WHERE STRING_SPLIT(col_3, ',')[1] = 'foo';",
+              "stringop_split_index_filter_null.json");
 
   // out-of-range
   // duckdb returns null ("null") but cider returns empty string ("")
-  // assertQueryArrow(
+  // assertQuery(
   //     "SELECT STRING_SPLIT(col_2, ',')[5], STRING_SPLIT(col_3, ',')[5] FROM test",
   //     "stringop_split_index_oob.json");
 
   // multi-char
-  assertQueryArrow(
+  assertQuery(
       "SELECT STRING_SPLIT(col_2, 'oo')[1], STRING_SPLIT(col_3, 'oo')[1] FROM test;",
       "stringop_split_index_multi.json");
 
   // not found
-  assertQueryArrow(
+  assertQuery(
       "SELECT STRING_SPLIT(col_2, 'z')[1], STRING_SPLIT(col_3, 'z')[1] FROM test;",
       "stringop_split_index_not_found.json");
 }
@@ -619,12 +622,14 @@ TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
         "foobar,boo", "foobar,boo", "foo,bar,boo", "foo,bar,boo", ",", ","};
     auto [data, offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
-    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", data, offsets)
             .addUTF8Column("col_3", data, offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_split_index_limit_1.json", expected_batch);
+            .build();
+    assertQuery("stringop_split_index_limit_1.json", expect_array, expect_schema);
   }
   {
     // split(input, delimiter, 2)[2]
@@ -632,12 +637,14 @@ TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
         std::vector<std::string>{"boo", "boo", "bar,boo", "bar,boo", "", ""};
     auto [data, offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
-    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", data, offsets)
             .addUTF8Column("col_3", data, offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_split_index_limit_2.json", expected_batch);
+            .build();
+    assertQuery("stringop_split_index_limit_2.json", expect_array, expect_schema);
   }
 }
 
@@ -653,18 +660,20 @@ TEST_F(CiderSplitPartTestNextGen, SplitPartTest) {
     auto string_vec = std::vector<std::string>{"foo", "foo", "foo,", "foo,", ",", ","};
     auto [data, offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
-    auto expected_batch = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", data, offsets)
             .addUTF8Column("col_3", data, offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_split_part.json", expected_batch);
+            .build();
+    assertQuery("stringop_split_part.json", expect_array, expect_schema);
   }
 }
 
 // stringop: regular expressions
 
-class CiderRegexpTestNextGen : public CiderTestBase {
+class CiderRegexpTestNextGen : public CiderNextgenTestBase {
  public:
   CiderRegexpTestNextGen() {
     table_name_ = "test";
@@ -689,7 +698,7 @@ class CiderRegexpTestNextGen : public CiderTestBase {
     auto [vc_data, vc_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
 
-    std::tie(schema_, array_) =
+    std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder()
             .addColumn("col_1", CREATE_SUBSTRAIT_TYPE(I32), int_vec)
             .addUTF8Column("col_2", vc_data, vc_offsets)
@@ -702,7 +711,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
   // TODO: (YBRua) Enable this after nextgen supports StringOp
   GTEST_SKIP_("stringop (regexp-replace) is not supported yet in nextgen");
   // replace first
-  assertQueryArrow(
+  assertQuery(
       "SELECT "
       "REGEXP_REPLACE(col_2, '[wert]', 'yo'), "
       "REGEXP_REPLACE(col_3, '[wert]', 'yo') "
@@ -711,7 +720,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
   // replace all
   // in duckdb, regexp_replace only supports replacing the FIRST or ALL occurrences
   // the behaviour is controlled by an optional 'g' argument
-  assertQueryArrow(
+  assertQuery(
       "SELECT "
       "REGEXP_REPLACE(col_2, '[wert]', 'yo', 'g'), "
       "REGEXP_REPLACE(col_3, '[wert]', 'yo', 'g') "
@@ -738,12 +747,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
                                              ""};
     const auto [replaced_data, replaced_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", replaced_data, replaced_offsets)
             .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_replace_second.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_replace_second.json", expect_array, expect_schema);
   }
   {
     // replace with starting position
@@ -762,12 +773,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
                                              ""};
     const auto [replaced_data, replaced_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", replaced_data, replaced_offsets)
             .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_replace_position.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_replace_position.json", expect_array, expect_schema);
   }
   {
     // replace with capturing groups
@@ -788,12 +801,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
                                              ""};
     const auto [replaced_data, replaced_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", replaced_data, replaced_offsets)
             .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_replace_capture.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_replace_capture.json", expect_array, expect_schema);
   }
 }
 
@@ -823,12 +838,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
                                              ""};
     const auto [replaced_data, replaced_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", replaced_data, replaced_offsets)
             .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_replace_neg_occ.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_replace_neg_occ.json", expect_array, expect_schema);
   }
   {
     // negative position: start search from the last 5 characters
@@ -847,12 +864,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
                                              ""};
     const auto [replaced_data, replaced_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(replaced);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", replaced_data, replaced_offsets)
             .addUTF8Column("col_3", replaced_data, replaced_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_replace_neg_pos.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_replace_neg_pos.json", expect_array, expect_schema);
   }
 }
 
@@ -868,12 +887,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
         "", "", "", "", "", "", "112", "112", "123", "123", "", ""};
     const auto [substr_data, susbtr_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", substr_data, susbtr_offsets)
             .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_substr_first.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_substr_first.json", expect_array, expect_schema);
   }
   {
     // extract last match
@@ -882,12 +903,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
         "", "", "", "", "", "", "123", "123", "123", "123", "", ""};
     const auto [substr_data, susbtr_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", substr_data, susbtr_offsets)
             .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_substr_last.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_substr_last.json", expect_array, expect_schema);
   }
   {
     // extract first match starting from pos 5
@@ -896,12 +919,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
         "", "", "ow", "ow", "tt", "tt", "ma", "ma", "we", "we", "", ""};
     const auto [substr_data, susbtr_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", substr_data, susbtr_offsets)
             .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_substr_pos.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_substr_pos.json", expect_array, expect_schema);
   }
 }
 
@@ -927,12 +952,14 @@ TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
                                            ""};
     const auto [substr_data, susbtr_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", substr_data, susbtr_offsets)
             .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_extract_group.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_extract_group.json", expect_array, expect_schema);
   }
   {
     // extract entire first match
@@ -951,25 +978,27 @@ TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
                                            ""};
     const auto [substr_data, susbtr_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(substr);
-    auto replace_expected = ArrowBuilderUtils::createCiderBatchFromArrowBuilder(
+    struct ArrowArray* expect_array{nullptr};
+    struct ArrowSchema* expect_schema{nullptr};
+    std::tie(expect_schema, expect_array) =
         ArrowArrayBuilder()
             .addUTF8Column("col_2", substr_data, susbtr_offsets)
             .addUTF8Column("col_3", substr_data, susbtr_offsets, is_null)
-            .build());
-    assertQueryArrow("stringop_regexp_extract_full.json", replace_expected);
+            .build();
+    assertQuery("stringop_regexp_extract_full.json", expect_array, expect_schema);
   }
 }
 
 // string to date
 
-class CiderStringToDateTestNextGen : public CiderTestBase {
+class CiderStringToDateTestNextGen : public CiderNextgenTestBase {
  public:
   CiderStringToDateTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_int INTEGER, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         100,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
@@ -981,26 +1010,25 @@ class CiderStringToDateTestNextGen : public CiderTestBase {
 TEST_F(CiderStringToDateTestNextGen, NestedTryCastStringOpTest) {
   // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
   GTEST_SKIP_("casting strings to other types (date) is not supported yet in nextgen");
-  assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
-  assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
-  assertQueryArrow("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
-  assertQueryArrow(
-      "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > 2000");
-  assertQueryArrow(
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) < date '1990-01-11'");
+  assertQuery("SELECT * FROM test where CAST(col_str AS DATE) IS NOT NULL");
+  assertQuery("SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > 2000");
+  assertQuery(
       "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > col_int");
 }
 
 TEST_F(CiderStringToDateTestNextGen, DateStrTest) {
   // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
   GTEST_SKIP_("casting strings to other types (date) is not supported yet in nextgen");
-  assertQueryArrow(
+  assertQuery(
       "select col_str from test where col_str between date '1970-01-01' and date "
       "'2077-12-31'",
       "cast_str_to_date_implictly.json");
-  assertQueryArrow("SELECT CAST(col_str AS DATE) FROM test");
-  assertQueryArrow("SELECT extract(year from CAST(col_str AS DATE)) FROM test");
-  assertQueryArrow("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
-                   "functions/date/year_cast_string_to_date.json");
+  assertQuery("SELECT CAST(col_str AS DATE) FROM test");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test");
+  assertQuery("SELECT extract(year from CAST(col_str AS DATE)) FROM test",
+              "functions/date/year_cast_string_to_date.json");
 }
 
 // encoded string's bin_oper support is still in progress in heavydb.

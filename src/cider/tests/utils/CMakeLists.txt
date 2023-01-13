@@ -29,6 +29,7 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderNextgenBenchmarkBase.cpp
     CiderNextgenTestBase.cpp
     CiderArrowChecker.cpp
+    CiderArrowStringifier.cpp
     CiderBatchChecker.cpp
     CiderBenchmarkRunner.cpp
     CiderRunner.cpp

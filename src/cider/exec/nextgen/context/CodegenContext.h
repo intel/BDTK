@@ -24,6 +24,7 @@
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
@@ -83,6 +84,7 @@ using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
 struct CodegenOptions {
   bool needs_error_check = false;
+  jitlib::CompilationOptions co = jitlib::CompilationOptions{};
 };
 
 class CodegenContext {
