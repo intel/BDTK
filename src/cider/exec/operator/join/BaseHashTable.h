@@ -79,7 +79,7 @@ class BaseHashTable {
   // merge other hashtables
   virtual void merge_other_hashtables(
       const std::vector<
-          std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
+          std::shared_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
           otherTables) = 0;
 };
 }  // namespace cider_hashtable

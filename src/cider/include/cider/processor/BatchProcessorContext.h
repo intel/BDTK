@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#pragma once
 
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #define CIDER_BATCH_PROCESSOR_CONTEXT_H
@@ -25,17 +26,9 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <vector>
 #include "cider/CiderAllocator.h"
-
+#include "exec/operator/join/CiderJoinHashTable.h"
 namespace cider::exec::processor {
-
-class JoinHashTable {
- public:
-  /// merge other hashTable into this one
-  virtual std::unique_ptr<JoinHashTable> merge(
-      std::vector<std::unique_ptr<JoinHashTable>> otherTables) = 0;
-};
 
 struct HashBuildResult {
   explicit HashBuildResult(std::shared_ptr<JoinHashTable> _table)

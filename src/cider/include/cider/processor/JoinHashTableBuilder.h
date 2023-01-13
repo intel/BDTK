@@ -23,7 +23,7 @@
 #define CIDER_JOIN_HASH_TABLE_BUILDER_H
 
 #include <memory>
-#include "include/cider/batch/CiderBatch.h"
+#include "exec/nextgen/context/Batch.h"
 #include "substrait/algebra.pb.h"
 
 namespace cider::exec::processor {
@@ -43,7 +43,8 @@ class JoinHashTableBuildContext {
 
 class JoinHashTableBuilder {
  public:
-  virtual void appendBatch(std::shared_ptr<CiderBatch> batch) = 0;
+  virtual void appendBatch(
+      std::shared_ptr<cider::exec::nextgen::context::Batch> batch) = 0;
 
   virtual std::unique_ptr<JoinHashTable> build() = 0;
 };

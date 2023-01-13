@@ -34,7 +34,7 @@ class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
                               const std::shared_ptr<JoinHashTableBuildContext>& context)
       : joinRel_(joinRel), context_(context) {}
 
-  void appendBatch(std::shared_ptr<CiderBatch> batch) override;
+  void appendBatch(std::shared_ptr<cider::exec::nextgen::context::Batch> batch) override;
 
   std::unique_ptr<JoinHashTable> build() override;
 
