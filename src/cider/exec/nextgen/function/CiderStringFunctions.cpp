@@ -441,12 +441,6 @@ extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
                                              int split_part) {
   // If split_part is negative then it is taken as the number
   // of split parts from the end of the string
-  // printf("str:%s,str_len:%d,del_ptr:%s, del_len:%d\n",
-  //        str_ptr,
-  //        str_len,
-  //        delimiter_ptr,
-  //        delimiter_len);
-  // printf("reverse:%d, limit:%d, split_part:%d\n", reverse, limit, split_part);
   split_part = split_part == 0 ? 1UL : std::abs(split_part);
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   if (delimiter_len == 0) {
@@ -521,7 +515,6 @@ extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
     } else {
       len = delimiter_pos - substr_start;
     }
-    printf("start:%d, len:%d\n", substr_start, len);
 
     string_t s = ptr->addString(str_ptr + substr_start, len);
     return pack_string_t(s);
@@ -541,7 +534,6 @@ std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
   int matched_index = 0;
   while (string_pos < input_len) {
     re2::StringPiece submatch;
-    printf("string pos: %d\n", string_pos);
     re.Match(re2::StringPiece(input_ptr, input_len),
              string_pos,
              input_len,
@@ -558,10 +550,6 @@ std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
       if (matched_index++ == occurrence) {
         return matched_pos.back();
       }
-      printf("str: %s, len: %d, start: %d\n",
-             submatch.data(),
-             submatch.size(),
-             matched_start_pos);
       string_pos = matched_start_pos + submatch.size();  // ??
     }
   }
@@ -581,17 +569,6 @@ extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
                                                       const int replace_len,
                                                       int start_pos,
                                                       int occurrence) {
-  printf(
-      "str_ptr:%s,str_len:%d,regex_pattern_ptr:%s,regex_pattern_len:%d,replace_ptr:%s,"
-      "replace_len:%d, start_pos:%d, occurrence:%d\n",
-      str_ptr,
-      str_len,
-      regex_pattern_ptr,
-      regex_pattern_len,
-      replace_ptr,
-      replace_len,
-      start_pos,
-      occurrence);
   start_pos = start_pos > 0 ? start_pos - 1 : start_pos;
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   const size_t wrapped_start = static_cast<size_t>(
