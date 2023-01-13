@@ -170,6 +170,44 @@ FORCE_INLINE void clearBitAt(uint8_t* bit_vector, size_t index) {
   bit_vector[index >> 3] &= kCiderBitReverseMask[index & 0x7];
 }
 
+FORCE_INLINE bool isBitClearAt(const uint8_t* bit_vector, size_t index) {
+  // return bit_vector[index >> 3] ^ kCiderBitMask[index & 0x7];
+  return bit_vector[index >> 3] ^ (1 << (index & 0x7));
+}
+
+FORCE_INLINE void setBitAt1(uint8_t* bit_vector, size_t index, bool is_null) {
+  // https://stackoverflow.com/questions/24314281/conditionally-set-or-clear-bits
+  // https://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
+  uint8_t idx = index >> 3;
+  uint8_t mask = 1 << (index & 0x7);
+  bit_vector[idx] = (bit_vector[idx] & ~mask) | (-(uint8_t)is_null & mask);
+}
+/*
+FORCE_INLINE uint8_t setBitAt1(uint8_t* bit_vector,
+                               size_t index,
+                               bool is_null,
+                               uint8_t tmp_8bit_acc) {
+  //  uint8_t tmp_8bit_acc,
+  //  uint64_t total_row_num) {
+
+  // https://stackoverflow.com/questions/24314281/conditionally-set-or-clear-bits
+  //
+https://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
+  uint8_t bit = index & 0x7;
+  uint8_t mask = 1 << bit;
+  tmp_8bit_acc = (tmp_8bit_acc & ~mask) | (-(uint8_t)is_null & mask);
+
+  // tmp_8bit_acc |= (kCiderBitReverseMask[bit] | kCiderBitMask[is_null << bit]);
+  // tmp_8bit_acc |= (~(1 << bit)) | (is_null << bit));
+  // if (bit == 0x7 || index + 1 == total_row_num) {
+  if (bit == 0x7) {
+    uint8_t byte_idx = index >> 3;
+    bit_vector[byte_idx] = tmp_8bit_acc;
+    tmp_8bit_acc = 0;
+  }
+  return tmp_8bit_acc;
+}
+*/
 inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
   size_t i = 0, ans = 0;
   for (; i + 64 <= end; i += 64) {

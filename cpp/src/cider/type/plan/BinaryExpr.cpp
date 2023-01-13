@@ -79,7 +79,8 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     } else if (IS_COMPARISON(optype)) {
       return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
     } else if (IS_LOGIC(optype)) {
-      return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val);
+      bool branchless_logic = context.getCodegenOptions().branchless_logic;
+      return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val, branchless_logic);
     }
   }
   UNREACHABLE();
@@ -164,11 +165,20 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
 JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
                                                   JITValuePointer& null,
                                                   FixSizeJITExprValue& lhs_val,
-                                                  FixSizeJITExprValue& rhs_val) {
+                                                  FixSizeJITExprValue& rhs_val,
+                                                  bool branchless_logic) {
   switch (get_optype()) {
     case kAND: {
       // If one side is not null and false, return not null and FALSE
       // else no special handle needed
+      if (branchless_logic) {
+        auto lhs_null = lhs_val.getNull();
+        auto lhs_data = lhs_val.getValue();
+        auto rhs_null = rhs_val.getNull();
+        auto rhs_data = rhs_val.getValue();
+        null = null || (lhs_null && lhs_data) || (rhs_null && rhs_data);
+        return set_expr_value(null, lhs_data && rhs_data);
+      }
       auto if_builder = func.createIfBuilder();
       auto value = func.createVariable(JITTypeTag::BOOL, "logical_and_val");
       if_builder
@@ -193,6 +203,14 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
     case kOR: {
       // If one side is not null and true, return not null and TRUE
       // else no special handle needed
+      if (branchless_logic) {
+        auto lhs_null = lhs_val.getNull();
+        auto lhs_data = lhs_val.getValue();
+        auto rhs_null = rhs_val.getNull();
+        auto rhs_data = rhs_val.getValue();
+        null = null || (lhs_null && !rhs_data) || (rhs_null && !lhs_data);
+        return set_expr_value(null, lhs_data || rhs_data);
+      }
       auto if_builder = func.createIfBuilder();
       auto value = func.createVariable(JITTypeTag::BOOL, "logical_and_val");
       if_builder

@@ -85,6 +85,10 @@ using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
 struct CodegenOptions {
   bool needs_error_check = false;
+  bool check_bit_vector_clear_opt = false;
+  bool set_null_bit_vector_opt = false;
+  bool branchless_logic = false;
+
   jitlib::CompilationOptions co = jitlib::CompilationOptions{};
 };
 

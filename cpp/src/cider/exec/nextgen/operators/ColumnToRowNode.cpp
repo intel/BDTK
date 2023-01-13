@@ -79,8 +79,12 @@ class ColumnReader {
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.
+      std::string fname = "check_bit_vector_clear";
+      if (context_.getCodegenOptions().check_bit_vector_clear_opt) {
+        fname = "check_bit_vector_clear_opt";
+      }
       auto row_null_data = func.emitRuntimeFunctionCall(
-          "check_bit_vector_clear",
+          fname,
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::BOOL,
               .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
@@ -99,8 +103,12 @@ class ColumnReader {
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.
+      std::string fname = "check_bit_vector_clear";
+      if (context_.getCodegenOptions().check_bit_vector_clear_opt) {
+        fname = "check_bit_vector_clear_opt";
+      }
       auto row_null_data = func.emitRuntimeFunctionCall(
-          "check_bit_vector_clear",
+          fname,
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::BOOL,
               .params_vector = {{fixsize_values.getNull().get(), index_.get()}}});

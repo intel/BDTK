@@ -19,10 +19,13 @@
  * under the License.
  */
 
-#include "exec/processor/DefaultBatchProcessor.h"
 #include <memory>
+
 #include "cider/CiderException.h"
+#include "cider/CiderOptions.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
+#include "exec/processor/DefaultBatchProcessor.h"
 #include "exec/processor/StatefulProcessor.h"
 #include "exec/processor/StatelessProcessor.h"
 
@@ -64,7 +67,16 @@ DefaultBatchProcessor::DefaultBatchProcessor(
   auto translator =
       std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan_->getPlan());
   RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
-  codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
+  nextgen::context::CodegenOptions cgo;
+  cgo.co.dump_ir = true;
+  // cgo.co.enable_vectorize = true;
+  // cgo.co.enable_avx2 = true;
+  // cgo.co.enable_avx512 = true;
+
+  cgo.check_bit_vector_clear_opt =
+      FLAGS_codegen_all_opt | FLAGS_check_bit_vector_clear_opt;
+  cgo.set_null_bit_vector_opt = FLAGS_codegen_all_opt | FLAGS_set_null_bit_vector_opt;
+  codegen_context_ = nextgen::compile(ra_exe_unit, cgo);
   runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(
       codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());

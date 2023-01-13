@@ -18,7 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
+
+#include <fmt/format.h>
+#include <chrono>
 
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
@@ -40,6 +42,7 @@
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Vectorize/LoopVectorize.h>
 
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
@@ -84,6 +87,14 @@ LLVMJITModule::LLVMJITModule(const std::string& name,
                              bool copy_runtime_module,
                              const CompilationOptions& co)
     : context_(std::make_unique<llvm::LLVMContext>()), engine_(nullptr), co_(co) {
+  std::string uniq_name = name;
+  if (co_.dump_ir) {
+    std::time_t t =
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    char ts[std::size("_mm-ddThh:mm:ss")];
+    std::strftime(std::data(ts), std::size(ts), "_%m-%dT%T", std::localtime(&t));
+    uniq_name = name + ts;
+  }
   if (copy_runtime_module) {
     auto expected_res =
         llvm::parseBitcodeFile(getRuntimeBuffer()->getMemBufferRef(), *context_);
@@ -93,9 +104,9 @@ LLVMJITModule::LLVMJITModule(const std::string& name,
       runtime_module_ = std::move(expected_res.get());
     }
     copyRuntimeModule();
-    module_->setModuleIdentifier(name);
+    module_->setModuleIdentifier(uniq_name);
   } else {
-    module_ = std::make_unique<llvm::Module>(name, *context_);
+    module_ = std::make_unique<llvm::Module>(uniq_name, *context_);
   }
   CHECK(module_);
 }

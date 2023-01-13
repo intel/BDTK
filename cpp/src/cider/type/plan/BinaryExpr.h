@@ -158,7 +158,8 @@ class BinOper : public Expr {
   JITExprValue& codegenFixedSizeLogicalFun(JITFunction& func,
                                            JITValuePointer& null,
                                            FixSizeJITExprValue& lhs_val,
-                                           FixSizeJITExprValue& rhs_val);
+                                           FixSizeJITExprValue& rhs_val,
+                                           bool branchless_logic);
   JITExprValue& codegenFixedSizeDistinctFrom(JITFunction& func,
                                              FixSizeJITExprValue& lhs,
                                              FixSizeJITExprValue& rhs);

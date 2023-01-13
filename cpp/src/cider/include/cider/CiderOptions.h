@@ -55,6 +55,11 @@ DECLARE_double(running_query_interrupt_freq);
 DECLARE_uint64(pending_query_interrupt_freq);
 DECLARE_bool(force_direct_hash);
 
+DECLARE_bool(codegen_all_opt);
+DECLARE_bool(check_bit_vector_clear_opt);
+DECLARE_bool(set_null_bit_vector_opt);
+DECLARE_bool(branchless_logic);
+
 // wrapper for Omnisci CompilationOptions
 struct CiderCompilationOption {
   bool hoist_literals;
