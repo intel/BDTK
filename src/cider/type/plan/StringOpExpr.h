@@ -512,14 +512,15 @@ class SplitPartStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  SplitPartStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit SplitPartStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::SPLIT_PART,
                    foldLiteralStrCasts(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  SplitPartStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit SplitPartStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   JITExprValue& codegen(CodegenContext& context) override;
@@ -543,7 +544,8 @@ class SplitPartStringOper : public StringOper {
 
 class RegexpReplaceStringOper : public StringOper {
  public:
-  RegexpReplaceStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit RegexpReplaceStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::REGEXP_REPLACE,
                    foldLiteralStrCasts(operands),
                    getMinArgs(),
@@ -562,7 +564,8 @@ class RegexpReplaceStringOper : public StringOper {
             getExpectedTypeFamilies(),
             getArgNames()) {}
 
-  RegexpReplaceStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit RegexpReplaceStringOper(
+      const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   JITExprValue& codegen(CodegenContext& context) override;
