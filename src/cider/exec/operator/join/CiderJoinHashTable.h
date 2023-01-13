@@ -26,10 +26,10 @@
 #include "exec/operator/join/HashTableFactory.h"
 
 namespace cider::exec::processor {
-  
+
 struct BatchOffset {
- cider::exec::nextgen::context::Batch* batch_ptr;
- int64_t batch_offset;
+  cider::exec::nextgen::context::Batch* batch_ptr;
+  int64_t batch_offset;
 };
 
 using CiderJoinBaseHashTable = cider_hashtable::BaseHashTable<
@@ -38,10 +38,7 @@ using CiderJoinBaseHashTable = cider_hashtable::BaseHashTable<
     cider_hashtable::AnyMurmurHash,
     cider_hashtable::AnyEqual,
     void,
-    std::allocator<std::pair<cider_hashtable::table_key<std::any>,
-                             BatchOffset>>>;
-
-
+    std::allocator<std::pair<cider_hashtable::table_key<std::any>, BatchOffset>>>;
 
 class JoinHashTable {
  public:
@@ -53,15 +50,12 @@ class JoinHashTable {
         cider_hashtable::AnyMurmurHash,
         cider_hashtable::AnyEqual,
         void,
-        std::allocator<std::pair<cider_hashtable::table_key<std::any>,
-                                 BatchOffset>>>
+        std::allocator<std::pair<cider_hashtable::table_key<std::any>, BatchOffset>>>
         hashTableSelector;
     hashTableInstance_ = std::move(hashTableSelector.createForJoin(hashTableType));
   }
   // choose hashtable, right now just one
-  std::shared_ptr<CiderJoinBaseHashTable> getHashTable() {
-    return hashTableInstance_;
-  }
+  std::shared_ptr<CiderJoinBaseHashTable> getHashTable() { return hashTableInstance_; }
 
   void merge_other_hashtables(
       std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables) {
@@ -75,4 +69,4 @@ class JoinHashTable {
  private:
   std::shared_ptr<CiderJoinBaseHashTable> hashTableInstance_;
 };
-}
+}  // namespace cider::exec::processor
