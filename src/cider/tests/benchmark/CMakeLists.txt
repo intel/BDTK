@@ -28,5 +28,5 @@ foreach(cider_benchmark_file ${cider_benchmark_files})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${cider_benchmark_file})
   target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
-                        ${DATA_READER_LIB} benchmark::benchmark)
+                        ${DATA_READER_LIB} benchmark::benchmark dl)
 endforeach()

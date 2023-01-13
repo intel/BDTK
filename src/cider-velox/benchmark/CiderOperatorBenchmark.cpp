@@ -126,7 +126,9 @@ void benchmarkOpCompilation(const std::shared_ptr<const core::PlanNode>& planNod
   compile_option.use_cider_groupby_hash = true;
   compile_option.use_default_col_range = true;
 
-  auto ciderCompileModule_ = CiderCompileModule::Make();
+  std::shared_ptr<CiderAllocator> allocator = std::make_shared<CiderDefaultAllocator>();
+
+  auto ciderCompileModule_ = CiderCompileModule::Make(allocator);
 
   suspender.dismiss();
 

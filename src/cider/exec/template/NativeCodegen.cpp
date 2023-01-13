@@ -409,7 +409,7 @@ ExecutionEngineWrapper CodeGenerator::generateNativeCPUCode(
 
   ExecutionEngineWrapper execution_engine(eb.create(), co);
   CHECK(execution_engine.get());
-  LOG(ASM) << assemblyForCPU(execution_engine, module);
+  LOG(INFO) << assemblyForCPU(execution_engine, module);
 
   execution_engine->finalizeObject();
   return execution_engine;
@@ -679,8 +679,8 @@ std::unique_ptr<llvm::Module> read_llvm_module_from_ir_string(
 
   auto owner = llvm::parseIR(*buf, parse_error, ctx);
   if (!owner) {
-    LOG(IR) << "read_llvm_module_from_ir_string:\n"
-            << udf_ir_string << "\nEnd of LLVM/NVVM IR";
+    LOG(INFO) << "read_llvm_module_from_ir_string:\n"
+              << udf_ir_string << "\nEnd of LLVM/NVVM IR";
     throw_parseIR_error(parse_error);
   }
   return owner;
@@ -1497,15 +1497,6 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
                           const bool has_cardinality_estimation,
                           DataProvider* data_provider,
                           ColumnCacheMap& column_cache) {
-#ifndef NDEBUG
-  static std::uint64_t counter = 0;
-  ++counter;
-  VLOG(1) << "CODEGEN #" << counter << ":";
-  LOG(IR) << "CODEGEN #" << counter << ":";
-  LOG(PTX) << "CODEGEN #" << counter << ":";
-  LOG(ASM) << "CODEGEN #" << counter << ":";
-#endif
-
   // cgenstate_manager uses RAII pattern to manage the live time of
   // CgenState instances.
   Executor::CgenStateManager cgenstate_manager(*this,
@@ -1731,18 +1722,18 @@ Executor::compileWorkUnit(const std::vector<InputTableInfo>& query_infos,
     }
   }
 
-  LOG(IR) << "\n\n" << query_mem_desc->toString() << "\n";
+  LOG(INFO) << "\n\n" << query_mem_desc->toString() << "\n";
 #ifndef NDEBUG
-  LOG(DEBUG1) << "IR for the CPU: \n";
-  LOG(DEBUG1) << serialize_llvm_object(query_func)
-              << serialize_llvm_object(cgen_state_->row_func_)
-              << (cgen_state_->filter_func_
-                      ? serialize_llvm_object(cgen_state_->filter_func_)
-                      : "")
-              << "\nEnd of IR";
+  LOG(INFO) << "IR for the CPU: \n";
+  LOG(INFO) << serialize_llvm_object(query_func)
+            << serialize_llvm_object(cgen_state_->row_func_)
+            << (cgen_state_->filter_func_
+                    ? serialize_llvm_object(cgen_state_->filter_func_)
+                    : "")
+            << "\nEnd of IR";
 #else
-  LOG(IR) << "IR for the CPU: \n";
-  LOG(IR) << serialize_llvm_object(cgen_state_->module_) << "\nEnd of IR";
+  LOG(INFO) << "IR for the CPU: \n";
+  LOG(INFO) << serialize_llvm_object(cgen_state_->module_) << "\nEnd of IR";
 #endif
 
   // Run some basic validation checks on the LLVM IR before code is generated below.

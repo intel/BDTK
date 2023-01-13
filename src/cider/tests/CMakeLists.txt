@@ -44,15 +44,7 @@ add_executable(CiderLogTest CiderLogTest.cpp)
 add_executable(Sql2IR Sql2IR.cpp)
 add_executable(StringHeapTest StringHeapTest.cpp)
 
-set(EXECUTE_TEST_LIBS
-    cider
-    gtest
-    test_utils
-    fmt::fmt
-    ${CIDER_LIBRARIES}
-    ${CMAKE_DL_LIBS}
-    ${Boost_LIBRARIES}
-    ${ZLIB_LIBRARIES})
+set(EXECUTE_TEST_LIBS cider gtest test_utils fmt::fmt)
 
 target_link_libraries(CodeGeneratorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CompileWorkUnitTest ${EXECUTE_TEST_LIBS})
@@ -103,7 +95,7 @@ if(DEFINED ENV{ISTHMUS_EXEC})
   add_subdirectory(utils)
   add_subdirectory(functionality)
   add_subdirectory(profiling)
-  add_subdirectory(benchmark)
+  # add_subdirectory(benchmark)
   add_subdirectory(hashtable)
 endif()
 

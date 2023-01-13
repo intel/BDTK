@@ -289,7 +289,7 @@ std::shared_ptr<HashJoin> HashJoin::getInstance(
     }
   }
   CHECK(join_hash_table);
-  if (VLOGGING(2)) {
+  {
     if (join_hash_table->getJoinHashBufferSize() <= 1000) {
       VLOG(2) << "Built CPU hash table: " << join_hash_table->toString();
     }

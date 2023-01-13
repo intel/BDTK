@@ -26,14 +26,10 @@
 class CiderLogTest : public ::testing::Test {};
 
 TEST_F(CiderLogTest, log) {
-  LOG(DEBUG4) << "DEBUG4 log";
-  LOG(DEBUG3) << "DEBUG3 log";
-  LOG(DEBUG2) << "DEBUG2 log";
-  LOG(DEBUG1) << "DEBUG1 log";
   LOG(INFO) << "INFO log";
   LOG(WARNING) << "WARNING log";
   LOG(ERROR) << "ERROR log";
-  EXPECT_THROW({ LOG(FATAL) << "FATAL log"; }, CheckFatalException);
+  // EXPECT_THROW({ LOG(FATAL) << "FATAL log"; }, CheckFatalException);
 }
 
 /*

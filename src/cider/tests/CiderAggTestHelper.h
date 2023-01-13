@@ -239,8 +239,8 @@ void runTest(const std::string& test_name,
              size_t buffer_entry_num = 16384,
              size_t spilled_entry_num = 0,
              const std::vector<CiderBitUtils::CiderBitVector<>>& nulls = {}) {
-  LOG(DEBUG1) << "----------------------Test case: " + test_name +
-                     " --------------------------------------";
+  LOG(INFO) << "----------------------Test case: " + test_name +
+                   " --------------------------------------";
 
   auto cider_compile_module =
       CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
@@ -272,10 +272,10 @@ void runTest(const std::string& test_name,
 
   CiderRuntimeModule cider_runtime_module(compile_result, compile_option, exe_option);
 
-  LOG(DEBUG1) << "EU:\n" << *ra_exe_unit_ptr;
-  LOG(DEBUG1) << "MemInfo\n" << cider_runtime_module.convertQueryMemDescToString();
-  LOG(DEBUG1) << "HashTable:\n"
-              << cider_runtime_module.convertGroupByAggHashTableToString();
+  LOG(INFO) << "EU:\n" << *ra_exe_unit_ptr;
+  LOG(INFO) << "MemInfo\n" << cider_runtime_module.convertQueryMemDescToString();
+  LOG(INFO) << "HashTable:\n"
+            << cider_runtime_module.convertGroupByAggHashTableToString();
 
   std::unique_ptr<CiderBatch> input_batch =
       table_ptr->generateStructBatch(input_cols_name);
@@ -299,8 +299,8 @@ void runTest(const std::string& test_name,
     cider_runtime_module.processNextBatch(*input_batch);
   }
 
-  LOG(DEBUG1) << "---------------------------Execution "
-                 "Success-----------------------------------";
+  LOG(INFO) << "---------------------------Execution "
+               "Success-----------------------------------";
 
   std::vector<SQLTypes> types(ra_exe_unit_ptr->target_exprs.size());
   for (size_t i = 0; i < types.size(); ++i) {
@@ -384,7 +384,7 @@ void runTest(const std::string& test_name,
     ss << "\n";
   }
 
-  LOG(DEBUG1) << ss.str();
+  LOG(INFO) << ss.str();
   CHECK_EQ(out_batch->getLength(), expect_targets_num);
-  LOG(DEBUG1) << "Result Row Num: " << out_batch->getLength();
+  LOG(INFO) << "Result Row Num: " << out_batch->getLength();
 }

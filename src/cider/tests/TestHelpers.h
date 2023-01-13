@@ -28,7 +28,6 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
 #include <boost/variant.hpp>
 
 namespace TestHelpers {

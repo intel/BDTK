@@ -121,9 +121,7 @@ class IntLiteral : public Literal {
   explicit IntLiteral(int64_t i) : intval_(i) {}
   int64_t get_intval() const { return intval_; }
   static std::shared_ptr<Analyzer::Expr> analyzeValue(const int64_t intval);
-  std::string to_string() const override {
-    return boost::lexical_cast<std::string>(intval_);
-  }
+  std::string to_string() const override { return std::to_string(intval_); }
 
  private:
   int64_t intval_;
@@ -156,9 +154,7 @@ class FloatLiteral : public Literal {
   explicit FloatLiteral(float f) : floatval_(f) {}
   float get_floatval() const { return floatval_; }
 
-  std::string to_string() const override {
-    return boost::lexical_cast<std::string>(floatval_);
-  }
+  std::string to_string() const override { return std::to_string(floatval_); }
 
  private:
   float floatval_;
@@ -173,9 +169,7 @@ class DoubleLiteral : public Literal {
   explicit DoubleLiteral(double d) : doubleval_(d) {}
   double get_doubleval() const { return doubleval_; }
 
-  std::string to_string() const override {
-    return boost::lexical_cast<std::string>(doubleval_);
-  }
+  std::string to_string() const override { return std::to_string(doubleval_); }
 
  private:
   double doubleval_;
@@ -193,7 +187,7 @@ class TimestampLiteral : public Literal {
   std::string to_string() const override {
     // TODO: Should we convert to a datum and use the datum toString converters to pretty
     // print?
-    return boost::lexical_cast<std::string>(timestampval_);
+    return std::to_string(timestampval_);
   }
 
  private:

@@ -22,7 +22,6 @@
 #include "ParserNode.h"
 #include <rapidjson/document.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/core/null_deleter.hpp>
 #include <regex>
 #include <stdexcept>
 #include <string>
@@ -692,7 +691,7 @@ std::string LikelihoodExpr::to_string() const {
   std::string str = " LIKELIHOOD ";
   str += arg_->to_string();
   str += " ";
-  str += boost::lexical_cast<std::string>(is_not_ ? 1.0 - likelihood_ : likelihood_);
+  str += std::to_string(is_not_ ? 1.0 - likelihood_ : likelihood_);
   return str;
 }
 
