@@ -23,6 +23,7 @@
 #define CIDER_CIDEROPTIONS_H
 
 #include <gflags/gflags.h>
+#include <gflags/gflags_declare.h>
 #include <cstddef>
 #include <cstdint>
 
@@ -59,6 +60,7 @@ DECLARE_bool(codegen_all_opt);
 DECLARE_bool(check_bit_vector_clear_opt);
 DECLARE_bool(set_null_bit_vector_opt);
 DECLARE_bool(branchless_logic);
+DECLARE_bool(null_separate);
 
 // wrapper for Omnisci CompilationOptions
 struct CiderCompilationOption {

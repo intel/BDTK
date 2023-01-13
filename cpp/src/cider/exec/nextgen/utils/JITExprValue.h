@@ -21,6 +21,7 @@
 #ifndef NEXTGEN_UTILS_JITEXPRVALUE_H
 #define NEXTGEN_UTILS_JITEXPRVALUE_H
 
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace cider::exec::nextgen::utils {
@@ -49,6 +50,9 @@ class JITExprValue {
   JITExprValue& append(T&&... values) {
     ptrs_.reserve(sizeof...(values));
     (ptrs_.emplace_back(jitlib::JITValuePointer(values)), ...);
+    // if (FLAGS_null_separate) {
+    //   ptrs_[0] = jitlib::JITValuePointer(nullptr);
+    // }
     return *this;
   }
 

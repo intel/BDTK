@@ -19,6 +19,7 @@
  * under the License.
  */
 #include "type/plan/ConstantExpr.h"
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
 
 namespace Analyzer {
@@ -30,6 +31,9 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
   }
 
   auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
+  if (FLAGS_null_separate) {
+    null = func.createLiteral(JITTypeTag::BOOL, false);
+  }
 
   const auto& ti = get_type_info();
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();

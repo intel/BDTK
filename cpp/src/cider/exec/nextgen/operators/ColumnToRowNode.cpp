@@ -21,6 +21,7 @@
 
 #include "exec/nextgen/operators/ColumnToRowNode.h"
 
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/utils/TypeUtils.h"
@@ -74,7 +75,7 @@ class ColumnReader {
     auto value_pointer = varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8);
     auto row_data = value_pointer + cur_offset;  // still char*
 
-    if (expr_->get_type_info().get_notnull()) {
+    if (FLAGS_null_separate || expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), len, row_data);
     } else {
       // null buffer decoder
@@ -98,7 +99,7 @@ class ColumnReader {
 
     auto& func = batch->getParentJITFunction();
     auto row_data = getFixSizeRowData(func, fixsize_values);
-    if (expr_->get_type_info().get_notnull()) {
+    if (FLAGS_null_separate || expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), row_data);
     } else {
       // null buffer decoder

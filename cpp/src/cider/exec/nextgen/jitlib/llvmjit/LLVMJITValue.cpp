@@ -31,6 +31,7 @@
 namespace cider::jitlib {
 JITValue& LLVMJITValue::assign(JITValue& value) {
   if (!is_variable_) {
+    // return *this;
     LOG(FATAL) << "JITValue " << getValueName()
                << "is not a variable in LLVMJITValue::assign.";
   }

@@ -21,6 +21,7 @@
 
 #include "exec/nextgen/operators/RowToColumnNode.h"
 
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/utils/JITExprValue.h"
@@ -175,7 +176,7 @@ class ColumnWriter {
     // so it doesn't matter whether null_buffer is nullptr
     // or constant false.
     auto null_buffer = JITValuePointer(nullptr);
-    if (!expr_->get_type_info().get_notnull()) {
+    if (!FLAGS_null_separate && !expr_->get_type_info().get_notnull()) {
       // auto tmp_8bit_acc =
       //     context_.getJITFunction()->createVariable(JITTypeTag::INT8, "tmp_8bit_acc",
       //     0);

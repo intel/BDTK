@@ -57,3 +57,4 @@ DEFINE_bool(codegen_all_opt, false, "codegen all optimization");
 DEFINE_bool(check_bit_vector_clear_opt, false, "use optimized bit clear checker");
 DEFINE_bool(set_null_bit_vector_opt, false, "use optimized set null bit");
 DEFINE_bool(branchless_logic, false, "use branchless logic operation");
+DEFINE_bool(null_separate, false, "separate null operation");

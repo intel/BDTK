@@ -154,7 +154,8 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
   size_t nextgenCompute(const std::string& expression,
                         bool check_bit_vector_clear_opt = false,
                         bool set_null_bit_vector_opt = false,
-                        bool branchless_logic = false) {
+                        bool branchless_logic = false,
+                        bool null_separate = false) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
@@ -165,6 +166,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     FLAGS_check_bit_vector_clear_opt = check_bit_vector_clear_opt;
     FLAGS_set_null_bit_vector_opt = set_null_bit_vector_opt;
     FLAGS_branchless_logic = branchless_logic;
+    FLAGS_null_separate = null_separate;
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context);
@@ -194,6 +196,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     FLAGS_check_bit_vector_clear_opt = false;
     FLAGS_set_null_bit_vector_opt = false;
     FLAGS_branchless_logic = false;
+    FLAGS_null_separate = false;
 
     return rows_size;
   }
@@ -219,69 +222,72 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
 std::unique_ptr<CiderSimpleArithmeticBenchmark> benchmark;
 
 // for profile
+auto profile_expr = "i8 * i8";
 // auto profile_expr = "d AND e";
-// BENCHMARK(velox) {
-//   benchmark->veloxCompute(profile_expr);
-// }
-// BENCHMARK_RELATIVE(nextgen) {
-//   benchmark->nextgenCompute(profile_expr);
-// }
-// BENCHMARK_RELATIVE(nextgen_opt) {
-//   benchmark->nextgenCompute(profile_expr, true);
-// }
+BENCHMARK(velox) {
+  benchmark->veloxCompute(profile_expr);
+}
+BENCHMARK_RELATIVE(nextgen) {
+  benchmark->nextgenCompute(profile_expr);
+}
+BENCHMARK_RELATIVE(nextgen_opt) {
+  // benchmark->nextgenCompute(profile_expr, true);
+  benchmark->nextgenCompute(profile_expr, false, false, false, true);
+}
 
-#define BENCHMARK_GROUP(name, expr)                                        \
-  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }   \
-  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }   \
-  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); } \
-  BENCHMARK_RELATIVE(name##NextgenBitClearOpt) {                           \
-    benchmark->nextgenCompute(expr, true);                                 \
-  }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenSetNullOpt) {                            \
-    benchmark->nextgenCompute(expr, false, true);                          \
-  }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenBranchlessLogicOpt) {                    \
-    benchmark->nextgenCompute(expr, false, false, true);                   \
-  }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                \
-    benchmark->nextgenCompute(expr, true, true, true);                     \
-  }                                                                        \
-  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }            \
+#define BENCHMARK_GROUP(name, expr)                                                    \
+  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }               \
+  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }               \
+  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); }             \
+  BENCHMARK_RELATIVE(name##NextgenBitClear) { benchmark->nextgenCompute(expr, true); } \
+  BENCHMARK_RELATIVE(name##NextgenSetNull) {                                           \
+    benchmark->nextgenCompute(expr, false, true);                                      \
+  }                                                                                    \
+  BENCHMARK_RELATIVE(name##NextgenBranchlessLogic) {                                   \
+    benchmark->nextgenCompute(expr, false, false, true);                               \
+  }                                                                                    \
+  BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                                      \
+    benchmark->nextgenCompute(expr, false, false, true);                               \
+  }                                                                                    \
+  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                            \
+    benchmark->nextgenCompute(expr, true, true, true, true);                           \
+  }                                                                                    \
+  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }                        \
   BENCHMARK_DRAW_LINE()
 
-BENCHMARK_GROUP(mulI8, "multiply(i8, i8)");
-BENCHMARK_GROUP(mulI8Nested, "i8*i8*i8");
-BENCHMARK_GROUP(mulI8NestedDeep, "i8*i8*i8*i8");
-BENCHMARK_GROUP(mulI16, "multiply(i16, i16)");
-BENCHMARK_GROUP(mulI32, "multiply(i32, i32)");
-BENCHMARK_GROUP(mulI64, "multiply(i64, i64)");
+// BENCHMARK_GROUP(mulI8, "multiply(i8, i8)");
+// BENCHMARK_GROUP(mulI8Nested, "i8*i8*i8");
+// BENCHMARK_GROUP(mulI8NestedDeep, "i8*i8*i8*i8");
+// BENCHMARK_GROUP(mulI16, "multiply(i16, i16)");
+// BENCHMARK_GROUP(mulI32, "multiply(i32, i32)");
+// BENCHMARK_GROUP(mulI64, "multiply(i64, i64)");
 
-BENCHMARK_GROUP(mulDouble, "multiply(a, b)");
-BENCHMARK_GROUP(mulDoubleSameColumn, "multiply(a, a)");
-BENCHMARK_GROUP(mulDoubleConstant, "multiply(a, constant)");
-BENCHMARK_GROUP(mulDoubleNested, "multiply(multiply(a, b), b)");
-BENCHMARK_GROUP(mulDoubleNestedDeep,
-                "multiply(multiply(multiply(a, b), a), "
-                "multiply(a, multiply(a, b)))");
+// BENCHMARK_GROUP(mulDouble, "multiply(a, b)");
+// BENCHMARK_GROUP(mulDoubleSameColumn, "multiply(a, a)");
+// BENCHMARK_GROUP(mulDoubleConstant, "multiply(a, constant)");
+// BENCHMARK_GROUP(mulDoubleNested, "multiply(multiply(a, b), b)");
+// BENCHMARK_GROUP(mulDoubleNestedDeep,
+//                 "multiply(multiply(multiply(a, b), a), "
+//                 "multiply(a, multiply(a, b)))");
 
-BENCHMARK(PlusCheckedVeloxI64) {
-  benchmark->veloxCompute("checkedPlus(i64, i64)");
-}
-BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
+// BENCHMARK(PlusCheckedVeloxI64) {
+//   benchmark->veloxCompute("checkedPlus(i64, i64)");
+// }
+// BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
 
-BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+// BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
 
-// comparison
-BENCHMARK_GROUP(eq, "eq(a, b)");
-BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
-BENCHMARK_GROUP(eqBool, "eq(d, e)");
-BENCHMARK_GROUP(neq, "neq(a, b)");
-BENCHMARK_GROUP(gt, "gt(a, b)");
-BENCHMARK_GROUP(lt, "lt(a, b)");
-BENCHMARK_GROUP(and, "d AND e");
-BENCHMARK_GROUP(or, "d OR e");
-BENCHMARK_GROUP(conjunctsNested,
-                "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
+// // comparison
+// BENCHMARK_GROUP(eq, "eq(a, b)");
+// BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
+// BENCHMARK_GROUP(eqBool, "eq(d, e)");
+// BENCHMARK_GROUP(neq, "neq(a, b)");
+// BENCHMARK_GROUP(gt, "gt(a, b)");
+// BENCHMARK_GROUP(lt, "lt(a, b)");
+// BENCHMARK_GROUP(and, "d AND e");
+// BENCHMARK_GROUP(or, "d OR e");
+// BENCHMARK_GROUP(conjunctsNested,
+//                 "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
 }  // namespace
 
 int main(int argc, char* argv[]) {
