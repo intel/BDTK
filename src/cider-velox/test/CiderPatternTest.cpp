@@ -95,6 +95,68 @@ TEST_F(CiderPatternTest, FilterPattern) {
   EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
 }
 
+TEST_F(CiderPatternTest, ProjectPattern) {
+  auto data =
+      makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; }),
+                     makeFlatVector<int64_t>(10, [](auto row) { return row + 10; })});
+  createDuckDbTable({data});
+  auto veloxPlan =
+      PlanBuilder().values({data}).project({"c0", "c1"}).filter("c0 > 5").planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT c0, c1 FROM tmp WHERE c0 > 5";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .project({"c0", "c1"})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
+TEST_F(CiderPatternTest, ProjectExprPattern) {
+  auto data =
+      makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; }),
+                     makeFlatVector<int64_t>(10, [](auto row) { return row + 10; })});
+  createDuckDbTable({data});
+  auto veloxPlan = PlanBuilder()
+                       .values({data})
+                       .project({"c0 + 8 ", "c1 + c0"})
+                       .filter("p1 > 15")
+                       .planNode();
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto duckdbSql = "SELECT c0 + 8, c1 + c0 FROM tmp WHERE c1 + c0 > 15";
+
+  assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
+
+  const ::substrait::Plan substraitPlan = ::substrait::Plan();
+  auto expectedPlan =
+      PlanBuilder()
+          .values({data})
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
+            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+                CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
+          })
+          .planNode();
+
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
+}
+
 TEST_F(CiderPatternTest, partialTopN) {
   auto data = makeRowVector({makeFlatVector<int64_t>(20, [](auto row) { return row; })});
   createDuckDbTable({data});
