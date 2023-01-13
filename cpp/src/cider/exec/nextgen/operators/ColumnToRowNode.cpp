@@ -35,7 +35,7 @@ class ColumnReader {
   ColumnReader(context::CodegenContext& ctx, ExprPtr& expr, JITValuePointer& index)
       : context_(ctx), expr_(expr), index_(index) {}
 
-  void read() {
+  void read(bool for_null) {
     switch (expr_->get_type_info().get_type()) {
       case kBOOLEAN:
       case kTINYINT:
@@ -47,12 +47,12 @@ class ColumnReader {
       case kDATE:
       case kTIME:
       case kTIMESTAMP:
-        readFixSizedTypeCol();
+        readFixSizedTypeCol(for_null);
         break;
       case kVARCHAR:
       case kCHAR:
       case kTEXT:
-        readVariableSizeTypeCol();
+        readVariableSizeTypeCol(for_null);
         break;
       default:
         LOG(FATAL) << "Unsupported data type in ColumnReader: "
@@ -61,11 +61,31 @@ class ColumnReader {
   }
 
  private:
-  void readVariableSizeTypeCol() {
+  void readVariableSizeTypeCol(bool for_null) {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeJITExprValue varsize_values(buffers);
 
     auto& func = batch->getParentJITFunction();
+
+    if (for_null) {
+      if (expr_->get_type_info().get_notnull()) {
+        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
+      } else {
+        // std::string fname = "check_bit_vector_clear";
+        // if (context_.getCodegenOptions().check_bit_vector_clear_opt) {
+        //   fname = "check_bit_vector_clear_opt";
+        // }
+        // auto row_null_data = func.emitRuntimeFunctionCall(
+        //     fname,
+        //     JITFunctionEmitDescriptor{
+        //         .ret_type = JITTypeTag::BOOL,
+        //         .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
+        auto row_null_data = varsize_values.getNull()[index_];
+        expr_->set_expr_null(row_null_data);
+      }
+      return;
+    }
+
     // offset buffer
     auto offset_pointer =
         varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
@@ -75,7 +95,7 @@ class ColumnReader {
     auto value_pointer = varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8);
     auto row_data = value_pointer + cur_offset;  // still char*
 
-    if (FLAGS_null_separate || expr_->get_type_info().get_notnull()) {
+    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), len, row_data);
     } else {
       // null buffer decoder
@@ -93,13 +113,36 @@ class ColumnReader {
     }
   }
 
-  void readFixSizedTypeCol() {
+  void readFixSizedTypeCol(bool for_null) {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::FixSizeJITExprValue fixsize_values(buffers);
 
     auto& func = batch->getParentJITFunction();
+
+    if (for_null) {
+      if (expr_->get_type_info().get_notnull()) {
+        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
+      } else {
+        // null buffer decoder
+        // TBD: Null representation, bit-array or bool-array.
+        // std::string fname = "check_bit_vector_clear";
+        // if (context_.getCodegenOptions().check_bit_vector_clear_opt) {
+        //   fname = "check_bit_vector_clear_opt";
+        // }
+        // auto row_null_data = func.emitRuntimeFunctionCall(
+        //     fname,
+        //     JITFunctionEmitDescriptor{
+        //         .ret_type = JITTypeTag::BOOL,
+        //         .params_vector = {{fixsize_values.getNull().get(), index_.get()}}});
+
+        auto row_null_data = fixsize_values.getNull()[index_];
+        expr_->set_expr_value(row_null_data);
+      }
+      return;
+    }
+
     auto row_data = getFixSizeRowData(func, fixsize_values);
-    if (FLAGS_null_separate || expr_->get_type_info().get_notnull()) {
+    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), row_data);
     } else {
       // null buffer decoder
@@ -150,7 +193,11 @@ void ColumnToRowTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
+void ColumnToRowTranslator::consumeNull(context::CodegenContext& context) {
+  codegen(context, true);
+}
+
+void ColumnToRowTranslator::codegen(context::CodegenContext& context, bool for_null) {
   auto func = context.getJITFunction();
   auto&& [type, exprs] = node_->getOutputExprs();
   ExprPtrVector& inputs = exprs;
@@ -165,18 +212,26 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context) {
     return context::codegen_utils::getArrowArrayLength(input_array);
   });
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
+  auto idx_upper = func->createVariable(JITTypeTag::INT64, "idx_upper", len);
+  if (for_null) {
+    // pack 8 bit
+    idx_upper = len / 8 + 1;
+  }
 
   func->createLoopBuilder()
-      ->condition([&index, &len]() { return index < len; })
+      ->condition([&index, &idx_upper]() { return index < idx_upper; })
       ->loop([&]() {
         for (auto& input : inputs) {
-          ColumnReader(context, input, index).read();
+          ColumnReader(context, input, index).read(for_null);
         }
-        successor_->consume(context);
+        for_null ? successor_->consumeNull(context) : successor_->consume(context);
       })
       ->update([&index]() { index = index + 1l; })
       ->build();
 
+  if (for_null) {
+    return;
+  }
   // Execute defer build functions.
   auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
   for (auto& defer_func : c2r_node->getDeferFunctions()) {

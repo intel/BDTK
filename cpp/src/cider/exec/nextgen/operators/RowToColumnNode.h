@@ -48,9 +48,11 @@ class RowToColumnTranslator : public Translator {
   using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
+  void consumeNull(context::CodegenContext& context) override;
 
  private:
-  void codegen(context::CodegenContext& context);
+  void codegen(context::CodegenContext& context, bool for_null = false);
+  Analyzer::JITValuePointer output_arrow_array_;
 };
 
 }  // namespace cider::exec::nextgen::operators

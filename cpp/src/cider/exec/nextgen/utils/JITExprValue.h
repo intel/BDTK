@@ -50,9 +50,6 @@ class JITExprValue {
   JITExprValue& append(T&&... values) {
     ptrs_.reserve(sizeof...(values));
     (ptrs_.emplace_back(jitlib::JITValuePointer(values)), ...);
-    // if (FLAGS_null_separate) {
-    //   ptrs_[0] = jitlib::JITValuePointer(nullptr);
-    // }
     return *this;
   }
 

@@ -69,10 +69,9 @@ DefaultBatchProcessor::DefaultBatchProcessor(
   RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
   nextgen::context::CodegenOptions cgo;
   cgo.co.dump_ir = true;
-  // cgo.co.enable_vectorize = true;
-  // cgo.co.enable_avx2 = true;
-  // cgo.co.enable_avx512 = true;
-
+  cgo.co.enable_vectorize = true;
+  cgo.co.enable_avx2 = true;
+  cgo.co.enable_avx512 = true;
   cgo.check_bit_vector_clear_opt =
       FLAGS_codegen_all_opt | FLAGS_check_bit_vector_clear_opt;
   cgo.set_null_bit_vector_opt = FLAGS_codegen_all_opt | FLAGS_set_null_bit_vector_opt;

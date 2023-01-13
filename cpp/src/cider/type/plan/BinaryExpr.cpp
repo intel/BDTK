@@ -20,6 +20,7 @@
  */
 #include "type/plan/BinaryExpr.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/template/Execute.h"  // for is_unnest
 
 namespace Analyzer {
@@ -69,8 +70,8 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
       return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
     }
-    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
-    null = lhs_val.getNull() || rhs_val.getNull();
+    // JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+    auto null = lhs_val.getNull() || rhs_val.getNull();
 
     const auto optype = get_optype();
     if (IS_ARITHMETIC(optype)) {
@@ -82,6 +83,84 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
       bool branchless_logic = context.getCodegenOptions().branchless_logic;
       return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val, branchless_logic);
     }
+  }
+  UNREACHABLE();
+  return expr_var_;
+}
+
+JITExprValue& BinOper::codegenNull(CodegenContext& context) {
+  // JITFunction& func = *context.getJITFunction();
+  // FIXME: how to use cache for not first call
+  // if (auto& expr_var = get_expr_value()) {
+  //   return expr_var;
+  // }
+
+  auto lhs = const_cast<Analyzer::Expr*>(get_left_operand());
+  auto rhs = const_cast<Analyzer::Expr*>(get_right_operand());
+
+  if (is_unnest(lhs) || is_unnest(rhs)) {
+    CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
+  }
+
+  const auto& lhs_ti = lhs->get_type_info();
+  const auto& rhs_ti = rhs->get_type_info();
+  if (lhs_ti.is_string()) {
+    CHECK(rhs_ti.is_string());
+  } else {
+    CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
+  }
+  if (lhs_ti.is_decimal() || lhs_ti.is_timeinterval()) {
+    CIDER_THROW(CiderCompileException,
+                "Decimal and TimeInterval are not supported in arithmetic codegen now.");
+  }
+  if (lhs_ti.is_string()) {
+    // string binops, should only be comparisons
+    // const auto optype = get_optype();
+    // if (IS_COMPARISON(optype)) {
+    //   VarSizeJITExprValue lhs_val(lhs->codegen(context));
+    //   VarSizeJITExprValue rhs_val(rhs->codegen(context));
+    //   JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+    //   null = lhs_val.getNull() || rhs_val.getNull();
+    //   return codegenVarcharCmpFun(func, null, lhs_val, rhs_val);
+    // } else {
+    //   CIDER_THROW(CiderUnsupportedException, "string BinOp only supports comparison");
+    // }
+  } else {
+    // const auto optype = get_optype();
+    // if (IS_LOGIC(optype)) {
+    //   FixSizeJITExprValue lhs_val(lhs->codegen(context));
+    //   FixSizeJITExprValue rhs_val(rhs->codegen(context));
+
+    //   JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+    //   null = lhs_val.getNull() || rhs_val.getNull();
+
+    //   bool branchless_logic = context.getCodegenOptions().branchless_logic;
+    //   return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val,
+    //   branchless_logic);
+    // }
+
+    // primitive type binops
+    JITExprValueAdaptor lhs_val(lhs->codegenNull(context));
+    JITExprValueAdaptor rhs_val(rhs->codegenNull(context));
+
+    // if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
+    //   return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
+    // }
+
+    // FIXME: propagate null, don't support kleene logic operation
+    return set_expr_null(lhs_val.getNull() || rhs_val.getNull());
+
+    // if (IS_ARITHMETIC(optype)) {
+    //   bool needs_error_check = context.getCodegenOptions().needs_error_check;
+    //   return codegenFixedSizeColArithFun(
+    //       null, lhs_val.getValue(), rhs_val.getValue(), needs_error_check);
+    // } else if (IS_COMPARISON(optype)) {
+    //   return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
+    // } else if (IS_LOGIC(optype)) {
+    //   bool branchless_logic = context.getCodegenOptions().branchless_logic;
+    //   return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val,
+    //   branchless_logic);
+    // }
   }
   UNREACHABLE();
   return expr_var_;

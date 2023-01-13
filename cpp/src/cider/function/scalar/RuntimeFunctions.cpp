@@ -1450,6 +1450,10 @@ extern "C" ALWAYS_INLINE bool check_bit_vector_clear_opt(uint8_t* bit_vector,
                                                          uint64_t index) {
   return CiderBitUtils::isBitClearAt(bit_vector, index);
 }
+// extern "C" ALWAYS_INLINE uint8_t check_8bit_vector_clear(uint8_t* bit_vector,
+//                                                          uint64_t index) {
+//   return CiderBitUtils::isBitClearAt(bit_vector, index);
+// }
 
 extern "C" ALWAYS_INLINE void set_bit_vector(uint8_t* bit_vector, uint64_t index) {
   CiderBitUtils::setBitAt(bit_vector, index);

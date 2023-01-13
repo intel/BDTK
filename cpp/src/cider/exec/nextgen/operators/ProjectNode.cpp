@@ -30,12 +30,24 @@ void ProjectTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
+void ProjectTranslator::consumeNull(context::CodegenContext& context) {
+  codegenNull(context);
+}
+
 void ProjectTranslator::codegen(context::CodegenContext& context) {
   auto&& [output_type, exprs] = node_->getOutputExprs();
   for (auto& expr : exprs) {
     expr->codegen(context);
   }
   successor_->consume(context);
+}
+
+void ProjectTranslator::codegenNull(context::CodegenContext& context) {
+  auto&& [output_type, exprs] = node_->getOutputExprs();
+  for (auto& expr : exprs) {
+    expr->codegenNull(context);
+  }
+  successor_->consumeNull(context);
 }
 
 }  // namespace cider::exec::nextgen::operators

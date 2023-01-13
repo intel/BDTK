@@ -19,7 +19,10 @@
  * under the License.
  */
 #include "exec/nextgen/transformer/Transformer.h"
+#include <iterator>
 
+#include "cider/CiderOptions.h"
+#include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
 
 namespace cider::exec::nextgen::transformer {

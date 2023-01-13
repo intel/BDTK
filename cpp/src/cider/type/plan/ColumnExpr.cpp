@@ -26,5 +26,8 @@ using namespace cider::jitlib;
 JITExprValue& ColumnVar::codegen(CodegenContext& context) {
   return get_expr_value();
 }
+JITExprValue& ColumnVar::codegenNull(CodegenContext& context) {
+  return get_expr_value();
+}
 
 }  // namespace Analyzer

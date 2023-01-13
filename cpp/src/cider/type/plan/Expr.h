@@ -29,8 +29,10 @@
 #include <string>
 #include <vector>
 
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
 #include "type/data/sqltypes.h"
@@ -162,6 +164,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
  public:
   // change this to pure virtual method after all subclasses support codegen.
   virtual JITExprValue& codegen(CodegenContext& context);
+  virtual JITExprValue& codegenNull(CodegenContext& context);
 
   // for {JITValuePointer, ...}
   template <JITExprValueType type = JITExprValueType::ROW, typename... T>
@@ -171,6 +174,13 @@ class Expr : public std::enable_shared_from_this<Expr> {
   }
 
   JITExprValue& get_expr_value() { return expr_var_; }
+
+  // should be called after set_expr_value
+  JITExprValue& set_expr_null(JITValuePointer null) {
+    CHECK_GT(expr_var_.size(), 0);
+    JITExprValueAdaptor(expr_var_).setNull(null);
+    return expr_var_;
+  }
 
   // TODO (bigPYJ1151): to pure virtual.
   virtual ExprPtrRefVector get_children_reference() {
