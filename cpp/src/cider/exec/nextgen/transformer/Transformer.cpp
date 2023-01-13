@@ -49,7 +49,7 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
   // whole pipeline. Should be designed more properly.
   auto c2r_node =
       createOpNode<ColumnToRowNode>(pipeline.front()->getOutputExprs().second);
-  pipeline.insert(pipeline.begin() + 1, c2r_node);
+  pipeline.insert(++pipeline.begin(), c2r_node);
 
   auto r2c_node =
       createOpNode<RowToColumnNode>(pipeline.back()->getOutputExprs().second,

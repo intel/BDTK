@@ -33,7 +33,7 @@ class Translator;
 class OpNode;
 
 using OpNodePtr = std::shared_ptr<OpNode>;
-using OpPipeline = std::vector<OpNodePtr>;
+using OpPipeline = std::list<OpNodePtr>;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 using ExprPtrVector = std::vector<ExprPtr>;
 using TranslatorPtr = std::shared_ptr<Translator>;
