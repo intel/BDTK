@@ -481,6 +481,114 @@ class TrimStringOper : public StringOper {
     return op_kind;
   }
 };
+
+class SplitPartStringOper : public StringOper {
+ public:
+  /**
+   * split(input, delimiter)[split_part]
+   * split_part(input, delimiter, split_part)
+   */
+  SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
+                      const std::shared_ptr<Analyzer::Expr>& delimiter,
+                      const std::shared_ptr<Analyzer::Expr>& split_part)
+      : StringOper(SqlStringOpKind::SPLIT_PART,
+                   foldLiteralStrCasts({operand, delimiter, split_part}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  /**
+   * split(input, delimiter, limit)[split_part]
+   * returns a list of size at most `limit`, the last element always contains everything
+   * left in the string
+   */
+  SplitPartStringOper(const std::shared_ptr<Analyzer::Expr>& operand,
+                      const std::shared_ptr<Analyzer::Expr>& delimiter,
+                      const std::shared_ptr<Analyzer::Expr>& limit,
+                      const std::shared_ptr<Analyzer::Expr>& split_part)
+      : StringOper(SqlStringOpKind::SPLIT_PART,
+                   foldLiteralStrCasts({operand, delimiter, limit, split_part}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit SplitPartStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::SPLIT_PART,
+                   foldLiteralStrCasts(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit SplitPartStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 3UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{
+        "operand", "delimiter", "limit_or_splitpart", "splitpart"};
+    return names;
+  }
+};
+
+class RegexpReplaceStringOper : public StringOper {
+ public:
+  explicit RegexpReplaceStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::REGEXP_REPLACE,
+                   foldLiteralStrCasts(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  RegexpReplaceStringOper(const std::shared_ptr<Analyzer::Expr>& input,
+                          const std::shared_ptr<Analyzer::Expr>& pattern,
+                          const std::shared_ptr<Analyzer::Expr>& replacement,
+                          const std::shared_ptr<Analyzer::Expr>& position,
+                          const std::shared_ptr<Analyzer::Expr>& occurrence)
+      : StringOper(
+            SqlStringOpKind::REGEXP_REPLACE,
+            foldLiteralStrCasts({input, pattern, replacement, position, occurrence}),
+            getMinArgs(),
+            getExpectedTypeFamilies(),
+            getArgNames()) {}
+
+  explicit RegexpReplaceStringOper(
+      const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 5UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{
+        "input", "pattern", "replacement", "position", "occurrence"};
+    return names;
+  }
+};
+
 }  // namespace Analyzer
 
 #endif
