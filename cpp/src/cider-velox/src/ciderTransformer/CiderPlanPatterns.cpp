@@ -278,15 +278,12 @@ bool FilterStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
 }
 
 StatePtr ProjectStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr) {
-  VeloxPlanNodePtr nodePtr = nodeAddr.nodePtr;
-  if (auto projectNode = std::dynamic_pointer_cast<const ProjectNode>(nodePtr)) {
+  if (auto projectNode = std::dynamic_pointer_cast<const ProjectNode>(nodeAddr.nodePtr)) {
     const auto& inputType = projectNode->sources()[0]->outputType();
     const auto& outputType = projectNode->outputType();
-    if (inputType->equivalent(*(outputType))) {
-      if (inputType->names() == outputType->names() &&
-          inputType->children() == outputType->children()) {
-        return std::make_shared<ProjectStateMachine::NotAccept>();
-      }
+    if ((inputType->equivalent(*(outputType))) &&
+        (inputType->names() == outputType->names())) {
+      return std::make_shared<ProjectStateMachine::NotAccept>();
     }
     return std::make_shared<ProjectStateMachine::Project>();
   } else {
