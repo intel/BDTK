@@ -26,7 +26,6 @@
 
 #pragma once
 #include "substrait/algebra.pb.h"
-#include "substrait/extended_expression.pb.h"
 #include "substrait/type.pb.h"
 
 struct ExpressionReference {
@@ -59,8 +58,6 @@ class SubstraitExprBuilder {
       ::substrait::AggregateFunction_AggregationInvocation agg_invoc =
           ::substrait::AggregateFunction_AggregationInvocation::
               AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_ALL);
-
-  ::substrait::ExtendedExpression* build(std::vector<ExpressionReference> expr_refs);
 
   [[deprecated]] ::substrait::NamedStruct* getSchema();
 
