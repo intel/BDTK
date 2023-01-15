@@ -35,7 +35,7 @@
 
 #include "cider/CiderException.h"
 
-namespace cider {
+namespace cider::hashtable {
 
 using AggregateDataPtr = int8_t*;
 
@@ -282,4 +282,4 @@ class AggregationHashTable final {
     return AggregationMethod::Type::EMPTY;
   }
 };
-}  // namespace cider
+}  // namespace cider::hashtable

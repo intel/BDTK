@@ -24,11 +24,11 @@
 
 #include <common/hashtable/HashTable.h>
 
-namespace cider {
+namespace cider::hashtable {
 namespace ErrorCodes {
 extern const int NO_AVAILABLE_DATA;
 }
-}  // namespace cider
+}  // namespace cider::hashtable
 
 template <typename Key, typename TState = HashTableNoState>
 struct FixedHashTableCell {

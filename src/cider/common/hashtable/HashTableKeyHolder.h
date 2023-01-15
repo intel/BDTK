@@ -89,7 +89,7 @@ inline void ALWAYS_INLINE keyHolderPersistKey(Key&&) {}
 template <typename Key>
 inline void ALWAYS_INLINE keyHolderDiscardKey(Key&&) {}
 
-namespace cider {
+namespace cider::hashtable {
 
 /**
  * ArenaKeyHolder is a key holder for hash tables that serializes a StringRef
@@ -100,21 +100,21 @@ struct ArenaKeyHolder {
   Arena& pool;
 };
 
-}  // namespace cider
+}  // namespace cider::hashtable
 
-inline StringRef& ALWAYS_INLINE keyHolderGetKey(cider::ArenaKeyHolder& holder) {
+inline StringRef& ALWAYS_INLINE keyHolderGetKey(cider::hashtable::ArenaKeyHolder& holder) {
   return holder.key;
 }
 
-inline void ALWAYS_INLINE keyHolderPersistKey(cider::ArenaKeyHolder& holder) {
+inline void ALWAYS_INLINE keyHolderPersistKey(cider::hashtable::ArenaKeyHolder& holder) {
   // Hash table shouldn't ask us to persist a zero key
   assert(holder.key.size > 0);
   holder.key.data = holder.pool.insert(holder.key.data, holder.key.size);
 }
 
-inline void ALWAYS_INLINE keyHolderDiscardKey(cider::ArenaKeyHolder&) {}
+inline void ALWAYS_INLINE keyHolderDiscardKey(cider::hashtable::ArenaKeyHolder&) {}
 
-namespace cider {
+namespace cider::hashtable {
 
 /** SerializedKeyHolder is a key holder for a StringRef key that is already
  * serialized to an Arena. The key must be the last allocation in this Arena,
@@ -125,15 +125,15 @@ struct SerializedKeyHolder {
   Arena& pool;
 };
 
-}  // namespace cider
+}  // namespace cider::hashtable
 
-inline StringRef& ALWAYS_INLINE keyHolderGetKey(cider::SerializedKeyHolder& holder) {
+inline StringRef& ALWAYS_INLINE keyHolderGetKey(cider::hashtable::SerializedKeyHolder& holder) {
   return holder.key;
 }
 
-inline void ALWAYS_INLINE keyHolderPersistKey(cider::SerializedKeyHolder&) {}
+inline void ALWAYS_INLINE keyHolderPersistKey(cider::hashtable::SerializedKeyHolder&) {}
 
-inline void ALWAYS_INLINE keyHolderDiscardKey(cider::SerializedKeyHolder& holder) {
+inline void ALWAYS_INLINE keyHolderDiscardKey(cider::hashtable::SerializedKeyHolder& holder) {
   [[maybe_unused]] void* new_head = holder.pool.rollback(holder.key.size);
   assert(new_head == holder.key.data);
   holder.key.data = nullptr;

@@ -53,7 +53,8 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   reinterpret_cast<int8_t*>(init_value_ptr + 12)[0] = std::numeric_limits<int8_t>::max();
   reinterpret_cast<int8_t*>(init_value_ptr + 13)[0] = std::numeric_limits<int8_t>::min();
 
-  cider::AggregationHashTable aggregator(key_types, init_value_ptr, init_value_len);
+  cider::hashtable::AggregationHashTable aggregator(
+      key_types, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
@@ -168,7 +169,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   reinterpret_cast<int16_t*>(init_value_ptr + 14)[0] =
       std::numeric_limits<int16_t>::min();
 
-  cider::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
+  cider::hashtable::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
@@ -283,7 +284,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   reinterpret_cast<int32_t*>(init_value_ptr + 16)[0] =
       std::numeric_limits<int32_t>::min();
 
-  cider::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
+  cider::hashtable::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
@@ -398,7 +399,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   reinterpret_cast<int64_t*>(init_value_ptr + 20)[0] =
       std::numeric_limits<int64_t>::min();
 
-  cider::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
+  cider::hashtable::AggregationHashTable aggregator(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1

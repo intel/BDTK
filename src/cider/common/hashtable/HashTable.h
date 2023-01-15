@@ -46,12 +46,12 @@
  * zero key.
  */
 
-namespace cider {
+namespace cider::hashtable {
 namespace ErrorCodes {
 extern const int LOGICAL_ERROR;
 extern const int NO_AVAILABLE_DATA;
 }  // namespace ErrorCodes
-}  // namespace cider
+}  // namespace cider::hashtable
 
 /** The state of the hash table that affects the properties of its cells.
  * Used as a template parameter.
