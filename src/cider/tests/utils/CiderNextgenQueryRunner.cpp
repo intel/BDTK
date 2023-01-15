@@ -88,7 +88,10 @@ void CiderNextgenQueryRunner::runQueryOneBatch(
   // Step 3: run on this batch
   processor_->processNextBatch(&input_array, &input_schema);
 
-  // Step 4: fetch data
+  // Step 4: notify no more input to process
+  processor_->finish();
+
+  // Step 5: fetch data
   processor_->getResult(output_array, output_schema);
 
   return;

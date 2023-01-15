@@ -19,9 +19,9 @@
  * under the License.
  */
 
-#include "SubstraitPlan.h"
+#include "exec/plan/substrait/SubstraitPlan.h"
 
-namespace cider::plan {
+namespace cider::exec::plan {
 
 SubstraitPlan::SubstraitPlan(const substrait::Plan& plan) : plan_(plan) {}
 
@@ -34,6 +34,21 @@ bool SubstraitPlan::hasAggregateRel() const {
     }
   }
   return false;
+}
+
+bool SubstraitPlan::isGroupingAggregateRel() const {
+  bool is_groupby = false;
+  for (auto& rel : plan_.relations()) {
+    if (rel.has_root() && rel.root().has_input()) {
+      if (rel.root().input().has_aggregate()) {
+        auto aggregate = rel.root().input().aggregate();
+        for (auto& group : aggregate.groupings()) {
+          is_groupby = is_groupby || group.grouping_expressions_size();
+        }
+      }
+    }
+  }
+  return is_groupby;
 }
 
 bool SubstraitPlan::hasJoinRel() const {
@@ -55,4 +70,4 @@ const std::optional<std::shared_ptr<::substrait::JoinRel>> SubstraitPlan::getJoi
   return std::nullopt;
 }
 
-}  // namespace cider::plan
+}  // namespace cider::exec::plan

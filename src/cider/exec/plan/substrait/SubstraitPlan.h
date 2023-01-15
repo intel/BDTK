@@ -24,7 +24,7 @@
 
 #include "substrait/plan.pb.h"
 
-namespace cider::plan {
+namespace cider::exec::plan {
 
 /// A utility class for substrait plan by wrapped the substrait plan and provide some
 /// useful methods for batch processor.
@@ -33,6 +33,8 @@ class SubstraitPlan {
   explicit SubstraitPlan(const ::substrait::Plan& plan);
 
   bool hasAggregateRel() const;
+
+  bool isGroupingAggregateRel() const;
 
   bool hasJoinRel() const;
 
@@ -46,6 +48,6 @@ class SubstraitPlan {
 
 using SubstraitPlanPtr = std::shared_ptr<const SubstraitPlan>;
 
-}  // namespace cider::plan
+}  // namespace cider::exec::plan
 
 #endif  // CIDER_SUBSTRAIT_PLAN_H

@@ -22,18 +22,21 @@
 #ifndef CIDER_STATEFUL_PROCESSOR_H
 #define CIDER_STATEFUL_PROCESSOR_H
 
-#include "exec/plan/substrait/SubstraitPlan.h"
 #include "exec/processor/DefaultBatchProcessor.h"
 
 namespace cider::exec::processor {
 
 class StatefulProcessor : public DefaultBatchProcessor {
  public:
-  using DefaultBatchProcessor::DefaultBatchProcessor;
+  StatefulProcessor(const plan::SubstraitPlanPtr& plan,
+                    const BatchProcessorContextPtr& context);
 
   void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
 
   Type getProcessorType() const override { return Type::kStateful; };
+
+ private:
+  bool is_groupby_{false};
 };
 
 }  // namespace cider::exec::processor

@@ -82,6 +82,44 @@ TEST(CiderBatchProcessorTest, statelessProcessorProcessNextBatchTest) {
   std::cout << "Query result has " << output_array.length << " rows" << std::endl;
 }
 
+TEST(CiderBatchProcessorTest, statefulProcessorProcessNextBatchTest) {
+  std::string ddl = R"(
+        CREATE TABLE test(col_1 BIGINT, col_2 INT);
+        )";
+  std::string sql = "SELECT sum(col_1), sum(col_2) FROM test";
+
+  auto input_builder = ArrowArrayBuilder();
+  auto&& [input_schema, input_array] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "col_1",
+              CREATE_SUBSTRAIT_TYPE(I64),
+              {1, 2, 3, 1, 2, 4, 1, 2, 3, 4},
+              {true, false, false, false, false, false, false, false, false, false})
+          .addColumn<int32_t>("col_2",
+                              CREATE_SUBSTRAIT_TYPE(I32),
+                              {1, 11, 111, 2, 22, 222, 3, 33, 333, 555})
+          .build();
+
+  auto processor = createBatchProcessorFromSql(sql, ddl);
+  EXPECT_EQ(processor->getProcessorType(), BatchProcessor::Type::kStateful);
+  input_array->release = nullptr;
+  input_schema->release = nullptr;
+  processor->processNextBatch(input_array, input_schema);
+  processor->processNextBatch(input_array, input_schema);
+
+  processor->finish();
+
+  struct ArrowArray output_array;
+  struct ArrowSchema output_schema;
+  processor->getResult(output_array, output_schema);
+
+  EXPECT_EQ(output_array.length, 1);
+  EXPECT_EQ(output_array.n_children, 2);
+  EXPECT_EQ(*(int64_t*)(output_array.children[0]->buffers[1]), 22 * 2);
+  EXPECT_EQ(*(int32_t*)(output_array.children[1]->buffers[1]), 1293 * 2);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
