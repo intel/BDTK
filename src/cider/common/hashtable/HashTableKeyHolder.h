@@ -102,7 +102,8 @@ struct ArenaKeyHolder {
 
 }  // namespace cider::hashtable
 
-inline StringRef& ALWAYS_INLINE keyHolderGetKey(cider::hashtable::ArenaKeyHolder& holder) {
+inline StringRef& ALWAYS_INLINE
+keyHolderGetKey(cider::hashtable::ArenaKeyHolder& holder) {
   return holder.key;
 }
 
@@ -127,13 +128,15 @@ struct SerializedKeyHolder {
 
 }  // namespace cider::hashtable
 
-inline StringRef& ALWAYS_INLINE keyHolderGetKey(cider::hashtable::SerializedKeyHolder& holder) {
+inline StringRef& ALWAYS_INLINE
+keyHolderGetKey(cider::hashtable::SerializedKeyHolder& holder) {
   return holder.key;
 }
 
 inline void ALWAYS_INLINE keyHolderPersistKey(cider::hashtable::SerializedKeyHolder&) {}
 
-inline void ALWAYS_INLINE keyHolderDiscardKey(cider::hashtable::SerializedKeyHolder& holder) {
+inline void ALWAYS_INLINE
+keyHolderDiscardKey(cider::hashtable::SerializedKeyHolder& holder) {
   [[maybe_unused]] void* new_head = holder.pool.rollback(holder.key.size);
   assert(new_head == holder.key.data);
   holder.key.data = nullptr;
