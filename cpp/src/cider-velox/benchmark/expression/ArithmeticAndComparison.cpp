@@ -302,15 +302,11 @@ void mulI8Specialized1(uint8_t* null_input,
     output[i] = input[i] * input[i];
   }
 
-  // null process
-  auto num = n / 8;
+  // null process, ignore extra bit in last uint8
+  auto num = n / 8 + 1;
   for (int i = 0; i < num; ++i) {
     // 8bit packed
     null_output[i] = null_input[i];
-  }
-  int i = num * 8;
-  while (i++ < n) {
-    setBitAt(null_output, i, isBitSet(null_input, i));
   }
 }
 
@@ -390,6 +386,7 @@ BENCHMARK_RELATIVE(specifialize2) {
 BENCHMARK_RELATIVE(specifialize3) {
   benchmark->kernelCompute(mulI8Specialized3);
 }
+BENCHMARK_DRAW_LINE()
 
 #define BENCHMARK_GROUP(name, expr)                                                      \
   BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }                 \
