@@ -70,7 +70,6 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
       return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
     }
-    // JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
     auto null = lhs_val.getNull() || rhs_val.getNull();
 
     const auto optype = get_optype();

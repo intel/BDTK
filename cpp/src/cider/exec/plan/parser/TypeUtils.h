@@ -28,13 +28,13 @@
 
 // Public to make substrait type easier
 #define CREATE_SUBSTRAIT_TYPE_FULL(name, nullable) \
-  TypeUtils::createType(substrait::Type::KindCase::k##name, nullable)
+  TypeUtils::createType(::substrait::Type::KindCase::k##name, nullable)
 
 #define CREATE_SUBSTRAIT_TYPE_FULL_PTR(name, nullable) \
-  TypeUtils::createTypePtr(substrait::Type::KindCase::k##name, nullable)
+  TypeUtils::createTypePtr(::substrait::Type::KindCase::k##name, nullable)
 
 #define CREATE_SUBSTRAIT_TYPE(name) \
-  TypeUtils::createType(substrait::Type::KindCase::k##name)
+  TypeUtils::createType(::substrait::Type::KindCase::k##name)
 
 // Internal use this macro
 #define GENERATE_SUBSTRAIT_TYPE(type_name, type_func, nullalbility) \

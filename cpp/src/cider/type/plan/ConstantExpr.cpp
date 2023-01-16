@@ -86,9 +86,9 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
 
 JITExprValue& Constant::codegenNull(CodegenContext& context) {
   JITFunction& func = *context.getJITFunction();
-  if (auto& expr_var = get_expr_value()) {
-    return expr_var;
-  }
+  // if (auto& expr_var = get_expr_value()) {
+  //   return expr_var;
+  // }
 
   auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
   return set_expr_null(null);

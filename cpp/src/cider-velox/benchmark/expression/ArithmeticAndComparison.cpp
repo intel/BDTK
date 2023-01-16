@@ -75,8 +75,37 @@ std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
   return {inputArrowArray, inputArrowSchema};
 }
 
+template <class T>
+ArrowArray* allocArrowArray(int64_t length) {
+  ArrowArray* array = new ArrowArray();
+
+  array->n_buffers = 2;
+  array->buffers = (const void**)std::malloc(sizeof(void*) * 2);
+  size_t null_size = (length + 7) >> 3;
+  void* null_buf = std::malloc(null_size);
+  std::memset(null_buf, 0xFF, null_size);
+  array->buffers[0] = null_buf;
+  array->buffers[1] = std::malloc(sizeof(T) * length);
+
+  return array;
+}
+
+void releaseArrowArray(ArrowArray* array) {
+  free((void*)array->buffers[0]);
+  free((void*)array->buffers[1]);
+  free((void*)array->buffers);
+  free(array);
+}
+
 class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
+  using ArrowArrayReleaser = void (*)(struct ArrowArray*);
+  using KernelType = void (*)(uint8_t* null_input,
+                              uint8_t* input,
+                              uint8_t* null_output,
+                              uint8_t* output,
+                              size_t n);
+
   explicit CiderSimpleArithmeticBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
     // we register uncheck version for integer and checkedPlus for compare
@@ -134,7 +163,17 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
 
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, vectorSize, std::move(children));
+
+    ArrowSchema* _schema;
+    std::tie(inputArray_, _schema) = veloxVectorToArrow(rowVector_, execCtx_.pool());
+    // hack: make processor don't release inputArray_, otherwise we can't use inputArray_
+    // multi times.
+    inputReleaser_ = inputArray_->release;
+    inputArray_->release = nullptr;
+    _schema->release(_schema);
   }
+
+  ~CiderSimpleArithmeticBenchmark() { inputReleaser_(inputArray_); }
 
   size_t nextgenCompile(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
@@ -171,16 +210,11 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context);
 
-    auto [input_array, _] = veloxVectorToArrow(rowVector_, execCtx_.pool());
-    // hack: make processor don't release input_array, otherwise we can't use input_array
-    // multi times.
-    input_array->release = nullptr;
-
     suspender.dismiss();
 
     size_t rows_size = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
-      processor->processNextBatch(input_array);
+      processor->processNextBatch(inputArray_);
 
       struct ArrowArray output_array;
       struct ArrowSchema output_schema;
@@ -213,17 +247,131 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     return count;
   }
 
+  size_t kernelCompute(KernelType kernel) {
+    folly::BenchmarkSuspender suspender;
+    ArrowArray* i8_array = inputArray_->children[0];
+    uint8_t* null_input = (uint8_t*)i8_array->buffers[0];
+    uint8_t* input = (uint8_t*)i8_array->buffers[1];
+    suspender.dismiss();
+
+    size_t count = 0;
+    for (auto i = 0; i < FLAGS_loop_count; i++) {
+      ArrowArray* output_array = allocArrowArray<uint8_t>(inputArray_->length);
+
+      kernel(null_input,
+             input,
+             (uint8_t*)output_array->buffers[0],
+             (uint8_t*)output_array->buffers[1],
+             inputArray_->length);
+
+      count += inputArray_->length;
+      releaseArrowArray(output_array);
+    }
+    return count;
+  }
+
  private:
   TypePtr inputType_;
   RowVectorPtr rowVector_;
+  ArrowArray* inputArray_;
+  ArrowArrayReleaser inputReleaser_;
   size_t vectorSize_;
 };
 
 std::unique_ptr<CiderSimpleArithmeticBenchmark> benchmark;
 
+bool isBitSet(uint8_t* null, size_t n) {
+  return null[n >> 3] & 1 << (n & 0x7);
+}
+
+void setBitAt(uint8_t* __restrict null_output, size_t index, bool is_null) {
+  uint8_t idx = index >> 3;
+  uint8_t bit = index & 0x7;
+  null_output[idx] = (null_output[idx] & ~(1 << bit)) | (is_null << bit);
+}
+
+// specialized func used to check performance upper limit
+// two loop to mimic null separate in codegen currently.
+// can't process kleene logic which null result depends on data
+void mulI8Specialized1(uint8_t* null_input,
+                       uint8_t* input,
+                       uint8_t* __restrict null_output,
+                       uint8_t* __restrict output,
+                       size_t n) {
+  for (int i = 0; i < n; ++i) {
+    output[i] = input[i] * input[i];
+  }
+
+  // null process
+  auto num = n / 8;
+  for (int i = 0; i < num; ++i) {
+    // 8bit packed
+    null_output[i] = null_input[i];
+  }
+  int i = num * 8;
+  while (i++ < n) {
+    setBitAt(null_output, i, isBitSet(null_input, i));
+  }
+}
+
+// nested loop with null bit vector as bool vector
+void mulI8Specialized2(uint8_t* null_input,
+                       uint8_t* input,
+                       uint8_t* __restrict null_output,
+                       uint8_t* __restrict output,
+                       size_t n) {
+  auto num = n / 8;
+  //#pragma clang loop vectorize(enable)
+  for (int i = 0; i < num; ++i) {
+    for (int j = 0; j < 8; ++j) {
+      auto idx = i * 8 + j;
+      output[idx] = input[idx] * input[idx];
+    }
+    // 8bit packed
+    null_output[i] = null_input[i];
+  }
+
+  // tail
+  int i = num * 8;
+  while (i++ < n) {
+    output[i] = input[i] * input[i];
+    setBitAt(null_output, i, isBitSet(null_input, i));
+  }
+}
+
+// nested loop, outer process null
+void mulI8Specialized3(uint8_t* null_input,
+                       uint8_t* input,
+                       uint8_t* __restrict null_output,
+                       uint8_t* __restrict output,
+                       size_t n) {
+  auto num = n / 8;
+  //#pragma clang loop vectorize(enable)
+  for (int i = 0; i < num; ++i) {
+    bool tmp[8] = {false};
+    for (int j = 0; j < 8; ++j) {
+      auto idx = i * 8 + j;
+      output[idx] = input[idx] * input[idx];
+      tmp[j] = isBitSet(null_input, idx);
+    }
+
+    uint8_t packed = 0;
+    for (int j = 0; j < 8; ++j) {
+      packed |= tmp[j] << j;
+    }
+    null_output[i] = packed;
+  }
+  // tail
+  int i = num * 8;
+  while (i++ < n) {
+    output[i] = input[i] * input[i];
+    setBitAt(null_output, i, isBitSet(null_input, i));
+  }
+}
+
 // for profile
-auto profile_expr = "i8 * i8";
 // auto profile_expr = "d AND e";
+auto profile_expr = "i8 * i8";
 BENCHMARK(velox) {
   benchmark->veloxCompute(profile_expr);
 }
@@ -231,63 +379,71 @@ BENCHMARK_RELATIVE(nextgen) {
   benchmark->nextgenCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen_opt) {
-  // benchmark->nextgenCompute(profile_expr, true);
   benchmark->nextgenCompute(profile_expr, false, false, false, true);
 }
+BENCHMARK_RELATIVE(specifialize1) {
+  benchmark->kernelCompute(mulI8Specialized1);
+}
+BENCHMARK_RELATIVE(specifialize2) {
+  benchmark->kernelCompute(mulI8Specialized2);
+}
+BENCHMARK_RELATIVE(specifialize3) {
+  benchmark->kernelCompute(mulI8Specialized3);
+}
 
-#define BENCHMARK_GROUP(name, expr)                                                    \
-  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }               \
-  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }               \
-  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); }             \
-  BENCHMARK_RELATIVE(name##NextgenBitClear) { benchmark->nextgenCompute(expr, true); } \
-  BENCHMARK_RELATIVE(name##NextgenSetNull) {                                           \
-    benchmark->nextgenCompute(expr, false, true);                                      \
-  }                                                                                    \
-  BENCHMARK_RELATIVE(name##NextgenBranchlessLogic) {                                   \
-    benchmark->nextgenCompute(expr, false, false, true);                               \
-  }                                                                                    \
-  BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                                      \
-    benchmark->nextgenCompute(expr, false, false, true);                               \
-  }                                                                                    \
-  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                            \
-    benchmark->nextgenCompute(expr, true, true, true, true);                           \
-  }                                                                                    \
-  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }                        \
+#define BENCHMARK_GROUP(name, expr)                                                      \
+  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }                 \
+  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }                 \
+  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); }               \
+  BENCHMARK_RELATIVE(name##NextgenIsBitClear) { benchmark->nextgenCompute(expr, true); } \
+  BENCHMARK_RELATIVE(name##NextgenBranchlessSetNull) {                                   \
+    benchmark->nextgenCompute(expr, false, true);                                        \
+  }                                                                                      \
+  BENCHMARK_RELATIVE(name##NextgenBranchlessLogic) {                                     \
+    benchmark->nextgenCompute(expr, false, false, true);                                 \
+  }                                                                                      \
+  BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                                        \
+    benchmark->nextgenCompute(expr, false, false, false, true);                          \
+  }                                                                                      \
+  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                              \
+    benchmark->nextgenCompute(expr, true, true, true, true);                             \
+  }                                                                                      \
+  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }                          \
   BENCHMARK_DRAW_LINE()
 
-// BENCHMARK_GROUP(mulI8, "multiply(i8, i8)");
-// BENCHMARK_GROUP(mulI8Nested, "i8*i8*i8");
-// BENCHMARK_GROUP(mulI8NestedDeep, "i8*i8*i8*i8");
-// BENCHMARK_GROUP(mulI16, "multiply(i16, i16)");
-// BENCHMARK_GROUP(mulI32, "multiply(i32, i32)");
-// BENCHMARK_GROUP(mulI64, "multiply(i64, i64)");
+BENCHMARK_GROUP(mulI8, "multiply(i8, i8)");
+BENCHMARK_GROUP(mulI8Nested, "i8*i8*i8");
+BENCHMARK_GROUP(mulI8NestedDeep, "i8*i8*i8*i8");
+BENCHMARK_GROUP(mulI16, "multiply(i16, i16)");
+BENCHMARK_GROUP(mulI32, "multiply(i32, i32)");
+BENCHMARK_GROUP(mulI64, "multiply(i64, i64)");
 
-// BENCHMARK_GROUP(mulDouble, "multiply(a, b)");
-// BENCHMARK_GROUP(mulDoubleSameColumn, "multiply(a, a)");
-// BENCHMARK_GROUP(mulDoubleConstant, "multiply(a, constant)");
-// BENCHMARK_GROUP(mulDoubleNested, "multiply(multiply(a, b), b)");
-// BENCHMARK_GROUP(mulDoubleNestedDeep,
-//                 "multiply(multiply(multiply(a, b), a), "
-//                 "multiply(a, multiply(a, b)))");
+BENCHMARK_GROUP(mulDouble, "multiply(a, b)");
+BENCHMARK_GROUP(mulDoubleSameColumn, "multiply(a, a)");
+BENCHMARK_GROUP(mulDoubleConstant, "multiply(a, constant)");
+BENCHMARK_GROUP(mulDoubleNested, "multiply(multiply(a, b), b)");
+BENCHMARK_GROUP(mulDoubleNestedDeep,
+                "multiply(multiply(multiply(a, b), a), "
+                "multiply(a, multiply(a, b)))");
 
-// BENCHMARK(PlusCheckedVeloxI64) {
-//   benchmark->veloxCompute("checkedPlus(i64, i64)");
-// }
-// BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
+BENCHMARK(PlusCheckedVeloxI64) {
+  benchmark->veloxCompute("checkedPlus(i64, i64)");
+}
+BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
 
-// BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
 
-// // comparison
-// BENCHMARK_GROUP(eq, "eq(a, b)");
-// BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
-// BENCHMARK_GROUP(eqBool, "eq(d, e)");
-// BENCHMARK_GROUP(neq, "neq(a, b)");
-// BENCHMARK_GROUP(gt, "gt(a, b)");
-// BENCHMARK_GROUP(lt, "lt(a, b)");
-// BENCHMARK_GROUP(and, "d AND e");
-// BENCHMARK_GROUP(or, "d OR e");
-// BENCHMARK_GROUP(conjunctsNested,
-//                 "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
+// comparison
+BENCHMARK_GROUP(eq, "eq(a, b)");
+BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
+BENCHMARK_GROUP(eqBool, "eq(d, e)");
+BENCHMARK_GROUP(neq, "neq(a, b)");
+BENCHMARK_GROUP(gt, "gt(a, b)");
+BENCHMARK_GROUP(lt, "lt(a, b)");
+BENCHMARK_GROUP(and, "d AND e");
+BENCHMARK_GROUP(or, "d OR e");
+BENCHMARK_GROUP(conjunctsNested,
+                "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
 }  // namespace
 
 int main(int argc, char* argv[]) {
