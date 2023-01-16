@@ -83,9 +83,11 @@ ArrowArray* allocArrowArray(int64_t length) {
   array->buffers = (const void**)std::malloc(sizeof(void*) * 2);
   size_t null_size = (length + 7) >> 3;
   void* null_buf = std::malloc(null_size);
+  // void* null_buf = std::aligned_alloc(512, null_size);
   std::memset(null_buf, 0xFF, null_size);
   array->buffers[0] = null_buf;
   array->buffers[1] = std::malloc(sizeof(T) * length);
+  // array->buffers[1] = std::aligned_alloc(512, sizeof(T) * length);
 
   return array;
 }
@@ -97,7 +99,7 @@ void releaseArrowArray(ArrowArray* array) {
   free(array);
 }
 
-class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmarkBase {
+class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   using ArrowArrayReleaser = void (*)(struct ArrowArray*);
   using KernelType = void (*)(uint8_t* null_input,
@@ -106,7 +108,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
                               uint8_t* output,
                               size_t n);
 
-  explicit CiderSimpleArithmeticBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
+  explicit ArithmeticAndComparisonBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
     // we register uncheck version for integer and checkedPlus for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
@@ -173,7 +175,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
     _schema->release(_schema);
   }
 
-  ~CiderSimpleArithmeticBenchmark() { inputReleaser_(inputArray_); }
+  ~ArithmeticAndComparisonBenchmark() { inputReleaser_(inputArray_); }
 
   size_t nextgenCompile(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
@@ -226,12 +228,6 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
       output_schema.release(&output_schema);
     }
 
-    // reset options
-    FLAGS_check_bit_vector_clear_opt = false;
-    FLAGS_set_null_bit_vector_opt = false;
-    FLAGS_branchless_logic = false;
-    FLAGS_null_separate = false;
-
     return rows_size;
   }
 
@@ -278,7 +274,7 @@ class CiderSimpleArithmeticBenchmark : public functions::test::FunctionBenchmark
   size_t vectorSize_;
 };
 
-std::unique_ptr<CiderSimpleArithmeticBenchmark> benchmark;
+std::unique_ptr<ArithmeticAndComparisonBenchmark> benchmark;
 
 bool isBitSet(uint8_t* null, size_t n) {
   return null[n >> 3] & 1 << (n & 0x7);
@@ -386,7 +382,7 @@ BENCHMARK_RELATIVE(specifialize2) {
 BENCHMARK_RELATIVE(specifialize3) {
   benchmark->kernelCompute(mulI8Specialized3);
 }
-BENCHMARK_DRAW_LINE()
+BENCHMARK_DRAW_LINE();
 
 #define BENCHMARK_GROUP(name, expr)                                                      \
   BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }                 \
@@ -428,7 +424,7 @@ BENCHMARK(PlusCheckedVeloxI64) {
 }
 BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
 
-BENCHMARK_GROUP(multiplyAndAddArithmetic, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+BENCHMARK_GROUP(mulAndAdd, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
 
 // comparison
 BENCHMARK_GROUP(eq, "eq(a, b)");
@@ -446,7 +442,7 @@ BENCHMARK_GROUP(conjunctsNested,
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  benchmark = std::make_unique<CiderSimpleArithmeticBenchmark>(FLAGS_batch_size);
+  benchmark = std::make_unique<ArithmeticAndComparisonBenchmark>(FLAGS_batch_size);
   folly::runBenchmarks();
   benchmark.reset();
   return 0;

@@ -75,6 +75,7 @@ DefaultBatchProcessor::DefaultBatchProcessor(
   cgo.check_bit_vector_clear_opt =
       FLAGS_codegen_all_opt | FLAGS_check_bit_vector_clear_opt;
   cgo.set_null_bit_vector_opt = FLAGS_codegen_all_opt | FLAGS_set_null_bit_vector_opt;
+  cgo.branchless_logic = FLAGS_codegen_all_opt | FLAGS_branchless_logic;
   codegen_context_ = nextgen::compile(ra_exe_unit, cgo);
   runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(

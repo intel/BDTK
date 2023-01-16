@@ -1450,10 +1450,6 @@ extern "C" ALWAYS_INLINE bool check_bit_vector_clear_opt(uint8_t* bit_vector,
                                                          uint64_t index) {
   return CiderBitUtils::isBitClearAt(bit_vector, index);
 }
-// extern "C" ALWAYS_INLINE uint8_t check_8bit_vector_clear(uint8_t* bit_vector,
-//                                                          uint64_t index) {
-//   return CiderBitUtils::isBitClearAt(bit_vector, index);
-// }
 
 extern "C" ALWAYS_INLINE void set_bit_vector(uint8_t* bit_vector, uint64_t index) {
   CiderBitUtils::setBitAt(bit_vector, index);
@@ -1473,7 +1469,7 @@ extern "C" ALWAYS_INLINE void set_null_vector_bit(uint8_t* bit_vector,
 extern "C" ALWAYS_INLINE void set_null_vector_bit_opt(uint8_t* bit_vector,
                                                       uint64_t index,
                                                       bool is_null) {
-  CiderBitUtils::setBitAt1(bit_vector, index, is_null);
+  CiderBitUtils::setBitAtUnified(bit_vector, index, is_null);
 }
 
 extern "C" ALWAYS_INLINE void do_memcpy(int8_t* dst, int8_t* src, int32_t len) {

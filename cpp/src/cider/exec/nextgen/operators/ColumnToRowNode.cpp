@@ -71,15 +71,6 @@ class ColumnReader {
       if (expr_->get_type_info().get_notnull()) {
         expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
       } else {
-        // std::string fname = "check_bit_vector_clear";
-        // if (context_.getCodegenOptions().check_bit_vector_clear_opt) {
-        //   fname = "check_bit_vector_clear_opt";
-        // }
-        // auto row_null_data = func.emitRuntimeFunctionCall(
-        //     fname,
-        //     JITFunctionEmitDescriptor{
-        //         .ret_type = JITTypeTag::BOOL,
-        //         .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
         auto row_null_data = varsize_values.getNull()[index_];
         expr_->set_expr_null(row_null_data);
       }
@@ -123,18 +114,6 @@ class ColumnReader {
       if (expr_->get_type_info().get_notnull()) {
         expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
       } else {
-        // null buffer decoder
-        // TBD: Null representation, bit-array or bool-array.
-        // std::string fname = "check_bit_vector_clear";
-        // if (context_.getCodegenOptions().check_bit_vector_clear_opt) {
-        //   fname = "check_bit_vector_clear_opt";
-        // }
-        // auto row_null_data = func.emitRuntimeFunctionCall(
-        //     fname,
-        //     JITFunctionEmitDescriptor{
-        //         .ret_type = JITTypeTag::BOOL,
-        //         .params_vector = {{fixsize_values.getNull().get(), index_.get()}}});
-
         auto row_null_data = fixsize_values.getNull()[index_];
         expr_->set_expr_value(row_null_data);
       }

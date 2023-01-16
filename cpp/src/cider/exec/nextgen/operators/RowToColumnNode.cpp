@@ -150,9 +150,6 @@ class ColumnWriter {
 
   JITValuePointer setFixSizeRawData(utils::FixSizeJITExprValue& fixsize_val) {
     if (expr_->get_type_info().get_type() == kBOOLEAN) {
-      // auto tmp_8bit_acc =
-      //     context_.getJITFunction()->createVariable(JITTypeTag::INT8, "tmp_8bit_acc",
-      //     0);
       auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue(
           [this]() { return allocateBitwiseBuffer(1); });
       // leverage existing set_null_vector but need opposite value as input
@@ -168,13 +165,6 @@ class ColumnWriter {
               .params_vector = {{raw_data_buffer.get(),
                                  index_.get(),
                                  (!fixsize_val.getValue()).get()}}});
-      // tmp_8bit_acc = context_.getJITFunction()->emitRuntimeFunctionCall(
-      //     "set_null_vector_bit",
-      //     JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
-      //                               .params_vector = {{raw_data_buffer.get(),
-      //                                                  index_.get(),
-      //                                                  (!fixsize_val.getValue()).get(),
-      //                                                  tmp_8bit_acc.get()}}});
       return raw_data_buffer;
     } else {
       auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
@@ -194,9 +184,6 @@ class ColumnWriter {
     // or constant false.
     auto null_buffer = JITValuePointer(nullptr);
     if ((!FLAGS_null_separate || for_null) && !expr_->get_type_info().get_notnull()) {
-      // auto tmp_8bit_acc =
-      //     context_.getJITFunction()->createVariable(JITTypeTag::INT8, "tmp_8bit_acc",
-      //     0);
       // TBD: Null representation, bit-array or bool-array.
       null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
           [this]() { return allocateBitwiseBuffer(0); }));
@@ -214,13 +201,6 @@ class ColumnWriter {
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::VOID,
               .params_vector = {{null_buffer.get(), index_.get(), null_val.get()}}});
-      // tmp_8bit_acc = context_.getJITFunction()->emitRuntimeFunctionCall(
-      //     "set_null_vector_bit",
-      //     JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
-      //                               .params_vector = {{null_buffer.get(),
-      //                                                  index_.get(),
-      //                                                  null_val.get(),
-      //                                                  tmp_8bit_acc.get()}}});
     }
     return null_buffer;
   }
