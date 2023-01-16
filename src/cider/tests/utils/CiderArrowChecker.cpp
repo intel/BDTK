@@ -268,7 +268,8 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
     LOG(INFO) << "ArrowSchema format not equal: "
               << "Expected: " << expect_schema->format
               << ". Actual: " << actual_schema->format;
-    // return false;
+    // temp workaround for non-groupby, as duckdb convert agg result to decimal. Will
+    // enable after support cast or decimal return false;
   }
 
   if (!expect_array || !actual_array) {
