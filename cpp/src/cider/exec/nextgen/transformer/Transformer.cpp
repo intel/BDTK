@@ -20,11 +20,24 @@
  */
 #include "exec/nextgen/transformer/Transformer.h"
 
+#include "exec/nextgen/operators/QueryFuncInitializer.h"
 #include "exec/nextgen/operators/OpNode.h"
+#include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
 
 namespace cider::exec::nextgen::transformer {
 using namespace operators;
+
+// [Head, Tail], both sides are closed.
+class PipelineStage {
+ public:
+  PipelineStage(const OpPipeline::iterator& head, const OpPipeline::iterator& tail)
+      : head_(head), tail_(tail) {}
+
+ private:
+  OpPipeline::iterator head_;
+  OpPipeline::iterator tail_;
+};
 
 static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
   CHECK_GT(pipeline.size(), 0);
@@ -45,8 +58,34 @@ static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
 }
 
 TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
-  // TBD: Currently, we only insert a pair of C2R and R2C at start point and end point of
-  // whole pipeline. Should be designed more properly.
+  CHECK(pipeline.size() > 1);
+  CHECK(isa<QueryFuncInitializer>(pipeline.front()));
+
+  std::vector<PipelineStage> stages;
+  stages.reserve(pipeline.size());
+
+  auto traverse_pivot = pipeline.begin();
+
+  while (++traverse_pivot != pipeline.end()) {
+    // Currently, auto-vectorize will be applied to pure project pipeline only.
+    if (!isa<ProjectNode>(*traverse_pivot)) {
+      stages.emplace_back(++pipeline.begin(), --pipeline.end());
+      break;
+    }
+
+    OpNodePtr& curr_op = *traverse_pivot;
+    auto&& [_, exprs] = curr_op->getOutputExprs();
+
+    ExprPtrVector vectorizable_exprs;
+    vectorizable_exprs.reserve(8);
+
+    for (auto& expr : exprs) {
+      if (expr->isAutoVectorizable()) {
+        // pipeline.insert(traverse_pivot, );      
+      }      
+    }
+  }
+
   auto c2r_node =
       createOpNode<ColumnToRowNode>(pipeline.front()->getOutputExprs().second);
   pipeline.insert(++pipeline.begin(), c2r_node);

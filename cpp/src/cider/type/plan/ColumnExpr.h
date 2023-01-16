@@ -43,11 +43,15 @@ namespace Analyzer {
 class ColumnVar : public Expr {
  public:
   ColumnVar(ColumnInfoPtr col_info, int nest_level)
-      : Expr(col_info->type), rte_idx(nest_level), col_info_(std::move(col_info)) {}
+      : Expr(col_info->type), rte_idx(nest_level), col_info_(std::move(col_info)) {
+    initAutoVectorizeFlag();
+  }
   explicit ColumnVar(const SQLTypeInfo& ti)
       : Expr(ti)
       , rte_idx(-1)
-      , col_info_(std::make_shared<ColumnInfo>(-1, 0, 0, "", ti, false)) {}
+      , col_info_(std::make_shared<ColumnInfo>(-1, 0, 0, "", ti, false)) {
+    initAutoVectorizeFlag();
+  }
   ColumnVar(const SQLTypeInfo& ti,
             int table_id,
             int col_id,
@@ -56,7 +60,9 @@ class ColumnVar : public Expr {
       : Expr(ti)
       , rte_idx(nest_level)
       , col_info_(
-            std::make_shared<ColumnInfo>(-1, table_id, col_id, "", ti, is_virtual)) {}
+            std::make_shared<ColumnInfo>(-1, table_id, col_id, "", ti, is_virtual)) {
+    initAutoVectorizeFlag();
+  }
   int get_db_id() const { return col_info_->db_id; }
   int get_table_id() const { return col_info_->table_id; }
   int get_column_id() const { return col_info_->column_id; }
@@ -112,6 +118,9 @@ class ColumnVar : public Expr {
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins
   ColumnInfoPtr col_info_;
+
+ private:
+  void initAutoVectorizeFlag();
 };
 
 class OutputColumnVar : public Expr {

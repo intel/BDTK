@@ -23,6 +23,10 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
+void ColumnVar::initAutoVectorizeFlag() {
+  auto_vectorizable_ = isVectorizableType(type_info.get_type());
+}
+
 JITExprValue& ColumnVar::codegen(CodegenContext& context) {
   return get_expr_value();
 }
