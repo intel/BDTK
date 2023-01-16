@@ -497,7 +497,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   // Row2:
   int8_t* key3_ptr = allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key3_ptr) = key_null;
-  *reinterpret_cast<uint64_t*>(key3_ptr + offset_vec[0]) = key1;
+  *reinterpret_cast<uint64_t*>(key3_ptr + offset_vec[0]) = key3;
   // Use get api and return value address
   int8_t* value3_ptr = agg_ht.get(key3_ptr);
 
