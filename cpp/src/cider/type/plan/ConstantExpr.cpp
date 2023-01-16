@@ -21,6 +21,7 @@
 #include "type/plan/ConstantExpr.h"
 #include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace Analyzer {
 
@@ -32,7 +33,7 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
 
   auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
   if (FLAGS_null_separate) {
-    null = func.createLiteral(JITTypeTag::BOOL, false);
+    null.replace(func.createLiteral(JITTypeTag::BOOL, false));
   }
 
   const auto& ti = get_type_info();

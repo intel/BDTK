@@ -19,6 +19,7 @@
  * under the License.
  */
 #include "type/plan/BinaryExpr.h"
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/template/Execute.h"  // for is_unnest
@@ -70,7 +71,8 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
       return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
     }
-    auto null = lhs_val.getNull() || rhs_val.getNull();
+    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
+    null = lhs_val.getNull() || rhs_val.getNull();
 
     const auto optype = get_optype();
     if (IS_ARITHMETIC(optype)) {
@@ -90,6 +92,8 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
 JITExprValue& BinOper::codegenNull(CodegenContext& context) {
   // JITFunction& func = *context.getJITFunction();
   // FIXME: how to use cache for not first call
+  // cann't use cache in the first call,
+  // cause codegen() generated null operation need to be updated
   // if (auto& expr_var = get_expr_value()) {
   //   return expr_var;
   // }
