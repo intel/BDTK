@@ -34,7 +34,7 @@ class SubstraitPlan {
 
   bool hasAggregateRel() const;
 
-  bool isGroupingAggregateRel() const;
+  bool hasGroupingAggregateRel() const;
 
   bool hasJoinRel() const;
 

@@ -30,7 +30,7 @@ StatefulProcessor::StatefulProcessor(
     const BatchProcessorContextPtr& context,
     const cider::exec::nextgen::context::CodegenOptions& codegen_options)
     : DefaultBatchProcessor(plan, context, codegen_options) {
-  is_groupby_ = plan->isGroupingAggregateRel();
+  has_groupby_ = plan->hasGroupingAggregateRel();
 }
 
 void StatefulProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
@@ -41,7 +41,7 @@ void StatefulProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& 
 
   state_ = BatchProcessorState::kFinished;
 
-  if (!is_groupby_) {
+  if (!has_groupby_) {
     has_result_ = false;
     auto output_batch = runtime_context_->getNonGroupByAggOutputBatch();
     output_batch->move(schema, array);

@@ -36,7 +36,7 @@ bool SubstraitPlan::hasAggregateRel() const {
   return false;
 }
 
-bool SubstraitPlan::isGroupingAggregateRel() const {
+bool SubstraitPlan::hasGroupingAggregateRel() const {
   bool is_groupby = false;
   for (auto& rel : plan_.relations()) {
     if (rel.has_root() && rel.root().has_input()) {

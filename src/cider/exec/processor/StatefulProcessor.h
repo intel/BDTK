@@ -29,14 +29,15 @@ namespace cider::exec::processor {
 class StatefulProcessor : public DefaultBatchProcessor {
  public:
   StatefulProcessor(const plan::SubstraitPlanPtr& plan,
-                    const BatchProcessorContextPtr& context);
+                    const BatchProcessorContextPtr& context,
+                    const cider::exec::nextgen::context::CodegenOptions& codegen_options);
 
   void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
 
   Type getProcessorType() const override { return Type::kStateful; };
 
  private:
-  bool is_groupby_{false};
+  bool has_groupby_{false};
 };
 
 }  // namespace cider::exec::processor
