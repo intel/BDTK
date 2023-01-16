@@ -196,19 +196,6 @@ std::shared_ptr<Analyzer::Expr> AggExpr::deep_copy() const {
       type_info, aggtype, arg ? arg->deep_copy() : nullptr, is_distinct, arg1);
 }
 
-std::shared_ptr<Analyzer::Expr> CaseExpr::deep_copy() const {
-  std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
-      new_list;
-  for (auto p : expr_pair_list) {
-    new_list.emplace_back(p.first->deep_copy(), p.second->deep_copy());
-  }
-  return makeExpr<CaseExpr>(type_info,
-                            contains_agg,
-                            new_list,
-                            else_expr == nullptr ? nullptr : else_expr->deep_copy());
-}
-
-
 std::shared_ptr<Analyzer::Expr> DatediffExpr::deep_copy() const {
   return makeExpr<DatediffExpr>(
       type_info, field_, start_->deep_copy(), end_->deep_copy());
@@ -1333,32 +1320,6 @@ std::shared_ptr<Analyzer::Expr> Constant::add_cast(const SQLTypeInfo& new_type_i
   return shared_from_this();
 }
 
-std::shared_ptr<Analyzer::Expr> CaseExpr::add_cast(const SQLTypeInfo& new_type_info) {
-  SQLTypeInfo ti = new_type_info;
-  if (new_type_info.is_string() && new_type_info.get_compression() == kENCODING_DICT &&
-      new_type_info.get_comp_param() == TRANSIENT_DICT_ID && type_info.is_string() &&
-      type_info.get_compression() == kENCODING_NONE &&
-      type_info.get_comp_param() > TRANSIENT_DICT_ID) {
-    ti.set_comp_param(TRANSIENT_DICT(type_info.get_comp_param()));
-  }
-
-  std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
-      new_expr_pair_list;
-  for (auto& p : expr_pair_list) {
-    new_expr_pair_list.emplace_back(
-        std::make_pair(p.first, p.second->deep_copy()->add_cast(ti)));
-  }
-
-  if (else_expr != nullptr) {
-    else_expr = else_expr->add_cast(ti);
-  }
-  // Replace the current WHEN THEN pair list once we are sure all casts have succeeded
-  expr_pair_list = new_expr_pair_list;
-
-  type_info = ti;
-  return shared_from_this();
-}
-
 std::shared_ptr<Analyzer::Expr> Subquery::add_cast(const SQLTypeInfo& new_type_info) {
   // not supported yet.
   CHECK(false);
@@ -1632,26 +1593,6 @@ void AggExpr::group_predicates(std::list<const Expr*>& scan_predicates,
   }
 }
 
-void CaseExpr::group_predicates(std::list<const Expr*>& scan_predicates,
-                                std::list<const Expr*>& join_predicates,
-                                std::list<const Expr*>& const_predicates) const {
-  std::set<int> rte_idx_set;
-  for (auto p : expr_pair_list) {
-    p.first->collect_rte_idx(rte_idx_set);
-    p.second->collect_rte_idx(rte_idx_set);
-  }
-  if (else_expr != nullptr) {
-    else_expr->collect_rte_idx(rte_idx_set);
-  }
-  if (rte_idx_set.size() > 1) {
-    join_predicates.push_back(this);
-  } else if (rte_idx_set.size() == 1) {
-    scan_predicates.push_back(this);
-  } else {
-    const_predicates.push_back(this);
-  }
-}
-
 void DatediffExpr::group_predicates(std::list<const Expr*>& scan_predicates,
                                     std::list<const Expr*>& join_predicates,
                                     std::list<const Expr*>& const_predicates) const {
@@ -1800,21 +1741,6 @@ std::shared_ptr<Analyzer::Expr> AggExpr::rewrite_agg_to_var(
               "Internal error: cannot find AggExpr from having clause in targetlist.");
 }
 
-std::shared_ptr<Analyzer::Expr> CaseExpr::rewrite_with_targetlist(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
-      epair_list;
-  for (auto p : expr_pair_list) {
-    epair_list.emplace_back(p.first->rewrite_with_targetlist(tlist),
-                            p.second->rewrite_with_targetlist(tlist));
-  }
-  return makeExpr<CaseExpr>(
-      type_info,
-      contains_agg,
-      epair_list,
-      else_expr ? else_expr->rewrite_with_targetlist(tlist) : nullptr);
-}
-
 std::shared_ptr<Analyzer::Expr> DatediffExpr::rewrite_with_targetlist(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
   return makeExpr<DatediffExpr>(type_info,
@@ -1829,21 +1755,6 @@ std::shared_ptr<Analyzer::Expr> DatetruncExpr::rewrite_with_targetlist(
       type_info, contains_agg, field_, from_expr_->rewrite_with_targetlist(tlist));
 }
 
-std::shared_ptr<Analyzer::Expr> CaseExpr::rewrite_with_child_targetlist(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
-      epair_list;
-  for (auto p : expr_pair_list) {
-    epair_list.emplace_back(p.first->rewrite_with_child_targetlist(tlist),
-                            p.second->rewrite_with_child_targetlist(tlist));
-  }
-  return makeExpr<CaseExpr>(
-      type_info,
-      contains_agg,
-      epair_list,
-      else_expr ? else_expr->rewrite_with_child_targetlist(tlist) : nullptr);
-}
-
 std::shared_ptr<Analyzer::Expr> DatediffExpr::rewrite_with_child_targetlist(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
   return makeExpr<DatediffExpr>(type_info,
@@ -1856,20 +1767,6 @@ std::shared_ptr<Analyzer::Expr> DatetruncExpr::rewrite_with_child_targetlist(
     const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
   return makeExpr<DatetruncExpr>(
       type_info, contains_agg, field_, from_expr_->rewrite_with_child_targetlist(tlist));
-}
-
-std::shared_ptr<Analyzer::Expr> CaseExpr::rewrite_agg_to_var(
-    const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
-  std::list<std::pair<std::shared_ptr<Analyzer::Expr>, std::shared_ptr<Analyzer::Expr>>>
-      epair_list;
-  for (auto p : expr_pair_list) {
-    epair_list.emplace_back(p.first->rewrite_agg_to_var(tlist),
-                            p.second->rewrite_agg_to_var(tlist));
-  }
-  return makeExpr<CaseExpr>(type_info,
-                            contains_agg,
-                            epair_list,
-                            else_expr ? else_expr->rewrite_agg_to_var(tlist) : nullptr);
 }
 
 std::shared_ptr<Analyzer::Expr> DatediffExpr::rewrite_agg_to_var(
@@ -2110,29 +2007,6 @@ bool AggExpr::operator==(const Expr& rhs) const {
     return false;
   }
   return *arg == *rhs_ae.get_arg();
-}
-
-bool CaseExpr::operator==(const Expr& rhs) const {
-  if (typeid(rhs) != typeid(CaseExpr)) {
-    return false;
-  }
-  const CaseExpr& rhs_ce = dynamic_cast<const CaseExpr&>(rhs);
-  if (expr_pair_list.size() != rhs_ce.get_expr_pair_list().size()) {
-    return false;
-  }
-  if ((else_expr == nullptr && rhs_ce.get_else_expr() != nullptr) ||
-      (else_expr != nullptr && rhs_ce.get_else_expr() == nullptr)) {
-    return false;
-  }
-  auto it = rhs_ce.get_expr_pair_list().cbegin();
-  for (auto p : expr_pair_list) {
-    if (!(*p.first == *it->first) || !(*p.second == *it->second)) {
-      return false;
-    }
-    ++it;
-  }
-  return else_expr == nullptr ||
-         (else_expr != nullptr && *else_expr == *rhs_ce.get_else_expr());
 }
 
 bool DatediffExpr::operator==(const Expr& rhs) const {
@@ -2441,24 +2315,6 @@ std::string AggExpr::toString() const {
   return str + ") ";
 }
 
-std::string CaseExpr::toString() const {
-  std::string str{"CASE "};
-  for (auto p : expr_pair_list) {
-    str += "(";
-    str += p.first->toString();
-    str += ", ";
-    str += p.second->toString();
-    str += ") ";
-  }
-  if (else_expr) {
-    str += "ELSE ";
-    str += else_expr->toString();
-  }
-  str += " END ";
-  return str;
-}
-
-
 std::string DatediffExpr::toString() const {
   return "DATEDIFF(" + std::to_string(field_) + " START " + start_->toString() + " END " +
          end_->toString() + ") ";
@@ -2625,21 +2481,6 @@ void AggExpr::find_expr(bool (*f)(const Expr*), std::list<const Expr*>& expr_lis
   }
 }
 
-void CaseExpr::find_expr(bool (*f)(const Expr*),
-                         std::list<const Expr*>& expr_list) const {
-  if (f(this)) {
-    add_unique(expr_list);
-    return;
-  }
-  for (auto p : expr_pair_list) {
-    p.first->find_expr(f, expr_list);
-    p.second->find_expr(f, expr_list);
-  }
-  if (else_expr != nullptr) {
-    else_expr->find_expr(f, expr_list);
-  }
-}
-
 void DatediffExpr::find_expr(bool (*f)(const Expr*),
                              std::list<const Expr*>& expr_list) const {
   if (f(this)) {
@@ -2659,16 +2500,6 @@ void DatetruncExpr::find_expr(bool (*f)(const Expr*),
   from_expr_->find_expr(f, expr_list);
 }
 
-void CaseExpr::collect_rte_idx(std::set<int>& rte_idx_set) const {
-  for (auto p : expr_pair_list) {
-    p.first->collect_rte_idx(rte_idx_set);
-    p.second->collect_rte_idx(rte_idx_set);
-  }
-  if (else_expr != nullptr) {
-    else_expr->collect_rte_idx(rte_idx_set);
-  }
-}
-
 void DatediffExpr::collect_rte_idx(std::set<int>& rte_idx_set) const {
   start_->collect_rte_idx(rte_idx_set);
   end_->collect_rte_idx(rte_idx_set);
@@ -2684,19 +2515,6 @@ void ArrayExpr::collect_rte_idx(std::set<int>& rte_idx_set) const {
     expr->collect_rte_idx(rte_idx_set);
   }
 }
-
-void CaseExpr::collect_column_var(
-    std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>& colvar_set,
-    bool include_agg) const {
-  for (auto p : expr_pair_list) {
-    p.first->collect_column_var(colvar_set, include_agg);
-    p.second->collect_column_var(colvar_set, include_agg);
-  }
-  if (else_expr != nullptr) {
-    else_expr->collect_column_var(colvar_set, include_agg);
-  }
-}
-
 
 void DatediffExpr::collect_column_var(
     std::set<const ColumnVar*, bool (*)(const ColumnVar*, const ColumnVar*)>& colvar_set,
@@ -2720,17 +2538,6 @@ void ArrayExpr::collect_column_var(
   }
 }
 
-void CaseExpr::check_group_by(
-    const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
-  for (auto p : expr_pair_list) {
-    p.first->check_group_by(groupby);
-    p.second->check_group_by(groupby);
-  }
-  if (else_expr != nullptr) {
-    else_expr->check_group_by(groupby);
-  }
-}
-
 void DatediffExpr::check_group_by(
     const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
   start_->check_group_by(groupby);
@@ -2740,65 +2547,6 @@ void DatediffExpr::check_group_by(
 void DatetruncExpr::check_group_by(
     const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {
   from_expr_->check_group_by(groupby);
-}
-
-void CaseExpr::get_domain(DomainSet& domain_set) const {
-  for (const auto& p : expr_pair_list) {
-    const auto c = std::dynamic_pointer_cast<const Constant>(p.second);
-    if (c != nullptr) {
-      c->add_unique(domain_set);
-    } else {
-      const auto v = std::dynamic_pointer_cast<const ColumnVar>(p.second);
-      if (v != nullptr) {
-        v->add_unique(domain_set);
-      } else {
-        const auto cast = std::dynamic_pointer_cast<const UOper>(p.second);
-        if (cast != nullptr && cast->get_optype() == kCAST) {
-          const Constant* c = dynamic_cast<const Constant*>(cast->get_operand());
-          if (c != nullptr) {
-            cast->add_unique(domain_set);
-            continue;
-          } else {
-            const auto v = std::dynamic_pointer_cast<const ColumnVar>(p.second);
-            if (v != nullptr) {
-              v->add_unique(domain_set);
-              continue;
-            }
-          }
-        }
-        p.second->get_domain(domain_set);
-        if (domain_set.empty()) {
-          return;
-        }
-      }
-    }
-  }
-  if (else_expr != nullptr) {
-    const auto c = std::dynamic_pointer_cast<const Constant>(else_expr);
-    if (c != nullptr) {
-      c->add_unique(domain_set);
-    } else {
-      const auto v = std::dynamic_pointer_cast<const ColumnVar>(else_expr);
-      if (v != nullptr) {
-        v->add_unique(domain_set);
-      } else {
-        const auto cast = std::dynamic_pointer_cast<const UOper>(else_expr);
-        if (cast != nullptr && cast->get_optype() == kCAST) {
-          const Constant* c = dynamic_cast<const Constant*>(cast->get_operand());
-          if (c != nullptr) {
-            c->add_unique(domain_set);
-          } else {
-            const auto v = std::dynamic_pointer_cast<const ColumnVar>(else_expr);
-            if (v != nullptr) {
-              v->add_unique(domain_set);
-            }
-          }
-        } else {
-          else_expr->get_domain(domain_set);
-        }
-      }
-    }
-  }
 }
 
 double WidthBucketExpr::get_bound_val(const Analyzer::Expr* bound_expr) const {
