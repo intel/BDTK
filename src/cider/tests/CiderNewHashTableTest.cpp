@@ -25,6 +25,7 @@
 #include "common/hashtable/FixedHashMap.h"
 
 using namespace TestHelpers;
+using namespace cider::hashtable;
 
 class CiderNewHashTableTest : public ::testing::Test {};
 

@@ -25,6 +25,7 @@
 #include <common/hashtable/FixedHashTable.h>
 #include <common/hashtable/HashMap.h>
 
+namespace cider::hashtable {
 template <typename Key, typename TMapped, typename TState = HashTableNoState>
 struct FixedHashMapCell {
   using Mapped = TMapped;
@@ -189,3 +190,5 @@ using FixedImplicitZeroHashMapWithCalculatedSize =
                  FixedHashMapImplicitZeroCell<Key, Mapped>,
                  FixedHashTableCalculatedSize<FixedHashMapImplicitZeroCell<Key, Mapped>>,
                  Allocator>;
+
+}  // namespace cider::hashtable

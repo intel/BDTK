@@ -28,7 +28,6 @@ namespace cider::hashtable {
 namespace ErrorCodes {
 extern const int NO_AVAILABLE_DATA;
 }
-}  // namespace cider::hashtable
 
 template <typename Key, typename TState = HashTableNoState>
 struct FixedHashTableCell {
@@ -510,3 +509,5 @@ class FixedHashTable : private boost::noncopyable,
   size_t getCollisions() const { return 0; }
 #endif
 };
+
+}  // namespace cider::hashtable

@@ -26,10 +26,11 @@
 #include "common/interpreters/AggregationHashTable.h"
 
 using namespace TestHelpers;
+using namespace cider::hashtable;
 
 class CiderNewAggHashTableTest : public ::testing::Test {};
 
-static const std::shared_ptr<CiderAllocator> allocator =
+static const std::shared_ptr<CiderAllocator> default_allocator =
     std::make_shared<CiderDefaultAllocator>();
 
 TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
@@ -60,7 +61,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   // value of HT: SUM(int8)-int64 + COUNT(int8)-int32 + MIN(int8)-int8 +
   // MAX(int8)-int8
   uint32_t init_value_len = 14;
-  int8_t* init_value_ptr = allocator->allocate(init_value_len);
+  int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
   int64_t sum_init_val = 0;
   int32_t cnt_init_val = 0;
   int8_t min_init_val = std::numeric_limits<int8_t>::max();
@@ -70,12 +71,11 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   *reinterpret_cast<int8_t*>(init_value_ptr + offset_vec[2]) = min_init_val;
   *reinterpret_cast<int8_t*>(init_value_ptr + offset_vec[3]) = max_init_val;
 
-  cider::hashtable::AggregationHashTable agg_ht(
-      key_types, init_value_ptr, init_value_len);
+  AggregationHashTable agg_ht(key_types, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
-  int8_t* key1_ptr = allocator->allocate(key_len);
+  int8_t* key1_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_ptr) = key_null;
   *reinterpret_cast<uint8_t*>(key1_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -96,7 +96,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
       std::max(reinterpret_cast<int8_t*>(value1_ptr + offset_vec[3])[0], val1);
 
   // Row1:
-  int8_t* key2_ptr = allocator->allocate(key_len);
+  int8_t* key2_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_ptr) = key_null;
   *reinterpret_cast<uint8_t*>(key2_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -117,7 +117,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
       std::max(reinterpret_cast<int8_t*>(value2_ptr + offset_vec[3])[0], val2);
 
   // Row2:
-  int8_t* key3_ptr = allocator->allocate(key_len);
+  int8_t* key3_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key3_ptr) = key_null;
   *reinterpret_cast<uint16_t*>(key3_ptr + offset_vec[0]) = key3;
   // Use get api and return value address
@@ -133,7 +133,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
 
   // Final check
   // Check key = 1
-  int8_t* key1_check_ptr = allocator->allocate(key_len);
+  int8_t* key1_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_check_ptr) = key_null;
   *reinterpret_cast<uint8_t*>(key1_check_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -146,7 +146,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   CHECK_EQ(reinterpret_cast<int8_t*>(value1_check_ptr + offset_vec[3])[0], 30);
 
   // Check key = 2
-  int8_t* key2_check_ptr = allocator->allocate(key_len);
+  int8_t* key2_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_check_ptr) = key_null;
   *reinterpret_cast<uint8_t*>(key2_check_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -187,7 +187,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   // value of HT: SUM(int16)-int64 + COUNT(int16)-int32 + MIN(int16)-int16 +
   // MAX(int16)-int16
   uint32_t init_value_len = 16;
-  int8_t* init_value_ptr = allocator->allocate(init_value_len);
+  int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
   int64_t sum_init_val = 0;
   int32_t cnt_init_val = 0;
   int16_t min_init_val = std::numeric_limits<int16_t>::max();
@@ -197,11 +197,11 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   *reinterpret_cast<int16_t*>(init_value_ptr + offset_vec[2]) = min_init_val;
   *reinterpret_cast<int16_t*>(init_value_ptr + offset_vec[3]) = max_init_val;
 
-  cider::hashtable::AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
+  AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
-  int8_t* key1_ptr = allocator->allocate(key_len);
+  int8_t* key1_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_ptr) = key_null;
   *reinterpret_cast<uint16_t*>(key1_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -222,7 +222,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
       std::max(reinterpret_cast<int16_t*>(value1_ptr + offset_vec[3])[0], val1);
 
   // Row1:
-  int8_t* key2_ptr = allocator->allocate(key_len);
+  int8_t* key2_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_ptr) = key_null;
   *reinterpret_cast<uint16_t*>(key2_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -243,7 +243,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
       std::max(reinterpret_cast<int16_t*>(value2_ptr + offset_vec[3])[0], val2);
 
   // Row2:
-  int8_t* key3_ptr = allocator->allocate(key_len);
+  int8_t* key3_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key3_ptr) = key_null;
   *reinterpret_cast<uint16_t*>(key3_ptr + offset_vec[0]) = key3;
   // Use get api and return value address
@@ -259,7 +259,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
 
   // Final check
   // Check key = 1
-  int8_t* key1_check_ptr = allocator->allocate(key_len);
+  int8_t* key1_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_check_ptr) = key_null;
   *reinterpret_cast<uint16_t*>(key1_check_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -272,7 +272,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   CHECK_EQ(reinterpret_cast<int16_t*>(value1_check_ptr + offset_vec[3])[0], 30);
 
   // Check key = 2
-  int8_t* key2_check_ptr = allocator->allocate(key_len);
+  int8_t* key2_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_check_ptr) = key_null;
   *reinterpret_cast<uint16_t*>(key2_check_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -313,7 +313,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   // value of HT: SUM(int32)-int64 + COUNT(int32)-int32 + MIN(int32)-int32 +
   // MAX(int32)-int32
   uint32_t init_value_len = 20;
-  int8_t* init_value_ptr = allocator->allocate(init_value_len);
+  int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
   int64_t sum_init_val = 0;
   int32_t cnt_init_val = 0;
   int32_t min_init_val = std::numeric_limits<int32_t>::max();
@@ -323,11 +323,11 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   *reinterpret_cast<int32_t*>(init_value_ptr + offset_vec[2]) = min_init_val;
   *reinterpret_cast<int32_t*>(init_value_ptr + offset_vec[3]) = max_init_val;
 
-  cider::hashtable::AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
+  AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
-  int8_t* key1_ptr = allocator->allocate(key_len);
+  int8_t* key1_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_ptr) = key_null;
   *reinterpret_cast<uint32_t*>(key1_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -348,7 +348,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
       std::max(reinterpret_cast<int32_t*>(value1_ptr + 16)[0], val1);
 
   // Row1:
-  int8_t* key2_ptr = allocator->allocate(key_len);
+  int8_t* key2_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_ptr) = key_null;
   *reinterpret_cast<uint32_t*>(key2_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -369,7 +369,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
       std::max(reinterpret_cast<int32_t*>(value2_ptr + offset_vec[3])[0], val2);
 
   // Row2:
-  int8_t* key3_ptr = allocator->allocate(key_len);
+  int8_t* key3_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key3_ptr) = key_null;
   *reinterpret_cast<uint32_t*>(key3_ptr + offset_vec[0]) = key3;
   // Use get api and return value address
@@ -385,7 +385,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
 
   // Final check
   // Check key = 1
-  int8_t* key1_check_ptr = allocator->allocate(key_len);
+  int8_t* key1_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_check_ptr) = key_null;
   *reinterpret_cast<uint32_t*>(key1_check_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -398,7 +398,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   CHECK_EQ(reinterpret_cast<int32_t*>(value1_check_ptr + offset_vec[3])[0], 30);
 
   // Check key = 2
-  int8_t* key2_check_ptr = allocator->allocate(key_len);
+  int8_t* key2_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_check_ptr) = key_null;
   *reinterpret_cast<uint32_t*>(key2_check_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -439,7 +439,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   // value of HT: SUM(int64)-int64 + COUNT(int64)-int32 + MIN(int64)-int64 +
   // MAX(int64)-int64
   uint32_t init_value_len = 28;
-  int8_t* init_value_ptr = allocator->allocate(init_value_len);
+  int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
   int64_t sum_init_val = 0;
   int32_t cnt_init_val = 0;
   int64_t min_init_val = std::numeric_limits<int64_t>::max();
@@ -449,11 +449,11 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   *reinterpret_cast<int64_t*>(init_value_ptr + offset_vec[2]) = min_init_val;
   *reinterpret_cast<int64_t*>(init_value_ptr + offset_vec[3]) = max_init_val;
 
-  cider::hashtable::AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
+  AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
-  int8_t* key1_ptr = allocator->allocate(key_len);
+  int8_t* key1_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_ptr) = key_null;
   *reinterpret_cast<uint64_t*>(key1_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -474,7 +474,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
       std::max(reinterpret_cast<int64_t*>(value1_ptr + offset_vec[3])[0], val1);
 
   // Row1:
-  int8_t* key2_ptr = allocator->allocate(key_len);
+  int8_t* key2_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_ptr) = key_null;
   *reinterpret_cast<uint64_t*>(key2_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
@@ -495,7 +495,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
       std::max(reinterpret_cast<int64_t*>(value2_ptr + offset_vec[3])[0], val2);
 
   // Row2:
-  int8_t* key3_ptr = allocator->allocate(key_len);
+  int8_t* key3_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key3_ptr) = key_null;
   *reinterpret_cast<uint64_t*>(key3_ptr + offset_vec[0]) = key3;
   // Use get api and return value address
@@ -511,7 +511,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
 
   // Final check
   // Check key = 1
-  int8_t* key1_check_ptr = allocator->allocate(key_len);
+  int8_t* key1_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key1_check_ptr) = key_null;
   *reinterpret_cast<uint64_t*>(key1_check_ptr + offset_vec[0]) = key1;
   // Use get api and return value address
@@ -524,7 +524,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   CHECK_EQ(reinterpret_cast<int64_t*>(value1_check_ptr + offset_vec[3])[0], 30);
 
   // Check key = 2
-  int8_t* key2_check_ptr = allocator->allocate(key_len);
+  int8_t* key2_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_check_ptr) = key_null;
   *reinterpret_cast<uint64_t*>(key2_check_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
