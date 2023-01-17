@@ -88,12 +88,12 @@ struct Block {
   bool operator!() const { return !count; }
 };
 
-TEST_F(CiderNewHashTableTest, aggInt8Test) {
-  using AggregatedDataWithUInt8Key =
+TEST_F(CiderNewHashTableTest, aggUInt8Test) {
+  using AggregatedHashTableWithUInt8Key =
       FixedImplicitZeroHashMapWithStoredSize<int8_t, Block>;
-  AggregatedDataWithUInt8Key map;
+  AggregatedHashTableWithUInt8Key map;
 
-  std::vector<int8_t> keys{1, 2, 3, 4, 5};
+  std::vector<uint8_t> keys{1, 2, 3, 4, 5};
   std::vector<int64_t> values{10, 20, 30, 40, 50};
 
   for (int i = 0; i < keys.size(); i++) {
@@ -106,7 +106,7 @@ TEST_F(CiderNewHashTableTest, aggInt8Test) {
     CHECK_EQ(map[keys[i]].getCount(), 1);
   }
 
-  std::vector<int8_t> keys2{1, 2, 3, 4, 5};
+  std::vector<uint8_t> keys2{1, 2, 3, 4, 5};
   std::vector<int64_t> values2{50, 40, 30, 20, 10};
   for (int i = 0; i < keys2.size(); i++) {
     Block& block = map[keys2[i]];
@@ -120,12 +120,12 @@ TEST_F(CiderNewHashTableTest, aggInt8Test) {
   }
 }
 
-TEST_F(CiderNewHashTableTest, aggInt16Test) {
-  using AggregatedDataWithUInt16Key =
+TEST_F(CiderNewHashTableTest, aggUInt16Test) {
+  using AggregatedHashTableWithUInt16Key =
       FixedImplicitZeroHashMapWithCalculatedSize<int16_t, Block>;
-  AggregatedDataWithUInt16Key map;
+  AggregatedHashTableWithUInt16Key map;
 
-  std::vector<int16_t> keys{1, 2, 3, 4, 5};
+  std::vector<uint16_t> keys{1, 2, 3, 4, 5};
   std::vector<int64_t> values{10, 20, 30, 40, 50};
 
   for (int i = 0; i < keys.size(); i++) {
@@ -138,7 +138,7 @@ TEST_F(CiderNewHashTableTest, aggInt16Test) {
     CHECK_EQ(map[keys[i]].getCount(), 1);
   }
 
-  std::vector<int8_t> keys2{1, 2, 3, 4, 5};
+  std::vector<uint8_t> keys2{1, 2, 3, 4, 5};
   std::vector<int64_t> values2{50, 40, 30, 20, 10};
   for (int i = 0; i < keys2.size(); i++) {
     Block& block = map[keys2[i]];
@@ -151,7 +151,7 @@ TEST_F(CiderNewHashTableTest, aggInt16Test) {
   }
 }
 
-TEST_F(CiderNewHashTableTest, hashTableTest) {
+TEST_F(CiderNewHashTableTest, fixedHashTableTest) {
   using Cell = FixedHashMapCell<int16_t, Block>;
   FixedHashTable<int16_t, Cell, FixedHashTableStoredSize<Cell>, HashTableAllocator> fht;
 
@@ -190,6 +190,66 @@ TEST_F(CiderNewHashTableTest, hashTableTest) {
   fht.clear();
   CHECK_EQ(fht.empty(), true);
   CHECK_EQ(fht.contains(key), false);
+}
+
+TEST_F(CiderNewHashTableTest, aggUInt32Test) {
+  using AggregatedHashTableWithUInt32Key = HashMap<uint32_t, Block, HashCRC32<uint32_t>>;
+  AggregatedHashTableWithUInt32Key ht_uint32;
+
+  std::vector<uint32_t> keys{1, 2, 3, 4, 5};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_uint32[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_uint32[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_uint32[keys[i]].getCount(), 1);
+  }
+
+  std::vector<uint32_t> keys2{1, 2, 3, 4, 5};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_uint32[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_uint32[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_uint32[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_uint32[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggUInt64Test) {
+  using AggregatedHashTableWithUInt64Key = HashMap<uint64_t, Block, HashCRC32<uint64_t>>;
+  AggregatedHashTableWithUInt64Key ht_uint64;
+
+  std::vector<uint64_t> keys{1, 2, 3, 4, 5};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_uint64[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_uint64[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_uint64[keys[i]].getCount(), 1);
+  }
+
+  std::vector<uint64_t> keys2{1, 2, 3, 4, 5};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_uint64[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_uint64[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_uint64[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_uint64[keys[i]].getAvg(), 30);
+  }
 }
 
 int main(int argc, char** argv) {

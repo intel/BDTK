@@ -26,7 +26,7 @@
 
 #include <algorithm>
 
-namespace DB {
+namespace cider::hashtable {
 
 /**
  * The purpose of this helper class is to provide a good value for prefetch look ahead
@@ -77,4 +77,4 @@ class PrefetchingHelper {
   Stopwatch watch;
 };
 
-}  // namespace DB
+}  // namespace cider::hashtable
