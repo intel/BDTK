@@ -96,13 +96,14 @@ void LLVMLoopBuilder::build() {
 
   auto for_body = llvm::BasicBlock::Create(func_.getContext(), ".Loop_Body", &func_);
   auto for_update = llvm::BasicBlock::Create(func_.getContext(), ".Loop_Update", &func_);
+  update_block_ = for_update;
   auto after_for = llvm::BasicBlock::Create(func_.getContext(), ".After_Loop", &func_);
   builder_.CreateCondBr(
       castToBool(builder_, condition_llvm_value.load()), for_body, after_for);
 
   builder_.SetInsertPoint(for_body);
   if (loop_body_) {
-    loop_body_();
+    loop_body_(this);
   }
   builder_.CreateBr(for_update);
 
@@ -114,4 +115,10 @@ void LLVMLoopBuilder::build() {
 
   builder_.SetInsertPoint(after_for);
 }
+
+void LLVMLoopBuilder::loopContinue() {
+  CHECK(update_block_);
+  builder_.CreateBr(update_block_);
+}
+
 };  // namespace cider::jitlib

@@ -32,19 +32,21 @@ class IfBuilder {
 
   virtual void build() = 0;
 
-  template <typename T>
+  template <
+      typename T,
+      typename std::enable_if_t<std::is_invocable_r_v<JITValuePointer, T>, bool> = true>
   IfBuilder* condition(T&& fun) {
     condition_ = fun;
     return this;
   }
 
-  template <typename T>
+  template <typename T, typename std::enable_if_t<std::is_invocable_v<T>, bool> = true>
   IfBuilder* ifTrue(T&& fun) {
     if_true_ = fun;
     return this;
   }
 
-  template <typename T>
+  template <typename T, typename std::enable_if_t<std::is_invocable_v<T>, bool> = true>
   IfBuilder* ifFalse(T&& fun) {
     if_false_ = fun;
     return this;
@@ -62,27 +64,32 @@ class LoopBuilder {
 
   virtual void build() = 0;
 
-  template <typename T>
+  template <
+      typename T,
+      typename std::enable_if_t<std::is_invocable_r_v<JITValuePointer, T>, bool> = true>
   LoopBuilder* condition(T&& fun) {
     condition_ = fun;
     return this;
   }
 
-  template <typename T>
+  template <typename T,
+            typename std::enable_if_t<std::is_invocable_v<T, LoopBuilder*>, bool> = true>
   LoopBuilder* loop(T&& fun) {
     loop_body_ = fun;
     return this;
   }
 
-  template <typename T>
+  template <typename T, typename std::enable_if_t<std::is_invocable_v<T>, bool> = true>
   LoopBuilder* update(T&& fun) {
     update_ = fun;
     return this;
   }
 
+  virtual void loopContinue() = 0;
+
  protected:
   std::function<JITValuePointer()> condition_;
-  std::function<void()> loop_body_;
+  std::function<void(LoopBuilder*)> loop_body_;
   std::function<void()> update_;
 };
 

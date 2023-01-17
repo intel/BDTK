@@ -488,7 +488,7 @@ TEST_F(JITLibTests, BasicForControlFlowTest) {
                 function->createVariable(JITTypeTag::INT32, "index", 9);
 
             loop_builder->condition([&]() { return index + 0; })
-                ->loop([&]() { ret = ret + index; })
+                ->loop([&](LoopBuilder*) { ret = ret + index; })
                 ->update([&]() { index = index - 1; })
                 ->build();
 
@@ -525,7 +525,7 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
               *index = function->createLiteral(JITTypeTag::INT32, 10);
 
               loop_builder->condition([&]() { return index + 0; })
-                  ->loop([&]() { nested_loop_builder(); })
+                  ->loop([&](LoopBuilder*) { nested_loop_builder(); })
                   ->update([&]() { index = index - 1; })
                   ->build();
             };
@@ -538,6 +538,41 @@ TEST_F(JITLibTests, NestedForControlFlowTest) {
 
   auto func_ptr = func->getFunctionPointer<int32_t>();
   EXPECT_EQ(func_ptr(), 100000);
+}
+
+TEST_F(JITLibTests, ForContinueTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addReturn(JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunctionPointer function) {
+            JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret", 0);
+
+            auto loop_builder = function->createLoopBuilder();
+            JITValuePointer index =
+                function->createVariable(JITTypeTag::INT32, "index", 10);
+
+            loop_builder->condition([&]() { return index + 0; })
+                ->loop([&](LoopBuilder*) {
+                  function->createIfBuilder()
+                      ->condition([&index]() { return index % 2 != 0; })
+                      ->ifTrue([&]() { loop_builder->loopContinue(); })
+                      ->build();
+
+                  ret = ret + 1;
+                })
+                ->update([&]() { index = index - 1; })
+                ->build();
+
+            function->createReturn(ret);
+          })
+          .build();
+  module.finish();
+
+  auto func_ptr = func->getFunctionPointer<int32_t>();
+  EXPECT_EQ(func_ptr(), 5);
 }
 
 TEST_F(JITLibTests, PointerCounterTest) {
@@ -601,7 +636,7 @@ TEST_F(JITLibTests, ReadOnlyJITPointerTest) {
             *index = array_len - 1;
 
             loop_builder->condition([&]() { return index + 0; })
-                ->loop([&]() { ret = ret + array_ptr[index]; })
+                ->loop([&](LoopBuilder*) { ret = ret + array_ptr[index]; })
                 ->update([&]() { index = index - 1; })
                 ->build();
 
@@ -636,7 +671,8 @@ TEST_F(JITLibTests, ReadAndWriteJITPointerTest) {
             *index = array_len - 1;
 
             loop_builder->condition([&]() { return index + 0; })
-                ->loop([&]() { array_out_ptr[index] = array_in_ptr_i32[index]; })
+                ->loop(
+                    [&](LoopBuilder*) { array_out_ptr[index] = array_in_ptr_i32[index]; })
                 ->update([&]() { index = index - 1; })
                 ->build();
 

@@ -46,9 +46,13 @@ class LLVMLoopBuilder final : public LoopBuilder {
 
   void build() override;
 
+  void loopContinue() override;
+
  private:
   llvm::Function& func_;
   llvm::IRBuilder<>& builder_;
+
+  llvm::BasicBlock* update_block_{nullptr};
 };
 };  // namespace cider::jitlib
 

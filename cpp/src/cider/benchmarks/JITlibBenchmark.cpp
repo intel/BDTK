@@ -20,7 +20,6 @@
  */
 
 #include <benchmark/benchmark.h>
-#include <cstdlib>
 
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "type/data/funcannotations.h"
@@ -107,7 +106,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
                     auto len = func->getArgument(3);                                     \
                     return index < len;                                                  \
                   })                                                                     \
-                  ->loop([&func, &index]() {                                             \
+                  ->loop([&func, &index](LoopBuilder*) {                                 \
                     auto out = func->getArgument(2);                                     \
                     auto a = func->getArgument(0);                                       \
                     auto b = func->getArgument(1);                                       \
@@ -262,7 +261,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
                     auto len = func->getArgument(3);                                     \
                     return index < len;                                                  \
                   })                                                                     \
-                  ->loop([&func, &index]() {                                             \
+                  ->loop([&func, &index](LoopBuilder*) {                                 \
                     auto out = func->getArgument(2);                                     \
                     auto a = func->getArgument(0);                                       \
                     auto b = func->getArgument(1);                                       \
@@ -416,7 +415,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
                     auto len = func->getArgument(3);                                     \
                     return index < len;                                                  \
                   })                                                                     \
-                  ->loop([&func, &index]() {                                             \
+                  ->loop([&func, &index](LoopBuilder*) {                                 \
                     auto out = func->getArgument(2);                                     \
                     auto a = func->getArgument(0);                                       \
                     auto b = func->getArgument(1);                                       \
@@ -592,7 +591,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
                     auto len = func->getArgument(3);                                     \
                     return index < len;                                                  \
                   })                                                                     \
-                  ->loop([&func, &index]() {                                             \
+                  ->loop([&func, &index](LoopBuilder*) {                                 \
                     auto out = func->getArgument(2);                                     \
                     auto a = func->getArgument(0);                                       \
                     auto b = func->getArgument(1);                                       \
@@ -747,7 +746,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
                     auto len = func->getArgument(3);                                     \
                     return index < len;                                                  \
                   })                                                                     \
-                  ->loop([&func, &index]() {                                             \
+                  ->loop([&func, &index](LoopBuilder*) {                                 \
                     auto out = func->getArgument(2);                                     \
                     auto a = func->getArgument(0);                                       \
                     auto b = func->getArgument(1);                                       \
@@ -923,7 +922,7 @@ void jitlibBasicArithmeticExecFunc(benchmark::State& state, JITFunctionPointer& 
                     auto len = func->getArgument(3);                                     \
                     return index < len;                                                  \
                   })                                                                     \
-                  ->loop([&func, &index]() {                                             \
+                  ->loop([&func, &index](LoopBuilder*) {                                 \
                     auto out = func->getArgument(2);                                     \
                     auto a = func->getArgument(0);                                       \
                     auto b = func->getArgument(1);                                       \
