@@ -15,6 +15,7 @@ scripts/*
 *CiderBatchDataProvider.h
 *CiderSchemaProvider.*
 *CiderBitUtils.h
+src/cider/exec/plan/builder/*
 src/cider/exec/plan/parser/*Utils*
 src/cider/exec/plan/parser/*Context*
 src/cider/exec/plan/parser/Plan*

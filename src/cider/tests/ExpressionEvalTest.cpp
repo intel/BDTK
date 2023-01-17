@@ -29,7 +29,7 @@
 #include "tests/utils/CiderBatchChecker.h"
 #include "util/Logger.h"
 
-#include "exec/plan/parser/SubstraitExprBuilder.h"
+#include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
 
@@ -130,19 +130,17 @@ TEST(ExpressionEvalTest, Add_I64_I64) {
 
 TEST(ExpressionEvalTest, Complex_I32_I32) {
   // Expression: a * b + b
-  SubstraitExprBuilder* builder = new SubstraitExprBuilder();
-  ::substrait::Expression* field1 = SubstraitExprBuilder::makeFieldReference(
-      builder, "a", CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
-  ::substrait::Expression* field2 = SubstraitExprBuilder::makeFieldReference(
-      builder, "b", CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
-  ::substrait::NamedStruct* schema = builder->schema();
-  ::substrait::Expression* multiply_expr = SubstraitExprBuilder::makeExpr(
-      builder, "multiply", {field1, field2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
-  ::substrait::Expression* add_expr =
-      SubstraitExprBuilder::makeExpr(builder,
-                                     "add",
-                                     {multiply_expr, field2},
-                                     CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
+  SubstraitExprBuilder builder({"a", "b"},
+                               {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false),
+                                CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false)});
+
+  ::substrait::Expression* field1 = builder.makeFieldReference(0);
+  ::substrait::Expression* field2 = builder.makeFieldReference(1);
+  ::substrait::Expression* multiply_expr = builder.makeScalarExpr(
+      "multiply", {field1, field2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
+
+  ::substrait::Expression* add_expr = builder.makeScalarExpr(
+      "add", {multiply_expr, field2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
   auto input_batch = CiderBatchBuilder()
                          .setRowNum(2)
                          .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I32), {1, 4})
@@ -152,8 +150,11 @@ TEST(ExpressionEvalTest, Complex_I32_I32) {
                           .setRowNum(2)
                           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I32), {8, 15})
                           .build();
-  CiderExprEvaluator evaluator(
-      {add_expr}, builder->funcsInfo(), schema, allocator, ExprType::ProjectExpr);
+  CiderExprEvaluator evaluator({add_expr},
+                               builder.funcsInfo(),
+                               builder.getSchema(),
+                               allocator,
+                               ExprType::ProjectExpr);
   auto out_batch1 = evaluator.eval(input_batch);
   auto out_batch2 = evaluator.eval(input_batch);
   auto expect_batch_ptr = std::make_shared<CiderBatch>(expect_batch);
@@ -165,16 +166,13 @@ TEST(ExpressionEvalTest, Complex_I32_I32) {
 
 TEST(ExpressionEvalTest, GT_I64_I64) {
   // Expression: a > b
-  SubstraitExprBuilder* builder = new SubstraitExprBuilder();
-  ::substrait::NamedStruct* schema =
-      SubstraitExprBuilder::makeNamedStruct(builder,
-                                            {"a", "b"},
-                                            {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
-                                             CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
-  ::substrait::Expression* field0 = SubstraitExprBuilder::makeFieldReference(0);
-  ::substrait::Expression* field1 = SubstraitExprBuilder::makeFieldReference(1);
-  ::substrait::Expression* gt_expr = SubstraitExprBuilder::makeExpr(
-      builder, "gt", {field0, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(Bool, false));
+  SubstraitExprBuilder builder({"a", "b"},
+                               {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
+                                CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
+  ::substrait::Expression* field0 = builder.makeFieldReference(0);
+  ::substrait::Expression* field1 = builder.makeFieldReference(1);
+  ::substrait::Expression* gt_expr = builder.makeScalarExpr(
+      "gt", {field0, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(Bool, false));
   auto input_batch = CiderBatchBuilder()
                          .setRowNum(2)
                          .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I64), {1, 4})
@@ -185,8 +183,11 @@ TEST(ExpressionEvalTest, GT_I64_I64) {
                           .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I64), {4})
                           .addColumn<int64_t>("b", CREATE_SUBSTRAIT_TYPE(I64), {3})
                           .build();
-  CiderExprEvaluator evaluator(
-      {gt_expr}, builder->funcsInfo(), schema, allocator, ExprType::FilterExpr);
+  CiderExprEvaluator evaluator({gt_expr},
+                               builder.funcsInfo(),
+                               builder.getSchema(),
+                               allocator,
+                               ExprType::FilterExpr);
   auto out_batch1 = evaluator.eval(input_batch);
   auto out_batch2 = evaluator.eval(input_batch);
   auto expect_batch_ptr = std::make_shared<CiderBatch>(expect_batch);

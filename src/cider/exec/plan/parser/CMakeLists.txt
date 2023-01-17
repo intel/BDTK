@@ -62,7 +62,6 @@ set(CIDER_PLAN_PARSER_SRCS
     SubstraitToAnalyzerExpr.cpp
     SubstraitToRelAlgExecutionUnit.cpp
     ConverterHelper.cpp
-    SubstraitExprBuilder.cpp
     BaseContext.cpp
     PlanContext.cpp
     VariableContext.cpp
