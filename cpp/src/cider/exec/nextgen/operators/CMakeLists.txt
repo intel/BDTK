@@ -23,7 +23,7 @@ endmacro(add_opnode)
 
 add_opnode(FilterNode)
 add_opnode(ProjectNode)
-add_opnode(ArrowSourceNode)
+add_opnode(QueryFuncInitializer)
 add_opnode(ColumnToRowNode)
 add_opnode(AggregationNode)
 add_opnode(RowToColumnNode)

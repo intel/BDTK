@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/operators/ArrowSourceNode.h"
+#include "exec/nextgen/operators/QueryFuncInitializer.h"
 
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/jitlib/JITLib.h"
@@ -28,15 +28,15 @@
 namespace cider::exec::nextgen::operators {
 using namespace jitlib;
 
-TranslatorPtr ArrowSourceNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<ArrowSourceTranslator>(shared_from_this(), succ);
+TranslatorPtr QueryFuncInitializer::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<QueryFuncInitializerTranslator>(shared_from_this(), succ);
 }
 
-void ArrowSourceTranslator::consume(context::CodegenContext& context) {
+void QueryFuncInitializerTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
+void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
   auto&& [output_type, exprs] = node_->getOutputExprs();
 
@@ -44,6 +44,7 @@ void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
   // void query_func(RuntimeContext* ctx, ArrowArray* input).
   auto arrow_pointer = func->getArgument(1);
 
+  // Load input columns
   for (int64_t index = 0; index < exprs.size(); ++index) {
     auto col_var_expr = dynamic_cast<Analyzer::ColumnVar*>(exprs[index].get());
     CHECK(col_var_expr);
@@ -68,6 +69,38 @@ void ArrowSourceTranslator::codegen(context::CodegenContext& context) {
         context.appendArrowArrayValues(child_array, std::move(buffer_values));
     exprs[index]->setLocalIndex(local_offset);
   }
+
+  // Prepare target columns
+  ExprPtrVector& target_exprs =
+      static_cast<QueryFuncInitializer*>(node_.get())->getTargetExprs();
+  // Target output ArrowArray will always be the first Batch in CodegenCTX.
+  auto output_arrow_array = context.registerBatch(
+      SQLTypeInfo(kSTRUCT,
+                  false,
+                  [&target_exprs]() {
+                    std::vector<SQLTypeInfo> output_types;
+                    output_types.reserve(target_exprs.size());
+                    for (auto& expr : target_exprs) {
+                      output_types.emplace_back(expr->get_type_info());
+                    }
+                    return output_types;
+                  }()),
+      "output",
+      true);
+  context.appendArrowArrayValues(output_arrow_array,
+                                 utils::JITExprValue(1, JITExprValueType::BATCH));
+
+  for (int64_t i = 0; i < target_exprs.size(); ++i) {
+    ExprPtr& expr = target_exprs[i];
+    auto child_arrow_array = func->createLocalJITValue([&output_arrow_array, i]() {
+      return context::codegen_utils::getArrowArrayChild(output_arrow_array, i);
+    });
+
+    // Binding target exprs with JITValues.
+    expr->setLocalIndex(context.appendArrowArrayValues(
+        child_arrow_array, utils::JITExprValue(0, JITExprValueType::BATCH)));
+  }
+
   successor_->consume(context);
 }
 

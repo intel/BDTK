@@ -18,26 +18,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_OPERATORS_ARROWSOURCENODE_H
-#define NEXTGEN_OPERATORS_ARROWSOURCENODE_H
+#ifndef NEXTGEN_OPERATORS_QUERYFUNCINITIALIZER_H
+#define NEXTGEN_OPERATORS_QUERYFUNCINITIALIZER_H
 
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
 
 namespace cider::exec::nextgen::operators {
 
-class ArrowSourceNode : public OpNode {
+class QueryFuncInitializer : public OpNode {
  public:
-  explicit ArrowSourceNode(ExprPtrVector&& output_exprs)
-      : OpNode("ArrowSourceNode", std::move(output_exprs), JITExprValueType::BATCH) {}
+  explicit QueryFuncInitializer(ExprPtrVector&& output_exprs,
+                                ExprPtrVector&& target_exprs)
+      : OpNode("QueryFuncInitializer", std::move(output_exprs), JITExprValueType::BATCH)
+      , target_exprs_(std::move(target_exprs)) {}
 
-  explicit ArrowSourceNode(const ExprPtrVector& output_exprs)
-      : OpNode("ArrowSourceNode", output_exprs, JITExprValueType::BATCH) {}
+  explicit QueryFuncInitializer(const ExprPtrVector& output_exprs,
+                                const ExprPtrVector& target_exprs)
+      : OpNode("QueryFuncInitializer", output_exprs, JITExprValueType::BATCH)
+      , target_exprs_(target_exprs) {}
+
+  ExprPtrVector& getTargetExprs() { return target_exprs_; }
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
+
+ private:
+  ExprPtrVector target_exprs_;
 };
 
-class ArrowSourceTranslator : public Translator {
+class QueryFuncInitializerTranslator : public Translator {
  public:
   using Translator::Translator;
 
@@ -47,4 +56,4 @@ class ArrowSourceTranslator : public Translator {
   void codegen(context::CodegenContext& context);
 };
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_ARROWSOURCENODE_H
+#endif  // NEXTGEN_OPERATORS_QUERYFUNCINITIALIZER_H

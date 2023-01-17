@@ -114,6 +114,19 @@ class ColumnVar : public Expr {
   ColumnInfoPtr col_info_;
 };
 
+class OutputColumnVar : public Expr {
+ public:
+  explicit OutputColumnVar(const std::shared_ptr<ColumnVar>& col)
+      : Expr(col->get_type_info()), col_(col) {}
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+  ExprPtrRefVector get_children_reference() override { return {&col_}; }
+
+ private:
+  ExprPtr col_;
+};
+
 /*
  * @type Var
  * @brief expression that evaluates to the value of a column in a given row generated
@@ -154,9 +167,9 @@ class Var : public ColumnVar {
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const override;
 
  private:
-  WhichRow which_row;  // indicate which row this Var should project from.  It can be from
-                       // the outer input plan or the inner input plan (for joins) or the
-                       // output row in the current plan.
+  WhichRow which_row;  // indicate which row this Var should project from.  It can be
+                       // from the outer input plan or the inner input plan (for joins)
+                       // or the output row in the current plan.
   int varno;           // the column number in the row.  1-based
 };
 

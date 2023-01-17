@@ -100,7 +100,7 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
                                  buffer_holder_.back().first.get())
                                  ->info_;
   int8_t* buf = buffer_holder_.back().second->getBuffer();
-  Batch* batch = batch_holder_.back().second.get();
+  Batch* batch = batch_holder_.front().second.get();
 
   // allocate mem
   // row struct

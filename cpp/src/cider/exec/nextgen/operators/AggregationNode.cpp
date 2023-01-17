@@ -180,16 +180,6 @@ void AggTranslator::codegen(context::CodegenContext& context) {
     LOG(ERROR) << "group-by is not supported now.";
   }
 
-  ExprPtrVector& output_exprs = exprs;
-  auto batch = context.registerBatch(SQLTypeInfo(kSTRUCT, false, [&output_exprs]() {
-    std::vector<SQLTypeInfo> output_types;
-    output_types.reserve(output_exprs.size());
-    for (auto& expr : output_exprs) {
-      output_types.emplace_back(expr->get_type_info());
-    }
-    return output_types;
-  }()));
-
   // non-groupby Agg
   auto buffer =
       context.registerBuffer(origin_value.size(),

@@ -22,10 +22,10 @@
 #include "exec/nextgen/parsers/Parser.h"
 
 #include "exec/nextgen/operators/AggregationNode.h"
-#include "exec/nextgen/operators/ArrowSourceNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/HashJoinNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
+#include "exec/nextgen/operators/QueryFuncInitializer.h"
 #include "util/Logger.h"
 
 namespace cider::exec::nextgen::parsers {
@@ -47,7 +47,7 @@ class InputAnalyzer {
   explicit InputAnalyzer(RelAlgExecutionUnit& eu)
       : eu_(eu), input_exprs_(eu.input_col_descs.size(), nullptr) {}
 
-  void run() {
+  ExprPtrVector& run() {
     size_t index = 0;
     bool tag = true;
     for (auto iter = eu_.input_col_descs.begin(); iter != eu_.input_col_descs.end();
@@ -74,8 +74,8 @@ class InputAnalyzer {
 
     if (!eu_.join_quals.empty()) {
       for (auto& join_condition : eu_.join_quals) {
-        for (auto join_expr : join_condition.quals) {
-          traverse(&join_expr);
+        for (auto& join_expr : join_condition.quals) {
+          traverse(&const_cast<ExprPtr&>(join_expr));
         }
       }
     }
@@ -91,6 +91,8 @@ class InputAnalyzer {
                        input_exprs_.end(),
                        [](const ExprPtr& input_expr) { return input_expr == nullptr; }),
         input_exprs_.end());
+
+    return input_exprs_;
   }
 
   ExprPtrVector& getInputExprs() { return input_exprs_; }
@@ -145,9 +147,18 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   OpPipeline ops;
 
   InputAnalyzer analyzer(eu);
-  analyzer.run();
+  auto&& input_exprs = analyzer.run();
 
-  ops.insert(ops.begin(), createOpNode<ArrowSourceNode>(analyzer.getInputExprs()));
+  // Relpace ColumnVar in target_exprs with OutputColumnVar to distinguish input cols and
+  // output cols.
+  for (auto& expr : eu.shared_target_exprs) {
+    if (auto column_var_ptr = std::dynamic_pointer_cast<Analyzer::ColumnVar>(expr)) {
+      expr = std::make_shared<Analyzer::OutputColumnVar>(column_var_ptr);
+    }
+  }
+
+  ops.emplace_back(
+      createOpNode<QueryFuncInitializer>(input_exprs, eu.shared_target_exprs));
 
   ExprPtrVector join_quals;
   for (auto& join_condition : eu.join_quals) {

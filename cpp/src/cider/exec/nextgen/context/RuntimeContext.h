@@ -52,13 +52,14 @@ class RuntimeContext {
 
   void setTrimStringOperCharMaps(const CodegenContext::TrimCharMapsPtr& maps);
 
-  // TBD: Currently, last batch would be output batch under all known scenarios.
   Batch* getOutputBatch() {
     if (batch_holder_.empty()) {
       return nullptr;
     }
-    auto batch = batch_holder_.back().second.get();
+    auto batch = batch_holder_.front().second.get();
     auto arrow_array = batch->getArray();
+    // FIXME (bigPYJ1151): This is a workaround for output struct array length setting.
+    arrow_array->length = arrow_array->children[0]->length;
     auto length = arrow_array->length;
     auto arrow_schema = batch->getSchema();
 
@@ -85,7 +86,7 @@ class RuntimeContext {
   // TODO: batch and buffer should be self-managed
   void resetBatch(const CiderAllocatorPtr& allocator) {
     if (!batch_holder_.empty()) {
-      auto& [descriptor, batch] = batch_holder_.back();
+      auto& [descriptor, batch] = batch_holder_.front();
       batch->reset(descriptor->type, allocator);
     }
   }
