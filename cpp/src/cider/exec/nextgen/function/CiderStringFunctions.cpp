@@ -431,6 +431,14 @@ extern "C" ALWAYS_INLINE size_t cider_find_str_from_right(const char* str1,
   return npos;
 }
 
+// Split a string into a list of strings, based on a specified `separator` character.
+// str_ptr & str_len: the input string
+// delimiter_ptr & delimiter_len: A character used for splitting the string.
+// reverse: default value is false, will be true if split_part < 0.
+// limit: Must be positive. Returns an array of size at most 'limit', and the last element
+// in array contains everything left in the string.
+// split_part: Field index to be returned. Index starts from 1. If the index is larger
+// than the number of fields, a null string is returned.
 extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
                                              const char* str_ptr,
                                              int str_len,
@@ -479,7 +487,7 @@ extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
     // do ++limit_counter in the loop to prevent bugs caused by shortcut execution
     ++limit_counter;
     // however, we still keep ++delimiter_idx in while condition check to ensure
-    // the property that delimiter_idx == 0 iff delimiter does not exist in input string
+    // the property that delimiter_idx == 0 if delimiter does not exist in input string
   } while (delimiter_pos != npos && ++delimiter_idx < split_part &&
            (limit == 0 || limit_counter < limit));
   if (limit && limit_counter == limit) {
@@ -560,6 +568,14 @@ std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
   return matched_pos[wrapped_match];
 }
 
+// Search a string for a substring that matches a given regular expression pattern and
+// replace it with a replacement string.
+// str_ptr & str_len: input string.
+// regex_pattern_ptr & regex_pattern_len: the regular expression to search for within the
+// input string.
+// replace_ptr & replace_len: the replacement string.
+// start_pos: the position to start the search.
+// occurrence: which occurrence of the match to replace.
 extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
                                                       const char* str_ptr,
                                                       int str_len,
