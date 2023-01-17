@@ -16,10 +16,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+set(HASHTABLE_SOURCE
+    ${CMAKE_CURRENT_LIST_DIR}/CiderJoinHashTable.cpp)
 
-set(PROCESSOR_SOURCE
-    DefaultBatchProcessor.cpp StatelessProcessor.cpp StatefulProcessor.cpp
-    JoinHandler.cpp DefaultJoinHashTableBuilder.cpp)
-
-add_library(cider_processor STATIC ${PROCESSOR_SOURCE})
-target_link_libraries(cider_processor cider_plan_substrait cider_hashtable)
+add_library(cider_hashtable STATIC ${HASHTABLE_SOURCE})
