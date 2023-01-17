@@ -71,18 +71,17 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
       return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
     }
-    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
-    null = lhs_val.getNull() || rhs_val.getNull();
 
     const auto optype = get_optype();
     if (IS_ARITHMETIC(optype)) {
+      auto null = lhs_val.getNull() || rhs_val.getNull();
       return codegenFixedSizeColArithFun(
           context, null, lhs_val.getValue(), rhs_val.getValue());
     } else if (IS_COMPARISON(optype)) {
+      auto null = lhs_val.getNull() || rhs_val.getNull();
       return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
     } else if (IS_LOGIC(optype)) {
-      bool branchless_logic = context.getCodegenOptions().branchless_logic;
-      return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val, branchless_logic);
+      return codegenFixedSizeLogicalFun(context, func, lhs_val, rhs_val);
     }
   }
   UNREACHABLE();
@@ -244,25 +243,49 @@ JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
   return expr_var_;
 }
 
-JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
-                                                  JITValuePointer& null,
+JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
+                                                  JITFunction& func,
                                                   FixSizeJITExprValue& lhs_val,
-                                                  FixSizeJITExprValue& rhs_val,
-                                                  bool branchless_logic) {
-  switch (get_optype()) {
-    case kAND: {
-      // If one side is not null and false, return not null and FALSE
-      // else no special handle needed
-      if (branchless_logic) {
+                                                  FixSizeJITExprValue& rhs_val) {
+  // branchless implementation for future perf comparison
+  bool branchless_logic = context.getCodegenOptions().branchless_logic;
+  if (branchless_logic) {
+    switch (get_optype()) {
+      case kAND: {
+        // If one side is not null and false, return not null and FALSE
+        // else no special handle needed
         auto lhs_null = lhs_val.getNull();
         auto lhs_data = lhs_val.getValue();
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
-        null = null || (lhs_null && lhs_data) || (rhs_null && rhs_data);
+        auto null =
+            (lhs_null && rhs_null) || (lhs_null && lhs_data) || (rhs_null && rhs_data);
         return set_expr_value(null, lhs_data && rhs_data);
       }
-      auto if_builder = func.createIfBuilder();
+      case kOR: {
+        // If one side is not null and true, return not null and TRUE
+        // else no special handle needed
+        auto lhs_null = lhs_val.getNull();
+        auto lhs_data = lhs_val.getValue();
+        auto rhs_null = rhs_val.getNull();
+        auto rhs_data = rhs_val.getValue();
+        auto null =
+            (lhs_null && rhs_null) || (lhs_null && !rhs_data) || (rhs_null && !lhs_data);
+        return set_expr_value(null, lhs_data || rhs_data);
+      }
+      default:
+        UNREACHABLE();
+    }
+    return expr_var_;
+  }
+
+  switch (get_optype()) {
+    case kAND: {
+      // If one side is not null and false, return not null and FALSE
+      // else no special handle needed
+      JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "logical_and_null");
       auto value = func.createVariable(JITTypeTag::BOOL, "logical_and_val");
+      auto if_builder = func.createIfBuilder();
       if_builder
           ->condition([&]() {
             auto condition = (!lhs_val.getNull() && !lhs_val.getValue()) ||
@@ -273,28 +296,19 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
             null = func.createLiteral(JITTypeTag::BOOL, false);
             value = func.createLiteral(JITTypeTag::BOOL, false);
           })
-          ->ifFalse([&]() { value = lhs_val.getValue() && rhs_val.getValue(); })
+          ->ifFalse([&]() {
+            null = lhs_val.getNull() || rhs_val.getNull();
+            value = lhs_val.getValue() && rhs_val.getValue();
+          })
           ->build();
       return set_expr_value(null, value);
-      // branchless implementation for future perf comparison
-      // null = (lhs_val.getNull() && rhs_val.getNull()) ||
-      //          (lhs_val.getNull() && lhs_val.getValue()) ||
-      //          (rhs_val.getNull() && rhs_val.getValue());
-      // return set_expr_value(null, lhs_val.getValue() && rhs_val.getValue());
     }
     case kOR: {
       // If one side is not null and true, return not null and TRUE
       // else no special handle needed
-      if (branchless_logic) {
-        auto lhs_null = lhs_val.getNull();
-        auto lhs_data = lhs_val.getValue();
-        auto rhs_null = rhs_val.getNull();
-        auto rhs_data = rhs_val.getValue();
-        null = null || (lhs_null && !rhs_data) || (rhs_null && !lhs_data);
-        return set_expr_value(null, lhs_data || rhs_data);
-      }
+      JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "logical_or_null");
+      auto value = func.createVariable(JITTypeTag::BOOL, "logical_or_val");
       auto if_builder = func.createIfBuilder();
-      auto value = func.createVariable(JITTypeTag::BOOL, "logical_and_val");
       if_builder
           ->condition([&]() {
             auto condition = (!lhs_val.getNull() && lhs_val.getValue()) ||
@@ -305,18 +319,17 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(JITFunction& func,
             null = func.createLiteral(JITTypeTag::BOOL, false);
             value = func.createLiteral(JITTypeTag::BOOL, true);
           })
-          ->ifFalse([&]() { value = lhs_val.getValue() || rhs_val.getValue(); })
+          ->ifFalse([&]() {
+            null = lhs_val.getNull() || rhs_val.getNull();
+            value = lhs_val.getValue() || rhs_val.getValue();
+          })
           ->build();
       return set_expr_value(null, value);
-      // branchless implementation for future perf comparison
-      // null = (lhs_val.getNull() && rhs_val.getNull()) ||
-      //          (lhs_val.getNull() && !rhs_val.getValue()) ||
-      //          (rhs_val.getNull() && !lhs_val.getValue());
-      // return set_expr_value(null, lhs_val.getValue() || rhs_val.getValue());
     }
     default:
       UNREACHABLE();
   }
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,

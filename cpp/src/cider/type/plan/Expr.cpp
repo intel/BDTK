@@ -30,6 +30,7 @@ JITExprValue& Expr::codegen(CodegenContext& context) {
   UNREACHABLE();
   return expr_var_;
 }
+
 JITExprValue& Expr::codegenNull(CodegenContext& context) {
   UNREACHABLE();
   return expr_var_;

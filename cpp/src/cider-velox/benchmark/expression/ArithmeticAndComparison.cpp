@@ -27,6 +27,7 @@
 #include "cider/CiderOptions.h"
 #include "cider/processor/BatchProcessor.h"
 #include "exec/module/batch/ArrowABI.h"
+#include "util/CiderBitUtils.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/expression/Expr.h"
 #include "velox/functions/Registerer.h"
@@ -186,6 +187,10 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
     suspender.dismiss();
 
+    FLAGS_check_bit_vector_clear_opt = false;
+    FLAGS_set_null_bit_vector_opt = false;
+    FLAGS_branchless_logic = false;
+    FLAGS_null_separate = false;
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context);
@@ -327,7 +332,7 @@ void mulI8Specialized2(uint8_t* null_input,
   int i = num * 8;
   while (i++ < n) {
     output[i] = input[i] * input[i];
-    setBitAt(null_output, i, isBitSet(null_input, i));
+    CiderBitUtils::setBitAtUnified(null_output, i, isBitSet(null_input, i));
   }
 }
 
@@ -357,7 +362,7 @@ void mulI8Specialized3(uint8_t* null_input,
   int i = num * 8;
   while (i++ < n) {
     output[i] = input[i] * input[i];
-    setBitAt(null_output, i, isBitSet(null_input, i));
+    CiderBitUtils::setBitAtUnified(null_output, i, isBitSet(null_input, i));
   }
 }
 
@@ -371,6 +376,9 @@ BENCHMARK_RELATIVE(nextgen) {
   benchmark->nextgenCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen_opt) {
+  // // branchless set null
+  // benchmark->nextgenCompute(profile_expr, false, true);
+  // null separate
   benchmark->nextgenCompute(profile_expr, false, false, false, true);
 }
 BENCHMARK_RELATIVE(specifialize1) {
