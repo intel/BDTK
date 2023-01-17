@@ -19,10 +19,10 @@
  * under the License.
  */
 #include "type/plan/BinaryExpr.h"
-#include "cider/CiderOptions.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/template/Execute.h"  // for is_unnest
+#include "util/Logger.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;
@@ -118,51 +118,14 @@ JITExprValue& BinOper::codegenNull(CodegenContext& context) {
   if (lhs_ti.is_string()) {
     // string binops, should only be comparisons
     // const auto optype = get_optype();
-    // if (IS_COMPARISON(optype)) {
-    //   VarSizeJITExprValue lhs_val(lhs->codegen(context));
-    //   VarSizeJITExprValue rhs_val(rhs->codegen(context));
-    //   JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
-    //   null = lhs_val.getNull() || rhs_val.getNull();
-    //   return codegenVarcharCmpFun(func, null, lhs_val, rhs_val);
-    // } else {
-    //   CIDER_THROW(CiderUnsupportedException, "string BinOp only supports comparison");
-    // }
+    UNIMPLEMENTED();
   } else {
-    // const auto optype = get_optype();
-    // if (IS_LOGIC(optype)) {
-    //   FixSizeJITExprValue lhs_val(lhs->codegen(context));
-    //   FixSizeJITExprValue rhs_val(rhs->codegen(context));
-
-    //   JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "null_val");
-    //   null = lhs_val.getNull() || rhs_val.getNull();
-
-    //   bool branchless_logic = context.getCodegenOptions().branchless_logic;
-    //   return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val,
-    //   branchless_logic);
-    // }
-
     // primitive type binops
     JITExprValueAdaptor lhs_val(lhs->codegenNull(context));
     JITExprValueAdaptor rhs_val(rhs->codegenNull(context));
 
-    // if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
-    //   return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
-    // }
-
     // FIXME: propagate null, don't support kleene logic operation
     return set_expr_null(lhs_val.getNull() || rhs_val.getNull());
-
-    // if (IS_ARITHMETIC(optype)) {
-    //   bool needs_error_check = context.getCodegenOptions().needs_error_check;
-    //   return codegenFixedSizeColArithFun(
-    //       null, lhs_val.getValue(), rhs_val.getValue(), needs_error_check);
-    // } else if (IS_COMPARISON(optype)) {
-    //   return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
-    // } else if (IS_LOGIC(optype)) {
-    //   bool branchless_logic = context.getCodegenOptions().branchless_logic;
-    //   return codegenFixedSizeLogicalFun(func, null, lhs_val, rhs_val,
-    //   branchless_logic);
-    // }
   }
   UNREACHABLE();
   return expr_var_;

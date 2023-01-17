@@ -20,7 +20,6 @@
  */
 #include "exec/nextgen/transformer/Transformer.h"
 
-#include "cider/CiderOptions.h"
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
 

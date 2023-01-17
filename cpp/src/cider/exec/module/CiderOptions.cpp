@@ -34,6 +34,7 @@ DEFINE_bool(use_default_col_range, true, "use default col range");
 DEFINE_bool(use_cider_data_format, false, "use cider data format");
 DEFINE_bool(needs_error_check, false, "needs error check");
 DEFINE_bool(use_nextgen_compiler, false, "use nextgen compiler");
+DEFINE_bool(null_separate, false, "separate null operation");
 
 // Execution Options
 DEFINE_bool(output_columnar_hint, false, "output columnar hint");
@@ -51,10 +52,3 @@ DEFINE_bool(allow_runtime_query_interrupt, false, "allow runtime query interrupt
 DEFINE_double(running_query_interrupt_freq, 0.5, "running query interrupt freq");
 DEFINE_uint64(pending_query_interrupt_freq, 1000, "pending query interrupt freq");
 DEFINE_bool(force_direct_hash, false, "force direct hash");
-
-// Codegen Options
-DEFINE_bool(codegen_all_opt, false, "codegen all optimization");
-DEFINE_bool(check_bit_vector_clear_opt, false, "use optimized bit clear checker");
-DEFINE_bool(set_null_bit_vector_opt, false, "use optimized set null bit");
-DEFINE_bool(branchless_logic, false, "use branchless logic operation");
-DEFINE_bool(null_separate, false, "separate null operation");

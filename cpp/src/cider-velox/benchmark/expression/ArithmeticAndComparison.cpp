@@ -27,6 +27,7 @@
 #include "cider/CiderOptions.h"
 #include "cider/processor/BatchProcessor.h"
 #include "exec/module/batch/ArrowABI.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "util/CiderBitUtils.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/expression/Expr.h"
@@ -47,8 +48,10 @@
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
 DEFINE_int64(batch_size, 1'000, "batch size for one loop");
 DEFINE_int64(loop_count, 2'000'000, "loop count for benchmark");
+DEFINE_bool(dump_ir, false, "dump llvm ir");
 
 using namespace cider::exec::processor;
+using namespace cider::exec::nextgen::context;
 using namespace facebook::velox;
 using namespace facebook::velox::memory;
 using namespace facebook::velox::exec;
@@ -187,10 +190,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
     suspender.dismiss();
 
-    FLAGS_check_bit_vector_clear_opt = false;
-    FLAGS_set_null_bit_vector_opt = false;
-    FLAGS_branchless_logic = false;
-    FLAGS_null_separate = false;
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context);
@@ -198,10 +197,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
   }
 
   size_t nextgenCompute(const std::string& expression,
-                        bool check_bit_vector_clear_opt = false,
-                        bool set_null_bit_vector_opt = false,
-                        bool branchless_logic = false,
-                        bool null_separate = false) {
+                        CodegenOptions cgo = CodegenOptions{}) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
@@ -209,13 +205,14 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
 
-    FLAGS_check_bit_vector_clear_opt = check_bit_vector_clear_opt;
-    FLAGS_set_null_bit_vector_opt = set_null_bit_vector_opt;
-    FLAGS_branchless_logic = branchless_logic;
-    FLAGS_null_separate = null_separate;
+    cgo.co.dump_ir = FLAGS_dump_ir;
+    cgo.co.enable_vectorize = true;
+    cgo.co.enable_avx2 = true;
+    cgo.co.enable_avx512 = true;
+
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = makeBatchProcessor(plan, context);
+    auto processor = makeBatchProcessor(plan, context, cgo);
 
     suspender.dismiss();
 
@@ -375,11 +372,16 @@ BENCHMARK(velox) {
 BENCHMARK_RELATIVE(nextgen) {
   benchmark->nextgenCompute(profile_expr);
 }
+BENCHMARK_DRAW_LINE();
+BENCHMARK(nextgen____base) {
+  benchmark->nextgenCompute(profile_expr);
+}
 BENCHMARK_RELATIVE(nextgen_opt) {
-  // // branchless set null
-  // benchmark->nextgenCompute(profile_expr, false, true);
   // null separate
-  benchmark->nextgenCompute(profile_expr, false, false, false, true);
+  FLAGS_null_separate = true;
+  CodegenOptions cgo;
+  benchmark->nextgenCompute(profile_expr, cgo);
+  FLAGS_null_separate = false;
 }
 BENCHMARK_RELATIVE(specifialize1) {
   benchmark->kernelCompute(mulI8Specialized1);
@@ -392,24 +394,41 @@ BENCHMARK_RELATIVE(specifialize3) {
 }
 BENCHMARK_DRAW_LINE();
 
-#define BENCHMARK_GROUP(name, expr)                                                      \
-  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }                 \
-  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }                 \
-  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); }               \
-  BENCHMARK_RELATIVE(name##NextgenIsBitClear) { benchmark->nextgenCompute(expr, true); } \
-  BENCHMARK_RELATIVE(name##NextgenBranchlessSetNull) {                                   \
-    benchmark->nextgenCompute(expr, false, true);                                        \
-  }                                                                                      \
-  BENCHMARK_RELATIVE(name##NextgenBranchlessLogic) {                                     \
-    benchmark->nextgenCompute(expr, false, false, true);                                 \
-  }                                                                                      \
-  BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                                        \
-    benchmark->nextgenCompute(expr, false, false, false, true);                          \
-  }                                                                                      \
-  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                              \
-    benchmark->nextgenCompute(expr, true, true, true, true);                             \
-  }                                                                                      \
-  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }                          \
+#define BENCHMARK_GROUP(name, expr)                                        \
+  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }   \
+  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }   \
+  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); } \
+  BENCHMARK_RELATIVE(name##NextgenIsBitClear) {                            \
+    CodegenOptions cgo;                                                    \
+    cgo.check_bit_vector_clear_opt = true;                                 \
+    benchmark->nextgenCompute(expr, cgo);                                  \
+  }                                                                        \
+  BENCHMARK_RELATIVE(name##NextgenBranchlessSetNull) {                     \
+    CodegenOptions cgo;                                                    \
+    cgo.set_null_bit_vector_opt = true;                                    \
+    benchmark->nextgenCompute(expr, cgo);                                  \
+  }                                                                        \
+  BENCHMARK_RELATIVE(name##NextgenBranchlessLogic) {                       \
+    CodegenOptions cgo;                                                    \
+    cgo.branchless_logic = true;                                           \
+    benchmark->nextgenCompute(expr, cgo);                                  \
+  }                                                                        \
+  BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                          \
+    FLAGS_null_separate = true;                                            \
+    CodegenOptions cgo;                                                    \
+    benchmark->nextgenCompute(expr, cgo);                                  \
+    FLAGS_null_separate = false;                                           \
+  }                                                                        \
+  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                \
+    FLAGS_null_separate = true;                                            \
+    CodegenOptions cgo;                                                    \
+    cgo.check_bit_vector_clear_opt = true;                                 \
+    cgo.set_null_bit_vector_opt = true;                                    \
+    cgo.branchless_logic = true;                                           \
+    benchmark->nextgenCompute(expr, cgo);                                  \
+    FLAGS_null_separate = false;                                           \
+  }                                                                        \
+  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }            \
   BENCHMARK_DRAW_LINE()
 
 BENCHMARK_GROUP(mulI8, "multiply(i8, i8)");

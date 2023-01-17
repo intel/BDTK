@@ -39,6 +39,7 @@ DECLARE_bool(use_default_col_range);
 DECLARE_bool(use_cider_data_format);
 DECLARE_bool(needs_error_check);
 DECLARE_bool(use_nextgen_compiler);
+DECLARE_bool(null_separate);
 
 DECLARE_bool(output_columnar_hint);
 DECLARE_bool(allow_multifrag);
@@ -55,12 +56,6 @@ DECLARE_bool(allow_runtime_query_interrupt);
 DECLARE_double(running_query_interrupt_freq);
 DECLARE_uint64(pending_query_interrupt_freq);
 DECLARE_bool(force_direct_hash);
-
-DECLARE_bool(codegen_all_opt);
-DECLARE_bool(check_bit_vector_clear_opt);
-DECLARE_bool(set_null_bit_vector_opt);
-DECLARE_bool(branchless_logic);
-DECLARE_bool(null_separate);
 
 // wrapper for Omnisci CompilationOptions
 struct CiderCompilationOption {

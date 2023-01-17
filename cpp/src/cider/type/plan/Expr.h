@@ -29,7 +29,6 @@
 #include <string>
 #include <vector>
 
-#include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"

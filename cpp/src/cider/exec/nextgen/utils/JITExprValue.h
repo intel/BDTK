@@ -21,7 +21,6 @@
 #ifndef NEXTGEN_UTILS_JITEXPRVALUE_H
 #define NEXTGEN_UTILS_JITEXPRVALUE_H
 
-#include "cider/CiderOptions.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace cider::exec::nextgen::utils {
