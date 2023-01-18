@@ -96,7 +96,7 @@ if(DEFINED ENV{ISTHMUS_EXEC})
   add_subdirectory(utils)
   add_subdirectory(functionality)
   add_subdirectory(profiling)
-  # add_subdirectory(benchmark)
+  add_subdirectory(benchmark)
   add_subdirectory(hashtable)
 endif()
 
