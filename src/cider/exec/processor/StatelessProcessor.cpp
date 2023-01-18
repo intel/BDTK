@@ -24,7 +24,7 @@
 namespace cider::exec::processor {
 
 void StatelessProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
-  if (!input_arrow_array_) {
+  if (!has_result_) {
     if (no_more_batch_) {
       // set state as finish if last batch has been processed and no more batch
       state_ = BatchProcessorState::kFinished;
@@ -33,15 +33,7 @@ void StatelessProcessor::getResult(struct ArrowArray& array, struct ArrowSchema&
     return;
   }
 
-  if (input_arrow_array_->release) {
-    input_arrow_array_->release(const_cast<struct ArrowArray*>(input_arrow_array_));
-  }
-  input_arrow_array_ = nullptr;
-
-  if (input_arrow_schema_ && input_arrow_schema_->release) {
-    input_arrow_schema_->release(const_cast<struct ArrowSchema*>(input_arrow_schema_));
-  }
-  input_arrow_schema_ = nullptr;
+  has_result_ = false;
 
   auto output_batch = runtime_context_->getOutputBatch();
   output_batch->move(schema, array);

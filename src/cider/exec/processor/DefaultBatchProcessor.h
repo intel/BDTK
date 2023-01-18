@@ -64,6 +64,10 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   bool no_more_batch_{false};
 
+  bool has_result_{false};
+
+  bool need_spill_{false};
+
   JoinHandlerPtr joinHandler_;
 
   nextgen::context::CodegenCtxPtr codegen_context_;
