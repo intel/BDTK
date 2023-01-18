@@ -201,8 +201,9 @@ void AggTranslator::codegen(context::CodegenContext& context) {
                              });
 
   int32_t current_expr_idx = 0;
-  for (const auto& expr : exprs) {
-    auto agg_expr = dynamic_cast<const Analyzer::AggExpr*>(expr.get());
+  for (auto& expr : exprs) {
+    auto agg_expr = dynamic_cast<Analyzer::AggExpr*>(expr.get());
+
     auto cast_buffer = buffer->castPointerSubType(jitlib::JITTypeTag::INT8);
     auto val_addr_initial = cast_buffer + exprs_info[current_expr_idx].start_offset_;
     auto val_addr = val_addr_initial->castPointerSubType(
@@ -233,7 +234,7 @@ void AggTranslator::codegen(context::CodegenContext& context) {
     }
 
     // for other agg function
-    utils::FixSizeJITExprValue values(agg_expr->get_arg()->get_expr_value());
+    utils::FixSizeJITExprValue values(agg_expr->get_arg()->codegen(context));
 
     if (agg_expr->get_arg()->get_type_info().get_notnull()) {
       func->emitRuntimeFunctionCall(
