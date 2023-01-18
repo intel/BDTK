@@ -33,6 +33,9 @@ velox_plugin:
   - "cider-velox/src/**/*"
   - "cider-velox/CMakeLists.txt"
 
+compression:
+  - "compression/**/*"
+
 documentation:
   - "docs/**/*"
   - "**/**/*.MD"
