@@ -21,19 +21,21 @@
 
 #include <gtest/gtest.h>
 #include "tests/utils/ArrowArrayBuilder.h"
-#include "tests/utils/CiderTestBase.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 
+using namespace cider::test::util;
+
 #define GEN_PRIMITIVETYPE_BASE_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME) \
-  class PrimitiveType##C_TYPE_NAME##Test : public CiderTestBase {                 \
+  class PrimitiveType##C_TYPE_NAME##Test : public CiderNextgenTestBase {          \
    public:                                                                        \
     PrimitiveType##C_TYPE_NAME##Test() {                                          \
       table_name_ = "test";                                                       \
       create_ddl_ = "CREATE TABLE test(col_a " #TYPE " NOT NULL, col_b " #TYPE    \
                     ", col_c " #TYPE ");";                                        \
       QueryArrowDataGenerator::generateBatchByTypes(                              \
-          schema_,                                                                \
-          array_,                                                                 \
+          input_schema_,                                                          \
+          input_array_,                                                           \
           10,                                                                     \
           {"col_a", "col_b", "col_c"},                                            \
           {CREATE_SUBSTRAIT_TYPE(SUBSTRAIT_TYPE_NAME),                            \
@@ -46,12 +48,12 @@
     }                                                                             \
   };
 
-#define TEST_UNIT(TEST_CLASS, UNIT_NAME)                                              \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                     \
-    assertQueryArrow("SELECT * FROM test");                                           \
-    assertQueryArrow("SELECT col_a, col_b, col_c FROM test");                         \
-    assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NOT NULL"); \
-    assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NULL");     \
+#define TEST_UNIT(TEST_CLASS, UNIT_NAME)                                         \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                \
+    assertQuery("SELECT * FROM test");                                           \
+    assertQuery("SELECT col_a, col_b, col_c FROM test");                         \
+    assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NOT NULL"); \
+    assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NULL");     \
   }
 
 GEN_PRIMITIVETYPE_BASE_TEST_CLASS(Boolean, BOOLEAN, Bool)
@@ -82,14 +84,14 @@ TEST_UNIT(PrimitiveTypeIntegerTest, integerBaseTest)
 
 TEST_UNIT(PrimitiveTypeBigintTest, bigintBaseTest)
 
-class PrimitiveTypeIntegerMaxTest : public CiderTestBase {
+class PrimitiveTypeIntegerMaxTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeIntegerMaxTest() {
     table_name_ = "test";
     create_ddl_ =
         "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   10,
                                                   {"col_a", "col_b", "col_c"},
                                                   {CREATE_SUBSTRAIT_TYPE(I32),
@@ -102,14 +104,14 @@ class PrimitiveTypeIntegerMaxTest : public CiderTestBase {
   }
 };
 
-class PrimitiveTypeIntegerMINTest : public CiderTestBase {
+class PrimitiveTypeIntegerMINTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeIntegerMINTest() {
     table_name_ = "test";
     create_ddl_ =
         "CREATE TABLE test(col_a INTEGER NOT NULL, col_b INTEGER, col_c INTEGER);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   10,
                                                   {"col_a", "col_b", "col_c"},
                                                   {CREATE_SUBSTRAIT_TYPE(I32),
@@ -122,15 +124,15 @@ class PrimitiveTypeIntegerMINTest : public CiderTestBase {
   }
 };
 
-class PrimitiveTypeMixedTypeNotNullTest : public CiderTestBase {
+class PrimitiveTypeMixedTypeNotNullTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeMixedTypeNotNullTest() {
     table_name_ = "test";
     create_ddl_ =
         "CREATE TABLE test(col_a BOOLEAN NOT NULL, col_b FLOAT NOT NULL, col_c "
         "TINYINT NOT NULL)";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   10,
                                                   {"col_a", "col_b", "col_c"},
                                                   {CREATE_SUBSTRAIT_TYPE(Bool),
@@ -143,13 +145,13 @@ class PrimitiveTypeMixedTypeNotNullTest : public CiderTestBase {
   }
 };
 
-class PrimitiveTypeMixedTypeNullTest : public CiderTestBase {
+class PrimitiveTypeMixedTypeNullTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeMixedTypeNullTest() {
     table_name_ = "test";
     create_ddl_ = "CREATE TABLE test(col_a BOOLEAN, col_b DOUBLE, col_c INTEGER)";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   10,
                                                   {"col_a", "col_b", "col_c"},
                                                   {CREATE_SUBSTRAIT_TYPE(Bool),
@@ -162,13 +164,13 @@ class PrimitiveTypeMixedTypeNullTest : public CiderTestBase {
   }
 };
 
-class PrimitiveTypeMixedTypeHalfNullTest : public CiderTestBase {
+class PrimitiveTypeMixedTypeHalfNullTest : public CiderNextgenTestBase {
  public:
   PrimitiveTypeMixedTypeHalfNullTest() {
     table_name_ = "test";
     create_ddl_ = "CREATE TABLE test(col_a BOOLEAN, col_b DOUBLE, col_c INTEGER)";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   10,
                                                   {"col_a", "col_b", "col_c"},
                                                   {CREATE_SUBSTRAIT_TYPE(Bool),
@@ -193,7 +195,6 @@ TEST_UNIT(PrimitiveTypeMixedTypeHalfNullTest, mixedTypeHalfNULLTest)
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   int err{0};
   try {

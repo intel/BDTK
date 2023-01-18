@@ -20,8 +20,8 @@
  */
 #include "cider/CiderCompileModule.h"
 #include "exec/module/CiderExprEvaluator.h"
+#include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/LiteralUtils.h"
-#include "exec/plan/parser/SubstraitExprBuilder.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/function.pb.h"
@@ -31,21 +31,18 @@
 
 int main(int argc, char** argv) {
   // Example 1: generate for expression "a * b + b"
-  SubstraitExprBuilder* builder = new SubstraitExprBuilder();
-  ::substrait::NamedStruct* schema =
-      SubstraitExprBuilder::makeNamedStruct(builder,
-                                            {"a", "b"},
-                                            {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
-                                             CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
-  ::substrait::Expression* field0 = SubstraitExprBuilder::makeFieldReference(0);
-  ::substrait::Expression* field1 = SubstraitExprBuilder::makeFieldReference(1);
-  ::substrait::Expression* multiply_expr = SubstraitExprBuilder::makeExpr(
-      builder, "multiply", {field0, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  ::substrait::Expression* add_expr =
-      SubstraitExprBuilder::makeExpr(builder,
-                                     "add",
-                                     {multiply_expr, field1},
-                                     CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  SubstraitExprBuilder builder({"a", "b"},
+                               {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
+                                CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
+  ::substrait::Expression* field0 = builder.makeFieldReference(0);
+  ::substrait::Expression* field1 = builder.makeFieldReference("b");
+  ::substrait::Expression* multiply_expr = builder.makeScalarExpr(
+      "multiply", {field0, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  ::substrait::Expression* add_expr = builder.makeScalarExpr(
+      "add", {multiply_expr, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+
+  // TODO: (yma11) build extended expression and replace old evalulator API
+  // ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr, {"add_res"}}});
   // Make batch for evaluation, data should be transferred from frontend in real case
   auto input_batch = CiderBatchBuilder()
                          .setRowNum(2)
@@ -58,8 +55,8 @@ int main(int argc, char** argv) {
                           .build();
   auto allocator = std::make_shared<CiderDefaultAllocator>();
   CiderExprEvaluator evaluator({add_expr},
-                               builder->funcsInfo(),
-                               schema,
+                               builder.funcsInfo(),
+                               builder.getSchema(),
                                allocator,
                                generator::ExprType::ProjectExpr);
   auto out_batch = evaluator.eval(input_batch);
@@ -68,26 +65,21 @@ int main(int argc, char** argv) {
                                     std::make_shared<CiderBatch>(out_batch)));
 
   // Example 2 : generate for expression "a * b + 10"
-  SubstraitExprBuilder* inc_builder = new SubstraitExprBuilder();
-  ::substrait::Expression* field2 = SubstraitExprBuilder::makeFieldReference(
-      inc_builder, "a", CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  ::substrait::Expression* field3 = SubstraitExprBuilder::makeFieldReference(
-      inc_builder, "b", CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  SubstraitExprBuilder inc_builder({"a", "b"},
+                                   {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
+                                    CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
+  ::substrait::Expression* field2 = inc_builder.makeFieldReference("a");
+  ::substrait::Expression* field3 = inc_builder.makeFieldReference("b");
   ::substrait::Expression* field4 = CREATE_LITERAL(I64, "10");
-  ::substrait::NamedStruct* inc_schema = inc_builder->schema();
-  ::substrait::Expression* multiply_expr1 =
-      SubstraitExprBuilder::makeExpr(inc_builder,
-                                     "multiply",
-                                     {field2, field3},
-                                     CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  ::substrait::Expression* add_expr1 =
-      SubstraitExprBuilder::makeExpr(inc_builder,
-                                     "add",
-                                     {multiply_expr1, field4},
-                                     CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  // Evaluate same batch as above
+  ::substrait::NamedStruct* inc_schema = inc_builder.getSchema();
+  ::substrait::Expression* multiply_expr1 = inc_builder.makeScalarExpr(
+      "multiply", {field2, field3}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  ::substrait::Expression* add_expr1 = inc_builder.makeScalarExpr(
+      "add", {multiply_expr1, field4}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  // ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr1,
+  // {"add_res"}}}); Evaluate same batch as above
   CiderExprEvaluator evaluator1({add_expr1},
-                                inc_builder->funcsInfo(),
+                                inc_builder.funcsInfo(),
                                 inc_schema,
                                 allocator,
                                 generator::ExprType::ProjectExpr);
@@ -100,4 +92,16 @@ int main(int argc, char** argv) {
           .build();
   assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expected_batch1),
                                     std::make_shared<CiderBatch>(out_batch1)));
+  // Example 2 : generate for expression "sum(a), min(b)"
+  SubstraitExprBuilder agg_builder({"a", "b"},
+                                   {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
+                                    CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
+  ::substrait::Expression* arg_1 = agg_builder.makeFieldReference("a");
+  ::substrait::Expression* arg_2 = agg_builder.makeFieldReference("b");
+  ::substrait::AggregateFunction* sum =
+      agg_builder.makeAggExpr("sum", {arg_1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  ::substrait::AggregateFunction* min =
+      agg_builder.makeAggExpr("min", {arg_2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  // ::substrait::ExtendedExpression* ext_expr = builder.build({{sum, {"sum_a"}}, {min,
+  // {"min_b"}}});
 }

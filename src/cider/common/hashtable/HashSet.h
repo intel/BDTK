@@ -26,11 +26,10 @@
 #include <common/hashtable/HashTable.h>
 #include <common/hashtable/HashTableAllocator.h>
 
-namespace DB {
+namespace cider::hashtable {
 namespace ErrorCodes {
 extern const int LOGICAL_ERROR;
 }
-}  // namespace DB
 
 /** NOTE HashSet could only be used for memmoveable (position independent) types.
  * Example: std::string is not position independent in libstdc++ with C++11 ABI or in
@@ -190,3 +189,5 @@ using HashSetWithSavedHash =
 //     HashTableAllocatorWithStackMemory<
 //         (1ULL << initial_size_degree)
 //         * sizeof(HashSetCellWithSavedHash<Key, Hash>)>>;
+
+}  // namespace cider::hashtable

@@ -321,7 +321,6 @@ JITExprValue& InValues::codegenForString(CodegenContext& context) {
   } else {
     JITValuePointer val = func.createVariable(JITTypeTag::BOOL, "null_val", false);
     for (auto in_val : get_value_list()) {
-      std::cout << in_val->toString() << std::endl;
       auto in_val_const = dynamic_cast<Analyzer::Constant*>(
           const_cast<Analyzer::Expr*>(extract_cast_arg(in_val.get())));
       if (!in_val_const) {

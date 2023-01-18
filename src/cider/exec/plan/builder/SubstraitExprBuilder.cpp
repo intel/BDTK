@@ -25,17 +25,27 @@
  **/
 
 #include "SubstraitExprBuilder.h"
-#include "TypeUtils.h"
 #include "cider/CiderException.h"
+#include "exec/plan/parser/TypeUtils.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/type.pb.h"
 #include "util/Logger.h"
 
+SubstraitExprBuilder::SubstraitExprBuilder(std::vector<std::string> names,
+                                           std::vector<::substrait::Type*> types)
+    : func_anchor_(0), names_(names), types_(types), funcs_info_{} {
+  schema_ = makeNamedStruct(names, types);
+}
+
 ::substrait::NamedStruct* SubstraitExprBuilder::makeNamedStruct(
-    SubstraitExprBuilder* builder,
     std::vector<std::string> names,
     std::vector<::substrait::Type*> types) {
-  CHECK_EQ(names.size(), types.size());
+  // CHECK_EQ(names.size(), types.size());
+  std::unordered_set<std::string> unique_names;
+  for (auto name : names) {
+    unique_names.emplace(name);
+  }
+  // CHECK(unique_names.size() == names.size(), "col names should not be duplicated.");
   ::substrait::NamedStruct* named_struct = new ::substrait::NamedStruct();
   for (auto name : names) {
     named_struct->add_names(name);
@@ -47,60 +57,42 @@
   // TODO: Need set different nuallibilty for struct?
   mutable_struct->set_type_variation_reference(0);
   mutable_struct->set_nullability(substrait::Type::NULLABILITY_REQUIRED);
-  builder->schema_ = named_struct;
   return named_struct;
 }
 
-::substrait::NamedStruct* SubstraitExprBuilder::schema() {
-  if (schema_) {
-    CIDER_THROW(CiderCompileException, "schema already exists, check your usage");
-  }
-  CHECK_GT(names_.size(), 0);
-  CHECK_EQ(names_.size(), types_.size());
-  return makeNamedStruct(this, names_, types_);
-}
-
-::substrait::Type* SubstraitExprBuilder::makeType(bool isNullable) {
-  ::substrait::Type* type = new ::substrait::Type();
-  ::substrait::Type_I64* type_i64 = new ::substrait::Type_I64();
-  type_i64->set_nullability(TypeUtils::getSubstraitTypeNullability(isNullable));
-  type->set_allocated_i64(type_i64);
-  return type;
+::substrait::NamedStruct* SubstraitExprBuilder::getSchema() {
+  return schema_;
 }
 
 ::substrait::Expression* SubstraitExprBuilder::makeFieldReference(size_t field) {
-  auto arg = new ::substrait::Expression();
-  ::substrait::Expression_FieldReference* s_field_ref = arg->mutable_selection();
+  // TODO: (yma11) enable CHECK once glog adopted?
+  // CHECK(field < names_.size(), "Col index is out of boundary.");
+  auto field_expr = new ::substrait::Expression();
+  ::substrait::Expression_FieldReference* s_field_ref = field_expr->mutable_selection();
   ::substrait::Expression_ReferenceSegment_StructField* s_direct_struct =
       s_field_ref->mutable_direct_reference()->mutable_struct_field();
   s_field_ref->mutable_root_reference();
   s_direct_struct->set_field(field);
-  return arg;
+  return field_expr;
 }
 
-::substrait::Expression* SubstraitExprBuilder::makeFieldReference(
-    SubstraitExprBuilder* builder,
-    std::string name,
-    ::substrait::Type* type) {
-  auto arg = new ::substrait::Expression();
-  ::substrait::Expression_FieldReference* s_field_ref = arg->mutable_selection();
-  ::substrait::Expression_ReferenceSegment_StructField* s_direct_struct =
-      s_field_ref->mutable_direct_reference()->mutable_struct_field();
-  s_field_ref->mutable_root_reference();
-  s_direct_struct->set_field(builder->names_.size());
-  builder->names_.push_back(name);
-  builder->types_.push_back(type);
-  return arg;
+::substrait::Expression* SubstraitExprBuilder::makeFieldReference(std::string name) {
+  size_t col_index = -1;
+  for (int i = 0; i < names_.size(); i++) {
+    if (name == names_[i]) {
+      col_index = i;
+    }
+  }
+  // CHECK(col_index != -1,
+  //       "column with name " + name + " is not found in referred schema.");
+  return makeFieldReference(col_index);
 }
 
 ::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*
-SubstraitExprBuilder::makeFunc(SubstraitExprBuilder* builder,
-                               std::string func_name,
+SubstraitExprBuilder::makeFunc(std::string func_name,
                                std::vector<::substrait::Expression*> args,
                                ::substrait::Type* output_type) {
-  // FIXME: need detect whether function already exists
-  auto func = new ::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction();
-  // FIXME: func_sig is not always in this pattern
+  // Function signature has format like "func_name:arg1_type, arg2_type..."
   auto func_sig = func_name + ":opt";
   for (auto arg : args) {
     if (arg->has_scalar_function()) {
@@ -109,40 +101,58 @@ SubstraitExprBuilder::makeFunc(SubstraitExprBuilder* builder,
       continue;
     }
     if (arg->has_selection()) {
-      // need names/types or schema availble
+      // get type from schema for field reference
       auto field = arg->selection().direct_reference().struct_field().field();
-      if (builder->schema_) {
-        func_sig = func_sig + "_" +
-                   TypeUtils::getStringType(builder->schema_->struct_().types(field));
-      } else if (builder->names_.size() > field) {
-        func_sig = func_sig + "_" + TypeUtils::getStringType(*builder->types_[field]);
-      } else {
-        CIDER_THROW(CiderCompileException,
-                    "Failed to get type of field reference, check builder names/types or "
-                    "schema.");
-      }
+      func_sig =
+          func_sig + "_" + TypeUtils::getStringType(schema_->struct_().types(field));
+    }
+    if (arg->has_literal()) {
+      func_sig = func_sig + "_" + TypeUtils::getStringType(arg->literal());
     }
   }
+  for (auto func : funcs_info_) {
+    if (func->name() == func_sig) {
+      // return directly if func already exist
+      return func;
+    }
+  }
+  auto func = new ::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction();
   func->set_name(func_sig);
-  func->set_function_anchor(builder->func_anchor_);
-  builder->func_anchor_ += 1;
+  func->set_function_anchor(func_anchor_);
+  func_anchor_ += 1;
   func->set_extension_uri_reference(2);
-  builder->funcs_info_.push_back(func);
+  funcs_info_.push_back(func);
   return func;
 }
 
-::substrait::Expression* SubstraitExprBuilder::makeExpr(
-    SubstraitExprBuilder* builder,
+::substrait::Expression* SubstraitExprBuilder::makeScalarExpr(
     std::string func_name,
     std::vector<::substrait::Expression*> args,
     ::substrait::Type* output_type) {
   auto expr = new ::substrait::Expression();
   auto expr_func = expr->mutable_scalar_function();
   expr_func->set_function_reference(
-      makeFunc(builder, func_name, args, output_type)->function_anchor());
+      makeFunc(func_name, args, output_type)->function_anchor());
   for (auto arg : args) {
     expr_func->add_arguments()->mutable_value()->CopyFrom(*arg);
   }
   expr_func->mutable_output_type()->CopyFrom(*output_type);
+  return expr;
+}
+
+::substrait::AggregateFunction* SubstraitExprBuilder::makeAggExpr(
+    std::string func_name,
+    std::vector<::substrait::Expression*> args,
+    ::substrait::Type* output_type,
+    ::substrait::AggregationPhase agg_phase,
+    ::substrait::AggregateFunction_AggregationInvocation agg_invoc) {
+  auto expr = new ::substrait::AggregateFunction();
+  expr->set_function_reference(makeFunc(func_name, args, output_type)->function_anchor());
+  for (auto arg : args) {
+    expr->add_arguments()->mutable_value()->CopyFrom(*arg);
+  }
+  expr->set_phase(agg_phase);
+  expr->set_invocation(agg_invoc);
+  expr->mutable_output_type()->CopyFrom(*output_type);
   return expr;
 }

@@ -25,15 +25,28 @@
 
 namespace cider::exec::processor {
 
+StatefulProcessor::StatefulProcessor(
+    const plan::SubstraitPlanPtr& plan,
+    const BatchProcessorContextPtr& context,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options)
+    : DefaultBatchProcessor(plan, context, codegen_options) {
+  has_groupby_ = plan->hasGroupingAggregateRel();
+}
+
 void StatefulProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
-  if (!no_more_batch_ || BatchProcessorState::kFinished == state_) {
-    input_arrow_array_ = nullptr;
+  if (!no_more_batch_ || !has_result_) {
     array.length = 0;
     return;
   }
 
   state_ = BatchProcessorState::kFinished;
-  // TODO: getResult through nextGen runtime api
+
+  if (!has_groupby_) {
+    has_result_ = false;
+    auto output_batch = runtime_context_->getNonGroupByAggOutputBatch();
+    output_batch->move(schema, array);
+  }
+
   return;
 }
 

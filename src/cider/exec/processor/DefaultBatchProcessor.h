@@ -31,8 +31,11 @@ namespace cider::exec::processor {
 
 class DefaultBatchProcessor : public BatchProcessor {
  public:
-  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
-                        const BatchProcessorContextPtr& context);
+  DefaultBatchProcessor(
+      const plan::SubstraitPlanPtr& plan,
+      const BatchProcessorContextPtr& context,
+
+      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
   virtual ~DefaultBatchProcessor() = default;
 
@@ -60,6 +63,10 @@ class DefaultBatchProcessor : public BatchProcessor {
   struct ArrowSchema* output_arrow_schema_{nullptr};
 
   bool no_more_batch_{false};
+
+  bool has_result_{false};
+
+  bool need_spill_{false};
 
   JoinHandlerPtr joinHandler_;
 

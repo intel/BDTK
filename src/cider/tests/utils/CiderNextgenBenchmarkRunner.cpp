@@ -25,11 +25,13 @@ extern bool g_enable_debug_timer;
 
 namespace cider::test::util {
 
-void CiderNextgenBenchmarkRunner::runQueryOneBatch(const std::string& file_or_sql,
-                                                   const struct ArrowArray& input_array,
-                                                   const struct ArrowSchema& input_schema,
-                                                   struct ArrowArray& output_array,
-                                                   struct ArrowSchema& output_schema) {
+void CiderNextgenBenchmarkRunner::runQueryOneBatch(
+    const std::string& file_or_sql,
+    const struct ArrowArray& input_array,
+    const struct ArrowSchema& input_schema,
+    struct ArrowArray& output_array,
+    struct ArrowSchema& output_schema,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options) {
   g_enable_debug_timer = true;
 
   // Step 1: construct substrait plan

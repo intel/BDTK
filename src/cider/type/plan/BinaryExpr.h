@@ -146,10 +146,12 @@ class BinOper : public Expr {
     return {&left_operand, &right_operand};
   }
   JITExprValue& codegen(CodegenContext& context) override;
-  JITExprValue& codegenFixedSizeColArithFun(JITValuePointer& null,
-                                            JITValue& lhs,
-                                            JITValue& rhs,
-                                            bool needs_error_check = false);
+
+  JITExprValue& codegenFixedSizeColArithFun(CodegenContext& context,
+                                            JITValuePointer null,
+                                            JITValuePointer lhs,
+                                            JITValuePointer rhs);
+
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
                                           JITValue& rhs);
@@ -168,6 +170,8 @@ class BinOper : public Expr {
   JITExprValue& codegenVarcharDistinctFrom(JITFunction& func,
                                            VarSizeJITExprValue& lhs,
                                            VarSizeJITExprValue& rhs);
+
+  JITValuePointer codegenArithWithErrorCheck(JITValuePointer lhs, JITValuePointer rhs);
 
  private:
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.

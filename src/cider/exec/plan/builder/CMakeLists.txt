@@ -17,16 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-add_executable(CiderBatchExample CiderBatchExample.cpp)
-target_link_libraries(CiderBatchExample cider substrait)
+# Set up Proto
+find_package(Protobuf REQUIRED)
+include_directories(${Protobuf_INCLUDE_DIRS})
 
-add_executable(ExpressionEvalExample ExpressionEvalExample.cpp)
-target_link_libraries(ExpressionEvalExample test_utils cider_expr_builder cider
-                      substrait)
+set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -Wno-attributes -Wno-write-strings -Wno-unused-function -Wno-unused-label -Wno-sign-compare"
+)
 
-add_executable(CiderRuntimeModuleExample CiderRuntimeModuleExample.cpp)
-target_link_libraries(CiderRuntimeModuleExample cider_expr_builder test_utils
-                      cider substrait)
-
-add_executable(CiderHashTableExample CiderHashTableExample.cpp)
-target_link_libraries(CiderHashTableExample cider)
+set(CIDER_PLAN_PARSER_SRCS SubstraitExprBuilder.cpp)
+add_library(cider_expr_builder STATIC ${CIDER_PLAN_PARSER_SRCS})
+target_link_libraries(cider_expr_builder substrait cider_util protobuf)

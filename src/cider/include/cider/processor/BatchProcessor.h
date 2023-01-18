@@ -26,6 +26,7 @@
 
 #include "cider/processor/BatchProcessorContext.h"
 #include "cider/processor/JoinHashTableBuilder.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "substrait/plan.pb.h"
 
 struct ArrowArray;
@@ -71,7 +72,8 @@ using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
 /// Factory method to create an instance of batchProcessor
 std::unique_ptr<BatchProcessor> makeBatchProcessor(
     const ::substrait::Plan& plan,
-    const BatchProcessorContextPtr& context);
+    const BatchProcessorContextPtr& context,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
 inline std::ostream& operator<<(std::ostream& stream, const BatchProcessor::Type& type) {
   switch (type) {

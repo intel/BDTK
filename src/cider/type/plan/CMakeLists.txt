@@ -24,6 +24,7 @@ set(cider_type_plan_source_files
     UnaryExpr.cpp
     ColumnExpr.cpp
     ConstantExpr.cpp
+    CaseExpr.cpp
     LikeExpr.cpp
     DateExpr.cpp
     StringOpExpr.cpp

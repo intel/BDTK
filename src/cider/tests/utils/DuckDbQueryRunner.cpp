@@ -250,6 +250,16 @@ template <>
     }                                                                        \
   }
 
+::duckdb::Value duckValueVarcharAt(const int8_t* data_buffer,
+                                   const int32_t* offset_buffer,
+                                   int64_t offset) {
+  auto len = offset_buffer[offset + 1] - offset_buffer[offset];
+  char copy[len + 1];
+  memcpy(&copy, &data_buffer[offset_buffer[offset]], len);
+  copy[len] = '\0';
+  return ::duckdb::Value(std::string(copy));
+}
+
 #define GEN_DUCK_DB_VALUE_FROM_ARROW_ARRAY_AND_SCHEMA_FUNC                               \
   [&]() {                                                                                \
     switch (child_schema->format[0]) {                                                   \
@@ -285,7 +295,19 @@ template <>
         if (child_schema->format[1] == 'd' && child_schema->format[2] == 'D') {          \
           return duckValueAt<int32_t>(                                                   \
               static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
+        } else if (child_schema->format[1] == 't' && child_schema->format[2] == 'u') {   \
+          return duckValueAt<int64_t>(                                                   \
+              static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
+        } else if (child_schema->format[1] == 's' && child_schema->format[2] == 'u') {   \
+          return duckValueAt<int64_t>(                                                   \
+              static_cast<const int8_t*>(child_array->buffers[1]), row_idx);             \
         }                                                                                \
+        CIDER_THROW(CiderException, "not supported time type to gen duck value");        \
+      }                                                                                  \
+      case 'u': {                                                                        \
+        return duckValueVarcharAt(static_cast<const int8_t*>(child_array->buffers[2]),   \
+                                  static_cast<const int32_t*>(child_array->buffers[1]),  \
+                                  row_idx);                                              \
       }                                                                                  \
       default:                                                                           \
         CIDER_THROW(CiderException, "not supported type to gen duck value");             \
