@@ -23,6 +23,7 @@
 #pragma once
 
 #include <common/Arena.h>
+#include "type/data/funcannotations.h"
 
 /**
  * In some aggregation scenarios, when adding a key to the hash table, we

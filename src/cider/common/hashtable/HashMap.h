@@ -26,6 +26,7 @@
 #include <common/hashtable/HashTable.h>
 #include <common/hashtable/HashTableAllocator.h>
 #include <common/hashtable/Prefetching.h>
+#include <iostream>
 
 /** NOTE HashMap could only be used for memmoveable (position independent) types.
  * Example: std::string is not position independent in libstdc++ with C++11 ABI or in
@@ -37,7 +38,6 @@ namespace cider::hashtable {
 namespace ErrorCodes {
 extern const int LOGICAL_ERROR;
 }
-}  // namespace cider::hashtable
 
 struct NoInitTag {};
 
@@ -174,23 +174,26 @@ struct HashMapCell {
       return std::move(value.second);
   }
 };
+}  // namespace cider::hashtable
 
 namespace std {
 
 template <typename Key, typename TMapped, typename Hash, typename TState>
-struct tuple_size<HashMapCell<Key, TMapped, Hash, TState>>
+struct tuple_size<cider::hashtable::HashMapCell<Key, TMapped, Hash, TState>>
     : std::integral_constant<size_t, 2> {};
 
 template <typename Key, typename TMapped, typename Hash, typename TState>
-struct tuple_element<0, HashMapCell<Key, TMapped, Hash, TState>> {
+struct tuple_element<0, cider::hashtable::HashMapCell<Key, TMapped, Hash, TState>> {
   using type = Key;
 };
 
 template <typename Key, typename TMapped, typename Hash, typename TState>
-struct tuple_element<1, HashMapCell<Key, TMapped, Hash, TState>> {
+struct tuple_element<1, cider::hashtable::HashMapCell<Key, TMapped, Hash, TState>> {
   using type = TMapped;
 };
 }  // namespace std
+
+namespace cider::hashtable {
 
 template <typename Key,
           typename TMapped,
@@ -343,24 +346,30 @@ class HashMapTable : public HashTable<Key, Cell, Hash, Grower, Allocator> {
     return it;
   }
 };
+}  // namespace cider::hashtable
 
 namespace std {
 
 template <typename Key, typename TMapped, typename Hash, typename TState>
-struct tuple_size<HashMapCellWithSavedHash<Key, TMapped, Hash, TState>>
+struct tuple_size<cider::hashtable::HashMapCellWithSavedHash<Key, TMapped, Hash, TState>>
     : std::integral_constant<size_t, 2> {};
 
 template <typename Key, typename TMapped, typename Hash, typename TState>
-struct tuple_element<0, HashMapCellWithSavedHash<Key, TMapped, Hash, TState>> {
+struct tuple_element<
+    0,
+    cider::hashtable::HashMapCellWithSavedHash<Key, TMapped, Hash, TState>> {
   using type = Key;
 };
 
 template <typename Key, typename TMapped, typename Hash, typename TState>
-struct tuple_element<1, HashMapCellWithSavedHash<Key, TMapped, Hash, TState>> {
+struct tuple_element<
+    1,
+    cider::hashtable::HashMapCellWithSavedHash<Key, TMapped, Hash, TState>> {
   using type = TMapped;
 };
 }  // namespace std
 
+namespace cider::hashtable {
 template <typename Key,
           typename Mapped,
           typename Hash = DefaultHash<Key>,
@@ -391,3 +400,5 @@ using HashMapWithSavedHash = HashMapTable<Key,
 //     HashTableAllocatorWithStackMemory<
 //         (1ULL << initial_size_degree)
 //         * sizeof(HashMapCellWithSavedHash<Key, Mapped, Hash>)>>;
+
+}  // namespace cider::hashtable

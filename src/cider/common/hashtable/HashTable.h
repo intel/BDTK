@@ -33,6 +33,8 @@
 
 #include <common/hashtable/HashTableAllocator.h>
 #include <common/hashtable/HashTableKeyHolder.h>
+#include "type/data/funcannotations.h"
+#include "util/Logger.h"
 
 #ifdef DBMS_HASH_MAP_DEBUG_RESIZES
 #include <Common/Stopwatch.h>
@@ -51,7 +53,6 @@ namespace ErrorCodes {
 extern const int LOGICAL_ERROR;
 extern const int NO_AVAILABLE_DATA;
 }  // namespace ErrorCodes
-}  // namespace cider::hashtable
 
 /** The state of the hash table that affects the properties of its cells.
  * Used as a template parameter.
@@ -1339,3 +1340,5 @@ class HashTable : private boost::noncopyable,
   size_t getCollisions() const { return collisions; }
 #endif
 };
+
+}  // namespace cider::hashtable

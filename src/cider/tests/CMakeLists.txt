@@ -46,6 +46,7 @@ add_executable(StringHeapTest StringHeapTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     cider
+    cider_hashtable
     gtest
     test_utils
     fmt::fmt

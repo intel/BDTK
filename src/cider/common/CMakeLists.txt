@@ -18,3 +18,5 @@
 # specific language governing permissions and limitations
 # under the License.
 add_subdirectory(contrib)
+
+add_library(cider_hashtable interpreters/AggregationHashTable.cpp)
