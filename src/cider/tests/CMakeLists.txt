@@ -44,7 +44,16 @@ add_executable(CiderLogTest CiderLogTest.cpp)
 add_executable(Sql2IR Sql2IR.cpp)
 add_executable(StringHeapTest StringHeapTest.cpp)
 
-set(EXECUTE_TEST_LIBS cider gtest test_utils fmt::fmt)
+set(EXECUTE_TEST_LIBS
+    cider
+    cider_hashtable
+    gtest
+    test_utils
+    fmt::fmt
+    ${CIDER_LIBRARIES}
+    ${CMAKE_DL_LIBS}
+    ${Boost_LIBRARIES}
+    ${ZLIB_LIBRARIES})
 
 target_link_libraries(CodeGeneratorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CompileWorkUnitTest ${EXECUTE_TEST_LIBS})
