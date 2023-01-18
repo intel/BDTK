@@ -555,12 +555,43 @@ TEST_F(JITLibTests, ForContinueTest) {
                 function->createVariable(JITTypeTag::INT32, "index", 10);
 
             loop_builder->condition([&]() { return index + 0; })
-                ->loop([&](LoopBuilder*) {
+                ->loop([&](LoopBuilder* loop_builder) {
                   function->createIfBuilder()
                       ->condition([&index]() { return index % 2 != 0; })
                       ->ifTrue([&]() { loop_builder->loopContinue(); })
                       ->build();
 
+                  ret = ret + 1;
+                })
+                ->update([&]() { index = index - 1; })
+                ->build();
+
+            function->createReturn(ret);
+          })
+          .build();
+  module.finish();
+
+  auto func_ptr = func->getFunctionPointer<int32_t>();
+  EXPECT_EQ(func_ptr(), 5);
+}
+
+TEST_F(JITLibTests, ForConditionalContinueTest) {
+  LLVMJITModule module("TestModule");
+  JITFunctionPointer func =
+      JITFunctionBuilder()
+          .setFuncName("test_func")
+          .registerModule(module)
+          .addReturn(JITTypeTag::INT32)
+          .addProcedureBuilder([](JITFunctionPointer function) {
+            JITValuePointer ret = function->createVariable(JITTypeTag::INT32, "ret", 0);
+
+            auto loop_builder = function->createLoopBuilder();
+            JITValuePointer index =
+                function->createVariable(JITTypeTag::INT32, "index", 10);
+
+            loop_builder->condition([&]() { return index + 0; })
+                ->loop([&](LoopBuilder*) {
+                  loop_builder->loopContinue(index % 2 != 0);
                   ret = ret + 1;
                 })
                 ->update([&]() { index = index - 1; })

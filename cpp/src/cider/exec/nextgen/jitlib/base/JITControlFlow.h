@@ -85,9 +85,16 @@ class LoopBuilder {
     return this;
   }
 
-  virtual void loopContinue() = 0;
+  template <
+      typename T = JITValuePointer,
+      std::enable_if_t<std::is_same_v<std::decay_t<T>, JITValuePointer>, bool> = true>
+  void loopContinue(T&& condition = JITValuePointer()) {
+    loopContinueImpl(condition.get());
+  }
 
  protected:
+  virtual void loopContinueImpl(JITValue* condition) = 0;
+
   std::function<JITValuePointer()> condition_;
   std::function<void(LoopBuilder*)> loop_body_;
   std::function<void()> update_;
