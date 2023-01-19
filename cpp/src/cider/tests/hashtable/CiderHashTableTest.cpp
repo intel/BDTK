@@ -65,29 +65,16 @@ TEST(CiderHashTableTest, factoryTest) {
       hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
 }
 
-TEST(CiderHashTableTest, AnyTest) {
-  std::any a = 1;  // a is empty
-  std::any b = 1;
-  bool is_equal = cider_hashtable::AnyEqual()(a, b);
-  EXPECT_EQ(is_equal, true);
-  size_t hash_a = cider_hashtable::AnyMurmurHash()(a);
-  size_t hash_b = cider_hashtable::AnyMurmurHash()(b);
-  EXPECT_EQ(hash_a, hash_b);
-}
-
 // test build and probe for cider
 TEST(CiderHashTableTest, JoinHashTableTest) {
   using namespace cider::exec::nextgen::context;
 
   auto joinHashTable1 = new cider::exec::processor::JoinHashTable(
       cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto hashTable1 = joinHashTable1->getHashTable();
   auto joinHashTable2 = new cider::exec::processor::JoinHashTable(
       cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto hashTable2 = joinHashTable2->getHashTable();
   auto joinHashTable3 = new cider::exec::processor::JoinHashTable(
       cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto hashTable3 = joinHashTable3->getHashTable();
 
   auto input_builder = ArrowArrayBuilder();
 
@@ -103,12 +90,12 @@ TEST(CiderHashTableTest, JoinHashTableTest) {
   for (int i = 0; i < 10; i++) {
     int key = *(
         (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
-    hashTable1->emplace(key, {&build_batch, i});
-    hashTable2->emplace(key, {&build_batch, i});
-    hashTable3->emplace(key, {&build_batch, i});
+    joinHashTable1->emplace(key, {&build_batch, i});
+    joinHashTable2->emplace(key, {&build_batch, i});
+    joinHashTable3->emplace(key, {&build_batch, i});
   }
   for (auto key : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
-    auto hm_res_vec = joinHashTable1->getHashTable()->findAll(key);
+    auto hm_res_vec = joinHashTable1->findAll(key);
     EXPECT_EQ(hm_res_vec.size(), 1);
     EXPECT_EQ(hm_res_vec[0].batch_offset, key);
   }

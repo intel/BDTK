@@ -23,36 +23,37 @@
 
 namespace cider::exec::processor {
 
-  JoinHashTable::JoinHashTable(cider_hashtable::HashTableType hashTableType) {
-    cider_hashtable::HashTableSelector<
-        CiderJoinBaseKey,
-        CiderJoinBaseValue,
-        cider_hashtable::AnyMurmurHash,
-        cider_hashtable::AnyEqual,
-        void,
-        std::allocator<std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>>
-        hashTableSelector;
-    hashTableInstance_ = std::move(hashTableSelector.createForJoin(hashTableType));
+JoinHashTable::JoinHashTable(cider_hashtable::HashTableType hashTableType) {
+  cider_hashtable::HashTableSelector<
+      CiderJoinBaseKey,
+      CiderJoinBaseValue,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
+      void,
+      std::allocator<
+          std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>>
+      hashTableSelector;
+  hashTableInstance_ = std::move(hashTableSelector.createForJoin(hashTableType));
+}
+// choose hashtable, right now just one
+std::shared_ptr<CiderJoinBaseHashTable> JoinHashTable::getHashTable() {
+  return hashTableInstance_;
+}
+
+void JoinHashTable::merge_other_hashtables(
+    std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables) {
+  std::vector<std::shared_ptr<CiderJoinBaseHashTable>> otherHashTables;
+  for (auto& otherJoinTable : otherJoinTables) {
+    otherHashTables.emplace_back(otherJoinTable->getHashTable());
   }
-  // choose hashtable, right now just one
-  std::shared_ptr<CiderJoinBaseHashTable> JoinHashTable::getHashTable() { return hashTableInstance_; }
+  hashTableInstance_->merge_other_hashtables(otherHashTables);
+}
 
-  void JoinHashTable::merge_other_hashtables(
-      std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables) {
-    std::vector<std::shared_ptr<CiderJoinBaseHashTable>> otherHashTables;
-    for (auto& otherJoinTable : otherJoinTables) {
-      otherHashTables.emplace_back(otherJoinTable->getHashTable());
-    }
-    hashTableInstance_->merge_other_hashtables(otherHashTables);
-  }
-
-  bool JoinHashTable::emplace(CiderJoinBaseKey key, CiderJoinBaseValue value) { 
-    return hashTableInstance_->emplace(key,value); 
- }
-  std::vector<CiderJoinBaseValue> JoinHashTable::findAll(const CiderJoinBaseKey key) { 
-    return hashTableInstance_->findAll(key); 
-    }
-
-
+bool JoinHashTable::emplace(CiderJoinBaseKey key, CiderJoinBaseValue value) {
+  return hashTableInstance_->emplace(key, value);
+}
+std::vector<CiderJoinBaseValue> JoinHashTable::findAll(const CiderJoinBaseKey key) {
+  return hashTableInstance_->findAll(key);
+}
 
 }  // namespace cider::exec::processor

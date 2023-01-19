@@ -35,9 +35,9 @@ void DefaultJoinHashTableBuilder::appendBatch(
     std::shared_ptr<cider::exec::nextgen::context::Batch> batch) {
   int length = batch->getArray()->children[0]->length;
   for (int i = 0; i < length; i++) {
-    std::any key = *((reinterpret_cast<int*>(
-                         const_cast<void*>(batch->getArray()->children[0]->buffers[1]))) +
-                     i);
+    int key = *((reinterpret_cast<int*>(
+                    const_cast<void*>(batch->getArray()->children[0]->buffers[1]))) +
+                i);
 
     hashTable_->getHashTable()->emplace(key, {batch.get(), i});
   }

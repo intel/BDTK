@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#pragma once
 
 #include <any>
 #include <memory>
@@ -32,16 +33,17 @@ struct BatchOffset {
   int64_t batch_offset;
 };
 
-using CiderJoinBaseKey = std::any;
+using CiderJoinBaseKey = int;
 using CiderJoinBaseValue = BatchOffset;
 
 using CiderJoinBaseHashTable = cider_hashtable::BaseHashTable<
     CiderJoinBaseKey,
     CiderJoinBaseValue,
-    cider_hashtable::AnyMurmurHash,
-    cider_hashtable::AnyEqual,
+    cider_hashtable::MurmurHash,
+    cider_hashtable::Equal,
     void,
-    std::allocator<std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>>;
+    std::allocator<
+        std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>>;
 
 class JoinHashTable {
  public:

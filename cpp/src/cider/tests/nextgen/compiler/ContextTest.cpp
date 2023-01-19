@@ -24,7 +24,7 @@
 
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
-#include "exec/operator/join/CiderLinearProbingHashTable.h"
+#include "exec/operator/join/CiderJoinHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/TestHelpers.h"
@@ -160,14 +160,12 @@ TEST_F(ContextTests, RegisterHashTableTest) {
   StdMapDuplicateKeyWrapper<int, std::pair<Batch*, int>> dup_map;
 
   Batch build_batch(*schema, *array);
-  cider_hashtable::
-      LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>
-          hm(16, 0);
+  cider::exec::processor::JoinHashTable hm;
   auto batch = new Batch(build_batch);
   for (int i = 0; i < 10; i++) {
     int key = *(
         (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
-    hm.insert(key, std::make_pair(batch, i));
+    hm.emplace(key, {batch, i});
     dup_map.insert(std::move(key), std::make_pair(batch, i));
   }
 
@@ -180,9 +178,7 @@ TEST_F(ContextTests, RegisterHashTableTest) {
   EXPECT_EQ(runtime_ctx->getContextItemNum(), 1);
   EXPECT_NE(runtime_ctx->getContextItem(0), nullptr);
 
-  auto hash_table = reinterpret_cast<
-      cider_hashtable::
-          LinearProbeHashTable<int, std::pair<Batch*, int>, murmurHash, Equal>*>(
+  auto hash_table = reinterpret_cast<cider::exec::processor::JoinHashTable*>(
       runtime_ctx->getContextItem(0));
 
   auto check_array = [](ArrowArray* array, size_t expect_len) {
@@ -200,7 +196,7 @@ TEST_F(ContextTests, RegisterHashTableTest) {
 
     for (int i = 0; i < hm_res_vec.size(); ++i) {
       auto pair = hm_res_vec.at(i);
-      auto batch = pair.first;
+      auto batch = pair.batch_ptr;
       check_array(batch->getArray()->children[0], 10);
       check_array(batch->getArray()->children[1], 10);
       check_array(batch->getArray()->children[2], 10);

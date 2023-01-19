@@ -16,7 +16,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(HASHTABLE_SOURCE
-    ${CMAKE_CURRENT_LIST_DIR}/CiderJoinHashTable.cpp)
+set(HASHTABLE_SOURCE ${CMAKE_CURRENT_LIST_DIR}/CiderJoinHashTable.cpp)
 
 add_library(cider_hashtable STATIC ${HASHTABLE_SOURCE})

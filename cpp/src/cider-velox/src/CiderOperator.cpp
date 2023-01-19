@@ -28,7 +28,6 @@
 #include "velox/exec/Task.h"
 
 #include "cider/batch/CiderBatchUtils.h"
-#include "velox/vector/arrow/Abi.h"
 #include "velox/vector/arrow/Bridge.h"
 
 #include "CiderJoinBuild.h"
