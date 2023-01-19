@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#pragma once
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
@@ -94,6 +93,7 @@ TEST(CiderHashTableTest, JoinHashTableTest) {
     joinHashTable2->emplace(key, {&build_batch, i});
     joinHashTable3->emplace(key, {&build_batch, i});
   }
+  EXPECT_EQ(joinHashTable1->getHashTable()->size(), 10);
   for (auto key : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
     auto hm_res_vec = joinHashTable1->findAll(key);
     EXPECT_EQ(hm_res_vec.size(), 1);

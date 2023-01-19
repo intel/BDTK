@@ -18,4 +18,4 @@
 # under the License.
 set(HASHTABLE_SOURCE ${CMAKE_CURRENT_LIST_DIR}/CiderJoinHashTable.cpp)
 
-add_library(cider_hashtable STATIC ${HASHTABLE_SOURCE})
+add_library(cider_hashtable_join STATIC ${HASHTABLE_SOURCE})

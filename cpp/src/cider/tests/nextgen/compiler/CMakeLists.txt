@@ -24,7 +24,7 @@ set(NEXTGEN_COMPILER_TEST_LIBS
     duckdb
     substrait
     cider
-    cider_hashtable)
+    cider_hashtable_join)
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
 target_link_libraries(NextgenCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})
