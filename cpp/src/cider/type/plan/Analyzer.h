@@ -764,7 +764,13 @@ class AggExpr : public Expr {
   std::string toString() const override;
   void find_expr(bool (*f)(const Expr*),
                  std::list<const Expr*>& expr_list) const override;
-  ExprPtrRefVector get_children_reference() override { return {&arg}; }
+  ExprPtrRefVector get_children_reference() override {
+    ExprPtrRefVector ret;
+    if (arg) {
+      ret.emplace_back(&arg);
+    }
+    return ret;
+  }
 
  private:
   SQLAgg aggtype;                       // aggregate type: kAVG, kMIN, kMAX, kSUM, kCOUNT
@@ -1120,4 +1126,4 @@ inline std::shared_ptr<Analyzer::Var> var_ref(const Analyzer::Expr* expr,
 bool expr_list_match(const std::vector<std::shared_ptr<Analyzer::Expr>>& lhs,
                      const std::vector<std::shared_ptr<Analyzer::Expr>>& rhs);
 
-#endif  // TYPE_PLAN_ANALYZER_H
+#endif // TYPE_PLAN_ANALYZER_H

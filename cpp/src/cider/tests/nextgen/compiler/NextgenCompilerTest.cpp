@@ -109,11 +109,15 @@ class NextgenCompilerTest : public ::testing::Test {
   }
 
  private:
-  std::string create_ddl_ = "CREATE TABLE test(a BIGINT NOT NULL, b BIGINT NOT NULL);";
+  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);";
 };
 
-TEST_F(NextgenCompilerTest, FrameworkTest) {
+TEST_F(NextgenCompilerTest, FrameworkTest1) {
   executeTest("select a + b, a - b from test where a < b");
+}
+
+TEST_F(NextgenCompilerTest, FrameworkTest2) {
+  executeTest("select a + b, a - b from test");
 }
 
 class CiderNextgenCompilerTestBase : public CiderNextgenTestBase {

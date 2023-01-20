@@ -20,21 +20,71 @@
  */
 #include "exec/nextgen/transformer/Transformer.h"
 
-#include "exec/nextgen/operators/QueryFuncInitializer.h"
+#include "exec/nextgen/operators/ColumnToRowNode.h"
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
+#include "exec/nextgen/operators/QueryFuncInitializer.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
+#include "exec/nextgen/operators/VectorizedProjectNode.h"
+#include "exec/nextgen/utils/ExprUtils.h"
 
 namespace cider::exec::nextgen::transformer {
 using namespace operators;
 
-// [Head, Tail], both sides are closed.
+// [Head, Tail)
 class PipelineStage {
  public:
   PipelineStage(const OpPipeline::iterator& head, const OpPipeline::iterator& tail)
       : head_(head), tail_(tail) {}
 
+  void generateLoopStage(OpPipeline& pipeline) {
+    // Insert C2R and R2C for row-based stage.
+    if (auto&& [type, _] = head_->get()->getOutputExprs();
+        type == JITExprValueType::ROW) {
+      head_ = pipeline.insert(head_, createOpNode<ColumnToRowNode>(collectColumnVar()));
+    }
+
+    if (auto&& [type, exprs] = tail_->get()->getOutputExprs();
+        type == JITExprValueType::ROW) {
+      ColumnToRowNode* c2r = dynamic_cast<ColumnToRowNode*>(head_->get());
+      CHECK(c2r);
+      tail_ = pipeline.insert(++tail_, createOpNode<RowToColumnNode>(exprs, c2r));
+    }
+  }
+
+  std::string toString() const {
+    std::stringstream ss;
+    ss << "[";
+
+    auto iter = head_;
+    auto end = tail_;
+    ++end;
+    ss << iter->get()->name();
+    for (++iter; iter != end; ++iter) {
+      ss << " -> ";
+      ss << iter->get()->name();
+    }
+    ss << "]";
+
+    return ss.str();
+  }
+
  private:
+  ExprPtrVector collectColumnVar() {
+    auto end = tail_;
+    ++end;
+
+    ExprPtrVector stage_exprs;
+    stage_exprs.reserve(8);
+
+    for (auto iter = head_; iter != end; ++iter) {
+      auto&& [_, exprs] = iter->get()->getOutputExprs();
+      stage_exprs.insert(stage_exprs.end(), exprs.begin(), exprs.end());
+    }
+
+    return utils::collectColumnVars(stage_exprs);
+  }
+
   OpPipeline::iterator head_;
   OpPipeline::iterator tail_;
 };
@@ -64,36 +114,45 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
   std::vector<PipelineStage> stages;
   stages.reserve(pipeline.size());
 
-  auto traverse_pivot = pipeline.begin();
-
-  while (++traverse_pivot != pipeline.end()) {
+  // Vectorize Project Transformation
+  auto traverse_pivot = ++pipeline.begin();
+  if (isa<ProjectNode>(*traverse_pivot)) {
     // Currently, auto-vectorize will be applied to pure project pipeline only.
-    if (!isa<ProjectNode>(*traverse_pivot)) {
-      stages.emplace_back(++pipeline.begin(), --pipeline.end());
-      break;
-    }
-
     OpNodePtr& curr_op = *traverse_pivot;
     auto&& [_, exprs] = curr_op->getOutputExprs();
-
     ExprPtrVector vectorizable_exprs;
-    vectorizable_exprs.reserve(8);
+    vectorizable_exprs.reserve(exprs.size());
 
     for (auto& expr : exprs) {
       if (expr->isAutoVectorizable()) {
-        // pipeline.insert(traverse_pivot, );      
-      }      
+        // Move vectorizable exprs out of row-based ProjectNode.
+        vectorizable_exprs.emplace_back(expr);
+        expr.reset();
+      }
+    }
+    exprs.erase(std::remove_if(exprs.begin(),
+                               exprs.end(),
+                               [](ExprPtr& expr) -> bool { return expr == nullptr; }),
+                exprs.end());
+    if (exprs.empty()) {
+      traverse_pivot = pipeline.erase(traverse_pivot);
+    }
+
+    if (!vectorizable_exprs.empty()) {
+      auto vec_proj_iter = pipeline.insert(
+          traverse_pivot, createOpNode<VectorizedProjectNode>(vectorizable_exprs));
+      stages.emplace_back(vec_proj_iter, vec_proj_iter);
     }
   }
 
-  auto c2r_node =
-      createOpNode<ColumnToRowNode>(pipeline.front()->getOutputExprs().second);
-  pipeline.insert(++pipeline.begin(), c2r_node);
-
-  auto r2c_node =
-      createOpNode<RowToColumnNode>(pipeline.back()->getOutputExprs().second,
-                                    static_cast<ColumnToRowNode*>(c2r_node.get()));
-  pipeline.emplace_back(r2c_node);
+  if (traverse_pivot != pipeline.end()) {
+    stages.emplace_back(traverse_pivot, --pipeline.end());
+  }
+  std::cout << stages.front().toString() << std::endl;
+  for (auto&& stage : stages) {
+    stage.generateLoopStage(pipeline);
+    std::cout << stage.toString() << std::endl;
+  }
 
   return generateTranslators(pipeline);
 }

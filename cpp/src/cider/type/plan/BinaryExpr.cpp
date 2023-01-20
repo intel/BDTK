@@ -35,6 +35,7 @@ void BinOper::initAutoVectorizeFlag() {
       case kMINUS:
       case kMULTIPLY:
         auto_vectorizable_ = true;
+        return;
       default:
         auto_vectorizable_ = false;
     }
