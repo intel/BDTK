@@ -115,6 +115,8 @@ class ColumnVar : public Expr {
   JITExprValue& codegen(CodegenContext& context) override;
   JITExprValue& codegenNull(CodegenContext& context) override;
 
+  ExprPtrRefVector get_children_reference() override { return {}; }
+
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins
   ColumnInfoPtr col_info_;

@@ -201,6 +201,10 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   bool isAutoVectorizable() const { return auto_vectorizable_; }
 
+  bool getNullable() const { return !type_info.get_notnull(); }
+
+  void setNullable(bool nullable) { type_info.set_notnull(!nullable); }
+
  protected:
   JITTypeTag getJITTag(const SQLTypes& st) {
     return cider::exec::nextgen::utils::getJITTypeTag(st);

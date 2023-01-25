@@ -169,14 +169,20 @@ TranslatorPtr ColumnToRowNode::toTranslator(const TranslatorPtr& succ) {
 }
 
 void ColumnToRowTranslator::consume(context::CodegenContext& context) {
-  codegen(context);
+  for_null_ = false;
+  codegen(context,
+          [this](context::CodegenContext& context) { successor_->consume(context); });
 }
 
 void ColumnToRowTranslator::consumeNull(context::CodegenContext& context) {
-  codegen(context, true);
+  for_null_ = true;
+  codegen(context,
+          [this](context::CodegenContext& context) { successor_->consumeNull(context); });
 }
 
-void ColumnToRowTranslator::codegen(context::CodegenContext& context, bool for_null) {
+void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
+                                        context::CodegenContext& context,
+                                        void* successor) {
   auto func = context.getJITFunction();
   auto&& [type, exprs] = node_->getOutputExprs();
   ExprPtrVector& inputs = exprs;
@@ -192,7 +198,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context, bool for_n
   });
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
   auto idx_upper = func->createVariable(JITTypeTag::INT64, "idx_upper", len);
-  if (for_null) {
+  if (for_null_) {
     // pack 8 bit
     idx_upper = len / 8 + 1;
   }
@@ -201,14 +207,14 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context, bool for_n
       ->condition([&index, &idx_upper]() { return index < idx_upper; })
       ->loop([&](LoopBuilder*) {
         for (auto& input : inputs) {
-          ColumnReader(context, input, index).read(for_null);
+          ColumnReader(context, input, index).read(for_null_);
         }
-        for_null ? successor_->consumeNull(context) : successor_->consume(context);
+        successor_wrapper(successor, context);
       })
       ->update([&index]() { index = index + 1l; })
       ->build();
 
-  if (for_null) {
+  if (for_null_) {
     return;
   }
   // Execute defer build functions.

@@ -29,7 +29,9 @@ namespace cider::exec::nextgen::transformer {
 /// translator
 class Transformer {
  public:
-  static operators::TranslatorPtr toTranslator(operators::OpPipeline& pipeline);
+  static operators::TranslatorPtr toTranslator(
+      operators::OpPipeline& pipeline,
+      const context::CodegenOptions& co = context::CodegenOptions());
 };
 }  // namespace cider::exec::nextgen::transformer
 

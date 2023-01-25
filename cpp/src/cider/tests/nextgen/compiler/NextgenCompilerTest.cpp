@@ -39,7 +39,7 @@ static const std::shared_ptr<CiderAllocator> allocator =
 
 class NextgenCompilerTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& sql) {
+  void executeTest(const std::string& sql, size_t expect_row_num) {
     // SQL Parsing
     auto json = RunIsthmus::processSql(sql, create_ddl_);
     ::substrait::Plan plan;
@@ -51,11 +51,14 @@ class NextgenCompilerTest : public ::testing::Test {
     // Pipeline Building
     auto pipeline = parsers::toOpPipeline(eu);
     transformer::Transformer transformer;
-    auto translators = transformer.toTranslator(pipeline);
+    context::CodegenOptions codegen_co;
+    codegen_co.enable_vectorize = true;
+    auto translators = transformer.toTranslator(pipeline, codegen_co);
 
     // Codegen
     context::CodegenContext codegen_ctx;
     cider::jitlib::CompilationOptions co;
+    co.enable_vectorize = true;
     co.dump_ir = true;
     auto module = cider::jitlib::LLVMJITModule("test", true, co);
     cider::jitlib::JITFunctionPointer function =
@@ -93,7 +96,7 @@ class NextgenCompilerTest : public ::testing::Test {
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
-    EXPECT_EQ(output_batch_array->length, 5);
+    EXPECT_EQ(output_batch_array->length, expect_row_num);
 
     auto check_array = [](ArrowArray* array, size_t expect_len) {
       EXPECT_EQ(array->length, expect_len);
@@ -104,8 +107,8 @@ class NextgenCompilerTest : public ::testing::Test {
       std::cout << std::endl;
     };
 
-    check_array(output_batch_array->children[0], 5);
-    check_array(output_batch_array->children[1], 5);
+    check_array(output_batch_array->children[0], expect_row_num);
+    check_array(output_batch_array->children[1], expect_row_num);
   }
 
  private:
@@ -113,11 +116,11 @@ class NextgenCompilerTest : public ::testing::Test {
 };
 
 TEST_F(NextgenCompilerTest, FrameworkTest1) {
-  executeTest("select a + b, a - b from test where a < b");
+  executeTest("select a + b, a - b from test where a < b", 5);
 }
 
 TEST_F(NextgenCompilerTest, FrameworkTest2) {
-  executeTest("select a + b, a - b from test");
+  executeTest("select a + b, a - b from test", 10);
 }
 
 class CiderNextgenCompilerTestBase : public CiderNextgenTestBase {

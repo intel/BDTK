@@ -40,7 +40,7 @@ std::unique_ptr<context::CodegenContext> compile(
     codegen_ctx->setJITFunction(function);
     codegen_ctx->setCodegenOptions(codegen_options);
     auto pipeline = parsers::toOpPipeline(ra_exe_unit);
-    auto translator = transformer::Transformer::toTranslator(pipeline);
+    auto translator = transformer::Transformer::toTranslator(pipeline, codegen_options);
     translator->consume(*codegen_ctx);
     if (FLAGS_null_separate) {
       // bypass ArrowSourceNode

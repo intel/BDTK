@@ -107,8 +107,9 @@ static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
   return ptr;
 }
 
-TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
-  CHECK(pipeline.size() > 1);
+TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline,
+                                        const context::CodegenOptions& co) {
+  CHECK_GT(pipeline.size(), 1);
   CHECK(isa<QueryFuncInitializer>(pipeline.front()));
 
   std::vector<PipelineStage> stages;
@@ -116,7 +117,7 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
 
   // Vectorize Project Transformation
   auto traverse_pivot = ++pipeline.begin();
-  if (isa<ProjectNode>(*traverse_pivot)) {
+  if (co.enable_vectorize && isa<ProjectNode>(*traverse_pivot)) {
     // Currently, auto-vectorize will be applied to pure project pipeline only.
     OpNodePtr& curr_op = *traverse_pivot;
     auto&& [_, exprs] = curr_op->getOutputExprs();
@@ -148,10 +149,9 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline) {
   if (traverse_pivot != pipeline.end()) {
     stages.emplace_back(traverse_pivot, --pipeline.end());
   }
-  std::cout << stages.front().toString() << std::endl;
+
   for (auto&& stage : stages) {
     stage.generateLoopStage(pipeline);
-    std::cout << stage.toString() << std::endl;
   }
 
   return generateTranslators(pipeline);

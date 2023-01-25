@@ -89,7 +89,7 @@ class JITExprValueAdaptor {
 
   jitlib::JITValuePointer& getNull() { return values_[0]; }
 
-  void setNull(jitlib::JITValuePointer& rh) { values_[0].replace(rh); }
+  void setNull(const jitlib::JITValuePointer& rh) { values_[0].replace(rh); }
 
  protected:
   JITExprValue& values_;

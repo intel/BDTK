@@ -35,7 +35,7 @@ class ColumnToRowNode : public OpNode {
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
-  jitlib::JITValuePointer getColumnRowNum() { return column_row_num_; }
+  jitlib::JITValuePointer& getColumnRowNum() { return column_row_num_; }
 
   void setColumnRowNum(jitlib::JITValuePointer& row_num) {
     CHECK(column_row_num_.get() == nullptr);
@@ -64,8 +64,12 @@ class ColumnToRowTranslator : public Translator {
   void consumeNull(context::CodegenContext& context) override;
 
  private:
-  void codegen(context::CodegenContext& context, bool for_null = false);
-};
+  void codegenImpl(SuccessorEmitter successor_wrapper,
+                   context::CodegenContext& context,
+                   void* successor) override;
 
+  // FIXME: Workaround for null processing.
+  bool for_null_{false};
+};
 }  // namespace cider::exec::nextgen::operators
 #endif  // NEXTGEN_OPERATORS_COLUMNTOROWNODE_H

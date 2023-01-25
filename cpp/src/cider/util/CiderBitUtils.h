@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef CIDER_CIDERBITUTILS_H
-#define CIDER_CIDERBITUTILS_H
+#ifndef CIDER_UTIL_CIDERBITUTILS_H
+#define CIDER_UTIL_CIDERBITUTILS_H
 
 #include <cstdint>
 #include <cstdlib>
@@ -219,6 +219,16 @@ inline bool CheckBitVectorEq(const uint8_t* vec1, const uint8_t* vec2, int end) 
 
   return true;
 }
+
+inline void ENABLE_AVX256 bitwiseAnd(uint8_t* __restrict output,
+                                     const uint8_t* __restrict a,
+                                     const uint8_t* __restrict b,
+                                     size_t bit_num) {
+  size_t len = (bit_num + 7) >> 3;
+  for (size_t i = 0; i < len; ++i) {
+    output[i] = a[i] & b[i];
+  }
+}
 };  // namespace CiderBitUtils
 
-#endif
+#endif  // CIDER_UTIL_CIDERBITUTILS_H

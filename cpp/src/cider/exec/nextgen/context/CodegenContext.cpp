@@ -20,6 +20,7 @@
  */
 
 #include "exec/nextgen/context/CodegenContext.h"
+
 #include "exec/nextgen/context/RuntimeContext.h"
 
 namespace cider::exec::nextgen::context {
@@ -283,12 +284,61 @@ void setArrowArrayLength(jitlib::JITValuePointer& arrow_array,
                          jitlib::JITValuePointer& len) {
   CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
   CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(len->getValueTypeTag() == JITTypeTag::INT64);
 
   auto& func = arrow_array->getParentJITFunction();
   func.emitRuntimeFunctionCall(
       "set_arrow_array_len",
       JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
                                 .params_vector = {arrow_array.get(), len.get()}});
+}
+
+jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
+                                                 int64_t index,
+                                                 jitlib::JITValuePointer& len,
+                                                 SQLTypes type) {
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(len->getValueTypeTag() == JITTypeTag::INT64);
+
+  auto bytes = len * utils::getTypeBytes(type);
+  return allocateArrowArrayBuffer(arrow_array, index, bytes);
+}
+
+void bitBufferMemcpy(jitlib::JITValuePointer& dst,
+                     jitlib::JITValuePointer& src,
+                     jitlib::JITValuePointer& bit_num) {
+  CHECK(dst->getValueTypeTag() == JITTypeTag::POINTER &&
+        dst->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(src->getValueTypeTag() == JITTypeTag::POINTER &&
+        src->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(bit_num->getValueTypeTag() == JITTypeTag::INT64);
+
+  auto& func = dst->getParentJITFunction();
+  func.emitRuntimeFunctionCall(
+      "null_buffer_memcpy",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
+                                .params_vector = {dst.get(), src.get(), bit_num.get()}});
+}
+
+void bitBufferAnd(jitlib::JITValuePointer& output,
+                  jitlib::JITValuePointer& a,
+                  jitlib::JITValuePointer& b,
+                  jitlib::JITValuePointer& bit_num) {
+  CHECK(output->getValueTypeTag() == JITTypeTag::POINTER &&
+        output->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(a->getValueTypeTag() == JITTypeTag::POINTER &&
+        a->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(b->getValueTypeTag() == JITTypeTag::POINTER &&
+        b->getValueSubTypeTag() == JITTypeTag::INT8);
+  CHECK(bit_num->getValueTypeTag() == JITTypeTag::INT64);
+
+  auto& func = output->getParentJITFunction();
+  func.emitRuntimeFunctionCall(
+      "bitwise_and_2",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::VOID,
+          .params_vector = {output.get(), a.get(), b.get(), bit_num.get()}});
 }
 
 }  // namespace codegen_utils
