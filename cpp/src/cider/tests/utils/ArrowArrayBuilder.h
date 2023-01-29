@@ -349,6 +349,152 @@ class ArrowArrayBuilder {
     return *this;
   }
 
+  // Defined by a validity bitmap and an offsets buffer, and a child array.
+  template <class T>
+  ArrowArrayBuilder& addSingleDimensionArrayColumn(
+      const std::string& col_name,
+      const ::substrait::Type& col_type,
+      const std::vector<std::vector<T>>& col_data,
+      const std::vector<std::vector<bool>>& array_null_data = {},
+      const std::vector<bool>& null_data = {}) {
+    if (!is_row_num_set_ ||  // have not set row num, use this col_data's row num
+        row_num_ == 0) {     // previous columns are all empty
+      is_row_num_set_ = true;
+      row_num_ = col_data.size();
+    }
+    ArrowArray* current_array = new ArrowArray();
+    ArrowSchema* current_schema = new ArrowSchema();
+
+    // List schema
+    current_schema->name = col_name.c_str();
+    current_schema->format = "+l";
+    current_schema->n_children = 1;
+    current_schema->children = (ArrowSchema**)allocator_->allocate(sizeof(ArrowSchema*));
+    current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+
+    // Child array schema
+    ArrowSchema* child_schema = new ArrowSchema();
+    child_schema->name = "";
+    child_schema->format = CiderBatchUtils::convertSubstraitTypeToArrowType(col_type);
+    child_schema->n_children = 0;
+    child_schema->children = nullptr;
+    child_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
+
+    if (col_data.empty()) {
+      // append an empty buffer.
+      array_list_.push_back(nullptr);
+      schema_list_.push_back(current_schema);
+      return *this;
+    } else {
+      // check row num
+      if (row_num_ != col_data.size()) {
+        CIDER_THROW(CiderCompileException, "Row num is not equal to previous columns!");
+      }
+      CHECK_EQ(row_num_, col_data.size());
+      // check null data num
+      if (!null_data.empty()) {
+        CHECK_EQ(row_num_, null_data.size());
+      }
+      // check element num and null num for every row
+      if (!array_null_data.empty()) {
+        for (int i = 0; i < row_num_; i++) {
+          CHECK_EQ(col_data[i].size(), array_null_data[i].size());
+        }
+      }
+
+      // List array
+      current_array->length = row_num_;
+      current_array->n_children = 1;
+      current_array->offset = 0;
+      current_array->n_buffers = 2;
+      current_array->private_data = nullptr;
+      current_array->dictionary = nullptr;
+      current_array->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
+      current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
+      current_array->children = (ArrowArray**)allocator_->allocate(sizeof(ArrowArray*));
+
+      // Validity buffer
+      size_t null_size = (row_num_ + 7) >> 3;
+      void* null_buf = (void*)allocator_->allocate(null_size);
+      std::memset(null_buf, 0xFF, null_size);
+      for (auto i = 0; i < null_data.size(); i++) {
+        if (null_data[i]) {
+          CiderBitUtils::clearBitAt((uint8_t*)null_buf, i);
+          current_array->null_count++;
+        }
+      }
+      current_array->buffers[0] = null_buf;
+
+      // Offset buffer
+      int32_t* offset_buf =
+          (int32_t*)allocator_->allocate(sizeof(int32_t) * (row_num_ + 1));
+      std::vector<int32_t> offset_vec{0};
+      for (int i = 0; i < col_data.size(); i++) {
+        if (!null_data.empty() && !null_data[i]) {
+          offset_vec.push_back(offset_vec[i] + col_data[i].size());
+        } else {
+          offset_vec.push_back(offset_vec[i]);
+        }
+      }
+      std::memcpy(offset_buf, offset_vec.data(), sizeof(int32_t) * (row_num_ + 1));
+      current_array->buffers[1] = offset_buf;
+
+      // Child values array
+      ArrowArray* child_array = new ArrowArray();
+      child_array->n_children = 0;
+      child_array->n_buffers = 2;
+      child_array->offset = 0;
+      child_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
+      child_array->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
+      child_array->private_data = nullptr;
+      child_array->dictionary = nullptr;
+
+      size_t total_length = 0;
+      for (int i = 0; i < row_num_; i++) {
+        if (!null_data.empty() && !null_data[i]) {
+          total_length += col_data[i].size();
+        }
+      }
+      child_array->length = total_length;
+
+      // Validity bitmap in child array
+      size_t array_null_size = (total_length + 7) >> 3;
+      void* array_null_buf = (void*)allocator_->allocate(array_null_size);
+      std::memset(array_null_buf, 0xFF, array_null_size);
+      if (!array_null_data.empty() && !null_data.empty()) {
+        size_t total_idx = 0;
+        for (int i = 0; i < row_num_; i++) {
+          if (!null_data[i]) {
+            for (int j = 0; j < array_null_data[i].size(); j++, total_idx++) {
+              if (array_null_data[i][j]) {
+                CiderBitUtils::clearBitAt((uint8_t*)array_null_buf, total_idx);
+                child_array->null_count++;
+              }
+            }
+          }
+        }
+      }
+      child_array->buffers[0] = array_null_buf;
+
+      // Values buffer in child array
+      child_array->buffers[1] = (void*)allocator_->allocate(sizeof(T) * total_length);
+      T* copy_start = (T*)const_cast<void*>(child_array->buffers[1]);
+      for (int i = 0; i < row_num_; i++) {
+        if (!null_data.empty() && !null_data[i]) {
+          memcpy(copy_start, col_data[i].data(), sizeof(T) * col_data[i].size());
+          copy_start += col_data[i].size();
+        }
+      }
+
+      current_schema->children[0] = child_schema;
+      current_array->children[0] = child_array;
+
+      array_list_.push_back(current_array);
+      schema_list_.push_back(current_schema);
+    }
+    return *this;
+  }
+
   std::tuple<ArrowSchema*&, ArrowArray*&> build() {
     if (!is_row_num_set_) {
       CIDER_THROW(CiderCompileException, "Invalid build!");
