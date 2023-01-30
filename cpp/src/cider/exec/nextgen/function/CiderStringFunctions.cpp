@@ -626,3 +626,14 @@ extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
 
   return 0;
 }
+
+extern "C" ALWAYS_INLINE int64_t cider_regexp_substring(char* string_heap_ptr,
+                                                        const char* str_ptr,
+                                                        int str_len,
+                                                        const char* regex_pattern_ptr,
+                                                        int regex_pattern_len,
+                                                        int occurrence,
+                                                        int start_pos,
+                                                        int sub_match_index) {
+                                                          
+                                                        }

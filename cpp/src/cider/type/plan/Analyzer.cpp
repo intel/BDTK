@@ -119,11 +119,6 @@ std::shared_ptr<Analyzer::Expr> SampleRatioExpr::deep_copy() const {
 
 using LiteralArgMap = std::map<size_t, std::pair<SQLTypes, Datum>>;
 
-std::shared_ptr<Analyzer::Expr> RegexpExtractStringOper::deep_copy() const {
-  return makeExpr<Analyzer::RegexpExtractStringOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
 std::shared_ptr<Analyzer::Expr> RegexpSubstrStringOper::deep_copy() const {
   return makeExpr<Analyzer::RegexpSubstrStringOper>(
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));

@@ -765,4 +765,65 @@ JITExprValue& RegexpReplaceStringOper::codegen(CodegenContext& context) {
 
   return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
 }
+
+std::shared_ptr<Analyzer::Expr> RegexpExtractStringOper::deep_copy() const {
+  return makeExpr<Analyzer::RegexpExtractStringOper>(
+      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
+}
+
+JITExprValue& RegexpExtractStringOper::codegen(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
+  // decode input args
+  auto input = const_cast<Analyzer::Expr*>(getArg(0));
+  auto regex_pattern = const_cast<Analyzer::Expr*>(getArg(1));
+  auto replace = const_cast<Analyzer::Expr*>(getArg(2));
+
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
+
+  auto regex_pattern_literal = dynamic_cast<Analyzer::Constant*>(regex_pattern);
+  auto regex_pattern_val = VarSizeJITExprValue(regex_pattern_literal->codegen(context));
+
+  auto replace_literal = dynamic_cast<Analyzer::Constant*>(replace);
+  auto replace_val = VarSizeJITExprValue(replace_literal->codegen(context));
+
+  int start_pos_val =
+      dynamic_cast<const Analyzer::Constant*>(getArg(3))->get_constval().intval;
+  int occurence_val =
+      dynamic_cast<const Analyzer::Constant*>(getArg(4))->get_constval().intval;
+
+  // get string heap ptr
+  auto string_heap_ptr = func.emitRuntimeFunctionCall(
+      "get_query_context_string_heap_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {func.getArgument(0).get()}});
+  std::string fn_name = "cider_regexp_replace";
+  auto ptr_and_len = func.emitRuntimeFunctionCall(
+      fn_name,
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT64,
+          .params_vector = {
+              string_heap_ptr.get(),
+              input_val.getValue().get(),
+              input_val.getLength().get(),
+              regex_pattern_val.getValue().get(),
+              regex_pattern_val.getLength().get(),
+              replace_val.getValue().get(),
+              replace_val.getLength().get(),
+              func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get(),
+              func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get()}});
+
+  // decode result
+  auto ret_ptr = func.emitRuntimeFunctionCall(
+      "extract_string_ptr",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .params_vector = {ptr_and_len.get()}});
+  auto ret_len = func.emitRuntimeFunctionCall(
+      "extract_string_len",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                .params_vector = {ptr_and_len.get()}});
+
+  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+}
+
 }  // namespace Analyzer
