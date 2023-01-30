@@ -36,10 +36,6 @@ void CiderPlanTransformerFactory::registerCiderPattern() {
     ciderTransformerFactory_.registerPattern(std::make_shared<FilterPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
   }
-  if (FLAGS_project_pattern) {
-    ciderTransformerFactory_.registerPattern(std::make_shared<ProjectPattern>(),
-                                             std::make_shared<CiderPlanRewriter>());
-  }
   if (FLAGS_left_deep_join_pattern) {
     ciderTransformerFactory_.registerPattern(std::make_shared<LeftDeepJoinPattern>(),
                                              std::make_shared<CiderPlanRewriter>());
