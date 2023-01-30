@@ -22,11 +22,12 @@
 
 #pragma once
 
+#include "cider/CiderException.h"
+
 #include <common/hashtable/Hash.h>
 #include <common/hashtable/HashTable.h>
 #include <common/hashtable/HashTableAllocator.h>
 #include <common/hashtable/Prefetching.h>
-#include <iostream>
 
 /** NOTE HashMap could only be used for memmoveable (position independent) types.
  * Example: std::string is not position independent in libstdc++ with C++11 ABI or in
@@ -117,7 +118,7 @@ struct HashMapCell {
 
   void setMapped(const value_type& value_) { value.second = value_.second; }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // /// Serialization, in binary and text form.
   // void write(DB::WriteBuffer & wb) const
   // {
@@ -330,9 +331,7 @@ class HashMapTable : public HashTable<Key, Cell, Hash, Grower, Allocator> {
   const typename Cell::Mapped& ALWAYS_INLINE at(const Key& x) const {
     if (auto it = this->find(x); it != this->end())
       return it->getMapped();
-    // throw DB::Exception("Cannot find element in HashMap::at method",
-    // DB::ErrorCodes::LOGICAL_ERROR);
-    std::cout << "Cannot find element in HashMap::at method" << std::endl;
+    CIDER_THROW(CiderRuntimeException, "Cannot find element in HashMap::at method");
     return nullptr;
   }
 
@@ -389,7 +388,7 @@ using HashMapWithSavedHash = HashMapTable<Key,
                                           Grower,
                                           Allocator>;
 
-// TODO: Implement and enable later
+// TODO(Deegue): Implement and enable later
 // template <typename Key, typename Mapped, typename Hash,
 //     size_t initial_size_degree>
 // using HashMapWithStackMemory = HashMapTable<

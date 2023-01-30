@@ -577,7 +577,7 @@ class HashTable : private boost::noncopyable,
              reinterpret_cast<const void*>(old_buffer.get()),
              old_buffer_size);
     } else {
-      // TODO: Use realloc after new allocator is implemented.
+      // TODO(Deegue): Use realloc after new allocator is implemented.
       // buf = reinterpret_cast<Cell*>(
       // Allocator::realloc(buf, old_buffer_size, new_grower.bufSize() * sizeof(Cell)));
 
@@ -781,7 +781,7 @@ class HashTable : private boost::noncopyable,
     return *this;
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // class Reader final : private Cell::State
   // {
   // public:
@@ -1211,7 +1211,7 @@ class HashTable : private boost::noncopyable,
     return !buf[place_value].isZero(*this);
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // void write(DB::WriteBuffer & wb) const
   // {
   //     Cell::State::write(wb);
