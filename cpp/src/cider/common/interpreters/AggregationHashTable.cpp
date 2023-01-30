@@ -35,7 +35,7 @@ AggregationHashTable::AggregationHashTable(std::vector<SQLTypes> key_types,
                                            int8_t* addr,
                                            uint32_t len)
     : key_types_(key_types), init_val_(addr), init_len_(len) {
-  // TODO: use agg_method to construct the specific HashTable instead of all
+  // TODO(Deegue): use agg_method to construct the specific HashTable instead of all
   agg_method_ = chooseAggregationMethod();
 }
 
@@ -123,15 +123,15 @@ AggKey AggregationHashTable::transferToAggKey(int8_t* key_addr) {
       AggKey key(is_null, key_addr + 2, 8);
       return key;
     }
-    // TODO: Support more types.
+    // TODO(Deegue): Support more types.
   }
   CIDER_THROW(CiderRuntimeException, "Unsupported Aggregation key");
-  // TODO: Multiple keys, find out if keys can be arranged to primitive types like
+  // TODO(Deegue): Multiple keys, find out if keys can be arranged to primitive types like
   // int32/int64... If not, serialize the key and set the key type to Type::serialized.
 }
 
 // Dump all value of the HashTable.
-// TODO: Here need to be discussed, what to return?
+// TODO(Deegue): Here need to be discussed, what to return?
 // std::vector<AggregateDataPtr> dump() {
 //   std::vector<AggregateDataPtr> res(key_set_.size());
 //   for (auto key : key_set_) {
@@ -161,9 +161,9 @@ AggregationMethod::Type AggregationHashTable::chooseAggregationMethod() {
     } else if (SQLTypes::kBIGINT == key_types_[0]) {
       return AggregationMethod::Type::INT64;
     }
-    // TODO: Support more types.
+    // TODO(Deegue): Support more types.
   }
-  // TODO: Support multiple keys.
+  // TODO(Deegue): Support multiple keys.
   return AggregationMethod::Type::EMPTY;
 }
 }  // namespace cider::hashtable

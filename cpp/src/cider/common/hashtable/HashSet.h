@@ -60,7 +60,7 @@ class HashSetTable : public HashTable<Key, TCell, Hash, Grower, Allocator> {
         this->insert(rhs.buf[i].getValue());
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // void readAndMerge(DB::ReadBuffer & rb)
   // {
   //     Cell::State::read(rb);
@@ -79,7 +79,7 @@ class HashSetTable : public HashTable<Key, TCell, Hash, Grower, Allocator> {
   // }
 };
 
-// TODO: Implement and enable later
+// TODO(Deegue): Implement and enable later
 // template <typename Key,
 //           typename TCell,  /// Supposed to have no state (HashTableNoState)
 //           typename Hash = DefaultHash<Key>,
@@ -157,7 +157,7 @@ template <typename Key,
           typename Allocator = HashTableAllocator>
 using HashSet = HashSetTable<Key, HashTableCell<Key, Hash>, Hash, Grower, Allocator>;
 
-// TODO: Implement and enable later
+// TODO(Deegue): Implement and enable later
 // template <typename Key,
 //           typename Hash = DefaultHash<Key>,
 //           typename Grower = TwoLevelHashTableGrower<>,

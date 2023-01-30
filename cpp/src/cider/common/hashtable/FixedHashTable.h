@@ -248,7 +248,7 @@ class FixedHashTable : private boost::noncopyable,
     return *this;
   }
 
-  // TODO: refactor and enable later
+  // TODO(Deegue): refactor and enable later
   // class Reader final : private Cell::State
   // {
   // public:
@@ -389,7 +389,7 @@ class FixedHashTable : private boost::noncopyable,
     return !buf[hash_value].isZero(*this);
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // void write(DB::WriteBuffer & wb) const
   // {
   //     Cell::State::write(wb);

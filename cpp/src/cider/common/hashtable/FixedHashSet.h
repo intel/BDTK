@@ -41,7 +41,7 @@ class FixedHashSet
         new (&Base::buf[i]) Cell(rhs.buf[i]);
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   /// NOTE: Currently this method isn't used. When it does, the ReadBuffer should
   ///  contain the Key explicitly.
   // void readAndMerge(DB::ReadBuffer & rb)

@@ -42,7 +42,7 @@ inline void reverseMemcpy(void* dst, const void* src, size_t size) {
 template <typename T>
 inline T unalignedLoadLE(const void* address) {
   T res{};
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // if constexpr (std::endian::native == std::endian::little)
   //     memcpy(&res, address, sizeof(res));
   // else
@@ -54,7 +54,7 @@ template <typename T>
 inline void unalignedStoreLE(void* address,
                              const typename std::enable_if<true, T>::type& src) {
   static_assert(std::is_trivially_copyable_v<T>);
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   // if constexpr (std::endian::native == std::endian::little)
   //     memcpy(address, &src, sizeof(src));
   // else

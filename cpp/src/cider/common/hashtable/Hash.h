@@ -299,6 +299,6 @@ struct IntHash32 {
   }
 };
 
-// TODO: Implement and enable later
+// TODO(Deegue): Implement and enable later
 // template <>
 // struct DefaultHash<StringRef> : public StringRefHash {};

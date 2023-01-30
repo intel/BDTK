@@ -155,7 +155,7 @@ class AggregationHashTable final {
   AggKey transferToAggKey(int8_t* key_addr);
 
   // Dump all value of the HashTable.
-  // TODO: Here need to be discussed, what to return?
+  // TODO(Deegue): Here need to be discussed, what to return?
   // std::vector<AggregateDataPtr> dump() {
   //   std::vector<AggregateDataPtr> res(key_set_.size());
   //   for (auto key : key_set_) {
