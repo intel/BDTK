@@ -392,23 +392,20 @@ Generate Prestodb.tar.gz archive</p>
 </div>
 <div class="section" id="advanced-settings">
 <h2>Advanced Settings<a class="headerlink" href="#advanced-settings" title="Permalink to this headline">¶</a></h2>
-<p>There have several patterns configurations now in our project:</p>
+<p>There have four pattern configurations now in our project:</p>
 <ul class="simple">
-<li>left_deep_join_pattern</li>
-<li>compound_pattern</li>
-<li>filter_pattern</li>
-<li>project_pattern</li>
-<li>partial_agg_pattern</li>
-<li>top_n_pattern</li>
-<li>order_by_pattern</li>
+<li>LeftDeepJoinPattern</li>
+<li>CompoundPattern</li>
+<li>FilterPattern</li>
+<li>PartialAggPattern</li>
 </ul>
-<p>We enable <code class="docutils literal notranslate"><span class="pre">ProjectPattern</span></code> and <code class="docutils literal notranslate"><span class="pre">FilterPattern</span></code> by default.</p>
+<p>We enable <code class="docutils literal notranslate"><span class="pre">CompoundPattern</span></code> and <code class="docutils literal notranslate"><span class="pre">FilterPattern</span></code> by default.</p>
 <p>If you want to change the default value of these patterns, there have two ways.</p>
 <ol class="arabic">
 <li><dl class="first docutils">
 <dt>Write a file firstly, such as pattern.flags.</dt>
-<dd><div class="first highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">partial_agg_pattern</span>
-<span class="o">--</span><span class="n">compound_pattern</span><span class="o">=</span><span class="n">false</span>
+<dd><div class="first highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">PartialAggPattern</span>
+<span class="o">--</span><span class="n">CompoundPattern</span><span class="o">=</span><span class="n">false</span>
 </pre></div>
 </div>
 <p>And then you could use it like this:</p>
@@ -420,7 +417,7 @@ Generate Prestodb.tar.gz archive</p>
 </li>
 <li><dl class="first docutils">
 <dt>Just change them on command line.</dt>
-<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">presto_server</span> <span class="o">--</span><span class="n">partial_agg_pattern</span> <span class="o">--</span><span class="n">compound_pattern</span><span class="o">=</span><span class="n">false</span>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">presto_server</span> <span class="o">--</span><span class="n">PartialAggPattern</span> <span class="o">--</span><span class="n">CompoundPattern</span><span class="o">=</span><span class="n">false</span>
 </pre></div>
 </div>
 </dd>
