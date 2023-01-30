@@ -98,6 +98,20 @@ class LeftDeepJoinStateMachine : public StateMachine {
   bool inPartialAggState();
 };
 
+// PlanPattern for "filter(optional)->proj->agg(optional)"
+class CompoundPattern : public SequencePlanPattern {
+ public:
+  CompoundPattern() { setStateMachine(std::make_shared<CompoundStateMachine>()); }
+};
+
+// PlanPattern for ...agg->proj->filter->join ->join...
+//                                         |--->  |
+//                                                |---->
+class LeftDeepJoinPattern : public SequencePlanPattern {
+ public:
+  LeftDeepJoinPattern() { setStateMachine(std::make_shared<LeftDeepJoinStateMachine>()); }
+};
+
 class FilterStateMachine : public StateMachine {
  public:
   class Initial : public State {
@@ -113,25 +127,6 @@ class FilterStateMachine : public StateMachine {
     bool isFinal() override { return true; };
   };
   FilterStateMachine() { setCurState(std::make_shared<Initial>()); }
-  void setInitState() override { setCurState(std::make_shared<Initial>()); };
-  bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
-};
-
-class ProjectStateMachine : public StateMachine {
- public:
-  class Initial : public State {
-   public:
-    StatePtr accept(const VeloxPlanNodeAddr& nodeAddr) override;
-  };
-  class NotAccept : public State {
-   public:
-    bool isFinal() override { return true; };
-  };
-  class Project : public State {
-   public:
-    bool isFinal() override { return true; };
-  };
-  ProjectStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); };
   bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
@@ -155,6 +150,16 @@ class PartialAggStateMachine : public StateMachine {
   bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
 
+class FilterPattern : public SequencePlanPattern {
+ public:
+  FilterPattern() { setStateMachine(std::make_shared<FilterStateMachine>()); }
+};
+
+class PartialAggPattern : public SequencePlanPattern {
+ public:
+  PartialAggPattern() { setStateMachine(std::make_shared<PartialAggStateMachine>()); }
+};
+
 class OrderByStateMachine : public StateMachine {
  public:
   class Initial : public State {
@@ -174,6 +179,11 @@ class OrderByStateMachine : public StateMachine {
   bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
 };
 
+class OrderByPattern : public SequencePlanPattern {
+ public:
+  OrderByPattern() { setStateMachine(std::make_shared<OrderByStateMachine>()); }
+};
+
 class TopNStateMachine : public StateMachine {
  public:
   class Initial : public State {
@@ -191,40 +201,6 @@ class TopNStateMachine : public StateMachine {
   TopNStateMachine() { setCurState(std::make_shared<Initial>()); }
   void setInitState() override { setCurState(std::make_shared<Initial>()); };
   bool accept(const VeloxPlanNodeAddr& nodeAddr) override;
-};
-
-// PlanPattern for "filter(optional)->proj->agg(optional)"
-class CompoundPattern : public SequencePlanPattern {
- public:
-  CompoundPattern() { setStateMachine(std::make_shared<CompoundStateMachine>()); }
-};
-
-// PlanPattern for ...agg->proj->filter->join ->join...
-//                                         |--->  |
-//                                                |---->
-class LeftDeepJoinPattern : public SequencePlanPattern {
- public:
-  LeftDeepJoinPattern() { setStateMachine(std::make_shared<LeftDeepJoinStateMachine>()); }
-};
-
-class FilterPattern : public SequencePlanPattern {
- public:
-  FilterPattern() { setStateMachine(std::make_shared<FilterStateMachine>()); }
-};
-
-class ProjectPattern : public SequencePlanPattern {
- public:
-  ProjectPattern() { setStateMachine(std::make_shared<ProjectStateMachine>()); }
-};
-
-class PartialAggPattern : public SequencePlanPattern {
- public:
-  PartialAggPattern() { setStateMachine(std::make_shared<PartialAggStateMachine>()); }
-};
-
-class OrderByPattern : public SequencePlanPattern {
- public:
-  OrderByPattern() { setStateMachine(std::make_shared<OrderByStateMachine>()); }
 };
 
 class TopNPattern : public SequencePlanPattern {
