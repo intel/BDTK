@@ -31,7 +31,7 @@
 namespace cider::jitlib {
 JITValue& LLVMJITValue::assign(JITValue& value) {
   if (!is_variable_) {
-    LOG(FATAL) << "JITValue " << getValueName()
+    LOG(ERROR) << "JITValue " << getValueName()
                << "is not a variable in LLVMJITValue::assign.";
   }
   store(static_cast<LLVMJITValue&>(value));
@@ -50,7 +50,7 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
       break;
     }
     default:
-      LOG(FATAL) << "Invalid JITValue type for and operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for and operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -70,7 +70,7 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
       break;
     }
     default:
-      LOG(FATAL) << "Invalid JITValue type for or operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for or operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -90,7 +90,7 @@ JITValuePointer LLVMJITValue::notOp() {
       break;
     }
     default:
-      LOG(FATAL) << "Invalid JITValue type for not operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for not operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -112,7 +112,7 @@ JITValuePointer LLVMJITValue::uminus() {
       ans = getFunctionBuilder(parent_function_).CreateFNeg(load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for uminus operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for uminus operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
   return makeJITValuePointer<LLVMJITValue>(
@@ -136,7 +136,7 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFRem(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for mod operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for mod operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -177,7 +177,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFDiv(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for div operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for div operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -218,7 +218,7 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFMul(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for mul operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for mul operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -284,7 +284,7 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateFSub(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for sub operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for sub operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -340,7 +340,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
     auto rh_type = rh.getValueTypeTag();
     if (rh_type != JITTypeTag::INT8 && rh_type != JITTypeTag::INT16 &&
         rh_type != JITTypeTag::INT32 && rh_type != JITTypeTag::INT64) {
-      LOG(FATAL) << "Invalid index type for pointer offset operation. Name="
+      LOG(ERROR) << "Invalid index type for pointer offset operation. Name="
                  << rh.getValueName() << ", Type=" << getJITTypeName(rh_type);
     }
   } else {
@@ -363,7 +363,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateGEP(load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for add operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for add operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -388,7 +388,7 @@ JITValuePointer LLVMJITValue::addWithErrorCheck(JITValue& rh) {
     auto rh_type = rh.getValueTypeTag();
     if (rh_type != JITTypeTag::INT8 && rh_type != JITTypeTag::INT16 &&
         rh_type != JITTypeTag::INT32 && rh_type != JITTypeTag::INT64) {
-      LOG(FATAL) << "Invalid index type for pointer offset operation. Name="
+      LOG(ERROR) << "Invalid index type for pointer offset operation. Name="
                  << rh.getValueName() << ", Type=" << getJITTypeName(rh_type);
     }
   } else {
@@ -454,7 +454,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
                 .CreateFCmp(FCmpType, load(), llvm_rh.load());
       break;
     default:
-      LOG(FATAL) << "Invalid JITValue type for compare operation. Name=" << getValueName()
+      LOG(ERROR) << "Invalid JITValue type for compare operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
   }
 
@@ -488,7 +488,7 @@ JITValuePointer LLVMJITValue::ge(JITValue& rh) {
 
 void LLVMJITValue::checkOprandsType(JITTypeTag lh, JITTypeTag rh, const char* op) {
   if (lh != rh) {
-    LOG(FATAL) << "Oprands type doesn't match in LLVMJITValue operator " << op
+    LOG(ERROR) << "Oprands type doesn't match in LLVMJITValue operator " << op
                << " lh=" << getJITTypeName(lh) << ", rh=" << getJITTypeName(rh) << ".";
   }
 }
@@ -511,7 +511,7 @@ llvm::Value* LLVMJITValue::store(LLVMJITValue& rh) {
 
 JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
   if (JITTypeTag::POINTER != getValueTypeTag()) {
-    LOG(FATAL) << "Invalid operation to cast subtype of a non-POINTER JITValue. Type="
+    LOG(ERROR) << "Invalid operation to cast subtype of a non-POINTER JITValue. Type="
                << getJITTypeName(getValueTypeTag());
   }
   llvm::Value* new_llvm_value =
@@ -553,7 +553,7 @@ JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_ta
 
 JITValuePointer LLVMJITValue::dereference() {
   if (JITTypeTag::POINTER != getValueTypeTag()) {
-    LOG(FATAL) << "Invalid operation to dereference of a non-POINTER JITValue. Type="
+    LOG(ERROR) << "Invalid operation to dereference of a non-POINTER JITValue. Type="
                << getJITTypeName(getValueTypeTag());
   }
 
@@ -567,7 +567,7 @@ JITValuePointer LLVMJITValue::dereference() {
 
 JITValuePointer LLVMJITValue::getElemAt(JITValue& index) {
   if (JITTypeTag::POINTER != getValueTypeTag()) {
-    LOG(FATAL) << "Invalid operation to get elements from a non-POINTER JITValue. Type="
+    LOG(ERROR) << "Invalid operation to get elements from a non-POINTER JITValue. Type="
                << getJITTypeName(getValueTypeTag());
   }
   auto element_ptr = add(index);

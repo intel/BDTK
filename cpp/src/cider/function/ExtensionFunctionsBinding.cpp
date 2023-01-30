@@ -559,7 +559,7 @@ std::tuple<T, std::vector<SQLTypeInfo>> bind_function(
         message = "Could not bind " + name + "(" + sarg_types + ") to any " + processor +
                   " UDF implementation.";
       } else {
-        LOG(FATAL) << "bind_function: unknown extension function type "
+        LOG(ERROR) << "bind_function: unknown extension function type "
                    << typeid(T).name();
       }
       message += "\n  Existing extension function implementations:";

@@ -128,7 +128,7 @@ enum SQLTypes {
     case kSQLTYPE_LAST:
       break;
   }
-  LOG(FATAL) << "Invalid SQL type: " << type;
+  LOG(ERROR) << "Invalid SQL type: " << type;
   return "";
 }
 

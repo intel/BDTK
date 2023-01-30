@@ -54,7 +54,7 @@ class ColumnReader {
         readVariableSizeTypeCol();
         break;
       default:
-        LOG(FATAL) << "Unsupported data type in ColumnReader: "
+        LOG(ERROR) << "Unsupported data type in ColumnReader: "
                    << expr_->get_type_info().get_type_name();
     }
   }

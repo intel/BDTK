@@ -43,7 +43,7 @@ void CpuBuffer::readData(int8_t* const dst,
   if (dst_memory_level == CPU_LEVEL) {
     memcpy(dst, mem_ + offset, num_bytes);
   } else {
-    LOG(FATAL) << "Unsupported buffer type";
+    LOG(ERROR) << "Unsupported buffer type";
   }
 }
 
@@ -56,7 +56,7 @@ void CpuBuffer::writeData(int8_t* const src,
     // std::cout << "Writing to CPU from source CPU" << std::endl;
     memcpy(mem_ + offset, src, num_bytes);
   } else {
-    LOG(FATAL) << "Unsupported buffer type";
+    LOG(ERROR) << "Unsupported buffer type";
   }
 }
 

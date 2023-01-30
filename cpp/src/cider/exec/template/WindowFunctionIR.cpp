@@ -68,7 +68,7 @@ llvm::Value* Executor::codegenWindowFunction(const size_t target_index,
       return codegenWindowFunctionAggregate(co);
     }
     default: {
-      LOG(FATAL) << "Invalid window function kind";
+      LOG(ERROR) << "Invalid window function kind";
     }
   }
   return nullptr;
@@ -98,7 +98,7 @@ std::string get_window_agg_name(const SqlWindowFunctionKind kind,
       break;
     }
     default: {
-      LOG(FATAL) << "Invalid window function kind";
+      LOG(ERROR) << "Invalid window function kind";
     }
   }
   switch (window_func_ti.get_type()) {

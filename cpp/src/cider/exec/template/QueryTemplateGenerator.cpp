@@ -553,7 +553,7 @@ std::tuple<llvm::Function*, llvm::CallInst*> query_template_impl(
   delete pos_inc_pre;
 
   if (verifyFunction(*query_func_ptr)) {
-    LOG(FATAL) << "Generated invalid code. ";
+    LOG(ERROR) << "Generated invalid code. ";
   }
 
   return {query_func_ptr, row_process};
@@ -950,7 +950,7 @@ std::tuple<llvm::Function*, llvm::CallInst*> query_group_by_template_impl(
   }
 
   if (verifyFunction(*query_func_ptr, &llvm::errs())) {
-    LOG(FATAL) << "Generated invalid code. ";
+    LOG(ERROR) << "Generated invalid code. ";
   }
 
   return {query_func_ptr, row_process};

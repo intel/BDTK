@@ -67,8 +67,8 @@ enum Severity {
   _NSEVERITIES  // number of severity levels
 };
 
-#define UNREACHABLE() LOG(FATAL) << "UNREACHABLE "
-#define UNIMPLEMENTED() LOG(FATAL) << "UNIMPLEMENTED! "
+#define UNREACHABLE() LOG(ERROR) << "UNREACHABLE "
+#define UNIMPLEMENTED() LOG(ERROR) << "UNIMPLEMENTED! "
 
 class Duration;
 

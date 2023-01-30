@@ -152,7 +152,7 @@ void fill_baseline_hash_join_buff_on_device(int8_t* hash_buff,
   } else {
     static_assert(std::is_same<KEY_HANDLER, OverlapsKeyHandler>::value,
                   "Only Generic, Overlaps, and Range Key Handlers are supported.");
-    LOG(FATAL) << "32-bit keys not yet supported for overlaps join.";
+    LOG(ERROR) << "32-bit keys not yet supported for overlaps join.";
   }
 }
 
@@ -223,7 +223,7 @@ void fill_one_to_many_baseline_hash_table_on_device(int32_t* buff,
     static_assert(std::is_same<KEY_HANDLER, OverlapsKeyHandler>::value ||
                       std::is_same<KEY_HANDLER, RangeKeyHandler>::value,
                   "Only Generic, Overlaps, and Range Key Handlers are supported.");
-    LOG(FATAL) << "32-bit keys not yet supported for overlaps join.";
+    LOG(ERROR) << "32-bit keys not yet supported for overlaps join.";
   }
 }
 

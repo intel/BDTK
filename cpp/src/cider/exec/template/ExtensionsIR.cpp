@@ -145,7 +145,7 @@ inline SQLTypeInfo get_sql_type_from_llvm_type(const llvm::Type* ll_type) {
       case 64:
         return SQLTypeInfo(kDOUBLE, false);
       default:
-        LOG(FATAL) << "Unsupported llvm floating point type: " << bits
+        LOG(ERROR) << "Unsupported llvm floating point type: " << bits
                    << ", only 32 and 64 bit floating point is supported.";
     }
   } else {
@@ -161,7 +161,7 @@ inline SQLTypeInfo get_sql_type_from_llvm_type(const llvm::Type* ll_type) {
       case 64:
         return SQLTypeInfo(kBIGINT, false);
       default:
-        LOG(FATAL) << "Unrecognized llvm type for SQL type: "
+        LOG(ERROR) << "Unrecognized llvm type for SQL type: "
                    << bits;  // TODO let's get the real name here
     }
   }

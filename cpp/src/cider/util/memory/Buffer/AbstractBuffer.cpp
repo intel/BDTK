@@ -32,7 +32,7 @@ namespace Data_Namespace {
 void AbstractBuffer::initEncoder(const SQLTypeInfo& tmp_sql_type) {
   sql_type_ = tmp_sql_type;
   encoder_.reset(Encoder::Create(this, sql_type_));
-  LOG_IF(FATAL, encoder_ == nullptr)
+  LOG_IF(ERROR, encoder_ == nullptr)
       << "Failed to create encoder for SQL Type " << sql_type_.get_type_name();
 }
 

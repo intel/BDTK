@@ -756,7 +756,7 @@ AbstractBuffer* BufferMgr::getBuffer(const ChunkKey& key, const size_t num_bytes
       parent_mgr_->fetchBuffer(
           key, buffer, num_bytes);  // this should put buffer in a BufferSegment
     } catch (const CiderException& error) {
-      LOG(FATAL) << "Get chunk - Could not find chunk " << keyToString(key)
+      LOG(ERROR) << "Get chunk - Could not find chunk " << keyToString(key)
                  << " in buffer pool or parent buffer pools. Error was " << error.what();
     }
     return buffer;
@@ -781,7 +781,7 @@ void BufferMgr::fetchBuffer(const ChunkKey& key,
     try {
       parent_mgr_->fetchBuffer(key, buffer, num_bytes);
     } catch (CiderException& error) {
-      LOG(FATAL) << "Could not fetch parent buffer " << keyToString(key);
+      LOG(ERROR) << "Could not fetch parent buffer " << keyToString(key);
     }
   } else {
     buffer = buffer_it->second->buffer;
@@ -790,7 +790,7 @@ void BufferMgr::fetchBuffer(const ChunkKey& key,
       try {
         parent_mgr_->fetchBuffer(key, buffer, num_bytes);
       } catch (CiderException& error) {
-        LOG(FATAL) << "Could not fetch parent buffer " << keyToString(key);
+        LOG(ERROR) << "Could not fetch parent buffer " << keyToString(key);
       }
     }
     sized_segs_lock.unlock();
@@ -855,7 +855,7 @@ void BufferMgr::free(AbstractBuffer* buffer) {
   std::lock_guard<std::mutex> lock(global_mutex_);  // hack for now
   Buffer* casted_buffer = dynamic_cast<Buffer*>(buffer);
   if (casted_buffer == 0) {
-    LOG(FATAL) << "Wrong buffer type - expects base class pointer to Buffer type.";
+    LOG(ERROR) << "Wrong buffer type - expects base class pointer to Buffer type.";
   }
   deleteBuffer(casted_buffer->seg_it_->chunk_key);
 }
@@ -879,7 +879,7 @@ size_t BufferMgr::getMaxSlabSize() {
 
 void BufferMgr::getChunkMetadataVecForKeyPrefix(ChunkMetadataVector& chunk_metadata_vec,
                                                 const ChunkKey& key_prefix) {
-  LOG(FATAL) << "getChunkMetadataVecForPrefix not supported for BufferMgr.";
+  LOG(ERROR) << "getChunkMetadataVecForPrefix not supported for BufferMgr.";
 }
 
 const std::vector<BufferList>& BufferMgr::getSlabSegments() {

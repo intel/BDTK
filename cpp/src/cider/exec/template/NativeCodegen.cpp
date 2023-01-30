@@ -323,7 +323,7 @@ void verify_function_ir(const llvm::Function* func) {
     err_os << "\n-----\n";
     func->print(err_os, nullptr);
     err_os << "\n-----\n";
-    LOG(FATAL) << err_ss.str();
+    LOG(ERROR) << err_ss.str();
   }
 }
 

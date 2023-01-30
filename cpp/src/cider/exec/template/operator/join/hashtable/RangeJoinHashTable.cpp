@@ -355,7 +355,7 @@ std::pair<size_t, size_t> RangeJoinHashTable::approximateTupleCount(
 
 llvm::Value* RangeJoinHashTable::codegenKey(const CompilationOptions& co,
                                             llvm::Value* offset_ptr) {
-  LOG(FATAL) << "Range join key currently only supported for geospatial types.";
+  LOG(ERROR) << "Range join key currently only supported for geospatial types.";
   llvm::Value* key_buff_lv{nullptr};
   return key_buff_lv;
 }

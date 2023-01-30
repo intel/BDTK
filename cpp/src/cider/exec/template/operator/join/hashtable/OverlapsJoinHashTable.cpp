@@ -1173,7 +1173,7 @@ llvm::Value* OverlapsJoinHashTable::codegenKey(const CompilationOptions& co) {
     arr_ptr = code_generator.castArrayPointer(array_ptr, SQLTypeInfo(kTINYINT, true));
   }
   if (!arr_ptr) {
-    LOG(FATAL) << "Overlaps key currently only supported for geospatial columns and "
+    LOG(ERROR) << "Overlaps key currently only supported for geospatial columns and "
                   "constructed points.";
   }
 

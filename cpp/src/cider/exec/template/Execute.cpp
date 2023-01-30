@@ -1387,7 +1387,7 @@ llvm::Value* Executor::castToFP(llvm::Value* value,
         fp_type = llvm::Type::getDoubleTy(cgen_state_->context_);
         break;
       default:
-        LOG(FATAL) << "Unsupported FP size: " << to_ti.get_size();
+        LOG(ERROR) << "Unsupported FP size: " << to_ti.get_size();
     }
     value = cgen_state_->ir_builder_.CreateSIToFP(value, fp_type);
     if (from_ti.get_scale()) {

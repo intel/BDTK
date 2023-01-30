@@ -89,7 +89,7 @@ LLVMJITModule::LLVMJITModule(const std::string& name,
     auto expected_res =
         llvm::parseBitcodeFile(getRuntimeBuffer()->getMemBufferRef(), *context_);
     if (!expected_res) {
-      LOG(FATAL) << "LLVM IR ParseError: Something wrong when parsing bitcode.";
+      LOG(ERROR) << "LLVM IR ParseError: Something wrong when parsing bitcode.";
     } else {
       runtime_module_ = std::move(expected_res.get());
     }
