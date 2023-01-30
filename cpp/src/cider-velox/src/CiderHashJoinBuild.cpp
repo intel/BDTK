@@ -24,7 +24,6 @@
 #include "velox/exec/Task.h"
 
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
-#define CIDER_BATCH_PROCESSOR_CONTEXT_H
 #include "velox/vector/arrow/Abi.h"
 #endif
 

@@ -175,8 +175,8 @@ class CodegenContext {
         : ctx_id(id), name(n), hash_table(table) {}
   };
 
-  void setHashTable(cider::exec::processor::JoinHashTable& join_hash_table) {
-    hashtable_descriptor_.first->hash_table = &join_hash_table;
+  void setHashTable(cider::exec::processor::JoinHashTable* join_hash_table) {
+    hashtable_descriptor_.first->hash_table = join_hash_table;
   }
 
   struct CiderSetDescriptor {

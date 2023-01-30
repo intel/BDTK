@@ -109,7 +109,7 @@ class HashJoinTest : public ::testing::Test {
 
     // TODO(Xinyi) : sethashtable in velox hashjoinbuild
     auto tmp = hm.findAll(1);
-    codegen_ctx.setHashTable(hm);
+    codegen_ctx.setHashTable(&hm);
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);

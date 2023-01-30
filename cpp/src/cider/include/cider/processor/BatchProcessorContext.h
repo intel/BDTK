@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#pragma once
 
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #define CIDER_BATCH_PROCESSOR_CONTEXT_H

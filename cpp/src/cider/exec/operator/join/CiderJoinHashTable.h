@@ -28,13 +28,13 @@
 
 namespace cider::exec::processor {
 
-struct BatchOffset {
+struct BatchAndOffset {
   cider::exec::nextgen::context::Batch* batch_ptr;
   int64_t batch_offset;
 };
 
 using CiderJoinBaseKey = int;
-using CiderJoinBaseValue = BatchOffset;
+using CiderJoinBaseValue = BatchAndOffset;
 
 using CiderJoinBaseHashTable = cider_hashtable::BaseHashTable<
     CiderJoinBaseKey,
