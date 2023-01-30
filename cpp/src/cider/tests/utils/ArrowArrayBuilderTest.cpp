@@ -366,13 +366,13 @@ TEST(ArrowArrayBuilderTest, SingleDimensionArrayTest) {
       ArrowArrayBuilder()
           .setRowNum(4)
           .addSingleDimensionArrayColumn("int32_array",
-                                         CREATE_SUBSTRAIT_TYPE(I32),
+                                         CREATE_SUBSTRAIT_LIST_TYPE(I32),
                                          vecs,
+                                         {false, true, false, false},
                                          {{false, false, false},
                                           {false, false, false},
                                           {true, false, true, false},
-                                          {}},
-                                         {false, true, false, false})
+                                          {}})
           .build();
 
   EXPECT_EQ(std::string(schema->children[0]->format), "+l");

@@ -355,8 +355,9 @@ class ArrowArrayBuilder {
       const std::string& col_name,
       const ::substrait::Type& col_type,
       const std::vector<std::vector<T>>& col_data,
-      const std::vector<std::vector<bool>>& array_null_data = {},
-      const std::vector<bool>& null_data = {}) {
+      const std::vector<bool>& null_data = {},
+      const std::vector<std::vector<bool>>& array_null_data = {}) {
+    CHECK(col_type.has_list());
     if (!is_row_num_set_ ||  // have not set row num, use this col_data's row num
         row_num_ == 0) {     // previous columns are all empty
       is_row_num_set_ = true;
@@ -375,7 +376,8 @@ class ArrowArrayBuilder {
     // Child array schema
     ArrowSchema* child_schema = new ArrowSchema();
     child_schema->name = "";
-    child_schema->format = CiderBatchUtils::convertSubstraitTypeToArrowType(col_type);
+    child_schema->format =
+        CiderBatchUtils::convertSubstraitTypeToArrowType(col_type.list().type());
     child_schema->n_children = 0;
     child_schema->children = nullptr;
     child_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
