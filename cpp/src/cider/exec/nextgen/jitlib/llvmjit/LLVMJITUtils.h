@@ -41,6 +41,8 @@ inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
       return llvm::Type::getInt32Ty(ctx);
     case JITTypeTag::INT64:
       return llvm::Type::getInt64Ty(ctx);
+    case JITTypeTag::INT128:
+      return llvm::Type::getInt128Ty(ctx);
     case JITTypeTag::FLOAT:
       return llvm::Type::getFloatTy(ctx);
     case JITTypeTag::DOUBLE:
@@ -85,6 +87,13 @@ inline llvm::Value* getLLVMConstantInt(uint64_t value,
     default:
       return nullptr;
   }
+}
+
+inline llvm::Value* getLLVMConstantInt128(__int128_t value,
+                                          JITTypeTag tag,
+                                          llvm::LLVMContext& ctx) {
+  return llvm::ConstantInt::get(
+      ctx, ((llvm::APInt(128, value >> 64) << 64) | llvm::APInt(128, (uint64_t)value)));
 }
 
 inline llvm::Value* getLLVMConstantFP(double value,

@@ -122,6 +122,9 @@ llvm::Value* createConstantImpl(llvm::LLVMContext& context, const std::any& valu
   NativeType actual_value = std::any_cast<NativeType>(value);
   if constexpr (std::is_floating_point_v<NativeType>) {
     return getLLVMConstantFP(actual_value, type_tag, context);
+  } else if (JITTypeTraits<type_tag>::bits > 64) {
+    CHECK(JITTypeTraits<type_tag>::bits == 128);
+    return getLLVMConstantInt128(actual_value, type_tag, context);
   } else {
     return getLLVMConstantInt(actual_value, type_tag, context);
   }
@@ -158,6 +161,9 @@ JITValuePointer LLVMJITFunction::createLiteralImpl(JITTypeTag type_tag,
       type_tag = JITTypeTag::INT64;
     case JITTypeTag::INT64:
       llvm_value = createConstantImpl<JITTypeTag::INT64>(getLLVMContext(), value);
+      break;
+    case JITTypeTag::INT128:
+      llvm_value = createConstantImpl<JITTypeTag::INT128>(getLLVMContext(), value);
       break;
     case JITTypeTag::FLOAT:
       llvm_value = createConstantImpl<JITTypeTag::FLOAT>(getLLVMContext(), value);
