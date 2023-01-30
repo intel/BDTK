@@ -46,7 +46,6 @@ add_executable(StringHeapTest StringHeapTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     cider
-    cider_hashtable
     gtest
     test_utils
     fmt::fmt
@@ -58,8 +57,10 @@ set(EXECUTE_TEST_LIBS
 target_link_libraries(CodeGeneratorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CompileWorkUnitTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderAggHashTableTest ${EXECUTE_TEST_LIBS})
-target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS})
-target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS})
+target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
+                      cider_hashtable)
+target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS}
+                      cider_hashtable)
 target_link_libraries(CiderNongroupbyAggTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderCompileModuleTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderRuntimeModuleTest ${EXECUTE_TEST_LIBS})

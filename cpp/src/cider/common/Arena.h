@@ -57,7 +57,7 @@ class Arena : private boost::noncopyable {
   /// Get piece of memory with alignment
   char* alignedAlloc(size_t size, size_t alignment) { return nullptr; }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   template <typename T>
   T* alloc() {
     return nullptr;
@@ -85,17 +85,17 @@ class Arena : private boost::noncopyable {
   char* allocContinue(size_t additional_bytes,
                       char const*& range_start,
                       size_t start_alignment = 0) {
-    // TODO: Implement and enable later
+    // TODO(Deegue): Implement and enable later
     return nullptr;
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   /// NOTE Old memory region is wasted.
   char* realloc(const char* old_data, size_t old_size, size_t new_size) {
     return nullptr;
   }
 
-  // TODO: Implement and enable later
+  // TODO(Deegue): Implement and enable later
   char* alignedRealloc(const char* old_data,
                        size_t old_size,
                        size_t new_size,

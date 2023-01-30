@@ -31,7 +31,7 @@
  */
 using HashTableAllocator = CiderDefaultAllocator;
 
-// TODO: will implement more allocator later
+// TODO(Deegue): will implement more allocator later
 // template <size_t initial_bytes = 64>
 // using HashTableAllocatorWithStackMemory = AllocatorWithStackMemory<HashTableAllocator,
 // initial_bytes>;
