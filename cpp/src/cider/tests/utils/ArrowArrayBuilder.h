@@ -87,10 +87,12 @@ class ArrowArrayBuilder {
                                const ::substrait::Type& col_type,
                                const uint8_t* arrow_null_buffer,
                                const uint8_t* arrow_data_buffer) {
+    CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
     ArrowArray* current_array = CiderBatchUtils::allocateArrowArray();
     ArrowSchema* current_schema = CiderBatchUtils::allocateArrowSchema();
     current_schema->name = col_name.c_str();
-    current_schema->format = CiderBatchUtils::convertSubstraitTypeToArrowType(col_type);
+    current_schema->format =
+        CiderBatchUtils::convertSubstraitTypeToArrowType(col_type, holder->formatBuffer);
     current_schema->n_children = 0;
     current_schema->children = nullptr;
     current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
@@ -458,11 +460,13 @@ class ArrowArrayBuilder {
       const std::vector<T>& col_data,
       const std::vector<bool>& null_data = {},
       bool check_row_num = true) {
+    CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
     ArrowArray* current_array = CiderBatchUtils::allocateArrowArray();
     ArrowSchema* current_schema = CiderBatchUtils::allocateArrowSchema();
 
     current_schema->name = col_name.c_str();
-    current_schema->format = CiderBatchUtils::convertSubstraitTypeToArrowType(col_type);
+    current_schema->format =
+        CiderBatchUtils::convertSubstraitTypeToArrowType(col_type, holder->formatBuffer);
     current_schema->n_children = 0;
     current_schema->children = nullptr;
     current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;

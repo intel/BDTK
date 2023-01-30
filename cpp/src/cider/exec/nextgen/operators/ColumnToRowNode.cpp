@@ -47,6 +47,7 @@ class ColumnReader {
       case kDATE:
       case kTIME:
       case kTIMESTAMP:
+      case kDECIMAL:
         readFixSizedTypeCol(for_null);
         break;
       case kVARCHAR:

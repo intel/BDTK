@@ -49,3 +49,7 @@ add_executable(HashJoinTest HashJoinTest.cpp)
 target_link_libraries(HashJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
                       ${FOLLY_LIBRARIES})
 add_test(HashJoinTest ${EXECUTABLE_OUTPUT_PATH}/HashJoinTest ${TEST_ARGS})
+
+add_executable(DecimalOpTest DecimalOpTest.cpp)
+target_link_libraries(DecimalOpTest ${NEXTGEN_COMPILER_TEST_LIBS})
+add_test(DecimalOpTest ${EXECUTABLE_OUTPUT_PATH}/DecimalOpTest ${TEST_ARGS})

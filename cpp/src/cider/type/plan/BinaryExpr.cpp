@@ -45,6 +45,61 @@ void BinOper::initAutoVectorizeFlag() {
   }
 }
 
+int32_t getBinOpRescaledFactor(const SQLOps ops,
+                             const int32_t self_scale,
+                             const int32_t other_scale,
+                             const int32_t res_scale,
+                             const bool first_operand) {
+  switch (ops) {
+    case kPLUS:
+    case kMINUS:
+      return res_scale - self_scale;
+    case kMULTIPLY:
+      return 0;
+    case kDIVIDE:
+    case kMODULO: {
+      if (first_operand)
+        return other_scale + res_scale - self_scale;
+      else
+        return 0;
+    }
+    case kEQ:
+    case kBW_EQ:
+    case kNE:
+    case kLT:
+    case kGT:
+    case kLE:
+    case kGE:
+    case kBW_NE:
+      return std::max(self_scale, other_scale) - self_scale;
+    default:
+      return 0;
+  }
+}
+
+JITValuePointer getRescaledValue(CodegenContext& context,
+                                 FixSizeJITExprValue& expr_val,
+                                 const int32_t scaled_factor) {
+  JITFunction& func = *context.getJITFunction();
+  if (scaled_factor == 0)
+    return expr_val.getValue();
+  // only do upscale to keep precision
+  CHECK_GT(scaled_factor, 0);
+  auto val_tag = expr_val.getValue()->getValueTypeTag();
+  JITValuePointer new_val = func.createVariable(val_tag, "rescaled_val");
+  func.createIfBuilder()
+      ->condition([&]() { return expr_val.getNull(); })
+      ->ifTrue([&]() { *new_val = expr_val.getValue(); })
+      ->ifFalse([&]() {
+        JITValuePointer scaled_val =
+            func.createLiteral(val_tag, exp_to_scale(scaled_factor));
+        // TODO(kaidi): cast overflow check
+        new_val = expr_val.getValue() * scaled_val;
+      })
+      ->build();
+  return new_val;
+}
+
 JITExprValue& BinOper::codegen(CodegenContext& context) {
   JITFunction& func = *context.getJITFunction();
   if (auto& expr_var = get_expr_value()) {
@@ -65,9 +120,9 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
   } else {
     CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
   }
-  if (lhs_ti.is_decimal() || lhs_ti.is_timeinterval()) {
+  if (lhs_ti.is_timeinterval()) {
     CIDER_THROW(CiderCompileException,
-                "Decimal and TimeInterval are not supported in arithmetic codegen now.");
+                "TimeInterval is not supported in arithmetic codegen now.");
   }
   if (lhs_ti.is_string()) {
     // string binops, should only be comparisons
@@ -83,23 +138,43 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     }
   } else {
     // primitive type binops
-    FixSizeJITExprValue lhs_val(lhs->codegen(context));
-    FixSizeJITExprValue rhs_val(rhs->codegen(context));
+    FixSizeJITExprValue lhs_expr_val(lhs->codegen(context));
+    FixSizeJITExprValue rhs_expr_val(rhs->codegen(context));
 
     if (get_optype() == kBW_EQ or get_optype() == kBW_NE) {
-      return codegenFixedSizeDistinctFrom(func, lhs_val, rhs_val);
+      return codegenFixedSizeDistinctFrom(func, lhs_expr_val, rhs_expr_val);
     }
 
     const auto optype = get_optype();
+    // rescale decimal value before integer calculation
+    auto lhs_jit_val =
+        !lhs_ti.is_decimal()
+            ? lhs_expr_val.getValue()
+            : getRescaledValue(context,
+                               lhs_expr_val,
+                               getBinOpRescaledFactor(optype,
+                                                    lhs_ti.get_scale(),
+                                                    rhs_ti.get_scale(),
+                                                    get_type_info().get_scale(),
+                                                    true));
+    auto rhs_jit_val =
+        !rhs_ti.is_decimal()
+            ? rhs_expr_val.getValue()
+            : getRescaledValue(context,
+                               rhs_expr_val,
+                               getBinOpRescaledFactor(optype,
+                                                    rhs_ti.get_scale(),
+                                                    lhs_ti.get_scale(),
+                                                    get_type_info().get_scale(),
+                                                    false));
     if (IS_ARITHMETIC(optype)) {
-      auto null = lhs_val.getNull() || rhs_val.getNull();
-      return codegenFixedSizeColArithFun(
-          context, null, lhs_val.getValue(), rhs_val.getValue());
+      auto null = lhs_expr_val.getNull() || rhs_expr_val.getNull();
+      return codegenFixedSizeColArithFun(context, null, lhs_jit_val, rhs_jit_val);
     } else if (IS_COMPARISON(optype)) {
-      auto null = lhs_val.getNull() || rhs_val.getNull();
-      return codegenFixedSizeColCmpFun(null, lhs_val.getValue(), rhs_val.getValue());
+      auto null = lhs_expr_val.getNull() || rhs_expr_val.getNull();
+      return codegenFixedSizeColCmpFun(null, lhs_jit_val, rhs_jit_val);
     } else if (IS_LOGIC(optype)) {
-      return codegenFixedSizeLogicalFun(context, func, lhs_val, rhs_val);
+      return codegenFixedSizeLogicalFun(context, func, lhs_expr_val, rhs_expr_val);
     }
   }
   UNREACHABLE();
