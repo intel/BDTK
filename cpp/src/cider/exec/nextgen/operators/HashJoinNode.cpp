@@ -203,7 +203,7 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
   row_index = func->createLiteral(JITTypeTag::INT64, 0l);
   func->createLoopBuilder()
       ->condition([&row_index, &join_res_len]() { return row_index < join_res_len; })
-      ->loop([&] {
+      ->loop([&](LoopBuilder*) {
         auto res_array = func->emitRuntimeFunctionCall(
             "extract_join_res_array",
             JITFunctionEmitDescriptor{

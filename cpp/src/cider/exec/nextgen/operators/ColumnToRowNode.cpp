@@ -199,7 +199,7 @@ void ColumnToRowTranslator::codegen(context::CodegenContext& context, bool for_n
 
   func->createLoopBuilder()
       ->condition([&index, &idx_upper]() { return index < idx_upper; })
-      ->loop([&]() {
+      ->loop([&](LoopBuilder*) {
         for (auto& input : inputs) {
           ColumnReader(context, input, index).read(for_null);
         }

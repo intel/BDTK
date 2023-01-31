@@ -95,14 +95,16 @@ void LLVMLoopBuilder::build() {
   LLVMJITValue& condition_llvm_value = static_cast<LLVMJITValue&>(*condition_value);
 
   auto for_body = llvm::BasicBlock::Create(func_.getContext(), ".Loop_Body", &func_);
+  body_block_ = for_body;
   auto for_update = llvm::BasicBlock::Create(func_.getContext(), ".Loop_Update", &func_);
+  update_block_ = for_update;
   auto after_for = llvm::BasicBlock::Create(func_.getContext(), ".After_Loop", &func_);
   builder_.CreateCondBr(
       castToBool(builder_, condition_llvm_value.load()), for_body, after_for);
 
   builder_.SetInsertPoint(for_body);
   if (loop_body_) {
-    loop_body_();
+    loop_body_(this);
   }
   builder_.CreateBr(for_update);
 
@@ -114,4 +116,20 @@ void LLVMLoopBuilder::build() {
 
   builder_.SetInsertPoint(after_for);
 }
+
+void LLVMLoopBuilder::loopContinueImpl(JITValue* condition) {
+  CHECK(update_block_);
+  if (condition) {
+    auto for_body =
+        llvm::BasicBlock::Create(func_.getContext(), ".Loop_Body_Continue", &func_);
+    LLVMJITValue* llvm_condition = static_cast<LLVMJITValue*>(condition);
+
+    builder_.CreateCondBr(llvm_condition->load(), update_block_, for_body);
+    builder_.SetInsertPoint(for_body);
+  } else {
+    builder_.CreateBr(update_block_);
+    builder_.SetInsertPoint(body_block_);
+  }
+}
+
 };  // namespace cider::jitlib
