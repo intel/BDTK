@@ -23,6 +23,7 @@
 #define CIDER_CIDEROPTIONS_H
 
 #include <gflags/gflags.h>
+#include <gflags/gflags_declare.h>
 #include <cstddef>
 #include <cstdint>
 
@@ -38,6 +39,7 @@ DECLARE_bool(use_default_col_range);
 DECLARE_bool(use_cider_data_format);
 DECLARE_bool(needs_error_check);
 DECLARE_bool(use_nextgen_compiler);
+DECLARE_bool(null_separate);
 
 DECLARE_bool(output_columnar_hint);
 DECLARE_bool(allow_multifrag);

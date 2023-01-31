@@ -19,7 +19,9 @@
  * under the License.
  */
 #include "type/plan/ConstantExpr.h"
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 
 namespace Analyzer {
 
@@ -30,6 +32,9 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
   }
 
   auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
+  if (FLAGS_null_separate) {
+    null.replace(func.createLiteral(JITTypeTag::BOOL, false));
+  }
 
   const auto& ti = get_type_info();
   const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
@@ -79,4 +84,14 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
   UNREACHABLE();
   return expr_var_;
 }
+
+JITExprValue& Constant::codegenNull(CodegenContext& context) {
+  JITFunction& func = *context.getJITFunction();
+  // if (auto& expr_var = get_expr_value()) {
+  //   return expr_var;
+  // }
+
+  auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
+  return set_expr_null(null);
+}  // namespace Analyzer
 }  // namespace Analyzer

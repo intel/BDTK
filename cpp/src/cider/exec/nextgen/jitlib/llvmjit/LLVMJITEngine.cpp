@@ -18,10 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 
 #include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/ExecutionEngine/JITEventListener.h>
 
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 
 namespace cider::jitlib {
@@ -65,6 +66,11 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
   engine->engine = eb.create(tm_.release());
   engine->engine->DisableLazyCompilation(false);
   engine->engine->setVerifyModules(false);
+
+  engine->engine->RegisterJITEventListener(
+      llvm::JITEventListener::createPerfJITEventListener());
+  engine->engine->RegisterJITEventListener(
+      llvm::JITEventListener::createIntelJITEventListener());
 
   LOG(INFO) << "Enabled features: "
             << engine->engine->getTargetMachine()->getTargetFeatureString().str();

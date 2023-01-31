@@ -170,6 +170,19 @@ FORCE_INLINE void clearBitAt(uint8_t* bit_vector, size_t index) {
   bit_vector[index >> 3] &= kCiderBitReverseMask[index & 0x7];
 }
 
+FORCE_INLINE bool isBitClearAt(const uint8_t* bit_vector, size_t index) {
+  // return bit_vector[index >> 3] ^ kCiderBitMask[index & 0x7];
+  return bit_vector[index >> 3] ^ (1 << (index & 0x7));
+}
+
+FORCE_INLINE void setBitAtUnified(uint8_t* bit_vector, size_t index, bool is_null) {
+  // https://stackoverflow.com/questions/24314281/conditionally-set-or-clear-bits
+  // https://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
+  uint8_t idx = index >> 3;
+  uint8_t mask = 1 << (index & 0x7);
+  bit_vector[idx] = (bit_vector[idx] & ~mask) | (-(uint8_t)is_null & mask);
+}
+
 inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
   size_t i = 0, ans = 0;
   for (; i + 64 <= end; i += 64) {

@@ -19,10 +19,12 @@
  * under the License.
  */
 
-#include "exec/processor/DefaultBatchProcessor.h"
 #include <memory>
+
 #include "cider/CiderException.h"
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
+#include "exec/processor/DefaultBatchProcessor.h"
 #include "exec/processor/StatefulProcessor.h"
 #include "exec/processor/StatelessProcessor.h"
 
