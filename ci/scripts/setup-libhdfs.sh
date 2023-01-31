@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2022 Intel Corporation.
+# Copyright(c) 2022-2023 Intel Corporation.
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

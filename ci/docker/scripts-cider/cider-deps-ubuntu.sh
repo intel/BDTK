@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2022 Intel Corporation.
+# Copyright(c) 2022-2023 Intel Corporation.
 # Copyright (c) Omnisci, Inc. and its affiliates.
 #
 # Licensed to the Apache Software Foundation (ASF) under one
