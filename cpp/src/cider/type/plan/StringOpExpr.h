@@ -600,14 +600,16 @@ class RegexpExtractStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  RegexpExtractStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit RegexpExtractStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
                    foldLiteralStrCasts(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  RegexpExtractStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit RegexpExtractStringOper(
+      const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   JITExprValue& codegen(CodegenContext& context) override;
@@ -640,14 +642,16 @@ class RegexpSubstrStringOper : public StringOper {
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  RegexpSubstrStringOper(const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+  explicit RegexpSubstrStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::REGEXP_SUBSTR,
                    foldLiteralStrCasts(operands),
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
 
-  RegexpSubstrStringOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
+  explicit RegexpSubstrStringOper(
+      const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
