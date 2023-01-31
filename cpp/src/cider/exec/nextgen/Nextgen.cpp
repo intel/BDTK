@@ -23,6 +23,7 @@
 
 #include <memory>
 
+#include "cider/CiderOptions.h"
 #include "jitlib/base/JITFunction.h"
 
 namespace cider::exec::nextgen {
@@ -41,6 +42,10 @@ std::unique_ptr<context::CodegenContext> compile(
     auto pipeline = parsers::toOpPipeline(ra_exe_unit);
     auto translator = transformer::Transformer::toTranslator(pipeline);
     translator->consume(*codegen_ctx);
+    if (FLAGS_null_separate) {
+      // bypass ArrowSourceNode
+      translator->getSuccessor()->consumeNull(*codegen_ctx);
+    }
     auto ret_val = function->createVariable(cider::jitlib::JITTypeTag::INT32, "ret", 0);
     function->createReturn(*ret_val.get());
   };

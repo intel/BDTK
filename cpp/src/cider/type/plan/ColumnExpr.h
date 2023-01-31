@@ -107,6 +107,7 @@ class ColumnVar : public Expr {
 
  public:
   JITExprValue& codegen(CodegenContext& context) override;
+  JITExprValue& codegenNull(CodegenContext& context) override;
 
  protected:
   int rte_idx;  // 0-based range table index, used for table ordering in multi-joins

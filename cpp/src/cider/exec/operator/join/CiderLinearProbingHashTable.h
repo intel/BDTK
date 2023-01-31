@@ -49,7 +49,6 @@ struct table_key {
   std::size_t duplicate_num;
 };
 
-// TODO: extends JoinHashTable class and a hashtable basic interface
 template <typename Key,
           typename Value,
           typename Hash = std::hash<Key>,
@@ -197,7 +196,7 @@ class LinearProbeHashTable
   // TODO: assert key and value types
   void merge_other_hashtables(
       const std::vector<
-          std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
+          std::shared_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
           otherTables);
 
   void swap(LinearProbeHashTable& other) noexcept;

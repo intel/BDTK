@@ -28,7 +28,9 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
-#include "exec/operator/join/CiderLinearProbingHashTable.h"
+#ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
+#include "exec/operator/join/CiderJoinHashTable.h"
+#endif
 #include "util/sqldefs.h"
 
 namespace cider::exec::nextgen::context {
@@ -37,23 +39,6 @@ class RuntimeContext;
 class Batch;
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
 using namespace cider_hashtable;
-
-// TODO(qiuyang) : will be removed after hashtable being refactored and won't include
-// CiderLinearProbingHashTable.h file
-struct murmurHash {
-  size_t operator()(int64_t rawHash) {
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xff51afd7ed558ccdL;
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xc4ceb9fe1a85ec53L;
-    rawHash ^= unsigned(rawHash) >> 33;
-    return rawHash;
-  }
-};
-
-struct Equal {
-  bool operator()(int lhs, int rhs) { return lhs == rhs; }
-};
 
 struct AggExprsInfo {
  public:
@@ -85,6 +70,10 @@ using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
 struct CodegenOptions {
   bool needs_error_check = false;
+  bool check_bit_vector_clear_opt = false;
+  bool set_null_bit_vector_opt = false;
+  bool branchless_logic = false;
+
   jitlib::CompilationOptions co = jitlib::CompilationOptions{};
 };
 
@@ -179,23 +168,19 @@ class CodegenContext {
     int64_t ctx_id;
     std::string name;
     // TODO(qiuyang) : LinearProbeHashTable will provide the default template
-    LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>* hash_table;
+    cider::exec::processor::JoinHashTable* hash_table;
 
     HashTableDescriptor(
         int64_t id,
         const std::string& n,
         // TODO(qiuyang) : LinearProbeHashTable will provide the default template
-        LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>* table =
-            new LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>(
-                16,
-                0))
+        cider::exec::processor::JoinHashTable* table =
+            new cider::exec::processor::JoinHashTable())
         : ctx_id(id), name(n), hash_table(table) {}
   };
 
-  void setHashTable(
-      LinearProbeHashTable<int, std::pair<Batch*, int64_t>, murmurHash, Equal>&
-          LP_hash_table) {
-    hashtable_descriptor_.first->hash_table = &LP_hash_table;
+  void setHashTable(cider::exec::processor::JoinHashTable* join_hash_table) {
+    hashtable_descriptor_.first->hash_table = join_hash_table;
   }
 
   struct CiderSetDescriptor {

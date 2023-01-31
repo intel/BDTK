@@ -34,7 +34,6 @@ class DefaultBatchProcessor : public BatchProcessor {
   DefaultBatchProcessor(
       const plan::SubstraitPlanPtr& plan,
       const BatchProcessorContextPtr& context,
-
       const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
   virtual ~DefaultBatchProcessor() = default;

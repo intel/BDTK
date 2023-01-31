@@ -69,6 +69,9 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
       break;
     }
+    case JITTypeTag::INT8:
+      ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
+      break;
     default:
       LOG(ERROR) << "Invalid JITValue type for or operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";

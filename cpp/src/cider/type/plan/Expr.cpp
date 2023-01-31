@@ -30,6 +30,11 @@ JITExprValue& Expr::codegen(CodegenContext& context) {
   UNREACHABLE();
   return expr_var_;
 }
+
+JITExprValue& Expr::codegenNull(CodegenContext& context) {
+  UNREACHABLE();
+  return expr_var_;
+}
 }  // namespace Analyzer
 
 std::shared_ptr<Analyzer::Expr> remove_cast(const std::shared_ptr<Analyzer::Expr>& expr) {

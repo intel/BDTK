@@ -23,7 +23,9 @@
 #include "Allocator.h"
 #include "CiderHashJoinBuild.h"
 #include "velox/exec/Task.h"
+#ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #include "velox/vector/arrow/Abi.h"
+#endif
 #include "velox/vector/arrow/Bridge.h"
 
 namespace facebook::velox::plugin {

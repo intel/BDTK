@@ -22,12 +22,15 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <any>
 #include <iostream>
 #include <random>
 #include <unordered_map>
 #include <vector>
+#include "cider/CiderException.h"
 #include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderF14HashTable.h"
+#include "exec/operator/join/CiderJoinHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "exec/operator/join/HashTableFactory.h"
 #include "exec/plan/parser/TypeUtils.h"
@@ -61,6 +64,50 @@ TEST(CiderHashTableTest, factoryTest) {
       hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
 }
 
+// test build and probe for cider
+TEST(CiderHashTableTest, JoinHashTableTest) {
+  using namespace cider::exec::nextgen::context;
+
+  auto joinHashTable1 = new cider::exec::processor::JoinHashTable(
+      cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto joinHashTable2 = new cider::exec::processor::JoinHashTable(
+      cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto joinHashTable3 = new cider::exec::processor::JoinHashTable(
+      cider_hashtable::HashTableType::LINEAR_PROBING);
+
+  auto input_builder = ArrowArrayBuilder();
+
+  auto&& [schema, array] =
+      input_builder.setRowNum(10)
+          .addColumn<int64_t>(
+              "l_bigint", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
+          .addColumn<int32_t>(
+              "l_int", CREATE_SUBSTRAIT_TYPE(I32), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+          .build();
+  Batch build_batch(*schema, *array);
+
+  for (int i = 0; i < 10; i++) {
+    int key = *(
+        (reinterpret_cast<int*>(const_cast<void*>(array->children[1]->buffers[1]))) + i);
+    joinHashTable1->emplace(key, {&build_batch, i});
+    joinHashTable2->emplace(key, {&build_batch, i});
+    joinHashTable3->emplace(key, {&build_batch, i});
+  }
+  EXPECT_EQ(joinHashTable1->getHashTable()->size(), 10);
+  for (auto key : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+    auto hm_res_vec = joinHashTable1->findAll(key);
+    EXPECT_EQ(hm_res_vec.size(), 1);
+    EXPECT_EQ(hm_res_vec[0].batch_offset, key);
+  }
+  std::vector<std::unique_ptr<cider::exec::processor::JoinHashTable>> otherTables;
+  otherTables.emplace_back(
+      std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable2)));
+  otherTables.emplace_back(
+      std::move(std::unique_ptr<cider::exec::processor::JoinHashTable>(joinHashTable3)));
+  joinHashTable1->merge_other_hashtables(otherTables);
+  EXPECT_EQ(joinHashTable1->getHashTable()->size(), 30);
+}
+
 TEST(CiderHashTableTest, mergeTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
   cider_hashtable::HashTableSelector<
@@ -85,7 +132,7 @@ TEST(CiderHashTableTest, mergeTest) {
     hm3->emplace(random(-10, 10), value);
   }
   // cider_hashtable::BaseHashTable<int, int, MurmurHash, Equal> hb1 = hm1;
-  std::vector<std::unique_ptr<cider_hashtable::BaseHashTable<
+  std::vector<std::shared_ptr<cider_hashtable::BaseHashTable<
       int,
       int,
       cider_hashtable::MurmurHash,
@@ -118,7 +165,7 @@ TEST(CiderHashTableTest, batchAsValueTest) {
           .build();
 
   Batch build_batch(*schema, *array);
-  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using factory
+  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key using
   cider_hashtable::HashTableSelector<
       int,
       std::pair<cider::exec::nextgen::context::Batch*, int>,

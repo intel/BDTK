@@ -61,9 +61,10 @@ class ColumnToRowTranslator : public Translator {
   using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
+  void consumeNull(context::CodegenContext& context) override;
 
  private:
-  void codegen(context::CodegenContext& context);
+  void codegen(context::CodegenContext& context, bool for_null = false);
 };
 
 }  // namespace cider::exec::nextgen::operators

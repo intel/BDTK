@@ -24,6 +24,7 @@
 
 #include "exec/nextgen/context/CodegenContext.h"
 #include "type/plan/Analyzer.h"
+#include "util/Logger.h"
 
 namespace cider::exec::nextgen::operators {
 using utils::JITExprValueType;
@@ -81,6 +82,7 @@ class Translator {
   virtual ~Translator() = default;
 
   virtual void consume(context::CodegenContext& context) = 0;
+  virtual void consumeNull(context::CodegenContext& context) { UNIMPLEMENTED(); }
 
   OpNodePtr getOpNode() { return node_; }
 

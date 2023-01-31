@@ -23,13 +23,24 @@
 
 namespace cider::exec::processor {
 
+// TODO: pass some arguments that will decide hashtable type
 std::unique_ptr<JoinHashTable> DefaultJoinHashTableBuilder::build() {
-  // TODO: build a join hash table
+  // TODO: get the choosed hashtable type
+  // reset to other hashtable if changed, comment out due to only have one hashtable now
+  // hashTable_.reset(new JoinHashTable());
   return std::move(hashTable_);
 }
+// TODO: get the join key. Right use hard-code col 0
+void DefaultJoinHashTableBuilder::appendBatch(
+    std::shared_ptr<cider::exec::nextgen::context::Batch> batch) {
+  int length = batch->getArray()->children[0]->length;
+  for (int i = 0; i < length; i++) {
+    int key = *((reinterpret_cast<int*>(
+                    const_cast<void*>(batch->getArray()->children[0]->buffers[1]))) +
+                i);
 
-void DefaultJoinHashTableBuilder::appendBatch(std::shared_ptr<CiderBatch> batch) {
-  // TODO: add batch into hashTable
+    hashTable_->getHashTable()->emplace(key, {batch.get(), i});
+  }
 }
 
 std::shared_ptr<JoinHashTableBuilder> makeJoinHashTableBuilder(

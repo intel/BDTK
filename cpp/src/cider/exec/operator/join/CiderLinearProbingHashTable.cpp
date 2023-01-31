@@ -67,7 +67,7 @@ template <typename Key,
           typename Allocator>
 void LinearProbeHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::
     merge_other_hashtables(
-        const std::vector<std::unique_ptr<
+        const std::vector<std::shared_ptr<
             BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>& otherTables) {
   int total_size = 0;
   for (const auto& table_ptr_tmp : otherTables) {
