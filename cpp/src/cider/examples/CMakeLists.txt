@@ -29,4 +29,4 @@ target_link_libraries(CiderRuntimeModuleExample cider_expr_builder test_utils
                       cider substrait)
 
 add_executable(CiderHashTableExample CiderHashTableExample.cpp)
-target_link_libraries(CiderHashTableExample cider)
+target_link_libraries(CiderHashTableExample cider cider_hashtable_join)

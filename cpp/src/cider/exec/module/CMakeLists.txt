@@ -38,7 +38,8 @@ target_link_libraries(
   ${CMAKE_DL_LIBS}
   ${GFLAGS_LIBRARIES}
   ${TBB_LIBS}
-  yaml-cpp)
+  yaml-cpp
+  cider_hashtable_join)
 
 set_target_properties(cider PROPERTIES VERSION "${BDTK_FULL_SO_VERSION}"
                                        SOVERSION "${BDTK_SO_VERSION}")

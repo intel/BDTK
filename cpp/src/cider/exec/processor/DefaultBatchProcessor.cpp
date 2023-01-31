@@ -125,7 +125,7 @@ void DefaultBatchProcessor::feedHashBuildTable(
     const std::shared_ptr<JoinHashTable>& hashTable) {
   // switch state from waiting to running once hashTable is ready
   this->state_ = BatchProcessorState::kRunning;
-  // TODO: feed the hashTable into nextGen context
+  this->codegen_context_->setHashTable(hashTable.get());
 }
 
 std::unique_ptr<BatchProcessor> makeBatchProcessor(

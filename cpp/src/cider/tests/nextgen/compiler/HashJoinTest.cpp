@@ -97,22 +97,19 @@ class HashJoinTest : public ::testing::Test {
                 "l_c", CREATE_SUBSTRAIT_TYPE(I64), {555, 666, 777, 888})
             .build();
 
-    cider_hashtable::LinearProbeHashTable<int,
-                                          std::pair<context::Batch*, int64_t>,
-                                          context::murmurHash,
-                                          context::Equal>
-        hm(16, 0);
+    cider::exec::processor::JoinHashTable hm;
     auto join_key = build_batch.getArray()->children[1];
     for (int64_t i = 0; i < join_key->length; i++) {
       // if (!*((reinterpret_cast<bool*>(const_cast<void*>(join_key->buffers[0]))) + i)) {
       int key =
           *((reinterpret_cast<COL_TYPE*>(const_cast<void*>(join_key->buffers[1]))) + i);
-      hm.insert(key, std::make_pair(&build_batch, i));
+      hm.emplace(key, {&build_batch, i});
       // }
     }
 
     // TODO(Xinyi) : sethashtable in velox hashjoinbuild
-    codegen_ctx.setHashTable(hm);
+    auto tmp = hm.findAll(1);
+    codegen_ctx.setHashTable(&hm);
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
