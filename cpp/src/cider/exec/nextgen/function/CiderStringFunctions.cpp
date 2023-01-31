@@ -19,6 +19,9 @@
  * under the License.
  */
 
+#include <re2/re2.h>
+#include <string.h>
+#include <algorithm>
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/context/StringHeap.h"
@@ -391,4 +394,235 @@ extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
 convert_string_to_time(const char* str_ptr, const int32_t str_len, const int32_t dim) {
   std::string from_str(str_ptr, str_len);
   return dateTimeParse<kTIME>(from_str, dim);
+}
+
+static const size_t npos = -1;
+extern "C" ALWAYS_INLINE size_t cider_find_str_from_left(const char* str1,
+                                                         size_t str1_len,
+                                                         const char* str2,
+                                                         size_t str2_len,
+                                                         size_t start_pos = npos) {
+  if (str1_len < str2_len) {
+    return npos;
+  }
+  size_t real_start_pos = (start_pos == npos) ? 0 : start_pos;
+  for (size_t i = real_start_pos; i < str1_len - str2_len; ++i) {
+    if (!std::memcmp(str1 + i, str2, str2_len)) {
+      return i;
+    }
+  }
+  return npos;
+}
+
+extern "C" ALWAYS_INLINE size_t cider_find_str_from_right(const char* str1,
+                                                          size_t str1_len,
+                                                          const char* str2,
+                                                          size_t str2_len,
+                                                          size_t start_pos = npos) {
+  if (str1_len < str2_len) {
+    return npos;
+  }
+  size_t real_start_pos = (start_pos == npos) ? 0 : start_pos;
+  for (size_t i = real_start_pos; i >= str2_len; --i) {
+    if (!std::memcmp(str1 + i - str2_len, str2, str2_len)) {
+      return i - str2_len;
+    }
+  }
+  return npos;
+}
+
+// Split a string into a list of strings, based on a specified `separator` character.
+// str_ptr & str_len: the input string
+// delimiter_ptr & delimiter_len: A character used for splitting the string.
+// reverse: default value is false, will be true if split_part < 0.
+// limit: Must be positive. Returns an array of size at most 'limit', and the last element
+// in array contains everything left in the string.
+// split_part: Field index to be returned. Index starts from 1. If the index is larger
+// than the number of fields, a null string is returned.
+extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
+                                             const char* str_ptr,
+                                             int str_len,
+                                             const char* delimiter_ptr,
+                                             int delimiter_len,
+                                             bool reverse,
+                                             int limit,
+                                             int split_part) {
+  // If split_part is negative then it is taken as the number
+  // of split parts from the end of the string
+  split_part = split_part == 0 ? 1UL : std::abs(split_part);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  if (delimiter_len == 0) {
+    string_t s = ptr->addString(str_ptr, str_len);
+    return pack_string_t(s);
+  }
+
+  if (limit == 1) {
+    // should return a list with only 1 string (which should not be splitted)
+    if (split_part == 1) {
+      string_t s = ptr->addString(str_ptr, str_len);
+      return pack_string_t(s);
+    } else {
+      // out of range, should return null;
+      return 0;
+    }
+  }
+  size_t delimiter_pos = reverse ? str_len : 0UL;
+  size_t last_delimiter_pos;
+  size_t delimiter_idx = 0UL;
+  size_t limit_counter = 0UL;
+
+  do {
+    last_delimiter_pos = delimiter_pos;
+
+    delimiter_pos =
+        reverse ? cider_find_str_from_right(
+                      str_ptr, str_len, delimiter_ptr, delimiter_len, delimiter_pos)
+                : cider_find_str_from_left(
+                      str_ptr,
+                      str_len,
+                      delimiter_ptr,
+                      delimiter_len,
+                      // shouldn't skip delimiter length on first search attempt
+                      delimiter_pos == 0 ? 0 : delimiter_pos + delimiter_len);
+    // do ++limit_counter in the loop to prevent bugs caused by shortcut execution
+    ++limit_counter;
+    // however, we still keep ++delimiter_idx in while condition check to ensure
+    // the property that delimiter_idx == 0 if delimiter does not exist in input string
+  } while (delimiter_pos != npos && ++delimiter_idx < split_part &&
+           (limit == 0 || limit_counter < limit));
+  if (limit && limit_counter == limit) {
+    // split has reached maximum split limit
+    // treat whatever remains as a whole by extending delimiter_pos to end-of-string
+    delimiter_pos = npos;
+  }
+
+  if (delimiter_idx == 0 && split_part == 1) {
+    // delimiter does not exist, but the first split is requested, return the entire str
+    string_t s = ptr->addString(str_ptr, str_len);
+    return pack_string_t(s);
+  }
+
+  if (delimiter_pos == npos &&
+      (delimiter_idx < split_part - 1UL || delimiter_idx < 1UL)) {
+    // split_part_ was out of range
+    return 0;  // null string
+  }
+
+  if (reverse) {
+    const size_t substr_start =
+        delimiter_pos == npos ? 0UL : delimiter_pos + delimiter_len;
+    string_t s =
+        ptr->addString(str_ptr + substr_start, last_delimiter_pos - substr_start);
+    return pack_string_t(s);
+  } else {
+    const size_t substr_start =
+        split_part == 1UL ? 0UL : last_delimiter_pos + delimiter_len;
+    size_t len;
+    if (-1 == delimiter_pos) {
+      len = str_len - substr_start;
+    } else {
+      len = delimiter_pos - substr_start;
+    }
+
+    string_t s = ptr->addString(str_ptr + substr_start, len);
+    return pack_string_t(s);
+  }
+}
+
+std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
+                                                     int input_len,
+                                                     const re2::StringPiece& pattern,
+                                                     int start_pos,
+                                                     int occurrence) {
+  RE2 re(pattern);
+
+  // record start_pos and length for each matched substring
+  std::vector<std::pair<size_t, size_t>> matched_pos;
+  int string_pos = start_pos;
+  int matched_index = 0;
+  while (string_pos < input_len) {
+    re2::StringPiece submatch;
+    re.Match(re2::StringPiece(input_ptr, input_len),
+             string_pos,
+             input_len,
+             RE2::UNANCHORED,
+             &submatch,
+             1);
+
+    if (submatch.data() == nullptr) {
+      // not found
+      break;
+    } else {
+      size_t matched_start_pos = submatch.data() - input_ptr;  // addr - addr
+      matched_pos.push_back({matched_start_pos, submatch.size()});
+      if (matched_index++ == occurrence) {
+        return matched_pos.back();
+      }
+      string_pos = matched_start_pos + submatch.size();  // ??
+    }
+  }
+  int wrapped_match = occurrence >= 0 ? occurrence : matched_index + occurrence;
+  if (wrapped_match < 0 || wrapped_match >= matched_index) {
+    return std::make_pair(npos, npos);
+  }
+  return matched_pos[wrapped_match];
+}
+
+// Search a string for a substring that matches a given regular expression pattern and
+// replace it with a replacement string.
+// str_ptr & str_len: input string.
+// regex_pattern_ptr & regex_pattern_len: the regular expression to search for within the
+// input string.
+// replace_ptr & replace_len: the replacement string.
+// start_pos: the position to start the search.
+// occurrence: which occurrence of the match to replace.
+extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
+                                                      const char* str_ptr,
+                                                      int str_len,
+                                                      const char* regex_pattern_ptr,
+                                                      int regex_pattern_len,
+                                                      const char* replace_ptr,
+                                                      const int replace_len,
+                                                      int start_pos,
+                                                      int occurrence) {
+  start_pos = start_pos > 0 ? start_pos - 1 : start_pos;
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  const size_t wrapped_start = static_cast<size_t>(
+      std::min(start_pos >= 0 ? start_pos : std::max(str_len + start_pos, 0), str_len));
+  // construct for re2 lib - first memory copy
+  std::string input(str_ptr + wrapped_start, str_len - wrapped_start);
+  re2::StringPiece pattern(regex_pattern_ptr, regex_pattern_len);
+  re2::StringPiece replace(replace_ptr, replace_len);
+  if (occurrence == 0L) {
+    // occurrence_ == 0: replace all occurrences
+    int cnt = RE2::GlobalReplace(&input, pattern, replace);
+    string_t res = ptr->emptyString(wrapped_start + input.length());
+    // construct result string - second memory copy
+    std::memcpy(res.getDataWriteable(), str_ptr, wrapped_start);
+    std::memcpy(res.getDataWriteable() + wrapped_start, input.c_str(), input.length());
+    return pack_string_t(res);
+  } else {
+    // only replace n-th occurrence
+    std::pair<size_t, size_t> match_pos =
+        cider_find_nth_regex_match(str_ptr,
+                                   str_len,
+                                   pattern,
+                                   start_pos,
+                                   occurrence > 0 ? occurrence - 1 : occurrence);
+    if (match_pos.first == npos) {
+      // no match found, return origin string
+      string_t res = ptr->addString(str_ptr, str_len);
+      return pack_string_t(res);
+    } else {
+      string_t res = ptr->emptyString(str_len - match_pos.second + replace_len);
+      std::memcpy(res.getDataWriteable(), str_ptr, match_pos.first);
+      std::memcpy(res.getDataWriteable() + match_pos.first, replace_ptr, replace_len);
+      std::memcpy(res.getDataWriteable() + match_pos.first + replace_len,
+                  str_ptr + match_pos.first + match_pos.second,
+                  str_len - (match_pos.first + match_pos.second));
+      return pack_string_t(res);
+    }
+  }
+
+  return 0;
 }

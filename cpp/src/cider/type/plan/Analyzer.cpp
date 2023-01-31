@@ -134,16 +134,6 @@ std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
-std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
-  return makeExpr<Analyzer::RegexpReplaceStringOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
-std::shared_ptr<Analyzer::Expr> SplitPartStringOper::deep_copy() const {
-  return makeExpr<Analyzer::SplitPartStringOper>(
-      std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
-}
-
 std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
     const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
     int start_idx) {
