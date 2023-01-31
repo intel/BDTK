@@ -130,7 +130,7 @@ std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildBasicAggEx
 
 std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildAVGAggExtractor(
     const int8_t* buffer) {
-  LOG(FATAL) << "Avg agg extractor is not support yet";
+  LOG(ERROR) << "Avg agg extractor is not support yet";
   return nullptr;
 }
 }  // namespace cider::exec::nextgen::operators

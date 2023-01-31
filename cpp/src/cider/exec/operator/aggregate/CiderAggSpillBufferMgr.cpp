@@ -29,6 +29,7 @@
 
 #include <ctime>
 #include <exception>
+#include <filesystem>
 #include <string>
 
 #include "util/Logger.h"
@@ -194,7 +195,7 @@ CiderAggSpillFile::CiderAggSpillFile(const std::string& fname, size_t partition_
     LOG(ERROR) << "Create spill file: " << file_path.native()
                << " failed, errno=" << errno;
   } else {
-    LOG(DEBUG1) << "Create spill file: " << file_path.native() << " Fd=" << fd_;
+    LOG(INFO) << "Create spill file: " << file_path.native() << " Fd=" << fd_;
   }
 
   resizeSpillFile(1);
@@ -208,7 +209,7 @@ CiderAggSpillFile::~CiderAggSpillFile() {
                << " failed, errno=" << errno;
   }
   if (remove(file_path)) {
-    LOG(DEBUG1) << "Remove spill file: " << file_path.native();
+    LOG(INFO) << "Remove spill file: " << file_path.native();
   } else {
     LOG(ERROR) << "Remove spill file: " << file_path.native() << " failed.";
   }
@@ -222,8 +223,8 @@ void CiderAggSpillFile::resizeSpillFile(size_t partition_num) {
     fsync(fd_);
     partition_num_ = partition_num;
     file_size_ = partition_num_ * partition_size_;
-    LOG(DEBUG1) << "Expand spill file: " << fname_ << " success. Fd= " << fd_
-                << " File Size=" << file_size_ << " Bytes";
+    LOG(INFO) << "Expand spill file: " << fname_ << " success. Fd= " << fd_
+              << " File Size=" << file_size_ << " Bytes";
   }
 }
 

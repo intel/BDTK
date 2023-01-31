@@ -296,7 +296,7 @@ SQLTypeInfo ext_arg_type_to_type_info(const ExtArgumentType ext_arg_type) {
     case ExtArgumentType::ColumnListTextEncodingDict:
       return generate_column_type(kTEXT, kENCODING_DICT, 0 /* comp_param */);
     default:
-      LOG(FATAL) << "ExtArgumentType `" << serialize_type(ext_arg_type)
+      LOG(ERROR) << "ExtArgumentType `" << serialize_type(ext_arg_type)
                  << "` cannot be converted to SQLTypeInfo.";
   }
   return SQLTypeInfo(kNULLT, false);

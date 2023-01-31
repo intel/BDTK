@@ -65,7 +65,7 @@ class ColumnWriter {
         writeVariableSizeTypeCol(for_null);
         break;
       default:
-        LOG(FATAL) << "Unsupported data type in ColumnWriter: "
+        LOG(ERROR) << "Unsupported data type in ColumnWriter: "
                    << expr_->get_type_info().get_type_name();
     }
   }

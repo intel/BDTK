@@ -163,7 +163,7 @@ inline size_t get_bit_width(const SQLTypeInfo& ti, bool is_arrow_format = false)
   const auto int_type = ti.is_decimal() ? kBIGINT : ti.get_type();
   switch (int_type) {
     case kNULLT:
-      LOG(FATAL) << "Untyped NULL values are not supported. Please CAST any NULL "
+      LOG(ERROR) << "Untyped NULL values are not supported. Please CAST any NULL "
                     "constants to a type.";
     case kBOOLEAN:
       return 8;
@@ -204,7 +204,7 @@ inline size_t get_bit_width(const SQLTypeInfo& ti, bool is_arrow_format = false)
     case kCOLUMN_LIST:
       return ti.get_elem_type().get_size() * 8;
     default:
-      LOG(FATAL) << "Unhandled int_type: " << int_type;
+      LOG(ERROR) << "Unhandled int_type: " << int_type;
       return {};
   }
 }

@@ -57,7 +57,7 @@ inline llvm::ArrayType* get_int_array_type(int const width,
       return llvm::ArrayType::get(llvm::Type::getInt1Ty(context), count);
       break;
     default:
-      LOG(FATAL) << "Unsupported integer width: " << width;
+      LOG(ERROR) << "Unsupported integer width: " << width;
   }
   return nullptr;
 }
@@ -81,7 +81,7 @@ inline llvm::VectorType* get_int_vector_type(int const width,
       return llvm::VectorType::get(llvm::Type::getInt1Ty(context), count, false);
       break;
     default:
-      LOG(FATAL) << "Unsupported integer width: " << width;
+      LOG(ERROR) << "Unsupported integer width: " << width;
   }
   return nullptr;
 }
@@ -103,7 +103,7 @@ inline llvm::Type* get_int_type(const int width, llvm::LLVMContext& context) {
       return llvm::Type::getInt1Ty(context);
       break;
     default:
-      LOG(FATAL) << "Unsupported integer width: " << width;
+      LOG(ERROR) << "Unsupported integer width: " << width;
   }
   UNREACHABLE();
   return nullptr;
@@ -116,7 +116,7 @@ inline llvm::Type* get_fp_type(const int width, llvm::LLVMContext& context) {
     case 32:
       return llvm::Type::getFloatTy(context);
     default:
-      LOG(FATAL) << "Unsupported floating point width: " << width;
+      LOG(ERROR) << "Unsupported floating point width: " << width;
   }
   UNREACHABLE();
   return nullptr;

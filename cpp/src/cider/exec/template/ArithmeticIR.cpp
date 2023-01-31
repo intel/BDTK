@@ -911,7 +911,7 @@ llvm::Function* CodeGenerator::getArithWithOverflowIntrinsic(
       fn_id = llvm::Intrinsic::smul_with_overflow;
       break;
     default:
-      LOG(FATAL) << "unexpected arith with overflow optype: " << bin_oper->toString();
+      LOG(ERROR) << "unexpected arith with overflow optype: " << bin_oper->toString();
   }
 
   return llvm::Intrinsic::getDeclaration(cgen_state_->module_, fn_id, type);

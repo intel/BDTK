@@ -128,7 +128,7 @@ enum SQLTypes {
     case kSQLTYPE_LAST:
       break;
   }
-  LOG(FATAL) << "Invalid SQL type: " << type;
+  LOG(ERROR) << "Invalid SQL type: " << type;
   return "";
 }
 
@@ -940,9 +940,7 @@ inline SQLTypes get_int_type_by_size(size_t const nbytes) {
     case 8:
       return kBIGINT;
     default:
-#ifndef NO_BOOST
-      UNREACHABLE();
-#endif
+      UNREACHABLE() << "Invalid number of bytes=" << nbytes;
       return {};
   }
 }

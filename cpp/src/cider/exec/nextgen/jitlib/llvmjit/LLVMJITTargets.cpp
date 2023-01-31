@@ -59,7 +59,7 @@ static const llvm::Target* host_target = []() {
   std::string error;
   auto* target = llvm::TargetRegistry::lookupTarget(process_triple.str(), error);
   if (nullptr == target) {
-    LOG(FATAL) << "Unable to initialize host target, process triple: "
+    LOG(ERROR) << "Unable to initialize host target, process triple: "
                << process_triple.str().str() << ", error: " << error << ".";
   }
   return target;
@@ -68,7 +68,7 @@ static const llvm::Target* host_target = []() {
 static llvm::StringMap<bool> host_supported_features = []() {
   llvm::StringMap<bool> features;
   if (!llvm::sys::getHostCPUFeatures(features)) {
-    LOG(FATAL) << "Unable to get host supported features.";
+    LOG(ERROR) << "Unable to get host supported features.";
   }
   // TBD (bigPYJ1151): whether need to filter unused instruction sets.
   return features;

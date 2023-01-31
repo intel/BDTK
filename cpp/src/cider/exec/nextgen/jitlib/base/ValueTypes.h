@@ -189,7 +189,7 @@ inline const char* getJITTypeName(JITTypeTag type_tag) {
     case JITTypeTag::STRUCT:
       return JITTypeTraits<JITTypeTag::STRUCT>::name;
     default:
-      LOG(FATAL) << "Invalid JITType in getJITTypeName";
+      LOG(ERROR) << "Invalid JITType in getJITTypeName";
   }
   return 0;
 }
@@ -213,7 +213,7 @@ inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
     case JITTypeTag::POINTER:
       return JITTypeTraits<JITTypeTag::POINTER>::width;
     default:
-      LOG(FATAL) << "Invalid JITType in getJITTypeSize: " << getJITTypeName(type_tag);
+      LOG(ERROR) << "Invalid JITType in getJITTypeSize: " << getJITTypeName(type_tag);
   }
   return 0;
 }
@@ -237,7 +237,7 @@ inline std::any castLiteral(JITTypeTag target_type, T value) {
     case JITTypeTag::DOUBLE:
       return static_cast<JITTypeTraits<JITTypeTag::DOUBLE>::NativeType>(value);
     default:
-      LOG(FATAL) << "Invalid JITType in castLiteral: " << getJITTypeName(target_type);
+      LOG(ERROR) << "Invalid JITType in castLiteral: " << getJITTypeName(target_type);
   }
   return -1;
 }

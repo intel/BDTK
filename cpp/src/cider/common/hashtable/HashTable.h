@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <math.h>
+#include <cassert>
 
 #include <new>
 #include <utility>

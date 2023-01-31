@@ -53,7 +53,7 @@ llvm::Type* llvm_type_from_sql(const SQLTypeInfo& ti, llvm::LLVMContext& ctx) {
       return get_int_type(32, ctx);
     }
     default: {
-      LOG(FATAL) << "Unsupported type";
+      LOG(ERROR) << "Unsupported type";
       return nullptr;  // satisfy -Wreturn-type
     }
   }

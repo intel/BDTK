@@ -54,9 +54,9 @@ std::shared_ptr<BaselineJoinHashTable> BaselineJoinHashTable::getInstance(
     const TableIdToNodeMap& table_id_to_node_map) {
   decltype(std::chrono::steady_clock::now()) ts1, ts2;
 
-  if (VLOGGING(1)) {
-    VLOG(1) << "Building keyed hash table " << getHashTypeString(preferred_hash_type)
-            << " for qual: " << condition->toString();
+  {
+    LOG(INFO) << "Building keyed hash table " << getHashTypeString(preferred_hash_type)
+              << " for qual: " << condition->toString();
     ts1 = std::chrono::steady_clock::now();
   }
   auto inner_outer_pairs = HashJoin::normalizeColumnPairs(
@@ -86,12 +86,12 @@ std::shared_ptr<BaselineJoinHashTable> BaselineJoinHashTable::getInstance(
     join_hash_table->freeHashBufferMemory();
     throw;
   }
-  if (VLOGGING(1)) {
+  {
     ts2 = std::chrono::steady_clock::now();
-    VLOG(1) << "Built keyed hash table "
-            << getHashTypeString(join_hash_table->getHashType()) << " in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count()
-            << " ms";
+    LOG(INFO) << "Built keyed hash table "
+              << getHashTypeString(join_hash_table->getHashType()) << " in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count()
+              << " ms";
   }
   return join_hash_table;
 }

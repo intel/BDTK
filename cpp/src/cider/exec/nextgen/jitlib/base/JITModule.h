@@ -74,16 +74,16 @@ class JITFunctionBuilder {
 
   JITFunctionPointer build() {
     if (!module_) {
-      LOG(FATAL) << "Create JITFunction ERROR: lack of module.";
+      LOG(ERROR) << "Create JITFunction ERROR: lack of module.";
     }
     if (name_ == "") {
-      LOG(FATAL) << "Create JITFunction ERROR: lack of function name";
+      LOG(ERROR) << "Create JITFunction ERROR: lack of function name";
     }
     if (return_.type == JITTypeTag::INVALID) {
-      LOG(FATAL) << "Create JITFunction ERROR: return type invalid";
+      LOG(ERROR) << "Create JITFunction ERROR: return type invalid";
     }
     if (!builder_) {
-      LOG(FATAL) << "Create JITFunction ERROR: lack of procedure builder.";
+      LOG(ERROR) << "Create JITFunction ERROR: lack of procedure builder.";
     }
 
     JITFunctionPointer function = module_->createJITFunction(JITFunctionDescriptor{

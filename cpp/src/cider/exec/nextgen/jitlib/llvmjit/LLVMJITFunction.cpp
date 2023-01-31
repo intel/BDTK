@@ -62,7 +62,7 @@ void LLVMJITFunction::finish() {
     error_os << "\n-----\n";
     func_.print(error_os);
     error_os << "\n-----\n";
-    LOG(FATAL) << error_msg.str();
+    LOG(ERROR) << error_msg.str();
   }
 }
 
@@ -170,7 +170,7 @@ JITValuePointer LLVMJITFunction::createLiteralImpl(JITTypeTag type_tag,
           getLLVMContext(), ir_builder_.get(), value);
       break;
     default:
-      LOG(FATAL) << "Invalid JITTypeTag in LLVMJITFunction::createLiteralImpl: "
+      LOG(ERROR) << "Invalid JITTypeTag in LLVMJITFunction::createLiteralImpl: "
                  << getJITTypeName(type_tag);
   }
   return makeJITValuePointer<LLVMJITValue>(type_tag, *this, llvm_value, "", false);
@@ -193,7 +193,7 @@ JITValuePointer LLVMJITFunction::emitJITFunctionCall(
     return makeJITValuePointer<LLVMJITValue>(
         descriptor.ret_type, *this, ans, "ret", false);
   } else {
-    LOG(FATAL) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
+    LOG(ERROR) << "Invalid target function in LLVMJITFunction::emitJITFunctionCall.";
     return JITValuePointer(nullptr);
   }
 }
@@ -204,7 +204,7 @@ JITValuePointer LLVMJITFunction::emitRuntimeFunctionCall(
     const JITFunctionEmitDescriptor& descriptor) {
   auto func = module_.module_->getFunction(fname);
   if (!func) {
-    LOG(FATAL) << "Function: " << fname << " does not exist.";
+    LOG(ERROR) << "Function: " << fname << " does not exist.";
   }
   cloneFunctionRecursive(func);
 
@@ -268,7 +268,7 @@ void LLVMJITFunction::cloneFunctionRecursive(llvm::Function* fn) {
 
 JITValuePointer LLVMJITFunction::getArgument(size_t index) {
   if (index > descriptor_.params_type.size()) {
-    LOG(FATAL) << "Index out of range in LLVMJITFunction::getArgument.";
+    LOG(ERROR) << "Index out of range in LLVMJITFunction::getArgument.";
   }
 
   auto& param_type = descriptor_.params_type[index];

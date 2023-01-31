@@ -98,7 +98,7 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
             makeSumInitialValue<int64_t>(raw_memory, info.start_offset_);
             break;
           default:
-            LOG(FATAL) << info.sql_type_info_.get_size()
+            LOG(ERROR) << info.sql_type_info_.get_size()
                        << " size is not support for sum/count yet";
             break;
         }
@@ -119,7 +119,7 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
             makeMinInitialValue<int64_t>(raw_memory, info.start_offset_);
             break;
           default:
-            LOG(FATAL) << info.sql_type_info_.get_size()
+            LOG(ERROR) << info.sql_type_info_.get_size()
                        << " size is not support for min yet";
             break;
         }
@@ -140,14 +140,14 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
             makeMaxInitialValue<int64_t>(raw_memory, info.start_offset_);
             break;
           default:
-            LOG(FATAL) << info.sql_type_info_.get_size()
+            LOG(ERROR) << info.sql_type_info_.get_size()
                        << " size is not support for max yet";
             break;
         }
         break;
       }
       default:
-        LOG(FATAL) << "Agg function is not supported yet";
+        LOG(ERROR) << "Agg function is not supported yet";
         break;
     }
   }
@@ -177,7 +177,7 @@ void AggTranslator::codegen(context::CodegenContext& context) {
   auto agg_node = dynamic_cast<AggNode*>(node_.get());
   auto& groupby_exprs = agg_node->getGroupByExprs();
   if (groupby_exprs.size() != 0) {
-    LOG(FATAL) << "group-by is not supported now.";
+    LOG(ERROR) << "group-by is not supported now.";
   }
 
   ExprPtrVector& output_exprs = exprs;

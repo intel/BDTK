@@ -23,6 +23,7 @@
 #include "type/data/string/StringDictionary.h"
 
 #include <sys/fcntl.h>
+#include <filesystem>
 #include <future>
 #include <iostream>
 #include <string_view>

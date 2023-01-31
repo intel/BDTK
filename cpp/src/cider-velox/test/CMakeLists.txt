@@ -22,13 +22,9 @@ find_package(
   Boost
   1.66.0
   REQUIRED
-  program_options
   context
-  filesystem
-  regex
   thread
   system
-  date_time
   atomic)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
@@ -51,9 +47,8 @@ find_library(ZSTD zstd)
 find_package(ZLIB)
 find_library(SNAPPY snappy)
 find_package(folly CONFIG REQUIRED)
-set(FOLLY_WITH_DEPENDENCIES
-    ${FOLLY_LIBRARIES} ${Boost_LIBRARIES} ${DOUBLE_CONVERSION_LIBRARIES}
-    ${EVENT} ${SNAPPY} ${CMAKE_DL_LIBS})
+set(FOLLY_WITH_DEPENDENCIES ${FOLLY_LIBRARIES} ${Boost_LIBRARIES}
+                            ${DOUBLE_CONVERSION_LIBRARIES} ${EVENT} ${SNAPPY})
 
 set(FOLLY ${FOLLY_LIBRARIES})
 set(FOLLY_BENCHMARK Folly::follybenchmark)

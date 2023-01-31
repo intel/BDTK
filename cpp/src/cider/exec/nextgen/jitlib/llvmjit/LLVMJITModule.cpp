@@ -42,6 +42,7 @@
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Vectorize/LoopVectorize.h>
 
+#include <filesystem>
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
@@ -99,7 +100,7 @@ LLVMJITModule::LLVMJITModule(const std::string& name,
     auto expected_res =
         llvm::parseBitcodeFile(getRuntimeBuffer()->getMemBufferRef(), *context_);
     if (!expected_res) {
-      LOG(FATAL) << "LLVM IR ParseError: Something wrong when parsing bitcode.";
+      LOG(ERROR) << "LLVM IR ParseError: Something wrong when parsing bitcode.";
     } else {
       runtime_module_ = std::move(expected_res.get());
     }

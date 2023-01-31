@@ -80,9 +80,9 @@ constexpr inline int64_t max_valid_int_value() {
 template <typename T>
 constexpr inline T inline_fp_null_value() {
 #ifndef NO_BOOST
-  LOG(FATAL) << "Only float or double overloads should be called.";
+  LOG(ERROR) << "Only float or double overloads should be called.";
 #else
-  LOG(FATAL);
+  LOG(ERROR);
 #endif
   return T{};
 }
@@ -100,7 +100,7 @@ constexpr inline double inline_fp_null_value<double>() {
 template <typename T>
 T inline_fp_null_array_value() {
 #ifndef NO_BOOST
-  LOG(FATAL) << "Only float or double overloads should be called.";
+  LOG(ERROR) << "Only float or double overloads should be called.";
 #else
   assert(false);
 #endif

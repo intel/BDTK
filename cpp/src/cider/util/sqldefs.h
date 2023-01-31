@@ -169,7 +169,7 @@ inline std::string toString(const SQLQualifier& qualifier) {
     case kALL:
       return "ALL";
   }
-  LOG(FATAL) << "Invalid SQLQualifier: " << qualifier;
+  LOG(ERROR) << "Invalid SQLQualifier: " << qualifier;
   return "";
 }
 
@@ -194,7 +194,7 @@ inline std::string toString(const SQLAgg& kind) {
     case kSINGLE_VALUE:
       return "SINGLE_VALUE";
   }
-  LOG(FATAL) << "Invalid aggregate kind: " << kind;
+  LOG(ERROR) << "Invalid aggregate kind: " << kind;
   return "";
 }
 
@@ -251,7 +251,7 @@ inline std::string toString(const SQLOps& op) {
     case kBW_NE:
       return "BW_NE";
   }
-  LOG(FATAL) << "Invalid operation kind: " << op;
+  LOG(ERROR) << "Invalid operation kind: " << op;
   return "";
 }
 
@@ -285,7 +285,7 @@ inline std::ostream& operator<<(std::ostream& os, const SqlStringOpKind kind) {
 
   auto it = kind_to_string_map.find(kind);
   if (it == kind_to_string_map.end()) {
-    LOG(FATAL) << "Invalid string operation";
+    LOG(ERROR) << "Invalid string operation";
     return os << "INVALID";
   } else {
     return os << it->second;
@@ -328,7 +328,7 @@ inline SqlStringOpKind name_to_string_op_kind(const std::string& func_name) {
   auto op_kind_entry = name_to_string_map.find(func_name);
 
   if (op_kind_entry == name_to_string_map.end()) {
-    LOG(FATAL) << "Invalid string function " << func_name << ".";
+    LOG(ERROR) << "Invalid string function " << func_name << ".";
     return SqlStringOpKind::INVALID;
   }
 
@@ -365,7 +365,7 @@ inline std::string toString(const SqlStringOpKind& kind) {
 
   auto it = kind_to_string_map.find(kind);
   if (it == kind_to_string_map.end()) {
-    LOG(FATAL) << "Invalid string operation";
+    LOG(ERROR) << "Invalid string operation";
     return "";
   } else {
     return it->second;
@@ -407,7 +407,7 @@ inline std::string toString(const SqlStringOpKind& kind) {
     case SqlWindowFunctionKind::SUM_INTERNAL:
       return "SUM_INTERNAL";
   }
-  LOG(FATAL) << "Invalid window function kind.";
+  LOG(ERROR) << "Invalid window function kind.";
   return "";
 }
 

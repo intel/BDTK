@@ -56,7 +56,7 @@ class BuildTableReader {
         readVariableSizeTypeCol();
         break;
       default:
-        LOG(FATAL) << "Unsupported data type in BuildTableReader: "
+        LOG(ERROR) << "Unsupported data type in BuildTableReader: "
                    << expr_->get_type_info().get_type_name();
     }
   }

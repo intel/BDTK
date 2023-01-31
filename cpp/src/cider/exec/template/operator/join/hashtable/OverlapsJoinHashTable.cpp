@@ -83,7 +83,7 @@ std::shared_ptr<OverlapsJoinHashTable> OverlapsJoinHashTable::getInstance(
 
   const auto layout = getHashTableType(condition, inner_outer_pairs);
 
-  if (VLOGGING(1)) {
+  {
     VLOG(1) << "Building geo hash table " << getHashTypeString(layout)
             << " for qual: " << condition->toString();
     ts1 = std::chrono::steady_clock::now();
@@ -129,7 +129,7 @@ std::shared_ptr<OverlapsJoinHashTable> OverlapsJoinHashTable::getInstance(
   }
   join_hash_table->reify(layout);
 
-  if (VLOGGING(1)) {
+  {
     ts2 = std::chrono::steady_clock::now();
     VLOG(1) << "Built geo hash table " << getHashTypeString(layout) << " in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count()
@@ -1173,7 +1173,7 @@ llvm::Value* OverlapsJoinHashTable::codegenKey(const CompilationOptions& co) {
     arr_ptr = code_generator.castArrayPointer(array_ptr, SQLTypeInfo(kTINYINT, true));
   }
   if (!arr_ptr) {
-    LOG(FATAL) << "Overlaps key currently only supported for geospatial columns and "
+    LOG(ERROR) << "Overlaps key currently only supported for geospatial columns and "
                   "constructed points.";
   }
 

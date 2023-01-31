@@ -223,7 +223,7 @@ size_t get_int_constant_from_expr(const Analyzer::Expr* expr) {
       return lag_constant->get_constval().bigintval;
     }
     default: {
-      LOG(FATAL) << "Invalid type for the lag argument";
+      LOG(ERROR) << "Invalid type for the lag argument";
     }
   }
   return 0;

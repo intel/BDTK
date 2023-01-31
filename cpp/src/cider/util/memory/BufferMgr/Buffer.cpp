@@ -84,7 +84,7 @@ void Buffer::read(int8_t* const dst,
 #endif
 
   if (num_bytes + offset > size_) {
-    LOG(FATAL) << "Buffer: Out of bounds read error";
+    LOG(ERROR) << "Buffer: Out of bounds read error";
   }
   readData(dst, num_bytes, offset, dst_buffer_type, dst_device_id);
 }

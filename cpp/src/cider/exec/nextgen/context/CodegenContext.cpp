@@ -209,7 +209,7 @@ std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
       break;
     }
     default:
-      LOG(FATAL) << "unsupport agg function type: " << toString(agg_type);
+      LOG(ERROR) << "unsupport agg function type: " << toString(agg_type);
       break;
   }
   return agg_name;
