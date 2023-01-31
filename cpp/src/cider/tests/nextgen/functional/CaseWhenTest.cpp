@@ -352,10 +352,9 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
         "");                                                                             \
   }
 
-// STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringNotNullTestForArrow);
-// STRING_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
-// stringSeqNullTestForArrow); STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
-// stringRandomNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringNotNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, stringSeqNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, stringRandomNullTestForArrow);
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
