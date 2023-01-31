@@ -669,7 +669,6 @@ class RegexpSubstrStringOper : public StringOper {
   }
 };
 
-
 }  // namespace Analyzer
 
 #endif
