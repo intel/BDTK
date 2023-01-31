@@ -633,7 +633,24 @@ extern "C" ALWAYS_INLINE int64_t cider_regexp_substring(char* string_heap_ptr,
                                                         const char* regex_pattern_ptr,
                                                         int regex_pattern_len,
                                                         int occurrence,
-                                                        int start_pos,
-                                                        int sub_match_index) {
-                                                          
-                                                        }
+                                                        int start_pos) {
+  start_pos = start_pos > 0 ? start_pos - 1 : str_len + start_pos;
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  const size_t wrapped_start = static_cast<size_t>(
+      std::min(start_pos >= 0 ? start_pos : std::max(str_len + start_pos, 0), str_len));
+  std::string input(str_ptr + wrapped_start, str_len - wrapped_start);
+  re2::StringPiece pattern(regex_pattern_ptr, regex_pattern_len);
+
+  std::pair<size_t, size_t> match_pos = cider_find_nth_regex_match(
+      str_ptr, str_len, pattern, start_pos, occurrence > 0 ? occurrence - 1 : occurrence);
+  if (match_pos.first == npos) {
+    // no match found, return empty
+    string_t res = ptr->emptyString(0);
+    return pack_string_t(res);
+  } else {
+    string_t res = ptr->emptyString(match_pos.second);
+    std::memcpy(res.getDataWriteable(), str_ptr + match_pos.first, match_pos.second);
+
+    return pack_string_t(res);
+  }
+}
