@@ -20,6 +20,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include "tests/utils/CiderTestBase.h"
 
 class CiderArrowCaseWhenSequenceTestBase : public CiderTestBase {
@@ -308,6 +309,52 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase,
                          caseWhenAggSeqNullTestForArrow);
 CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
                          caseWhenAggRandomNullTestForArrow);
+
+#define STRING_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                         \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
+    assertQueryArrow(                                                                    \
+        "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
+        "ELSE 0 "                                                                        \
+        "END FROM test");                                                                \
+    assertQueryArrow(                                                                    \
+        "SELECT col_int, CASE WHEN col_str < 'uuu' THEN 10 WHEN col_int > 3 THEN 20 "    \
+        "ELSE 0 END FROM test");                                                         \
+    assertQueryArrow(                                                                    \
+        "SELECT col_str, CASE WHEN col_str like '%mm%' THEN 10 WHEN col_int > 3 THEN "   \
+        "20 "                                                                            \
+        "ELSE 0 "                                                                        \
+        "END FROM test");                                                                \
+    assertQueryArrow(                                                                    \
+        "SELECT CASE WHEN col_str like '%mmmm%' THEN 'yes' ELSE col_str END FROM test"); \
+    GTEST_SKIP_(                                                                         \
+        "TODO(Haiwei): CHAR/VARCHAR NULL literal not supported, require future "         \
+        "validation of the following case.");                                            \
+    assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
+                     "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
+                     "FROM test");                                                       \
+    GTEST_SKIP_(                                                                         \
+        "TODO(Haiwei): Agg is not support now, require future validation of the "        \
+        "following case.");                                                              \
+    assertQueryArrow(                                                                    \
+        "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
+        "ELSE 3 "                                                                        \
+        "END",                                                                           \
+        "");                                                                             \
+    assertQueryArrow(                                                                    \
+        "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
+        "ELSE 3 "                                                                        \
+        "END",                                                                           \
+        "");                                                                             \
+    assertQueryArrow(                                                                    \
+        "SELECT SUM(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
+        "GROUP BY CASE "                                                                 \
+        "WHEN col_str > 'ttt' THEN 4 ELSE 3 END",                                        \
+        "");                                                                             \
+  }
+
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringNotNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, stringSeqNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, stringRandomNullTestForArrow);
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
