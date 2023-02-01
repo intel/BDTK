@@ -24,8 +24,7 @@
 #include "common/interpreters/AggregationHashTable.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
-#include "exec/nextgen/jitlib/base/JITModule.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
+#include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
@@ -212,6 +211,14 @@ class CodegenContext {
   int registerTrimStringOperCharMap(const std::string& trim_chars);
 
  private:
+  int64_t acquireContextID() { return id_counter_++; }
+  int64_t getNextContextID() const { return id_counter_; }
+  jitlib::JITValuePointer getBufferContentPtr(
+      int64_t id,
+      bool output_raw_buffer = false,
+      const std::string& raw_buffer_func_name = "");
+
+ private:
   std::vector<std::pair<BatchDescriptorPtr, jitlib::JITValuePointer>>
       batch_descriptors_{};
   std::vector<std::pair<BufferDescriptorPtr, jitlib::JITValuePointer>>
@@ -226,13 +233,6 @@ class CodegenContext {
   int64_t id_counter_{0};
   jitlib::JITModulePointer jit_module_;
   CodegenOptions codegen_options_;
-
-  int64_t acquireContextID() { return id_counter_++; }
-  int64_t getNextContextID() const { return id_counter_; }
-  jitlib::JITValuePointer getBufferContentPtr(
-      int64_t id,
-      bool output_raw_buffer = false,
-      const std::string& raw_buffer_func_name = "");
 
   // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
   TrimCharMapsPtr trim_char_maps_;

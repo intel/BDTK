@@ -70,15 +70,17 @@ class Expr : public std::enable_shared_from_this<Expr> {
   virtual std::shared_ptr<Analyzer::Expr> add_cast(const SQLTypeInfo& new_type_info);
   virtual void check_group_by(
       const std::list<std::shared_ptr<Analyzer::Expr>>& groupby) const {}
-  virtual std::shared_ptr<Analyzer::Expr> deep_copy()
-      const = 0;  // make a deep copy of self
-                  /*
-                   * @brief normalize_simple_predicate only applies to boolean expressions.
-                   * it checks if it is an expression comparing a column
-                   * with a constant.  if so, it returns a normalized copy of the predicate with ColumnVar
-                   * always as the left operand with rte_idx set to the rte_idx of the ColumnVar.
-                   * it returns nullptr with rte_idx set to -1 otherwise.
-                   */
+  virtual std::shared_ptr<Analyzer::Expr> deep_copy() const {
+    UNREACHABLE();
+    return nullptr;
+  }  // make a deep copy of self
+     /*
+      * @brief normalize_simple_predicate only applies to boolean expressions.
+      * it checks if it is an expression comparing a column
+      * with a constant.  if so, it returns a normalized copy of the predicate with ColumnVar
+      * always as the left operand with rte_idx set to the rte_idx of the ColumnVar.
+      * it returns nullptr with rte_idx set to -1 otherwise.
+      */
   virtual std::shared_ptr<Analyzer::Expr> normalize_simple_predicate(int& rte_idx) const {
     rte_idx = -1;
     return nullptr;
@@ -133,8 +135,14 @@ class Expr : public std::enable_shared_from_this<Expr> {
       const std::vector<std::shared_ptr<TargetEntry>>& tlist) const {
     return deep_copy();
   }
-  virtual bool operator==(const Expr& rhs) const = 0;
-  virtual std::string toString() const = 0;
+  virtual bool operator==(const Expr& rhs) const {
+    UNREACHABLE();
+    return false;
+  }
+  virtual std::string toString() const {
+    UNREACHABLE();
+    return "";
+  }
   virtual void print() const { std::cout << toString(); }
 
   virtual void add_unique(std::list<const Expr*>& expr_list) const;

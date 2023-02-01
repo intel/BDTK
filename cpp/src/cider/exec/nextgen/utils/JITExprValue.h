@@ -52,15 +52,31 @@ class JITExprValue {
     return *this;
   }
 
+  JITExprValue& operator=(const JITExprValue& rh) {
+    if (this != &rh) {
+      resize(rh.size());
+      value_type_ = rh.value_type_;
+      for (size_t i = 0; i < rh.size(); ++i) {
+        ptrs_[i].replace(rh[i]);
+      }
+    }
+
+    return *this;
+  }
+
   void resize(size_t attributes_num) { ptrs_.resize(attributes_num); }
 
-  size_t size() { return ptrs_.size(); }
+  size_t size() const { return ptrs_.size(); }
+
+  bool empty() { return ptrs_.empty(); }
 
   void clear() { resize(0); }
 
   operator bool() { return size(); }
 
   jitlib::JITValuePointer& operator[](size_t index) { return ptrs_[index]; }
+
+  const jitlib::JITValuePointer& operator[](size_t index) const { return ptrs_[index]; }
 
  private:
   std::vector<cider::jitlib::JITValuePointer> ptrs_{};

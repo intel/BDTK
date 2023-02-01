@@ -34,18 +34,16 @@ class ColumnWriter {
  public:
   ColumnWriter(context::CodegenContext& ctx,
                ExprPtr& expr,
-               JITValuePointer& arrow_array,
                JITValuePointer& index,
                JITValuePointer& arrow_array_len)
       : context_(ctx)
       , expr_(expr)
-      , arrow_array_(arrow_array)
+      , arrow_array_(getArrowArrayFromCTX())
+      , buffers_(getArrowArrayBuffersFromCTX())
       , index_(index)
       , arrow_array_len_(arrow_array_len) {}
 
   void write(bool for_null) {
-    // TBD: Whether input ColumnVar's ArrowArray could be overwriten.
-    // CHECK(0 == expr_->getLocalIndex());
     switch (expr_->get_type_info().get_type()) {
       case kBOOLEAN:
       case kTINYINT:
@@ -114,7 +112,7 @@ class ColumnWriter {
             .params_vector = {arrow_array_.get(),
                               actual_raw_length_buffer[index_].get()}});
     auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
-    auto cur_pointer = actual_raw_data_buffer + *actual_raw_length_buffer[index_];
+    auto cur_pointer = actual_raw_data_buffer + actual_raw_length_buffer[index_];
 
     context_.getJITFunction()->emitRuntimeFunctionCall(
         "do_memcpy",
@@ -123,14 +121,10 @@ class ColumnWriter {
             .params_vector = {
                 cur_pointer.get(), values.getValue().get(), values.getLength().get()}});
 
-    // Register Output ArrowArray to CodegenContext
-    size_t local_offset = context_.appendArrowArrayValues(
-        arrow_array_,
-        utils::JITExprValue(JITExprValueType::BATCH,
-                            setNullBuffer(values.getNull(), for_null),
-                            raw_length_buffer,
-                            raw_data_buffer));
-    expr_->setLocalIndex(local_offset);
+    // Save JITValues of output buffers to corresponding exprs.
+    buffers_.clear();
+    buffers_.append(
+        setNullBuffer(values.getNull(), for_null), raw_length_buffer, raw_data_buffer);
   }
 
   void writeFixSizedTypeCol(bool for_null) {
@@ -148,13 +142,10 @@ class ColumnWriter {
     // Allocate buffer.
     // Write value
     auto raw_data_buffer = setFixSizeRawData(values);
-    // Register Output ArrowArray to CodegenContext
-    size_t local_offset = context_.appendArrowArrayValues(
-        arrow_array_,
-        utils::JITExprValue(JITExprValueType::BATCH,
-                            setNullBuffer(values.getNull(), for_null),
-                            raw_data_buffer));
-    expr_->setLocalIndex(local_offset);
+
+    // Save JITValues of output buffers to corresponding exprs.
+    buffers_.clear();
+    buffers_.append(setNullBuffer(values.getNull(), for_null), raw_data_buffer);
   }
 
   JITValuePointer setFixSizeRawData(utils::FixSizeJITExprValue& fixsize_val) {
@@ -229,10 +220,25 @@ class ColumnWriter {
     return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
   }
 
+  JITValuePointer& getArrowArrayFromCTX() {
+    size_t local_index = expr_->getLocalIndex();
+    CHECK(local_index);
+    auto& values = context_.getArrowArrayValues(local_index);
+    return values.first;
+  }
+
+  utils::JITExprValue& getArrowArrayBuffersFromCTX() {
+    size_t local_index = expr_->getLocalIndex();
+    CHECK(local_index);
+    auto& values = context_.getArrowArrayValues(local_index);
+    return values.second;
+  }
+
  private:
   context::CodegenContext& context_;
   ExprPtr& expr_;
   JITValuePointer& arrow_array_;
+  utils::JITExprValue& buffers_;
   JITValuePointer& index_;
   JITValuePointer& arrow_array_len_;
 };
@@ -254,23 +260,6 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context, bool for_n
   auto&& [type, exprs] = node_->getOutputExprs();
   ExprPtrVector& output_exprs = exprs;
 
-  // construct output Batch
-  if (!for_null) {
-    output_arrow_array_.replace(context.registerBatch(
-        SQLTypeInfo(kSTRUCT,
-                    false,
-                    [&output_exprs]() {
-                      std::vector<SQLTypeInfo> output_types;
-                      output_types.reserve(output_exprs.size());
-                      for (auto& expr : output_exprs) {
-                        output_types.emplace_back(expr->get_type_info());
-                      }
-                      return output_types;
-                    }()),
-        "output",
-        true));
-  }
-
   auto output_index = func->createVariable(JITTypeTag::INT64, "output_index", 0);
 
   // Get input ArrowArray length from previous C2RNode
@@ -279,13 +268,7 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context, bool for_n
 
   for (int64_t i = 0; i < exprs.size(); ++i) {
     ExprPtr& expr = exprs[i];
-
-    auto child_arrow_array = func->createLocalJITValue([&i, this]() {
-      return codegen_utils::getArrowArrayChild(output_arrow_array_, i);
-    });
-
-    // Write rows
-    ColumnWriter writer(context, expr, child_arrow_array, output_index, input_array_len);
+    ColumnWriter writer(context, expr, output_index, input_array_len);
     writer.write(for_null);
   }
   // Update index
@@ -299,17 +282,15 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context, bool for_n
   }
 
   // Execute length field updating build function after C2R loop finished.
-  prev_c2r_node->registerDeferFunc(
-      [output_index, &output_exprs, &context, this]() mutable {
-        codegen_utils::setArrowArrayLength(output_arrow_array_, output_index);
-        for (auto& expr : output_exprs) {
-          size_t local_offset = expr->getLocalIndex();
-          CHECK_NE(local_offset, 0);
+  prev_c2r_node->registerDeferFunc([output_index, &output_exprs, &context]() mutable {
+    for (auto& expr : output_exprs) {
+      size_t local_offset = expr->getLocalIndex();
+      CHECK_NE(local_offset, 0);
 
-          auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
-          codegen_utils::setArrowArrayLength(arrow_array, output_index);
-        }
-      });
+      auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
+      codegen_utils::setArrowArrayLength(arrow_array, output_index);
+    }
+  });
 
   if (successor_) {
     successor_->consume(context);

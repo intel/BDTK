@@ -30,4 +30,14 @@ JITExprValue& ColumnVar::codegenNull(CodegenContext& context) {
   return get_expr_value();
 }
 
+JITExprValue& OutputColumnVar::codegen(CodegenContext& context) {
+  if (auto& expr_value = get_expr_value()) {
+    return expr_value;
+  }
+
+  expr_var_ = col_->codegen(context);
+
+  return get_expr_value();
+}
+
 }  // namespace Analyzer
