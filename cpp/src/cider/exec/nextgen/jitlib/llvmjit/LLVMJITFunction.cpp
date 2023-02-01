@@ -122,11 +122,8 @@ llvm::Value* createConstantImpl(llvm::LLVMContext& context, const std::any& valu
   NativeType actual_value = std::any_cast<NativeType>(value);
   if constexpr (std::is_floating_point_v<NativeType>) {
     return getLLVMConstantFP(actual_value, type_tag, context);
-  } else if (JITTypeTraits<type_tag>::bits > 64) {
-    CHECK(JITTypeTraits<type_tag>::bits == 128);
-    return getLLVMConstantInt128(actual_value, type_tag, context);
   } else {
-    return getLLVMConstantInt(actual_value, type_tag, context);
+    return getLLVMConstantInt<type_tag>(actual_value, context);
   }
 }
 
@@ -309,7 +306,7 @@ JITValuePointer LLVMJITFunction::packJITValuesImpl(
 
   llvm::AllocaInst* allocated_memory = ir_builder_->CreateAlloca(
       llvm::Type::getInt8Ty(getLLVMContext()),
-      getLLVMConstantInt(memory_count, JITTypeTag::INT64, getLLVMContext()));
+      getLLVMConstantInt<JITTypeTag::INT64>(memory_count, getLLVMContext()));
   auto start_address = allocated_memory;
   auto start_val = makeJITValuePointer<LLVMJITValue>(JITTypeTag::POINTER,
                                                      *this,

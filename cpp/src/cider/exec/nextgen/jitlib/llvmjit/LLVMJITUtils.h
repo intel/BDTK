@@ -73,27 +73,24 @@ inline llvm::PointerType* getLLVMPtrType(JITTypeTag sub_tag, llvm::LLVMContext& 
   }
 }
 
-inline llvm::Value* getLLVMConstantInt(uint64_t value,
-                                       JITTypeTag tag,
-                                       llvm::LLVMContext& ctx) {
-  llvm::Type* type = getLLVMType(tag, ctx);
-  switch (tag) {
+template <JITTypeTag type_tag,
+          typename NativeType = typename JITTypeTraits<type_tag>::NativeType>
+inline llvm::Value* getLLVMConstantInt(NativeType value, llvm::LLVMContext& ctx) {
+  llvm::Type* type = getLLVMType(type_tag, ctx);
+  switch (type_tag) {
     case JITTypeTag::BOOL:
     case JITTypeTag::INT8:
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
-      return llvm::ConstantInt::get(type, value, true);
+      return llvm::ConstantInt::get(type, (uint64_t)value, true);
+    case JITTypeTag::INT128:
+      return llvm::ConstantInt::get(
+          ctx,
+          ((llvm::APInt(128, value >> 64) << 64) | llvm::APInt(128, (uint64_t)value)));
     default:
       return nullptr;
   }
-}
-
-inline llvm::Value* getLLVMConstantInt128(__int128_t value,
-                                          JITTypeTag tag,
-                                          llvm::LLVMContext& ctx) {
-  return llvm::ConstantInt::get(
-      ctx, ((llvm::APInt(128, value >> 64) << 64) | llvm::APInt(128, (uint64_t)value)));
 }
 
 inline llvm::Value* getLLVMConstantFP(double value,
