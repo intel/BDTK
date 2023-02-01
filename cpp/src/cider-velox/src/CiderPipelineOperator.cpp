@@ -38,6 +38,7 @@ void CiderPipelineOperator::addInput(RowVectorPtr input) {
   for (size_t i = 0; i < input->childrenSize(); i++) {
     input->childAt(i)->mutableRawNulls();
   }
+  this->input_ = std::move(input);
   ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
   exportToArrow(input_, *inputArrowArray);
   ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
