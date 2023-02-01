@@ -36,6 +36,9 @@
 #define CREATE_SUBSTRAIT_TYPE(name) \
   TypeUtils::createType(::substrait::Type::KindCase::k##name)
 
+#define CREATE_SUBSTRAIT_LIST_TYPE(name) \
+  TypeUtils::createListType(substrait::Type::KindCase::k##name)
+
 // Internal use this macro
 #define GENERATE_SUBSTRAIT_TYPE(type_name, type_func, nullalbility) \
   {                                                                 \
@@ -43,6 +46,15 @@
     s->set_nullability(nullalbility);                               \
     s_type.set_allocated_##type_func(s);                            \
     break;                                                          \
+  }
+
+#define GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)            \
+  {                                                           \
+    auto l = new ::substrait::Type_List();                    \
+    l->set_nullability(nullalbility);                         \
+    l->set_allocated_type(createTypePtr(typeKind, nullable)); \
+    s_type.set_allocated_list(l);                             \
+    break;                                                    \
   }
 
 class TypeUtils {
@@ -89,6 +101,49 @@ class TypeUtils {
         GENERATE_SUBSTRAIT_TYPE(FixedChar, fixed_char, nullalbility)
       case ::substrait::Type::KindCase::kDecimal:
         GENERATE_SUBSTRAIT_TYPE(Decimal, decimal, nullalbility)
+      default:
+        CIDER_THROW(CiderCompileException,
+                    fmt::format("not supported type: {}", typeKind));
+    }
+
+    return s_type;
+  }
+
+  static ::substrait::Type createListType(::substrait::Type::KindCase typeKind,
+                                          bool nullable = false) {
+    ::substrait::Type s_type;
+    substrait::Type_Nullability nullalbility =
+        nullable ? substrait::Type::NULLABILITY_NULLABLE
+                 : substrait::Type::NULLABILITY_REQUIRED;
+    switch (typeKind) {
+      case ::substrait::Type::KindCase::kBool:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kI8:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kI16:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kI32:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kI64:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kFp32:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kFp64:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kDate:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kTime:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kTimestamp:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kString:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kVarchar:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kFixedChar:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
+      case ::substrait::Type::KindCase::kDecimal:
+        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       default:
         CIDER_THROW(CiderCompileException,
                     fmt::format("not supported type: {}", typeKind));
