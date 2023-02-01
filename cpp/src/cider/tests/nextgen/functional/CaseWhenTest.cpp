@@ -313,7 +313,6 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
         "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
         "ELSE 0 "                                                                        \
         "END FROM test");                                                                \
-    GTEST_SKIP();                                                                        \
     assertQuery(                                                                         \
         "SELECT col_int, CASE WHEN col_str < 'uuu' THEN 10 WHEN col_int > 3 THEN 20 "    \
         "ELSE 0 END FROM test");                                                         \
@@ -350,10 +349,9 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
         "");                                                                             \
   }
 
-/*STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringNotNullTestForArrow);
+STRING_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, stringNotNullTestForArrow);
 STRING_ARROW_TEST(CiderArrowCaseWhenSequenceWithNullTestBase, stringSeqNullTestForArrow);
-STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
-stringRandomNullTestForArrow);*/
+STRING_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, stringRandomNullTestForArrow);
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
