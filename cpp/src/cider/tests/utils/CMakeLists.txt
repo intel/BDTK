@@ -36,7 +36,7 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderInt128.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
-target_link_libraries(test_utils cider_plan_parser cider_processor)
+target_link_libraries(test_utils duckdb cider_plan_parser cider_processor)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 

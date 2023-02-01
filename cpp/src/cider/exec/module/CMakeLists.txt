@@ -24,9 +24,10 @@ set(SRC_FILE
     CiderExprEvaluator.cpp
     CiderTypes.cpp
     CiderOptions.cpp
+    batch/CiderBatch.cpp
     batch/CiderBatchUtils.cpp
     batch/CiderArrowBufferHolder.cpp
-    batch/CiderBatch.cpp)
+    )
 add_library(cider SHARED ${SRC_FILE})
 target_link_libraries(
   cider

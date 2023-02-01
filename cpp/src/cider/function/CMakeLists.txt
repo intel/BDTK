@@ -18,6 +18,7 @@
 # under the License.
 
 set(function_source_files
+    ../../cider/exec/template/DynamicWatchdog.cpp
     scalar/RuntimeFunctions.cpp
     vector/ArrayOps.cpp
     RuntimeFunctions.bc

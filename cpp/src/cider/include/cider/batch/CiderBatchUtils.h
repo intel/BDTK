@@ -25,7 +25,6 @@
 #include "cider/CiderAllocator.h"
 #include "type/data/sqltypes.h"
 
-class CiderBatch;
 class CiderTableSchema;
 
 struct ArrowSchema;
@@ -59,10 +58,6 @@ int64_t getBufferNum(const ArrowSchema* schema);
 
 SQLTypes convertArrowTypeToCiderType(const char* format);
 
-std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
-                                             ArrowSchema* schema,
-                                             ArrowArray* array = nullptr);
-
 const char* convertCiderTypeToArrowType(SQLTypes type);
 
 ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
@@ -72,9 +67,6 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type);
 ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table);
 
 std::string extractUtf8ArrowArrayAt(const ArrowArray* array, size_t index);
-
-// convert non group-by agg result to Arrow format
-CiderBatch convertToArrow(const CiderBatch& output_batch);
 
 };  // namespace CiderBatchUtils
 

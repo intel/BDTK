@@ -19,7 +19,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 #include "CpuBufferMgr.h"
 
 #include "CpuBuffer.h"
@@ -36,7 +35,7 @@ void CpuBufferMgr::addSlab(const size_t slab_size) {
   } catch (std::bad_alloc&) {
     slabs_.resize(slabs_.size() - 1);
     CIDER_THROW(CiderOutOfMemoryException,
-                fmt::format("Failed to allocate {}} bytes", slab_size));
+                fmt::format("Failed to allocate {} bytes", slab_size));
   }
   slab_segments_.resize(slab_segments_.size() + 1);
   slab_segments_[slab_segments_.size() - 1].push_back(
