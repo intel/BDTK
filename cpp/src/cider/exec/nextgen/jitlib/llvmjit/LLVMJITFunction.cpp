@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -123,7 +123,7 @@ llvm::Value* createConstantImpl(llvm::LLVMContext& context, const std::any& valu
   if constexpr (std::is_floating_point_v<NativeType>) {
     return getLLVMConstantFP(actual_value, type_tag, context);
   } else {
-    return getLLVMConstantInt(actual_value, type_tag, context);
+    return getLLVMConstantInt<type_tag>(actual_value, context);
   }
 }
 
@@ -158,6 +158,9 @@ JITValuePointer LLVMJITFunction::createLiteralImpl(JITTypeTag type_tag,
       type_tag = JITTypeTag::INT64;
     case JITTypeTag::INT64:
       llvm_value = createConstantImpl<JITTypeTag::INT64>(getLLVMContext(), value);
+      break;
+    case JITTypeTag::INT128:
+      llvm_value = createConstantImpl<JITTypeTag::INT128>(getLLVMContext(), value);
       break;
     case JITTypeTag::FLOAT:
       llvm_value = createConstantImpl<JITTypeTag::FLOAT>(getLLVMContext(), value);
@@ -303,7 +306,7 @@ JITValuePointer LLVMJITFunction::packJITValuesImpl(
 
   llvm::AllocaInst* allocated_memory = ir_builder_->CreateAlloca(
       llvm::Type::getInt8Ty(getLLVMContext()),
-      getLLVMConstantInt(memory_count, JITTypeTag::INT64, getLLVMContext()));
+      getLLVMConstantInt<JITTypeTag::INT64>(memory_count, getLLVMContext()));
   auto start_address = allocated_memory;
   auto start_val = makeJITValuePointer<LLVMJITValue>(JITTypeTag::POINTER,
                                                      *this,

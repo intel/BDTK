@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -762,6 +762,39 @@ TEST_F(JITLibTests, PackJITValueTest) {
   auto func_ptr = func->getFunctionPointer<bool>();
   bool result = func_ptr();
   EXPECT_EQ(result, true);
+}
+
+TEST_F(JITLibTests, DecimalMathOpTest) {
+  int64_t a_dec_arr[2] = {1, 1};
+  int64_t b_dec_arr[2] = {2, 2};
+  int64_t c_dec_arr[2] = {3, 3};
+  __int128_t a = (__int128_t(a_dec_arr[0]) << 64) | a_dec_arr[1];
+  __int128_t b = (__int128_t(b_dec_arr[0]) << 64) | b_dec_arr[1];
+  __int128_t c = (__int128_t(c_dec_arr[0]) << 64) | c_dec_arr[1];
+  // variable a, constant b, expected c
+  executeBinaryOp<JITTypeTag::INT128>(
+      a, b, c, [](JITValue& a, JITValue& b) { return a + b; });
+
+  executeBinaryOp<JITTypeTag::INT128>(
+      a, b, __int128_t(1), [](JITValue& a, JITValue& b) { return -b + 2 * a + 1; });
+
+  executeBinaryOp<JITTypeTag::INT128>(
+      a, b, __int128_t(1), [](JITValue& a, JITValue& b) { return b / 2 - a + 1; });
+}
+
+TEST_F(JITLibTests, DecimalCmpOpTest) {
+  int64_t a_dec_arr[2] = {1, 1};
+  int64_t b_dec_arr[2] = {2, 2};
+  __int128_t a = (__int128_t(a_dec_arr[0]) << 64) | a_dec_arr[1];
+  __int128_t b = (__int128_t(b_dec_arr[0]) << 64) | b_dec_arr[1];
+  executeCompareOp<JITTypeTag::INT128>(
+      a, b, true, [](JITValue& a, JITValue& b) { return b == a * 2; });
+
+  executeCompareOp<JITTypeTag::INT128>(
+      a, b, false, [](JITValue& a, JITValue& b) { return b / 2 != a; });
+
+  executeCompareOp<JITTypeTag::INT128>(
+      a, b, true, [](JITValue& a, JITValue& b) { return 0 == b % a; });
 }
 
 int main(int argc, char** argv) {

@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Intel Corporation.
+# Copyright(c) 2022-2023 Intel Corporation.
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -121,3 +121,6 @@ test-debug:
 test-release:
 	@$(MAKE) test-cider BUILD_TYPE=Release
 	@$(MAKE) test-cider-velox BUILD_TYPE=Release
+
+update-copyright:
+	sed -i '0,/Copyright.*Intel Corporation/s//Copyright(c) 2022-$(shell date +"%Y") Intel Corporation/' `grep Copyright -rl --exclude-dir="build-*" --exclude-dir="thirdparty" --exclude-dir=".cache" .`

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -107,6 +107,21 @@ static constexpr int64_t kMaxTimestamp =
     break;                                                                            \
   }
 
+#define GENERATE_AND_ADD_ARRAY_COLUMN(C_TYPE)                                      \
+  {                                                                                \
+    std::vector<std::vector<C_TYPE>> col_data;                                     \
+    std::vector<bool> null_data;                                                   \
+    std::vector<std::vector<bool>> array_null_data;                                \
+    std::tie(col_data, null_data, array_null_data) =                               \
+        value_min > value_max                                                      \
+            ? generateAndFillArrayVector<C_TYPE>(row_num, pattern, null_chance[i]) \
+            : generateAndFillArrayVector<C_TYPE>(                                  \
+                  row_num, pattern, null_chance[i], value_min, value_max);         \
+    builder = builder.addSingleDimensionArrayColumn<C_TYPE>(                       \
+        names[i], type, col_data, null_data, array_null_data);                     \
+    break;                                                                         \
+  }
+
 #define N_MAX std::numeric_limits<T>::max()
 
 #define N_MIN std::numeric_limits<T>::min()
@@ -154,6 +169,24 @@ class QueryArrowDataGenerator {
           GENERATE_AND_ADD_TIMING_COLUMN(int64_t, kMinTime, kMaxTime)
         case ::substrait::Type::KindCase::kTimestamp:
           GENERATE_AND_ADD_TIMING_COLUMN(int64_t, kMinTimestamp, kMaxTimestamp)
+        case ::substrait::Type::KindCase::kList:
+          switch (type.list().type().kind_case()) {
+            case ::substrait::Type::KindCase::kI8:
+              GENERATE_AND_ADD_ARRAY_COLUMN(int8_t)
+            case ::substrait::Type::KindCase::kI16:
+              GENERATE_AND_ADD_ARRAY_COLUMN(int16_t)
+            case ::substrait::Type::KindCase::kI32:
+              GENERATE_AND_ADD_ARRAY_COLUMN(int32_t)
+            case ::substrait::Type::KindCase::kI64:
+              GENERATE_AND_ADD_ARRAY_COLUMN(int64_t)
+            case ::substrait::Type::KindCase::kFp32:
+              GENERATE_AND_ADD_ARRAY_COLUMN(float)
+            case ::substrait::Type::KindCase::kFp64:
+              GENERATE_AND_ADD_ARRAY_COLUMN(double)
+            default:
+              CIDER_THROW(CiderCompileException, "Type not supported.");
+          }
+          break;
         default:
           CIDER_THROW(CiderCompileException, "Type not supported.");
       }
@@ -287,6 +320,57 @@ class QueryArrowDataGenerator {
         break;
     }
     return std::make_tuple(null_data, offset_data, col_data);
+  }
+
+  template <typename T>
+  static std::tuple<std::vector<std::vector<T>>,
+                    std::vector<bool>,
+                    std::vector<std::vector<bool>>>
+  generateAndFillArrayVector(
+      const size_t row_num,
+      const GeneratePattern pattern,
+      const int32_t
+          null_chance,  // Null chance for each column, -1 represents for unnullable
+                        // column, 0 represents for nullable column but all data is not
+                        // null, 1 represents for all rows are null, values >= 2 means
+                        // each row has 1/x chance to be null.
+      const T value_min = N_MIN,
+      const T value_max = N_MAX) {
+    std::vector<std::vector<T>> col_data(row_num);
+    std::vector<bool> null_data(row_num);
+    std::vector<std::vector<bool>> array_null_data(row_num);
+    std::mt19937 rng(std::random_device{}());  // NOLINT
+    switch (pattern) {
+      case GeneratePattern::Random:
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
+          if (!null_data[i]) {
+            auto arr_len = static_cast<T>(Random::randInt64(0, 10, rng));
+            for (auto j = 0; j < arr_len; j++) {
+              array_null_data[i].push_back(
+                  Random::oneIn(null_chance, rng)
+                      ? (col_data[i].push_back(0), true)
+                      : (col_data[i].push_back(static_cast<T>(
+                             Random::randInt64(value_min, value_max, rng))),
+                         false));
+            }
+          }
+        }
+        break;
+      case GeneratePattern::Sequence:
+        for (auto i = 0; i < row_num; ++i) {
+          null_data[i] = Random::oneIn(null_chance, rng) ? true : false;
+          if (!null_data[i]) {
+            for (auto j = 0; j < 10; j++) {
+              array_null_data[i].push_back(Random::oneIn(null_chance, rng)
+                                               ? (col_data[i].push_back(0), true)
+                                               : (col_data[i].push_back(j), false));
+            }
+          }
+        }
+        break;
+    }
+    return std::make_tuple(col_data, null_data, array_null_data);
   }
 
   static std::string random_string(size_t length) {
