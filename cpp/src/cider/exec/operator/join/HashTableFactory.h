@@ -25,6 +25,7 @@
 #include <string>
 #include "cider/CiderException.h"
 #include "exec/operator/join/BaseHashTable.h"
+#include "exec/operator/join/CiderChainedHashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
 namespace cider_hashtable {
 

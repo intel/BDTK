@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2022-2023 Intel Corporation.
+ * Copyright (c) 2022 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -43,14 +43,13 @@ Disadvantages:
 
 namespace cider_hashtable {
 
-
 template <typename Key,
           typename Value,
           typename Hash = std::hash<Key>,
           typename KeyEqual = std::equal_to<void>,
           typename Grower = void,
           typename Allocator = std::allocator<std::pair<table_key<Key>, Value>>>
-class LinearProbeHashTable
+class ChainedHashTable
     : public BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator> {
  public:
   using key_type = table_key<Key>;
@@ -61,94 +60,21 @@ class LinearProbeHashTable
   using key_equal = KeyEqual;
   using allocator_type = Allocator;
   using reference = value_type&;
-  using buckets = std::vector<value_type, allocator_type>;
-
-  template <typename IterVal>
-  struct hashtable_iterator {
-    using difference_type = std::ptrdiff_t;
-    using value_type = IterVal;
-    using pointer = value_type*;
-    using reference = value_type&;
-    using iterator_category = std::forward_iterator_tag;
-
-    bool operator==(const hashtable_iterator& other) const {
-      return other.hm_ == hm_ && other.idx_ == idx_;
-    }
-    bool operator!=(const hashtable_iterator& other) const { return !(other == *this); }
-
-    hashtable_iterator& operator++() {
-      ++idx_;
-      advance_past_empty();
-      return *this;
-    }
-
-    reference operator*() const { return hm_->buckets_[idx_]; }
-    pointer operator->() const { return &hm_->buckets_[idx_]; }
-
-   private:
-    explicit hashtable_iterator(LinearProbeHashTable* hm) : hm_(hm) {
-      advance_past_empty();
-    }
-    explicit hashtable_iterator(const LinearProbeHashTable* hm)
-        : hm_(const_cast<LinearProbeHashTable*>(hm)) {
-      advance_past_empty();
-    }
-    explicit hashtable_iterator(LinearProbeHashTable* hm, size_type idx)
-        : hm_(hm), idx_(idx) {}
-    explicit hashtable_iterator(const LinearProbeHashTable* hm, const size_type idx)
-        : hm_(const_cast<LinearProbeHashTable*>(hm)), idx_(idx) {}
-    template <typename OtherIterVal>
-    hashtable_iterator(const hashtable_iterator<OtherIterVal>& other)
-        : hm_(other.hm_), idx_(other.idx_) {}
-
-    void advance_past_empty() {
-      while (idx_ < hm_->buckets_.size() &&
-             (hm_->buckets_[idx_].first.is_not_null == false)) {
-        ++idx_;
-      }
-    }
-
-    LinearProbeHashTable* hm_ = nullptr;
-    typename LinearProbeHashTable::size_type idx_ = 0;
-    friend LinearProbeHashTable;
-  };
-
-  using iterator = hashtable_iterator<value_type>;
-  using const_iterator = hashtable_iterator<const value_type>;
+  using buckets = std::vector<std::vector<value_type, allocator_type>>;
 
  public:
-  LinearProbeHashTable(size_type bucket_count = 16,
-                       Key empty_key = Key(),
-                       const allocator_type& alloc = allocator_type())
-      : empty_key_({empty_key, false, 0}), buckets_(alloc) {
+  // chained hashtable initial size should be fixed
+  ChainedHashTable(size_type bucket_count = 16384,
+                   const allocator_type& alloc = allocator_type())
+      : buckets_(alloc) {
     size_t pow2 = 1;
     while (pow2 < bucket_count) {
       pow2 <<= 1;
     }
-    buckets_.resize(pow2, std::make_pair(empty_key_, Value()));
-  }
-
-  LinearProbeHashTable(const LinearProbeHashTable& other, size_type bucket_count)
-      : LinearProbeHashTable(bucket_count, other.empty_key_.key, other.get_allocator()) {
-    for (auto it = other.begin(); it != other.end(); ++it) {
-      insert(*it);
-    }
+    buckets_.resize(pow2);
   }
 
   allocator_type get_allocator() const noexcept { return buckets_.get_allocator(); }
-
-  // Iterators
-  iterator begin() noexcept { return iterator(this); }
-
-  const_iterator begin() const noexcept { return const_iterator(this); }
-
-  const_iterator cbegin() const noexcept { return const_iterator(this); }
-
-  iterator end() noexcept { return iterator(this, buckets_.size()); }
-
-  const_iterator end() const noexcept { return const_iterator(this, buckets_.size()); }
-
-  const_iterator cend() const noexcept { return const_iterator(this, buckets_.size()); }
 
   // Capacity
   bool empty() const noexcept { return size() == 0; }
@@ -157,28 +83,16 @@ class LinearProbeHashTable
 
   size_type size() const noexcept { return size_; }
 
-  size_type max_size() const noexcept { return buckets_.max_size() / 2; }
-
   bool insert(const std::pair<key_type, Value>& value) {
-    return emplace_impl(value.first.key, value.second);
+    return emplace_impl(value.first, value.second);
   }
 
   bool insert(std::pair<key_type, Value>&& value) {
-    return emplace_impl(value.first.key, std::move(value.second));
-  }
-
-  template <typename... Args>
-  bool insert(Args&&... args) {
-    return emplace_impl(std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  bool emplace(Args&&... args) {
-    return emplace_impl(std::forward<Args>(args)...);
+    return emplace_impl(value.first, std::move(value.second));
   }
 
   void emplace(Key key, Value value, bool inserted) {
-    inserted = emplace_impl(key, value);
+    inserted = emplace_impl(key, std::move(value));
   }
 
   // not supported
@@ -188,13 +102,17 @@ class LinearProbeHashTable
   // not supported
   bool emplace(Key key, Value value, size_t hash_value) {}
 
+  void reserve(size_type count) {
+    if (count > buckets_.size()) {
+      buckets_.resize(count);
+    }
+  }
+
   // TODO: assert key and value types
   void merge_other_hashtables(
       const std::vector<
           std::shared_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
           otherTables);
-
-  void swap(LinearProbeHashTable& other) noexcept;
 
   Value find(const Key key) { return find_impl(key); }
   Value find(const Key key, size_t hash_value) { return find_impl(key); }
@@ -213,21 +131,7 @@ class LinearProbeHashTable
   // Bucket interface
   size_type bucket_count() const noexcept { return buckets_.size(); }
 
-  size_type max_bucket_count() const noexcept { return buckets_.max_size(); }
-
-  // Hash policy
-  void rehash(size_type count) {
-    // comment out due to may adjust load factor in future
-    // count = std::max(count, size() * 2);
-    LinearProbeHashTable other(*this, count);
-    swap(other);
-  }
-
-  void reserve(size_type count) {
-    if (count * 2 > buckets_.size()) {
-      rehash(count * 2);
-    }
-  }
+  const buckets& get_buckets() { return buckets_; }
 
   // Observers
   hasher hash_function() const { return hasher(); }
@@ -235,8 +139,8 @@ class LinearProbeHashTable
   key_equal key_eq() const { return key_equal(); }
 
  private:
-  template <typename K, typename... Args>
-  bool emplace_impl(const K& key, Args&&... args);
+  template <typename K, typename V>
+  bool emplace_impl(const K& key, const V& value);
 
   template <typename K>
   bool contains_impl(const K& key);
@@ -250,10 +154,7 @@ class LinearProbeHashTable
   template <typename K>
   size_t key_to_idx(const K& key) const noexcept(noexcept(hasher()(key)));
 
-  size_t probe_next(size_t idx) const noexcept;
-
  private:
-  key_type empty_key_;
   buckets buckets_;
   size_t size_ = 0;
 };
@@ -263,4 +164,4 @@ class LinearProbeHashTable
 // to isolate the implementation from codegen.
 // use include cpp as a method to avoid maintaining too many template
 // declaration in cpp file.
-#include "exec/operator/join/CiderLinearProbingHashTable.cpp"
+#include "exec/operator/join/CiderChainedHashTable.cpp"

@@ -62,18 +62,15 @@ TEST(CiderHashTableTest, factoryTest) {
       hashTableSelector;
   auto hm =
       hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hm2 = hashTableSelector.createForJoin(cider_hashtable::HashTableType::CHAINED);
 }
 
-// test build and probe for cider
-TEST(CiderHashTableTest, JoinHashTableTest) {
+void joinHashTableTest(cider_hashtable::HashTableType hashtable_type) {
   using namespace cider::exec::nextgen::context;
 
-  auto joinHashTable1 = new cider::exec::processor::JoinHashTable(
-      cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto joinHashTable2 = new cider::exec::processor::JoinHashTable(
-      cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto joinHashTable3 = new cider::exec::processor::JoinHashTable(
-      cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto joinHashTable1 = new cider::exec::processor::JoinHashTable(hashtable_type);
+  auto joinHashTable2 = new cider::exec::processor::JoinHashTable(hashtable_type);
+  auto joinHashTable3 = new cider::exec::processor::JoinHashTable(hashtable_type);
 
   auto input_builder = ArrowArrayBuilder();
 
@@ -108,7 +105,13 @@ TEST(CiderHashTableTest, JoinHashTableTest) {
   EXPECT_EQ(joinHashTable1->getHashTable()->size(), 30);
 }
 
-TEST(CiderHashTableTest, mergeTest) {
+// test build and probe for cider
+TEST(CiderHashTableTest, JoinHashTableTest) {
+  joinHashTableTest(cider_hashtable::HashTableType::LINEAR_PROBING);
+  joinHashTableTest(cider_hashtable::HashTableType::CHAINED);
+}
+
+void mergeTest(cider_hashtable::HashTableType hashtable_type) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
   cider_hashtable::HashTableSelector<
       int,
@@ -118,13 +121,9 @@ TEST(CiderHashTableTest, mergeTest) {
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
       hashTableSelector;
-  auto hm1 =
-      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto hm2 =
-      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
-  auto hm3 =
-      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
-
+  auto hm1 = hashTableSelector.createForJoin(hashtable_type);
+  auto hm2 = hashTableSelector.createForJoin(hashtable_type);
+  auto hm3 = hashTableSelector.createForJoin(hashtable_type);
   for (int i = 0; i < 100; i++) {
     int value = random(-1000, 1000);
     hm1->emplace(random(-10, 10), value);
@@ -144,11 +143,14 @@ TEST(CiderHashTableTest, mergeTest) {
   other_tables.emplace_back(std::move(hm2));
   other_tables.emplace_back(std::move(hm3));
 
-  cider_hashtable::
-      LinearProbeHashTable<int, int, cider_hashtable::MurmurHash, cider_hashtable::Equal>
-          hm_final(16, NULL);
-  hm_final.merge_other_hashtables(std::move(other_tables));
-  EXPECT_EQ(hm_final.size(), 300);
+  auto hm_final = hashTableSelector.createForJoin(hashtable_type);
+  hm_final->merge_other_hashtables(std::move(other_tables));
+  EXPECT_EQ(hm_final->size(), 300);
+}
+
+TEST(CiderHashTableTest, mergeTest) {
+  mergeTest(cider_hashtable::HashTableType::LINEAR_PROBING);
+  mergeTest(cider_hashtable::HashTableType::CHAINED);
 }
 
 // test value type for probe
@@ -201,15 +203,22 @@ TEST(CiderHashTableTest, batchAsValueTest) {
 
 TEST(CiderHashTableTest, keyCollisionTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
-  cider_hashtable::LinearProbeHashTable<int, int, Hash, cider_hashtable::Equal> hm(16,
-                                                                                   NULL);
+  cider_hashtable::LinearProbeHashTable<int, int, Hash, cider_hashtable::Equal>
+      linear_probing_hm(16, NULL);
+  cider_hashtable::ChainedHashTable<int, int, Hash, cider_hashtable::Equal> chained_hm;
   StdMapDuplicateKeyWrapper<int, int> udup_map;
-  hm.emplace(1, 1);
-  hm.emplace(1, 2);
-  hm.emplace(15, 1515);
-  hm.emplace(8, 88);
-  hm.emplace(1, 5);
-  hm.emplace(1, 6);
+  linear_probing_hm.emplace(1, 1);
+  linear_probing_hm.emplace(1, 2);
+  linear_probing_hm.emplace(15, 1515);
+  linear_probing_hm.emplace(8, 88);
+  linear_probing_hm.emplace(1, 5);
+  linear_probing_hm.emplace(1, 6);
+  chained_hm.emplace(1, 1);
+  chained_hm.emplace(1, 2);
+  chained_hm.emplace(15, 1515);
+  chained_hm.emplace(8, 88);
+  chained_hm.emplace(1, 5);
+  chained_hm.emplace(1, 6);
   udup_map.insert(1, 1);
   udup_map.insert(1, 2);
   udup_map.insert(15, 1515);
@@ -219,14 +228,17 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 
   for (auto key_iter : udup_map.getMap()) {
     auto dup_res_vec = udup_map.findAll(key_iter.first);
-    auto hm_res_vec = hm.findAll(key_iter.first);
+    auto linear_probing_hm_res_vec = linear_probing_hm.findAll(key_iter.first);
+    auto chained_hm_res_vec = chained_hm.findAll(key_iter.first);
     std::sort(dup_res_vec.begin(), dup_res_vec.end());
-    std::sort(hm_res_vec.begin(), hm_res_vec.end());
-    EXPECT_TRUE(dup_res_vec == hm_res_vec);
+    std::sort(linear_probing_hm_res_vec.begin(), linear_probing_hm_res_vec.end());
+    std::sort(chained_hm_res_vec.begin(), chained_hm_res_vec.end());
+    EXPECT_TRUE(dup_res_vec == linear_probing_hm_res_vec);
+    EXPECT_TRUE(dup_res_vec == chained_hm_res_vec);
   }
 }
 
-TEST(CiderHashTableTest, randomInsertAndfindTest) {
+void hashtableRandomInsertTest(cider_hashtable::HashTableType hashtable_type) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
   cider_hashtable::HashTableSelector<
       int,
@@ -236,8 +248,7 @@ TEST(CiderHashTableTest, randomInsertAndfindTest) {
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
       hashTableSelector;
-  auto hm =
-      hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+  auto hm = hashTableSelector.createForJoin(hashtable_type);
   StdMapDuplicateKeyWrapper<int, int> dup_map;
   for (int i = 0; i < 10000; i++) {
     int key = random(-1000, 1000);
@@ -254,6 +265,11 @@ TEST(CiderHashTableTest, randomInsertAndfindTest) {
   }
 }
 
+TEST(CiderHashTableTest, randomInsertAndfindTest) {
+  hashtableRandomInsertTest(cider_hashtable::HashTableType::LINEAR_PROBING);
+  hashtableRandomInsertTest(cider_hashtable::HashTableType::CHAINED);
+}
+
 TEST(CiderHashTableTest, LPHashMapTest) {
   // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
   cider_hashtable::HashTableSelector<
@@ -266,6 +282,27 @@ TEST(CiderHashTableTest, LPHashMapTest) {
       hashTableSelector;
   auto hm =
       hashTableSelector.createForJoin(cider_hashtable::HashTableType::LINEAR_PROBING);
+  for (int i = 0; i < 10000; i++) {
+    int key = random(-100000, 10000);
+    int value = random(-10000, 10000);
+    hm->emplace(key, value);
+  }
+  for (int i = 0; i < 1000000; i++) {
+    int key = random(-10000, 10000);
+    auto hm_res_vec = hm->findAll(key);
+  }
+}
+
+TEST(CiderHashTableTest, ChainedHashMapTest) {
+  cider_hashtable::HashTableSelector<
+      int,
+      int,
+      cider_hashtable::MurmurHash,
+      cider_hashtable::Equal,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
+      hashTableSelector;
+  auto hm = hashTableSelector.createForJoin(cider_hashtable::HashTableType::CHAINED);
   for (int i = 0; i < 10000; i++) {
     int key = random(-100000, 10000);
     int value = random(-10000, 10000);

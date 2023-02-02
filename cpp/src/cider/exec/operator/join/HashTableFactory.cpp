@@ -35,6 +35,9 @@ HashTableSelector<Key, Value, Hash, KeyEqual, Grower, Allocator>::createForJoin(
     case LINEAR_PROBING:
       return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
           std::forward<Args>(args)...);
+    case CHAINED:
+      return std::make_unique<ChainedHashTable<Key, Value, Hash, KeyEqual>>(
+          std::forward<Args>(args)...);
     default:
       return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
           std::forward<Args>(args)...);
