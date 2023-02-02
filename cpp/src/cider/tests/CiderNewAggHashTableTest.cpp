@@ -45,6 +45,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   std::vector<SQLTypes> key_types;
   key_types.push_back(SQLTypes::kTINYINT);
 
+  // 1byte is_null(bool) + 1byte padding + 1byte int8 + 1byte padding
   uint8_t key_len = 4;
   bool key_null = false;
 
@@ -56,6 +57,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   int8_t val2 = 20;
   int8_t val3 = 30;
 
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
   std::vector<int8_t> offset_vec{2, 8, 12, 13};
 
   // value of HT: SUM(int8)-int64 + COUNT(int8)-int32 + MIN(int8)-int8 +
@@ -172,6 +174,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   std::vector<SQLTypes> keys;
   keys.push_back(SQLTypes::kSMALLINT);
 
+  // 1byte is_null(bool) + 1byte padding + 2bytes int16
   uint8_t key_len = 4;
   bool key_null = false;
 
@@ -183,6 +186,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   int16_t val2 = 20;
   int16_t val3 = 30;
 
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
   std::vector<int8_t> offset_vec{2, 8, 12, 14};
 
   // value of HT: SUM(int16)-int64 + COUNT(int16)-int32 + MIN(int16)-int16 +
@@ -299,6 +303,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   std::vector<SQLTypes> keys;
   keys.push_back(SQLTypes::kINT);
 
+  // 1byte is_null(bool) + 1byte padding + 4bytes int32
   uint8_t key_len = 6;
   bool key_null = false;
 
@@ -310,6 +315,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   int32_t val2 = 20;
   int32_t val3 = 30;
 
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
   std::vector<int8_t> offset_vec{2, 8, 12, 16};
 
   // value of HT: SUM(int32)-int64 + COUNT(int32)-int32 + MIN(int32)-int32 +
@@ -426,6 +432,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   std::vector<SQLTypes> keys;
   keys.push_back(SQLTypes::kBIGINT);
 
+  // 1byte is_null(bool) + 1byte padding + 8bytes int64
   uint8_t key_len = 10;
   bool key_null = false;
 
@@ -437,6 +444,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   int64_t val2 = 20;
   int64_t val3 = 30;
 
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
   std::vector<int8_t> offset_vec{2, 8, 12, 20};
 
   // value of HT: SUM(int64)-int64 + COUNT(int64)-int32 + MIN(int64)-int64 +
@@ -553,6 +561,7 @@ TEST_F(CiderNewAggHashTableTest, aggFloatTest) {
   std::vector<SQLTypes> keys;
   keys.push_back(SQLTypes::kFLOAT);
 
+  // 1byte is_null(bool) + 1byte padding + 4bytes float
   uint8_t key_len = 6;
   bool key_null = false;
 
@@ -564,10 +573,11 @@ TEST_F(CiderNewAggHashTableTest, aggFloatTest) {
   int32_t val2 = 20;
   int32_t val3 = 30;
 
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
   std::vector<int8_t> offset_vec{2, 8, 12, 16};
 
-  // value of HT: SUM(int32)-int64 + COUNT(int32)-int32 + MIN(int32)-int32 +
-  // MAX(int32)-int32
+  // value of HT: SUM(float)-double + COUNT(float)-int32 + MIN(float)-float +
+  // MAX(float)-float
   uint32_t init_value_len = 20;
   int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
   int64_t sum_init_val = 0;
@@ -680,6 +690,7 @@ TEST_F(CiderNewAggHashTableTest, aggDoubleTest) {
   std::vector<SQLTypes> keys;
   keys.push_back(SQLTypes::kDOUBLE);
 
+  // 1byte is_null(bool) + 1byte padding + 8bytes double
   uint8_t key_len = 10;
   bool key_null = false;
 
@@ -691,10 +702,11 @@ TEST_F(CiderNewAggHashTableTest, aggDoubleTest) {
   int64_t val2 = 20;
   int64_t val3 = 30;
 
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
   std::vector<int8_t> offset_vec{2, 8, 12, 20};
 
-  // value of HT: SUM(int64)-int64 + COUNT(int64)-int32 + MIN(int64)-int64 +
-  // MAX(int64)-int64
+  // value of HT: SUM(double)-double + COUNT(double)-int32 + MIN(double)-double +
+  // MAX(double)-double
   uint32_t init_value_len = 28;
   int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
   int64_t sum_init_val = 0;
