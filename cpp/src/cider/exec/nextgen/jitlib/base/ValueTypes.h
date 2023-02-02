@@ -34,6 +34,7 @@ enum class JITTypeTag {
   INT16,
   INT32,
   INT64,
+  INT128,
   FLOAT,
   DOUBLE,
   POINTER,
@@ -108,6 +109,16 @@ struct JITTypeTraits<JITTypeTag::INT64> {
   static constexpr uint64_t bits = sizeof(NativeType) * 8;
   static constexpr JITTypeTag tag = JITTypeTag::INT64;
   static constexpr const char* name = "INT64";
+};
+
+template <>
+struct JITTypeTraits<JITTypeTag::INT128> {
+  using NativeType = __int128_t;
+  static constexpr bool isFixedWidth = true;
+  static constexpr uint64_t width = sizeof(NativeType);
+  static constexpr uint64_t bits = sizeof(NativeType) * 8;
+  static constexpr JITTypeTag tag = JITTypeTag::INT128;
+  static constexpr const char* name = "INT128";
 };
 
 template <>
@@ -188,6 +199,8 @@ inline const char* getJITTypeName(JITTypeTag type_tag) {
       return JITTypeTraits<JITTypeTag::TUPLE>::name;
     case JITTypeTag::STRUCT:
       return JITTypeTraits<JITTypeTag::STRUCT>::name;
+    case JITTypeTag::INT128:
+      return JITTypeTraits<JITTypeTag::INT128>::name;
     default:
       LOG(ERROR) << "Invalid JITType in getJITTypeName";
   }
@@ -206,6 +219,8 @@ inline uint64_t getJITTypeSize(JITTypeTag type_tag) {
       return JITTypeTraits<JITTypeTag::INT32>::width;
     case JITTypeTag::INT64:
       return JITTypeTraits<JITTypeTag::INT64>::width;
+    case JITTypeTag::INT128:
+      return JITTypeTraits<JITTypeTag::INT128>::width;
     case JITTypeTag::FLOAT:
       return JITTypeTraits<JITTypeTag::FLOAT>::width;
     case JITTypeTag::DOUBLE:
@@ -232,6 +247,8 @@ inline std::any castLiteral(JITTypeTag target_type, T value) {
     case JITTypeTag::INT64:
     case JITTypeTag::POINTER:
       return static_cast<JITTypeTraits<JITTypeTag::INT64>::NativeType>(value);
+    case JITTypeTag::INT128:
+      return static_cast<JITTypeTraits<JITTypeTag::INT128>::NativeType>(value);
     case JITTypeTag::FLOAT:
       return static_cast<JITTypeTraits<JITTypeTag::FLOAT>::NativeType>(value);
     case JITTypeTag::DOUBLE:
