@@ -50,6 +50,21 @@
     }                                                                                \
   }
 
+#define DEF_NEXTEGN_CIDER_SIMPLE_AGG_FP(fpType, aggname, aggfunc)       \
+  extern "C" ALWAYS_INLINE void nextgen_cider_agg_##aggname##_##fpType( \
+      fpType* agg_val_addr, const fpType val) {                         \
+    aggfunc(*agg_val_addr, val);                                        \
+  }
+
+#define DEF_NEXTEGN_CIDER_SIMPLE_AGG_FP_NULLABLE(fpType, aggname, aggfunc)            \
+  extern "C" ALWAYS_INLINE void nextgen_cider_agg_##aggname##_##fpType##_nullable(    \
+      fpType* agg_val_addr, const fpType val, uint8_t* agg_null_addr, bool is_null) { \
+    if (!is_null) {                                                                   \
+      aggfunc(*agg_val_addr, val);                                                    \
+      *agg_null_addr = 0;                                                             \
+    }                                                                                 \
+  }
+
 #define DEF_NEXTEGN_CIDER_SIMPLE_AGG_FUNCS(aggName, aggFunc)         \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(8, aggName, aggFunc)              \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT(16, aggName, aggFunc)             \
@@ -62,7 +77,11 @@
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(8, aggName, aggFunc)     \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(16, aggName, aggFunc)    \
   DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(32, aggName, aggFunc)    \
-  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(64, aggName, aggFunc)
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_INT_NULLABLE(64, aggName, aggFunc)    \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_FP(float, aggName, aggFunc)           \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_FP(double, aggName, aggFunc)          \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_FP_NULLABLE(float, aggName, aggFunc)  \
+  DEF_NEXTEGN_CIDER_SIMPLE_AGG_FP_NULLABLE(double, aggName, aggFunc)
 
 template <typename T>
 ALWAYS_INLINE void nextgen_cider_agg_sum(T& agg_val, const T& val) {

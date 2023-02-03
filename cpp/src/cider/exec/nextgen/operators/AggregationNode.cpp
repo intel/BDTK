@@ -20,6 +20,7 @@
  */
 
 #include "exec/nextgen/operators/AggregationNode.h"
+#include "exec/template/TypePunning.h"
 
 namespace cider::exec::nextgen::operators {
 TranslatorPtr AggNode::toTranslator(const TranslatorPtr& succ) {
@@ -82,7 +83,43 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
   int8_t* raw_memory = origin_vector.data();
   for (const auto& info : exprs_info) {
     switch (info.agg_type_) {
-      case SQLAgg::kSUM:
+      case SQLAgg::kSUM: {
+        switch (info.sql_type_info_.get_size()) {
+          case 1:
+            makeSumInitialValue<int8_t>(raw_memory, info.start_offset_);
+            break;
+          case 2:
+            makeSumInitialValue<int16_t>(raw_memory, info.start_offset_);
+            break;
+          case 4: {
+            if (info.sql_type_info_.is_fp()) {
+              const float zero_float{0.};
+              auto cast_memory = reinterpret_cast<float*>(
+                  may_alias_ptr(raw_memory + info.start_offset_));
+              *cast_memory = zero_float;
+              break;
+            }
+            makeSumInitialValue<int32_t>(raw_memory, info.start_offset_);
+            break;
+          }
+          case 8: {
+            if (info.sql_type_info_.is_fp()) {
+              const float zero_double{0.};
+              auto cast_memory = reinterpret_cast<double*>(
+                  may_alias_ptr(raw_memory + info.start_offset_));
+              *cast_memory = zero_double;
+              break;
+            }
+            makeSumInitialValue<int64_t>(raw_memory, info.start_offset_);
+            break;
+          }
+          default:
+            LOG(ERROR) << info.sql_type_info_.get_size()
+                       << " size is not support for sum yet";
+            break;
+        }
+        break;
+      }
       case SQLAgg::kCOUNT: {
         switch (info.sql_type_info_.get_size()) {
           case 1:
@@ -99,7 +136,7 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
             break;
           default:
             LOG(ERROR) << info.sql_type_info_.get_size()
-                       << " size is not support for sum/count yet";
+                       << " size is not support for count yet";
             break;
         }
         break;
@@ -112,12 +149,28 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
           case 2:
             makeMinInitialValue<int16_t>(raw_memory, info.start_offset_);
             break;
-          case 4:
+          case 4: {
+            if (info.sql_type_info_.is_fp()) {
+              const float max_float = std::numeric_limits<float>::max();
+              auto cast_memory = reinterpret_cast<float*>(
+                  may_alias_ptr(raw_memory + info.start_offset_));
+              *cast_memory = max_float;
+              break;
+            }
             makeMinInitialValue<int32_t>(raw_memory, info.start_offset_);
             break;
-          case 8:
+          }
+          case 8: {
+            if (info.sql_type_info_.is_fp()) {
+              const float max_double = std::numeric_limits<double>::max();
+              auto cast_memory = reinterpret_cast<double*>(
+                  may_alias_ptr(raw_memory + info.start_offset_));
+              *cast_memory = max_double;
+              break;
+            }
             makeMinInitialValue<int64_t>(raw_memory, info.start_offset_);
             break;
+          }
           default:
             LOG(ERROR) << info.sql_type_info_.get_size()
                        << " size is not support for min yet";
@@ -133,12 +186,28 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
           case 2:
             makeMaxInitialValue<int16_t>(raw_memory, info.start_offset_);
             break;
-          case 4:
+          case 4: {
+            if (info.sql_type_info_.is_fp()) {
+              const float min_float = std::numeric_limits<float>::min();
+              auto cast_memory = reinterpret_cast<float*>(
+                  may_alias_ptr(raw_memory + info.start_offset_));
+              *cast_memory = min_float;
+              break;
+            }
             makeMaxInitialValue<int32_t>(raw_memory, info.start_offset_);
             break;
-          case 8:
+          }
+          case 8: {
+            if (info.sql_type_info_.is_fp()) {
+              const float min_double = std::numeric_limits<double>::min();
+              auto cast_memory = reinterpret_cast<double*>(
+                  may_alias_ptr(raw_memory + info.start_offset_));
+              *cast_memory = min_double;
+              break;
+            }
             makeMaxInitialValue<int64_t>(raw_memory, info.start_offset_);
             break;
+          }
           default:
             LOG(ERROR) << info.sql_type_info_.get_size()
                        << " size is not support for max yet";

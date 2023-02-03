@@ -65,6 +65,18 @@ void check_array(ArrowArray* array, size_t expect_len, std::vector<TYPE> expect_
   }
 }
 
+template <typename TYPE>
+void check_array_fp(ArrowArray* array,
+                    size_t expect_len,
+                    std::vector<TYPE> expect_values) {
+  EXPECT_EQ(array->length, expect_len);
+  TYPE* data_buffer = (TYPE*)array->buffers[1];
+  for (size_t i = 0; i < expect_len; ++i) {
+    EXPECT_TRUE(std::fabs(data_buffer[0] - expect_values[0]) <=
+                std::numeric_limits<TYPE>::epsilon());
+  }
+}
+
 context::RuntimeCtxPtr executeAndReturnRuntimeCtx(const std::string& create_ddl,
                                                   const std::string& sql,
                                                   ArrowArray* array) {
@@ -130,6 +142,21 @@ class NonGroupbyAggTest : public ::testing::Test {
       check_array<COL_TYPE>(output_batch_array->children[i], 1, {res[i]});
     }
   }
+
+  template <typename COL_TYPE>
+  void executeTestResultFp(const std::string& create_ddl,
+                           const std::string& sql,
+                           ArrowArray* array,
+                           std::vector<COL_TYPE> res) {
+    auto runtime_ctx = executeAndReturnRuntimeCtx(create_ddl, sql, array);
+
+    auto output_batch_array = runtime_ctx->getNonGroupByAggOutputBatch()->getArray();
+    EXPECT_EQ(output_batch_array->length, 1);
+
+    for (size_t i = 0; i < res.size(); i++) {
+      check_array_fp<COL_TYPE>(output_batch_array->children[i], 1, {res[i]});
+    }
+  }
 };
 
 TEST_F(NonGroupbyAggTest, TestBuffer) {
@@ -186,6 +213,196 @@ TEST_F(NonGroupbyAggTest, TestResultSumInt64Nullable) {
                              "select sum(a), sum(b) from test",
                              input_data,
                              {22, 1293});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultSumFloatNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<float>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<float>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResultFp<float>("CREATE TABLE test(a FLOAT, b FLOAT);",
+                             "select sum(a), sum(b) from test",
+                             input_data,
+                             {749.926, 1195.47});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultSumFloatNotNull) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<float>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<float>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResultFp<float>("CREATE TABLE test(a FLOAT NOT NULL, b FLOAT NOT NULL);",
+                             "select sum(a), sum(b) from test",
+                             input_data,
+                             {1195.47, 1195.47});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultSumDoubleNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<double>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<double>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResultFp<double>(
+      "CREATE TABLE test(a DOUBLE, b DOUBLE);",
+      "select sum(a), sum(b) from test",
+      input_data,
+      {2.2 + 3.3 + 11.1 + 22.22 + 44.44 + 111.111 + 222.222 + 333.333, 1195.47});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultCountFloatNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<float>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<float>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResult<int64_t>("CREATE TABLE test(a FLOAT, b FLOAT);",
+                             "select count(a), count(b) from test",
+                             input_data,
+                             {8, 10});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultCountFloatNotNull) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<float>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<float>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResult<int64_t>("CREATE TABLE test(a FLOAT NOT NULL, b FLOAT NOT NULL);",
+                             "select count(a), count(b) from test",
+                             input_data,
+                             {10, 10});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultCountDoubleNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<double>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<double>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResult<int64_t>("CREATE TABLE test(a DOUBLE, b DOUBLE);",
+                             "select count(a), count(b) from test",
+                             input_data,
+                             {8, 10});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultMinMaxFloatNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<float>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<float>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp32),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResultFp<float>("CREATE TABLE test(a FLOAT, b FLOAT);",
+                             "select min(a), max(a), min(b), max(b) from test",
+                             input_data,
+                             {2.2, 333.333, 1.1, 444.444});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultMinMaxDoubleNullable) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<double>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<double>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResultFp<double>("CREATE TABLE test(a DOUBLE, b DOUBLE);",
+                              "select min(a), max(a), min(b), max(b) from test",
+                              input_data,
+                              {2.2, 333.333, 1.1, 444.444});
+}
+
+TEST_F(NonGroupbyAggTest, TestResultMinMaxDoubleNotNull) {
+  auto input_builder = ArrowArrayBuilder();
+  auto [_, input_data] =
+      input_builder.setRowNum(10)
+          .addColumn<double>(
+              "a",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444},
+              {true, false, false, false, false, false, false, false, false, true})
+          .addColumn<double>(
+              "b",
+              CREATE_SUBSTRAIT_TYPE(Fp64),
+              {1.1, 2.2, 3.3, 11.1, 22.22, 44.44, 111.111, 222.222, 333.333, 444.444})
+          .build();
+
+  executeTestResultFp<double>("CREATE TABLE test(a DOUBLE NOT NULL, b DOUBLE NOT NULL);",
+                              "select min(a), max(a), min(b), max(b) from test",
+                              input_data,
+                              {1.1, 444.444, 1.1, 444.444});
 }
 
 TEST_F(NonGroupbyAggTest, TestResultCountNullable) {
