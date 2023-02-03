@@ -589,6 +589,90 @@ class RegexpReplaceStringOper : public StringOper {
   }
 };
 
+class RegexpExtractStringOper : public StringOper {
+ public:
+  RegexpExtractStringOper(const std::shared_ptr<Analyzer::Expr>& input,
+                          const std::shared_ptr<Analyzer::Expr>& pattern,
+                          const std::shared_ptr<Analyzer::Expr>& group)
+      : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
+                   foldLiteralStrCasts({input, pattern, group}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit RegexpExtractStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::REGEXP_EXTRACT,
+                   foldLiteralStrCasts(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit RegexpExtractStringOper(
+      const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  size_t getMinArgs() const override { return 3UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"input", "pattern", "group"};
+    return names;
+  }
+};
+
+class RegexpSubstrStringOper : public StringOper {
+ public:
+  RegexpSubstrStringOper(const std::shared_ptr<Analyzer::Expr>& input,
+                         const std::shared_ptr<Analyzer::Expr>& pattern,
+                         const std::shared_ptr<Analyzer::Expr>& position,
+                         const std::shared_ptr<Analyzer::Expr>& occurrence)
+      : StringOper(SqlStringOpKind::REGEXP_SUBSTR,
+                   foldLiteralStrCasts({input, pattern, position, occurrence}),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit RegexpSubstrStringOper(
+      const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
+      : StringOper(SqlStringOpKind::REGEXP_SUBSTR,
+                   foldLiteralStrCasts(operands),
+                   getMinArgs(),
+                   getExpectedTypeFamilies(),
+                   getArgNames()) {}
+
+  explicit RegexpSubstrStringOper(
+      const std::shared_ptr<Analyzer::StringOper>& string_oper)
+      : StringOper(string_oper) {}
+
+  std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+
+  JITExprValue& codegen(CodegenContext& context) override;
+
+  size_t getMinArgs() const override { return 4UL; }
+
+  std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
+    return {OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::STRING_FAMILY,
+            OperandTypeFamily::INT_FAMILY,
+            OperandTypeFamily::INT_FAMILY};
+  }
+
+  const std::vector<std::string>& getArgNames() const override {
+    static std::vector<std::string> names{"input", "pattern", "position", "occurrence"};
+    return names;
+  }
+};
+
 }  // namespace Analyzer
 
 #endif

@@ -867,8 +867,6 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
 }
 
 TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (regexp-match-substring) is not supported yet in nextgen");
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -922,8 +920,6 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
 }
 
 TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (regexp-extract) is not supported yet in nextgen");
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
