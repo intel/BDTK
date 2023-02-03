@@ -19,19 +19,23 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-#include "tests/utils/CiderTestBase.h"
+#include "exec/plan/parser/TypeUtils.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 
-class CiderArrowCaseWhenSequenceTestBase : public CiderTestBase {
+using namespace cider::test::util;
+
+class CiderArrowCaseWhenSequenceTestBase : public CiderNextgenTestBase {
  public:
   CiderArrowCaseWhenSequenceTestBase() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         10,
         {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
@@ -42,15 +46,15 @@ class CiderArrowCaseWhenSequenceTestBase : public CiderTestBase {
   }
 };
 
-class CiderArrowCaseWhenSequenceWithNullTestBase : public CiderTestBase {
+class CiderArrowCaseWhenSequenceWithNullTestBase : public CiderNextgenTestBase {
  public:
   CiderArrowCaseWhenSequenceWithNullTestBase() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         10,
         {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
@@ -62,15 +66,15 @@ class CiderArrowCaseWhenSequenceWithNullTestBase : public CiderTestBase {
   }
 };
 
-class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
+class CiderArrowCaseWhenRandomWithNullTestBase : public CiderNextgenTestBase {
  public:
   CiderArrowCaseWhenRandomWithNullTestBase() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_int INTEGER, col_bigint BIGINT, col_double DOUBLE, col_float FLOAT, col_str VARCHAR(10));)";
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         10,
         {"col_int", "col_bigint", "col_double", "col_float", "col_str"},
         {CREATE_SUBSTRAIT_TYPE(I32),
@@ -85,18 +89,17 @@ class CiderArrowCaseWhenRandomWithNullTestBase : public CiderTestBase {
   }
 };
 
-#define COALESCE_FUNCTION_ARROW_TEST(TEST_CLASS, UNIT_NAME)                         \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
-    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, 7) from test",           \
-                     "functions/conditional/coalesce.json");                        \
-    assertQueryArrow("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test",  \
-                     "functions/conditional/coalesce_null.json");                   \
-    GTEST_SKIP_(                                                                    \
-        "TODO(Haiwei): Agg is not supported now, require future validation of the " \
-        "following case.");                                                         \
-    assertQueryArrow(                                                               \
-        "select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test",       \
-        "functions/conditional/coalesce_sum.json");                                 \
+#define COALESCE_FUNCTION_ARROW_TEST(TEST_CLASS, UNIT_NAME)                           \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                     \
+    assertQuery("select COALESCE(COL_INT, COL_BIGINT, 7) from test",                  \
+                "functions/conditional/coalesce.json");                               \
+    assertQuery("select COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE) from test",         \
+                "functions/conditional/coalesce_null.json");                          \
+    GTEST_SKIP_(                                                                      \
+        "TODO(Haiwei): Agg is not supported now, require future validation of the "   \
+        "following case.");                                                           \
+    assertQuery("select SUM(COALESCE(COL_INT, COL_BIGINT, COL_DOUBLE, 7)) from test", \
+                "functions/conditional/coalesce_sum.json");                           \
   }
 
 COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
@@ -116,32 +119,31 @@ COALESCE_FUNCTION_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
 // END
 #define COALESCE_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                       \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT COALESCE(col_int, col_bigint, 777) FROM test",                           \
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not "      \
         "null THEN col_bigint ELSE 777 END from test");                                  \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT COALESCE(col_int, col_double, 777) FROM test",                           \
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_double is not "      \
         "null THEN col_double ELSE 777 END from test");                                  \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT COALESCE(col_int, col_bigint, col_double, 777) FROM test",               \
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not null " \
         "THEN col_bigint "                                                               \
         "WHEN col_double is not null THEN col_double ELSE 777 END from test");           \
-    assertQueryArrow(                                                                    \
-        "SELECT COALESCE(col_float) FROM test",                                          \
-        "SELECT CASE WHEN col_float is not null THEN col_float ELSE null END "           \
-        "from test");                                                                    \
-    assertQueryArrow(                                                                    \
+    assertQuery("SELECT COALESCE(col_float) FROM test",                                  \
+                "SELECT CASE WHEN col_float is not null THEN col_float ELSE null END "   \
+                "from test");                                                            \
+    assertQuery(                                                                         \
         "SELECT COALESCE(col_double, col_int) FROM test",                                \
         "SELECT CASE WHEN col_double is not null THEN col_double WHEN col_int is not "   \
         "null THEN col_int ELSE null END from test");                                    \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT COALESCE(col_int, col_double) FROM test",                                \
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_double is not "      \
         "null THEN col_double ELSE null END from test");                                 \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT COALESCE(col_int, col_bigint, col_double, col_float) FROM test",         \
         "SELECT CASE WHEN col_int is not null THEN col_int WHEN col_bigint is not "      \
         "null THEN col_bigint WHEN col_double is not null THEN col_double WHEN "         \
@@ -160,29 +162,26 @@ COALESCE_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
     GTEST_SKIP_(                                                                         \
         "TODO(Haiwei): Agg is not supported now, require future validation of the "      \
         "following case.");                                                              \
-    assertQueryArrow(                                                                    \
-        "SELECT SUM(COALESCE(col_int, 777)) FROM test",                                  \
-        "SELECT SUM(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "           \
-        "from test");                                                                    \
-    assertQueryArrow("SELECT count(COALESCE(col_double, 777)) FROM test",                \
-                     "SELECT count(CASE WHEN col_double is not null THEN col_double "    \
-                     "ELSE 777 END) from test");                                         \
-    assertQueryArrow("SELECT SUM(COALESCE(col_double, 777)) FROM test",                  \
-                     "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE " \
-                     "777 END) from test");                                              \
-    assertQueryArrow(                                                                    \
-        "SELECT SUM(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",          \
-        "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
-        "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
-        "col_double ELSE 777 END) from test");                                           \
-    assertQueryArrow("SELECT SUM(COALESCE(col_double)) FROM test",                       \
-                     "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE " \
-                     "null END) from test");                                             \
-    assertQueryArrow(                                                                    \
-        "SELECT SUM(COALESCE(col_int, col_bigint, col_double)) FROM test",               \
-        "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint "         \
-        "is not null THEN col_bigint WHEN col_double is not null THEN "                  \
-        "col_double ELSE null END) from test");                                          \
+    assertQuery("SELECT SUM(COALESCE(col_int, 777)) FROM test",                          \
+                "SELECT SUM(CASE WHEN col_int is not null THEN col_int ELSE 777 END) "   \
+                "from test");                                                            \
+    assertQuery("SELECT count(COALESCE(col_double, 777)) FROM test",                     \
+                "SELECT count(CASE WHEN col_double is not null THEN col_double "         \
+                "ELSE 777 END) from test");                                              \
+    assertQuery("SELECT SUM(COALESCE(col_double, 777)) FROM test",                       \
+                "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE "      \
+                "777 END) from test");                                                   \
+    assertQuery("SELECT SUM(COALESCE(col_int, col_bigint, col_double, 777)) FROM test",  \
+                "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint " \
+                "is not null THEN col_bigint WHEN col_double is not null THEN "          \
+                "col_double ELSE 777 END) from test");                                   \
+    assertQuery("SELECT SUM(COALESCE(col_double)) FROM test",                            \
+                "SELECT SUM(CASE WHEN col_double is not null THEN col_double ELSE "      \
+                "null END) from test");                                                  \
+    assertQuery("SELECT SUM(COALESCE(col_int, col_bigint, col_double)) FROM test",       \
+                "SELECT SUM(CASE WHEN col_int is not null THEN col_int WHEN col_bigint " \
+                "is not null THEN col_bigint WHEN col_double is not null THEN "          \
+                "col_double ELSE null END) from test");                                  \
   }
 
 COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase,
@@ -201,18 +200,18 @@ COALESCE_WITH_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
 // substrait plan to cider, so tests are between IF function and case when
 #define IF_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                            \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
-    assertQueryArrow("SELECT IF(col_int = 1 ,10, 1) FROM test",                         \
-                     "SELECT CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test");      \
-    assertQueryArrow(                                                                   \
+    assertQuery("SELECT IF(col_int = 1 ,10, 1) FROM test",                              \
+                "SELECT CASE WHEN col_int = 1 THEN 10 ELSE 1 END FROM test");           \
+    assertQuery(                                                                        \
         "SELECT IF(col_int > 20, col_bigint, col_double) FROM test",                    \
         "SELECT CASE WHEN col_int > 20 THEN col_bigint ELSE col_double END FROM test"); \
     GTEST_SKIP_(                                                                        \
         "TODO(Haiwei): Agg is not supported now, require future validation of the "     \
         "following case.");                                                             \
-    assertQueryArrow(                                                                   \
+    assertQuery(                                                                        \
         "SELECT SUM(IF(col_int > 20, col_double, 5)) FROM test",                        \
         "SELECT SUM(CASE WHEN col_int > 20 THEN col_double ELSE 5 END) FROM test");     \
-    assertQueryArrow(                                                                   \
+    assertQuery(                                                                        \
         "SELECT SUM(IF(col_double > 20, 5, col_double)) FROM test",                     \
         "SELECT SUM(CASE WHEN col_double > 20 THEN 5 ELSE col_double END) FROM test");  \
   }
@@ -223,79 +222,77 @@ IF_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase, ifRandomNullTestForArrow
 
 #define CASE_WHEN_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                     \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
-    assertQueryArrow(                                                                   \
-        "SELECT col_int, CASE WHEN col_int > 3 THEN 1 ELSE 0 END FROM test");           \
-    assertQueryArrow(                                                                   \
+    assertQuery("SELECT col_int, CASE WHEN col_int > 3 THEN 1 ELSE 0 END FROM test");   \
+    assertQuery(                                                                        \
         "SELECT col_double, CASE WHEN col_int > 5 THEN 4 ELSE 3"                        \
         " END FROM test");                                                              \
-    assertQueryArrow(                                                                   \
-        "SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");          \
-    assertQueryArrow(                                                                   \
+    assertQuery("SELECT col_int, CASE WHEN col_int > 30 THEN 1 ELSE 0 END FROM test");  \
+    assertQuery(                                                                        \
         "SELECT col_bigint, CASE WHEN col_double > 5 THEN 3 ELSE 2"                     \
         " END FROM test");                                                              \
-    assertQueryArrow(                                                                   \
+    assertQuery(                                                                        \
         "SELECT col_bigint, CASE WHEN col_double > 50 THEN 3 ELSE 2"                    \
         " END FROM test");                                                              \
-    assertQueryArrow(                                                                   \
+    assertQuery(                                                                        \
         "SELECT col_int, CASE WHEN col_bigint < 9 THEN 2 ELSE 1"                        \
         " END FROM test");                                                              \
-    assertQueryArrow(                                                                   \
+    assertQuery(                                                                        \
         "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 ELSE 0" \
         " END FROM test");                                                              \
-    assertQueryArrow(                                                                   \
+    assertQuery(                                                                        \
         "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 2 THEN 20 WHEN "  \
         "col_int = 3 THEN 30 ELSE 0 END FROM test");                                    \
-    assertQueryArrow("SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");    \
-    assertQueryArrow(                                                                   \
+    assertQuery("SELECT col_int, CASE WHEN col_int = 1 THEN 10 END FROM test");         \
+    assertQuery(                                                                        \
         "SELECT col_int, CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN "  \
         "col_int = 3 THEN 30 END FROM test");                                           \
     GTEST_SKIP_(                                                                        \
         "TODO(Haiwei): Agg is not supported now, require future validation of the "     \
         "following case.");                                                             \
-    assertQueryArrow("SELECT SUM(CASE WHEN col_int >50 THEN 10 ELSE 1 END) FROM test"); \
-    assertQueryArrow(                                                                   \
+    assertQuery("SELECT SUM(CASE WHEN col_int >50 THEN 10 ELSE 1 END) FROM test");      \
+    assertQuery(                                                                        \
         "(SELECT SUM(CASE WHEN col_bigint < 30 THEN 10 WHEN col_bigint > 70"            \
         " THEN 20 WHEN col_bigint = 50 THEN 30 ELSE 1 END) FROM test)");                \
   }
 
-#define CASE_WHEN_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                 \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
-    GTEST_SKIP_(                                                                        \
-        "TODO(Haiwei): Agg is not support now, require future validation of the "       \
-        "following case.");                                                             \
-    assertQueryArrow(                                                                   \
-        "SELECT SUM(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "    \
-        "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                            \
-    assertQueryArrow("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test"); \
-    assertQueryArrow(                                                                   \
-        "(SELECT SUM(CASE WHEN col_int = 3 THEN 11 ELSE 2 END),"                        \
-        " SUM(CASE WHEN col_double = 3 THEN 12 ELSE 3 END) FROM test)");                \
-    assertQueryArrow(                                                                   \
-        "(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END),"                          \
-        " SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");                  \
-    assertQueryArrow(                                                                   \
-        "(SELECT SUM(CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN"       \
-        " col_int = 3 THEN 30 ELSE 1 END) FROM test)");                                 \
-    assertQueryArrow(                                                                   \
-        "(SELECT SUM(CASE WHEN col_int < 10 THEN 11 END),"                              \
-        " SUM(CASE WHEN col_double > 10 THEN 12 END) FROM test)");                      \
-    assertQueryArrow(                                                                   \
-        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "     \
-        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "   \
-        "END");                                                                         \
-    assertQueryArrow(                                                                   \
-        "SELECT count(1), SUM(CASE WHEN col_int = 7 THEN col_bigint END), SUM(CASE "    \
-        "WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE WHEN col_int = 7 THEN "    \
-        "col_double * 2 ELSE col_double / 2 END) FROM test");                           \
-    assertQueryArrow(                                                                   \
-        "SELECT col_int,  SUM(CASE WHEN col_int = 5 THEN col_bigint + 3 END),"          \
-        " SUM(CASE WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END)"       \
-        " FROM test GROUP BY col_int");                                                 \
-    assertQueryArrow(                                                                   \
-        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
-        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",     \
-        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END "  \
-        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)");    \
+#define CASE_WHEN_AGG_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                      \
+    GTEST_SKIP_(                                                                       \
+        "TODO(Haiwei): Agg is not support now, require future validation of the "      \
+        "following case.");                                                            \
+    assertQuery(                                                                       \
+        "SELECT SUM(col_double), CASE WHEN col_int > 5 THEN 4 ELSE 3 END FROM test "   \
+        "GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 END");                           \
+    assertQuery("SELECT SUM(CASE WHEN col_int = 1 THEN 10 ELSE 1 END) FROM test");     \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE WHEN col_int = 3 THEN 11 ELSE 2 END),"                       \
+        " SUM(CASE WHEN col_double = 3 THEN 12 ELSE 3 END) FROM test)");               \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE col_int WHEN 3 THEN 11 ELSE 2 END),"                         \
+        " SUM(CASE col_double WHEN 3 THEN 12 ELSE 3 END) FROM test)");                 \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE WHEN col_int = 1 THEN 10 WHEN col_int = 3 THEN 20 WHEN"      \
+        " col_int = 3 THEN 30 ELSE 1 END) FROM test)");                                \
+    assertQuery(                                                                       \
+        "(SELECT SUM(CASE WHEN col_int < 10 THEN 11 END),"                             \
+        " SUM(CASE WHEN col_double > 10 THEN 12 END) FROM test)");                     \
+    assertQuery(                                                                       \
+        "SELECT SUM(CASE WHEN col_int > 5 THEN 4 ELSE 3 END), CASE WHEN col_int > "    \
+        "5 THEN 4 ELSE 3 END FROM test GROUP BY CASE WHEN col_int > 5 THEN 4 ELSE 3 "  \
+        "END");                                                                        \
+    assertQuery(                                                                       \
+        "SELECT count(1), SUM(CASE WHEN col_int = 7 THEN col_bigint END), SUM(CASE "   \
+        "WHEN col_int = 5 THEN col_bigint + 3 END), SUM(CASE WHEN col_int = 7 THEN "   \
+        "col_double * 2 ELSE col_double / 2 END) FROM test");                          \
+    assertQuery(                                                                       \
+        "SELECT col_int,  SUM(CASE WHEN col_int = 5 THEN col_bigint + 3 END),"         \
+        " SUM(CASE WHEN col_int = 7 THEN col_double * 2 ELSE col_double / 2 END)"      \
+        " FROM test GROUP BY col_int");                                                \
+    assertQuery(                                                                       \
+        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)",    \
+        "SELECT SUM(col_double), col_bigint, CASE WHEN col_int > 5 THEN 4 ELSE 3 END " \
+        "FROM test GROUP BY col_bigint, (CASE WHEN col_int > 5 THEN 4 ELSE 3 END)");   \
   }
 
 CASE_WHEN_ARROW_TEST(CiderArrowCaseWhenSequenceTestBase, caseWhenNotNullTestForArrow);
@@ -312,40 +309,40 @@ CASE_WHEN_AGG_ARROW_TEST(CiderArrowCaseWhenRandomWithNullTestBase,
 
 #define STRING_ARROW_TEST(TEST_CLASS, UNIT_NAME)                                         \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                        \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT col_int, CASE WHEN col_str IS NULL THEN 10 WHEN col_int > 3 THEN 20 "    \
         "ELSE 0 "                                                                        \
         "END FROM test");                                                                \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT col_int, CASE WHEN col_str < 'uuu' THEN 10 WHEN col_int > 3 THEN 20 "    \
         "ELSE 0 END FROM test");                                                         \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT col_str, CASE WHEN col_str like '%mm%' THEN 10 WHEN col_int > 3 THEN "   \
         "20 "                                                                            \
         "ELSE 0 "                                                                        \
         "END FROM test");                                                                \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT CASE WHEN col_str like '%mmmm%' THEN 'yes' ELSE col_str END FROM test"); \
     GTEST_SKIP_(                                                                         \
         "TODO(Haiwei): CHAR/VARCHAR NULL literal not supported, require future "         \
         "validation of the following case.");                                            \
-    assertQueryArrow("SELECT COALESCE(col_str) FROM test",                               \
-                     "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "  \
-                     "FROM test");                                                       \
+    assertQuery("SELECT COALESCE(col_str) FROM test",                                    \
+                "SELECT CASE WHEN col_str IS NOT NULL THEN col_str ELSE NULL END "       \
+                "FROM test");                                                            \
     GTEST_SKIP_(                                                                         \
         "TODO(Haiwei): Agg is not support now, require future validation of the "        \
         "following case.");                                                              \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str IS NULL THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
         "");                                                                             \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT SUM(col_double) FROM test GROUP BY CASE WHEN col_str > 'ttt' THEN 4 "    \
         "ELSE 3 "                                                                        \
         "END",                                                                           \
         "");                                                                             \
-    assertQueryArrow(                                                                    \
+    assertQuery(                                                                         \
         "SELECT SUM(col_double), CASE WHEN col_str > 'ttt' THEN 4 ELSE 3 END FROM test " \
         "GROUP BY CASE "                                                                 \
         "WHEN col_str > 'ttt' THEN 4 ELSE 3 END",                                        \
