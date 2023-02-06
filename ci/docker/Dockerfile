@@ -107,7 +107,7 @@ RUN mkdir -p ~/.gradle/ && \
 # @link: https://github.com/substrait-io/substrait-java/commit/5045aa3840156198d4251d4f3eb79440fc00e0e7
 RUN git clone https://github.com/substrait-io/substrait-java /substrait-java && \
     pushd /substrait-java && \
-    git checkout 5045aa3840156198d4251d4f3eb79440fc00e0e7 && \
+    git checkout 63cfcb33fa7818e91303d79317c12b8489a9014f && \
     git submodule update --init --recursive && \
     /bin/bash -c "source /root/.sdkman/bin/sdkman-init.sh && gradle nativeImage --info" && \
     popd

@@ -59,9 +59,7 @@
                   }
                 },
                 "arguments": [{
-                  "enum": {
-                    "specified": "DOY"
-                  }
+                  "enum": "DOY"
                 }, {
                   "value": {
                     "selection": {

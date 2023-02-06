@@ -204,7 +204,7 @@ TEST_F(AggWithRandomDataTest, AVG_Partial_Test) {
   auto allocator_ = std::make_shared<CiderDefaultAllocator>();
   auto context =
       std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
-  auto processor = makeBatchProcessor(substraitPlan, context);
+  auto processor = cider::exec::processor::BatchProcessor::Make(substraitPlan, context);
   processor->processNextBatch(std::get<1>(schema_and_array),
                               std::get<0>(schema_and_array));
   processor->finish();

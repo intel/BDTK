@@ -19,7 +19,7 @@
 
 set(PROCESSOR_SOURCE
     DefaultBatchProcessor.cpp StatelessProcessor.cpp StatefulProcessor.cpp
-    JoinHandler.cpp DefaultJoinHashTableBuilder.cpp)
+    JoinHandler.cpp DefaultJoinHashTableBuilder.cpp ExpressionEvaluator.cpp)
 
 add_library(cider_processor STATIC ${PROCESSOR_SOURCE})
 target_link_libraries(cider_processor cider_plan_substrait cider_plan_parser

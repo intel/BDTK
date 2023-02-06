@@ -47,6 +47,8 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
     kStateful,
   };
 
+  virtual ~BatchProcessor() = default;
+
   virtual const BatchProcessorContextPtr& getContext() const = 0;
   /// Adds an input batch to the batchProcessor.  This method will only be called if
   /// getState return kRunning.
@@ -67,15 +69,14 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
   virtual void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hashTable) = 0;
 
   virtual void feedCrossBuildData(const std::shared_ptr<Batch>& crossData) = 0;
+
+  static std::unique_ptr<BatchProcessor> Make(
+      const substrait::Plan& plan,
+      const BatchProcessorContextPtr& context,
+      const nextgen::context::CodegenOptions& codegen_options = {});
 };
 
 using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
-
-/// Factory method to create an instance of batchProcessor
-std::unique_ptr<BatchProcessor> makeBatchProcessor(
-    const ::substrait::Plan& plan,
-    const BatchProcessorContextPtr& context,
-    const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
 inline std::ostream& operator<<(std::ostream& stream, const BatchProcessor::Type& type) {
   switch (type) {
