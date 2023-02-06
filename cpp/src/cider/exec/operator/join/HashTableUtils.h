@@ -28,4 +28,19 @@ struct table_key {
   bool is_not_null;
   std::size_t duplicate_num;
 };
+
+struct MurmurHash {
+  size_t operator()(int64_t rawHash) {
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xff51afd7ed558ccdL;
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xc4ceb9fe1a85ec53L;
+    rawHash ^= unsigned(rawHash) >> 33;
+    return rawHash;
+  }
+};
+
+struct Equal {
+  bool operator()(int lhs, int rhs) { return lhs == rhs; }
+};
 }  // namespace cider_hashtable

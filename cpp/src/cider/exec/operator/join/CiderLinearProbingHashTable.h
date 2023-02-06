@@ -177,12 +177,12 @@ class LinearProbeHashTable
     return emplace_impl(std::forward<Args>(args)...);
   }
 
-  void emplace(Key key, Value value, bool inserted) {
+  void emplace(Key key, Value value, bool& inserted) {
     inserted = emplace_impl(key, value);
   }
 
   // not supported
-  void emplace(Key key, Value value, size_t hash_value, bool inserted) {}
+  void emplace(Key key, Value value, size_t hash_value, bool& inserted) {}
 
   bool emplace(Key key, Value value) { return emplace_impl(key, std::move(value)); }
   // not supported

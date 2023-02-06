@@ -18,8 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "exec/operator/join/HashTableSelector.h"
 
 namespace cider_hashtable {
+
 template <typename Key,
           typename Value,
           typename Hash,
