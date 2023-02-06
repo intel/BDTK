@@ -122,7 +122,7 @@ class VarSizeArrayExprValue : public JITExprValueAdaptor {
     values_.resize(4);
   }
   // offsets buffer
-  jitlib::JITValuePointer& getLength() { return values_[1]; }
+  jitlib::JITValuePointer& getOffsets() { return values_[1]; }
 
   jitlib::JITValuePointer& getElemNull() { return values_[2]; }
 

@@ -63,6 +63,8 @@ class ColumnWriter {
       case kTEXT:
         writeVariableSizeTypeCol(for_null);
         break;
+      case kARRAY:
+        writeVariableSizeArrayCol(for_null);
       default:
         LOG(ERROR) << "Unsupported data type in ColumnWriter: "
                    << expr_->get_type_info().get_type_name();
@@ -110,8 +112,10 @@ class ColumnWriter {
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,
-            .params_vector = {arrow_array_.get(),
-                              actual_raw_length_buffer[index_].get()}});
+            .params_vector = {
+                arrow_array_.get(),
+                actual_raw_length_buffer[index_].get(),
+                context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 2)}});
     auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
     auto cur_pointer = actual_raw_data_buffer + actual_raw_length_buffer[index_];
 
@@ -126,6 +130,103 @@ class ColumnWriter {
     buffers_.clear();
     buffers_.append(
         setNullBuffer(values.getNull(), for_null), raw_length_buffer, raw_data_buffer);
+  }
+
+  void writeVariableSizeArrayCol(bool for_null) {
+    // Get values need to write
+    utils::VarSizeArrayExprValue values(expr_->get_expr_value());
+
+    if (for_null) {
+      auto null = setNullBuffer(values.getNull(), for_null);
+      Analyzer::JITExprValueAdaptor(
+          context_.getArrowArrayValues(expr_->getLocalIndex()).second)
+          .setNull(null);
+      return;
+    }
+
+    // Allocate buffer
+    // offset, need array_len + 1 element.
+    auto offset_bytes = (arrow_array_len_ + 1) *
+                        context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
+    auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue(
+        [&offset_bytes]() { return allocateRawDataBuffer(1, offset_bytes); });
+    auto actual_raw_length_buffer =
+        raw_length_buffer->castPointerSubType(JITTypeTag::INT32);
+
+    auto offset_pointer = values.getOffsets()->castPointerSubType(JITTypeTag::INT32);
+    auto len = offset_pointer[index_ + 1] - offset_pointer[index_];
+
+    context_.getJITFunction()->emitRuntimeFunctionCall(
+        "do_memcpy",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::VOID,
+            .params_vector = {
+                raw_length_buffer.get(), offset_pointer.get(), offset_bytes.get()}});
+
+    // validity bitmap in child array
+    auto values_child_array = context_.getJITFunction()->createLocalJITValue(
+        [this]() { return context::codegen_utils::getArrowArrayChild(arrow_array_, 0); });
+    auto child_raw_null_buffer = copyNullBuffer(values.getElemNull(), for_null);
+
+    // get latest pointer to data buffer, will allocate data buffer on first call,
+    // and will reallocate buffer if more capacity is needed
+    auto raw_data_bytes = actual_raw_length_buffer[index_] *
+                          getBytesFromSQLType(expr_->get_type_info().get_subtype());
+    auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
+        "get_data_buffer_with_realloc_on_demand",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {
+                values_child_array.get(),
+                raw_data_bytes.get(),
+                context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 1)}});
+    auto actual_raw_data_buffer = JITValuePointer(nullptr);
+    switch (expr_->get_type_info().get_subtype()) {
+      case kTINYINT:
+        actual_raw_data_buffer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8));
+        break;
+      case kSMALLINT:
+        actual_raw_data_buffer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT16));
+        break;
+      case kINT:
+        actual_raw_data_buffer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT32));
+        break;
+      case kBIGINT:
+        actual_raw_data_buffer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT64));
+        break;
+      case kFLOAT:
+        actual_raw_data_buffer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::FLOAT));
+        break;
+      case kDOUBLE:
+        actual_raw_data_buffer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::DOUBLE));
+        break;
+      default:
+        CIDER_THROW(CiderException, std::string("Unsupported list data type"));
+        break;
+    }
+    auto cur_pointer = actual_raw_data_buffer + actual_raw_length_buffer[index_];
+
+    auto data_bytes = len * getBytesFromSQLType(expr_->get_type_info().get_subtype());
+    context_.getJITFunction()->emitRuntimeFunctionCall(
+        "do_memcpy",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::VOID,
+            .params_vector = {
+                cur_pointer.get(), values.getValue().get(), data_bytes.get()}});
+
+    // Save JITValues of output buffers to corresponding exprs.
+    buffers_.clear();
+    buffers_.append(setNullBuffer(values.getNull(), for_null),
+                    raw_length_buffer,
+                    child_raw_null_buffer,
+                    raw_data_buffer);
   }
 
   void writeFixSizedTypeCol(bool for_null) {
@@ -206,9 +307,46 @@ class ColumnWriter {
     return null_buffer;
   }
 
+  JITValuePointer copyNullBuffer(JITValuePointer& src_buffer, bool for_null) {
+    // the null_buffer, raw_data_buffer not used anymore.
+    // so it doesn't matter whether null_buffer is nullptr
+    // or constant false.
+    auto null_buffer = JITValuePointer(nullptr);
+    if ((!FLAGS_null_separate || for_null) && !expr_->get_type_info().get_notnull()) {
+      // TBD: Null representation, bit-array or bool-array.
+      auto values_child_array = context_.getJITFunction()->createLocalJITValue([this]() {
+        return context::codegen_utils::getArrowArrayChild(arrow_array_, 0);
+      });
+      null_buffer.replace(
+          context_.getJITFunction()->createLocalJITValue([this, &values_child_array]() {
+            return allocateBitwiseBuffer(values_child_array, 0);
+          }));
+      if (for_null) {
+        *null_buffer[index_] =
+            context_.getJITFunction()->createLiteral(JITTypeTag::INT8, 0);
+        return null_buffer;
+      }
+
+      auto len = (arrow_array_len_ + 7) >> 3;
+      context_.getJITFunction()->emitRuntimeFunctionCall(
+          "do_memcpy",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::VOID,
+              .params_vector = {null_buffer.get(), src_buffer.get(), len.get()}});
+    }
+    return null_buffer;
+  }
+
  private:
   JITValuePointer allocateBitwiseBuffer(int64_t index = 0) {
     return allocateRawDataBuffer(index, SQLTypes::kTINYINT);
+  }
+
+  JITValuePointer allocateBitwiseBuffer(jitlib::JITValuePointer& arrow_array,
+                                        int64_t index = 0) {
+    auto bytes = arrow_array_len_ * context_.getJITFunction()->createLiteral(
+                                        JITTypeTag::INT64, utils::getTypeBytes(kTINYINT));
+    return allocateRawDataBuffer(arrow_array, index, bytes);
   }
 
   JITValuePointer allocateRawDataBuffer(int64_t index, SQLTypes type) {
@@ -218,6 +356,12 @@ class ColumnWriter {
 
   JITValuePointer allocateRawDataBuffer(int64_t index, jitlib::JITValuePointer& bytes) {
     return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
+  }
+
+  JITValuePointer allocateRawDataBuffer(jitlib::JITValuePointer& arrow_array,
+                                        int64_t index,
+                                        jitlib::JITValuePointer& bytes) {
+    return codegen_utils::allocateArrowArrayBuffer(arrow_array, index, bytes);
   }
 
   JITValuePointer& getArrowArrayFromCTX() {

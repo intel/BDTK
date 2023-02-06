@@ -201,23 +201,24 @@ extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
 
 extern "C" ALWAYS_INLINE int8_t* get_data_buffer_with_realloc_on_demand(
     const int8_t* input_desc_ptr,
-    const int32_t current_bytes) {
+    const int32_t current_bytes,
+    const int32_t index) {
   const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
   CiderArrowArrayBufferHolder* holder =
       reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
 
   // assumes arrow_array is an array for var-size binary (with 3 buffers)
-  size_t capacity = holder->getBufferSizeAt(2);
+  size_t capacity = holder->getBufferSizeAt(index);
   if (capacity == 0) {
     // initialize buffer with a capacity of 4096 bytes
-    holder->allocBuffer(2, 4096);
+    holder->allocBuffer(index, 4096);
   } else if (current_bytes >= 0.9 * capacity) {
     // double capacity if current bytes take up 90% of capacity
     // assumes we would have enough space for next input after at most one resize op
-    holder->allocBuffer(2, capacity * 2);
+    holder->allocBuffer(index, capacity * 2);
   }
 
-  return holder->getBufferAs<int8_t>(2);
+  return holder->getBufferAs<int8_t>(index);
 }
 
 extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,

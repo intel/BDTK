@@ -125,7 +125,7 @@ class ColumnReader {
 
     // offset buffer
     auto offset_pointer =
-        varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
+        varsize_values.getOffsets()->castPointerSubType(JITTypeTag::INT32);
     auto cur_offset = offset_pointer[index_];
     // data buffer
     auto value_pointer = JITValuePointer();
