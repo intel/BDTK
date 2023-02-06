@@ -55,6 +55,8 @@ class ColumnReader {
       case kTEXT:
         readVariableSizeTypeCol(for_null);
         break;
+      case kARRAY:
+        readVariableSizeArrayCol(for_null);
       default:
         LOG(ERROR) << "Unsupported data type in ColumnReader: "
                    << expr_->get_type_info().get_type_name();
@@ -102,6 +104,79 @@ class ColumnReader {
               .ret_type = JITTypeTag::BOOL,
               .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
       expr_->set_expr_value(row_null_data, len, row_data);
+    }
+  }
+
+  void readVariableSizeArrayCol(bool for_null) {
+    auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
+    utils::VarSizeArrayExprValue varsize_values(buffers);
+
+    auto& func = batch->getParentJITFunction();
+
+    if (for_null) {
+      if (expr_->get_type_info().get_notnull()) {
+        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
+      } else {
+        auto row_null_data = varsize_values.getNull()[index_];
+        expr_->set_expr_null(row_null_data);
+      }
+      return;
+    }
+
+    // offset buffer
+    auto offset_pointer =
+        varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
+    auto cur_offset = offset_pointer[index_];
+    // data buffer
+    auto value_pointer = JITValuePointer();
+    switch (expr_->get_type_info().get_subtype()) {
+      case kTINYINT:
+        value_pointer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8));
+        break;
+      case kSMALLINT:
+        value_pointer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT16));
+        break;
+      case kINT:
+        value_pointer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT32));
+        break;
+      case kBIGINT:
+        value_pointer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT64));
+        break;
+      case kFLOAT:
+        value_pointer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::FLOAT));
+        break;
+      case kDOUBLE:
+        value_pointer.replace(
+            varsize_values.getValue()->castPointerSubType(JITTypeTag::DOUBLE));
+        break;
+      default:
+        CIDER_THROW(CiderException, std::string("Unsupported list data type"));
+        break;
+    }
+    auto row_data = value_pointer + cur_offset;
+    // array elements null buffer
+    auto elem_null_pointer =
+        varsize_values.getElemNull()->castPointerSubType(JITTypeTag::INT8);
+
+    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
+      expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false),
+                            offset_pointer,
+                            elem_null_pointer,
+                            row_data);
+    } else {
+      // null buffer decoder
+      // TBD: Null representation, bit-array or bool-array.
+      auto row_null_data = func.emitRuntimeFunctionCall(
+          "check_bit_vector_clear",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::BOOL,
+              .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
+      expr_->set_expr_value(row_null_data, offset_pointer, elem_null_pointer, row_data);
     }
   }
 

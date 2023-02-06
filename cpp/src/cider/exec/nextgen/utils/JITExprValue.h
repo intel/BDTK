@@ -116,6 +116,19 @@ class VarSizeJITExprValue : public JITExprValueAdaptor {
   jitlib::JITValuePointer& getValue() { return values_[2]; }
 };
 
+class VarSizeArrayExprValue : public JITExprValueAdaptor {
+ public:
+  explicit VarSizeArrayExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
+    values_.resize(4);
+  }
+  // offsets buffer
+  jitlib::JITValuePointer& getLength() { return values_[1]; }
+
+  jitlib::JITValuePointer& getElemNull() { return values_[2]; }
+
+  jitlib::JITValuePointer& getValue() { return values_[3]; }
+};
+
 }  // namespace cider::exec::nextgen::utils
 
 #endif  // NEXTGEN_UTILS_JITEXPRVALUE_H

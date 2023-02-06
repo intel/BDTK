@@ -77,6 +77,7 @@ inline int64_t getBufferNum(SQLTypes type) {
     case kFLOAT:
     case kDOUBLE:
     case kDECIMAL:
+    case kARRAY:
       return 2;
     case kVARCHAR:
     case kCHAR:

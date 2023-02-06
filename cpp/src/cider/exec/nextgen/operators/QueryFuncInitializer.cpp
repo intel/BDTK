@@ -63,6 +63,18 @@ void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
       buffer_values.append(buffer);
     }
 
+    if (col_var_expr->get_type_info().get_type() == kARRAY) {
+      auto values_child_array = func->createLocalJITValue([&child_array]() {
+        return context::codegen_utils::getArrowArrayChild(child_array, 0);
+      });
+      for (int64_t i = 0; i < 2; ++i) {
+        auto buffer = func->createLocalJITValue([&values_child_array, i]() {
+          return context::codegen_utils::getArrowArrayBuffer(values_child_array, i);
+        });
+        buffer_values.append(buffer);
+      }
+    }
+
     // All ArrowArray related JITValues will be saved in CodegenContext, and associate
     // with exprs with local_offset.
     size_t local_offset =
