@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,17 +19,6 @@
  * under the License.
  */
 
-/*
-A hash map for join. Uses open addressing with linear probing.
-Advantages:
-  - Predictable performance. Doesn'Value use the allocator unless load factor
-    grows beyond 50%. Linear probing ensures cash efficency.
-  - Desgin for no delete/erase action, makes it faster on insert and find
-  - Allow duplicate keys
-Disadvantages:
-  - Significant performance degradation at high load factors.
-  - Maximum load factor hard coded to 50%, memory inefficient.
- */
 #pragma once
 
 namespace cider_hashtable {

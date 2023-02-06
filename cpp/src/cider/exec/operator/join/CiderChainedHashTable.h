@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,15 +20,12 @@
  */
 
 /*
-A hash map for join. Uses open addressing with linear probing.
+A hash map for join. Uses basic chained.
 Advantages:
-  - Predictable performance. Doesn't use the allocator unless load factor
-    grows beyond 50%. Linear probing ensures cash efficency.
-  - Desgin for no delete/erase action, makes it faster on insert and find
-  - Allow duplicate keys
+  - Don't need to know the estimate size of input elements
+  - avoid copy and resize as size increasing
 Disadvantages:
-  - Significant performance degradation at high load factors.
-  - Maximum load factor hard coded to 50%, memory inefficient.
+  - Significant performance degradation when collision rate became large.
  */
 #pragma once
 
