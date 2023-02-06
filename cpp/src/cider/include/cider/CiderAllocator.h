@@ -39,7 +39,7 @@ class CiderAllocator {
 
   virtual int8_t* reallocate(int8_t* p, size_t size, size_t newSize) {
     int8_t* newP = allocate(newSize);
-    std::memmove(newP, p, size);
+    std::memmove(newP, p, std::min(size, newSize));
     deallocate(p, size);
     return newP;
   }

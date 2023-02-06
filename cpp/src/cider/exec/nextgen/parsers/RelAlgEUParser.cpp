@@ -161,15 +161,27 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
       createOpNode<QueryFuncInitializer>(input_exprs, eu.shared_target_exprs));
 
   ExprPtrVector join_quals;
+  JoinType join_type;
   for (auto& join_condition : eu.join_quals) {
+    join_type = join_condition.type;
     for (auto& join_expr : join_condition.quals) {
       join_quals.push_back(join_expr);
     }
   }
 
   if (!join_quals.empty()) {
-    ops.emplace_back(createOpNode<HashJoinNode>(
-        analyzer.getInputExprs(), join_quals, analyzer.getBuildTableMap()));
+    switch (join_type) {
+      case JoinType::INNER:
+      case JoinType::LEFT:
+        ops.emplace_back(createOpNode<HashJoinNode>(analyzer.getInputExprs(),
+                                                    join_quals,
+                                                    analyzer.getBuildTableMap(),
+                                                    join_type));
+        break;
+      default:
+        LOG(INFO) << "this join type has not implement yet.";
+        break;
+    }
   }
 
   ExprPtrVector filters;

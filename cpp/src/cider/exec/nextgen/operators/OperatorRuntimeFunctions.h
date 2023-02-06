@@ -110,7 +110,8 @@ extern "C" ALWAYS_INLINE int64_t look_up_value_by_key(int8_t* hashtable,
   auto join_key_val = reinterpret_cast<int64_t*>(keys);
   if (!*join_key_is_null) {
     auto join_res = join_hashtable->findAll(*join_key_val);
-    context_buffer->allocateBuffer(join_res.size() * 16);
+    context_buffer->allocateBuffer(join_res.size() *
+                                   sizeof(cider::exec::processor::CiderJoinBaseValue));
     auto join_res_buffer = reinterpret_cast<cider::exec::processor::CiderJoinBaseValue*>(
         context_buffer->getBuffer());
     for (int i = 0; i < join_res.size(); ++i) {
