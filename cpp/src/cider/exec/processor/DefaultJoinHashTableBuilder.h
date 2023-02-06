@@ -36,7 +36,7 @@ class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
     // TODO(xinyi): pass some arguments that will decide hashtable type
     // TODO(xinyi): 1. get the choosed hashtable type
     // TODO(xinyi): 2. set the hashtable type
-    // hashTable_->set_hash_table_type(xxxx)
+    hashTable_ = std::unique_ptr<JoinHashTable>(new JoinHashTable());
   }
 
   void appendBatch(std::shared_ptr<cider::exec::nextgen::context::Batch> batch) override;
