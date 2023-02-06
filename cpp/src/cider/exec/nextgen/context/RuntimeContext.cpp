@@ -37,6 +37,11 @@ void RuntimeContext::addHashTable(
   hashtable_holder_ = descriptor;
 }
 
+void RuntimeContext::addBuildTable(
+    const CodegenContext::BuildTableDescriptorPtr& descriptor) {
+  buildtable_holder_ = descriptor;
+}
+
 void RuntimeContext::addCiderSet(
     const CodegenContext::CiderSetDescriptorPtr& descriptor) {
   cider_set_holder_.emplace_back(descriptor, nullptr);
@@ -63,6 +68,12 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of hashtable.
   if (hashtable_holder_ != nullptr) {
     runtime_ctx_pointers_[hashtable_holder_->ctx_id] = hashtable_holder_->hash_table;
+  }
+
+  // Instantiation of buildtable.
+  if (buildtable_holder_ != nullptr) {
+    runtime_ctx_pointers_[buildtable_holder_->ctx_id] =
+        buildtable_holder_->build_table.get();
   }
 
   string_heap_ptr_ = std::make_shared<StringHeap>(allocator);

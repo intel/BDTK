@@ -49,3 +49,8 @@ add_executable(HashJoinTest HashJoinTest.cpp)
 target_link_libraries(HashJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
                       ${FOLLY_LIBRARIES})
 add_test(HashJoinTest ${EXECUTABLE_OUTPUT_PATH}/HashJoinTest ${TEST_ARGS})
+
+add_executable(CrossJoinTest CrossJoinTest.cpp)
+target_link_libraries(CrossJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
+                      ${FOLLY_LIBRARIES})
+add_test(CrossJoinTest ${EXECUTABLE_OUTPUT_PATH}/CrossJoinTest ${TEST_ARGS})

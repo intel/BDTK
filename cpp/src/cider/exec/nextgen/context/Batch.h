@@ -35,6 +35,8 @@ class Batch {
 
   Batch(ArrowSchema& schema, ArrowArray& array) : schema_(schema), array_(array) {}
 
+  Batch() {}
+
   ~Batch() { release(); }
 
   void reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator);
@@ -70,6 +72,7 @@ class Batch {
 };
 
 using BatchPtr = std::unique_ptr<Batch>;
+using BatchSharedPtr = std::shared_ptr<Batch>;
 
 namespace batch_runtime_utils {
 // void resizeBatch(Batch* batch, size_t size);

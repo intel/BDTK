@@ -44,6 +44,9 @@ class RuntimeContext {
   void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
 
   void addHashTable(const CodegenContext::HashTableDescriptorPtr& descriptor);
+
+  void addBuildTable(const CodegenContext::BuildTableDescriptorPtr& descriptor);
+
   void addCiderSet(const CodegenContext::CiderSetDescriptorPtr& descriptor);
 
   void instantiate(const CiderAllocatorPtr& allocator);
@@ -99,6 +102,7 @@ class RuntimeContext {
       cider_set_holder_;
   std::shared_ptr<StringHeap> string_heap_ptr_;
   CodegenContext::HashTableDescriptorPtr hashtable_holder_;
+  CodegenContext::BuildTableDescriptorPtr buildtable_holder_;
   CodegenContext::TrimCharMapsPtr trim_char_maps_;
 };
 
