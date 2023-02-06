@@ -84,6 +84,7 @@ class JITFunction {
     }
   }
 
+  // The unit of alignment is bytes
   template <uint64_t alignment = 8, typename... T>
   JITValuePointer packJITValues(T&&... params) {
     return packJITValuesImpl({std::forward<T>(params)...}, alignment);

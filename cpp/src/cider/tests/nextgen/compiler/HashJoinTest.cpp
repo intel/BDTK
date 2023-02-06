@@ -107,7 +107,7 @@ class HashJoinTest : public ::testing::Test {
       // }
     }
 
-    codegen_ctx.setHashTable(&hm);
+    codegen_ctx.setHashTable(std::make_shared<cider::exec::processor::JoinHashTable>(hm));
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
