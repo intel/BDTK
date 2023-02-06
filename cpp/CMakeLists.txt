@@ -19,6 +19,11 @@
 
 cmake_minimum_required(VERSION 3.16)
 message(STATUS "Building using CMake version: ${CMAKE_VERSION}")
+find_program(CCACHE "sccache")
+if(CCACHE)
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+endif(CCACHE)
 
 set(BDTK_VERSION "0.9.0")
 
@@ -31,6 +36,7 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
       Release
       CACHE STRING "Choose the type of build.")
 endif()
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 
 project(BDTK VERSION "${BDTK_BASE_VERSION}")
 

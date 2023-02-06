@@ -106,8 +106,10 @@ void releaseArrowArray(ArrowArray* array) {
 class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   using ArrowArrayReleaser = void (*)(struct ArrowArray*);
-  using KernelType = void (*)(uint8_t* null_input,
-                              uint8_t* input,
+  using KernelType = void (*)(uint8_t* null_input1,
+                              uint8_t* input1,
+                              uint8_t* null_input2,
+                              uint8_t* input2,
                               uint8_t* null_output,
                               uint8_t* output,
                               size_t n);
@@ -181,7 +183,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
   ~ArithmeticAndComparisonBenchmark() { inputReleaser_(inputArray_); }
 
-  size_t nextgenCompile(const std::string& expression) {
+  __attribute__((noinline)) size_t nextgenCompile(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
@@ -196,8 +198,8 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     return 1;
   }
 
-  size_t nextgenCompute(const std::string& expression,
-                        CodegenOptions cgo = CodegenOptions{}) {
+  __attribute__((noinline)) size_t nextgenCompute(const std::string& expression,
+                                                  CodegenOptions cgo = CodegenOptions{}) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
@@ -233,7 +235,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     return rows_size;
   }
 
-  size_t veloxCompute(const std::string& expression) {
+  __attribute__((noinline)) size_t veloxCompute(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
     auto exprSet = compileExpression(expression, inputType_);
     suspender.dismiss();
@@ -245,7 +247,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     return count;
   }
 
-  size_t kernelCompute(KernelType kernel) {
+  __attribute__((noinline)) size_t kernelCompute(KernelType kernel) {
     folly::BenchmarkSuspender suspender;
     ArrowArray* i8_array = inputArray_->children[0];
     uint8_t* null_input = (uint8_t*)i8_array->buffers[0];
@@ -257,6 +259,8 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
       ArrowArray* output_array = allocArrowArray<uint8_t>(inputArray_->length);
 
       kernel(null_input,
+             input,
+             null_input,
              input,
              (uint8_t*)output_array->buffers[0],
              (uint8_t*)output_array->buffers[1],
@@ -291,62 +295,69 @@ void setBitAt(uint8_t* __restrict null_output, size_t index, bool is_null) {
 // specialized func used to check performance upper limit
 // two loop to mimic null separate in codegen currently.
 // can't process kleene logic which null result depends on data
-void mulI8Specialized1(uint8_t* null_input,
-                       uint8_t* input,
-                       uint8_t* __restrict null_output,
-                       uint8_t* __restrict output,
-                       size_t n) {
+__attribute__((noinline)) void mulI8Specialized1(uint8_t* null_input1,
+                                                 uint8_t* input1,
+                                                 uint8_t* null_input2,
+                                                 uint8_t* input2,
+                                                 uint8_t* __restrict null_output,
+                                                 uint8_t* __restrict output,
+                                                 size_t n) {
   for (int i = 0; i < n; ++i) {
-    output[i] = input[i] * input[i];
+    output[i] = input1[i] * input2[i];
   }
 
   // null process, ignore extra bit in last uint8
   auto num = n / 8 + 1;
   for (int i = 0; i < num; ++i) {
     // 8bit packed
-    null_output[i] = null_input[i];
+    null_output[i] = null_input1[i] & null_input2[i];
   }
 }
 
 // nested loop with null bit vector as bool vector
-void mulI8Specialized2(uint8_t* null_input,
-                       uint8_t* input,
-                       uint8_t* __restrict null_output,
-                       uint8_t* __restrict output,
-                       size_t n) {
+__attribute__((noinline)) void mulI8Specialized2(uint8_t* null_input1,
+                                                 uint8_t* input1,
+                                                 uint8_t* null_input2,
+                                                 uint8_t* input2,
+                                                 uint8_t* __restrict null_output,
+                                                 uint8_t* __restrict output,
+                                                 size_t n) {
   auto num = n / 8;
   //#pragma clang loop vectorize(enable)
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < 8; ++j) {
       auto idx = i * 8 + j;
-      output[idx] = input[idx] * input[idx];
+      output[idx] = input1[idx] * input2[idx];
     }
     // 8bit packed
-    null_output[i] = null_input[i];
+    null_output[i] = null_input1[i] & null_input2[i];
   }
 
   // tail
   int i = num * 8;
   while (i++ < n) {
-    output[i] = input[i] * input[i];
-    CiderBitUtils::setBitAtUnified(null_output, i, isBitSet(null_input, i));
+    output[i] = input1[i] * input2[i];
+    CiderBitUtils::setBitAtUnified(
+        null_output, i, isBitSet(null_input1, i) && isBitSet(null_input2, i));
   }
 }
 
 // nested loop, outer process null
-void mulI8Specialized3(uint8_t* null_input,
-                       uint8_t* input,
-                       uint8_t* __restrict null_output,
-                       uint8_t* __restrict output,
-                       size_t n) {
+__attribute__((noinline)) void mulI8Specialized3(uint8_t* null_input1,
+                                                 uint8_t* input1,
+                                                 uint8_t* null_input2,
+                                                 uint8_t* input2,
+                                                 uint8_t* __restrict null_output,
+                                                 uint8_t* __restrict output,
+                                                 size_t n) {
   auto num = n / 8;
   //#pragma clang loop vectorize(enable)
   for (int i = 0; i < num; ++i) {
     bool tmp[8] = {false};
     for (int j = 0; j < 8; ++j) {
       auto idx = i * 8 + j;
-      output[idx] = input[idx] * input[idx];
-      tmp[j] = isBitSet(null_input, idx);
+      output[idx] = input1[idx] * input2[idx];
+      tmp[j] = isBitSet(null_input1, idx) && isBitSet(null_input2, idx);
     }
 
     uint8_t packed = 0;
@@ -358,8 +369,9 @@ void mulI8Specialized3(uint8_t* null_input,
   // tail
   int i = num * 8;
   while (i++ < n) {
-    output[i] = input[i] * input[i];
-    CiderBitUtils::setBitAtUnified(null_output, i, isBitSet(null_input, i));
+    output[i] = input1[i] * input2[i];
+    CiderBitUtils::setBitAtUnified(
+        null_output, i, isBitSet(null_input1, i) && isBitSet(null_input2, i));
   }
 }
 
