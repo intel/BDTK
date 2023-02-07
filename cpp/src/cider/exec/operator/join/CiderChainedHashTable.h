@@ -74,11 +74,11 @@ class ChainedHashTable
   allocator_type get_allocator() const noexcept { return buckets_.get_allocator(); }
 
   // Capacity
-  bool empty() const noexcept { return size() == 0; }
+  bool empty() const noexcept override { return size() == 0; }
 
-  void clear() { buckets_.clear(); }
+  void clear() override { buckets_.clear(); }
 
-  size_type size() const noexcept { return size_; }
+  size_type size() const noexcept override { return size_; }
 
   bool insert(const std::pair<key_type, Value>& value) {
     return emplace_impl(value.first, value.second);
@@ -88,18 +88,20 @@ class ChainedHashTable
     return emplace_impl(value.first, std::move(value.second));
   }
 
-  void emplace(Key key, Value value, bool& inserted) {
+  void emplace(Key key, Value value, bool& inserted) override {
     inserted = emplace_impl(key, std::move(value));
   }
 
   // not supported
-  void emplace(Key key, Value value, size_t hash_value, bool& inserted) {}
+  void emplace(Key key, Value value, size_t hash_value, bool& inserted) override {}
 
-  bool emplace(Key key, Value value) { return emplace_impl(key, std::move(value)); }
+  bool emplace(Key key, Value value) override {
+    return emplace_impl(key, std::move(value));
+  }
   // not supported
-  bool emplace(Key key, Value value, size_t hash_value) {}
+  bool emplace(Key key, Value value, size_t hash_value) override {}
 
-  void reserve(size_type count) {
+  void reserve(size_type count) override {
     if (count > buckets_.size()) {
       buckets_.resize(count);
     }
@@ -109,21 +111,21 @@ class ChainedHashTable
   void merge_other_hashtables(
       const std::vector<
           std::shared_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>>&
-          otherTables);
+          otherTables) override;
 
-  Value find(const Key key) { return find_impl(key); }
-  Value find(const Key key, size_t hash_value) { return find_impl(key); }
+  Value find(const Key key) override { return find_impl(key); }
+  Value find(const Key key, size_t hash_value) override { return find_impl(key); }
   // find
-  std::vector<mapped_type> findAll(const Key key) { return find_all_impl(key); }
-  std::vector<mapped_type> findAll(const Key key, size_t hash_value) {
+  std::vector<mapped_type> findAll(const Key key) override { return find_all_impl(key); }
+  std::vector<mapped_type> findAll(const Key key, size_t hash_value) override {
     return find_all_impl(key);
   }
   // not supported
-  bool erase(const Key key) { return false; }
-  bool erase(const Key key, size_t hash_value) { return false; }
+  bool erase(const Key key) override { return false; }
+  bool erase(const Key key, size_t hash_value) override { return false; }
 
-  bool contains(const Key key) { return contains_impl(key); }
-  bool contains(const Key key, size_t hash_value) { return contains_impl(key); }
+  bool contains(const Key key) override { return contains_impl(key); }
+  bool contains(const Key key, size_t hash_value) override { return contains_impl(key); }
 
   // Bucket interface
   size_type bucket_count() const noexcept { return buckets_.size(); }
