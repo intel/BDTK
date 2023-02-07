@@ -162,7 +162,7 @@ extern "C" void test_to_string(int value) {
   std::printf("test_to_string: %s\n", std::to_string(value).c_str());
 }
 
-extern "C" ALWAYS_INLINE int64_t cider_concat(char* string_heap_ptr,
+extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
                                               const char* lhs,
                                               int lhs_len,
                                               const char* rhs,

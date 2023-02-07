@@ -154,7 +154,7 @@ class CiderStringNullableTestNextGen : public CiderNextgenTestBase {
     QueryArrowDataGenerator::generateBatchByTypes(
         input_schema_,
         input_array_,
-        50,
+        50000,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {2, 2},
