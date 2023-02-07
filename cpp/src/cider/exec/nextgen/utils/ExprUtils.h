@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -67,12 +67,13 @@ inline operators::ExprPtrVector collectColumnVars(const operators::ExprPtrVector
 inline bool isSubsetExprVector(const operators::ExprPtrVector& a,
                                const operators::ExprPtrVector& b) {
   if (a.size() <= b.size()) {
-    for (size_t i = 0; i < a.size(); ++i) {
-      if (a[i] != b[i]) {
-        return false;
+    size_t a_index = 0;
+    for (size_t b_index = 0; b_index < b.size(); ++b_index) {
+      if (a[a_index] == b[b_index]) {
+        ++a_index;
       }
     }
-    return true;
+    return a_index == a.size();
   }
   return false;
 }

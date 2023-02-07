@@ -30,6 +30,7 @@ using namespace cider::jitlib;
 void BinOper::initAutoVectorizeFlag() {
   if (left_operand->isAutoVectorizable() && right_operand->isAutoVectorizable()) {
     auto op_type = get_optype();
+    // TODO (bigPYJ1151): Support more operations and types.
     switch (op_type) {
       case kPLUS:
       case kMINUS:
