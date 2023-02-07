@@ -74,6 +74,12 @@ using AggregatedHashTableWithUInt32Key =
 using AggregatedHashTableWithUInt64Key =
     HashMap<uint64_t, AggregateDataPtr, HashCRC32<uint64_t>>;
 
+using AggregatedHashTableWithFloatKey =
+    HashMap<float, AggregateDataPtr, HashCRC32<float>>;
+
+using AggregatedHashTableWithDoubleKey =
+    HashMap<double, AggregateDataPtr, HashCRC32<double>>;
+
 template <typename... Types>
 using HashTableWithNullKey = AggregatedHashTableWithNullKey<HashMapTable<Types...>>;
 
@@ -93,6 +99,8 @@ struct AggregationMethod : private boost::noncopyable {
     INT16 = 3,
     INT32 = 4,
     INT64 = 5,
+    FLOAT = 6,
+    DOUBLE = 7,
     without_key,
   };
   Type type = Type::EMPTY;
@@ -182,6 +190,8 @@ class AggregationHashTable final {
   AggregatedHashTableWithUInt16Key agg_ht_uint16_;
   AggregatedHashTableWithUInt32Key agg_ht_uint32_;
   AggregatedHashTableWithUInt64Key agg_ht_uint64_;
+  AggregatedHashTableWithFloatKey agg_ht_float_;
+  AggregatedHashTableWithDoubleKey agg_ht_double_;
 
   // Select the aggregation method based on the number and types of keys.
   AggregationMethod::Type chooseAggregationMethod();
