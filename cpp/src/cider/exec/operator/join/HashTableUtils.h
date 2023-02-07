@@ -18,26 +18,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#pragma once
 
 namespace cider_hashtable {
-template <typename Key,
-          typename Value,
-          typename Hash,
-          typename KeyEqual,
-          typename Grower,
-          typename Allocator>
-template <typename... Args>
-std::unique_ptr<BaseHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>>
-HashTableSelector<Key, Value, Hash, KeyEqual, Grower, Allocator>::createForJoin(
-    HashTableType hashtable_type,
-    Args&&... args) {
-  switch (hashtable_type) {
-    case LINEAR_PROBING:
-      return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
-          std::forward<Args>(args)...);
-    default:
-      return std::make_unique<LinearProbeHashTable<Key, Value, Hash, KeyEqual>>(
-          std::forward<Args>(args)...);
+
+template <typename KeyType>
+struct table_key {
+  KeyType key;
+  bool is_not_null;
+  std::size_t duplicate_num;
+};
+
+struct MurmurHash {
+  size_t operator()(int64_t rawHash) {
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xff51afd7ed558ccdL;
+    rawHash ^= unsigned(rawHash) >> 33;
+    rawHash *= 0xc4ceb9fe1a85ec53L;
+    rawHash ^= unsigned(rawHash) >> 33;
+    return rawHash;
   }
-}
+};
+
+struct Equal {
+  bool operator()(int lhs, int rhs) { return lhs == rhs; }
+};
 }  // namespace cider_hashtable

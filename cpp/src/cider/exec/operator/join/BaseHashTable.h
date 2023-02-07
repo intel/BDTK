@@ -36,13 +36,13 @@ class BaseHashTable {
   virtual bool emplace(Key key, Value value) = 0;
   // inserted is the flag used to indicate whether the insertion result is successful or
   // not
-  virtual void emplace(Key key, Value value, bool inserted) = 0;
+  virtual void emplace(Key key, Value value, bool& inserted) = 0;
   // hash_value is the hash result of the key
   virtual bool emplace(Key key, Value value, size_t hash_value) = 0;
   // hash_value is the hash result of the key
   // inserted is the flag used to indicate whether the insertion result is successful or
   // not
-  virtual void emplace(Key key, Value value, size_t hash_value, bool inserted) = 0;
+  virtual void emplace(Key key, Value value, size_t hash_value, bool& inserted) = 0;
 
   // find one result that matched the key, for agg and non-duplicated value cases
   virtual Value find(const Key key) = 0;
