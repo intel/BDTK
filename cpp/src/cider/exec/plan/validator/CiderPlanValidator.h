@@ -23,6 +23,7 @@
 
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "substrait/algebra.pb.h"
+#include "substrait/extended_expression.pb.h"
 #include "substrait/plan.pb.h"
 #include "substrait/type.pb.h"
 
@@ -36,11 +37,19 @@ struct PlanSlice {
 class CiderPlanValidator {
  public:
   /**
-   * @param plan plan with pattern already validated
+   * @param plan substrait plan for validation
    * @param from_platform specific frontend framework for future function lookup
    * @return whether the plan can be executed by Cider
    **/
   static bool validate(const substrait::Plan& plan, const PlatformType& from_platform);
+
+  /**
+   * @param ext_expr extended expression for validation
+   * @param from_platform specific frontend framework for future function lookup
+   * @return whether the exprs can be executed by Cider
+   **/
+  static bool validate(const ::substrait::ExtendedExpression& ext_expr,
+                       const PlatformType& from_platform);
 
   /**
    * @param plan original plan without any validation

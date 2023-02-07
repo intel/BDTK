@@ -28,6 +28,7 @@
 #include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
+#include "exec/plan/validator/CiderPlanValidator.h"
 
 static const auto allocator = std::make_shared<CiderDefaultAllocator>();
 
@@ -194,6 +195,22 @@ TEST(ExpressionEvalTest, GT_I64_I64) {
   //                                        std::make_shared<CiderBatch>(out_batch1)));
   // EXPECT_TRUE(CiderBatchChecker::checkEq(expect_batch_ptr,
   //                                        std::make_shared<CiderBatch>(out_batch2)));
+}
+
+TEST(ExpressionEvalTest, UnsupportedExpression) {
+  SubstraitExprBuilder agg_builder({"a", "b"},
+                                   {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
+                                    CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
+  ::substrait::Expression* arg_1 = agg_builder.makeFieldReference("a");
+  ::substrait::Expression* arg_2 = agg_builder.makeFieldReference("b");
+  ::substrait::AggregateFunction* sum =
+      agg_builder.makeAggExpr("sum", {arg_1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
+  ::substrait::AggregateFunction* min = agg_builder.makeAggExpr(
+      "test_min", {arg_2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
+  ::substrait::ExtendedExpression* ext_expr =
+      agg_builder.build({{sum, "sum_a"}, {min, "min_b"}});
+  EXPECT_TRUE(
+      !validator::CiderPlanValidator::validate(*ext_expr, PlatformType::PrestoPlatform));
 }
 
 int main(int argc, char** argv) {

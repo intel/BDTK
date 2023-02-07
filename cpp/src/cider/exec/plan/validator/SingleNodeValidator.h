@@ -52,6 +52,15 @@ class SingleNodeValidator {
   // get outputTypes of a rel node
   static std::vector<substrait::Type> getRelOutputTypes(const substrait::Rel& rel_node);
 
+  static void functionLookup(const substrait::Expression& s_expr,
+                             const std::vector<substrait::Type>& input_types,
+                             const std::unordered_map<int, std::string>& func_map,
+                             std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr);
+  static void functionLookup(const substrait::AggregateFunction& agg_expr,
+                             const std::vector<substrait::Type>& input_types,
+                             const std::unordered_map<int, std::string>& func_map,
+                             std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr);
+
  private:
   static std::vector<substrait::Type> getRelOutputTypes(
       const substrait::Rel& rel_node,
@@ -78,13 +87,5 @@ class SingleNodeValidator {
   static bool validate(const substrait::JoinRel& join_rel,
                        const std::unordered_map<int, std::string>& func_map,
                        std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr);
-  static void functionLookup(const substrait::Expression& s_expr,
-                             const std::vector<substrait::Type>& input_types,
-                             const std::unordered_map<int, std::string>& func_map,
-                             std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr);
-  static void functionLookup(const substrait::AggregateFunction& agg_expr,
-                             const std::vector<substrait::Type>& input_types,
-                             const std::unordered_map<int, std::string>& func_map,
-                             std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr);
 };
 }  // namespace validator

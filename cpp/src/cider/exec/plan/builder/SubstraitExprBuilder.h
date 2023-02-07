@@ -26,10 +26,16 @@
 
 #pragma once
 #include "substrait/algebra.pb.h"
+#include "substrait/extended_expression.pb.h"
 #include "substrait/type.pb.h"
 
-struct ExpressionReference {
+struct ScalarExprRef {
   ::substrait::Expression* expr;
+  std::string output_names;
+};
+
+struct AggregationExprRef {
+  ::substrait::AggregateFunction* expr;
   std::string output_names;
 };
 
@@ -42,8 +48,9 @@ class SubstraitExprBuilder {
 
   ::substrait::Expression* makeFieldReference(std::string name);
 
-  // TODO: (yma11) build extended expression
-  // ::substrait::ExtendedExpression* build(std::vector<ExpressionReference> expr_refs);
+  ::substrait::ExtendedExpression* build(std::vector<ScalarExprRef> expr_refs);
+
+  ::substrait::ExtendedExpression* build(std::vector<AggregationExprRef> expr_refs);
 
   ::substrait::Expression* makeScalarExpr(std::string func_name,
                                           std::vector<::substrait::Expression*> args,

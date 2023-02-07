@@ -37,6 +37,46 @@ SubstraitExprBuilder::SubstraitExprBuilder(std::vector<std::string> names,
   schema_ = makeNamedStruct(names, types);
 }
 
+::substrait::ExtendedExpression* SubstraitExprBuilder::build(
+    std::vector<ScalarExprRef> expr_refs) {
+  ::substrait::ExtendedExpression* ext_expr = new ::substrait::ExtendedExpression();
+  for (auto expr_ref : expr_refs) {
+    auto referred_expr = ext_expr->add_referred_expr();
+    referred_expr->set_allocated_expression(expr_ref.expr);
+    referred_expr->add_output_names(expr_ref.output_names);
+  }
+  using SimpleExtensionURI = ::substrait::extensions::SimpleExtensionURI;
+  // Currently we don't introduce any substrait extension YAML files, so always
+  // only have one dummy URI.
+  SimpleExtensionURI* extensionUri = ext_expr->add_extension_uris();
+  extensionUri->set_extension_uri_anchor(1);
+  for (auto func_info : funcs_info_) {
+    ext_expr->add_extensions()->set_allocated_extension_function(func_info);
+  }
+  ext_expr->set_allocated_base_schema(schema_);
+  return ext_expr;
+}
+
+::substrait::ExtendedExpression* SubstraitExprBuilder::build(
+    std::vector<AggregationExprRef> expr_refs) {
+  ::substrait::ExtendedExpression* ext_expr = new ::substrait::ExtendedExpression();
+  for (auto expr_ref : expr_refs) {
+    auto referred_expr = ext_expr->add_referred_expr();
+    referred_expr->set_allocated_measure(expr_ref.expr);
+    referred_expr->add_output_names(expr_ref.output_names);
+  }
+  using SimpleExtensionURI = ::substrait::extensions::SimpleExtensionURI;
+  // Currently we don't introduce any substrait extension YAML files, so always
+  // only have one dummy URI.
+  SimpleExtensionURI* extensionUri = ext_expr->add_extension_uris();
+  extensionUri->set_extension_uri_anchor(1);
+  for (auto func_info : funcs_info_) {
+    ext_expr->add_extensions()->set_allocated_extension_function(func_info);
+  }
+  ext_expr->set_allocated_base_schema(schema_);
+  return ext_expr;
+}
+
 ::substrait::NamedStruct* SubstraitExprBuilder::makeNamedStruct(
     std::vector<std::string> names,
     std::vector<::substrait::Type*> types) {
@@ -120,7 +160,7 @@ SubstraitExprBuilder::makeFunc(std::string func_name,
   func->set_name(func_sig);
   func->set_function_anchor(func_anchor_);
   func_anchor_ += 1;
-  func->set_extension_uri_reference(2);
+  func->set_extension_uri_reference(1);
   funcs_info_.push_back(func);
   return func;
 }
