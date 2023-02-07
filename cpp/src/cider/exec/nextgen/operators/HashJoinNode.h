@@ -55,6 +55,7 @@ class HashJoinNode : public OpNode {
 
  private:
   ExprPtrVector join_quals_;
+  // save the desired build table expr and offset, such as selected expr and join key
   std::map<ExprPtr, size_t> build_table_map_;
   JoinType join_type_;
 };

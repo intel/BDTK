@@ -32,6 +32,8 @@ namespace cider::exec::nextgen::parsers {
 
 using namespace cider::exec::nextgen::operators;
 
+constexpr auto right_table_id = 101;
+
 static bool isParseable(const RelAlgExecutionUnit& eu) {
   if (eu.groupby_exprs.size() > 1 || *eu.groupby_exprs.begin() != nullptr) {
     LOG(ERROR) << "GroupBy is not supported in RelAlgExecutionUnitParser.";
@@ -111,7 +113,8 @@ class InputAnalyzer {
         *curr = input_exprs_[input_exprs_index];
       } else {
         // insert build table expr
-        if (col_var_ptr->get_table_id() == 101) {
+        // FIXME(qiuyang): 101 is not always used as right table id.
+        if (col_var_ptr->get_table_id() == right_table_id) {
           build_table_map_.insert({*curr, input_exprs_index - build_table_offset_});
         }
         input_exprs_[input_exprs_index] = *curr;
@@ -131,6 +134,7 @@ class InputAnalyzer {
 
   RelAlgExecutionUnit& eu_;
   ExprPtrVector input_exprs_;
+  // save the desired build table expr and offset, such as selected expr and join key
   std::map<ExprPtr, size_t> build_table_map_;
   // record build table index
   size_t build_table_offset_;

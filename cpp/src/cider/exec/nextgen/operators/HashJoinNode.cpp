@@ -219,6 +219,7 @@ void traverse(ExprPtr expr,
   if (Analyzer::ColumnVar* col_var = dynamic_cast<Analyzer::ColumnVar*>(expr.get())) {
     // FIXME (qiuyang):: 100 is not always used as left table id.
     if (col_var->get_table_id() == left_table_id) {
+      // TODO(qiuyang): hashjoin only support FixSizetype join key now
       utils::FixSizeJITExprValue jit_value(expr->codegen(context));
       keys.emplace_back(jit_value.getValue());
       // null vector handle

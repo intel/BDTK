@@ -181,7 +181,7 @@ TEST_F(HashJoinTest, basicINT32NotNullTest) {
                        build_batch);
 }
 
-TEST_F(HashJoinTest, basicINT64NullableTest) {
+TEST_F(HashJoinTest, basicINT32NullableTest) {
   auto build_table = ArrowArrayBuilder();
   auto&& [build_schema, build_array] =
       build_table.setRowNum(4)
@@ -231,11 +231,9 @@ TEST_F(HashJoinTest, basicRepeatableINT32NotNullTest) {
                                                     {333, 444, 555, 666, 777, 888}};
   std::string ddl =
       "CREATE TABLE table_probe(l_a INTEGER NOT NULL, l_b INTEGER NOT NULL, l_c INTEGER "
-      "NOT "
-      "NULL);"
+      "NOT NULL);"
       "CREATE TABLE table_build(r_a INTEGER NOT NULL, r_b INTEGER NOT NULL, r_c INTEGER "
-      "NOT "
-      "NULL);";
+      "NOT NULL);";
   executeTest<int32_t>(
       ddl,
       "select l_a, l_c, r_b, r_c from table_probe join table_build on table_probe.l_b = "
