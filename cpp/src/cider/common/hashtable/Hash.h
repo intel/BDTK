@@ -22,12 +22,10 @@
 
 #pragma once
 
-// #include <common/Types.h>
-// #include <common/base/StringRef.h>
-// #include <common/base/types.h>
+#include <common/base/extended_types.h>
 #include <common/base/unaligned.h>
+#include <common/base/wide_integer.h>
 #include <common/contrib/cityhash102/include/city.h>
-
 #include <type_traits>
 
 /** Hash functions that are better than the trivial function std::hash.
@@ -66,26 +64,12 @@ inline uint64_t intHash64(uint64_t x) {
 #include <nmmintrin.h>
 #endif
 
-#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32)
-#include <arm_acle.h>
-#endif
-
-template <typename T>
-struct is_big_int {
-  static constexpr bool value = false;
-};
-
-template <typename T>
-inline constexpr bool is_big_int_v = is_big_int<T>::value;
-
 /// NOTE: Intel intrinsic can be confusing.
 /// - https://code.google.com/archive/p/sse-intrinsics/wikis/PmovIntrinsicBug.wiki
 /// - https://stackoverflow.com/questions/15752770/mm-crc32-u64-poorly-defined
 inline uint64_t intHashCRC32(uint64_t x) {
 #ifdef __SSE4_2__
   return _mm_crc32_u64(-1ULL, x);
-#elif defined(__aarch64__) && defined(__ARM_FEATURE_CRC32)
-  return __crc32cd(-1U, x);
 #else
   /// On other platforms we do not have CRC32. NOTE This can be confusing.
   /// NOTE: consider using intHash32()
@@ -95,8 +79,6 @@ inline uint64_t intHashCRC32(uint64_t x) {
 inline uint64_t intHashCRC32(uint64_t x, uint64_t updated_value) {
 #ifdef __SSE4_2__
   return _mm_crc32_u64(updated_value, x);
-#elif defined(__aarch64__) && defined(__ARM_FEATURE_CRC32)
-  return __crc32cd(static_cast<uint32_t>(updated_value), x);
 #else
   /// On other platforms we do not have CRC32. NOTE This can be confusing.
   return intHash64(x) ^ updated_value;
@@ -237,14 +219,71 @@ DEFINE_HASH(uint8_t)
 DEFINE_HASH(uint16_t)
 DEFINE_HASH(uint32_t)
 DEFINE_HASH(uint64_t)
+DEFINE_HASH(UInt128)
+DEFINE_HASH(UInt256)
 DEFINE_HASH(int8_t)
 DEFINE_HASH(int16_t)
 DEFINE_HASH(int32_t)
 DEFINE_HASH(int64_t)
+DEFINE_HASH(Int128)
+DEFINE_HASH(Int256)
 DEFINE_HASH(float)
 DEFINE_HASH(double)
 
 #undef DEFINE_HASH
+
+struct UInt128Hash {
+  size_t operator()(UInt128 x) const {
+    return CityHash_v1_0_2::Hash128to64({x.items[0], x.items[1]});
+  }
+};
+
+#ifdef __SSE4_2__
+
+struct UInt128HashCRC32 {
+  size_t operator()(UInt128 x) const {
+    UInt64 crc = -1ULL;
+    crc = _mm_crc32_u64(crc, x.items[0]);
+    crc = _mm_crc32_u64(crc, x.items[1]);
+    return crc;
+  }
+};
+
+#else
+
+/// On other platforms we do not use CRC32. NOTE This can be confusing.
+struct UInt128HashCRC32 : public UInt128Hash {};
+
+#endif
+
+struct UInt256Hash {
+  size_t operator()(UInt256 x) const {
+    /// NOTE suboptimal
+    return CityHash_v1_0_2::Hash128to64(
+        {CityHash_v1_0_2::Hash128to64({x.items[0], x.items[1]}),
+         CityHash_v1_0_2::Hash128to64({x.items[2], x.items[3]})});
+  }
+};
+
+#ifdef __SSE4_2__
+
+struct UInt256HashCRC32 {
+  size_t operator()(UInt256 x) const {
+    uint64_t crc = -1ULL;
+    crc = _mm_crc32_u64(crc, x.items[0]);
+    crc = _mm_crc32_u64(crc, x.items[1]);
+    crc = _mm_crc32_u64(crc, x.items[2]);
+    crc = _mm_crc32_u64(crc, x.items[3]);
+    return crc;
+  }
+};
+
+#else
+
+/// We do not need to use CRC32 on other platforms. NOTE This can be confusing.
+struct UInt256HashCRC32 : public UInt256Hash {};
+
+#endif
 
 /** A relatively good non-cryptographic hash function from uint64_t to uint32_t.
  * But worse (both in quality and speed) than just cutting intHash64.

@@ -70,6 +70,8 @@ enum SQLTypes {
   kCOLUMN = 27,
   kCOLUMN_LIST = 28,
   kSTRUCT = 29,
+  kINT128 = 30,
+  kINT256 = 31,
   kSQLTYPE_LAST
 };
 

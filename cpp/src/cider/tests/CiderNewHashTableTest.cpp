@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <common/base/wide_integer.h>
 #include <common/hashtable/HashTableAllocator.h>
 #include <gtest/gtest.h>
 #include "TestHelpers.h"
@@ -90,9 +91,9 @@ struct Block {
 };
 
 TEST_F(CiderNewHashTableTest, aggUInt8Test) {
-  using AggregatedHashTableWithUInt8Key =
+  using AggregatedHashTableForUInt8Key =
       FixedImplicitZeroHashMapWithStoredSize<int8_t, Block>;
-  AggregatedHashTableWithUInt8Key map;
+  AggregatedHashTableForUInt8Key map;
 
   std::vector<uint8_t> keys{1, 2, 3, 4, 5};
   std::vector<int64_t> values{10, 20, 30, 40, 50};
@@ -122,9 +123,9 @@ TEST_F(CiderNewHashTableTest, aggUInt8Test) {
 }
 
 TEST_F(CiderNewHashTableTest, aggUInt16Test) {
-  using AggregatedHashTableWithUInt16Key =
+  using AggregatedHashTableForUInt16Key =
       FixedImplicitZeroHashMapWithCalculatedSize<int16_t, Block>;
-  AggregatedHashTableWithUInt16Key map;
+  AggregatedHashTableForUInt16Key map;
 
   std::vector<uint16_t> keys{1, 2, 3, 4, 5};
   std::vector<int64_t> values{10, 20, 30, 40, 50};
@@ -194,8 +195,8 @@ TEST_F(CiderNewHashTableTest, fixedHashTableTest) {
 }
 
 TEST_F(CiderNewHashTableTest, aggUInt32Test) {
-  using AggregatedHashTableWithUInt32Key = HashMap<uint32_t, Block, HashCRC32<uint32_t>>;
-  AggregatedHashTableWithUInt32Key ht_uint32;
+  using AggregatedHashTableForUInt32Key = HashMap<uint32_t, Block, HashCRC32<uint32_t>>;
+  AggregatedHashTableForUInt32Key ht_uint32;
 
   std::vector<uint32_t> keys{1, 2, 3, 4, 5};
   std::vector<int64_t> values{10, 20, 30, 40, 50};
@@ -224,8 +225,8 @@ TEST_F(CiderNewHashTableTest, aggUInt32Test) {
 }
 
 TEST_F(CiderNewHashTableTest, aggUInt64Test) {
-  using AggregatedHashTableWithUInt64Key = HashMap<uint64_t, Block, HashCRC32<uint64_t>>;
-  AggregatedHashTableWithUInt64Key ht_uint64;
+  using AggregatedHashTableForUInt64Key = HashMap<uint64_t, Block, HashCRC32<uint64_t>>;
+  AggregatedHashTableForUInt64Key ht_uint64;
 
   std::vector<uint64_t> keys{1, 2, 3, 4, 5};
   std::vector<int64_t> values{10, 20, 30, 40, 50};
@@ -250,6 +251,234 @@ TEST_F(CiderNewHashTableTest, aggUInt64Test) {
     CHECK_EQ(ht_uint64[keys[i]].getSum(), 60);
     CHECK_EQ(ht_uint64[keys[i]].getCount(), 2);
     CHECK_EQ(ht_uint64[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggUInt128Test) {
+  using AggregatedHashTableForKeys128 = HashMap<UInt128, Block, UInt128HashCRC32>;
+  AggregatedHashTableForKeys128 ht_keys128;
+
+  std::vector<UInt128> keys;
+  keys.push_back(cider::wide::Integer<128, unsigned>(1));
+  keys.push_back(cider::wide::Integer<128, unsigned>(2));
+  keys.push_back(cider::wide::Integer<128, unsigned>(3));
+  keys.push_back(cider::wide::Integer<128, unsigned>(4));
+  keys.push_back(cider::wide::Integer<128, unsigned>(5));
+
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_keys128[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys128[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_keys128[keys[i]].getCount(), 1);
+  }
+
+  std::vector<UInt128> keys2;
+  keys2.push_back(cider::wide::Integer<128, unsigned>(1));
+  keys2.push_back(cider::wide::Integer<128, unsigned>(2));
+  keys2.push_back(cider::wide::Integer<128, unsigned>(3));
+  keys2.push_back(cider::wide::Integer<128, unsigned>(4));
+  keys2.push_back(cider::wide::Integer<128, unsigned>(5));
+
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_keys128[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys128[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_keys128[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_keys128[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggUInt256Test) {
+  using AggregatedHashTableForKeys256 = HashMap<UInt256, Block, UInt256HashCRC32>;
+  AggregatedHashTableForKeys256 ht_keys256;
+
+  std::vector<UInt256> keys;
+  keys.push_back(cider::wide::Integer<256, unsigned>(1));
+  keys.push_back(cider::wide::Integer<256, unsigned>(2));
+  keys.push_back(cider::wide::Integer<256, unsigned>(3));
+  keys.push_back(cider::wide::Integer<256, unsigned>(4));
+  keys.push_back(cider::wide::Integer<256, unsigned>(5));
+
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_keys256[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys256[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_keys256[keys[i]].getCount(), 1);
+  }
+
+  std::vector<UInt256> keys2;
+  keys2.push_back(cider::wide::Integer<256, unsigned>(1));
+  keys2.push_back(cider::wide::Integer<256, unsigned>(2));
+  keys2.push_back(cider::wide::Integer<256, unsigned>(3));
+  keys2.push_back(cider::wide::Integer<256, unsigned>(4));
+  keys2.push_back(cider::wide::Integer<256, unsigned>(5));
+
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_keys256[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys256[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_keys256[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_keys256[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggInt128Test) {
+  using AggregatedHashTableForKeys128 = HashMap<Int128, Block, UInt128HashCRC32>;
+  AggregatedHashTableForKeys128 ht_keys128;
+
+  std::vector<UInt128> keys;
+  keys.push_back(cider::wide::Integer<128, signed>(1));
+  keys.push_back(cider::wide::Integer<128, signed>(2));
+  keys.push_back(cider::wide::Integer<128, signed>(3));
+  keys.push_back(cider::wide::Integer<128, signed>(4));
+  keys.push_back(cider::wide::Integer<128, signed>(5));
+
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_keys128[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys128[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_keys128[keys[i]].getCount(), 1);
+  }
+
+  std::vector<Int128> keys2;
+  keys2.push_back(cider::wide::Integer<128, signed>(1));
+  keys2.push_back(cider::wide::Integer<128, signed>(2));
+  keys2.push_back(cider::wide::Integer<128, signed>(3));
+  keys2.push_back(cider::wide::Integer<128, signed>(4));
+  keys2.push_back(cider::wide::Integer<128, signed>(5));
+
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_keys128[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys128[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_keys128[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_keys128[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggInt256Test) {
+  using AggregatedHashTableForKeys256 = HashMap<Int256, Block, UInt256HashCRC32>;
+  AggregatedHashTableForKeys256 ht_keys256;
+
+  std::vector<Int256> keys;
+  keys.push_back(cider::wide::Integer<256, signed>(1));
+  keys.push_back(cider::wide::Integer<256, signed>(2));
+  keys.push_back(cider::wide::Integer<256, signed>(3));
+  keys.push_back(cider::wide::Integer<256, signed>(4));
+  keys.push_back(cider::wide::Integer<256, signed>(5));
+
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_keys256[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys256[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_keys256[keys[i]].getCount(), 1);
+  }
+
+  std::vector<Int256> keys2;
+  keys2.push_back(cider::wide::Integer<256, signed>(1));
+  keys2.push_back(cider::wide::Integer<256, signed>(2));
+  keys2.push_back(cider::wide::Integer<256, signed>(3));
+  keys2.push_back(cider::wide::Integer<256, signed>(4));
+  keys2.push_back(cider::wide::Integer<256, signed>(5));
+
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_keys256[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_keys256[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_keys256[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_keys256[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggFloatTest) {
+  using AggregatedHashTableForFloatKey = HashMap<float, Block, HashCRC32<float>>;
+  AggregatedHashTableForFloatKey ht_float;
+
+  std::vector<float> keys{1.1, 2.2, 3.3, 4.4, 5.5};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_float[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_float[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_float[keys[i]].getCount(), 1);
+  }
+
+  std::vector<float> keys2{1.1, 2.2, 3.3, 4.4, 5.5};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_float[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_float[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_float[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_float[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggDoubleTest) {
+  using AggregatedHashTableForDoubleKey = HashMap<double, Block, HashCRC32<double>>;
+  AggregatedHashTableForDoubleKey ht_double;
+
+  std::vector<double> keys{1.11, 2.22, 3.33, 4.44, 5.55};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_double[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_double[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_double[keys[i]].getCount(), 1);
+  }
+
+  std::vector<double> keys2{1.11, 2.22, 3.33, 4.44, 5.55};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_double[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_double[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_double[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_double[keys[i]].getAvg(), 30);
   }
 }
 
