@@ -71,9 +71,11 @@ inline bool isSubsetExprVector(const operators::ExprPtrVector& a,
     for (size_t b_index = 0; b_index < b.size(); ++b_index) {
       if (a[a_index] == b[b_index]) {
         ++a_index;
+        if (a.size() == a_index) {
+          return true;
+        }
       }
     }
-    return a_index == a.size();
   }
   return false;
 }
