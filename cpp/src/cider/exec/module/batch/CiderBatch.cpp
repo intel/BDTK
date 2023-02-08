@@ -20,10 +20,10 @@
  */
 
 #include "cider/batch/CiderBatch.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "tests/utils/ArrowArrayBuilder.h"
-#include "include/cider/batch/StructBatch.h"
 #include "ArrowABI.h"
+#include "include/cider/batch/ScalarBatch.h"
+#include "include/cider/batch/StructBatch.h"
+#include "tests/utils/ArrowArrayBuilder.h"
 
 CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
     : arrow_schema_(schema), ownership_(true), reallocate_(true), allocator_(allocator) {
@@ -657,4 +657,4 @@ CiderBatch convertToArrow(const CiderBatch& output_batch) {
   return result;
 }
 
-} //  CiderBatchUtils
+}  // namespace CiderBatchUtils

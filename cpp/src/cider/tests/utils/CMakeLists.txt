@@ -90,7 +90,7 @@ add_test(CiderQueryRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderQueryRunnerTest
 # add_executable(CiderMultiBatchTest CiderMultiBatchTest.cpp)
 # target_link_libraries(CiderMultiBatchTest ${EXECUTE_TEST_UTILS_LIBS})
 # add_test(CiderMultiBatchTest ${EXECUTABLE_OUTPUT_PATH}/CiderMultiBatchTest
-#          ${TEST_ARGS})
+# ${TEST_ARGS})
 
 add_executable(CiderRunnerTest CiderRunnerTest.cpp)
 target_link_libraries(CiderRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
