@@ -32,7 +32,7 @@
 
 namespace facebook::velox::plugin {
 
-void CiderCrossJoinBridge::setData(Batch data) {
+void CiderCrossJoinBridge::setData(std::shared_ptr<Batch> data) {
   std::vector<ContinuePromise> promises;
   {
     std::lock_guard<std::mutex> l(mutex_);
@@ -44,7 +44,7 @@ void CiderCrossJoinBridge::setData(Batch data) {
   notify(std::move(promises));
 }
 
-std::optional<Batch> CiderCrossJoinBridge::hasDataOrFuture(ContinueFuture* future) {
+std::optional<std::shared_ptr<Batch>> CiderCrossJoinBridge::hasDataOrFuture(ContinueFuture* future) {
   std::lock_guard<std::mutex> l(mutex_);
   VELOX_CHECK(!cancelled_, "Getting data after the build side is aborted");
   if (data_.has_value()) {
@@ -58,26 +58,20 @@ std::optional<Batch> CiderCrossJoinBridge::hasDataOrFuture(ContinueFuture* futur
 CiderCrossJoinBuild::CiderCrossJoinBuild(int32_t operatorId,
                                          exec::DriverCtx* driverCtx,
                                          std::shared_ptr<const CiderPlanNode> joinNode)
-    : Operator(driverCtx, nullptr, operatorId, joinNode->id(), "CiderCrossJoinBuild")
-    , data_(arrowSchema_, arrowArray_) {
+    : Operator(driverCtx, nullptr, operatorId, joinNode->id(), "CiderCrossJoinBuild") {
   auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
       operatorCtx_->driverCtx()->splitGroupId, planNodeId());
   joinBridge_ = std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
 }
 
 void CiderCrossJoinBuild::addInput(RowVectorPtr input) {
-  for (size_t i = 0; i < input->childrenSize(); i++) {
-    input->childAt(i)->mutableRawNulls();
+  if (input->size() > 0) {
+    // Load lazy vectors before storing.
+    for (auto& child : input->children()) {
+      child->loadedVector();
+    }
+    data_.emplace_back(std::move(input));
   }
-  input_ = std::move(input);
-  ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
-  exportToArrow(input_, *inputArrowArray);
-  ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
-  exportToArrow(input_, *inputArrowSchema);
-
-  cider::exec::nextgen::context::Batch inBatch(*inputArrowSchema, *inputArrowArray);
-
-  data_ = std::move(inBatch);
 }
 
 void CiderCrossJoinBuild::noMoreInput() {
@@ -90,7 +84,7 @@ void CiderCrossJoinBuild::noMoreInput() {
   // state. allPeersFinished is true only for the last Driver of the
   // build pipeline.
   if (!operatorCtx_->task()->allPeersFinished(
-          planNodeId(), operatorCtx_->driver(), &future_, promises, peers)) {
+      planNodeId(), operatorCtx_->driver(), &future_, promises, peers)) {
     return;
   }
 
@@ -98,9 +92,7 @@ void CiderCrossJoinBuild::noMoreInput() {
     auto op = peer->findOperator(planNodeId());
     auto* build = dynamic_cast<CiderCrossJoinBuild*>(op);
     VELOX_CHECK(build);
-    // TODO: append the data from peers into the current data.
-    // data_.data;
-    // data_.insert(data_.begin(), build->data_.begin(), build->data_.end());
+    data_.insert(data_.begin(), build->data_.begin(), build->data_.end());
   }
 
   // Realize the promises so that the other Drivers (which were not
@@ -110,7 +102,19 @@ void CiderCrossJoinBuild::noMoreInput() {
     promise.setValue();
   }
 
-  joinBridge_->setData(std::move(data_));
+  //Convert data_ to Batch.
+  auto rowVectorPtr = RowVector::createEmpty(data_.front()->type(), operatorCtx_->pool());
+  for (auto batch : data_) {
+    rowVectorPtr->append(batch.get());
+  }
+
+  ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
+  exportToArrow(rowVectorPtr, *inputArrowArray);
+  ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
+  exportToArrow(rowVectorPtr, *inputArrowSchema);
+
+  Batch inBatch(*inputArrowSchema, *inputArrowArray);
+  joinBridge_->setData(std::make_shared<Batch>(std::move(inBatch)));
 }
 
 exec::BlockingReason CiderCrossJoinBuild::isBlocked(

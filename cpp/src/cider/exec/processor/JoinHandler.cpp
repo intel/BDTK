@@ -44,10 +44,10 @@ std::shared_ptr<CiderBatch> HashProbeHandler::onProcessBatch(
 
 void CrossProbeHandler::onState(cider::exec::processor::BatchProcessorState state) {
   if (BatchProcessorState::kWaiting == state) {
-    const auto& crossColumnBatchSupplier =
-        batchProcessor_->getContext()->getCrossJoinColumnBatchSupplier();
-    if (crossColumnBatchSupplier) {
-      auto crossBuildData = crossColumnBatchSupplier();
+    const auto& crossBuildTableSupplier =
+        batchProcessor_->getContext()->getCrossJoinBuildTableSupplier();
+    if (crossBuildTableSupplier) {
+      auto crossBuildData = crossBuildTableSupplier();
       if (crossBuildData.has_value()) {
         batchProcessor_->feedCrossBuildData(crossBuildData.value());
       }

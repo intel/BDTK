@@ -131,7 +131,7 @@ void DefaultBatchProcessor::feedHashBuildTable(
   this->codegen_context_->setHashTable(hashTable.get());
 }
 
-void DefaultBatchProcessor::feedCrossBuildData(Batch crossData) {
+void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& crossData) {
   // switch state from waiting to running once cross build data is ready
   this->state_ = BatchProcessorState::kRunning;
   // TODO: feed cross build data into nextGen context

@@ -41,8 +41,7 @@ struct HashBuildResult {
 };
 
 using HashBuildTableSupplier = std::function<std::optional<HashBuildResult>()>;
-using CrossJoinColumnBatchSupplier =
-    std::function<std::optional<cider::exec::nextgen::context::Batch>()>;
+using CrossBuildTableSupplier = std::function<std::optional<std::shared_ptr<Batch>>()>;
 
 class BatchProcessorContext {
  public:
@@ -52,26 +51,26 @@ class BatchProcessorContext {
   const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 
   void setHashBuildTableSupplier(const HashBuildTableSupplier& hashBuildTableSupplier) {
-    buildTableSupplier_ = hashBuildTableSupplier;
+    hashBuildTableSupplier_ = hashBuildTableSupplier;
   }
 
   const HashBuildTableSupplier& getHashBuildTableSupplier() const {
-    return buildTableSupplier_;
+    return hashBuildTableSupplier_;
   }
 
-  void setCrossJoinColumnBatchSupplier(
-      const CrossJoinColumnBatchSupplier& columnBatchSupplier) {
-    columnBatchSupplier_ = columnBatchSupplier;
+  void setCrossJoinBuildTableSupplier(
+      const CrossBuildTableSupplier& crossBuildTableSupplier) {
+    crossBuildTableSupplier_ = crossBuildTableSupplier;
   }
 
-  const CrossJoinColumnBatchSupplier& getCrossJoinColumnBatchSupplier() const {
-    return columnBatchSupplier_;
+  const CrossBuildTableSupplier& getCrossJoinBuildTableSupplier() const {
+    return crossBuildTableSupplier_;
   }
 
  private:
   std::shared_ptr<CiderAllocator> allocator_;
-  HashBuildTableSupplier buildTableSupplier_;
-  CrossJoinColumnBatchSupplier columnBatchSupplier_;
+  HashBuildTableSupplier hashBuildTableSupplier_;
+  CrossBuildTableSupplier crossBuildTableSupplier_;
 };
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;

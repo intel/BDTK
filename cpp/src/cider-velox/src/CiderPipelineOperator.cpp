@@ -106,11 +106,11 @@ CiderPipelineOperator::CiderPipelineOperator(
       operatorCtx_->driverCtx()->splitGroupId, planNodeId());
 
   if (planUtil->hasCrossRel()) {
-    cider::exec::processor::CrossJoinColumnBatchSupplier columnBatchSupplier = [&]() {
+    cider::exec::processor::CrossBuildTableSupplier crossBuildTableSupplier = [&]() {
       auto ciderJoinBridge = std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
-      return ciderJoinBridge->hasDataOrFuture(&future_);
+      return *ciderJoinBridge->hasDataOrFuture(&future_);
     };
-    context->setCrossJoinColumnBatchSupplier(columnBatchSupplier);
+    context->setCrossJoinBuildTableSupplier(crossBuildTableSupplier);
   } else {
     cider::exec::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
       auto ciderJoinBridge = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);

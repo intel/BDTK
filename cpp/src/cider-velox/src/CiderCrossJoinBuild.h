@@ -30,14 +30,16 @@ using namespace cider::exec::nextgen::context;
 
 namespace facebook::velox::plugin {
 
+// Hands over all batches from a multi-threads build pipeline to a
+// multi-threads probe pipeline.
 class CiderCrossJoinBridge : public exec::JoinBridge {
  public:
-  void setData(Batch data);
+  void setData(std::shared_ptr<Batch> data);
 
-  std::optional<Batch> hasDataOrFuture(ContinueFuture* future);
+  std::optional<std::shared_ptr<Batch>> hasDataOrFuture(ContinueFuture* future);
 
  private:
-  std::optional<Batch> data_;
+  std::optional<std::shared_ptr<Batch>> data_;
 };
 
 class CiderCrossJoinBuild : public exec::Operator {
@@ -59,22 +61,18 @@ class CiderCrossJoinBuild : public exec::Operator {
   bool isFinished() override;
 
   void close() override {
-    data_.release();
+    data_.clear();
     Operator::close();
   }
 
  private:
-  Batch data_;
+  std::vector<VectorPtr> data_;
 
   // Future for synchronizing with other Drivers of the same pipeline. All build
   // Drivers must be completed before making data available for the probe side.
   ContinueFuture future_{ContinueFuture::makeEmpty()};
 
   std::shared_ptr<CiderCrossJoinBridge> joinBridge_;
-
-  const std::shared_ptr<CiderAllocator> allocator_;
-  ArrowArray arrowArray_;
-  ArrowSchema arrowSchema_;
 };
 
 }  // namespace facebook::velox::plugin
