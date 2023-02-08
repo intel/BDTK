@@ -36,6 +36,7 @@
 #include "exec/template/RelAlgExecutionUnit.h"
 #include "include/cider/CiderSupportPlatType.h"
 #include "substrait/algebra.pb.h"
+#include "substrait/extended_expression.pb.h"
 #include "substrait/plan.pb.h"
 
 namespace generator {
@@ -61,6 +62,9 @@ class SubstraitToRelAlgExecutionUnit {
       , ctx_{nullptr}
       , input_table_schemas_{}
       , plan_(substrait::Plan()) {}
+
+  RelAlgExecutionUnit createRelAlgExecutionUnit(
+      const substrait::ExtendedExpression* ext_expr);
 
   /**
    * public API for generating RelAlgExecutionUnit with substrait plan as input

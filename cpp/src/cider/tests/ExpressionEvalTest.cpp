@@ -213,6 +213,27 @@ TEST(ExpressionEvalTest, UnsupportedExpression) {
       !validator::CiderPlanValidator::validate(*ext_expr, PlatformType::PrestoPlatform));
 }
 
+TEST(ExpressionEvalTest, EU_Build) {
+  // Expression: a * b + b, a * b
+  SubstraitExprBuilder builder({"a", "b"},
+                               {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false),
+                                CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false)});
+
+  ::substrait::Expression* field1 = builder.makeFieldReference(0);
+  ::substrait::Expression* field2 = builder.makeFieldReference(1);
+  ::substrait::Expression* multiply_expr = builder.makeScalarExpr(
+      "multiply", {field1, field2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
+
+  ::substrait::Expression* add_expr = builder.makeScalarExpr(
+      "add", {multiply_expr, field2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I32, false));
+  ::substrait::ExtendedExpression* ext_expr =
+      builder.build({{add_expr, "add"}, {multiply_expr, "multiply"}});
+  auto translator = std::make_shared<generator::SubstraitToRelAlgExecutionUnit>();
+  auto rel_alg_eu = translator->createRelAlgExecutionUnit(ext_expr);
+  CHECK_EQ(rel_alg_eu.input_col_descs.size(), 2);
+  CHECK_EQ(rel_alg_eu.target_exprs.size(), 2);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

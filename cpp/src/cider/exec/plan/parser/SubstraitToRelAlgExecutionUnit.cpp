@@ -68,6 +68,80 @@ RelAlgExecutionUnit SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit() 
   return ctx_->getExeUnitBasedOnContext();
 }
 
+RelAlgExecutionUnit SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit(
+    const substrait::ExtendedExpression* ext_expr) {
+  std::vector<InputDescriptor> input_descs;
+  int cur_nest_level = 0;
+  InputDescriptor input_desc(fake_table_id, cur_nest_level);
+  input_descs.emplace_back(input_desc);
+  std::list<std::shared_ptr<const InputColDescriptor>> input_col_descs;
+  std::shared_ptr<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>> expr_map_ptr =
+      std::make_shared<std::unordered_map<int, std::shared_ptr<Analyzer::Expr>>>();
+  for (int i = 0; i < ext_expr->base_schema().struct_().types_size(); i++) {
+    auto type = ext_expr->base_schema().struct_().types(i);
+    auto sti = getSQLTypeInfo(type);
+    ColumnInfoPtr colum_info_ptr = std::make_shared<ColumnInfo>(
+        fake_db_id, fake_table_id, i, ext_expr->base_schema().names(i), sti, false);
+    input_col_descs.emplace_back(
+        std::make_shared<const InputColDescriptor>(colum_info_ptr,
+                                                   cur_nest_level));  // FIXME
+    auto col_var = std::make_shared<Analyzer::ColumnVar>(colum_info_ptr, cur_nest_level);
+    expr_map_ptr->insert(std::pair(i, col_var));
+  }
+  std::unordered_map<int, std::string> func_map;
+  for (int i = 0; i < ext_expr->extensions_size(); i++) {
+    const auto& extension = ext_expr->extensions(i);
+    if (extension.has_extension_function()) {
+      const auto& function = extension.extension_function().name();
+      // do function lookup verify and function mapping
+      // get op type, no need mapping in substraitToAnalyzerExpr
+      func_map.emplace(extension.extension_function().function_anchor(), function);
+    }
+  }
+  std::vector<std::shared_ptr<Analyzer::Expr>> shared_target_exprs;
+  for (int i = 0; i < ext_expr->referred_expr_size(); i++) {
+    // TODO: (yma11) support more expression types besides scalar function and aggregate
+    // function
+    if (ext_expr->referred_expr(i).has_expression()) {
+      shared_target_exprs.emplace_back(toAnalyzerExprConverter_.toAnalyzerExpr(
+          ext_expr->referred_expr(i).expression(), func_map, expr_map_ptr));
+    } else if (ext_expr->referred_expr(i).has_measure()) {
+      shared_target_exprs.emplace_back(toAnalyzerExprConverter_.toAnalyzerExpr(
+          ext_expr->referred_expr(i).measure(), func_map, expr_map_ptr));
+    } else {
+      CIDER_THROW(CiderCompileException,
+                  "unsupported expression type for expression evaluation.");
+    }
+  }
+  std::vector<Analyzer::Expr*> target_exprs;
+  for (auto target_expr : shared_target_exprs) {
+    // TODO: Memleak here, remove it after nextgen ready.
+    std::cout << target_expr->toString() << std::endl;
+    target_exprs.emplace_back(getExpr(target_expr, false));
+  }
+  std::list<std::shared_ptr<Analyzer::Expr>> groupby_exprs;
+  std::shared_ptr<Analyzer::Expr> empty;
+  groupby_exprs.emplace_back(empty);
+  RelAlgExecutionUnit rel_alg_eu{input_descs,
+                                 input_col_descs,
+                                 {},
+                                 {},
+                                 {},
+                                 groupby_exprs,
+                                 target_exprs,
+                                 nullptr,
+                                 {{}, SortAlgorithm::Default, 0, 0},
+                                 0,
+                                 RegisteredQueryHint::defaults(),
+                                 EMPTY_QUERY_PLAN,
+                                 {},
+                                 {},
+                                 false,
+                                 std::nullopt,
+                                 shared_target_exprs};
+  return rel_alg_eu;
+}
+
 substrait::Type SubstraitToRelAlgExecutionUnit::reconstructStructType(size_t index,
                                                                       size_t length) {
   substrait::Type s_type;
