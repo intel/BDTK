@@ -49,7 +49,7 @@ message(
 message(
   STATUS "BDTK SO version: ${BDTK_SO_VERSION} (full: ${BDTK_FULL_SO_VERSION})")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -68,7 +68,7 @@ option(CIDER_ENABLE_GOOGLETEST "Build GoogleTest for Cider." ON)
 option(CIDER_ENABLE_DUCKDB "Build DuckDB for Cider." ON)
 option(CIDER_ENABLE_VELOX "Build Velox Plugin for Cider." ON)
 option(CIDER_ENABLE_SUBSTRAIT "Build Substrait for Cider." ON)
-option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." OFF)
+option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." ON)
 option(CIDER_ENABLE_AVX512 "Enable avx512 instructions." OFF)
 
 if(BDTK_ENABLE_CIDER)

@@ -73,7 +73,6 @@ std::string getFileContent(const std::string& file_name) {
 
   ::substrait::Plan plan;
   google::protobuf::util::JsonStringToMessage(json, &plan);
-  LOG(INFO) << "substrait json is: " << json << "\n";
   return std::move(plan);
 }
 
