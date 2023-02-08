@@ -442,7 +442,6 @@ void runTest(const std::string& test_name,
              size_t buffer_entry_num = 16384,
              size_t spilled_entry_num = 0,
              const std::vector<CiderBitUtils::CiderBitVector<>>& nulls = {}) {
-
   auto cider_compile_module =
       CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
   auto exe_option = CiderExecutionOption::defaults();
