@@ -23,11 +23,7 @@
 
 namespace cider::exec::processor {
 
-// TODO: pass some arguments that will decide hashtable type
 std::unique_ptr<JoinHashTable> DefaultJoinHashTableBuilder::build() {
-  // TODO: get the choosed hashtable type
-  // reset to other hashtable if changed, comment out due to only have one hashtable now
-  // hashTable_.reset(new JoinHashTable());
   return std::move(hashTable_);
 }
 // TODO: get the join key. Right use hard-code col 0
@@ -39,7 +35,7 @@ void DefaultJoinHashTableBuilder::appendBatch(
                     const_cast<void*>(batch->getArray()->children[0]->buffers[1]))) +
                 i);
 
-    hashTable_->getHashTable()->emplace(key, {batch.get(), i});
+    hashTable_->emplace(key, {batch.get(), i});
   }
 }
 

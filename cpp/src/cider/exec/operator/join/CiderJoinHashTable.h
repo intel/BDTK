@@ -20,11 +20,10 @@
  */
 #pragma once
 
-#include <any>
-#include <memory>
-#include <vector>
 #include "exec/nextgen/context/Batch.h"
-#include "exec/operator/join/HashTableFactory.h"
+#include "exec/operator/join/CiderChainedHashTable.h"
+#include "exec/operator/join/CiderLinearProbingHashTable.h"
+#include "exec/operator/join/HashTableSelector.h"
 
 namespace cider::exec::processor {
 
@@ -36,21 +35,32 @@ struct BatchAndOffset {
 using CiderJoinBaseKey = int;
 using CiderJoinBaseValue = BatchAndOffset;
 
-using CiderJoinBaseHashTable = cider_hashtable::BaseHashTable<
-    CiderJoinBaseKey,
-    CiderJoinBaseValue,
-    cider_hashtable::MurmurHash,
-    cider_hashtable::Equal,
-    void,
-    std::allocator<
-        std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>>;
+#define LP_TEMPLATE                                                  \
+  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::MurmurHash, \
+      cider_hashtable::Equal, void,                                  \
+      std::allocator<                                                \
+          std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>
+#define CHAINED_TEMPLATE                                             \
+  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::MurmurHash, \
+      cider_hashtable::Equal, void,                                  \
+      std::allocator<                                                \
+          std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>
+
+using JoinLPHashTable = cider_hashtable::BaseHashTable<LP_TEMPLATE>;
+
+using JoinChainedHashTable = cider_hashtable::BaseHashTable<CHAINED_TEMPLATE>;
 
 class JoinHashTable {
  public:
   JoinHashTable(cider_hashtable::HashTableType hashTableType =
                     cider_hashtable::HashTableType::LINEAR_PROBING);
-  // choose hashtable, right now just one
-  std::shared_ptr<CiderJoinBaseHashTable> getHashTable();
+
+  bool set_hash_table_type(cider_hashtable::HashTableType hashTableType);
+
+  std::shared_ptr<JoinLPHashTable> getLPHashTable() { return LPHashTableInstance_; }
+  std::shared_ptr<JoinChainedHashTable> getChainedHashTable() {
+    return chainedHashTableInstance_;
+  }
 
   void merge_other_hashtables(
       std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables);
@@ -59,7 +69,11 @@ class JoinHashTable {
 
   std::vector<CiderJoinBaseValue> findAll(const CiderJoinBaseKey key);
 
+  size_t size();
+
  private:
-  std::shared_ptr<CiderJoinBaseHashTable> hashTableInstance_;
+  cider_hashtable::HashTableType hashTableType_;
+  std::shared_ptr<JoinLPHashTable> LPHashTableInstance_;
+  std::shared_ptr<JoinChainedHashTable> chainedHashTableInstance_;
 };
 }  // namespace cider::exec::processor

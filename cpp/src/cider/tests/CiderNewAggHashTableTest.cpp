@@ -808,6 +808,7 @@ TEST_F(CiderNewAggHashTableTest, aggKeys256Test) {
 TEST_F(CiderNewAggHashTableTest, aggFloatTest) {
   // SQL:
   // SELECT SUM(int32), COUNT(int32), MIN(int32), MAX(int32) FROM table GROUP BY float.
+
   // The example below has 3 rows of data.
   // Row number   key    value
   //     0         1.1       10
