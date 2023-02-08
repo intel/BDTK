@@ -152,6 +152,8 @@ int64_t getBufferNum(const ArrowSchema* schema) {
         // Struct Type
         case 's':
           return 1;
+        case 'l':
+          return 2;
       }
     case 'u':
       return 3;
@@ -187,6 +189,9 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
         // Struct Type
         case 's':
           return kSTRUCT;
+        // Array Type
+        case 'l':
+          return kARRAY;
       }
     case 'u':
       return kVARCHAR;
@@ -247,6 +252,8 @@ const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
           fmt::format("d:{},{}", sql_info.get_precision(), sql_info.get_scale());
       return format_buffer.c_str();
     }
+    case kARRAY:
+      return "+l";
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported to convert type ") + toString(type) +

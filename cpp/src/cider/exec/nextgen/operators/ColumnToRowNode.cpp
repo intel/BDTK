@@ -57,6 +57,7 @@ class ColumnReader {
         break;
       case kARRAY:
         readVariableSizeArrayCol(for_null);
+        break;
       default:
         LOG(ERROR) << "Unsupported data type in ColumnReader: "
                    << expr_->get_type_info().get_type_name();
@@ -107,6 +108,9 @@ class ColumnReader {
     }
   }
 
+  //| BOOL     | INT64      | INT8*                |   C_TYPE*      |  INT64     |
+  //|----------|------------|----------------------|----------------|------------|
+  //| row_null | row_length | elem_null for column | values for row | row_offset |
   void readVariableSizeArrayCol(bool for_null) {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeArrayExprValue varsize_values(buffers);
@@ -125,11 +129,12 @@ class ColumnReader {
 
     // offset buffer
     auto offset_pointer =
-        varsize_values.getOffsets()->castPointerSubType(JITTypeTag::INT32);
+        varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
     auto cur_offset = offset_pointer[index_];
+    auto len = offset_pointer[index_ + 1] - offset_pointer[index_];
     // data buffer
-    auto value_pointer = JITValuePointer();
-    switch (expr_->get_type_info().get_subtype()) {
+    auto value_pointer = JITValuePointer(nullptr);
+    switch (expr_->get_type_info().getChildAt(0).get_type()) {
       case kTINYINT:
         value_pointer.replace(
             varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8));
@@ -160,14 +165,15 @@ class ColumnReader {
     }
     auto row_data = value_pointer + cur_offset;
     // array elements null buffer
-    auto elem_null_pointer =
+    auto col_null_pointer =
         varsize_values.getElemNull()->castPointerSubType(JITTypeTag::INT8);
 
     if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false),
-                            offset_pointer,
-                            elem_null_pointer,
-                            row_data);
+                            len,
+                            col_null_pointer,
+                            row_data,
+                            cur_offset);
     } else {
       // null buffer decoder
       // TBD: Null representation, bit-array or bool-array.
@@ -176,7 +182,7 @@ class ColumnReader {
           JITFunctionEmitDescriptor{
               .ret_type = JITTypeTag::BOOL,
               .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
-      expr_->set_expr_value(row_null_data, offset_pointer, elem_null_pointer, row_data);
+      expr_->set_expr_value(row_null_data, len, col_null_pointer, row_data, cur_offset);
     }
   }
 
