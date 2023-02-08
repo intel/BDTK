@@ -44,7 +44,8 @@ void CiderCrossJoinBridge::setData(std::shared_ptr<Batch> data) {
   notify(std::move(promises));
 }
 
-std::optional<std::shared_ptr<Batch>> CiderCrossJoinBridge::hasDataOrFuture(ContinueFuture* future) {
+std::optional<std::shared_ptr<Batch>> CiderCrossJoinBridge::hasDataOrFuture(
+    ContinueFuture* future) {
   std::lock_guard<std::mutex> l(mutex_);
   VELOX_CHECK(!cancelled_, "Getting data after the build side is aborted");
   if (data_.has_value()) {
@@ -84,7 +85,7 @@ void CiderCrossJoinBuild::noMoreInput() {
   // state. allPeersFinished is true only for the last Driver of the
   // build pipeline.
   if (!operatorCtx_->task()->allPeersFinished(
-      planNodeId(), operatorCtx_->driver(), &future_, promises, peers)) {
+          planNodeId(), operatorCtx_->driver(), &future_, promises, peers)) {
     return;
   }
 
@@ -102,7 +103,7 @@ void CiderCrossJoinBuild::noMoreInput() {
     promise.setValue();
   }
 
-  //Convert data_ to Batch.
+  // Convert data_ to Batch.
   auto rowVectorPtr = RowVector::createEmpty(data_.front()->type(), operatorCtx_->pool());
   for (auto batch : data_) {
     rowVectorPtr->append(batch.get());
