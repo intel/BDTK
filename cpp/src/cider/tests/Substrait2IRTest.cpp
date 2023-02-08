@@ -99,9 +99,8 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
   std::ifstream sub_json(getDataFilesPath() + file_name);
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
-  std::string sub_data = buffer.str();
   ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
   auto cider_compile_module =
       CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
@@ -113,9 +112,8 @@ TEST(Substrait2IR, OutputTableSchema) {
   std::ifstream sub_json(getDataFilesPath() + "nullability.json");
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
-  std::string sub_data = buffer.str();
   ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
   eu_translator.createRelAlgExecutionUnit();
   auto table_schema = eu_translator.getOutputCiderTableSchema();
@@ -164,9 +162,8 @@ TEST(Substrait2IR, ColIndexUpdate_1) {
   std::ifstream sub_json(getDataFilesPath() + "col_update.json");
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
-  std::string sub_data = buffer.str();
   ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
   auto rel_alg_eu = eu_translator.createRelAlgExecutionUnit();
   std::vector<int> target_cols{1, 0, 2};
@@ -192,9 +189,8 @@ TEST(Substrait2IR, ColIndexUpdate_2) {
   std::ifstream sub_json(getDataFilesPath() + "agg_with_expr.json");
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
-  std::string sub_data = buffer.str();
   ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(sub_data, &sub_plan);
+  google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
   auto rel_alg_eu = eu_translator.createRelAlgExecutionUnit();
   CHECK(std::strcmp(
