@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,33 +20,17 @@
  */
 #pragma once
 
-#include <any>
-#include <map>
-#include <string>
 #include "cider/CiderException.h"
 #include "exec/operator/join/BaseHashTable.h"
+#include "exec/operator/join/CiderChainedHashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
+
 namespace cider_hashtable {
 
 // To be added
 // This enum is used for cider internal only
 // Outside cider will need to define their own enum
 enum HashTableType { LINEAR_PROBING, CHAINED, CK_INT8 };
-
-struct MurmurHash {
-  size_t operator()(int64_t rawHash) {
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xff51afd7ed558ccdL;
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xc4ceb9fe1a85ec53L;
-    rawHash ^= unsigned(rawHash) >> 33;
-    return rawHash;
-  }
-};
-
-struct Equal {
-  bool operator()(int lhs, int rhs) { return lhs == rhs; }
-};
 
 template <typename Key,
           typename Value,
@@ -72,4 +56,4 @@ class HashTableSelector {
 // to isolate the implementation from codegen.
 // use include cpp as a method to avoid maintaining too many template
 // declaration in cpp file.
-#include "exec/operator/join/HashTableFactory.cpp"
+#include "exec/operator/join/HashTableSelector.cpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -867,8 +867,6 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
 }
 
 TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (regexp-match-substring) is not supported yet in nextgen");
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -922,8 +920,6 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
 }
 
 TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
-  // TODO: (YBRua) Enable this after nextgen supports StringOp
-  GTEST_SKIP_("stringop (regexp-extract) is not supported yet in nextgen");
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {

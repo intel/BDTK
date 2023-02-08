@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -250,6 +250,66 @@ TEST_F(CiderNewHashTableTest, aggUInt64Test) {
     CHECK_EQ(ht_uint64[keys[i]].getSum(), 60);
     CHECK_EQ(ht_uint64[keys[i]].getCount(), 2);
     CHECK_EQ(ht_uint64[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggFloatTest) {
+  using AggregatedHashTableWithFloatKey = HashMap<float, Block, HashCRC32<float>>;
+  AggregatedHashTableWithFloatKey ht_float;
+
+  std::vector<float> keys{1.1, 2.2, 3.3, 4.4, 5.5};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_float[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_float[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_float[keys[i]].getCount(), 1);
+  }
+
+  std::vector<float> keys2{1.1, 2.2, 3.3, 4.4, 5.5};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_float[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_float[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_float[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_float[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggDoubleTest) {
+  using AggregatedHashTableWithDoubleKey = HashMap<double, Block, HashCRC32<double>>;
+  AggregatedHashTableWithDoubleKey ht_double;
+
+  std::vector<double> keys{1.11, 2.22, 3.33, 4.44, 5.55};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_double[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_double[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_double[keys[i]].getCount(), 1);
+  }
+
+  std::vector<double> keys2{1.11, 2.22, 3.33, 4.44, 5.55};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_double[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_double[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_double[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_double[keys[i]].getAvg(), 30);
   }
 }
 

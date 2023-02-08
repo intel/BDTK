@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -24,36 +24,72 @@
 namespace cider::exec::processor {
 
 JoinHashTable::JoinHashTable(cider_hashtable::HashTableType hashTableType) {
-  cider_hashtable::HashTableSelector<
-      CiderJoinBaseKey,
-      CiderJoinBaseValue,
-      cider_hashtable::MurmurHash,
-      cider_hashtable::Equal,
-      void,
-      std::allocator<
-          std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>>
-      hashTableSelector;
-  hashTableInstance_ = std::move(hashTableSelector.createForJoin(hashTableType));
-}
-// choose hashtable, right now just one
-std::shared_ptr<CiderJoinBaseHashTable> JoinHashTable::getHashTable() {
-  return hashTableInstance_;
+  hashTableType_ = hashTableType;
+  switch (hashTableType_) {
+    case cider_hashtable::HashTableType::LINEAR_PROBING:
+      LPHashTableInstance_ =
+          std::make_shared<cider_hashtable::LinearProbeHashTable<LP_TEMPLATE>>();
+    case cider_hashtable::HashTableType::CHAINED:
+      chainedHashTableInstance_ =
+          std::make_shared<cider_hashtable::ChainedHashTable<CHAINED_TEMPLATE>>();
+  }
 }
 
 void JoinHashTable::merge_other_hashtables(
     std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables) {
-  std::vector<std::shared_ptr<CiderJoinBaseHashTable>> otherHashTables;
-  for (auto& otherJoinTable : otherJoinTables) {
-    otherHashTables.emplace_back(otherJoinTable->getHashTable());
+  switch (hashTableType_) {
+    case cider_hashtable::HashTableType::LINEAR_PROBING: {
+      std::vector<std::shared_ptr<JoinLPHashTable>> otherHashTables;
+      for (auto& otherJoinTable : otherJoinTables) {
+        otherHashTables.emplace_back(otherJoinTable->getLPHashTable());
+      }
+      LPHashTableInstance_->merge_other_hashtables(otherHashTables);
+      break;
+    }
+    case cider_hashtable::HashTableType::CHAINED: {
+      std::vector<std::shared_ptr<JoinChainedHashTable>> otherHashTables;
+      for (auto& otherJoinTable : otherJoinTables) {
+        otherHashTables.emplace_back(otherJoinTable->getChainedHashTable());
+      }
+      chainedHashTableInstance_->merge_other_hashtables(otherHashTables);
+      break;
+    }
+    default:
+      return;
   }
-  hashTableInstance_->merge_other_hashtables(otherHashTables);
 }
 
 bool JoinHashTable::emplace(CiderJoinBaseKey key, CiderJoinBaseValue value) {
-  return hashTableInstance_->emplace(key, value);
+  switch (hashTableType_) {
+    case cider_hashtable::HashTableType::LINEAR_PROBING:
+      return LPHashTableInstance_->emplace(key, value);
+    case cider_hashtable::HashTableType::CHAINED:
+      return chainedHashTableInstance_->emplace(key, value);
+    default:
+      return false;
+  }
 }
+
 std::vector<CiderJoinBaseValue> JoinHashTable::findAll(const CiderJoinBaseKey key) {
-  return hashTableInstance_->findAll(key);
+  switch (hashTableType_) {
+    case cider_hashtable::HashTableType::LINEAR_PROBING:
+      return LPHashTableInstance_->findAll(key);
+    case cider_hashtable::HashTableType::CHAINED:
+      return chainedHashTableInstance_->findAll(key);
+    default:
+      return std::vector<CiderJoinBaseValue>();
+  }
+}
+
+size_t JoinHashTable::size() {
+  switch (hashTableType_) {
+    case cider_hashtable::HashTableType::LINEAR_PROBING:
+      return LPHashTableInstance_->size();
+    case cider_hashtable::HashTableType::CHAINED:
+      return chainedHashTableInstance_->size();
+    default:
+      return LPHashTableInstance_->size();
+  }
 }
 
 }  // namespace cider::exec::processor

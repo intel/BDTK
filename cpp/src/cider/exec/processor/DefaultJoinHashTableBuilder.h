@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -32,7 +32,12 @@ class DefaultJoinHashTableBuilder : public JoinHashTableBuilder {
  public:
   DefaultJoinHashTableBuilder(const ::substrait::JoinRel& joinRel,
                               const std::shared_ptr<JoinHashTableBuildContext>& context)
-      : joinRel_(joinRel), context_(context) {}
+      : joinRel_(joinRel), context_(context) {
+    // TODO(xinyi): pass some arguments that will decide hashtable type
+    // TODO(xinyi): 1. get the choosed hashtable type
+    // TODO(xinyi): 2. set the hashtable type
+    hashTable_ = std::unique_ptr<JoinHashTable>(new JoinHashTable());
+  }
 
   void appendBatch(std::shared_ptr<cider::exec::nextgen::context::Batch> batch) override;
 

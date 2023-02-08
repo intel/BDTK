@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -108,6 +108,7 @@ JITValuePointer LLVMJITValue::uminus() {
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateNeg(load());
       break;
     case JITTypeTag::FLOAT:
@@ -132,6 +133,7 @@ JITValuePointer LLVMJITValue::mod(JITValue& rh) {
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateSRem(load(), llvm_rh.load());
       break;
     case JITTypeTag::FLOAT:
@@ -173,6 +175,7 @@ JITValuePointer LLVMJITValue::div(JITValue& rh) {
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateSDiv(load(), llvm_rh.load());
       break;
     case JITTypeTag::FLOAT:
@@ -214,6 +217,7 @@ JITValuePointer LLVMJITValue::mul(JITValue& rh) {
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateMul(load(), llvm_rh.load());
       break;
     case JITTypeTag::FLOAT:
@@ -280,6 +284,7 @@ JITValuePointer LLVMJITValue::sub(JITValue& rh) {
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateSub(load(), llvm_rh.load());
       break;
     case JITTypeTag::FLOAT:
@@ -356,6 +361,7 @@ JITValuePointer LLVMJITValue::add(JITValue& rh) {
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateAdd(load(), llvm_rh.load());
       break;
     case JITTypeTag::FLOAT:
@@ -448,6 +454,7 @@ JITValuePointer LLVMJITValue::createCmpInstruction(llvm::CmpInst::Predicate ICmp
     case JITTypeTag::INT16:
     case JITTypeTag::INT32:
     case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_)
                 .CreateICmp(ICmpType, load(), llvm_rh.load());
       break;

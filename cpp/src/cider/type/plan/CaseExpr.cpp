@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -223,74 +223,86 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
       case_ti.is_fp() || case_ti.is_boolean()) {
     const auto type =
         case_ti.is_decimal() ? decimal_to_int_type(case_ti) : case_ti.get_type();
-    JITValuePointer value =
-        func.createVariable(getJITTag(type), "case_when_value_init", 0);
-    JITValuePointer null =
-        func.createVariable(JITTypeTag::BOOL, "case_when_null_init", false);
-    JITValuePointer is_case =
-        func.createVariable(JITTypeTag::BOOL, "is_case_init", false);
-    for (const auto& expr_pair : expr_pair_list) {
-      func.createIfBuilder()
-          ->condition([&]() {
-            cider::exec::nextgen::utils::FixSizeJITExprValue cond(
-                expr_pair.first->codegen(context));
-            auto condition = !cond.getNull() && cond.getValue();
-            return condition;
-          })
-          ->ifTrue([&]() {
-            cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
-                expr_pair.second->codegen(context));
-            value.replace(then_jit_expr_value.getValue());
-            null.replace(then_jit_expr_value.getNull());
-            is_case = func.createLiteral(JITTypeTag::BOOL, true);
-          })
-          ->build();
-    }
+    JITValuePointer value = func.createVariable(getJITTag(type), "case_when_value_init");
+    *value = func.createLiteral(getJITTag(type), 0);
+    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "case_when_null_init");
+    *null = func.createLiteral(JITTypeTag::BOOL, false);
+    JITValuePointer is_case = func.createVariable(JITTypeTag::BOOL, "is_case_init");
+    *is_case = func.createLiteral(JITTypeTag::BOOL, false);
+    std::for_each(
+        expr_pair_list.rbegin(),
+        expr_pair_list.rend(),
+        [&func, &context, &value, &null, &is_case](
+            const std::pair<std::shared_ptr<Analyzer::Expr>,
+                            std::shared_ptr<Analyzer::Expr>>& expr_pair) {
+          func.createIfBuilder()
+              ->condition([&]() {
+                cider::exec::nextgen::utils::FixSizeJITExprValue cond(
+                    expr_pair.first->codegen(context));
+                auto condition = !cond.getNull() && cond.getValue();
+                return condition;
+              })
+              ->ifTrue([&]() {
+                cider::exec::nextgen::utils::FixSizeJITExprValue then_jit_expr_value(
+                    expr_pair.second->codegen(context));
+                *value = *then_jit_expr_value.getValue();
+                *null = *then_jit_expr_value.getNull();
+                *is_case = func.createLiteral(JITTypeTag::BOOL, true);
+              })
+              ->build();
+        });
     func.createIfBuilder()
         ->condition([&]() { return !is_case; })
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::FixSizeJITExprValue else_jit_expr_value(
               else_expr->codegen(context));
-          value.replace(else_jit_expr_value.getValue());
-          null.replace(else_jit_expr_value.getNull());
+          *value = *else_jit_expr_value.getValue();
+          *null = *else_jit_expr_value.getNull();
         })
         ->build();
     return set_expr_value(null, value);
   } else if (case_ti.is_string()) {
     JITValuePointer value =
-        func.createVariable(JITTypeTag::POINTER, "case_when_value_init", 0);
+        func.createVariable(JITTypeTag::INT64, "case_when_value_init");
+    *value = func.createLiteral(JITTypeTag::INT64, 0);
     JITValuePointer length =
-        func.createVariable(JITTypeTag::INT64, "case_when_value_init", 0);
-    JITValuePointer null =
-        func.createVariable(JITTypeTag::BOOL, "case_when_null_init", false);
-    JITValuePointer is_case =
-        func.createVariable(JITTypeTag::BOOL, "is_case_init", false);
-    for (const auto& expr_pair : expr_pair_list) {
-      func.createIfBuilder()
-          ->condition([&]() {
-            cider::exec::nextgen::utils::VarSizeJITExprValue cond(
-                expr_pair.first->codegen(context));
-            auto condition = !cond.getNull() && cond.getValue();
-            return condition;
-          })
-          ->ifTrue([&]() {
-            cider::exec::nextgen::utils::VarSizeJITExprValue then_jit_expr_value(
-                expr_pair.second->codegen(context));
-            value.replace(then_jit_expr_value.getValue());
-            length.replace(then_jit_expr_value.getLength());
-            null.replace(then_jit_expr_value.getNull());
-            is_case = func.createLiteral(JITTypeTag::BOOL, true);
-          })
-          ->build();
-    }
+        func.createVariable(JITTypeTag::INT32, "case_when_length_init");
+    *length = func.createLiteral(JITTypeTag::INT32, 0);
+    JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "case_when_null_init");
+    *null = func.createLiteral(JITTypeTag::BOOL, false);
+    JITValuePointer is_case = func.createVariable(JITTypeTag::BOOL, "is_case_init");
+    *is_case = func.createLiteral(JITTypeTag::BOOL, false);
+    std::for_each(
+        expr_pair_list.rbegin(),
+        expr_pair_list.rend(),
+        [&func, &context, &value, &length, &null, &is_case](
+            const std::pair<std::shared_ptr<Analyzer::Expr>,
+                            std::shared_ptr<Analyzer::Expr>>& expr_pair) {
+          func.createIfBuilder()
+              ->condition([&]() {
+                cider::exec::nextgen::utils::FixSizeJITExprValue cond(
+                    expr_pair.first->codegen(context));
+                auto condition = !cond.getNull() && cond.getValue();
+                return condition;
+              })
+              ->ifTrue([&]() {
+                cider::exec::nextgen::utils::VarSizeJITExprValue then_jit_expr_value(
+                    expr_pair.second->codegen(context));
+                *value = *then_jit_expr_value.getValue();
+                *length = *then_jit_expr_value.getLength();
+                *null = *then_jit_expr_value.getNull();
+                *is_case = func.createLiteral(JITTypeTag::BOOL, true);
+              })
+              ->build();
+        });
     func.createIfBuilder()
         ->condition([&]() { return !is_case; })
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::VarSizeJITExprValue else_jit_expr_value(
               else_expr->codegen(context));
-          value.replace(else_jit_expr_value.getValue());
-          length.replace(else_jit_expr_value.getLength());
-          null.replace(else_jit_expr_value.getNull());
+          *value = *else_jit_expr_value.getValue();
+          *length = *else_jit_expr_value.getLength();
+          *null = *else_jit_expr_value.getNull();
         })
         ->build();
     return set_expr_value(null, length, value);

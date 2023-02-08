@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -351,6 +351,57 @@ TEST(ArrowArrayBuilderTest, NestedArrowArrayTest) {
   EXPECT_EQ(2, batch->getChildAt(0)->getChildAt(0)->getBufferNum());
 
   EXPECT_EQ(true, batch->isRootOwner());
+}
+
+TEST(ArrowArrayBuilderTest, SingleDimensionArrayTest) {
+  //[[12, -7, 25], null, [null, -127, null, 50], []]
+  std::vector<int> vec1{12, -7, 25};
+  std::vector<int> vec2{0, -127, 127, 50};
+  std::vector<int> vec3{};
+  std::vector<std::vector<int>> vecs{vec1, vec1, vec2, vec3};
+
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  std::tie(schema, array) =
+      ArrowArrayBuilder()
+          .setRowNum(4)
+          .addSingleDimensionArrayColumn("int32_array",
+                                         CREATE_SUBSTRAIT_LIST_TYPE(I32),
+                                         vecs,
+                                         {false, true, false, false},
+                                         {{false, false, false},
+                                          {false, false, false},
+                                          {true, false, true, false},
+                                          {}})
+          .build();
+
+  EXPECT_EQ(std::string(schema->children[0]->format), "+l");
+  EXPECT_EQ(schema->children[0]->n_children, 1);
+  EXPECT_EQ(std::string(schema->children[0]->children[0]->format), "i");
+  EXPECT_EQ(array->children[0]->n_children, 1);
+  EXPECT_EQ(array->children[0]->n_buffers, 2);
+  EXPECT_EQ(array->children[0]->length, 4);
+  EXPECT_EQ(array->children[0]->null_count, 1);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->buffers[0]), 0b11111101);
+  // offset
+  int32_t* offsets = (int32_t*)(array->children[0]->buffers[1]);
+  EXPECT_EQ(offsets[0], 0);
+  EXPECT_EQ(offsets[1], 3);
+  EXPECT_EQ(offsets[2], 3);
+  EXPECT_EQ(offsets[3], 7);
+  EXPECT_EQ(offsets[4], 7);
+  EXPECT_EQ(array->children[0]->children[0]->length, 7);
+  EXPECT_EQ(array->children[0]->children[0]->n_buffers, 2);
+  EXPECT_EQ(array->children[0]->children[0]->n_children, 0);
+  EXPECT_EQ(array->children[0]->children[0]->null_count, 2);
+  EXPECT_EQ(*(uint8_t*)(array->children[0]->children[0]->buffers[0]), 0b11010111);
+  // values buffer
+  int32_t* values = (int32_t*)(array->children[0]->children[0]->buffers[1]);
+  EXPECT_EQ(values[0], 12);
+  EXPECT_EQ(values[1], -7);
+  EXPECT_EQ(values[2], 25);
+  EXPECT_EQ(values[4], -127);
+  EXPECT_EQ(values[6], 50);
 }
 
 int main(int argc, char** argv) {

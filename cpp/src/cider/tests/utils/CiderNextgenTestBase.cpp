@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -96,10 +96,7 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
                                                 output_array,
                                                 output_schema,
                                                 codegen_options_);
-  // if (0 == duck_res_arrow.size()) {
-  //   // result is empty.
-  //   CHECK((!array || 0 == array->length));
-  // } else {
+
   if (ignore_order) {
     EXPECT_TRUE(CiderArrowChecker::checkArrowEqIgnoreOrder(
         expect_array, &output_array, expect_schema, &output_schema));

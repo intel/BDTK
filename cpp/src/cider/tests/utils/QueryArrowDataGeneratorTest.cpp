@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright(c) 2022-2023 Intel Corporation.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -223,6 +223,62 @@ TEST(QueryArrowDataGeneratorTest, genStringColumnTest) {
             << std::endl;
   std::cout << "str3: " << CiderBatchUtils::extractUtf8ArrowArrayAt(array->children[0], 2)
             << std::endl;
+}
+
+TEST(QueryArrowDataGeneratorTest, genArrayColumnSequenceTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                10,
+                                                {"col_arr"},
+                                                {CREATE_SUBSTRAIT_LIST_TYPE(I32)},
+                                                {0},
+                                                GeneratePattern::Sequence);
+  EXPECT_EQ(std::string(schema->children[0]->format), "+l");
+  EXPECT_EQ(schema->children[0]->n_children, 1);
+  EXPECT_EQ(std::string(schema->children[0]->children[0]->format), "i");
+  EXPECT_EQ(array->children[0]->n_children, 1);
+  EXPECT_EQ(array->children[0]->n_buffers, 2);
+  EXPECT_EQ(array->children[0]->length, 10);
+  EXPECT_EQ(array->children[0]->null_count, 0);
+  // offset
+  int32_t* offsets = (int32_t*)(array->children[0]->buffers[1]);
+  for (int i = 0; i < 11; i++) {
+    EXPECT_EQ(offsets[i], i * 10);
+  }
+  EXPECT_EQ(array->children[0]->children[0]->length, 100);
+  EXPECT_EQ(array->children[0]->children[0]->n_buffers, 2);
+  EXPECT_EQ(array->children[0]->children[0]->n_children, 0);
+  EXPECT_EQ(array->children[0]->children[0]->null_count, 0);
+  // values buffer
+  int32_t* values = (int32_t*)(array->children[0]->children[0]->buffers[1]);
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(values[i], i % 10);
+  }
+}
+
+TEST(QueryArrowDataGeneratorTest, genArrayColumnRandomTest) {
+  ArrowArray* array = nullptr;
+  ArrowSchema* schema = nullptr;
+  QueryArrowDataGenerator::generateBatchByTypes(schema,
+                                                array,
+                                                10,
+                                                {"col_arr"},
+                                                {CREATE_SUBSTRAIT_LIST_TYPE(I32)},
+                                                {0},
+                                                GeneratePattern::Random,
+                                                0,
+                                                10);
+  EXPECT_EQ(std::string(schema->children[0]->format), "+l");
+  EXPECT_EQ(schema->children[0]->n_children, 1);
+  EXPECT_EQ(std::string(schema->children[0]->children[0]->format), "i");
+  EXPECT_EQ(array->children[0]->n_children, 1);
+  EXPECT_EQ(array->children[0]->n_buffers, 2);
+  EXPECT_EQ(array->children[0]->null_count, 0);
+  EXPECT_EQ(array->children[0]->children[0]->n_buffers, 2);
+  EXPECT_EQ(array->children[0]->children[0]->n_children, 0);
+  EXPECT_EQ(array->children[0]->children[0]->null_count, 0);
 }
 
 int main(int argc, char** argv) {
