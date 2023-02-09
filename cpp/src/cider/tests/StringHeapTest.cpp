@@ -20,6 +20,8 @@
  */
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
+#include "util/Logger.h"
 #include "exec/nextgen/context/StringHeap.h"
 
 TEST(StringHeapTest, addString) {

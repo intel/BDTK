@@ -21,12 +21,12 @@
 
 #include <common/base/wide_integer.h>
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
+#include "util/Logger.h"
 #include <algorithm>
 #include <limits>
-#include "TestHelpers.h"
 #include "common/interpreters/AggregationHashTable.h"
 
-using namespace TestHelpers;
 using namespace cider::hashtable;
 
 class CiderNewAggHashTableTest : public ::testing::Test {};

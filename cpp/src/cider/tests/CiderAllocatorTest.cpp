@@ -20,7 +20,8 @@
  */
 
 #include <gtest/gtest.h>
-#include "TestHelpers.h"
+#include <gflags/gflags.h>
+#include "util/Logger.h"
 #include "cider/CiderAllocator.h"
 
 class CiderAllocatorTest : public ::testing::Test {};

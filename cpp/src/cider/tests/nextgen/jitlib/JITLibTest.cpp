@@ -24,7 +24,6 @@
 #include <functional>
 
 #include "exec/nextgen/jitlib/JITLib.h"
-#include "tests/TestHelpers.h"
 
 using namespace cider::jitlib;
 

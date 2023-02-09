@@ -22,10 +22,10 @@
 #include <common/base/wide_integer.h>
 #include <common/hashtable/HashTableAllocator.h>
 #include <gtest/gtest.h>
-#include "TestHelpers.h"
+#include <gflags/gflags.h>
+#include "util/Logger.h"
 #include "common/hashtable/FixedHashMap.h"
 
-using namespace TestHelpers;
 using namespace cider::hashtable;
 
 class CiderNewHashTableTest : public ::testing::Test {};

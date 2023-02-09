@@ -26,8 +26,9 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
+#include "util/Logger.h"
 #include <string>
-#include "TestHelpers.h"
 #include "cider/CiderCompileModule.h"
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/ConverterHelper.h"
@@ -102,10 +103,11 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
   ::substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
-  auto cider_compile_module =
-      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
-  cider_compile_module->feedBuildTable(std::move(buildCiderBatch()));
-  cider_compile_module->compile(sub_plan);
+  // TODO : (yma11) switch to use BatchProcessor API
+  // auto cider_compile_module =
+  //     CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
+  // cider_compile_module->feedBuildTable(std::move(buildCiderBatch()));
+  // cider_compile_module->compile(sub_plan);
 }
 
 TEST(Substrait2IR, OutputTableSchema) {

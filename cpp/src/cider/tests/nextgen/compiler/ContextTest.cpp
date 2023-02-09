@@ -21,13 +21,12 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-
+#include <gflags/gflags.h>
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/operator/join/CiderJoinHashTable.h"
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/TestHelpers.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "type/data/sqltypes.h"
 

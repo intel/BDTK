@@ -20,7 +20,8 @@
  */
 
 #include <gtest/gtest.h>
-#include "TestHelpers.h"
+#include <gflags/gflags.h>
+#include "util/Logger.h"
 #include "cider/CiderException.h"
 
 class CiderExceptionTest : public ::testing::Test {};

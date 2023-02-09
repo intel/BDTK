@@ -92,7 +92,6 @@ set(query_engine_source_files
     common/recycler/HashingSchemeRecycler.cpp
     common/recycler/OverlapsTuningParamRecycler.cpp
     ../operator/aggregate/CiderAggHashTable.cpp
-    ../operator/aggregate/CiderAggSpillBufferMgr.cpp
     ../operator/aggregate/CiderAggTargetColExtractorBuilder.cpp
     Codec.h
     Execute.h

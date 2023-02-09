@@ -21,6 +21,7 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include "util/Logger.h"
 #include "tests/utils/CiderNextgenBenchmarkBase.h"
 using namespace cider::test::util;
 
