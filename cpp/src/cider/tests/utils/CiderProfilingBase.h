@@ -31,7 +31,6 @@ class CiderProfilingBase : public CiderTestBase {
  public:
   void benchSQL(const std::string& sql) {
     g_enable_debug_timer = true;
-    LOG(INFO) << "BENCH SQL:" << sql;
     // duckdb
     {
       INJECT_TIMER(DuckDb);

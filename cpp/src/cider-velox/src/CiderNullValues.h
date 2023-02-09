@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <fmt/ostream.h>
 #include <cfloat>
 #include <cstdint>
 #include <limits>
