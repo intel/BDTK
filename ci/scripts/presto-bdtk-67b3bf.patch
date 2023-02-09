@@ -114,7 +114,7 @@ index 8433765d7d..370d92472c 100644
  #include "velox/exec/PartitionedOutputBufferManager.h"
  #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
  #include "velox/serializers/PrestoSerializer.h"
-+#include "BDTK/src/cider-velox/src/CiderVeloxPluginCtx.h"
++#include "BDTK/cpp/src/cider-velox/src/CiderVeloxPluginCtx.h"
  
  #ifdef PRESTO_ENABLE_PARQUET
  #include "velox/dwio/parquet/RegisterParquetReader.h" // @manual
@@ -137,7 +137,7 @@ index 05d83ffea0..e4dd0fe1d1 100644
  #include "presto_cpp/presto_protocol/presto_protocol.h"
  #include "velox/common/time/Timer.h"
  #include "velox/type/tz/TimeZoneMap.h"
-+#include "BDTK/src/cider-velox/src/CiderVeloxPluginCtx.h"
++#include "BDTK/cpp/src/cider-velox/src/CiderVeloxPluginCtx.h"
 +
 +DEFINE_bool(enable_velox_plugin_BDTK, true, "switch to turn on velox plugin using BDTK");
  
