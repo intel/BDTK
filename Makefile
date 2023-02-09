@@ -68,16 +68,20 @@ build-common:
 		  -DENABLE_INTEL_JIT_LISTENER=OFF \
 		  -DPREFER_STATIC_LIBS=OFF \
 		  -DENABLE_ASN=OFF \
-			-DCIDER_ENABLE_AVX512=OFF\
+		  -DCIDER_ENABLE_AVX512=OFF\
 		  -DVELOX_ENABLE_SUBSTRAIT=ON \
 		  -DVELOX_ENABLE_PARQUET=ON \
+		  ${EXTRA_OPTIONS} \
 		  $(FORCE_COLOR) \
 		  ${CPP_SOURCE_DIR}
 
 build:
-	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} || \
-	cmake --build ${CPP_BUILD_DIR}
-	@mkdir -p ${CPP_BUILD_DIR}/src/cider-velox/function/ && cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/function/
+	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} \
+		|| cmake --build ${CPP_BUILD_DIR}
+	@mkdir -p ${CPP_BUILD_DIR}/src/cider-velox/function/ \
+		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/function/
+	@mkdir -p ${CPP_BUILD_DIR}/src/cider-velox/benchmark/function/ \
+		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/benchmark/function/
 
 icl:
 	@mkdir -p ${CPP_BUILD_DIR}
@@ -101,6 +105,10 @@ reldeb:
 
 release:
 	@$(MAKE) build-common BUILD_TYPE=Release
+	@$(MAKE) build BUILD_TYPE=Release
+
+benchmark:
+	@$(MAKE) build-common BUILD_TYPE=Release EXTRA_OPTIONS="-DENABLE_BENCHMARK=ON"
 	@$(MAKE) build BUILD_TYPE=Release
 
 test-cider:
