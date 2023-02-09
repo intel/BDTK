@@ -21,8 +21,8 @@
 
 #include "cider/batch/CiderBatch.h"
 #include "ArrowABI.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "include/cider/batch/StructBatch.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 
 CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
