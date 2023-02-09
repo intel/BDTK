@@ -70,9 +70,10 @@ if(DEFINED ENV{ISTHMUS_EXEC})
   message("defined env var ISTHMUS_EXEC: $ENV{ISTHMUS_EXEC}")
   add_subdirectory(utils)
   add_subdirectory(profiling)
-  if(CIDER_ENABLE_BENCHMARK)
-    add_subdirectory(benchmark)
-  endif()
+  #  TODO : (yma11) rebase benchmark on nextgen
+  #if(CIDER_ENABLE_BENCHMARK)
+  #  add_subdirectory(benchmark)
+  # endif()
   add_subdirectory(hashtable)
 endif()
 
