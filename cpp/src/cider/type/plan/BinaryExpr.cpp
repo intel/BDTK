@@ -27,6 +27,24 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
+void BinOper::initAutoVectorizeFlag() {
+  if (left_operand->isAutoVectorizable() && right_operand->isAutoVectorizable()) {
+    auto op_type = get_optype();
+    // TODO (bigPYJ1151): Support more operations and types.
+    switch (op_type) {
+      case kPLUS:
+      case kMINUS:
+      case kMULTIPLY:
+        auto_vectorizable_ = true;
+        return;
+      default:
+        auto_vectorizable_ = false;
+    }
+  } else {
+    auto_vectorizable_ = false;
+  }
+}
+
 JITExprValue& BinOper::codegen(CodegenContext& context) {
   JITFunction& func = *context.getJITFunction();
   if (auto& expr_var = get_expr_value()) {

@@ -211,9 +211,8 @@ class ColumnWriter {
   }
 
   JITValuePointer allocateRawDataBuffer(int64_t index, SQLTypes type) {
-    auto bytes = arrow_array_len_ * context_.getJITFunction()->createLiteral(
-                                        JITTypeTag::INT64, utils::getTypeBytes(type));
-    return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
+    return codegen_utils::allocateArrowArrayBuffer(
+        arrow_array_, index, arrow_array_len_, type);
   }
 
   JITValuePointer allocateRawDataBuffer(int64_t index, jitlib::JITValuePointer& bytes) {
@@ -248,14 +247,26 @@ TranslatorPtr RowToColumnNode::toTranslator(const TranslatorPtr& succ) {
 }
 
 void RowToColumnTranslator::consume(context::CodegenContext& context) {
-  codegen(context);
+  for_null_ = false;
+  codegen(context, [this](context::CodegenContext& context) {
+    if (successor_) {
+      successor_->consume(context);
+    }
+  });
 }
 
 void RowToColumnTranslator::consumeNull(context::CodegenContext& context) {
-  codegen(context, true);
+  for_null_ = true;
+  codegen(context, [this](context::CodegenContext& context) {
+    if (successor_) {
+      successor_->consumeNull(context);
+    }
+  });
 }
 
-void RowToColumnTranslator::codegen(context::CodegenContext& context, bool for_null) {
+void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
+                                        context::CodegenContext& context,
+                                        void* successor) {
   auto func = context.getJITFunction();
   auto&& [type, exprs] = node_->getOutputExprs();
   ExprPtrVector& output_exprs = exprs;
@@ -269,15 +280,14 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context, bool for_n
   for (int64_t i = 0; i < exprs.size(); ++i) {
     ExprPtr& expr = exprs[i];
     ColumnWriter writer(context, expr, output_index, input_array_len);
-    writer.write(for_null);
+    writer.write(for_null_);
   }
   // Update index
   output_index = output_index + 1;
 
-  if (for_null) {
-    if (successor_) {
-      successor_->consumeNull(context);
-    }
+  successor_wrapper(successor, context);
+
+  if (for_null_) {
     return;
   }
 
@@ -291,10 +301,6 @@ void RowToColumnTranslator::codegen(context::CodegenContext& context, bool for_n
       codegen_utils::setArrowArrayLength(arrow_array, output_index);
     }
   });
-
-  if (successor_) {
-    successor_->consume(context);
-  }
 }
 
 }  // namespace cider::exec::nextgen::operators

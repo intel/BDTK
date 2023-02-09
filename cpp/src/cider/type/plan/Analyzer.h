@@ -764,7 +764,13 @@ class AggExpr : public Expr {
   std::string toString() const override;
   void find_expr(bool (*f)(const Expr*),
                  std::list<const Expr*>& expr_list) const override;
-  ExprPtrRefVector get_children_reference() override { return {&arg}; }
+  ExprPtrRefVector get_children_reference() override {
+    ExprPtrRefVector ret;
+    if (arg) {
+      ret.emplace_back(&arg);
+    }
+    return ret;
+  }
 
  private:
   SQLAgg aggtype;                       // aggregate type: kAVG, kMIN, kMAX, kSUM, kCOUNT
@@ -866,7 +872,6 @@ class TryStringCastOper : public StringOper {
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
-
   TryStringCastOper(const SQLTypeInfo& ti,
                     const std::vector<std::shared_ptr<Analyzer::Expr>>& operands)
       : StringOper(SqlStringOpKind::TRY_STRING_CAST,
@@ -875,14 +880,10 @@ class TryStringCastOper : public StringOper {
                    getMinArgs(),
                    getExpectedTypeFamilies(),
                    getArgNames()) {}
-
   TryStringCastOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
-
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
-
   size_t getMinArgs() const override { return 1UL; }
-
   std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {
     return {OperandTypeFamily::STRING_FAMILY};
   }

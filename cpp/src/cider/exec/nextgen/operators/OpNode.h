@@ -33,7 +33,7 @@ class Translator;
 class OpNode;
 
 using OpNodePtr = std::shared_ptr<OpNode>;
-using OpPipeline = std::vector<OpNodePtr>;
+using OpPipeline = std::list<OpNodePtr>;
 using ExprPtr = std::shared_ptr<Analyzer::Expr>;
 using ExprPtrVector = std::vector<ExprPtr>;
 using TranslatorPtr = std::shared_ptr<Translator>;
@@ -92,6 +92,28 @@ class Translator {
   }
 
   TranslatorPtr getSuccessor() const { return successor_; }
+
+  using SuccessorEmitter = void(void*, context::CodegenContext&);
+
+  template <typename T,
+            typename std::enable_if_t<std::is_invocable_v<T, context::CodegenContext&>,
+                                      bool> = true>
+  void codegen(context::CodegenContext& context, T&& successor) {
+    auto successor_wrapper = [](void* successor_ptr, context::CodegenContext& context) {
+      auto actual_builder = reinterpret_cast<T*>(successor_ptr);
+      (*actual_builder)(context);
+    };
+
+    return codegenImpl(successor_wrapper, context, (void*)&successor);
+  }
+
+ private:
+  // TODO (bigPYJ1151) : Change to pure virtual function.
+  virtual void codegenImpl(SuccessorEmitter successor_wrapper,
+                           context::CodegenContext& context,
+                           void* successor) {
+    UNREACHABLE();
+  }
 
  protected:
   OpNodePtr node_;

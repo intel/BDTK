@@ -199,6 +199,12 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   size_t getLocalIndex() { return local_index_; }
 
+  bool isAutoVectorizable() const { return auto_vectorizable_; }
+
+  bool getNullable() const { return !type_info.get_notnull(); }
+
+  void setNullable(bool nullable) { type_info.set_notnull(!nullable); }
+
  protected:
   JITTypeTag getJITTag(const SQLTypes& st) {
     return cider::exec::nextgen::utils::getJITTypeTag(st);
@@ -210,6 +216,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   JITExprValue expr_var_;
   size_t local_index_{0};  // 1-based index of input column in CodegenContext.
+  bool auto_vectorizable_ = false;
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;

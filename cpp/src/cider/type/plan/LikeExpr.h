@@ -121,7 +121,11 @@ class LikeExpr : public Expr {
 
  public:
   ExprPtrRefVector get_children_reference() override {
-    return {&arg, &like_expr, &escape_expr};
+    if (escape_expr) {
+      return {&arg, &like_expr, &escape_expr};
+    } else {
+      return {&arg, &like_expr};
+    }
   }
 
   JITExprValue& codegen(CodegenContext& context) override;
