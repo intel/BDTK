@@ -61,7 +61,7 @@ void check_array(ArrowArray* array, size_t expect_len, std::vector<TYPE> expect_
   EXPECT_EQ(array->length, expect_len);
   TYPE* data_buffer = (TYPE*)array->buffers[1];
   for (size_t i = 0; i < expect_len; ++i) {
-    EXPECT_EQ(data_buffer[0], expect_values[0]);
+    EXPECT_EQ(data_buffer[i], expect_values[i]);
   }
 }
 
