@@ -26,9 +26,8 @@ foreach(cider_functionality_test_file ${cider_functionality_test_files})
                ${cider_functionality_test_file})
   string(REGEX REPLACE "functionality/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
-  # following ut will core, due to Executor
-  # after Executor relative codes deleted
-  # those ut need delete
+  # following ut will core, due to Executor after Executor relative codes
+  # deleted those ut need delete
   if(${target_name} MATCHES "CiderFilterTest")
     continue()
   elseif(${target_name} MATCHES "CiderGroupByTest")
