@@ -108,7 +108,8 @@ release:
 	@$(MAKE) build BUILD_TYPE=Release
 
 benchmark:
-	@$(MAKE) build-common BUILD_TYPE=Release EXTRA_OPTIONS="-DENABLE_BENCHMARK=ON"
+	@$(MAKE) build-common BUILD_TYPE=Release \
+		EXTRA_OPTIONS="-DENABLE_BENCHMARK=ON -DOPTIMIZE_FOR_NATIVE=ON"
 	@$(MAKE) build BUILD_TYPE=Release
 
 test-cider:

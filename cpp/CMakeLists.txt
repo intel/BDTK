@@ -36,7 +36,6 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
       Release
       CACHE STRING "Choose the type of build.")
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 
 project(BDTK VERSION "${BDTK_BASE_VERSION}")
 
