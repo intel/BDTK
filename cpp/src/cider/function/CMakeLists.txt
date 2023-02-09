@@ -62,7 +62,6 @@ add_custom_command(
     scalar/RuntimeFunctions.h
     scalar/RuntimeFunctions.cpp
     scalar/DecodersImpl.h
-    scalar/TopKRuntime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/template/operator/join/hashtable/runtime/JoinHashTableQueryRuntime.cpp
     string/StringLike.cpp
     aggregate/CiderRuntimeFunctions.h

@@ -1078,8 +1078,6 @@ extern "C" ALWAYS_INLINE uint64_t string_pack(const int8_t* ptr, const int32_t l
 #include "function/string/StringLike.cpp"
 #endif
 
-#include "function/scalar/TopKRuntime.cpp"
-
 extern "C" ALWAYS_INLINE int32_t char_length(const char* str, const int32_t str_len) {
   return str_len;
 }
