@@ -420,11 +420,6 @@ BENCHMARK_DRAW_LINE();
     cgo.set_null_bit_vector_opt = true;                                    \
     benchmark->nextgenCompute(expr, cgo);                                  \
   }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenBranchlessLogic) {                       \
-    CodegenOptions cgo;                                                    \
-    cgo.branchless_logic = true;                                           \
-    benchmark->nextgenCompute(expr, cgo);                                  \
-  }                                                                        \
   BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                          \
     FLAGS_null_separate = true;                                            \
     CodegenOptions cgo;                                                    \
