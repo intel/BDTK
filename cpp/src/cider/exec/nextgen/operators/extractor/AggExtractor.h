@@ -37,6 +37,8 @@ class NextgenAggExtractor {
 
   std::string getName() { return name_; }
 
+  virtual ~NextgenAggExtractor() = default;
+
  protected:
   int8_t null_offset_;
   bool is_nullable_;

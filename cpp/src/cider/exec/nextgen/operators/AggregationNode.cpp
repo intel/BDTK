@@ -107,7 +107,8 @@ void initSumOrCountValue(const context::AggExprsInfo& info, int8_t* raw_memory) 
       break;
     }
     default:
-      LOG(ERROR) << info.sql_type_info_.get_size() << " size is not support for sum/count yet";
+      LOG(ERROR) << info.sql_type_info_.get_size()
+                 << " size is not support for sum/count yet";
       break;
   }
 }
