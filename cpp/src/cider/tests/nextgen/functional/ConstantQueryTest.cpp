@@ -19,18 +19,21 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "tests/utils/CiderTestBase.h"
 
-class ConstantQueryTest : public CiderTestBase {
+#include "tests/utils/CiderNextgenTestBase.h"
+
+using namespace cider::test::util;
+class ConstantQueryTest : public CiderNextgenTestBase {
  public:
   ConstantQueryTest() {
     table_name_ = "test";
     create_ddl_ = "CREATE TABLE test(col_a BIGINT, col_b BIGINT);";
 
     QueryArrowDataGenerator::generateBatchByTypes(
-        schema_,
-        array_,
+        input_schema_,
+        input_array_,
         100,
         {"col_a", "col_b"},
         {CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(I64)},
@@ -39,31 +42,32 @@ class ConstantQueryTest : public CiderTestBase {
 };
 
 TEST_F(ConstantQueryTest, selectConstantTest) {
-  assertQueryArrow("SELECT true FROM test");
-  assertQueryArrow("SELECT 1 FROM test");
-  assertQueryArrow("SELECT true FROM test where col_a > 10");
-  assertQueryArrow("SELECT true, col_b FROM test where col_a > 10");
+  assertQuery("SELECT true FROM test");
+  assertQuery("SELECT 1 FROM test");
+  assertQuery("SELECT true FROM test where col_a > 10");
+  assertQuery("SELECT true, col_b FROM test where col_a > 10");
+  assertQuery("SELECT true, col_b FROM test ");
 }
 
 TEST_F(ConstantQueryTest, selectOperatorTest) {
-  assertQueryArrow("SELECT 3 < 2 FROM test");
-  assertQueryArrow("SELECT 3 > 2 FROM test");
-  assertQueryArrow("SELECT 3 = 2 FROM test");
-  assertQueryArrow("SELECT 3 <= 2  FROM test");
-  assertQueryArrow("SELECT 3 >= 2  FROM test");
-  assertQueryArrow("SELECT 3 <> 2 FROM test");
-  assertQueryArrow("SELECT CAST(null AS boolean) FROM test");
-  assertQueryArrow("SELECT NOT CAST(null AS boolean) FROM test");
-  assertQueryArrow("SELECT CAST(null AS boolean) AND true FROM test");
-  assertQueryArrow("SELECT CAST(null AS boolean) AND false FROM test");
-  assertQueryArrow("SELECT CAST(null AS boolean) OR true FROM test");
-  assertQueryArrow("SELECT CAST(null AS boolean) OR false FROM test");
-  assertQueryArrow("SELECT null and true FROM test");
-  assertQueryArrow("SELECT null and false FROM test");
-  assertQueryArrow("SELECT null or true FROM test");
-  assertQueryArrow("SELECT null or false FROM test");
-  assertQueryArrow("SELECT col_a = 2 AND col_b > 10 FROM test");
-  assertQueryArrow("SELECT col_a = 2 OR col_b > 10 FROM test");
+  assertQuery("SELECT 3 < 2 FROM test");
+  assertQuery("SELECT 3 > 2 FROM test");
+  assertQuery("SELECT 3 = 2 FROM test");
+  assertQuery("SELECT 3 <= 2  FROM test");
+  assertQuery("SELECT 3 >= 2  FROM test");
+  assertQuery("SELECT 3 <> 2 FROM test");
+  assertQuery("SELECT CAST(null AS boolean) FROM test");
+  assertQuery("SELECT NOT CAST(null AS boolean) FROM test");
+  assertQuery("SELECT CAST(null AS boolean) AND true FROM test");
+  assertQuery("SELECT CAST(null AS boolean) AND false FROM test");
+  assertQuery("SELECT CAST(null AS boolean) OR true FROM test");
+  assertQuery("SELECT CAST(null AS boolean) OR false FROM test");
+  assertQuery("SELECT null and true FROM test");
+  assertQuery("SELECT null and false FROM test");
+  assertQuery("SELECT null or true FROM test");
+  assertQuery("SELECT null or false FROM test");
+  assertQuery("SELECT col_a = 2 AND col_b > 10 FROM test");
+  assertQuery("SELECT col_a = 2 OR col_b > 10 FROM test");
 }
 
 int main(int argc, char** argv) {
