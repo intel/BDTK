@@ -242,7 +242,7 @@ struct UInt128Hash {
 
 struct UInt128HashCRC32 {
   size_t operator()(UInt128 x) const {
-    UInt64 crc = -1ULL;
+    uint64_t crc = -1ULL;
     crc = _mm_crc32_u64(crc, x.items[0]);
     crc = _mm_crc32_u64(crc, x.items[1]);
     return crc;
