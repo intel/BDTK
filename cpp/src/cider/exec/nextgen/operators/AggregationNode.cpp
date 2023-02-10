@@ -59,7 +59,7 @@ context::AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
 }
 
 template <typename TYPE>
-void makeSumInitialValue(int8_t* value_addr, int8_t offset) {
+void makeSumOrCountInitialValue(int8_t* value_addr, int8_t offset) {
   auto cast_memory = reinterpret_cast<TYPE*>(value_addr + offset);
   *cast_memory = 0;
 }
@@ -76,13 +76,13 @@ void makeMaxInitialValue(int8_t* value_addr, int8_t offset) {
   *cast_memory = std::numeric_limits<TYPE>::min();
 }
 
-void initSumValue(const context::AggExprsInfo& info, int8_t* raw_memory) {
+void initSumOrCountValue(const context::AggExprsInfo& info, int8_t* raw_memory) {
   switch (info.sql_type_info_.get_size()) {
     case 1:
-      makeSumInitialValue<int8_t>(raw_memory, info.start_offset_);
+      makeSumOrCountInitialValue<int8_t>(raw_memory, info.start_offset_);
       break;
     case 2:
-      makeSumInitialValue<int16_t>(raw_memory, info.start_offset_);
+      makeSumOrCountInitialValue<int16_t>(raw_memory, info.start_offset_);
       break;
     case 4: {
       if (info.sql_type_info_.is_fp()) {
@@ -92,7 +92,7 @@ void initSumValue(const context::AggExprsInfo& info, int8_t* raw_memory) {
         *cast_memory = zero_float;
         break;
       }
-      makeSumInitialValue<int32_t>(raw_memory, info.start_offset_);
+      makeSumOrCountInitialValue<int32_t>(raw_memory, info.start_offset_);
       break;
     }
     case 8: {
@@ -103,32 +103,11 @@ void initSumValue(const context::AggExprsInfo& info, int8_t* raw_memory) {
         *cast_memory = zero_double;
         break;
       }
-      makeSumInitialValue<int64_t>(raw_memory, info.start_offset_);
+      makeSumOrCountInitialValue<int64_t>(raw_memory, info.start_offset_);
       break;
     }
     default:
-      LOG(ERROR) << info.sql_type_info_.get_size() << " size is not support for sum yet";
-      break;
-  }
-}
-
-void initCountValue(const context::AggExprsInfo& info, int8_t* raw_memory) {
-  switch (info.sql_type_info_.get_size()) {
-    case 1:
-      makeSumInitialValue<int8_t>(raw_memory, info.start_offset_);
-      break;
-    case 2:
-      makeSumInitialValue<int16_t>(raw_memory, info.start_offset_);
-      break;
-    case 4:
-      makeSumInitialValue<int32_t>(raw_memory, info.start_offset_);
-      break;
-    case 8:
-      makeSumInitialValue<int64_t>(raw_memory, info.start_offset_);
-      break;
-    default:
-      LOG(ERROR) << info.sql_type_info_.get_size()
-                 << " size is not support for count yet";
+      LOG(ERROR) << info.sql_type_info_.get_size() << " size is not support for sum/count yet";
       break;
   }
 }
@@ -224,10 +203,8 @@ std::vector<int8_t> initOriginValue(context::AggExprsInfoVector& exprs_info) {
   for (const auto& info : exprs_info) {
     switch (info.agg_type_) {
       case SQLAgg::kSUM:
-        initSumValue(info, raw_memory);
-        break;
       case SQLAgg::kCOUNT:
-        initCountValue(info, raw_memory);
+        initSumOrCountValue(info, raw_memory);
         break;
       case SQLAgg::kMIN:
         initMinValue(info, raw_memory);
