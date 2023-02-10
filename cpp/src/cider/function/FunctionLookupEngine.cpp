@@ -520,8 +520,8 @@ io::substrait::ParameterizedTypePtr FunctionLookupEngine::decode(
           std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
       io::substrait::StringLiteralPtr scale =
           std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[1]);
-      if ((!precision->value().empty() && precision->value().at(0) == 'L') ||
-          (!scale->value().empty() && scale->value().at(0) == 'L')) {
+      if ((!precision->value().empty() && precision->value().at(0) == 'P') ||
+          (!scale->value().empty() && scale->value().at(0) == 'S')) {
         return std::make_shared<io::substrait::Decimal>(0, 0, nullable);
       }
       return std::make_shared<io::substrait::Decimal>(
@@ -588,7 +588,8 @@ const std::string FunctionLookupEngine::getTypeSignatureRealTypeName(
       {"iday", "interval_day"},
       {"ts", "timestamp"},
       {"tstz", "timestamp_tz"},
-  };
+      {"any", "i8"},
+      {"any1", "i8"}};
   const auto iter = type_signature_map.find(argue_type_signature_str);
   if (iter != type_signature_map.end()) {
     return iter->second;

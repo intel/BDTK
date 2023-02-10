@@ -110,7 +110,6 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
 }
 
 TEST(Substrait2IR, OutputTableSchema) {
-  GTEST_SKIP();
   std::ifstream sub_json(getDataFilesPath() + "nullability.json");
   std::stringstream buffer;
   buffer << sub_json.rdbuf();
@@ -159,7 +158,6 @@ TEST(Substrait2IR, OutputTableSchema) {
 }
 
 TEST(Substrait2IR, ColIndexUpdate_1) {
-  GTEST_SKIP();
   // Check final col index should be correct
   // Select sum(l_extendedprice) as sum_ext, sum(l_quantity) as sum_qua,
   // sum(l_discount) as sum_dis from lineitem where l_quantity < 0. 5
@@ -188,7 +186,6 @@ TEST(Substrait2IR, ColIndexUpdate_1) {
 }
 
 TEST(Substrait2IR, ColIndexUpdate_2) {
-  GTEST_SKIP();
   // Check final targets should be correct
   // select sum(l_extendedprice * l_discount) as revenue,
   // sum(l_quantity) as sum_quantity from lineitem where l_quantity < 0.5
@@ -211,7 +208,6 @@ TEST(Substrait2IR, ColIndexUpdate_2) {
 TEST(Substrait2IR, FilterProject) {
   // select * from test where l_quantity > 24
   relAlgExecutionUnitCreateAndCompile("select_all.json");
-  GTEST_SKIP();
   // select l_suppkey, l_quantity from lineitem where l_orderkey > 10
   relAlgExecutionUnitCreateAndCompile("simple_project_filter.json");
   // select l_suppkey, l_extendedprice*l_discount from lineitem where l_orderkey > 10
