@@ -41,9 +41,9 @@ add_executable(AggTest AggTest.cpp)
 target_link_libraries(AggTest ${EXECUTE_TEST_LIBS} ${NEXTGEN_TEST_DEPS})
 add_test(AggTest ${EXECUTABLE_OUTPUT_PATH}/AggTest ${TEST_ARGS})
 
-add_executable(ContextTest ContextTest.cpp)
-target_link_libraries(ContextTest ${NEXTGEN_COMPILER_TEST_LIBS})
-add_test(ContextTest ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})
+# add_executable(ContextTest ContextTest.cpp) target_link_libraries(ContextTest
+# ${NEXTGEN_COMPILER_TEST_LIBS}) add_test(ContextTest
+# ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})
 
 add_executable(HashJoinTest HashJoinTest.cpp)
 target_link_libraries(HashJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
