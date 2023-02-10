@@ -30,8 +30,8 @@ rm -rf ./presto_cpp/main/lib
 cp -r ./BDTK/cpp/thirdparty/velox .
 mkdir -p ./presto_cpp/main/lib
 
-sed -i 's/BDTK\/src/BDTK\/cpp\/src/g' presto_cpp/main/PrestoServer.cpp
-sed -i 's/BDTK\/src/BDTK\/cpp\/src/g' presto_cpp/main/TaskResource.cpp
+sed -i 's|BDTK/src|BDTK/cpp/src|g' presto_cpp/main/PrestoServer.cpp
+sed -i 's|BDTK/src|BDTK/cpp/src|g' presto_cpp/main/TaskResource.cpp
 
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/ciderTransformer/libcider_plan_transformer.a ./presto_cpp/main/lib
