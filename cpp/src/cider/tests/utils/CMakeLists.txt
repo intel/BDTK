@@ -33,7 +33,8 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderBatchChecker.cpp
     CiderBenchmarkRunner.cpp
     CiderRunner.cpp
-    CiderInt128.cpp)
+    CiderInt128.cpp
+    ../../exec/module/batch/CiderBatch.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
 target_link_libraries(test_utils duckdb cider_plan_parser cider_processor)
