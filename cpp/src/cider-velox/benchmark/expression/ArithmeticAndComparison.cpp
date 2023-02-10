@@ -87,11 +87,11 @@ ArrowArray* allocArrowArray(int64_t length) {
   array->buffers = (const void**)std::malloc(sizeof(void*) * 2);
   size_t null_size = (length + 7) >> 3;
   void* null_buf = std::malloc(null_size);
-  // void* null_buf = std::aligned_alloc(512, null_size);
+  // void* null_buf = std::aligned_alloc(64, null_size);
   std::memset(null_buf, 0xFF, null_size);
   array->buffers[0] = null_buf;
   array->buffers[1] = std::malloc(sizeof(T) * length);
-  // array->buffers[1] = std::aligned_alloc(512, sizeof(T) * length);
+  // array->buffers[1] = std::aligned_alloc(64, sizeof(T) * length);
 
   return array;
 }
@@ -100,7 +100,7 @@ void releaseArrowArray(ArrowArray* array) {
   free((void*)array->buffers[0]);
   free((void*)array->buffers[1]);
   free((void*)array->buffers);
-  free(array);
+  delete array;
 }
 
 class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
@@ -388,12 +388,11 @@ BENCHMARK_DRAW_LINE();
 BENCHMARK(nextgen____base) {
   benchmark->nextgenCompute(profile_expr);
 }
-BENCHMARK_RELATIVE(nextgen_opt) {
+BENCHMARK_RELATIVE(nextgen_autorization) {
   // null separate
-  FLAGS_null_separate = true;
   CodegenOptions cgo;
+  cgo.enable_vectorize = true;
   benchmark->nextgenCompute(profile_expr, cgo);
-  FLAGS_null_separate = false;
 }
 BENCHMARK_RELATIVE(specifialize1) {
   benchmark->kernelCompute(mulI8Specialized1);
@@ -420,20 +419,17 @@ BENCHMARK_DRAW_LINE();
     cgo.set_null_bit_vector_opt = true;                                    \
     benchmark->nextgenCompute(expr, cgo);                                  \
   }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenNullSeparate) {                          \
-    FLAGS_null_separate = true;                                            \
+  BENCHMARK_RELATIVE(name##NextgenVectorization) {                         \
     CodegenOptions cgo;                                                    \
+    cgo.enable_vectorize = true;                                           \
     benchmark->nextgenCompute(expr, cgo);                                  \
-    FLAGS_null_separate = false;                                           \
   }                                                                        \
   BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                \
-    FLAGS_null_separate = true;                                            \
     CodegenOptions cgo;                                                    \
     cgo.check_bit_vector_clear_opt = true;                                 \
     cgo.set_null_bit_vector_opt = true;                                    \
-    cgo.branchless_logic = true;                                           \
+    cgo.enable_vectorize = true;                                           \
     benchmark->nextgenCompute(expr, cgo);                                  \
-    FLAGS_null_separate = false;                                           \
   }                                                                        \
   BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }            \
   BENCHMARK_DRAW_LINE()
