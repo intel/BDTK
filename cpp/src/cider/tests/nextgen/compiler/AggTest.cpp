@@ -43,8 +43,8 @@ static const std::shared_ptr<CiderAllocator> allocator =
 operators::TranslatorPtr initSqlToTranslators(const std::string& sql,
                                               const std::string& create_ddl) {
   // SQL Parsing
-  auto json = RunIsthmus::processSql(sql, create_ddl);
   ::substrait::Plan plan;
+  auto json = RunIsthmus::processSql(sql, create_ddl);
   google::protobuf::util::JsonStringToMessage(json, &plan);
 
   generator::SubstraitToRelAlgExecutionUnit substrait2eu(plan);

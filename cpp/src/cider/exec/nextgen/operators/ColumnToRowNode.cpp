@@ -196,7 +196,9 @@ void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   auto len = func->createLocalJITValue([&input_array]() {
     return context::codegen_utils::getArrowArrayLength(input_array);
   });
-  static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
+  if (!for_null_) {
+    static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
+  }
   auto idx_upper = func->createVariable(JITTypeTag::INT64, "idx_upper", len);
   if (for_null_) {
     // pack 8 bit
