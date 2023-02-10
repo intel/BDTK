@@ -86,4 +86,6 @@ add_library(cider_function ${function_source_files})
 if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
   add_dependencies(cider_function SUBSTRAITCPP)
 endif()
-target_link_libraries(cider_function ${SUBSTRAITCPP_FUNCTION_LIB} ${SUBSTRAITCPP_TYPE_LIB} ${SUBSTRAITCPP_COMMON_LIB} substrait re2)
+target_link_libraries(
+  cider_function ${SUBSTRAITCPP_FUNCTION_LIB} ${SUBSTRAITCPP_TYPE_LIB} 
+  ${SUBSTRAITCPP_COMMON_LIB} substrait re2)
