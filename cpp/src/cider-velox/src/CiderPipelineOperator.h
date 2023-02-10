@@ -22,7 +22,6 @@
 #pragma once
 
 #include "CiderOperator.h"
-#include "CiderPipelineOperator.h"
 #include "cider/processor/BatchProcessor.h"
 #include "velox/exec/Operator.h"
 
