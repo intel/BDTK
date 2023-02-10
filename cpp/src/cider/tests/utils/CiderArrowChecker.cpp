@@ -70,6 +70,52 @@ bool checkArrowBuffer(const struct ArrowArray* expect_array,
 }
 
 template <typename T>
+bool checkArrowBufferDecimal(const struct ArrowArray* expect_array,
+                             const struct ArrowArray* actual_array) {
+  if (expect_array == nullptr && actual_array == nullptr) {
+    return true;
+  }
+  if (expect_array == nullptr || actual_array == nullptr) {
+    return false;
+  }
+
+  auto decimal_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[1]);
+  auto actual_value_buffer = reinterpret_cast<const T*>(actual_array->buffers[1]);
+
+  auto expect_null_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[0]);
+  auto actual_null_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[0]);
+
+  if (expect_null_buffer && actual_null_buffer) {
+    for (int64_t i = 0; i < expect_array->length; i++) {
+      bool expect_valid = CiderBitUtils::isBitSetAt(expect_null_buffer, i);
+      bool actual_valid = CiderBitUtils::isBitSetAt(actual_null_buffer, i);
+      if (expect_valid != actual_valid) {
+        LOG(INFO) << "ArrowArray null bit not equal: "
+                  << "Expected: " << expect_valid << ". Actual: " << actual_valid;
+        return false;
+      }
+      if (expect_valid) {
+        T expect_value = *(reinterpret_cast<const T*>(decimal_buffer + 16 * i));
+        if (expect_value != actual_value_buffer[i]) {
+          return false;
+        }
+      }
+    }
+  } else {
+    if (!(expect_null_buffer == nullptr && actual_null_buffer == nullptr)) {
+      LOG(INFO) << "One ArrowArray null buffer is null in checkArrowBuffer.";
+    }
+    for (int64_t i = 0; i < expect_array->length; i++) {
+      T expect_value = *(reinterpret_cast<const T*>(decimal_buffer + 16 * i));
+      if (expect_value != actual_value_buffer[i]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <typename T>
 bool absoluteToleranceCompare(T x, T y) {
   if (x == std::numeric_limits<T>::infinity() &&
       y == std::numeric_limits<T>::infinity()) {
@@ -322,9 +368,25 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
       return checkArrowBufferFp<float>(expect_array, actual_array);
     case 'g':
       return checkArrowBufferFp<double>(expect_array, actual_array);
-    case 'd':
-      // workaround for non-groupby agg test
-      return checkArrowBuffer<int64_t>(expect_array, actual_array);
+    case 'd': {
+      // duck db schema makes all sum(int) type as decimal
+      // which does not keep consistency with our schema
+      // so add new processing branch
+      switch (actual_schema->format[0]) {
+        case 'c':
+        case 'C':
+          return checkArrowBufferDecimal<int8_t>(expect_array, actual_array);
+        case 's':
+        case 'S':
+          return checkArrowBufferDecimal<int16_t>(expect_array, actual_array);
+        case 'i':
+        case 'I':
+          return checkArrowBufferDecimal<int32_t>(expect_array, actual_array);
+        case 'l':
+        case 'L':
+          return checkArrowBufferDecimal<int64_t>(expect_array, actual_array);
+      }
+    }
     case 't': {
       if (expect_schema->format[1] == 'd' && expect_schema->format[2] == 'D') {
         return checkArrowBuffer<int32_t>(expect_array, actual_array);
@@ -395,13 +457,10 @@ bool CiderArrowChecker::checkArrowEq(const struct ArrowArray* expect_array,
   }
 
   for (int64_t i = 0; i < expect_array->n_children; i++) {
-    // duck db schema makes all int type as decimal
-    // which does not keep consistency which our schema
-    // so temp workaround by making actual schema as reference
     bool child_arrow_eq = checkOneScalarArrowEqual(expect_array->children[i],
                                                    actual_array->children[i],
-                                                   actual_schema->children[i],
-                                                   expect_schema->children[i]);
+                                                   expect_schema->children[i],
+                                                   actual_schema->children[i]);
     if (!child_arrow_eq) {
       return false;
     }
