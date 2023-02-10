@@ -31,9 +31,8 @@
 namespace icl {
 namespace codec {
 
-std::unique_ptr<IclCompressionCodec> IclCompressionCodec::MakeIclCompressionCodec(
-    std::string codec_name,
-    int compression_level) {
+std::unique_ptr<IclCompressionCodec> IclCompressionCodec::Make(std::string codec_name,
+                                                               int compression_level) {
   std::transform(
       codec_name.begin(), codec_name.end(), codec_name.begin(), [](unsigned char c) {
         return std::toupper(c);

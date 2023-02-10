@@ -38,9 +38,8 @@ class IclCompressionCodec {
   /// \param[in] codec_name the name of the backend codec used by ICL, supported codec can
   /// be "igzip", "qpl", "qat" \param[in] compression_level the compression level for the
   /// given codec
-  static std::unique_ptr<IclCompressionCodec> MakeIclCompressionCodec(
-      const std::string& codec_name,
-      int compression_level);
+  static std::unique_ptr<IclCompressionCodec> Make(std::string codec_name,
+                                                   int compression_level);
 
   /// \brief One-shot decompression function
   ///

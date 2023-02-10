@@ -94,7 +94,7 @@ int64_t igzip_wrapper_compress(void* context,
 
   stream.end_of_stream = 1; /* Do the entire file at once */
   stream.flush = NO_FLUSH;
-  stream.next_in = input;
+  stream.next_in = (uint8_t*)input;
   stream.avail_in = input_length;
   stream.next_out = output;
   stream.avail_out = output_length;
@@ -132,7 +132,7 @@ int64_t igzip_wrapper_decompress(void* context,
   struct inflate_state state;
   isal_inflate_init(&state);
 
-  state.next_in = input;
+  state.next_in = (uint8_t*)input;
   state.avail_in = input_length;
   state.next_out = output;
   state.avail_out = output_length;
@@ -156,7 +156,9 @@ int64_t igzip_wrapper_decompress(void* context,
   return state.total_out;
 }
 
-int64_t igzip_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input) {
+int64_t igzip_wrapper_max_compressed_len(void* context,
+                                         int64_t input_length,
+                                         const uint8_t* input) {
   return input_length * 2 + 1024;
 }
 

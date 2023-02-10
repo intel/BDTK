@@ -28,7 +28,18 @@
 extern "C" {
 #endif
 
-int64_t qat_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
+typedef struct qat_wrapper_context {
+  int compression_level;
+  void* private_data;
+} qat_wrapper_context_t;
+
+void* qat_wrapper_init(int compression_level);
+
+void qat_wrapper_destroy(void* context);
+
+int64_t qat_wrapper_max_compressed_len(void* context,
+                                       int64_t input_length,
+                                       const uint8_t* input);
 
 int64_t qat_wrapper_compress(void* context,
                              int64_t input_length,

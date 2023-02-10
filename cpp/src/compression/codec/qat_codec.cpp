@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include "icl_codec_internal.h"
-#include "qat_wrapper.h"
+#include "codec/icl_codec_internal.h"
+#include "common/qat/qat_wrapper.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -36,43 +36,55 @@ namespace {
 
 class QatCodec : public IclCompressionCodec {
  public:
-  int64_t Decompress(int64_t input_len,
+  explicit QatCodec(int compression_level) {
+    context_ =
+        static_cast<struct qat_wrapper_context*>(qat_wrapper_init(compression_level));
+  }
+
+  ~QatCodec() override { qat_wrapper_destroy(context_); }
+
+  int64_t Decompress(int64_t input_length,
                      const uint8_t* input,
-                     int64_t output_buffer_len,
-                     uint8_t* output_buffer) override {
-    int32_t decompressed_size = static_cast<int32_t>(output_buffer_len);
-    int32_t status = qat_wrapper_decompress(
-        input, static_cast<int32_t>(input_len), output_buffer, &decompressed_size);
-    if (status) {
-      return -1;
-    }
-
-    return static_cast<int64_t>(decompressed_size);
+                     int64_t output_length,
+                     uint8_t* output) override {
+    int64_t decompressed_size =
+        qat_wrapper_decompress(context_, input_length, input, output_length, output);
+    return decompressed_size;
   }
 
-  int64_t MaxCompressedLen(int64_t input_len, const uint8_t* input) override {
-    return qat_wrapper_max_compress_len(static_cast<int32_t>(input_len));
+  int64_t MaxCompressedLen(int64_t input_length, const uint8_t* input) override {
+    return qat_wrapper_max_compressed_len(context_, input_length, input);
   }
 
-  int64_t Compress(int64_t input_len,
+  int64_t Compress(int64_t input_length,
                    const uint8_t* input,
-                   int64_t output_buffer_len,
-                   uint8_t* output_buffer) override {
-    int32_t compressed_size = static_cast<int32_t>(output_buffer_len);
-    int32_t status = qat_wrapper_compress(
-        input, static_cast<int32_t>(input_len), output_buffer, &compressed_size);
-    if (status) {
-      return -1;
-    }
-
-    return static_cast<int64_t>(compressed_size);
+                   int64_t output_length,
+                   uint8_t* output) override {
+    int64_t compressed_size =
+        qat_wrapper_compress(context_, input_length, input, output_length, output);
+    return compressed_size;
   }
+
+  int minimum_compression_level() const override {
+    return qat_wrapper_minimum_compression_level();
+  }
+
+  int maximum_compression_level() const override {
+    return qat_wrapper_maximum_compression_level();
+  }
+
+  int default_compression_level() const override {
+    return qat_wrapper_default_compression_level();
+  }
+
+ private:
+  struct qat_wrapper_context* context_;
 };
 
 }  // namespace
 
 std::unique_ptr<IclCompressionCodec> MakeQatCodec(int compression_level) {
-  return std::unique_ptr<IclCompressionCodec>(new QatCodec());
+  return std::unique_ptr<IclCompressionCodec>(new QatCodec(compression_level));
 }
 
 }  // namespace internal
