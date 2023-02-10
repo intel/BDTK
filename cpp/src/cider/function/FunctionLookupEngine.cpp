@@ -99,20 +99,22 @@ void FunctionLookupEngine::loadExtensionYamlAndInitializeFunctionLookup(
     const std::string& platform_name,
     const std::string& yaml_extension_filename,
     const io::substrait::ExtensionPtr& cider_internal_function_ptr) {
-  io::substrait::ExtensionPtr extension_function_ptr =
-      io::substrait::Extension::load({fmt::format("{}/{}/{}/{}",
+  std::vector<std::string> extensions_files_path_vec;
+  extensions_files_path_vec.push_back(fmt::format("{}/{}/{}/{}",
                                                   yaml_conf_path,
                                                   "extensions",
                                                   platform_name,
-                                                  yaml_extension_filename)});
+                                                  yaml_extension_filename));
+  io::substrait::ExtensionPtr extension_function_ptr =
+      io::substrait::Extension::load(extensions_files_path_vec);
   io::substrait::FunctionMappingPtr func_mappings = std::make_shared<const T>();
-  scalar_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>(
-      cider_internal_function_ptr, func_mappings);
+  scalar_function_look_up_ptr_ =
+      std::make_shared<io::substrait::ScalarFunctionLookup>(cider_internal_function_ptr);
   aggregate_function_look_up_ptr_ =
       std::make_shared<io::substrait::AggregateFunctionLookup>(
-          cider_internal_function_ptr, func_mappings);
-  extension_function_look_up_ptr_ = std::make_shared<io::substrait::ScalarFunctionLookup>(
-      extension_function_ptr, func_mappings);
+          cider_internal_function_ptr);
+  extension_function_look_up_ptr_ =
+      std::make_shared<io::substrait::ScalarFunctionLookup>(extension_function_ptr);
   function_mapping_ptr_ = func_mappings;
 }
 
@@ -285,7 +287,7 @@ const std::string FunctionLookupEngine::getRealFunctionName(
 }
 
 const FunctionDescriptor FunctionLookupEngine::lookupFunction(
-    const FunctionSignature& function_signature) const {
+    FunctionSignature function_signature) const {
   FunctionDescriptor function_descriptor;
   const PlatformType& from_platform = function_signature.from_platform;
   if (from_platform != from_platform_) {
@@ -296,11 +298,9 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
             from_platform,
             from_platform_));
   }
-  const std::string& function_name = function_signature.func_name;
-  auto real_function_name = getRealFunctionName(function_name);
-  FunctionSignature function_signature_result = function_signature;
-  function_signature_result.func_name = real_function_name;
-  function_descriptor.func_sig = function_signature_result;
+  function_signature.func_name = getRealFunctionName(function_signature.func_name);
+  ;
+  function_descriptor.func_sig = function_signature;
   auto funtion_op_support_type_result = getFunctionOpSupportType(function_signature);
   function_descriptor.op_support_expr_type = funtion_op_support_type_result;
   if (funtion_op_support_type_result != OpSupportExprType::kUNDEFINED_EXPR) {
@@ -375,10 +375,193 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
   return function_descriptor;
 }
 
+size_t FunctionLookupEngine::findNextComma(const std::string& str, size_t start) const {
+  int cnt = 0;
+  for (auto i = start; i < str.size(); i++) {
+    if (str[i] == '<') {
+      cnt++;
+    } else if (str[i] == '>') {
+      cnt--;
+    } else if (cnt == 0 && str[i] == ',') {
+      return i;
+    }
+  }
+  return std::string::npos;
+}
+
+io::substrait::ParameterizedTypePtr FunctionLookupEngine::decode(
+    const std::string& rawType) const {
+  std::string matchingType = rawType;
+  std::transform(matchingType.begin(),
+                 matchingType.end(),
+                 matchingType.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  const auto& questionMaskPos = matchingType.find_last_of('?');
+
+  bool nullable = questionMaskPos != std::string::npos;
+
+  const auto& leftAngleBracketPos = matchingType.find('<');
+  if (leftAngleBracketPos == std::string::npos) {
+    // deal with type and with a question mask like "i32?".
+    const auto& baseType =
+        nullable ? matchingType = matchingType.substr(0, questionMaskPos) : matchingType;
+
+    if (io::substrait::TypeTraits<io::substrait::TypeKind::kBool>::typeString ==
+        baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kBool>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kI8>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kI8>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kI16>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kI16>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kI32>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kI32>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kI64>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kI64>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kFp32>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kFp32>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kFp64>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kFp64>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kString>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kString>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kBinary>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kBinary>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kUuid>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kUuid>>(nullable);
+    } else if (io::substrait::TypeTraits<
+                   io::substrait::TypeKind::kIntervalYear>::typeString == baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kIntervalYear>>(
+          nullable);
+    } else if (io::substrait::TypeTraits<
+                   io::substrait::TypeKind::kIntervalDay>::typeString == baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kIntervalDay>>(
+          nullable);
+    } else if (io::substrait::TypeTraits<
+                   io::substrait::TypeKind::kTimestamp>::typeString == baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kTimestamp>>(nullable);
+    } else if (io::substrait::TypeTraits<
+                   io::substrait::TypeKind::kTimestampTz>::typeString == baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kTimestampTz>>(
+          nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kDate>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kDate>>(nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kTime>::typeString ==
+               baseType) {
+      return std::make_shared<
+          const io::substrait::ScalarType<io::substrait::TypeKind::kTime>>(nullable);
+    } else {
+      return std::make_shared<const io::substrait::StringLiteral>(rawType);
+    }
+  } else {
+    const auto& rightAngleBracketPos = rawType.rfind('>');
+    const auto& baseTypePos =
+        nullable ? std::min(leftAngleBracketPos, questionMaskPos) : leftAngleBracketPos;
+
+    const auto& baseType = matchingType.substr(0, baseTypePos);
+
+    std::vector<io::substrait::ParameterizedTypePtr> nestedTypes;
+    auto prevPos = leftAngleBracketPos + 1;
+    auto commaPos = findNextComma(rawType, prevPos);
+    while (commaPos != std::string::npos) {
+      auto token = rawType.substr(prevPos, commaPos - prevPos);
+      nestedTypes.emplace_back(decode(token));
+      prevPos = commaPos + 1;
+      commaPos = findNextComma(rawType, prevPos);
+    }
+    auto token = rawType.substr(prevPos, rightAngleBracketPos - prevPos);
+    nestedTypes.emplace_back(decode(token));
+    if (io::substrait::TypeTraits<io::substrait::TypeKind::kList>::typeString ==
+        baseType) {
+      return std::make_shared<io::substrait::List>(
+          std::dynamic_pointer_cast<const io::substrait::Type>(nestedTypes[0]), nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kMap>::typeString ==
+               baseType) {
+      return std::make_shared<io::substrait::Map>(
+          std::dynamic_pointer_cast<const io::substrait::Type>(nestedTypes[0]),
+          std::dynamic_pointer_cast<const io::substrait::Type>(nestedTypes[1]),
+          nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kStruct>::typeString ==
+               baseType) {
+      std::vector<io::substrait::TypePtr> nestedTypePtrsVec;
+      nestedTypePtrsVec.reserve(nestedTypes.size());
+      for (auto nested_type : nestedTypes) {
+        nestedTypePtrsVec.push_back(
+            std::dynamic_pointer_cast<const io::substrait::Type>(nested_type));
+      }
+      return std::make_shared<io::substrait::Struct>(nestedTypePtrsVec, nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kDecimal>::typeString ==
+               baseType) {
+      io::substrait::StringLiteralPtr precision =
+          std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
+      io::substrait::StringLiteralPtr scale =
+          std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[1]);
+      if ((!precision->value().empty() && precision->value().at(0) == 'L') ||
+          (!scale->value().empty() && scale->value().at(0) == 'L')) {
+        return std::make_shared<io::substrait::Decimal>(0, 0, nullable);
+      }
+      return std::make_shared<io::substrait::Decimal>(
+          std::stoi(precision->value()), std::stoi(scale->value()), nullable);
+    } else if (io::substrait::TypeTraits<io::substrait::TypeKind::kVarchar>::typeString ==
+               baseType) {
+      auto length =
+          std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
+      if (!length->value().empty() && length->value().at(0) == 'L') {
+        return std::make_shared<io::substrait::Varchar>(0, nullable);
+      }
+      return std::make_shared<io::substrait::Varchar>(std::stoi(length->value()),
+                                                      nullable);
+    } else if (io::substrait::TypeTraits<
+                   io::substrait::TypeKind::kFixedChar>::typeString == baseType) {
+      auto length =
+          std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
+      if (!length->value().empty() && length->value().at(0) == 'L') {
+        return std::make_shared<io::substrait::Varchar>(0, nullable);
+      }
+      return std::make_shared<io::substrait::FixedChar>(std::stoi(length->value()),
+                                                        nullable);
+    } else if (io::substrait::TypeTraits<
+                   io::substrait::TypeKind::kFixedBinary>::typeString == baseType) {
+      auto length =
+          std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
+      if (!length->value().empty() && length->value().at(0) == 'L') {
+        return std::make_shared<io::substrait::Varchar>(0, nullable);
+      }
+      return std::make_shared<io::substrait::FixedBinary>(std::stoi(length->value()),
+                                                          nullable);
+    } else {
+      CIDER_THROW(CiderCompileException, "Unsupported type: " + rawType);
+    }
+  }
+}
+
 const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
     const std::string& argue_type_str) const {
-  io::substrait::TypePtr result_ptr = io::substrait::Type::decode(argue_type_str);
-  return result_ptr;
+  return std::dynamic_pointer_cast<const io::substrait::Type>(decode(argue_type_str));
 }
 
 const std::string FunctionLookupEngine::getTypeSignatureRealTypeName(
