@@ -23,6 +23,7 @@
 #define CIDER_ARROW_BUFFER_HOLDER_H
 
 #include <vector>
+
 #include "cider/CiderAllocator.h"
 
 struct ArrowSchema;

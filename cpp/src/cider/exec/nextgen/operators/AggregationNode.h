@@ -36,7 +36,7 @@ class AggNode : public OpNode {
 
   AggNode(const ExprPtrVector& groupby_exprs, const ExprPtrVector& output_exprs)
       : OpNode("AggNode", output_exprs, JITExprValueType::ROW)
-      , groupby_exprs_(std::move(groupby_exprs)) {}
+      , groupby_exprs_(groupby_exprs) {}
 
   ExprPtrVector& getGroupByExprs() { return groupby_exprs_; }
 

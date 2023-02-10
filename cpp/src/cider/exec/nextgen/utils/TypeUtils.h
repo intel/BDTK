@@ -142,6 +142,20 @@ inline std::string getSQLTypeName(SQLTypes type) {
   return "invalid";
 }
 
+inline bool isVectorizableType(SQLTypes type) {
+  switch (type) {
+    case kTINYINT:
+    case kSMALLINT:
+    case kINT:
+    case kBIGINT:
+    case kFLOAT:
+    case kDOUBLE:
+      return true;
+    default:
+      return false;
+  }
+}
+
 }  // namespace cider::exec::nextgen::utils
 
 #endif  // NEXTGEN_UTILS_TYPEUTILS_H

@@ -1,0 +1,96 @@
+{
+    "extensionUris": [],
+    "extensions": [],
+    "relations": [{
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [7]
+              }
+            },
+            "input": {
+              "read": {
+                "common": {
+                  "direct": {
+                  }
+                },
+                "baseSchema": {
+                  "names": ["COL_TINYINT", "COL_INT", "COL_BIGINT", "COL_BOOL", "COL_DATE", "COL_FLOAT", "COL_DOUBLE"],
+                  "struct": {
+                    "types": [{
+                      "i8": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "i32": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "i64": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "bool": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "date": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "fp32": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }, {
+                      "fp64": {
+                        "typeVariationReference": 0,
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    }],
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": {
+                  "names": ["TEST"]
+                }
+              }
+            },
+            "expressions": [{
+              "cast": {
+                "type": {
+                  "i32": {
+                    "typeVariationReference": 0,
+                    "nullability": "NULLABILITY_NULLABLE"
+                  }
+                },
+                "input": {
+                  "selection": {
+                    "directReference": {
+                      "structField": {
+                        "field": 3
+                      }
+                    },
+                    "rootReference": {
+                    }
+                  }
+                },
+                "failureBehavior": "FAILURE_BEHAVIOR_UNSPECIFIED"
+              }
+            }]
+          }
+        },
+        "names": ["EXPR$0"]
+      }
+    }],
+    "expectedTypeUrls": []
+  }
+  

@@ -19,8 +19,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef TYPE_PLAN_BINARY_EXPR_H
-#define TYPE_PLAN_BINARY_EXPR_H
+#ifndef TYPE_PLAN_BINARYEXPR_H
+#define TYPE_PLAN_BINARYEXPR_H
 
 #include <list>
 #include <memory>
@@ -52,7 +52,9 @@ class BinOper : public Expr {
           SQLQualifier q,
           std::shared_ptr<Analyzer::Expr> l,
           std::shared_ptr<Analyzer::Expr> r)
-      : Expr(ti, has_agg), optype(o), qualifier(q), left_operand(l), right_operand(r) {}
+      : Expr(ti, has_agg), optype(o), qualifier(q), left_operand(l), right_operand(r) {
+    initAutoVectorizeFlag();
+  }
   BinOper(SQLTypes t,
           SQLOps o,
           SQLQualifier q,
@@ -62,7 +64,9 @@ class BinOper : public Expr {
       , optype(o)
       , qualifier(q)
       , left_operand(l)
-      , right_operand(r) {}
+      , right_operand(r) {
+    initAutoVectorizeFlag();
+  }
   SQLOps get_optype() const { return optype; }
   SQLQualifier get_qualifier() const { return qualifier; }
   const Expr* get_left_operand() const { return left_operand.get(); }
@@ -176,6 +180,8 @@ class BinOper : public Expr {
   JITValuePointer codegenArithWithErrorCheck(JITValuePointer lhs, JITValuePointer rhs);
 
  private:
+  void initAutoVectorizeFlag();
+
   SQLOps optype;           // operator type, e.g., kLT, kAND, kPLUS, etc.
   SQLQualifier qualifier;  // qualifier kANY, kALL or kONE.  Only relevant with
                            // right_operand is Subquery
@@ -184,4 +190,4 @@ class BinOper : public Expr {
 };
 }  // namespace Analyzer
 
-#endif
+#endif  // TYPE_PLAN_BINARYEXPR_H

@@ -49,6 +49,10 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
       ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
       break;
     }
+    case JITTypeTag::INT8:
+      ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
+      return makeJITValuePointer<LLVMJITValue>(
+          JITTypeTag::INT8, parent_function_, ans, "and", false);
     default:
       LOG(ERROR) << "Invalid JITValue type for and operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -71,6 +75,8 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
     }
     case JITTypeTag::INT8:
       ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
+      return makeJITValuePointer<LLVMJITValue>(
+          JITTypeTag::INT8, parent_function_, ans, "or", false);
       break;
     default:
       LOG(ERROR) << "Invalid JITValue type for or operation. Name=" << getValueName()
@@ -541,8 +547,9 @@ JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_ta
   llvm::Value* source_lv = load();
   llvm::Value* target_lv = nullptr;
   if (source_type->isIntegerTy() && target_type->isIntegerTy()) {
-    target_lv =
-        getFunctionBuilder(parent_function_).CreateIntCast(source_lv, target_type, true);
+    target_lv = getFunctionBuilder(parent_function_)
+                    .CreateIntCast(
+                        source_lv, target_type, source_type->getScalarSizeInBits() != 1);
   } else if (source_type->isIntegerTy() && target_type->isFloatingPointTy()) {
     target_lv = getFunctionBuilder(parent_function_).CreateSIToFP(source_lv, target_type);
   } else if (source_type->isFloatingPointTy() && target_type->isIntegerTy()) {

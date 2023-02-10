@@ -21,6 +21,9 @@
 
 #include "cider/batch/CiderBatch.h"
 #include "ArrowABI.h"
+#include "cider/batch/ScalarBatch.h"
+#include "cider/batch/StructBatch.h"
+#include "tests/utils/ArrowArrayBuilder.h"
 
 CiderBatch::CiderBatch(ArrowSchema* schema, std::shared_ptr<CiderAllocator> allocator)
     : arrow_schema_(schema), ownership_(true), reallocate_(true), allocator_(allocator) {
@@ -489,3 +492,169 @@ void CiderBatch::printByTypeForArrow(std::stringstream& ss,
       CIDER_THROW(CiderCompileException, "Not supported type to print value!");
   }
 }
+
+namespace CiderBatchUtils {
+
+std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowSchema* schema,
+                                             ArrowArray* array) {
+  CHECK(schema);
+  CHECK(schema->release);
+
+  const char* format = schema->format;
+  switch (format[0]) {
+    // Scalar Types
+    case 'b':
+      return ScalarBatch<bool>::Create(schema, allocator, array);
+    case 'c':
+      return ScalarBatch<int8_t>::Create(schema, allocator, array);
+    case 's':
+      return ScalarBatch<int16_t>::Create(schema, allocator, array);
+    case 'i':
+      return ScalarBatch<int32_t>::Create(schema, allocator, array);
+    case 'l':
+      return ScalarBatch<int64_t>::Create(schema, allocator, array);
+    case 'f':
+      return ScalarBatch<float>::Create(schema, allocator, array);
+    case 'g':
+      return ScalarBatch<double>::Create(schema, allocator, array);
+    case 'd':
+      return ScalarBatch<__int128_t>::Create(schema, allocator, array);
+    case '+':
+      // Complex Types
+      switch (format[1]) {
+        // Struct Type
+        case 's':
+          return StructBatch::Create(schema, allocator, array);
+      }
+    case 't':
+      // date32 [days]
+      if (format[1] == 'd' && format[2] == 'D') {
+        return ScalarBatch<int32_t>::Create(schema, allocator, array);
+      }
+      // time64 [microseconds]
+      if (format[1] == 't' && format[2] == 'u') {
+        return ScalarBatch<int64_t>::Create(schema, allocator, array);
+      }
+      // timestamp [microseconds]
+      if (format[1] == 's' && format[2] == 'u') {
+        return ScalarBatch<int64_t>::Create(schema, allocator, array);
+      }
+      break;
+    case 'u':
+      return VarcharBatch::Create(schema, allocator, array);
+    default:
+      CIDER_THROW(CiderCompileException,
+                  std::string("Unsupported data type to create CiderBatch: ") + format);
+  }
+}
+
+#define GENERATE_AND_ADD_BOOL_COLUMN(C_TYPE)                                            \
+  {                                                                                     \
+    std::vector<C_TYPE> col_data;                                                       \
+    std::vector<bool> null_data;                                                        \
+    col_data.reserve(table_row_num);                                                    \
+    null_data.reserve(table_row_num);                                                   \
+    C_TYPE* buf = (C_TYPE*)table_ptr[table_ptr_idx];                                    \
+    uint8_t* null_buf = (uint8_t*)table_ptr[table_ptr_idx + column_num];                \
+    for (auto j = 0; j < table_row_num; ++j) {                                          \
+      C_TYPE value = buf[j];                                                            \
+      bool is_not_null = null_buf[j];                                                   \
+      col_data.push_back(value);                                                        \
+      null_data.push_back(!is_not_null);                                                \
+    }                                                                                   \
+    builder = builder.addBoolColumn<C_TYPE>(names[table_ptr_idx], col_data, null_data); \
+    break;                                                                              \
+  }
+
+#define GENERATE_AND_ADD_COLUMN(C_TYPE)                                             \
+  {                                                                                 \
+    std::vector<C_TYPE> col_data;                                                   \
+    std::vector<bool> null_data;                                                    \
+    col_data.reserve(table_row_num);                                                \
+    null_data.reserve(table_row_num);                                               \
+    C_TYPE* buf = (C_TYPE*)table_ptr[table_ptr_idx];                                \
+    uint8_t* null_buf = (uint8_t*)table_ptr[table_ptr_idx + column_num];            \
+    for (auto j = 0; j < table_row_num; ++j) {                                      \
+      C_TYPE value = buf[j];                                                        \
+      bool is_null = (null_buf[j] == 0);                                            \
+      col_data.push_back(value);                                                    \
+      null_data.push_back(is_null);                                                 \
+    }                                                                               \
+    builder =                                                                       \
+        builder.addColumn<C_TYPE>(names[table_ptr_idx], type, col_data, null_data); \
+    break;                                                                          \
+  }
+
+int convertToArrowStruct(ArrowArrayBuilder& builder,
+                         const ::substrait::Type type,
+                         const int8_t** table_ptr,
+                         int table_ptr_idx,
+                         int table_row_num,
+                         int column_num,
+                         std::vector<std::string> names) {
+  if (!type.has_struct_()) {
+    switch (type.kind_case()) {
+      case ::substrait::Type::KindCase::kBool:
+        GENERATE_AND_ADD_BOOL_COLUMN(bool)
+      case ::substrait::Type::KindCase::kI8:
+        GENERATE_AND_ADD_COLUMN(int8_t)
+      case ::substrait::Type::KindCase::kI16:
+        GENERATE_AND_ADD_COLUMN(int16_t)
+      case ::substrait::Type::KindCase::kI32:
+        GENERATE_AND_ADD_COLUMN(int32_t)
+      case ::substrait::Type::KindCase::kI64:
+        GENERATE_AND_ADD_COLUMN(int64_t)
+      case ::substrait::Type::KindCase::kFp32:
+        GENERATE_AND_ADD_COLUMN(float)
+      case ::substrait::Type::KindCase::kFp64:
+        GENERATE_AND_ADD_COLUMN(double)
+      default:
+        CIDER_THROW(CiderCompileException, "Type arrow convert not supported.");
+    }
+    return 1;
+  }
+
+  ArrowArrayBuilder subBuilder;
+  int table_ptr_num = 0;
+  for (auto subType : type.struct_().types()) {
+    auto struct_col_num = convertToArrowStruct(
+        subBuilder, subType, table_ptr, table_ptr_idx, table_row_num, column_num, names);
+    table_ptr_idx += struct_col_num;
+    table_ptr_num += struct_col_num;
+  }
+  auto schema_and_array = subBuilder.build();
+  builder.addStructColumn(std::get<0>(schema_and_array), std::get<1>(schema_and_array));
+  return table_ptr_num;
+}
+
+#undef GENERATE_AND_ADD_COLUMN
+#undef GENERATE_AND_ADD_BOOL_COLUMN
+
+CiderBatch convertToArrow(const CiderBatch& output_batch) {
+  std::shared_ptr<CiderTableSchema> table_schema = output_batch.schema();
+  auto column_num = table_schema->getFlattenColCount();
+  auto arrow_colum_num = output_batch.column_num();
+  CHECK_EQ(column_num * 2, arrow_colum_num);
+  auto table_row_num = output_batch.row_num();
+  ArrowArrayBuilder builder;
+  builder = builder.setRowNum(table_row_num);
+  const auto& types = table_schema->getColumnTypes();
+  const auto& names = table_schema->getFlattenColNames();
+  const int8_t** table_ptr = output_batch.table();
+  int table_ptr_idx = 0;
+  // Every scalar column is flatten stored in table_ptr, while some types in schema are
+  // nested. The loop below will enter the struct type and construct ArrowArray
+  // recursively.
+  for (auto type : types) {
+    table_ptr_idx += convertToArrowStruct(
+        builder, type, table_ptr, table_ptr_idx, table_row_num, column_num, names);
+  }
+  auto schema_and_array = builder.build();
+  CiderBatch result(std::get<0>(schema_and_array),
+                    std::get<1>(schema_and_array),
+                    std::make_shared<CiderDefaultAllocator>());
+  return result;
+}
+
+}  // namespace CiderBatchUtils

@@ -71,7 +71,8 @@ struct CodegenOptions {
   bool needs_error_check = false;
   bool check_bit_vector_clear_opt = false;
   bool set_null_bit_vector_opt = false;
-  bool branchless_logic = false;
+  bool branchless_logic = true;
+  bool enable_vectorize = false;
 
   jitlib::CompilationOptions co = jitlib::CompilationOptions{};
 };
@@ -255,6 +256,20 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
 jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
                                                  int64_t index,
                                                  jitlib::JITValuePointer& bytes);
+
+jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
+                                                 int64_t index,
+                                                 jitlib::JITValuePointer& len,
+                                                 SQLTypes type);
+
+void bitBufferMemcpy(jitlib::JITValuePointer& dst,
+                     jitlib::JITValuePointer& src,
+                     jitlib::JITValuePointer& bit_num);
+
+void bitBufferAnd(jitlib::JITValuePointer& output,
+                  jitlib::JITValuePointer& a,
+                  jitlib::JITValuePointer& b,
+                  jitlib::JITValuePointer& bit_num);
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context
 

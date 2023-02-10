@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>

@@ -184,8 +184,10 @@ JITValuePointer codegenCastFixedSize(CodegenContext& context,
     return codegenCastBetweenDateAndTime(context, operand_val, operand_ti, target_ti);
   } else if (operand_ti.get_type() == kTIMESTAMP && target_ti.get_type() == kTIMESTAMP) {
     return codegenCastBetweenTime(context, operand_val, operand_ti, target_ti);
-  } else if (operand_ti.is_integer()) {
-    CHECK(target_ti.is_fp() || target_ti.is_integer());
+  } else if (operand_ti.is_integer() || operand_ti.is_boolean()) {
+    // Like integer cast
+    // TODO: decimal cast
+    CHECK(operand_ti.is_castable(target_ti));
     return operand_val->castJITValuePrimitiveType(ti_jit_tag);
   } else if (operand_ti.is_fp()) {
     if (target_ti.is_fp()) {

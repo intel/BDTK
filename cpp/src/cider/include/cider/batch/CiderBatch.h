@@ -510,4 +510,15 @@ class CiderBatch {
 #endif
 };
 
+namespace CiderBatchUtils {
+
+std::unique_ptr<CiderBatch> createCiderBatch(std::shared_ptr<CiderAllocator> allocator,
+                                             ArrowSchema* schema,
+                                             ArrowArray* array = nullptr);
+
+// convert non group-by agg result to Arrow format
+CiderBatch convertToArrow(const CiderBatch& output_batch);
+
+}  // namespace CiderBatchUtils
+
 #endif  // CIDER_CIDERBATCH_H

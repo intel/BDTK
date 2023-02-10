@@ -18,58 +18,47 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-#ifndef NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
-#define NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
+#ifndef NEXTGEN_OPERATORS_VECTORIZEDPROJECTNODE_H
+#define NEXTGEN_OPERATORS_VECTORIZEDPROJECTNODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::operators {
-class ColumnToRowNode : public OpNode {
+class VectorizedProjectNode : public OpNode {
  public:
-  explicit ColumnToRowNode(ExprPtrVector&& output_exprs)
-      : OpNode("ColumnToRowNode", std::move(output_exprs), JITExprValueType::ROW) {}
+  explicit VectorizedProjectNode(ExprPtrVector&& output_exprs)
+      : OpNode("VectorizedProjectNode",
+               std::move(output_exprs),
+               JITExprValueType::BATCH) {}
 
-  explicit ColumnToRowNode(const ExprPtrVector& output_exprs)
-      : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW) {}
+  explicit VectorizedProjectNode(const ExprPtrVector& output_exprs)
+      : OpNode("VectorizedProjectNode", output_exprs, JITExprValueType::BATCH) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
-
-  jitlib::JITValuePointer& getColumnRowNum() { return column_row_num_; }
-
-  void setColumnRowNum(jitlib::JITValuePointer& row_num) {
-    CHECK(column_row_num_.get() == nullptr);
-    column_row_num_.replace(row_num);
-  }
-
-  using DeferFunc = void (*)(void*);
-
-  template <typename FuncT>
-  void registerDeferFunc(FuncT&& func) {
-    defer_func_list_.emplace_back(func);
-  }
-
-  std::vector<std::function<void()>>& getDeferFunctions() { return defer_func_list_; }
-
- private:
-  jitlib::JITValuePointer column_row_num_;
-  std::vector<std::function<void()>> defer_func_list_;
 };
 
-class ColumnToRowTranslator : public Translator {
+class VectorizedProjectTranslator : public Translator {
+ public:
+  struct ExprsGroup {
+    ExprPtrVector exprs;
+    ExprPtrVector input_exprs;
+  };
+
  public:
   using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
-  void consumeNull(context::CodegenContext& context) override;
 
  private:
   void codegenImpl(SuccessorEmitter successor_wrapper,
                    context::CodegenContext& context,
                    void* successor) override;
 
-  // FIXME: Workaround for null processing.
-  bool for_null_{false};
+  std::vector<ExprsGroup> groupOutputExprs();
+
+  void generateExprsGroupCode(context::CodegenContext& context,
+                              std::vector<ExprsGroup>& exprs_groups);
 };
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
+
+#endif  // NEXTGEN_OPERATORS_VECTORIZEDPROJECTNODE_H

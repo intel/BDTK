@@ -29,5 +29,6 @@ set(cider_type_plan_source_files
     DateExpr.cpp
     StringOpExpr.cpp
     InValues.cpp
-    FunctionExpr.cpp)
+    FunctionExpr.cpp
+    ../../exec/module/CiderOptions.cpp)
 add_library(cider_type_plan ${cider_type_plan_source_files})

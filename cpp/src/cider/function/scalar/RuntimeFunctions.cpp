@@ -1476,6 +1476,19 @@ extern "C" ALWAYS_INLINE void do_memcpy(int8_t* dst, int8_t* src, int32_t len) {
   memcpy(dst, src, len);
 }
 
+extern "C" ALWAYS_INLINE void bitwise_and_2(uint8_t* output,
+                                            const uint8_t* a,
+                                            const uint8_t* b,
+                                            uint64_t bit_num) {
+  CiderBitUtils::bitwiseAnd(output, a, b, bit_num);
+}
+
+extern "C" ALWAYS_INLINE void null_buffer_memcpy(int8_t* dst,
+                                                 int8_t* src,
+                                                 int64_t bit_num) {
+  memcpy(dst, src, (bit_num + 7) >> 3);
+}
+
 extern "C" ALWAYS_INLINE int8_t* extract_str_ptr_arrow(int8_t* data_buffer,
                                                        int8_t* offset_buffer,
                                                        uint64_t pos) {

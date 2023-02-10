@@ -23,6 +23,7 @@
 #define CIDER_JOINHANDLER_H
 
 #include <memory>
+#include "cider/CiderBatch.h"
 #include "cider/processor/BatchProcessor.h"
 
 namespace cider::exec::processor {

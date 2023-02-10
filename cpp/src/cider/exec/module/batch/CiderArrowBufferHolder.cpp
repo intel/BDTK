@@ -56,9 +56,11 @@ size_t CiderArrowArrayBufferHolder::getBufferSizeAt(size_t index) {
 
 void CiderArrowArrayBufferHolder::allocBuffer(size_t index, size_t bytes) {
   if (buffers_[index]) {
-    buffers_[index] = allocator_->reallocate(
-        reinterpret_cast<int8_t*>(buffers_[index]), buffers_bytes_[index], bytes);
-    buffers_bytes_[index] = bytes;
+    if (bytes > buffers_bytes_[index]) {
+      buffers_[index] = allocator_->reallocate(
+          reinterpret_cast<int8_t*>(buffers_[index]), buffers_bytes_[index], bytes);
+      buffers_bytes_[index] = bytes;
+    }
   } else {
     buffers_[index] = allocator_->allocate(bytes);
     memset(buffers_[index], 0, bytes);  // set new initialized bytes to 0
