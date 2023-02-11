@@ -18,16 +18,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "cider/CiderCompileModule.h"
-#include "exec/module/CiderExprEvaluator.h"
 #include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/LiteralUtils.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/function.pb.h"
 #include "substrait/type.pb.h"
-#include "tests/utils/CiderBatchBuilder.h"
-#include "tests/utils/CiderBatchChecker.h"
 
 int main(int argc, char** argv) {
   // Example 1: generate for expression "a * b + b"

@@ -114,9 +114,9 @@ add_executable(CiderPlanNodeTest CiderPlanNodeTest.cpp)
 target_link_libraries(CiderPlanNodeTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderPlanNodeTest CiderPlanNodeTest ${TEST_ARGS})
 
-add_executable(CiderDataConvertorTest DataConvertorTest.cpp ArrowUtilsTest.cpp)
-target_link_libraries(CiderDataConvertorTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderDataConvertorTest CiderDataConvertorTest ${TEST_ARGS})
+add_executable(ArrowUtilsTest ArrowUtilsTest.cpp)
+target_link_libraries(ArrowUtilsTest ${VELOX_PLUGIN_TEST_LIBS})
+add_test(ArrowUtilsTest ArrowUtilsTest ${TEST_ARGS})
 
 add_executable(CiderOperatorTest CiderOperatorTest.cpp)
 target_link_libraries(CiderOperatorTest ${VELOX_PLUGIN_TEST_LIBS}

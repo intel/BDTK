@@ -28,8 +28,6 @@
 #include <vector>
 
 #include "substrait/type.pb.h"
-
-#include "cider/CiderBatch.h"
 #include "cider/CiderTableSchema.h"
 
 struct CommandResult {
@@ -143,20 +141,6 @@ class SchemaUtils {
 
 class ArrowBuilderUtils {
  public:
-  /**
-   * Helper method for creating CiderBatch instances.
-   * Builds a CiderBatch from the array and schema returned by ArrowArrayBuilder::build()
-   */
-  static std::shared_ptr<CiderBatch> createCiderBatchFromArrowBuilder(
-      std::tuple<ArrowSchema*&, ArrowArray*&> array_with_schema) {
-    ArrowSchema* schema = nullptr;
-    ArrowArray* array = nullptr;
-    std::tie(schema, array) = array_with_schema;
-
-    return std::make_shared<CiderBatch>(
-        schema, array, std::make_shared<CiderDefaultAllocator>());
-  }
-
   /**
    * Helper method for generating inputs for ArrowArrayBuilder::addUTF8Column()
    * It accepts a vector of strings (i.e., rows of a VarChar/String column)

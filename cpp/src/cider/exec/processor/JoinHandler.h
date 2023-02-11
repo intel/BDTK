@@ -23,7 +23,6 @@
 #define CIDER_JOINHANDLER_H
 
 #include <memory>
-#include "cider/CiderBatch.h"
 #include "cider/processor/BatchProcessor.h"
 
 namespace cider::exec::processor {
@@ -31,9 +30,6 @@ namespace cider::exec::processor {
 class JoinHandler {
  public:
   virtual ~JoinHandler() = default;
-
-  virtual std::shared_ptr<CiderBatch> onProcessBatch(
-      std::shared_ptr<CiderBatch> batch) = 0;
 
   virtual void onState(BatchProcessorState state) = 0;
 
@@ -46,8 +42,6 @@ class HashProbeHandler : public JoinHandler {
  public:
   explicit HashProbeHandler(const BatchProcessorPtr& batchProcessor)
       : batchProcessor_(batchProcessor) {}
-
-  std::shared_ptr<CiderBatch> onProcessBatch(std::shared_ptr<CiderBatch> batch) override;
 
   void onState(BatchProcessorState state) override;
 

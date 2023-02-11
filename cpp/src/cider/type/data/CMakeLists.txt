@@ -29,6 +29,6 @@ if(ENABLE_FOLLY)
     ${Folly_LIBRARIES}
     ${TBB_LIBS})
 else()
-  target_link_libraries(cider_type_data cider_util ${Boost_LIBRARIES}
+  target_link_libraries(cider_type_data cider_util cider_function ${Boost_LIBRARIES}
                         ${Thrift_LIBRARIES} ${PROFILER_LIBS} ${TBB_LIBS})
 endif()

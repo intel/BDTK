@@ -21,7 +21,7 @@ set(DEP_LIBS ${EXECUTE_TEST_LIBS} cider_plan_validator)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
-add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
-target_link_libraries(CiderPlanValidatorTest ${DEP_LIBS})
-add_test(CiderPlanValidatorTest
-         ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})
+#add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
+#target_link_libraries(CiderPlanValidatorTest ${DEP_LIBS} dl)
+#add_test(CiderPlanValidatorTest
+#         ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})

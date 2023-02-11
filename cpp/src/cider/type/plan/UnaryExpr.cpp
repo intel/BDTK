@@ -19,7 +19,10 @@
  * under the License.
  */
 #include "UnaryExpr.h"
-#include "exec/template/Execute.h"
+#include "cider/CiderTypes.h"
+#include "util/SqlTypesLayout.h"
+
+#include "exec/template/DateTimeUtils.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;
@@ -53,6 +56,12 @@ void codegenCastOverflowCheck(CodegenContext& context,
         ->build();
   }
 }
+
+bool is_unnest(const Analyzer::Expr* expr) {
+  return dynamic_cast<const Analyzer::UOper*>(expr) &&
+         static_cast<const Analyzer::UOper*>(expr)->get_optype() == kUNNEST;
+}
+
 JITValuePointer codegenCastBetweenDateAndTime(CodegenContext& context,
                                               JITValuePointer operand_val,
                                               const SQLTypeInfo& operand_ti,

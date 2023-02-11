@@ -27,8 +27,6 @@
 #include <string>
 #include "CiderCrossJoinBuild.h"
 #include "CiderHashJoinBuild.h"
-#include "CiderJoinBuild.h"
-#include "CiderOperator.h"
 #include "CiderPipelineOperator.h"
 #include "CiderPlanNode.h"
 #include "CiderVeloxOptions.h"
@@ -47,11 +45,7 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
       int32_t id,
       const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderPlanNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
-      if (FLAGS_enable_batch_processor) {
-        return std::make_unique<CiderPipelineOperator>(id, ctx, ciderPlanNode);
-      } else {
-        return CiderOperator::Make(id, ctx, ciderPlanNode);
-      }
+      return std::make_unique<CiderPipelineOperator>(id, ctx, ciderPlanNode);
     }
     return nullptr;
   }
@@ -59,19 +53,7 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
   std::unique_ptr<exec::JoinBridge> toJoinBridge(
       const std::shared_ptr<const core::PlanNode>& node) override {
     if (auto ciderJoinNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
-      auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(
-          ciderJoinNode->getSubstraitPlan());
-      if (FLAGS_enable_batch_processor) {
-        if (planUtil->hasCrossRel()) {
-          return std::make_unique<CiderCrossJoinBridge>();
-        } else {
-          // planUtil->hasJoinRel()
-          return std::make_unique<CiderHashJoinBridge>();
-        }
-
-      } else {
-        return std::make_unique<CiderJoinBridge>();
-      }
+      return std::make_unique<CiderHashJoinBridge>();
     }
     return nullptr;
   }
@@ -81,19 +63,7 @@ class CiderPlanNodeTranslator : public exec::Operator::PlanNodeTranslator {
     if (auto ciderJoinNode = std::dynamic_pointer_cast<const CiderPlanNode>(node)) {
       return [ciderJoinNode](int32_t operatorId,
                              exec::DriverCtx* ctx) -> std::unique_ptr<exec::Operator> {
-        auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(
-            ciderJoinNode->getSubstraitPlan());
-        if (FLAGS_enable_batch_processor) {
-          if (planUtil->hasCrossRel()) {
-            return std::make_unique<CiderCrossJoinBuild>(operatorId, ctx, ciderJoinNode);
-          } else {
-            // planUtil->hasJoinRel()
-            return std::make_unique<CiderHashJoinBuild>(operatorId, ctx, ciderJoinNode);
-          }
-
-        } else {
-          return std::make_unique<CiderJoinBuild>(operatorId, ctx, ciderJoinNode);
-        }
+        return std::make_unique<CiderHashJoinBuild>(operatorId, ctx, ciderJoinNode);
       };
     }
     return nullptr;

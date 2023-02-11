@@ -24,10 +24,6 @@
 #include <gflags/gflags.h>
 #include "util/Logger.h"
 #include <string>
-#include "cider/CiderCompileModule.h"
-#include "exec/module/CiderExprEvaluator.h"
-#include "tests/utils/CiderBatchBuilder.h"
-#include "tests/utils/CiderBatchChecker.h"
 #include "util/Logger.h"
 
 #include "exec/plan/builder/SubstraitExprBuilder.h"

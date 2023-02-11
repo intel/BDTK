@@ -12,7 +12,6 @@ scripts/*
 *CiderAgg*
 *CiderRuntimeFunctions.h
 *CiderBuffer.h
-*CiderBatchDataProvider.h
 *CiderSchemaProvider.*
 *CiderBitUtils.h
 cpp/src/cider/exec/plan/builder/*

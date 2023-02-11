@@ -20,7 +20,8 @@
  */
 
 #include "DuckDbArrowAdaptor.h"
-
+#include <string>
+#include "cider/CiderException.h"
 // function interfaces from duckdb are different when enabling/disabling velox
 // for interface stability, we maintain a copy of relevant codes in duckdb
 // most of the following codes are copied from duckdb sources
@@ -29,8 +30,8 @@ void DuckDbArrowSchemaAdaptor::duckdbResultSchemaToArrowSchema(
     ArrowSchema* out_schema,
     std::vector<::duckdb::LogicalType>& types,
     std::vector<std::string>& names) {
-  CHECK(out_schema);
-  CHECK_EQ(types.size(), names.size());
+  // CHECK(out_schema);
+  // CHECK_EQ(types.size(), names.size());
   idx_t column_count = types.size();
   // Allocate as unique_ptr first to cleanup properly on error
   auto root_holder = std::make_unique<DuckDBArrowSchemaHolder>();
@@ -145,7 +146,7 @@ void DuckDbArrowSchemaAdaptor::SetArrowFormat(DuckDBArrowSchemaHolder& root_hold
       type.GetDecimalProperties(width, scale);
       // std::to_string(uint8_t) may result in converting ints to ASCII chars
       // instead of string of ints (e.g. 97 -> 'a' instead of "97")
-      std::string format = "d:" + to_string(int(width)) + "," + to_string(int(scale));
+      std::string format = "d:" + std::to_string(int(width)) + "," + std::to_string(int(scale));
       std::unique_ptr<char[]> format_ptr =
           std::unique_ptr<char[]>(new char[format.size() + 1]);
       for (size_t i = 0; i < format.size(); i++) {

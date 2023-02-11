@@ -142,14 +142,6 @@ extern "C" RUNTIME_EXPORT int64_t* get_group_value(
     const uint32_t key_width,
     const uint32_t row_size_quad);
 
-extern "C" RUNTIME_EXPORT int64_t* get_group_value_cider(
-    int64_t* agg_hash_table_ptr,
-    const uint32_t groups_buffer_entry_count,
-    const int64_t* key,
-    const uint32_t key_count,
-    const uint32_t key_width,
-    const uint32_t row_size_quad);
-
 enum RuntimeInterruptFlags { INT_CHECK = 0, INT_ABORT = -1, INT_RESET = -2 };
 
 extern "C" bool check_interrupt();

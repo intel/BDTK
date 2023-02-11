@@ -108,12 +108,16 @@ class CiderProjectAllTestNG : public CiderNextgenTestBase {
          CREATE_SUBSTRAIT_TYPE(Fp64),
          CREATE_SUBSTRAIT_TYPE(Date),
          CREATE_SUBSTRAIT_TYPE(Bool)},
-        {1, 2, 2, 2, 3, 3, 4, 2},
+        {1, 2, 2, 2, 3, 3, 4, 1},
         GeneratePattern::Random);
   }
 };
 
 TEST_F(CiderProjectAllTestNG, filterProjectAllTest) {
+  assertQuery("SELECT col_2 > 20 and col_8 FROM test");
+  assertQuery("SELECT col_2 < 20 or col_8 FROM test");
+  assertQuery("SELECT * FROM test where col_2 > 20 and col_8");
+  assertQuery("SELECT * FROM test where col_2 < 20 or col_8");
   assertQuery("SELECT * FROM test");
   assertQuery("SELECT * FROM test where TRUE");
   assertQuery(

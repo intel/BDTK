@@ -29,6 +29,7 @@
 #include "exec/processor/StatelessProcessor.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 #include "tests/utils/Utils.h"
+#include "exec/plan/parser/TypeUtils.h"
 
 using namespace cider::exec::processor;
 

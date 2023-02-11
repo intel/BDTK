@@ -215,8 +215,6 @@ TEST_F(CiderDuplicateStringTestNextGen, SingleGroupKeyTest) {
           .addUTF8Column("res_str", res_str, res_offset)
           .addColumn<int64_t>("res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {3, 2, 2, 1})
           .build();
-  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
-      schema, array, std::make_shared<CiderDefaultAllocator>());
 
   assertQuery("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", array, schema, true);
 }
@@ -241,8 +239,6 @@ TEST_F(CiderDuplicateStringTestNextGen, MultiGroupKeyTest) {
               "res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {2, 1, 1, 1, 1, 1, 1})
           .addUTF8Column("res_str2", res_str2, res_offset2)
           .build();
-  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
-      schema, array, std::make_shared<CiderDefaultAllocator>());
   assertQuery("SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2",
               array,
               schema,

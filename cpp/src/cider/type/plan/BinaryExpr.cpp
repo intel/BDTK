@@ -292,6 +292,7 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
       JITValuePointer null = func.createVariable(JITTypeTag::BOOL, "logical_and_null");
       auto value = func.createVariable(JITTypeTag::BOOL, "logical_and_val");
       auto if_builder = func.createIfBuilder();
+      // getNull = 0 represents it's null
       if_builder
           ->condition([&]() {
             auto condition = (!lhs_val.getNull() && !lhs_val.getValue()) ||

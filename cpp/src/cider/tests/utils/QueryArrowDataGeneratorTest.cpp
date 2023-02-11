@@ -22,7 +22,6 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "ArrowArrayBuilder.h"
-#include "CiderBatchChecker.h"
 #include "QueryArrowDataGenerator.h"
 #include "exec/plan/parser/TypeUtils.h"
 

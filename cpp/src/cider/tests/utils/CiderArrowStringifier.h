@@ -25,7 +25,8 @@
 #include <string>
 #include "exec/module/batch/ArrowABI.h"
 #include "tests/utils/CiderInt128.h"
-
+#include <vector>
+#include <memory>
 namespace cider::test::util {
 
 class ConcatenatedRow {

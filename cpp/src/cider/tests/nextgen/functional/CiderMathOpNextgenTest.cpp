@@ -20,7 +20,6 @@
  */
 
 #include <gtest/gtest.h>
-#include "cider/CiderBatch.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"

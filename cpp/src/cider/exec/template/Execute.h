@@ -44,7 +44,7 @@
 #include <llvm/Transforms/Utils/ValueMapper.h>
 #include <rapidjson/document.h>
 
-#include "exec/operator/aggregate/CiderAggHashTable.h"
+// #include "exec/operator/aggregate/CiderAggHashTable.h"
 #include "exec/template/AggregatedColRange.h"
 #include "exec/template/BufferCompaction.h"
 #include "exec/template/CartesianProduct.h"
@@ -303,8 +303,6 @@ class Executor {
       const int dictId,
       const std::shared_ptr<RowSetMemoryOwner> row_set_mem_owner,
       const bool with_generation) const;
-
-  CiderStringHasher* getCiderStringHasherHandle() const;
 
   enum class ExtModuleKinds {
     template_module,    // RuntimeFunctions.bc
@@ -675,7 +673,6 @@ class Executor {
   }
 
   std::unique_ptr<CgenState> cgen_state_;
-  CiderStringHasher* stringHasher_;
   mutable std::mutex str_hasher_mutex_;
 
   const std::unique_ptr<llvm::Module>& get_extension_module(ExtModuleKinds kind) const {

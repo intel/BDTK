@@ -91,10 +91,7 @@ set(query_engine_source_files
     common/recycler/HashtableRecycler.cpp
     common/recycler/HashingSchemeRecycler.cpp
     common/recycler/OverlapsTuningParamRecycler.cpp
-    ../operator/aggregate/CiderAggHashTable.cpp
-    ../operator/aggregate/CiderAggTargetColExtractorBuilder.cpp
     Codec.h
-    Execute.h
     QueryTemplateGenerator.h
     operator/aggregate/CiderAggregateCodeGenerator.cpp)
 

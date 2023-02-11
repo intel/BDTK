@@ -19,15 +19,12 @@
  * under the License.
  */
 
-#include "cider/batch/CiderBatchUtils.h"
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
 #include "tests/utils/CiderInt128.h"
-
+#include "substrait/type.pb.h"
+#include "cider/CiderTableSchema.h"
 #include "include/cider/CiderException.h"
-#include "include/cider/batch/CiderBatchUtils.h"
-#include "include/cider/batch/ScalarBatch.h"
-#include "include/cider/batch/StructBatch.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 
 namespace CiderBatchUtils {

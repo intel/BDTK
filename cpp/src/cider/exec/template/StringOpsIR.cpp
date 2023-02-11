@@ -101,10 +101,7 @@ extern "C" RUNTIME_EXPORT int64_t
 look_up_string_id_from_hasher(const char* str_ptr,
                               const int32_t str_len,
                               const int64_t string_hasher_handle) {
-  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
-  int64_t id =
-      string_hasher->lookupIdByValue(CiderByteArray(str_len, (const uint8_t*)str_ptr));
-  return id;
+  return 0;
 }
 
 extern "C" RUNTIME_EXPORT int64_t
@@ -139,17 +136,12 @@ extern "C" RUNTIME_EXPORT bool cider_check_string_id_is_null(const int64_t id) {
 extern "C" RUNTIME_EXPORT char* cider_hasher_decode_str_ptr(
     const int64_t id,
     const int64_t string_hasher_handle) {
-  CiderStringHasher* string_hasher =
-      reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
-  CiderByteArray res = string_hasher->lookupValueById(id);
-  return (char*)res.ptr;
+  return "";
 }
 
 extern "C" RUNTIME_EXPORT int32_t
 cider_hasher_decode_str_len(const int64_t id, const int64_t string_hasher_handle) {
-  auto string_hasher = reinterpret_cast<CiderStringHasher*>(string_hasher_handle);
-  CiderByteArray res = string_hasher->lookupValueById(id);
-  return res.len;
+  return 0;
 }
 
 #define DEF_CONVERT_TO_STRING_AND_ENCODE(value_type, value_name)                      \
@@ -403,8 +395,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenStringOpExpr(
   const int64_t string_ops_handle = reinterpret_cast<int64_t>(string_ops);
   auto string_ops_handle_lv = cgen_state_->llInt(string_ops_handle);
 
-  const int64_t cider_string_hasher_handle =
-      reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
+  const int64_t cider_string_hasher_handle = 0;
   auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
   if (!return_ti.is_string()) {
     std::vector<llvm::Value*> string_oper_lvs{

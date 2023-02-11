@@ -29,12 +29,12 @@
 #include <gflags/gflags.h>
 #include "util/Logger.h"
 #include <string>
-#include "cider/CiderCompileModule.h"
+#include <fstream>
+#include <sstream>
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/template/AggregatedColRange.h"
-#include "exec/template/Execute.h"
 #include "exec/template/InputMetadata.h"
 #include "util/Logger.h"
 
@@ -68,32 +68,6 @@ std::vector<InputTableInfo> buildInputTableInfo(
     query_infos.push_back(iti_0);
   }
   return query_infos;
-}
-
-CiderBatch buildCiderBatch() {
-  const int col_num = 9;
-  const int row_num = 20;
-
-  //"O_ORDERKEY", "O_CUSTKEY", "O_ORDERSTATUS", "O_TOTALPRICE",
-  //"O_ORDERDATE", "O_ORDERPRIORITY", "O_CLERK", "O_SHIPPRIORITY", "O_COMMENT"
-  std::vector<int8_t*> table_ptr_tmp(col_num, nullptr);
-  // int64_t O_Orderkey, int64_t O_CUSTKEY
-  int64_t* orderKey_buf = new int64_t[row_num];
-  int64_t* custKey_buf = new int64_t[row_num];
-  for (int i = 0; i < row_num; i++) {
-    orderKey_buf[i] = i;
-    custKey_buf[i] = 100 + i;
-  }
-  table_ptr_tmp[0] = (int8_t*)orderKey_buf;
-  table_ptr_tmp[1] = (int8_t*)custKey_buf;
-
-  std::vector<const int8_t*> table_ptr;
-  for (auto column_ptr : table_ptr_tmp) {
-    table_ptr.push_back(static_cast<const int8_t*>(column_ptr));
-  }
-
-  CiderBatch orders_table(row_num, table_ptr);
-  return orders_table;
 }
 
 void relAlgExecutionUnitCreateAndCompile(std::string file_name) {

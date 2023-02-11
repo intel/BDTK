@@ -22,6 +22,7 @@
 
 #include "CodeGenerator.h"
 #include "Execute.h"
+#include "cider/CiderTypes.h"
 #include "util/misc.h"
 
 extern bool g_enable_watchdog;
@@ -69,8 +70,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenCastFun(
   auto operand_lv = operand_fixedsize->getValue();
   llvm::Value* target_lv = nullptr;
   if (ti.is_string()) {
-    const int64_t string_hasher =
-        reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
+    const int64_t string_hasher = 0;
     auto hasher_handle_lv = cgen_state_->llInt(string_hasher);
     target_lv =
         codegenCastNonStringToString(operand_lv, hasher_handle_lv, operand_ti, ti);

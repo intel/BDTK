@@ -23,7 +23,6 @@
 #define QUERYENGINE_COUNTDISTINCT_H
 
 #include "HyperLogLog.h"
-#include "cider/CiderBatch.h"
 #include "exec/template/common/descriptors/CountDistinctDescriptor.h"
 #include "robin_hood.h"
 
@@ -118,9 +117,8 @@ inline int64_t wrap_to_batch(std::vector<T> values,
 
   std::vector<const int8_t*> table_ptr;
   table_ptr.push_back(reinterpret_cast<int8_t*>(column));
-  CiderBatch* batch = new CiderBatch(values.size(), table_ptr);
   // TODO: may need add schema
-  return reinterpret_cast<int64_t>(batch);
+  return 0;
 }
 
 inline int64_t count_distinct_set_address(

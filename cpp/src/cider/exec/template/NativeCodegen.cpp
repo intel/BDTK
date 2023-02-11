@@ -68,7 +68,6 @@ static_assert(false, "LLVM Version >= 9 is required.");
 #endif
 
 #include "StreamingTopN.h"
-#include "exec/optimizer/AnnotateInternalFunctionsPass.h"
 #include "exec/template/CodeGenerator.h"
 #include "exec/template/LLVMFunctionAttributesUtil.h"
 #include "exec/template/OutputBufferInitialization.h"
@@ -239,8 +238,6 @@ void optimize_ir(llvm::Function* query_func,
                  const CompilationOptions& co) {
   // the always inliner legacy pass must always run first
   pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
-
-  pass_manager.add(new AnnotateInternalFunctionsPass());
 
   pass_manager.add(llvm::createSROAPass());
   // mem ssa drops unused load and store instructions, e.g. passing variables directly

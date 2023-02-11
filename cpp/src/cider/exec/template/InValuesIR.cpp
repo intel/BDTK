@@ -160,8 +160,7 @@ std::unique_ptr<CodegenColValues> CodeGenerator::codegenInValuesString(
                          lhs_null)
                    : std::make_unique<FixedSizeColValues>(result, lhs_null);
       }
-      const int64_t cider_string_hasher_handle =
-          reinterpret_cast<int64_t>(executor()->getCiderStringHasherHandle());
+      const int64_t cider_string_hasher_handle = 0;
       auto cider_string_hasher_handle_lv = cgen_state_->llInt(cider_string_hasher_handle);
       auto id_val = cgen_state_->emitExternalCall(
           "look_up_string_id_from_hasher",
@@ -295,12 +294,10 @@ std::unique_ptr<InValuesBitmap> CodeGenerator::createInValuesBitmapArrow(
   if (!(ti.is_integer() || (ti.is_string() && ti.get_compression() == kENCODING_DICT))) {
     return nullptr;
   }
-  const auto stringHasher =
-      ti.is_string() ? executor()->getCiderStringHasherHandle() : nullptr;
+  const auto stringHasher = nullptr;
   if (val_count > 3) {
     using ListIterator = decltype(value_list.begin());
     std::vector<int64_t> values;
-    const auto needle_null_val = CiderStringHasher::kIdNullString;
     const auto do_work = [&](std::vector<int64_t>& out_vals,
                              const ListIterator start,
                              const ListIterator end) -> bool {
@@ -317,15 +314,7 @@ std::unique_ptr<InValuesBitmap> CodeGenerator::createInValuesBitmapArrow(
               get_nullable_type_info(in_val_ti) == ti);
         if (ti.is_string()) {
           std::string str_val = *in_val_const->get_constval().stringval;
-          CHECK(stringHasher);
-          const auto string_id =
-              in_val_const->get_is_null()
-                  ? needle_null_val
-                  : stringHasher->lookupIdByValue(CiderByteArray(
-                        str_val.length(), (const uint8_t*)str_val.c_str()));
-          if (string_id != CiderStringHasher::kIdNullString) {
-            out_vals.push_back(string_id);
-          }
+          const auto string_id = 0;
         } else {
           out_vals.push_back(
               CodeGenerator::codegenIntConst(in_val_const, cgen_state_)->getSExtValue());
@@ -336,7 +325,7 @@ std::unique_ptr<InValuesBitmap> CodeGenerator::createInValuesBitmapArrow(
     do_work(std::ref(values), value_list.begin(), value_list.end());
     try {
       return std::make_unique<InValuesBitmap>(values,
-                                              needle_null_val,
+                                              0,
                                               Data_Namespace::CPU_LEVEL,
                                               1,
                                               executor()->getBufferProvider());

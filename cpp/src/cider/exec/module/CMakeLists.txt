@@ -19,12 +19,8 @@
 
 find_package(gflags COMPONENTS shared)
 set(SRC_FILE
-    CiderCompileModule.cpp
-    CiderRuntimeModule.cpp
-    CiderExprEvaluator.cpp
     CiderTypes.cpp
     CiderOptions.cpp
-    batch/CiderBatch.cpp
     batch/CiderBatchUtils.cpp
     batch/CiderArrowBufferHolder.cpp)
 add_library(cider SHARED ${SRC_FILE})
@@ -49,9 +45,6 @@ install(
   COMPONENT "CIDER")
 install(
   FILES CiderInterface.h
-        CiderRuntimeModule.h
-        CiderCompileModule.h
-        CiderBatch.h
         CiderOptions.h
         CiderTableSchema.h
         CiderException.h

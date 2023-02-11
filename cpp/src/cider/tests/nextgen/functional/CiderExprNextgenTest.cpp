@@ -106,6 +106,7 @@ class CiderExprNextgenTest : public ::testing::Test {
       }
       std::cout << std::endl;
     };
+
     check_array(output_batch_array->children[0], expected_length);
   }
 
@@ -127,21 +128,21 @@ TEST_F(CiderExprNextgenTest, logicalOpTest) {
   std::tie(schema, array_) =
       ArrowArrayBuilder()
           .setRowNum(8)
-          .addBoolColumn<bool>("col_int_a", vec0, vec_null0)
-          .addBoolColumn<bool>("col_int_b", vec1, vec_null1)
+          .addBoolColumn<bool>("col_bool_a", vec0, vec_null0)
+          .addBoolColumn<bool>("col_bool_b", vec1, vec_null1)
           .addColumn<int>("col_int_c", CREATE_SUBSTRAIT_TYPE(I32), vec2, vec_null2)
           .build();
   executeTest(
-      "CREATE TABLE test(col_int_a BOOLEAN, col_int_b BOOLEAN, col_int_c INTEGER);",
-      "select col_int_a from test",
+      "CREATE TABLE test(col_bool_a BOOLEAN, col_bool_b BOOLEAN, col_int_c INTEGER);",
+      "select col_bool_a from test",
       8);
   executeTest(
-      "CREATE TABLE test(col_int_a BOOLEAN, col_int_b BOOLEAN, col_int_c INTEGER);",
-      "select col_int_c from test where col_int_a and col_int_b",
+      "CREATE TABLE test(col_bool_a BOOLEAN, col_bool_b BOOLEAN, col_int_c INTEGER);",
+      "select col_int_c from test where col_bool_a and col_bool_b",
       1);
   executeTest(
-      "CREATE TABLE test(col_int_a BOOLEAN, col_int_b BOOLEAN, col_int_c INTEGER);",
-      "select col_int_c from test where col_int_a or col_int_b",
+      "CREATE TABLE test(col_bool_a BOOLEAN, col_bool_b BOOLEAN, col_int_c INTEGER);",
+      "select col_int_c from test where col_bool_a or col_bool_b",
       4);
 }
 

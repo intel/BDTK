@@ -124,7 +124,7 @@ struct CgenState {
           return getOrAddLiteral(constant->get_constval().intval, device_id);
         } else {
           return getOrAddLiteral(
-              (int64_t)constant->get_constval().intval * kSecondsInOneDay, device_id);
+              (int64_t)constant->get_constval().intval, device_id);
         }
       case kTIME:
       case kTIMESTAMP:

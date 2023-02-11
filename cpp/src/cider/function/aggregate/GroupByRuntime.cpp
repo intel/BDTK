@@ -20,7 +20,8 @@
  * under the License.
  */
 
-#include "exec/operator/aggregate/CiderAggHashTable.h"
+// #include "exec/operator/aggregate/CiderAggHashTable.h"
+#include "util/CiderBitUtils.h"
 #include "exec/template/operator/join/hashtable/runtime/JoinHashImpl.h"
 #include "function/hash/MurmurHash.h"
 
@@ -53,26 +54,6 @@ extern "C" RUNTIME_EXPORT NEVER_INLINE int64_t* get_group_value(
     h_probe = (h_probe + 1) % groups_buffer_entry_count;
   }
   return NULL;
-}
-
-extern "C" RUNTIME_EXPORT NEVER_INLINE int64_t* get_group_value_cider(
-    int64_t* agg_hash_table_ptr,
-    const uint32_t groups_buffer_entry_count,
-    const int64_t* key,
-    const uint32_t key_count,
-    const uint32_t key_width,
-    const uint32_t row_size_quad) {
-  CiderAggHashTable* agg_hash_table =
-      reinterpret_cast<CiderAggHashTable*>(agg_hash_table_ptr);
-  return agg_hash_table->getGroupTargetPtr(key);
-}
-
-extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
-cider_get_string_id(int64_t* agg_hashtable_ptr, const uint8_t* ptr, uint32_t len) {
-  CiderAggHashTable* agg_hash_table =
-      reinterpret_cast<CiderAggHashTable*>(agg_hashtable_ptr);
-  CiderByteArray str(len, ptr);
-  return agg_hash_table->getStringHasher().lookupIdByValue(str);
 }
 
 extern "C" ALWAYS_INLINE void set_group_key_slot_int32(int32_t* value_vector,
