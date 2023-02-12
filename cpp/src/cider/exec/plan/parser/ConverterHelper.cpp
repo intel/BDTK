@@ -119,29 +119,23 @@ SQLTypeInfo getSQLTypeInfo(const substrait::Type& s_type) {
     case substrait::Type::kList:
       switch (s_type.list().type().kind_case()) {
         case substrait::Type::kFp32:
-          return SQLTypeInfo(SQLTypes::kARRAY,
-                             not_null,
-                             {SQLTypeInfo(SQLTypes::kFLOAT, not_null)});
+          return SQLTypeInfo(
+              SQLTypes::kARRAY, not_null, {SQLTypeInfo(SQLTypes::kFLOAT, not_null)});
         case substrait::Type::kFp64:
-          return SQLTypeInfo(SQLTypes::kARRAY,
-                             not_null,
-                             {SQLTypeInfo(SQLTypes::kDOUBLE, not_null)});
+          return SQLTypeInfo(
+              SQLTypes::kARRAY, not_null, {SQLTypeInfo(SQLTypes::kDOUBLE, not_null)});
         case substrait::Type::kI8:
-          return SQLTypeInfo(SQLTypes::kARRAY,
-                             not_null,
-                             {SQLTypeInfo(SQLTypes::kTINYINT, not_null)});
+          return SQLTypeInfo(
+              SQLTypes::kARRAY, not_null, {SQLTypeInfo(SQLTypes::kTINYINT, not_null)});
         case substrait::Type::kI16:
-          return SQLTypeInfo(SQLTypes::kARRAY,
-                             not_null,
-                             {SQLTypeInfo(SQLTypes::kSMALLINT, not_null)});
+          return SQLTypeInfo(
+              SQLTypes::kARRAY, not_null, {SQLTypeInfo(SQLTypes::kSMALLINT, not_null)});
         case substrait::Type::kI32:
-          return SQLTypeInfo(SQLTypes::kARRAY,
-                             not_null,
-                             {SQLTypeInfo(SQLTypes::kINT, not_null)});
+          return SQLTypeInfo(
+              SQLTypes::kARRAY, not_null, {SQLTypeInfo(SQLTypes::kINT, not_null)});
         case substrait::Type::kI64:
-          return SQLTypeInfo(SQLTypes::kARRAY,
-                             not_null,
-                             {SQLTypeInfo(SQLTypes::kBIGINT, not_null)});
+          return SQLTypeInfo(
+              SQLTypes::kARRAY, not_null, {SQLTypeInfo(SQLTypes::kBIGINT, not_null)});
         default:
           CIDER_THROW(
               CiderCompileException,
