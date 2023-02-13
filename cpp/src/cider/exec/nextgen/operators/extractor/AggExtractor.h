@@ -37,6 +37,8 @@ class NextgenAggExtractor {
 
   std::string getName() { return name_; }
 
+  virtual ~NextgenAggExtractor() = default;
+
  protected:
   int8_t null_offset_;
   bool is_nullable_;
@@ -70,14 +72,26 @@ class NextgenBasicAggExtractor : public NextgenAggExtractor {
           CiderBitUtils::clearBitAt(null_buffer, i);
           ++null_count_num;
         } else {
-          buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+          // avoid precision loss
+          if (this->getName() == "FLOAT_DOUBLE") {
+            buffer[i] =
+                std::stod(std::to_string(*reinterpret_cast<const ST*>(rowPtr + offset_)));
+          } else {
+            buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+          }
         }
       }
       output->null_count = null_count_num;
     } else {
       for (size_t i = 0; i < rowNum; ++i) {
         const int8_t* rowPtr = rowAddrs[i];
-        buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+        // avoid precision loss
+        if (this->getName() == "FLOAT_DOUBLE") {
+          buffer[i] =
+              std::stod(std::to_string(*reinterpret_cast<const ST*>(rowPtr + offset_)));
+        } else {
+          buffer[i] = *reinterpret_cast<const ST*>(rowPtr + offset_);
+        }
       }
     }
   }

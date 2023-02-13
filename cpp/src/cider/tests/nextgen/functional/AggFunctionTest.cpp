@@ -83,6 +83,8 @@ TEST_F(CiderAggTest, sumTest) {
   assertQuery("SELECT SUM(col_i32) FROM test");
   // SUM(bigint)
   assertQuery("SELECT SUM(col_i64) FROM test");
+  // SUM(double)
+  assertQuery("SELECT SUM(col_fp64) FROM test");
 
   // SUM(tinyint) with half null
   assertQuery("SELECT SUM(half_null_i8) FROM test");
@@ -96,20 +98,20 @@ TEST_F(CiderAggTest, sumTest) {
   // SUM(bigint) with half null
   assertQuery("SELECT SUM(half_null_i64) FROM test");
   assertQuery("SELECT SUM(half_null_i64) FROM test where half_null_i64 IS NOT NULL");
-
-  // Skip test whose function is not supported
-  GTEST_SKIP();
-  // SUM(float)
-  assertQuery("SELECT SUM(col_fp32) FROM test");
-  // SUM(double)
-  assertQuery("SELECT SUM(col_fp64) FROM test");
-  // TODO: SUM(decimal)
-  // SUM(float) with half null
-  assertQuery("SELECT SUM(half_null_fp32) FROM test");
-  assertQuery("SELECT SUM(half_null_fp32) FROM test where half_null_fp32 IS NOT NULL");
   // SUM(double) with half null
   assertQuery("SELECT SUM(half_null_fp64) FROM test");
   assertQuery("SELECT SUM(half_null_fp64) FROM test where half_null_fp64 IS NOT NULL");
+
+  // Skip test about float, because count(float) in duckdb output type is double, is not
+  // same with cider
+  GTEST_SKIP();
+  // SUM(float)
+  assertQuery("SELECT SUM(col_fp32) FROM test");
+  // TODO: SUM(decimal)
+
+  // SUM(float) with half null
+  assertQuery("SELECT SUM(half_null_fp32) FROM test");
+  assertQuery("SELECT SUM(half_null_fp32) FROM test where half_null_fp32 IS NOT NULL");
   // TODO: SUM(decimal) with half null
 }
 
@@ -124,6 +126,7 @@ TEST_F(CiderAggTest, countTest) {
   // COUNT AGG
   assertQuery("SELECT COUNT(1), MAX(col_i8) FROM test");
   assertQuery("SELECT COUNT(col_i8), MAX(col_i8) FROM test");
+  assertQuery("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
 
   // COUNT(INT)
   assertQuery("SELECT COUNT(col_i32) FROM test");
@@ -151,6 +154,25 @@ TEST_F(CiderAggTest, countTest) {
   assertQuery("SELECT COUNT(half_null_i8) FROM test");
   assertQuery("SELECT COUNT(half_null_i8) FROM test WHERE half_null_i8 IS NOT NULL");
   assertQuery("SELECT COUNT(half_null_i8) FROM test WHERE half_null_i8 IS NULL");
+
+  // COUNT with column is not supported by substrait-java yet
+  // COUNT(FLOAT)
+  assertQuery("SELECT COUNT(col_fp32) FROM test");
+  assertQuery("SELECT COUNT(col_fp32) FROM test WHERE col_fp32 IS NOT NULL");
+  assertQuery("SELECT COUNT(col_fp32) FROM test WHERE col_fp32 IS NULL");
+  // COUNT(DOUBLE)
+  assertQuery("SELECT COUNT(col_fp64) FROM test");
+  assertQuery("SELECT COUNT(col_fp64) FROM test WHERE col_fp64 IS NOT NULL");
+  assertQuery("SELECT COUNT(col_fp64) FROM test WHERE col_fp64 IS NULL");
+
+  // COUNT(FLOAT) with half null
+  assertQuery("SELECT COUNT(half_null_fp32) FROM test");
+  assertQuery("SELECT COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS NOT NULL");
+  assertQuery("SELECT COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS NULL");
+  // COUNT(DOUBLE) with half null
+  assertQuery("SELECT COUNT(half_null_fp64) FROM test");
+  assertQuery("SELECT COUNT(half_null_fp64) FROM test WHERE half_null_fp64 IS NOT NULL");
+  assertQuery("SELECT COUNT(half_null_fp64) FROM test WHERE half_null_fp64 IS NULL");
 
   // Skip test whose function is not supported
   GTEST_SKIP();
@@ -213,9 +235,6 @@ TEST_F(CiderAggTest, countTest) {
       "",
       true);
 
-  //   COUNT AGG
-  assertQuery("SELECT COUNT(*), MIN(half_null_fp64) FROM test");
-
   // COUNT AGG with GROUP BY
   assertQuery(
       "SELECT SUM(col_i32), COUNT(*), SUM(half_null_fp32) FROM test GROUP BY col_i32",
@@ -230,25 +249,6 @@ TEST_F(CiderAggTest, countTest) {
       "BY col_i32",
       "",
       true);
-
-  // COUNT with column is not supported by substrait-java yet
-  // COUNT(FLOAT)
-  assertQuery("SELECT COUNT(col_fp32) FROM test");
-  assertQuery("SELECT COUNT(col_fp32) FROM test WHERE col_fp32 IS NOT NULL");
-  assertQuery("SELECT COUNT(col_fp32) FROM test WHERE col_fp32 IS NULL");
-  // COUNT(DOUBLE)
-  assertQuery("SELECT COUNT(col_fp64) FROM test");
-  assertQuery("SELECT COUNT(col_fp64) FROM test WHERE col_fp64 IS NOT NULL");
-  assertQuery("SELECT COUNT(col_fp64) FROM test WHERE col_fp64 IS NULL");
-
-  // COUNT(FLOAT) with half null
-  assertQuery("SELECT COUNT(half_null_fp32) FROM test");
-  assertQuery("SELECT COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS NOT NULL");
-  assertQuery("SELECT COUNT(half_null_fp32) FROM test WHERE half_null_fp32 IS NULL");
-  // COUNT(DOUBLE) with half null
-  assertQuery("SELECT COUNT(half_null_fp64) FROM test");
-  assertQuery("SELECT COUNT(half_null_fp64) FROM test WHERE half_null_fp64 IS NOT NULL");
-  assertQuery("SELECT COUNT(half_null_fp64) FROM test WHERE half_null_fp64 IS NULL");
 
   // TODO: COUNT(decimal)
   // TODO: COUNT(decimal) with half null
@@ -340,8 +340,6 @@ TEST_F(CiderAggTest, minOnColumnTest) {
   assertQuery("SELECT MIN(half_null_i64) FROM test");
   assertQuery("SELECT MIN(half_null_i64) FROM test where half_null_i64 IS NOT NULL");
 
-  // Skip test whose function is not supported
-  GTEST_SKIP();
   // agg min with different data type.
   assertQuery("SELECT MIN(col_i8), MIN(col_i64), MIN(col_fp32), MIN(col_fp64) FROM test");
 
@@ -383,8 +381,6 @@ TEST_F(CiderAggTest, maxOnColumnTest) {
   assertQuery("SELECT MAX(half_null_i64) FROM test");
   assertQuery("SELECT MAX(half_null_i64) FROM test where half_null_i64 IS NOT NULL");
 
-  // Skip test whose function is not supported
-  GTEST_SKIP();
   // agg max with different data type.
   assertQuery("SELECT MAX(col_i8), MAX(col_i64), MAX(col_fp32), MAX(col_fp64) FROM test");
 
@@ -412,7 +408,8 @@ TEST_F(CiderAggTest, maxOnColumnTest) {
 }
 
 TEST_F(CiderAggTest, aggWithConditionTest) {
-  // Skip test whose function is not supported
+  // Skip test about float, because count(float) in duckdb output type is double, is not
+  // same with cider
   GTEST_SKIP();
   // multi agg funcs on col with condition.
   assertQuery(
@@ -520,19 +517,14 @@ TEST_F(CiderAggTest, maxOnExpressionTest) {
 
 // TODO: move this case to another file. it should belong to function development scope.
 TEST_F(CiderAggTest, castTest) {
-  // Skip because core dumped
-  GTEST_SKIP();
   assertQuery("SELECT CAST(col_i32 as tinyint) FROM test");
   assertQuery("SELECT CAST(col_i32 as smallint) FROM test");
 }
 
 TEST_F(CiderAggTest, sumCastTest) {
-  // Skip because core dumped
-  GTEST_SKIP();
   // cast int column
   assertQuery("SELECT SUM(cast(col_i32 as tinyint)) FROM test");
   assertQuery("SELECT SUM(cast(col_i32 as smallint)) FROM test");
-  assertQuery("SELECT SUM(cast(col_i32 as float)) FROM test");
 
   // cast long column
   assertQuery("SELECT SUM(cast(col_i64 as tinyint)) FROM test");
@@ -546,7 +538,11 @@ TEST_F(CiderAggTest, sumCastTest) {
   // cast double column
   assertQuery("SELECT SUM(cast(col_fp64 as int)) FROM test");
   assertQuery("SELECT SUM(cast(col_fp64 as bigint)) FROM test");
-  assertQuery("SELECT SUM(cast(col_fp64 as float)) FROM test");
+
+  // Skip because core dumped
+  GTEST_SKIP();
+
+  assertQuery("SELECT SUM(cast(col_i32 as float)) FROM test");
 }
 
 int main(int argc, char** argv) {

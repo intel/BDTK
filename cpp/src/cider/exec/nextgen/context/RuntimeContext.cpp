@@ -113,13 +113,9 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
     allocateBatchMem(child_array, 1, false, info[i].sql_type_info_.get_size());
   }
 
-  std::vector<std::unique_ptr<operators::NextgenAggExtractor>> non_groupby_agg_extractors;
-  non_groupby_agg_extractors.reserve(info.size());
-
   for (size_t i = 0; i < info.size(); ++i) {
-    std::unique_ptr<operators::NextgenAggExtractor> extractor =
-        operators::NextgenAggExtractorBuilder::buildNextgenAggExtractor(buf, info[i]);
-    extractor->extract({buf}, arrow_array->children[i]);
+    operators::NextgenAggExtractorBuilder::buildNextgenAggExtractor(buf, info[i])
+        ->extract({buf}, arrow_array->children[i]);
   }
 
   return batch;
