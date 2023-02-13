@@ -43,3 +43,8 @@ set(PARQUET_BENCHMARK_SRCS BenchmarkMain.cpp ParquetBenchmark.cpp)
 add_executable(ParquetBenchmark ${PARQUET_BENCHMARK_SRCS})
 target_link_libraries(ParquetBenchmark benchmark::benchmark gtest
                       parquet_shared arrow_shared arrow_testing_shared)
+
+set(TPCH_DATA_GEN_SRCS TpchDataGen.cpp)
+add_executable(TpchDataGen ${TPCH_DATA_GEN_SRCS})
+target_link_libraries(TpchDataGen parquet_shared arrow_shared
+                      arrow_testing_shared)
