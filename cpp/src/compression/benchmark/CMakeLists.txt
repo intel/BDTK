@@ -39,10 +39,16 @@ add_executable(CompressionBenchmark ${COMPRESSION_BENCHMARK_SRCS})
 target_link_libraries(CompressionBenchmark benchmark::benchmark gtest
                       arrow_shared)
 
-set(PARQUET_BENCHMARK_SRCS BenchmarkMain.cpp ParquetBenchmark.cpp)
+set(PARQUET_BENCHMARK_SRCS ParquetBenchmark.cpp)
 add_executable(ParquetBenchmark ${PARQUET_BENCHMARK_SRCS})
-target_link_libraries(ParquetBenchmark benchmark::benchmark gtest
-                      parquet_shared arrow_shared arrow_testing_shared)
+target_link_libraries(
+  ParquetBenchmark
+  benchmark::benchmark
+  gtest
+  pthread
+  parquet_shared
+  arrow_shared
+  arrow_testing_shared)
 
 set(TPCH_DATA_GEN_SRCS TpchDataGen.cpp)
 add_executable(TpchDataGen ${TPCH_DATA_GEN_SRCS})
