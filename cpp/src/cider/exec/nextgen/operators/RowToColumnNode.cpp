@@ -378,13 +378,6 @@ class ColumnWriter {
     return allocateRawDataBuffer(index, SQLTypes::kTINYINT);
   }
 
-  JITValuePointer allocateBitwiseBuffer(jitlib::JITValuePointer& arrow_array,
-                                        int64_t index = 0) {
-    auto bytes = arrow_array_len_ * context_.getJITFunction()->createLiteral(
-                                        JITTypeTag::INT64, utils::getTypeBytes(kTINYINT));
-    return allocateRawDataBuffer(arrow_array, index, bytes);
-  }
-
   JITValuePointer allocateRawDataBuffer(int64_t index, SQLTypes type) {
     return codegen_utils::allocateArrowArrayBuffer(
         arrow_array_, index, arrow_array_len_, type);
@@ -392,12 +385,6 @@ class ColumnWriter {
 
   JITValuePointer allocateRawDataBuffer(int64_t index, jitlib::JITValuePointer& bytes) {
     return codegen_utils::allocateArrowArrayBuffer(arrow_array_, index, bytes);
-  }
-
-  JITValuePointer allocateRawDataBuffer(jitlib::JITValuePointer& arrow_array,
-                                        int64_t index,
-                                        jitlib::JITValuePointer& bytes) {
-    return codegen_utils::allocateArrowArrayBuffer(arrow_array, index, bytes);
   }
 
   JITValuePointer& getArrowArrayFromCTX() {
