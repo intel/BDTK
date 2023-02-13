@@ -25,8 +25,13 @@
 #include <functional>
 #include <memory>
 #include <optional>
+
 #include "cider/CiderAllocator.h"
+#include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderJoinHashTable.h"
+
+using namespace cider::exec::nextgen::context;
+
 namespace cider::exec::processor {
 
 struct HashBuildResult {
@@ -36,6 +41,7 @@ struct HashBuildResult {
 };
 
 using HashBuildTableSupplier = std::function<std::optional<HashBuildResult>()>;
+using CrossBuildTableSupplier = std::function<std::optional<std::shared_ptr<Batch>>()>;
 
 class BatchProcessorContext {
  public:
@@ -45,16 +51,26 @@ class BatchProcessorContext {
   const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 
   void setHashBuildTableSupplier(const HashBuildTableSupplier& hashBuildTableSupplier) {
-    buildTableSupplier_ = hashBuildTableSupplier;
+    hashBuildTableSupplier_ = hashBuildTableSupplier;
   }
 
   const HashBuildTableSupplier& getHashBuildTableSupplier() const {
-    return buildTableSupplier_;
+    return hashBuildTableSupplier_;
+  }
+
+  void setCrossJoinBuildTableSupplier(
+      const CrossBuildTableSupplier& crossBuildTableSupplier) {
+    crossBuildTableSupplier_ = crossBuildTableSupplier;
+  }
+
+  const CrossBuildTableSupplier& getCrossJoinBuildTableSupplier() const {
+    return crossBuildTableSupplier_;
   }
 
  private:
   std::shared_ptr<CiderAllocator> allocator_;
-  HashBuildTableSupplier buildTableSupplier_;
+  HashBuildTableSupplier hashBuildTableSupplier_;
+  CrossBuildTableSupplier crossBuildTableSupplier_;
 };
 
 using BatchProcessorContextPtr = std::shared_ptr<BatchProcessorContext>;

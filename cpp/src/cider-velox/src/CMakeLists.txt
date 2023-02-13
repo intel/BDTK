@@ -34,7 +34,8 @@ set(VELOX_PLUGIN_SOURCES
     CiderStatelessOperator.cpp
     CiderPipelineOperator.cpp
     CiderHashJoinBuild.cpp
-    CiderVeloxOptions.cpp)
+    CiderVeloxOptions.cpp
+    CiderCrossJoinBuild.cpp)
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 

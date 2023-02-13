@@ -143,7 +143,7 @@ JITExprValue& BinOper::codegenNull(CodegenContext& context) {
     JITExprValueAdaptor rhs_val(rhs->codegenNull(context));
 
     // FIXME: propagate null, don't support kleene logic operation
-    return set_expr_null(lhs_val.getNull() || rhs_val.getNull());
+    return set_expr_null(lhs_val.getNull() && rhs_val.getNull());
   }
   UNREACHABLE();
   return expr_var_;

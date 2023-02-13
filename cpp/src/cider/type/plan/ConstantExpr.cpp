@@ -91,7 +91,7 @@ JITExprValue& Constant::codegenNull(CodegenContext& context) {
   //   return expr_var;
   // }
 
-  auto null = func.createLiteral(JITTypeTag::BOOL, get_is_null());
+  auto null = func.createLiteral(JITTypeTag::INT8, get_is_null());
   return set_expr_null(null);
 }  // namespace Analyzer
 }  // namespace Analyzer

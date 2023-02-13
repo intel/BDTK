@@ -42,4 +42,22 @@ std::shared_ptr<CiderBatch> HashProbeHandler::onProcessBatch(
   return batch;
 }
 
+void CrossProbeHandler::onState(cider::exec::processor::BatchProcessorState state) {
+  if (BatchProcessorState::kWaiting == state) {
+    const auto& crossBuildTableSupplier =
+        batchProcessor_->getContext()->getCrossJoinBuildTableSupplier();
+    if (crossBuildTableSupplier) {
+      auto crossBuildData = crossBuildTableSupplier();
+      if (crossBuildData.has_value()) {
+        batchProcessor_->feedCrossBuildData(crossBuildData.value());
+      }
+    }
+  }
+}
+
+std::shared_ptr<CiderBatch> CrossProbeHandler::onProcessBatch(
+    std::shared_ptr<CiderBatch> batch) {
+  return batch;
+}
+
 }  // namespace cider::exec::processor
