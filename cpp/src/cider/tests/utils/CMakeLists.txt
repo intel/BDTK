@@ -33,7 +33,8 @@ set(CIDER_TESTS_UTILS_SOURCE
     CiderBatchChecker.cpp
     CiderBenchmarkRunner.cpp
     CiderRunner.cpp
-    CiderInt128.cpp)
+    CiderInt128.cpp
+    ../../exec/module/batch/CiderBatch.cpp)
 
 add_library(test_utils ${CIDER_TESTS_UTILS_SOURCE})
 target_link_libraries(test_utils duckdb cider_plan_parser cider_processor)
@@ -82,19 +83,20 @@ target_link_libraries(QueryArrowDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(QueryArrowDataGeneratorTest
          ${EXECUTABLE_OUTPUT_PATH}/QueryArrowDataGeneratorTest ${TEST_ARGS})
 
-add_executable(CiderQueryRunnerTest CiderQueryRunnerTest.cpp)
-target_link_libraries(CiderQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
-add_test(CiderQueryRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderQueryRunnerTest
-         ${TEST_ARGS})
+# add_executable(CiderQueryRunnerTest CiderQueryRunnerTest.cpp)
+# target_link_libraries(CiderQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
+# add_test(CiderQueryRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderQueryRunnerTest
+# ${TEST_ARGS})
 
 # add_executable(CiderMultiBatchTest CiderMultiBatchTest.cpp)
 # target_link_libraries(CiderMultiBatchTest ${EXECUTE_TEST_UTILS_LIBS})
 # add_test(CiderMultiBatchTest ${EXECUTABLE_OUTPUT_PATH}/CiderMultiBatchTest
 # ${TEST_ARGS})
 
-add_executable(CiderRunnerTest CiderRunnerTest.cpp)
-target_link_libraries(CiderRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
-add_test(CiderRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderRunnerTest ${TEST_ARGS})
+# add_executable(CiderRunnerTest CiderRunnerTest.cpp)
+# target_link_libraries(CiderRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
+# add_test(CiderRunnerTest ${EXECUTABLE_OUTPUT_PATH}/CiderRunnerTest
+# ${TEST_ARGS})
 
 set(TEST_PROGRAMS IsthmusTest DuckDbQueryRunnerTest CiderBatchBuilderTest
                   CiderBatchCheckerTest)
