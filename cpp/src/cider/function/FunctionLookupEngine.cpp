@@ -540,7 +540,7 @@ io::substrait::ParameterizedTypePtr FunctionLookupEngine::decode(
       auto length =
           std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
       if (!length->value().empty() && length->value().at(0) == 'L') {
-        return std::make_shared<io::substrait::Varchar>(0, nullable);
+        return std::make_shared<io::substrait::FixedChar>(0, nullable);
       }
       return std::make_shared<io::substrait::FixedChar>(std::stoi(length->value()),
                                                         nullable);
@@ -549,7 +549,7 @@ io::substrait::ParameterizedTypePtr FunctionLookupEngine::decode(
       auto length =
           std::dynamic_pointer_cast<const io::substrait::StringLiteral>(nestedTypes[0]);
       if (!length->value().empty() && length->value().at(0) == 'L') {
-        return std::make_shared<io::substrait::Varchar>(0, nullable);
+        return std::make_shared<io::substrait::FixedBinary>(0, nullable);
       }
       return std::make_shared<io::substrait::FixedBinary>(std::stoi(length->value()),
                                                           nullable);
