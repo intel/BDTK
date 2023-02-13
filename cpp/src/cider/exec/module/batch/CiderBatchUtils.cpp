@@ -211,7 +211,7 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
 }
 
 const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
-                                        std::string& formatBuffer) {
+                                        std::string& format_buffer) {
   auto type = sql_info.get_type();
   switch (type) {
     case kBOOLEAN:
@@ -243,9 +243,9 @@ const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
     case kTIMESTAMP:
       return "tsu";
     case kDECIMAL: {
-      formatBuffer =
+      format_buffer =
           fmt::format("d:{},{}", sql_info.get_precision(), sql_info.get_scale());
-      return formatBuffer.c_str();
+      return format_buffer.c_str();
     }
     default:
       CIDER_THROW(CiderCompileException,
@@ -263,7 +263,7 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
         CiderArrowSchemaBufferHolder* holder =
             new CiderArrowSchemaBufferHolder(info.getChildrenNum(),
                                              false);  // TODO: Dictionary support is TBD;
-        schema->format = convertCiderTypeToArrowType(info, holder->formatBuffer);
+        schema->format = convertCiderTypeToArrowType(info, holder->getFormatBuffer());
         schema->n_children = info.getChildrenNum();
         schema->children = holder->getChildrenPtrs();
         schema->dictionary = holder->getDictPtr();
@@ -281,7 +281,7 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
 }
 
 const char* convertSubstraitTypeToArrowType(const substrait::Type& type,
-                                            std::string& formatBuffer) {
+                                            std::string& format_buffer) {
   using namespace substrait;
   switch (type.kind_case()) {
     case Type::kBool:
@@ -314,9 +314,9 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type,
     case Type::kTimestamp:
       return "tsu";
     case Type::kDecimal: {
-      formatBuffer =
+      format_buffer =
           fmt::format("d:{},{}", type.decimal().precision(), type.decimal().scale());
-      return formatBuffer.c_str();
+      return format_buffer.c_str();
     }
     default:
       CIDER_THROW(CiderRuntimeException,
@@ -341,7 +341,8 @@ ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table)
   for (size_t i = 0; i < children.size(); ++i) {
     ArrowSchema* schema = root_schema->children[i];
     CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
-    schema->format = convertSubstraitTypeToArrowType(children[i], holder->formatBuffer);
+    schema->format =
+        convertSubstraitTypeToArrowType(children[i], holder->getFormatBuffer());
     schema->n_children = 0;
     schema->children = holder->getChildrenPtrs();
     schema->dictionary = holder->getDictPtr();

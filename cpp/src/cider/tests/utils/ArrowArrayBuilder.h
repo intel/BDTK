@@ -91,8 +91,8 @@ class ArrowArrayBuilder {
     ArrowArray* current_array = CiderBatchUtils::allocateArrowArray();
     ArrowSchema* current_schema = CiderBatchUtils::allocateArrowSchema();
     current_schema->name = col_name.c_str();
-    current_schema->format =
-        CiderBatchUtils::convertSubstraitTypeToArrowType(col_type, holder->formatBuffer);
+    current_schema->format = CiderBatchUtils::convertSubstraitTypeToArrowType(
+        col_type, holder->getFormatBuffer());
     current_schema->n_children = 0;
     current_schema->children = nullptr;
     current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
@@ -465,8 +465,8 @@ class ArrowArrayBuilder {
     ArrowSchema* current_schema = CiderBatchUtils::allocateArrowSchema();
 
     current_schema->name = col_name.c_str();
-    current_schema->format =
-        CiderBatchUtils::convertSubstraitTypeToArrowType(col_type, holder->formatBuffer);
+    current_schema->format = CiderBatchUtils::convertSubstraitTypeToArrowType(
+        col_type, holder->getFormatBuffer());
     current_schema->n_children = 0;
     current_schema->children = nullptr;
     current_schema->release = CiderBatchUtils::ciderEmptyArrowSchemaReleaser;
