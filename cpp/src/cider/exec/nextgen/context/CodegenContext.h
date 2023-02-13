@@ -21,7 +21,6 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
-#include "common/interpreters/AggregationHashTable.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
 #include "exec/nextgen/jitlib/JITLib.h"
@@ -37,7 +36,6 @@ namespace cider::exec::nextgen::context {
 class RuntimeContext;
 class Batch;
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
-using namespace cider_hashtable;
 
 struct AggExprsInfo {
  public:
