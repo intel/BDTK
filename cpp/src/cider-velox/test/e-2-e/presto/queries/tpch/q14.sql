@@ -31,5 +31,5 @@ from
 	part as p
 where
 	l.partkey = p.partkey
-	and l.shipdate >= date '1995-09-01'
-	and l.shipdate < date '1995-09-01' + interval '1' month;
+	and l.shipdate >= '1995-09-01'
+	and l.shipdate < cast(date '1995-09-01' + interval '1' month as varchar);

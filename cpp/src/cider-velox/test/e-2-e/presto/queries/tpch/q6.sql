@@ -25,7 +25,7 @@ select
 from
 	lineitem
 where
-	shipdate >= date '1994-01-01'
-        and shipdate < date '1994-01-01' + interval '1' year
+	shipdate >= '1994-01-01'
+        and shipdate < cast(date '1994-01-01' + interval '1' year as varchar)
         and discount between decimal '0.06' - decimal '0.01' and decimal '0.06' + decimal '0.01'
 	and quantity < 24;
