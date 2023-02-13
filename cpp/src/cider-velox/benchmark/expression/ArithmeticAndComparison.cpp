@@ -103,6 +103,16 @@ void releaseArrowArray(ArrowArray* array) {
   delete array;
 }
 
+inline CodegenOptions getBaseOption() {
+  CodegenOptions cgo;
+  cgo.branchless_logic = false;
+  cgo.enable_vectorize = false;
+  cgo.co.enable_vectorize = false;
+  cgo.co.enable_avx2 = false;
+  cgo.co.enable_avx512 = false;
+  return cgo;
+}
+
 class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   using ArrowArrayReleaser = void (*)(struct ArrowArray*);
@@ -208,9 +218,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
 
     cgo.co.dump_ir = FLAGS_dump_ir;
-    cgo.co.enable_vectorize = true;
-    cgo.co.enable_avx2 = true;
-    cgo.co.enable_avx512 = true;
 
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
@@ -382,16 +389,19 @@ BENCHMARK(velox) {
   benchmark->veloxCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen) {
-  benchmark->nextgenCompute(profile_expr);
+  auto cgo = getBaseOption();
+  benchmark->nextgenCompute(profile_expr, cgo);
 }
 BENCHMARK_DRAW_LINE();
 BENCHMARK(nextgen____base) {
-  benchmark->nextgenCompute(profile_expr);
+  auto cgo = getBaseOption();
+  benchmark->nextgenCompute(profile_expr, cgo);
 }
-BENCHMARK_RELATIVE(nextgen_autorization) {
-  // null separate
-  CodegenOptions cgo;
-  cgo.enable_vectorize = true;
+BENCHMARK_RELATIVE(nextgen_vectorization) {
+  auto cgo = getBaseOption();
+  cgo.co.enable_vectorize = true;
+  cgo.co.enable_avx2 = true;
+  cgo.co.enable_avx512 = true;
   benchmark->nextgenCompute(profile_expr, cgo);
 }
 BENCHMARK_RELATIVE(specifialize1) {
@@ -405,49 +415,47 @@ BENCHMARK_RELATIVE(specifialize3) {
 }
 BENCHMARK_DRAW_LINE();
 
-#define BENCHMARK_GROUP(name, expr)                                        \
-  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); }   \
-  BENCHMARK_RELATIVE(name##NextGen) { benchmark->nextgenCompute(expr); }   \
-  BENCHMARK(name##NextGen_______Base) { benchmark->nextgenCompute(expr); } \
-  BENCHMARK_RELATIVE(name##NextgenIsBitClear) {                            \
-    CodegenOptions cgo;                                                    \
-    cgo.check_bit_vector_clear_opt = true;                                 \
-    benchmark->nextgenCompute(expr, cgo);                                  \
-  }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenBranchlessSetNull) {                     \
-    CodegenOptions cgo;                                                    \
-    cgo.set_null_bit_vector_opt = true;                                    \
-    benchmark->nextgenCompute(expr, cgo);                                  \
-  }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenVectorization) {                         \
-    CodegenOptions cgo;                                                    \
-    cgo.enable_vectorize = true;                                           \
-    benchmark->nextgenCompute(expr, cgo);                                  \
-  }                                                                        \
-  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                                \
-    CodegenOptions cgo;                                                    \
-    cgo.check_bit_vector_clear_opt = true;                                 \
-    cgo.set_null_bit_vector_opt = true;                                    \
-    cgo.enable_vectorize = true;                                           \
-    benchmark->nextgenCompute(expr, cgo);                                  \
-  }                                                                        \
-  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }            \
+#define BENCHMARK_GROUP(name, expr)                                      \
+  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); } \
+  BENCHMARK_RELATIVE(name##NextGen) {                                    \
+    auto cgo = getBaseOption();                                          \
+    benchmark->nextgenCompute(expr, cgo);                                \
+  }                                                                      \
+  BENCHMARK(name##NextGen_______Base) {                                  \
+    auto cgo = getBaseOption();                                          \
+    benchmark->nextgenCompute(expr, cgo);                                \
+  }                                                                      \
+  BENCHMARK_RELATIVE(name##NextgenVectorization) {                       \
+    CodegenOptions cgo;                                                  \
+    cgo.enable_vectorize = true;                                         \
+    cgo.co.enable_avx2 = true;                                           \
+    cgo.co.enable_avx512 = true;                                         \
+    benchmark->nextgenCompute(expr, cgo);                                \
+  }                                                                      \
+  BENCHMARK_RELATIVE(name##NextgenAllOpt) {                              \
+    CodegenOptions cgo;                                                  \
+    cgo.check_bit_vector_clear_opt = true;                               \
+    cgo.set_null_bit_vector_opt = true;                                  \
+    cgo.branchless_logic = true;                                         \
+    cgo.enable_vectorize = true;                                         \
+    cgo.co.enable_avx2 = true;                                           \
+    cgo.co.enable_avx512 = true;                                         \
+    benchmark->nextgenCompute(expr, cgo);                                \
+  }                                                                      \
+  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }          \
   BENCHMARK_DRAW_LINE()
 
-BENCHMARK_GROUP(mulI8, "multiply(i8, i8)");
-BENCHMARK_GROUP(mulI8Nested, "i8*i8*i8");
-BENCHMARK_GROUP(mulI8NestedDeep, "i8*i8*i8*i8");
-BENCHMARK_GROUP(mulI16, "multiply(i16, i16)");
-BENCHMARK_GROUP(mulI32, "multiply(i32, i32)");
-BENCHMARK_GROUP(mulI64, "multiply(i64, i64)");
+BENCHMARK_GROUP(mulI8, "i8*i8");
+BENCHMARK_GROUP(mulI8Deep, "i8*i8*i8*i8");
+BENCHMARK_GROUP(mulI16, "i16*i16");
+BENCHMARK_GROUP(mulI32, "i32*i32");
+BENCHMARK_GROUP(mulI64, "i64*i64");
 
-BENCHMARK_GROUP(mulDouble, "multiply(a, b)");
-BENCHMARK_GROUP(mulDoubleSameColumn, "multiply(a, a)");
-BENCHMARK_GROUP(mulDoubleConstant, "multiply(a, constant)");
-BENCHMARK_GROUP(mulDoubleNested, "multiply(multiply(a, b), b)");
-BENCHMARK_GROUP(mulDoubleNestedDeep,
-                "multiply(multiply(multiply(a, b), a), "
-                "multiply(a, multiply(a, b)))");
+BENCHMARK_GROUP(mulDouble, "a*b");
+BENCHMARK_GROUP(mulDoubleSameColumn, "a*a");
+BENCHMARK_GROUP(mulDoubleConstant, "a*constant");
+BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
+BENCHMARK_GROUP(mulDoubleNestedDeep, "(a*b*a)*(a*(a*b))");
 
 BENCHMARK(PlusCheckedVeloxI64) {
   benchmark->veloxCompute("checkedPlus(i64, i64)");

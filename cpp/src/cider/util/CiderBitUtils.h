@@ -184,13 +184,24 @@ FORCE_INLINE void setBitAtUnified(uint8_t* bit_vector, size_t index, bool is_nul
 }
 
 ENABLE_AVX256 inline size_t countSetBits(const uint8_t* bit_vector, size_t end) {
-  size_t i = 0, ans = 0;
-  for (; i + 64 <= end; i += 64) {
-    ans += __builtin_popcountl(
-        reinterpret_cast<uint64_t*>(const_cast<uint8_t*>(bit_vector))[i >> 6]);
+  size_t ans = 0;
+  // group by 64
+  size_t upper = end / 64;
+  for (size_t i = 0; i < upper; ++i) {
+    ans += __builtin_popcountl(reinterpret_cast<const uint64_t*>(bit_vector)[i]);
   }
 
-  for (; i < end; ++i) {
+  // group by 8
+  size_t curr = upper * 64;
+  const uint8_t* tmp_vector = &bit_vector[upper * 64];
+  upper = (end - curr) / 8;
+  for (size_t i = 0; i < upper; ++i) {
+    ans += __builtin_popcount(tmp_vector[i]);
+  }
+
+  // remaining
+  curr += upper * 8;
+  for (size_t i = curr; i < end; ++i) {
     ans += isBitSetAt(bit_vector, i);
   }
 
