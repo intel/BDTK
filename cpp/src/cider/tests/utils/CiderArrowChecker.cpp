@@ -21,52 +21,141 @@
 
 #include "tests/utils/CiderArrowChecker.h"
 
-#include <cstring>
-
 #include "util/Logger.h"
 
 namespace cider::test::util {
 
 namespace {
 
-template <typename T>
-bool checkArrowBuffer(const struct ArrowArray* expect_array,
-                      const struct ArrowArray* actual_array) {
-  auto expect_value_buffer = reinterpret_cast<const T*>(expect_array->buffers[1]);
-  auto actual_value_buffer = reinterpret_cast<const T*>(actual_array->buffers[1]);
-  if (expect_value_buffer == nullptr && actual_value_buffer == nullptr) {
-    return true;
-  }
-  if (expect_value_buffer == nullptr || actual_value_buffer == nullptr) {
+bool checkIfNeedCompareData(const struct ArrowArray* expect_array,
+                            const struct ArrowArray* actual_array) {
+  if (expect_array == nullptr || actual_array == nullptr) {
     return false;
   }
-
   auto expect_null_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[0]);
   auto actual_null_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[0]);
-
-  if (expect_null_buffer && actual_null_buffer) {
-    for (int64_t i = 0; i < expect_array->length; i++) {
-      bool expect_valid = CiderBitUtils::isBitSetAt(expect_null_buffer, i);
-      bool actual_valid = CiderBitUtils::isBitSetAt(actual_null_buffer, i);
-      if (expect_valid != actual_valid) {
-        LOG(INFO) << "ArrowArray null bit not equal: "
-                  << "Expected: " << expect_valid << ". Actual: " << actual_valid;
+  if (expect_array->buffers[0] && actual_array->buffers[0]) {
+    if (memcmp(expect_null_buffer, actual_null_buffer, expect_array->length / 8)) {
+      LOG(INFO) << "ArrowArray null buffer are not equal.";
+      return false;
+    }
+    for (size_t i = expect_array->length / 8 * 8; i < expect_array->length; i++) {
+      if (CiderBitUtils::isBitSetAt(expect_null_buffer, i) !=
+          CiderBitUtils::isBitSetAt(actual_null_buffer, i)) {
+        LOG(INFO) << "ArrowArray null buffer are not equal.";
         return false;
-      }
-      if (expect_valid) {
-        if (expect_value_buffer[i] != actual_value_buffer[i]) {
-          return false;
-        }
       }
     }
   } else {
-    if (!(expect_null_buffer == nullptr && actual_null_buffer == nullptr)) {
+    if (expect_array->buffers[0] == nullptr ^ actual_array->buffers[0] == nullptr) {
       LOG(INFO) << "One ArrowArray null buffer is null in checkArrowBuffer.";
     }
-    return !memcmp(
-        expect_value_buffer, actual_value_buffer, sizeof(T) * expect_array->length);
   }
   return true;
+}
+
+std::vector<int64_t> generateValidIndex(const void* original_null_buffer,
+                                        int64_t len,
+                                        bool need_check_null) {
+  std::vector<int64_t> valid_index;
+  auto null_buffer = reinterpret_cast<const uint8_t*>(original_null_buffer);
+
+  for (int64_t i = 0; i < len; i++) {
+    if (need_check_null) {
+      bool is_null = !CiderBitUtils::isBitSetAt(null_buffer, i);
+      if (is_null) {
+        continue;
+      }
+    }
+    valid_index.emplace_back(i);
+  }
+
+  return valid_index;
+}
+
+template <typename T>
+bool checkArrowBuffer(const struct ArrowArray* expect_array,
+                      const struct ArrowArray* actual_array) {
+  if (!checkIfNeedCompareData(expect_array, actual_array)) {
+    if (expect_array == nullptr && actual_array == nullptr) {
+      return true;
+    }
+    return false;
+  }
+
+  std::vector<int64_t> valid_index =
+      generateValidIndex(expect_array->buffers[0],
+                         expect_array->length,
+                         expect_array->buffers[0] && actual_array->buffers[0]);
+
+  if (valid_index.size() == expect_array->length) {
+    return !memcmp(expect_array->buffers[1],
+                   actual_array->buffers[1],
+                   sizeof(T) * expect_array->length);
+  } else {
+    auto expect_value_buffer = reinterpret_cast<const T*>(expect_array->buffers[1]);
+    auto actual_value_buffer = reinterpret_cast<const T*>(actual_array->buffers[1]);
+    for (int64_t i = 0; i < valid_index.size(); i++) {
+      if (expect_value_buffer[valid_index[i]] != actual_value_buffer[valid_index[i]]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <typename T>
+bool cmpBetweenDecimalAndInt(const void* expect_buffer,
+                             const void* actual_buffer,
+                             const std::vector<int64_t>& valid_index) {
+  auto decimal_buffer = reinterpret_cast<const uint8_t*>(expect_buffer);
+  auto actual_value_buffer = reinterpret_cast<const T*>(actual_buffer);
+
+  for (int64_t i = 0; i < valid_index.size(); i++) {
+    T expect_value = *(reinterpret_cast<const T*>(decimal_buffer + 16 * valid_index[i]));
+    if (expect_value != actual_value_buffer[valid_index[i]]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool checkArrowBufferDecimal(const struct ArrowArray* expect_array,
+                             const struct ArrowArray* actual_array,
+                             const char format) {
+  if (!checkIfNeedCompareData(expect_array, actual_array)) {
+    if (expect_array == nullptr && actual_array == nullptr) {
+      return true;
+    }
+    return false;
+  }
+
+  std::vector<int64_t> valid_index =
+      generateValidIndex(expect_array->buffers[0],
+                         expect_array->length,
+                         expect_array->buffers[0] && actual_array->buffers[0]);
+
+  switch (format) {
+    case 'c':
+    case 'C':
+      return cmpBetweenDecimalAndInt<int8_t>(
+          expect_array->buffers[1], actual_array->buffers[1], valid_index);
+    case 's':
+    case 'S':
+      return cmpBetweenDecimalAndInt<int16_t>(
+          expect_array->buffers[1], actual_array->buffers[1], valid_index);
+    case 'i':
+    case 'I':
+      return cmpBetweenDecimalAndInt<int32_t>(
+          expect_array->buffers[1], actual_array->buffers[1], valid_index);
+    case 'l':
+    case 'L':
+      return cmpBetweenDecimalAndInt<int64_t>(
+          expect_array->buffers[1], actual_array->buffers[1], valid_index);
+    default:
+      LOG(INFO) << "Data type not supported: decimal can only compare with int.";
+      return false;
+  }
 }
 
 template <typename T>
@@ -81,42 +170,24 @@ bool absoluteToleranceCompare(T x, T y) {
 template <typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
 bool checkArrowBufferFp(const struct ArrowArray* expect_array,
                         const struct ArrowArray* actual_array) {
-  auto expect_value_buffer = reinterpret_cast<const T*>(expect_array->buffers[1]);
-  auto actual_value_buffer = reinterpret_cast<const T*>(actual_array->buffers[1]);
-  if (expect_value_buffer == nullptr && actual_value_buffer == nullptr) {
-    return true;
-  }
-  if (expect_value_buffer == nullptr || actual_value_buffer == nullptr) {
+  if (!checkIfNeedCompareData(expect_array, actual_array)) {
+    if (expect_array == nullptr && actual_array == nullptr) {
+      return true;
+    }
     return false;
   }
 
-  auto expect_null_buffer = reinterpret_cast<const uint8_t*>(expect_array->buffers[0]);
-  auto actual_null_buffer = reinterpret_cast<const uint8_t*>(actual_array->buffers[0]);
+  std::vector<int64_t> valid_index =
+      generateValidIndex(expect_array->buffers[0],
+                         expect_array->length,
+                         expect_array->buffers[0] && actual_array->buffers[0]);
 
-  if (expect_null_buffer && actual_null_buffer) {
-    for (int64_t i = 0; i < expect_array->length; i++) {
-      bool expect_valid = CiderBitUtils::isBitSetAt(expect_null_buffer, i);
-      bool actual_valid = CiderBitUtils::isBitSetAt(actual_null_buffer, i);
-      if (expect_valid != actual_valid) {
-        LOG(INFO) << "ArrowArray null bit not equal: "
-                  << "Expected: " << expect_valid << ". Actual: " << actual_valid;
-        return false;
-      }
-      if (expect_valid) {
-        if (!absoluteToleranceCompare<T>(expect_value_buffer[i],
-                                         actual_value_buffer[i])) {
-          return false;
-        }
-      }
-    }
-  } else {
-    if (!(expect_null_buffer == nullptr && actual_null_buffer == nullptr)) {
-      LOG(INFO) << "One ArrowArray null buffer is null in checkArrowBuffer.";
-    }
-    for (int64_t i = 0; i < expect_array->length; i++) {
-      if (!absoluteToleranceCompare<T>(expect_value_buffer[i], actual_value_buffer[i])) {
-        return false;
-      }
+  auto expect_value_buffer = reinterpret_cast<const T*>(expect_array->buffers[1]);
+  auto actual_value_buffer = reinterpret_cast<const T*>(actual_array->buffers[1]);
+  for (int64_t i = 0; i < valid_index.size(); i++) {
+    if (!absoluteToleranceCompare<T>(expect_value_buffer[valid_index[i]],
+                                     actual_value_buffer[valid_index[i]])) {
+      return false;
     }
   }
   return true;
@@ -322,9 +393,13 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
       return checkArrowBufferFp<float>(expect_array, actual_array);
     case 'g':
       return checkArrowBufferFp<double>(expect_array, actual_array);
-    case 'd':
-      // workaround for non-groupby agg test
-      return checkArrowBuffer<int64_t>(expect_array, actual_array);
+    case 'd': {
+      // duck db schema makes all sum(int) type as decimal
+      // which does not keep consistency with our schema
+      // so add new processing branch
+      return checkArrowBufferDecimal(
+          expect_array, actual_array, actual_schema->format[0]);
+    }
     case 't': {
       if (expect_schema->format[1] == 'd' && expect_schema->format[2] == 'D') {
         return checkArrowBuffer<int32_t>(expect_array, actual_array);
@@ -395,13 +470,10 @@ bool CiderArrowChecker::checkArrowEq(const struct ArrowArray* expect_array,
   }
 
   for (int64_t i = 0; i < expect_array->n_children; i++) {
-    // duck db schema makes all int type as decimal
-    // which does not keep consistency which our schema
-    // so temp workaround by making actual schema as reference
     bool child_arrow_eq = checkOneScalarArrowEqual(expect_array->children[i],
                                                    actual_array->children[i],
-                                                   actual_schema->children[i],
-                                                   expect_schema->children[i]);
+                                                   expect_schema->children[i],
+                                                   actual_schema->children[i]);
     if (!child_arrow_eq) {
       return false;
     }
