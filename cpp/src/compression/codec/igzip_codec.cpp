@@ -37,30 +37,31 @@ namespace {
 class IgzipCodec : public IclCompressionCodec {
  public:
   explicit IgzipCodec(int compression_level) {
-    context = static_cast<struct igzip_context*>(igzip_wrapper_init(compression_level));
+    context_ =
+        static_cast<struct igzip_wrapper_context*>(igzip_wrapper_init(compression_level));
   }
 
-  ~IgzipCodec() override { igzip_wrapper_destroy(context); }
+  ~IgzipCodec() override { igzip_wrapper_destroy(context_); }
 
-  int64_t Decompress(int64_t input_len,
+  int64_t Decompress(int64_t input_length,
                      const uint8_t* input,
-                     int64_t output_buffer_len,
-                     uint8_t* output_buffer) override {
-    int64_t decompressed_size = igzip_wrapper_decompress(
-        context, input_len, input, output_buffer_len, output_buffer);
+                     int64_t output_length,
+                     uint8_t* output) override {
+    int64_t decompressed_size =
+        igzip_wrapper_decompress(context_, input_length, input, output_length, output);
     return decompressed_size;
   }
 
-  int64_t MaxCompressedLen(int64_t input_len, const uint8_t* input) override {
-    return igzip_wrapper_max_compressed_len(input_len, input);
+  int64_t MaxCompressedLen(int64_t input_length, const uint8_t* input) override {
+    return igzip_wrapper_max_compressed_len(context_, input_length, input);
   }
 
-  int64_t Compress(int64_t input_len,
+  int64_t Compress(int64_t input_length,
                    const uint8_t* input,
-                   int64_t output_buffer_len,
-                   uint8_t* output_buffer) override {
-    int64_t compressed_size = igzip_wrapper_compress(
-        context, input_len, input, output_buffer_len, output_buffer);
+                   int64_t output_length,
+                   uint8_t* output) override {
+    int64_t compressed_size =
+        igzip_wrapper_compress(context_, input_length, input, output_length, output);
     return compressed_size;
   }
 
@@ -77,7 +78,7 @@ class IgzipCodec : public IclCompressionCodec {
   }
 
  private:
-  struct igzip_context* context;
+  struct igzip_wrapper_context* context_;
 };
 
 }  // namespace

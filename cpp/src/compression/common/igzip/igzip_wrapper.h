@@ -38,7 +38,9 @@ void* igzip_wrapper_init(int compression_level);
 
 void igzip_wrapper_destroy(void* context);
 
-int64_t igzip_wrapper_max_compressed_len(int64_t input_length, const uint8_t* input);
+int64_t igzip_wrapper_max_compressed_len(void* context,
+                                         int64_t input_length,
+                                         const uint8_t* input);
 
 int64_t igzip_wrapper_compress(void* context,
                                int64_t input_length,
