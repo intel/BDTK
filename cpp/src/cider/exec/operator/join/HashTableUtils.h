@@ -22,6 +22,46 @@
 
 namespace cider_hashtable {
 
+class HT_Row {
+  public:
+    HT_Row(int8_t* key_ptr, size_t key_size):key_ptr_(key_ptr_),key_size_(key_size) {}
+    HT_Row(){}
+    ~HT_Row() {
+      if(nullptr == key_ptr_) {
+        delete[] key_ptr_;
+        key_ptr_ = nullptr;
+      }
+    }
+    template <typename T>
+    void make_row(T& value){
+      if constexpr (std::is_same_v<T, std::string>){
+        key_size_ = value.size();
+        if(nullptr == key_ptr_){
+        key_ptr_ = new int8_t[key_size_+1];
+        std::strcpy(reinterpret_cast<char*>(key_ptr_), value.c_str());
+        is_string = true;
+      }
+      }else {
+        key_size_ = sizeof(T);
+        if(nullptr == key_ptr_){
+        key_ptr_ = new int8_t[key_size_];  
+        memcpy(key_ptr_,&value,key_size_);
+      }
+      }
+    }
+
+    //todo(xinyihe): add append function to support build multi keys Row
+    template <typename... Args>
+    void make_row_from_multi_key(Args ...args){
+    }
+
+  public:
+    int8_t* key_ptr_ = nullptr;
+    size_t key_size_ = 0;
+    bool is_string = false;
+};
+
+
 template <typename KeyType>
 struct table_key {
   KeyType key;
@@ -29,18 +69,16 @@ struct table_key {
   std::size_t duplicate_num;
 };
 
-struct MurmurHash {
-  size_t operator()(int64_t rawHash) {
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xff51afd7ed558ccdL;
-    rawHash ^= unsigned(rawHash) >> 33;
-    rawHash *= 0xc4ceb9fe1a85ec53L;
-    rawHash ^= unsigned(rawHash) >> 33;
-    return rawHash;
-  }
-};
-
 struct Equal {
   bool operator()(int lhs, int rhs) { return lhs == rhs; }
+  bool operator()(std::string lhs, std::string rhs) { return lhs == rhs; }
 };
+
+struct HTRowEqual {
+  bool operator()(const HT_Row& lhs, const HT_Row& rhs) { 
+    return (lhs.key_size_ == rhs.key_size_) && (memcmp(lhs.key_ptr_, rhs.key_ptr_, lhs.key_size_) == 0); 
+    }
+};
+
+
 }  // namespace cider_hashtable

@@ -24,6 +24,7 @@
 #include "exec/operator/join/CiderChainedHashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
 #include "exec/operator/join/HashTableSelector.h"
+#include "exec/operator/join/HashFunctions.h"
 
 namespace cider::exec::processor {
 
@@ -36,12 +37,12 @@ using CiderJoinBaseKey = int;
 using CiderJoinBaseValue = BatchAndOffset;
 
 #define LP_TEMPLATE                                                  \
-  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::MurmurHash, \
+  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::hash_functions::MurmurHash, \
       cider_hashtable::Equal, void,                                  \
       std::allocator<                                                \
           std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>
 #define CHAINED_TEMPLATE                                             \
-  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::MurmurHash, \
+  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::hash_functions::MurmurHash, \
       cider_hashtable::Equal, void,                                  \
       std::allocator<                                                \
           std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>
