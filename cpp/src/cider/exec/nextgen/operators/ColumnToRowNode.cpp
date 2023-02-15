@@ -111,6 +111,16 @@ class ColumnReader {
   //| BOOL     | INT64      | INT8*                |   C_TYPE*      |  INT64     |
   //|----------|------------|----------------------|----------------|------------|
   //| row_null | row_length | elem_null for column | values for row | row_offset |
+  //
+  // results for column like [[12, -7, 25], null, [0, -127, null, 50], []] are
+  //|----------|------------|----------------------|----------------|------------|
+  //| false    | 3          | 101111               | <12, -7, 25>   | 0          |
+  //|----------|------------|----------------------|----------------|------------|
+  //| true     | 0          | 101111               | <>             | 3          |
+  //|----------|------------|----------------------|----------------|------------|
+  //| false    | 4          | 101111               | <0, -127,0, 50>| 3          |
+  //|----------|------------|----------------------|----------------|------------|
+  //| false    | 0          | 101111               | <>             | 7          |
   void readVariableSizeArrayCol(bool for_null) {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeArrayExprValue varsize_values(buffers);
@@ -133,36 +143,8 @@ class ColumnReader {
     auto cur_offset = offset_pointer[index_];
     auto len = offset_pointer[index_ + 1] - offset_pointer[index_];
     // data buffer
-    auto value_pointer = JITValuePointer(nullptr);
-    switch (expr_->get_type_info().getChildAt(0).get_type()) {
-      case kTINYINT:
-        value_pointer.replace(
-            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8));
-        break;
-      case kSMALLINT:
-        value_pointer.replace(
-            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT16));
-        break;
-      case kINT:
-        value_pointer.replace(
-            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT32));
-        break;
-      case kBIGINT:
-        value_pointer.replace(
-            varsize_values.getValue()->castPointerSubType(JITTypeTag::INT64));
-        break;
-      case kFLOAT:
-        value_pointer.replace(
-            varsize_values.getValue()->castPointerSubType(JITTypeTag::FLOAT));
-        break;
-      case kDOUBLE:
-        value_pointer.replace(
-            varsize_values.getValue()->castPointerSubType(JITTypeTag::DOUBLE));
-        break;
-      default:
-        CIDER_THROW(CiderException, std::string("Unsupported list data type"));
-        break;
-    }
+    auto value_pointer = varsize_values.getValue()->castPointerSubType(
+        utils::getJITTypeTag(expr_->get_type_info().getChildAt(0).get_type()));
     auto row_data = value_pointer + cur_offset;
     // array elements null buffer
     auto col_null_pointer =

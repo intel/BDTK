@@ -163,7 +163,7 @@ class ColumnWriter {
     // reallocate buffer on demand
     auto child_array = context_.getJITFunction()->createLocalJITValue(
         [this]() { return context::codegen_utils::getArrowArrayChild(arrow_array_, 0); });
-    auto bitmap_bytes_len = (values.getOffset() + values.getLength() + 7) / 8;
+    auto bitmap_bytes_len = (values.getOffset() + 7) / 8;
     auto new_elem_null_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
         "get_data_buffer_with_realloc_on_demand",
         JITFunctionEmitDescriptor{
@@ -176,7 +176,7 @@ class ColumnWriter {
 
     // allocate values buffer in child
     auto values_bytes_len =
-        (values.getLength() + values.getOffset()) *
+        values.getOffset() *
         utils::getTypeBytes(expr_->get_type_info().getChildAt(0).get_type());
     auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
         "get_data_buffer_with_realloc_on_demand",
@@ -237,36 +237,8 @@ class ColumnWriter {
           count =
               context_.getJITFunction()->createVariable(JITTypeTag::INT32, "count", 0);
           // set values buffer
-          auto actual_raw_data_buffer = JITValuePointer(nullptr);
-          switch (expr_->get_type_info().getChildAt(0).get_type()) {
-            case kTINYINT:
-              actual_raw_data_buffer.replace(
-                  raw_data_buffer->castPointerSubType(JITTypeTag::INT8));
-              break;
-            case kSMALLINT:
-              actual_raw_data_buffer.replace(
-                  raw_data_buffer->castPointerSubType(JITTypeTag::INT16));
-              break;
-            case kINT:
-              actual_raw_data_buffer.replace(
-                  raw_data_buffer->castPointerSubType(JITTypeTag::INT32));
-              break;
-            case kBIGINT:
-              actual_raw_data_buffer.replace(
-                  raw_data_buffer->castPointerSubType(JITTypeTag::INT64));
-              break;
-            case kFLOAT:
-              actual_raw_data_buffer.replace(
-                  raw_data_buffer->castPointerSubType(JITTypeTag::FLOAT));
-              break;
-            case kDOUBLE:
-              actual_raw_data_buffer.replace(
-                  raw_data_buffer->castPointerSubType(JITTypeTag::DOUBLE));
-              break;
-            default:
-              CIDER_THROW(CiderException, std::string("Unsupported list data type"));
-              break;
-          }
+          auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(
+              utils::getJITTypeTag(expr_->get_type_info().getChildAt(0).get_type()));
           auto cur_pointer = actual_raw_data_buffer + values.getOffset();
 
           auto data_bytes_len =
