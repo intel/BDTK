@@ -397,7 +397,15 @@ BENCHMARK(nextgen____base) {
   auto cgo = getBaseOption();
   benchmark->nextgenCompute(profile_expr, cgo);
 }
-BENCHMARK_RELATIVE(nextgen_vectorization) {
+BENCHMARK_RELATIVE(nextgenAVX2) {
+  auto cgo = getBaseOption();
+  cgo.enable_vectorize = true;
+  cgo.co.enable_vectorize = true;
+  cgo.co.enable_avx2 = true;
+  cgo.co.enable_avx512 = false;
+  benchmark->nextgenCompute(profile_expr, cgo);
+}
+BENCHMARK_RELATIVE(nextgenAVX512) {
   auto cgo = getBaseOption();
   cgo.enable_vectorize = true;
   cgo.co.enable_vectorize = true;
@@ -426,7 +434,15 @@ BENCHMARK_DRAW_LINE();
     auto cgo = getBaseOption();                                          \
     benchmark->nextgenCompute(expr, cgo);                                \
   }                                                                      \
-  BENCHMARK_RELATIVE(name##NextgenVectorization) {                       \
+  BENCHMARK_RELATIVE(name##NextgenAVX2) {                                \
+    CodegenOptions cgo;                                                  \
+    cgo.enable_vectorize = true;                                         \
+    cgo.co.enable_vectorize = true;                                      \
+    cgo.co.enable_avx2 = true;                                           \
+    cgo.co.enable_avx512 = false;                                        \
+    benchmark->nextgenCompute(expr, cgo);                                \
+  }                                                                      \
+  BENCHMARK_RELATIVE(name##NextgenAVX512) {                              \
     CodegenOptions cgo;                                                  \
     cgo.enable_vectorize = true;                                         \
     cgo.co.enable_vectorize = true;                                      \
