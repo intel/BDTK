@@ -33,7 +33,7 @@ struct CompilationOptions {
   bool dump_ir = false;
   bool enable_vectorize = true;
   bool enable_avx2 = true;
-  bool enable_avx512 = true;
+  bool enable_avx512 = false;
 };
 
 struct LLVMJITEngine {
