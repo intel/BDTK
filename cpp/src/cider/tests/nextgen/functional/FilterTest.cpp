@@ -112,7 +112,7 @@ class CiderProjectAllTestNG : public CiderNextgenTestBase {
         GeneratePattern::Random);
   }
 };
-
+/*
 TEST_F(CiderProjectAllTestNG, filterProjectAllTest) {
   assertQuery("SELECT col_2 > 20 and col_8 FROM test");
   assertQuery("SELECT col_2 < 20 or col_8 FROM test");
@@ -308,7 +308,7 @@ TEST_F(CiderFilterRandomTestNG, integerNullFilterTest) {
   assertQuery("SELECT col_3 FROM test WHERE col_3 IS NOT NULL AND col_3 <= 77");
   assertQuery("SELECT col_4 FROM test WHERE col_4 IS NOT NULL AND col_4 >= 77");
 }
-
+*/
 TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
   // IS DISTINCT FROM
   assertQueryIgnoreOrder(

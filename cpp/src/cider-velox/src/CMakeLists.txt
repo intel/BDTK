@@ -22,13 +22,8 @@ add_subdirectory(planTransformer)
 add_subdirectory(ciderTransformer)
 
 set(VELOX_PLUGIN_SOURCES
-    ArrowConvertorUtils.cpp
-    CiderPlanNode.cpp
-    CiderVeloxPluginCtx.cpp
-    CiderPipelineOperator.cpp
-    CiderHashJoinBuild.cpp
-    CiderVeloxOptions.cpp
-    CiderCrossJoinBuild.cpp)
+    CiderPlanNode.cpp ArrowConvertorUtils.cpp CiderVeloxPluginCtx.cpp
+    CiderPipelineOperator.cpp CiderHashJoinBuild.cpp CiderVeloxOptions.cpp)
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 
@@ -36,8 +31,8 @@ target_link_libraries(velox_plugin velox_substrait_convertor cider_processor
                       velox_plan_transformer velox_exec ${GLOG})
 
 # install headers
-set(VELOX_PLUGIN_HEADERS
-    CiderPlanNode.h CiderPlanNodeTranslator.h VeloxPlanToCiderExecutionUnit.h)
+set(VELOX_PLUGIN_HEADERS CiderPlanNode.h CiderPlanNodeTranslator.h
+                         VeloxPlanToCiderExecutionUnit.h)
 install(FILES ${VELOX_PLUGIN_HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 # install so

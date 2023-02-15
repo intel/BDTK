@@ -21,10 +21,10 @@
 
 #include <common/base/wide_integer.h>
 #include <common/hashtable/HashTableAllocator.h>
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
-#include "util/Logger.h"
+#include <gtest/gtest.h>
 #include "common/hashtable/FixedHashMap.h"
+#include "util/Logger.h"
 
 using namespace cider::hashtable;
 

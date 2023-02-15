@@ -32,8 +32,6 @@
 #include "VariableContext.h"
 #include "cider/CiderException.h"
 #include "exec/plan/parser/Translator.h"
-#include "exec/template/QueryHint.h"
-#include "exec/template/common/descriptors/ColSlotContext.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
 #include "substrait/extensions/extensions.pb.h"
 #include "type/plan/Analyzer.h"
@@ -175,10 +173,6 @@ SubstraitToRelAlgExecutionUnit::createRelAlgExecutionUnit(
                                  nullptr,
                                  {{}, SortAlgorithm::Default, 0, 0},
                                  0,
-                                 RegisteredQueryHint::defaults(),
-                                 EMPTY_QUERY_PLAN,
-                                 {},
-                                 {},
                                  false,
                                  std::nullopt};
   return std::make_shared<RelAlgExecutionUnit>(rel_alg_eu);

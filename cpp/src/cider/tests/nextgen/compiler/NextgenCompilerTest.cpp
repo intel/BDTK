@@ -19,9 +19,9 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
 
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"

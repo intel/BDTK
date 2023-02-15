@@ -22,11 +22,11 @@
 #ifndef CIDER_ARROW_STRINGIFIER_H
 #define CIDER_ARROW_STRINGIFIER_H
 
+#include <memory>
 #include <string>
+#include <vector>
 #include "exec/module/batch/ArrowABI.h"
 #include "tests/utils/CiderInt128.h"
-#include <vector>
-#include <memory>
 namespace cider::test::util {
 
 class ConcatenatedRow {

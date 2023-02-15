@@ -27,10 +27,10 @@
 
 #include <string>
 
+#include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/CiderNextgenQueryRunner.h"
 #include "tests/utils/DuckDbQueryRunner.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
-#include "exec/plan/parser/TypeUtils.h"
 
 namespace cider::test::util {
 

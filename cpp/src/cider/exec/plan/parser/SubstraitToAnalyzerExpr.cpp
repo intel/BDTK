@@ -33,6 +33,7 @@
 #include "util/DateTimeParser.h"
 
 namespace generator {
+
 bool getExprUpdatable(std::unordered_map<std::shared_ptr<Analyzer::Expr>, bool> map,
                       std::shared_ptr<Analyzer::Expr> expr) {
   return map.find(expr) == map.end() || !map.find(expr)->second;

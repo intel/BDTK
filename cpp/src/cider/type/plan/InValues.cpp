@@ -19,8 +19,10 @@
  * under the License.
  */
 #include "InValues.h"
+#include <type/data/sqltypes.h>
 #include "exec/nextgen/context/CiderSet.h"
-#include "exec/template/Execute.h"
+#include "type/plan/ConstantExpr.h"
+#include "type/plan/Utils.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;

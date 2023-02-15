@@ -21,11 +21,11 @@
 
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
-#include "tests/utils/CiderInt128.h"
-#include "substrait/type.pb.h"
 #include "cider/CiderTableSchema.h"
 #include "include/cider/CiderException.h"
+#include "substrait/type.pb.h"
 #include "tests/utils/ArrowArrayBuilder.h"
+#include "tests/utils/CiderInt128.h"
 
 namespace CiderBatchUtils {
 

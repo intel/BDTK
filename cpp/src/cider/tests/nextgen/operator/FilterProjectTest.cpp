@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "tests/nextgen/operator/MockSink.h"

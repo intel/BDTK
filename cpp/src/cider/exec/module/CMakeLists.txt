@@ -18,17 +18,13 @@
 # under the License.
 
 find_package(gflags COMPONENTS shared)
-set(SRC_FILE
-    CiderTypes.cpp
-    CiderOptions.cpp
-    batch/CiderBatchUtils.cpp
-    batch/CiderArrowBufferHolder.cpp)
+set(SRC_FILE CiderTypes.cpp CiderOptions.cpp batch/CiderBatchUtils.cpp
+             batch/CiderArrowBufferHolder.cpp)
 add_library(cider SHARED ${SRC_FILE})
 target_link_libraries(
   cider
   QueryEngine
   nextgen
-  memory
   cider_plan_parser
   ${Boost_LIBRARIES}
   ${GFLAGS_LIBRARIES}
@@ -44,9 +40,6 @@ install(
   DESTINATION "lib"
   COMPONENT "CIDER")
 install(
-  FILES CiderInterface.h
-        CiderOptions.h
-        CiderTableSchema.h
-        CiderException.h
+  FILES CiderInterface.h CiderOptions.h CiderTableSchema.h CiderException.h
   DESTINATION "Cider"
   COMPONENT "include")

@@ -19,9 +19,9 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
 #include <type_traits>
 
 #include "exec/nextgen/Nextgen.h"

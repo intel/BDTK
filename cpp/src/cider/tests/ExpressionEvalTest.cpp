@@ -19,10 +19,9 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
-#include "util/Logger.h"
 #include <string>
 #include "util/Logger.h"
 

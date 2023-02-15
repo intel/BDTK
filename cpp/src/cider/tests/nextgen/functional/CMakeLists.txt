@@ -17,8 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_FUNCTIONAL_TEST_LIBS gtest cider_util test_utils duckdb substrait
-                                 cider dl)
+set(NEXTGEN_FUNCTIONAL_TEST_LIBS
+    gtest
+    cider_util
+    test_utils
+    duckdb
+    substrait
+    cider
+    dl)
 
 file(GLOB next_gen_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(next_gen_test_file ${next_gen_test_files})

@@ -24,11 +24,11 @@
 #include <utility>
 #include "DuckDbArrowAdaptor.h"
 #include "Utils.h"
+#include "cider/CiderAllocator.h"
 #include "cider/CiderTypes.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "util/Logger.h"
-#include "cider/CiderAllocator.h"
 #include "util/CiderBitUtils.h"
+#include "util/Logger.h"
 
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();

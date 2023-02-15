@@ -20,12 +20,12 @@
  */
 
 #include "tests/utils/CiderArrowChecker.h"
-#include "util/CiderBitUtils.h"
-#include <cstring>
-#include <map>
-#include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <cstring>
+#include <iostream>
+#include <map>
+#include "util/CiderBitUtils.h"
 #include "util/Logger.h"
 
 namespace cider::test::util {

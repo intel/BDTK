@@ -22,10 +22,7 @@
 #ifndef QUERYENGINE_RELALGEXECUTIONUNIT_H
 #define QUERYENGINE_RELALGEXECUTIONUNIT_H
 
-#include "PhysicalInputs.h"
-#include "QueryHint.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
-#include "type/schema/TableInfo.h"
 #include "util/sqldefs.h"
 #include "util/toString.h"
 
@@ -54,26 +51,6 @@ using RelNodeExplainedHash = size_t;
 using QueryPlan = std::string;
 // join column's column id info
 using JoinColumnsInfo = std::string;
-// hashed value of QueryPlanNodeIds
-using QueryPlanHash = size_t;
-// a map btw. a join column and its access path, i.e., a query plan DAG to project B.b
-// here this join column is used to build a hashtable
-using HashTableBuildDag = std::pair<JoinColumnsInfo, QueryPlan>;
-// A map btw. join qual's column info and its corresponding hashtable access path as query
-// plan DAG i.e., A.a = B.b and build hashtable on B.b? <(A.a = B.b) --> query plan DAG of
-// projecting B.b> here, this two-level mapping (join qual -> inner join col -> hashtable
-// access plan DAG) is required since we have to extract query plan before deciding which
-// join col becomes inner since rel alg related metadata is required to extract query
-// plan, and the actual decision happens at the time of building hashtable
-using HashTableBuildDagMap = std::unordered_map<JoinColumnsInfo, HashTableBuildDag>;
-// A map btw. join column's input table id to its corresponding rel node
-// for each hash join operation, we can determine whether its input source
-// has inconsistency in its source data, e.g., row ordering
-// by seeing a type of input node, e.g., RelSort
-// note that disabling DAG extraction when we find sort node from join's input
-// is too restrict when a query becomes complex (and so have multiple joins)
-// since it eliminates a change of data recycling
-using TableIdToNodeMap = std::unordered_map<int, const void*>;
 
 enum JoinColumnSide {
   kInner,
@@ -83,7 +60,6 @@ enum JoinColumnSide {
            // Analyzer::BinOper*)
 };
 constexpr char const* EMPTY_QUERY_PLAN = "";
-constexpr QueryPlanHash EMPTY_HASHED_PLAN_DAG_KEY = 0;
 
 enum class SortAlgorithm { Default, SpeculativeTopN, StreamingTopN };
 
@@ -120,10 +96,6 @@ struct RelAlgExecutionUnit {
   const std::shared_ptr<Analyzer::Estimator> estimator;
   const SortInfo sort_info;
   size_t scan_limit;
-  RegisteredQueryHint query_hint;
-  QueryPlan query_plan_dag{EMPTY_QUERY_PLAN};
-  HashTableBuildDagMap hash_table_build_plan_dag{};
-  TableIdToNodeMap table_id_to_node_map{};
   bool use_bump_allocator{false};
   // empty if not a UNION, true if UNION ALL, false if regular UNION
   const std::optional<bool> union_all;

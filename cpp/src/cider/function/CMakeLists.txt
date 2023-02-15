@@ -20,7 +20,6 @@
 set(function_source_files
     ../../cider/exec/template/DynamicWatchdog.cpp
     scalar/RuntimeFunctions.cpp
-    vector/ArrayOps.cpp
     RuntimeFunctions.bc
     ExtensionFunctionsBinding.cpp
     ExtensionFunctionsWhitelist.cpp
@@ -62,10 +61,8 @@ add_custom_command(
     scalar/RuntimeFunctions.h
     scalar/RuntimeFunctions.cpp
     scalar/DecodersImpl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../exec/template/operator/join/hashtable/runtime/JoinHashTableQueryRuntime.cpp
     string/StringLike.cpp
     aggregate/CiderRuntimeFunctions.h
-    aggregate/GroupByRuntime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/context/ContextRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/operators/OperatorRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/function/CiderStringFunctions.cpp

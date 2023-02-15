@@ -28,7 +28,6 @@
 #include "exec/nextgen/operators/RowToColumnNode.h"
 #include "exec/nextgen/utils/ExprUtils.h"
 #include "exec/nextgen/utils/JITExprValue.h"
-#include "exec/template/CodegenColValues.h"
 
 namespace cider::exec::nextgen::operators {
 

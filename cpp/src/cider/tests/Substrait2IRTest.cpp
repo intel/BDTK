@@ -24,50 +24,21 @@
  * @brief   Test Expression IR generation from Substrait
  **/
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
-#include "util/Logger.h"
-#include <string>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
-#include "exec/template/AggregatedColRange.h"
-#include "exec/template/InputMetadata.h"
 #include "util/Logger.h"
 
 std::string getDataFilesPath() {
   const std::string absolute_path = __FILE__;
   auto const pos = absolute_path.find_last_of('/');
   return absolute_path.substr(0, pos) + "/substrait_plan_files/";
-}
-
-std::vector<InputTableInfo> buildInputTableInfo(
-    std::vector<CiderTableSchema> table_schemas) {
-  std::vector<InputTableInfo> query_infos;
-  for (int i = 0; i < table_schemas.size(); i++) {
-    Fragmenter_Namespace::FragmentInfo fi_0;
-    fi_0.fragmentId = i;
-    fi_0.shadowNumTuples = 1024;
-    // note that we use fake table id 100 since real table id can't be got
-    fi_0.physicalTableId = 100 + i;
-    fi_0.setPhysicalNumTuples(1024);
-    // add chunkMetadata
-    for (int j = 0; j < table_schemas[i].getColumnTypes().size(); j++) {
-      auto chunk_meta = std::make_shared<ChunkMetadata>();
-      chunk_meta->numBytes = 0;
-      chunk_meta->numElements = 0;
-      fi_0.setChunkMetadata(j, chunk_meta);
-    }
-    Fragmenter_Namespace::TableInfo ti_0;
-    ti_0.fragments = {fi_0};
-    ti_0.setPhysicalNumTuples(1024);
-    InputTableInfo iti_0{100, 100 + i, ti_0};
-    query_infos.push_back(iti_0);
-  }
-  return query_infos;
 }
 
 void relAlgExecutionUnitCreateAndCompile(std::string file_name) {

@@ -19,10 +19,10 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
-#include "util/Logger.h"
+#include <gtest/gtest.h>
 #include "exec/nextgen/context/StringHeap.h"
+#include "util/Logger.h"
 
 TEST(StringHeapTest, addString) {
   StringHeap heap;

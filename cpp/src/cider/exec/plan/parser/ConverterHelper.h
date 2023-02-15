@@ -28,7 +28,6 @@
 
 #include <string>
 #include <unordered_map>
-#include "exec/template/AggregatedColRange.h"
 #include "exec/template/ExpressionRewrite.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"

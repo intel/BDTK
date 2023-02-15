@@ -20,7 +20,8 @@
  */
 #include "type/plan/LikeExpr.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
-#include "exec/template/Execute.h"  // for is_unnest
+#include "type/plan/ConstantExpr.h"
+#include "type/plan/Utils.h"  // for is_unnest
 
 namespace Analyzer {
 using namespace cider::jitlib;

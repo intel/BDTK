@@ -20,7 +20,7 @@
  */
 #include "UnaryExpr.h"
 #include "cider/CiderTypes.h"
-#include "util/SqlTypesLayout.h"
+#include "type/plan/Utils.h"
 
 #include "exec/template/DateTimeUtils.h"
 

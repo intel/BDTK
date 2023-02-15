@@ -19,10 +19,10 @@
  * under the License.
  */
 
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
-#include "util/Logger.h"
+#include <gtest/gtest.h>
 #include "cider/CiderAllocator.h"
+#include "util/Logger.h"
 
 class CiderAllocatorTest : public ::testing::Test {};
 

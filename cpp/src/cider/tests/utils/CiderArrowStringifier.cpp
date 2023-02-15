@@ -20,11 +20,11 @@
  */
 
 #include "tests/utils/CiderArrowStringifier.h"
-#include "cider/CiderException.h"
-#include "util/CiderBitUtils.h"
-#include <sstream>
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
+#include "cider/CiderException.h"
+#include "util/CiderBitUtils.h"
 namespace cider::test::util {
 
 #define NULL_VALUE "null"

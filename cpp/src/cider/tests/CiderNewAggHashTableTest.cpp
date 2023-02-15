@@ -20,12 +20,12 @@
  */
 
 #include <common/base/wide_integer.h>
-#include <gtest/gtest.h>
 #include <gflags/gflags.h>
-#include "util/Logger.h"
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <limits>
 #include "common/interpreters/AggregationHashTable.h"
+#include "util/Logger.h"
 
 using namespace cider::hashtable;
 

@@ -29,7 +29,6 @@
 
 #include <memory>
 #include <vector>
-#include "exec/template/TargetMetaInfo.h"
 #include "type/plan/Analyzer.h"
 
 // Migrated from RelAlgTranslator.h

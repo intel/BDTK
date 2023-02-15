@@ -116,10 +116,6 @@ struct GeneratorContext {
                                    nullptr,
                                    getSortInfoFromCtx(),
                                    0,
-                                   RegisteredQueryHint::defaults(),
-                                   EMPTY_QUERY_PLAN,
-                                   {},
-                                   {},
                                    false,
                                    std::nullopt,
                                    shared_target_exprs};
