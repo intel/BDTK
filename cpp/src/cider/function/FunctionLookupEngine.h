@@ -32,14 +32,39 @@
 #include <unordered_set>
 #include <vector>
 
-#include "FunctionLookup.h"
-#include "FunctionMapping.h"
-#include "FunctionSignature.h"
-#include "Type.h"
 #include "function/SubstraitFunctionCiderMappings.h"
 #include "include/cider/CiderSupportPlatType.h"
+#include "substrait/function/FunctionLookup.h"
+#include "substrait/function/FunctionSignature.h"
+#include "substrait/type/Type.h"
 
 namespace io::substrait {
+
+using FunctionMap = std::unordered_map<std::string, std::string>;
+
+/// An interface describe the function names in difference between engine-own
+/// and substrait system.
+class FunctionMapping {
+ public:
+  /// Scalar function names in difference between engine own and substrait.
+  virtual const FunctionMap scalaMapping() const {
+    static const FunctionMap scalaFunctionMap{};
+    return scalaFunctionMap;
+  }
+
+  /// Scalar function names in difference between engine own and substrait.
+  virtual const FunctionMap aggregateMapping() const {
+    static const FunctionMap aggregateFunctionMap{};
+    return aggregateFunctionMap;
+  }
+
+  virtual const FunctionMap windowMapping() const {
+    static const FunctionMap windowFunctionMap{};
+    return windowFunctionMap;
+  }
+};
+
+using FunctionMappingPtr = std::shared_ptr<const FunctionMapping>;
 
 class PrestoFunctionMappings : public FunctionMapping {
  public:
@@ -102,13 +127,14 @@ class FunctionLookupEngine {
   /// Analyzer::FunctionOper directly. d) If sql_op/agg_op/op_support_type are all
   /// kUNDEFINED returned after lookup done, it indicates that we don't support this
   /// function and execution can not be offloaded.
-  const FunctionDescriptor lookupFunction(
-      const FunctionSignature& function_signature) const;
+  const FunctionDescriptor lookupFunction(FunctionSignature function_signature) const;
 
   // like:vchar<L1>_vchar<L1>, boolean
   const FunctionDescriptor lookupFunction(
       const std::string& function_signature_str,
       const std::string& function_return_type_str) const;
+
+  io::substrait::ParameterizedTypePtr decode(const std::string& rawType) const;
 
   static void setDataPath(const std::string& conf_path) { data_path_ = conf_path; }
 
@@ -157,6 +183,8 @@ class FunctionLookupEngine {
     size_t pos = file_path.find_last_of('/');
     return file_path.substr(0, pos);
   }
+
+  size_t findNextComma(const std::string& str, size_t start) const;
 
   static std::string data_path_;
   SubstraitFunctionCiderMappingsPtr function_mappings_ =
