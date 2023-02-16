@@ -60,14 +60,14 @@ class RuntimeContext {
     auto arrow_array = batch->getArray();
     // FIXME (bigPYJ1151): This is a workaround for output struct array length setting.
     arrow_array->length = arrow_array->children[0]->length;
-    auto length = arrow_array->length;
     auto arrow_schema = batch->getSchema();
 
     auto set_null_count_function =
-        utils::RecursiveFunctor{[&length](auto&& set_null_count_function,
-                                          ArrowArray* arrow_array,
-                                          ArrowSchema* arrow_schema) -> void {
+        utils::RecursiveFunctor{[](auto&& set_null_count_function,
+                                   ArrowArray* arrow_array,
+                                   ArrowSchema* arrow_schema) -> void {
           if (arrow_array->buffers[0]) {
+            auto length = arrow_array->length;
             arrow_array->null_count =
                 length -
                 CiderBitUtils::countSetBits(
