@@ -75,61 +75,27 @@ class ColumnReader {
         varsize_values.getDictionary()->castPointerSubType(JITTypeTag::INT8);
 
     auto ifBuilder = func.createIfBuilder();
-    JITValuePointer len;
-    JITValuePointer row_data;
 
-    ifBuilder
-        ->condition([&]() {  // check whether have dictionary
-          auto isDictionaryEncoded = func.emitRuntimeFunctionCall(
-              "check_dictionary_is_null",
-              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::BOOL,
-                                        .params_vector = {dictionary.get()}});
-          return isDictionaryEncoded;
-        })
-        ->ifFalse([&]() {
-          if (for_null) {
-            if (expr_->get_type_info().get_notnull()) {
-              expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
-            } else {
-              auto row_null_data = varsize_values.getNull()[index_];
-              expr_->set_expr_null(row_null_data);
-            }
-            return;
-          }
-
-          len = func.emitRuntimeFunctionCall(
-              "get_str_length_from_dictionary",
-              JITFunctionEmitDescriptor{
-                  .ret_type = JITTypeTag::INT32,
-                  .params_vector = {{dictionary.get(), index_.get()}}});
-          row_data = func.emitRuntimeFunctionCall(
-              "get_str_ptr_from_dictionary",
-              JITFunctionEmitDescriptor{
-                  .ret_type = JITTypeTag::POINTER,
-                  .params_vector = {{dictionary.get(), index_.get()}}});
-        })
-        ->ifTrue([&]() {
-          if (for_null) {
-            if (expr_->get_type_info().get_notnull()) {
-              expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
-            } else {
-              auto row_null_data = varsize_values.getNull()[index_];
-              expr_->set_expr_null(row_null_data);
-            }
-            return;
-          }
-
-          // offset buffer
-          auto offset_pointer =
-              varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
-          len = offset_pointer[index_ + 1] - offset_pointer[index_];  //
-          auto cur_offset = offset_pointer[index_];
-          // data buffer
-          auto value_pointer =
-              varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8);
-          row_data = value_pointer + cur_offset;  // still char*//
-        })
-        ->build();
+    JITValuePointer len = func.emitRuntimeFunctionCall(
+        "get_str_length_from_dictionary_or_buffer",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT32,
+            .params_vector = {{dictionary.get(),
+                               index_.get(),
+                               varsize_values.getLength()
+                                   ->castPointerSubType(JITTypeTag::INT32)
+                                   .get()}}});
+    JITValuePointer row_data = func.emitRuntimeFunctionCall(
+        "get_str_ptr_from_dictionary_or_buffer",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .params_vector = {
+                {dictionary.get(),
+                 index_.get(),
+                 varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32).get(),
+                 varsize_values.getValue()
+                     ->castPointerSubType(JITTypeTag::INT8)
+                     .get()}}});
 
     if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), len, row_data);

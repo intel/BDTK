@@ -263,6 +263,21 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
   return ret;
 }
 
+jitlib::JITValuePointer getArrowArrayDictionary(jitlib::JITValuePointer& arrow_array) {
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  auto ret = func.emitRuntimeFunctionCall(
+      "extract_arrow_array_dictionary",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                .ret_sub_type = JITTypeTag::INT8,
+                                .params_vector = {arrow_array.get()}});
+
+  ret->setName("child_dictionary");
+  return ret;
+}
+
 jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
                                                  int64_t index,
                                                  jitlib::JITValuePointer& bytes) {

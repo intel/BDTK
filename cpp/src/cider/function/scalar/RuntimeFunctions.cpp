@@ -1460,6 +1460,35 @@ extern "C" ALWAYS_INLINE const int8_t* get_str_ptr_from_dictionary(int8_t* dicti
   return data_buffer + offset_buffer[index];
 }
 
+extern "C" ALWAYS_INLINE const int32_t
+get_str_length_from_dictionary_or_buffer(int8_t* dictionary,
+                               uint64_t index,
+                               int32_t* offset_buffer) {
+  if (dictionary) {
+    const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
+        reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
+    return actual_offset_buffer[index + 1] - actual_offset_buffer[index];
+  } else {
+    return offset_buffer[index + 1] - offset_buffer[index];
+  }
+}
+
+extern "C" ALWAYS_INLINE const int8_t* get_str_ptr_from_dictionary_or_buffer(int8_t* dictionary,
+                                                                   uint64_t index,
+                                                                   int32_t* offset_buffer,
+                                                                   int8_t* data_buffer) {
+  if (dictionary) {
+    const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
+        reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
+    const int8_t* actual_data_buffer = reinterpret_cast<const int8_t*>(
+        reinterpret_cast<ArrowArray*>(dictionary)->buffers[2]);
+
+    return actual_data_buffer + actual_offset_buffer[index];
+  } else {
+    return data_buffer + offset_buffer[index];
+  }
+}
+
 extern "C" ALWAYS_INLINE bool check_bit_vector_set(uint8_t* bit_vector, uint64_t index) {
   return CiderBitUtils::isBitSetAt(bit_vector, index);
 }

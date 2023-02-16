@@ -75,6 +75,11 @@ void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
       }
     }
 
+    // append dictionary buffer as last element.
+    buffer_values.append(func->createLocalJITValue([&child_array]() {
+      return context::codegen_utils::getArrowArrayDictionary(child_array);
+    }));
+
     // All ArrowArray related JITValues will be saved in CodegenContext, and associate
     // with exprs with local_offset.
     size_t local_offset =

@@ -248,6 +248,8 @@ jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
                                            int64_t index);
 
+jitlib::JITValuePointer getArrowArrayDictionary(jitlib::JITValuePointer& arrow_array);
+
 jitlib::JITValuePointer allocateArrowArrayBuffer(jitlib::JITValuePointer& arrow_array,
                                                  int64_t index,
                                                  jitlib::JITValuePointer& bytes);
