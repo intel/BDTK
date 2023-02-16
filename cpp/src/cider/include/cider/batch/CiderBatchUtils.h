@@ -58,11 +58,13 @@ int64_t getBufferNum(const ArrowSchema* schema);
 
 SQLTypes convertArrowTypeToCiderType(const char* format);
 
-const char* convertCiderTypeToArrowType(SQLTypes type);
+const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
+                                        std::string& format_buffer);
 
 ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
 
-const char* convertSubstraitTypeToArrowType(const substrait::Type& type);
+const char* convertSubstraitTypeToArrowType(const substrait::Type& type,
+                                            std::string& format_buffer);
 
 ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table);
 

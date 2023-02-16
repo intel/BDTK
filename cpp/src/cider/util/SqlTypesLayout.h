@@ -151,8 +151,8 @@ inline double inline_fp_null_val(const SQLTypeInfo& ti) {
   }
 }
 
-inline uint64_t exp_to_scale(const unsigned exp) {
-  uint64_t res = 1;
+inline __int128_t exp_to_scale(const unsigned exp) {
+  __int128 res = 1;
   for (unsigned i = 0; i < exp; ++i) {
     res *= 10;
   }

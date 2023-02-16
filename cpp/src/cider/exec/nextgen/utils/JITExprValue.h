@@ -103,7 +103,7 @@ class FixSizeJITExprValue : public JITExprValueAdaptor {
 
   jitlib::JITValuePointer& getValue() { return values_[1]; }
 
-  void setValue(jitlib::JITValuePointer& rh) { values_[1].replace(rh); }
+  void setValue(const jitlib::JITValuePointer& rh) { values_[1].replace(rh); }
 };
 
 class VarSizeJITExprValue : public JITExprValueAdaptor {

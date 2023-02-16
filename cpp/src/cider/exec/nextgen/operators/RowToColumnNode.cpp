@@ -55,6 +55,7 @@ class ColumnWriter {
       case kDATE:
       case kTIMESTAMP:
       case kTIME:
+      case kDECIMAL:
         writeFixSizedTypeCol(for_null);
         break;
       case kVARCHAR:
