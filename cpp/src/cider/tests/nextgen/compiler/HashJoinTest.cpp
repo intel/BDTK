@@ -275,6 +275,44 @@ TEST_F(HashJoinTest, basicINT32NotNullLeftJoinTest) {
       build_batch);
 }
 
+// will cause table overflow problem
+TEST_F(HashJoinTest, basicINT32NotNullRepeatedLeftJoinTest) {
+  GTEST_SKIP_("Due to table overflow problem, This kind of case is not supported.");
+  auto build_table = ArrowArrayBuilder();
+  auto&& [build_schema, build_array] =
+      build_table.setRowNum(6)
+          .addColumn<int32_t>("r_a",
+                              CREATE_SUBSTRAIT_TYPE(I64),
+                              {3, 4, 5, 6, 7, 8},
+                              {true, false, true, false, false, false})
+          .template addColumn<int32_t>("r_b",
+                                       CREATE_SUBSTRAIT_TYPE(I64),
+                                       {1, 2, 3, 4, 4, 4},
+                                       {false, false, false, false, false, false})
+          .template addColumn<int32_t>(
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {333, 444, 555, 666, 777, 888})
+          .build();
+  context::Batch build_batch(*build_schema, *build_array);
+  std::vector<std::vector<int32_t>> expected_res = {
+      {2, 3, 7, 4, 5, 5, 5, 6},
+      {222, 333, 777, 444, 555, 555, 555, 666},
+      {3, 4, 0, 5, 6, 7, 8, 0},
+      {1, 2, 0, 3, 4, 4, 4, 0},
+      {333, 444, 0, 555, 666, 777, 888, 0}};
+  std::string ddl =
+      "CREATE TABLE table_probe(l_a INTEGER NOT NULL, l_b INTEGER NOT NULL, l_c INTEGER "
+      "NOT NULL);"
+      "CREATE TABLE table_build(r_a INTEGER NOT NULL, r_b INTEGER NOT NULL, r_c INTEGER "
+      "NOT NULL);";
+  executeTest<int32_t>(
+      ddl,
+      "select l_a, l_c, r_a, r_b, r_c from table_probe left join table_build on "
+      "table_probe.l_b = "
+      "table_build.r_b",
+      expected_res,
+      build_batch);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   int err = RUN_ALL_TESTS();

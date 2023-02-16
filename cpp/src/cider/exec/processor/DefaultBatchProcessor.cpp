@@ -129,6 +129,7 @@ void DefaultBatchProcessor::feedHashBuildTable(
   // switch state from waiting to running once hashTable is ready
   this->state_ = BatchProcessorState::kRunning;
   this->codegen_context_->setHashTable(hashTable);
+  this->runtime_context_->instantiate(context_->getAllocator());
 }
 
 void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& crossData) {

@@ -320,7 +320,7 @@ class ColumnWriter {
     // so it doesn't matter whether null_buffer is nullptr
     // or constant false.
     auto null_buffer = JITValuePointer(nullptr);
-    if (!expr_->get_type_info().get_notnull()) {
+    if ((!expr_->get_type_info().get_notnull()) || context_.getHasOuterJoin()) {
       // TBD: Null representation, bit-array or bool-array.
       null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
           [this]() { return allocateBitwiseBuffer(0); }));

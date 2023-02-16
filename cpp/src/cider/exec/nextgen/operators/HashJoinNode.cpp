@@ -22,6 +22,7 @@
 
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "type/plan/Expr.h"
 
@@ -134,7 +135,9 @@ class BuildTableReader {
  private:
   utils::JITExprValue& buffer_values_;
   ExprPtr& expr_;
-  JITValuePointer& index_;
+  JITValuePointer index_;
+  // std::map<ExprPtr, std::vector<JITValuePointer>> expr_map_;
+  // ExprMapPtr& expr_map_;
 };
 
 // TODO(qiuyang): extract as a util class
@@ -174,8 +177,8 @@ class ExprDefaultValueSetter {
   void setDefalutFixSizedTypeCol() {
     auto func = context_.getJITFunction();
     JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
-    auto null_init = func->createVariable(JITTypeTag::BOOL, "null_init", true);
-    auto val_init = func->createVariable(tag, "val_init", 0l);
+    auto null_init = func->createVariable(JITTypeTag::BOOL, "fix_null_init", true);
+    auto val_init = func->createVariable(tag, "fix_val_init", 0);
     *null_init = func->createLiteral(JITTypeTag::BOOL, true);
     *val_init = func->createLiteral(tag, 0l);
     expr_->set_expr_value(null_init, val_init);
@@ -186,12 +189,12 @@ class ExprDefaultValueSetter {
     // FIXME(qiuyang): how to set VariableSizeTypeCol default value
     auto func = context_.getJITFunction();
     JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
-    auto null_init = func->createVariable(JITTypeTag::BOOL, "null_init", true);
-    auto val_init = func->createVariable(tag, "val_init", 0l);
+    auto null_init = func->createVariable(JITTypeTag::BOOL, "varia_null_init", true);
+    auto val_init = func->createVariable(tag, "varia_val_init", 'a');
     auto length_init = func->createVariable(JITTypeTag::INT32, "length_init", 0);
     *null_init = func->createLiteral(JITTypeTag::BOOL, true);
     *length_init = func->createLiteral(JITTypeTag::INT32, 0);
-    *val_init = func->createLiteral(tag, 0l);
+    *val_init = func->createStringLiteral("");
     expr_->set_expr_value(null_init, length_init, val_init);
     expr_map_.insert({expr_, {null_init, length_init, val_init}});
   }
@@ -235,7 +238,8 @@ void traverse(ExprPtr expr,
   }
 }
 
-void joinProbe(jitlib::JITFunctionPointer& func,
+void joinProbe(context::CodegenContext& context,
+               jitlib::JITFunctionPointer& func,
                JITValuePointer& join_res_buffer,
                JITValuePointer& row_index,
                JITValuePointer& join_res_len,
@@ -341,7 +345,8 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
       loop_builder
           ->condition([&row_index, &join_res_len]() { return row_index < join_res_len; })
           ->loop([&](LoopBuilder*) {
-            joinProbe(func,
+            joinProbe(context,
+                      func,
                       join_res_buffer,
                       row_index,
                       join_res_len,
@@ -362,6 +367,7 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
       loop_builder
           ->condition([&row_index, &join_res_len]() { return row_index <= join_res_len; })
           ->loop([&](LoopBuilder*) {
+            context.setHasOuterJoin(true);
             std::map<ExprPtr, std::vector<JITValuePointer>> expr_map;
             for (iter = build_table_map.begin(); iter != build_table_map.end(); iter++) {
               auto expr = iter->first;
@@ -371,7 +377,8 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
 
             loop_builder->loopContinue(join_res_len == 0l);
             row_index = row_index - 1l;
-            joinProbe(func,
+            joinProbe(context,
+                      func,
                       join_res_buffer,
                       row_index,
                       join_res_len,
