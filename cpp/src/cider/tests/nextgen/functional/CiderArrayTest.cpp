@@ -49,7 +49,7 @@ using namespace cider::test::util;
     }                                                                                \
   };
 
-#define TEST_UNIT(TEST_CLASS, UNIT_NAME)                                             \
+#define TEST_UNIT_MULTI_COL(TEST_CLASS, UNIT_NAME)                                   \
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                    \
     assertQuery("SELECT * FROM test", input_array_, input_schema_, false);           \
     assertQuery(                                                                     \
@@ -68,17 +68,60 @@ GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(Integer, INTEGER, I32)
 
 GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(Bigint, BIGINT, I64)
 
-TEST_UNIT(PrimitiveTypeArrayFloatTest, floatBaseTest)
+TEST_UNIT_MULTI_COL(PrimitiveTypeArrayFloatTest, floatBaseMultiColTest)
 
-TEST_UNIT(PrimitiveTypeArrayDoubleTest, doubleBaseTest)
+TEST_UNIT_MULTI_COL(PrimitiveTypeArrayDoubleTest, doubleBaseMultiColTest)
 
-TEST_UNIT(PrimitiveTypeArrayTinyintTest, tinyIntBaseTest)
+TEST_UNIT_MULTI_COL(PrimitiveTypeArrayTinyintTest, tinyIntBaseMultiColTest)
 
-TEST_UNIT(PrimitiveTypeArraySmallintTest, smallIntBaseTest)
+TEST_UNIT_MULTI_COL(PrimitiveTypeArraySmallintTest, smallIntBaseMultiColTest)
 
-TEST_UNIT(PrimitiveTypeArrayIntegerTest, integerBaseTest)
+TEST_UNIT_MULTI_COL(PrimitiveTypeArrayIntegerTest, integerBaseMultiColTest)
 
-TEST_UNIT(PrimitiveTypeArrayBigintTest, bigintBaseTest)
+TEST_UNIT_MULTI_COL(PrimitiveTypeArrayBigintTest, bigintBaseMultiColTest)
+
+#define TEST_UNIT_SINGLE_COL(TEST_CLASS, UNIT_NAME)                                 \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
+    auto schema_and_array_a =                                                       \
+        ArrowArrayBuilder()                                                         \
+            .setRowNum(10)                                                          \
+            .addStructColumn(input_schema_->children[0], input_array_->children[0]) \
+            .build();                                                               \
+    assertQuery("SELECT col_a FROM test",                                           \
+                std::get<1>(schema_and_array_a),                                    \
+                std::get<0>(schema_and_array_a),                                    \
+                false);                                                             \
+    auto schema_and_array_b =                                                       \
+        ArrowArrayBuilder()                                                         \
+            .setRowNum(10)                                                          \
+            .addStructColumn(input_schema_->children[1], input_array_->children[1]) \
+            .build();                                                               \
+    assertQuery("SELECT col_a FROM test",                                           \
+                std::get<1>(schema_and_array_b),                                    \
+                std::get<0>(schema_and_array_b),                                    \
+                false);                                                             \
+    auto schema_and_array_c =                                                       \
+        ArrowArrayBuilder()                                                         \
+            .setRowNum(10)                                                          \
+            .addStructColumn(input_schema_->children[2], input_array_->children[2]) \
+            .build();                                                               \
+    assertQuery("SELECT col_a FROM test",                                           \
+                std::get<1>(schema_and_array_c),                                    \
+                std::get<0>(schema_and_array_c),                                    \
+                false);                                                             \
+  }
+
+TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayFloatTest, floatBaseSingleColTest)
+
+TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayDoubleTest, doubleBaseSingleColTest)
+
+TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayTinyintTest, tinyIntBaseSingleColTest)
+
+TEST_UNIT_SINGLE_COL(PrimitiveTypeArraySmallintTest, smallIntBaseSingleColTest)
+
+TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayIntegerTest, integerBaseSingleColTest)
+
+TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayBigintTest, bigintBaseSingleColTest)
 
 class PrimitiveTypeArrayMixed1Test : public CiderNextgenTestBaseWithoutDuckDB {
  public:
