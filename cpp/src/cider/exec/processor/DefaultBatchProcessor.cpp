@@ -94,7 +94,7 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
     CIDER_THROW(CiderRuntimeException,
                 getErrorMessageFromErrCode(static_cast<cider::jitlib::ERROR_CODE>(ret)));
   }
-
+  runtime_context_->destroyStringHeap();
   has_result_ = true;
 
   if (!need_spill_) {

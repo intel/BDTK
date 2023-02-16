@@ -91,6 +91,8 @@ class RuntimeContext {
     }
   }
 
+  void destroyStringHeap() { string_heap_ptr_->destroy(); }
+
  private:
   std::vector<void*> runtime_ctx_pointers_;
   std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
