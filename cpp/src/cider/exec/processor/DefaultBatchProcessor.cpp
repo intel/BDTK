@@ -94,7 +94,7 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
     CIDER_THROW(CiderRuntimeException,
                 getErrorMessageFromErrCode(static_cast<cider::jitlib::ERROR_CODE>(ret)));
   }
-
+  runtime_context_->destroyStringHeap();
   has_result_ = true;
 
   if (!need_spill_) {
@@ -128,7 +128,7 @@ void DefaultBatchProcessor::feedHashBuildTable(
     const std::shared_ptr<JoinHashTable>& hashTable) {
   // switch state from waiting to running once hashTable is ready
   this->state_ = BatchProcessorState::kRunning;
-  this->codegen_context_->setHashTable(hashTable.get());
+  this->codegen_context_->setHashTable(hashTable);
 }
 
 void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& crossData) {

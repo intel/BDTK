@@ -67,7 +67,8 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
 
   // Instantiation of hashtable.
   if (hashtable_holder_ != nullptr) {
-    runtime_ctx_pointers_[hashtable_holder_->ctx_id] = hashtable_holder_->hash_table;
+    runtime_ctx_pointers_[hashtable_holder_->ctx_id] =
+        hashtable_holder_->hash_table.get();
   }
 
   // Instantiation of buildtable.

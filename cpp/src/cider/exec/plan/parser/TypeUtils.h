@@ -117,31 +117,18 @@ class TypeUtils {
                  : substrait::Type::NULLABILITY_REQUIRED;
     switch (typeKind) {
       case ::substrait::Type::KindCase::kBool:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kI8:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kI16:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kI32:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kI64:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kFp32:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kFp64:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kDate:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kTime:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kTimestamp:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kString:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kVarchar:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kFixedChar:
-        GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       case ::substrait::Type::KindCase::kDecimal:
         GENERATE_SUBSTRAIT_LIST_TYPE(nullalbility)
       default:

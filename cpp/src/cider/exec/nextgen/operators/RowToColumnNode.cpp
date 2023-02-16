@@ -55,12 +55,16 @@ class ColumnWriter {
       case kDATE:
       case kTIMESTAMP:
       case kTIME:
+      case kDECIMAL:
         writeFixSizedTypeCol(for_null);
         break;
       case kVARCHAR:
       case kCHAR:
       case kTEXT:
         writeVariableSizeTypeCol(for_null);
+        break;
+      case kARRAY:
+        writeVariableSizeArrayCol(for_null);
         break;
       default:
         LOG(ERROR) << "Unsupported data type in ColumnWriter: "
@@ -105,12 +109,14 @@ class ColumnWriter {
     // get latest pointer to data buffer, will allocate data buffer on first call,
     // and will reallocate buffer if more capacity is needed
     auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
-        "get_data_buffer_with_realloc_on_demand",
+        "get_buffer_with_realloc_on_demand",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,
-            .params_vector = {arrow_array_.get(),
-                              actual_raw_length_buffer[index_].get()}});
+            .params_vector = {
+                arrow_array_.get(),
+                actual_raw_length_buffer[index_].get(),
+                context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 2).get()}});
     auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
     auto cur_pointer = actual_raw_data_buffer + actual_raw_length_buffer[index_];
 
@@ -125,6 +131,152 @@ class ColumnWriter {
     buffers_.clear();
     buffers_.append(
         setNullBuffer(values.getNull(), for_null), raw_length_buffer, raw_data_buffer);
+  }
+
+  // allocate and copy 4 buffers:
+  // 1.validity bitmap buffer(represent whether the row is null) in parent arrow array
+  // 2.offsets buffer in parent
+  // 3.validity bitmap buffer(represent whether the element is null) in child arrow array
+  // 4.actual values buffer in child
+  void writeVariableSizeArrayCol(bool for_null) {
+    // Get values need to write
+    utils::VarSizeArrayExprValue values(expr_->get_expr_value());
+
+    if (for_null) {
+      auto null = setNullBuffer(values.getNull(), for_null);
+      Analyzer::JITExprValueAdaptor(
+          context_.getArrowArrayValues(expr_->getLocalIndex()).second)
+          .setNull(null);
+      return;
+    }
+
+    // allocate offset buffer, need array_len + 1 element.
+    auto new_offset_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+      auto offsets_bytes_num =
+          (arrow_array_len_ + 1) *
+          context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
+      return allocateRawDataBuffer(1, offsets_bytes_num);
+    });
+    auto new_offset_bufferi32 = new_offset_buffer->castPointerSubType(JITTypeTag::INT32);
+
+    // allocate validity bitmap in child array
+    // reallocate buffer on demand
+    auto child_array = context_.getJITFunction()->createLocalJITValue(
+        [this]() { return context::codegen_utils::getArrowArrayChild(arrow_array_, 0); });
+    auto bitmap_bytes_len = (values.getOffset() + 7) / 8;
+    auto new_elem_null_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
+        "get_buffer_with_realloc_on_demand",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {
+                child_array.get(),
+                bitmap_bytes_len->castJITValuePrimitiveType(JITTypeTag::INT32).get(),
+                context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 0).get()}});
+
+    // allocate values buffer in child
+    auto values_bytes_len =
+        values.getOffset() *
+        utils::getTypeBytes(expr_->get_type_info().getChildAt(0).get_type());
+    auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
+        "get_buffer_with_realloc_on_demand",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {
+                child_array.get(),
+                values_bytes_len->castJITValuePrimitiveType(JITTypeTag::INT32).get(),
+                context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 1).get()}});
+
+    context_.getJITFunction()
+        ->createIfBuilder()
+        ->condition([&values]() { return values.getNull(); })
+        ->ifTrue(
+            [&]() { new_offset_bufferi32[index_ + 1] = new_offset_bufferi32[index_]; })
+        ->ifFalse([&]() {
+          // set offset buffer
+          new_offset_bufferi32[index_ + 1] =
+              new_offset_bufferi32[index_] + *values.getLength();
+
+          // set element null buffer
+          // travese all bits for this row
+          auto count =
+              context_.getJITFunction()->createVariable(JITTypeTag::INT32, "count", 0);
+          context_.getJITFunction()
+              ->createLoopBuilder()
+              ->condition([&count, &values]() { return count < values.getLength(); })
+              ->loop([&](LoopBuilder*) {
+                // read
+                auto origin_index = values.getOffset() + count;
+                auto elem_null_bit = context_.getJITFunction()->emitRuntimeFunctionCall(
+                    "check_bit_vector_clear",
+                    JITFunctionEmitDescriptor{
+                        .ret_type = JITTypeTag::BOOL,
+                        .params_vector = {
+                            {values.getElemNull().get(),
+                             origin_index->castJITValuePrimitiveType(JITTypeTag::INT64)
+                                 .get()}}});
+                // write
+                auto new_index = new_offset_bufferi32[index_] + count;
+                std::string fname = "set_null_vector_bit";
+                if (context_.getCodegenOptions().set_null_bit_vector_opt) {
+                  fname = "set_null_vector_bit_opt";
+                }
+                context_.getJITFunction()->emitRuntimeFunctionCall(
+                    fname,
+                    JITFunctionEmitDescriptor{
+                        .ret_type = JITTypeTag::VOID,
+                        .params_vector = {
+                            {new_elem_null_buffer.get(),
+                             new_index->castJITValuePrimitiveType(JITTypeTag::INT64)
+                                 .get(),
+                             elem_null_bit.get()}}});
+              })
+              ->update([&count]() { count = count + 1l; })
+              ->build();
+          // "count" is created in local variable zone for outer loop, need to initiate it
+          // everytime for inner loop to use
+          count =
+              context_.getJITFunction()->createVariable(JITTypeTag::INT32, "count", 0);
+          // set values buffer
+          auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(
+              utils::getJITTypeTag(expr_->get_type_info().getChildAt(0).get_type()));
+          auto cur_pointer = actual_raw_data_buffer + values.getOffset();
+
+          auto data_bytes_len =
+              values.getLength() *
+              utils::getTypeBytes(expr_->get_type_info().getChildAt(0).get_type());
+          context_.getJITFunction()->emitRuntimeFunctionCall(
+              "do_memcpy",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::VOID,
+                  .params_vector = {
+                      cur_pointer->castPointerSubType(JITTypeTag::INT8).get(),
+                      values.getValue()->castPointerSubType(JITTypeTag::INT8).get(),
+                      data_bytes_len->castJITValuePrimitiveType(JITTypeTag::INT32)
+                          .get()}});
+        })
+        ->build();
+
+    // set child_array length in the last loop
+    context_.getJITFunction()
+        ->createIfBuilder()
+        ->condition([this]() { return index_ == arrow_array_len_ - 1; })
+        ->ifTrue([&]() {
+          auto child_array_len =
+              new_offset_bufferi32[arrow_array_len_]->castJITValuePrimitiveType(
+                  JITTypeTag::INT64);
+          codegen_utils::setArrowArrayLength(child_array, child_array_len);
+        })
+        ->build();
+
+    // Save JITValues of output buffers to corresponding exprs.
+    buffers_.clear();
+    buffers_.append(setNullBuffer(values.getNull(), for_null),
+                    values.getLength(),
+                    new_elem_null_buffer,
+                    raw_data_buffer,
+                    values.getOffset());
   }
 
   void writeFixSizedTypeCol(bool for_null) {

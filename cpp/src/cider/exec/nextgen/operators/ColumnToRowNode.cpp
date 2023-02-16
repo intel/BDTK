@@ -47,12 +47,16 @@ class ColumnReader {
       case kDATE:
       case kTIME:
       case kTIMESTAMP:
+      case kDECIMAL:
         readFixSizedTypeCol(for_null);
         break;
       case kVARCHAR:
       case kCHAR:
       case kTEXT:
         readVariableSizeTypeCol(for_null);
+        break;
+      case kARRAY:
+        readVariableSizeArrayCol(for_null);
         break;
       default:
         LOG(ERROR) << "Unsupported data type in ColumnReader: "
@@ -101,6 +105,66 @@ class ColumnReader {
               .ret_type = JITTypeTag::BOOL,
               .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
       expr_->set_expr_value(row_null_data, len, row_data);
+    }
+  }
+
+  //| BOOL     | INT64      | INT8*                |   C_TYPE*      |  INT64     |
+  //|----------|------------|----------------------|----------------|------------|
+  //| row_null | row_length | elem_null for column | values for row | row_offset |
+  //
+  // results for column like [[12, -7, 25], null, [0, -127, null, 50], []] are
+  //|----------|------------|----------------------|----------------|------------|
+  //| false    | 3          | 101111               | <12, -7, 25>   | 0          |
+  //|----------|------------|----------------------|----------------|------------|
+  //| true     | 0          | 101111               | <>             | 3          |
+  //|----------|------------|----------------------|----------------|------------|
+  //| false    | 4          | 101111               | <0, -127,0, 50>| 3          |
+  //|----------|------------|----------------------|----------------|------------|
+  //| false    | 0          | 101111               | <>             | 7          |
+  void readVariableSizeArrayCol(bool for_null) {
+    auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
+    utils::VarSizeArrayExprValue varsize_values(buffers);
+
+    auto& func = batch->getParentJITFunction();
+
+    if (for_null) {
+      if (expr_->get_type_info().get_notnull()) {
+        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
+      } else {
+        auto row_null_data = varsize_values.getNull()[index_];
+        expr_->set_expr_null(row_null_data);
+      }
+      return;
+    }
+
+    // offset buffer
+    auto offset_pointer =
+        varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
+    auto cur_offset = offset_pointer[index_];
+    auto len = offset_pointer[index_ + 1] - offset_pointer[index_];
+    // data buffer
+    auto value_pointer = varsize_values.getValue()->castPointerSubType(
+        utils::getJITTypeTag(expr_->get_type_info().getChildAt(0).get_type()));
+    auto row_data = value_pointer + cur_offset;
+    // array elements null buffer
+    auto col_null_pointer =
+        varsize_values.getElemNull()->castPointerSubType(JITTypeTag::INT8);
+
+    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
+      expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false),
+                            len,
+                            col_null_pointer,
+                            row_data,
+                            cur_offset);
+    } else {
+      // null buffer decoder
+      // TBD: Null representation, bit-array or bool-array.
+      auto row_null_data = func.emitRuntimeFunctionCall(
+          "check_bit_vector_clear",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::BOOL,
+              .params_vector = {{varsize_values.getNull().get(), index_.get()}}});
+      expr_->set_expr_value(row_null_data, len, col_null_pointer, row_data, cur_offset);
     }
   }
 

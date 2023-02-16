@@ -72,10 +72,14 @@ class CiderArrowSchemaBufferHolder {
 
   ArrowSchema* getDictPtr();
 
+  // Buffer required to generate a decimal format.
+  std::string& getFormatBuffer() { return format_buffer_; }
+
  private:
   std::vector<ArrowSchema*> children_ptr_;
   std::vector<ArrowSchema> children_and_dict_;
   const bool has_dict_;
+  std::string format_buffer_;
 };
 
 #endif

@@ -19,4 +19,5 @@
 # under the License.
 add_subdirectory(contrib)
 
-add_library(cider_hashtable interpreters/AggregationHashTable.cpp)
+add_library(cider_hashtable interpreters/AggregationHashTable.h
+                            interpreters/AggregationHashTable.cpp)

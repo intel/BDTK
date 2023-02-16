@@ -152,6 +152,8 @@ int64_t getBufferNum(const ArrowSchema* schema) {
         // Struct Type
         case 's':
           return 1;
+        case 'l':
+          return 2;
       }
     case 'u':
       return 3;
@@ -187,6 +189,9 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
         // Struct Type
         case 's':
           return kSTRUCT;
+        // Array Type
+        case 'l':
+          return kARRAY;
       }
     case 'u':
       return kVARCHAR;
@@ -210,7 +215,9 @@ SQLTypes convertArrowTypeToCiderType(const char* format) {
   }
 }
 
-const char* convertCiderTypeToArrowType(SQLTypes type) {
+const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
+                                        std::string& format_buffer) {
+  auto type = sql_info.get_type();
   switch (type) {
     case kBOOLEAN:
       return "b";
@@ -240,6 +247,13 @@ const char* convertCiderTypeToArrowType(SQLTypes type) {
     // timestamp [microseconds]
     case kTIMESTAMP:
       return "tsu";
+    case kDECIMAL: {
+      format_buffer =
+          fmt::format("d:{},{}", sql_info.get_precision(), sql_info.get_scale());
+      return format_buffer.c_str();
+    }
+    case kARRAY:
+      return "+l";
     default:
       CIDER_THROW(CiderCompileException,
                   std::string("Unsupported to convert type ") + toString(type) +
@@ -253,12 +267,11 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
   std::function<void(ArrowSchema*, const SQLTypeInfo&)> build_function =
       [&build_function](ArrowSchema* schema, const SQLTypeInfo& info) {
         CHECK(schema);
-        schema->format = convertCiderTypeToArrowType(info.get_type());
-        schema->n_children = info.getChildrenNum();
-
         CiderArrowSchemaBufferHolder* holder =
             new CiderArrowSchemaBufferHolder(info.getChildrenNum(),
                                              false);  // TODO: Dictionary support is TBD;
+        schema->format = convertCiderTypeToArrowType(info, holder->getFormatBuffer());
+        schema->n_children = info.getChildrenNum();
         schema->children = holder->getChildrenPtrs();
         schema->dictionary = holder->getDictPtr();
         schema->release = ciderArrowSchemaReleaser;
@@ -274,7 +287,8 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
   return root_schema;
 }
 
-const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
+const char* convertSubstraitTypeToArrowType(const substrait::Type& type,
+                                            std::string& format_buffer) {
   using namespace substrait;
   switch (type.kind_case()) {
     case Type::kBool:
@@ -306,6 +320,11 @@ const char* convertSubstraitTypeToArrowType(const substrait::Type& type) {
     // timestamp [microseconds]
     case Type::kTimestamp:
       return "tsu";
+    case Type::kDecimal: {
+      format_buffer =
+          fmt::format("d:{},{}", type.decimal().precision(), type.decimal().scale());
+      return format_buffer.c_str();
+    }
     default:
       CIDER_THROW(CiderRuntimeException,
                   std::string("Unsupported to convert type ") + type.GetTypeName() +
@@ -328,10 +347,10 @@ ArrowSchema* convertCiderTableSchemaToArrowSchema(const CiderTableSchema& table)
 
   for (size_t i = 0; i < children.size(); ++i) {
     ArrowSchema* schema = root_schema->children[i];
-    schema->format = convertSubstraitTypeToArrowType(children[i]);
-    schema->n_children = 0;
-
     CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
+    schema->format =
+        convertSubstraitTypeToArrowType(children[i], holder->getFormatBuffer());
+    schema->n_children = 0;
     schema->children = holder->getChildrenPtrs();
     schema->dictionary = holder->getDictPtr();
     schema->release = ciderArrowSchemaReleaser;

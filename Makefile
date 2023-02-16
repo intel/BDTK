@@ -95,6 +95,20 @@ icl:
 	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} || \
 	cmake --build ${CPP_BUILD_DIR}
 
+icl-qat:
+	@mkdir -p ${CPP_BUILD_DIR}
+	@cd ${CPP_BUILD_DIR} && \
+	cmake -Wno-dev \
+		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+		  -DBDTK_ENABLE_ICL=ON \
+		  -DICL_WITH_QAT=ON \
+		  -DICL_WITH_IGZIP=OFF \
+		  -DBDTK_ENABLE_CIDER=OFF \
+		  $(FORCE_COLOR) \
+			${CPP_SOURCE_DIR}
+	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} || \
+	cmake --build ${CPP_BUILD_DIR}
+
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
 	@$(MAKE) build BUILD_TYPE=Debug

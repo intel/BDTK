@@ -64,6 +64,8 @@ inline llvm::PointerType* getLLVMPtrType(JITTypeTag sub_tag, llvm::LLVMContext& 
       return llvm::Type::getInt32PtrTy(ctx);
     case JITTypeTag::INT64:
       return llvm::Type::getInt64PtrTy(ctx);
+    case JITTypeTag::INT128:
+      return llvm::Type::getIntNPtrTy(ctx, 128);
     case JITTypeTag::FLOAT:
       return llvm::Type::getFloatPtrTy(ctx);
     case JITTypeTag::DOUBLE:

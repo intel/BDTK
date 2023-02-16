@@ -103,7 +103,7 @@ class FixSizeJITExprValue : public JITExprValueAdaptor {
 
   jitlib::JITValuePointer& getValue() { return values_[1]; }
 
-  void setValue(jitlib::JITValuePointer& rh) { values_[1].replace(rh); }
+  void setValue(const jitlib::JITValuePointer& rh) { values_[1].replace(rh); }
 };
 
 class VarSizeJITExprValue : public JITExprValueAdaptor {
@@ -114,6 +114,21 @@ class VarSizeJITExprValue : public JITExprValueAdaptor {
   jitlib::JITValuePointer& getLength() { return values_[1]; }
 
   jitlib::JITValuePointer& getValue() { return values_[2]; }
+};
+
+class VarSizeArrayExprValue : public JITExprValueAdaptor {
+ public:
+  explicit VarSizeArrayExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
+    values_.resize(5);
+  }
+  // offsets buffer
+  jitlib::JITValuePointer& getLength() { return values_[1]; }
+
+  jitlib::JITValuePointer& getElemNull() { return values_[2]; }
+
+  jitlib::JITValuePointer& getValue() { return values_[3]; }
+
+  jitlib::JITValuePointer& getOffset() { return values_[4]; }
 };
 
 }  // namespace cider::exec::nextgen::utils

@@ -17,36 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#
-# QatCommon
-#
+project(qat_common)
 
-project(QatCommon)
+set(QAT_COMMON_SOURCES qat_wrapper.c)
 
-set(CMAKE_CXX_STANDARD 17)
-set(QAT_COMMON_SOURCES qat_wrapper.cpp)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
-find_package(Qpl REQUIRED COMPONENTS qplhl)
-
-set(QAT_LINK_LIBS qatzip)
-
-add_custom_target(QatCommon)
-
-add_icl_lib(
-  QatCommon
-  BUILD_STATIC
-  BUILD_SHARED
-  SOURCES
-  ${QAT_COMMON_SOURCES}
-  OUTPUTS
-  QAT_COMMON_LIBRARIES
-  STATIC_LINK_LIBS
-  ${QAT_LINK_LIBS}
-  SHARED_LINK_LIBS
-  ${QAT_LINK_LIBS}
-  PRIVATE_INCLUDES
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  EXTRA_INCLUDES
-  ${QAT_INCLUDE_DIRS})
-
-add_dependencies(QatCommon ${QAT_COMMON_LIBRARIES})
+add_library(qat_common STATIC ${QAT_COMMON_SOURCES})
+target_link_libraries(qat_common ${CMAKE_DL_LIBS})

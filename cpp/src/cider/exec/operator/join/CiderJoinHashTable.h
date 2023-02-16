@@ -76,4 +76,6 @@ class JoinHashTable {
   std::shared_ptr<JoinLPHashTable> LPHashTableInstance_;
   std::shared_ptr<JoinChainedHashTable> chainedHashTableInstance_;
 };
+
+using JoinHashTablePtr = std::shared_ptr<JoinHashTable>;
 }  // namespace cider::exec::processor

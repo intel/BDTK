@@ -61,14 +61,35 @@ void CheckCodecRoundtrip(std::unique_ptr<IclCompressionCodec>& codec,
 
 }  // namespace
 
-TEST(TestIclCodec, IgzipCodecTest) {
+class IclTest : public ::testing::TestWithParam<std::string> {
+ protected:
+  std::string GetCodecName() { return GetParam(); }
+
+  std::unique_ptr<IclCompressionCodec> MakeCodec() {
+    return IclCompressionCodec::Make(GetCodecName(), 1);
+  }
+};
+
+TEST_P(IclTest, CodecRoundtrip) {
   int sizes[] = {0, 10000, 100000};
-  auto codec = IclCompressionCodec::MakeIclCompressionCodec("igzip", 2);
+  auto codec = MakeCodec();
   for (int data_size : sizes) {
     std::vector<uint8_t> data = MakeRandomData(data_size);
     CheckCodecRoundtrip(codec, data);
   }
 }
+
+#ifdef ICL_WITH_IGZIP
+INSTANTIATE_TEST_SUITE_P(TestIgzip, IclTest, ::testing::Values("igzip"));
+#endif
+
+#ifdef ICL_WITH_QAT
+INSTANTIATE_TEST_SUITE_P(TestQat, IclTest, ::testing::Values("qat"));
+#endif
+
+#ifdef ICL_WITH_QPL
+INSTANTIATE_TEST_SUITE_P(TestQpl, IclTest, ::testing::Values("qpl"));
+#endif
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

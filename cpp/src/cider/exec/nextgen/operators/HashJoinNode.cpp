@@ -29,6 +29,9 @@ namespace cider::exec::nextgen::operators {
 using namespace jitlib;
 using namespace context;
 
+constexpr auto left_table_id = 100;
+
+// TODO(qiuyang): will extract as a util class and migrate ColumnToRowReader
 class BuildTableReader {
  public:
   BuildTableReader(utils::JITExprValue& buffer_values,
@@ -94,9 +97,6 @@ class BuildTableReader {
     utils::FixSizeJITExprValue fixsize_values(buffer_values_);
     auto data_buffer = fixsize_values.getValue();
     auto& func = data_buffer->getParentJITFunction();
-    JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
-    // data buffer decoder
-    auto actual_raw_data_buffer = data_buffer->castPointerSubType(tag);
     auto row_data = getFixSizeRowData(func, fixsize_values);
     if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), row_data);
@@ -137,6 +137,71 @@ class BuildTableReader {
   JITValuePointer& index_;
 };
 
+// TODO(qiuyang): extract as a util class
+class ExprDefaultValueSetter {
+ public:
+  ExprDefaultValueSetter(ExprPtr& expr,
+                         CodegenContext& context,
+                         std::map<ExprPtr, std::vector<JITValuePointer>>& expr_map)
+      : expr_(expr), context_(context), expr_map_(expr_map) {}
+
+  void setDefault() {
+    switch (expr_->get_type_info().get_type()) {
+      case kBOOLEAN:
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE:
+      case kDATE:
+      case kTIME:
+      case kTIMESTAMP:
+        setDefalutFixSizedTypeCol();
+        break;
+      case kVARCHAR:
+      case kCHAR:
+      case kTEXT:
+        setDefalutVariableSizeTypeCol();
+        break;
+      default:
+        LOG(ERROR) << "Unsupported data type in BuildTableReader: "
+                   << expr_->get_type_info().get_type_name();
+    }
+  }
+
+ private:
+  void setDefalutFixSizedTypeCol() {
+    auto func = context_.getJITFunction();
+    JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
+    auto null_init = func->createVariable(JITTypeTag::BOOL, "null_init", true);
+    auto val_init = func->createVariable(tag, "val_init", 0l);
+    *null_init = func->createLiteral(JITTypeTag::BOOL, true);
+    *val_init = func->createLiteral(tag, 0l);
+    expr_->set_expr_value(null_init, val_init);
+    expr_map_.insert({expr_, {null_init, val_init}});
+  }
+
+  void setDefalutVariableSizeTypeCol() {
+    // FIXME(qiuyang): how to set VariableSizeTypeCol default value
+    auto func = context_.getJITFunction();
+    JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
+    auto null_init = func->createVariable(JITTypeTag::BOOL, "null_init", true);
+    auto val_init = func->createVariable(tag, "val_init", 0l);
+    auto length_init = func->createVariable(JITTypeTag::INT32, "length_init", 0);
+    *null_init = func->createLiteral(JITTypeTag::BOOL, true);
+    *length_init = func->createLiteral(JITTypeTag::INT32, 0);
+    *val_init = func->createLiteral(tag, 0l);
+    expr_->set_expr_value(null_init, length_init, val_init);
+    expr_map_.insert({expr_, {null_init, length_init, val_init}});
+  }
+
+ private:
+  ExprPtr& expr_;
+  context::CodegenContext& context_;
+  std::map<ExprPtr, std::vector<JITValuePointer>>& expr_map_;
+};
+
 TranslatorPtr HashJoinNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<HashJoinTranslator>(shared_from_this(), succ);
 }
@@ -152,8 +217,9 @@ void traverse(ExprPtr expr,
               std::vector<JITValuePointer>& nulls,
               context::CodegenContext& context) {
   if (Analyzer::ColumnVar* col_var = dynamic_cast<Analyzer::ColumnVar*>(expr.get())) {
-    // FIXME (qiuyang):: 100 is not always used as right table id.
-    if (col_var->get_table_id() == 100) {
+    // FIXME (qiuyang):: 100 is not always used as left table id.
+    if (col_var->get_table_id() == left_table_id) {
+      // TODO(qiuyang): hashjoin only support FixSizetype join key now
       utils::FixSizeJITExprValue jit_value(expr->codegen(context));
       keys.emplace_back(jit_value.getValue());
       // null vector handle
@@ -165,6 +231,67 @@ void traverse(ExprPtr expr,
     auto children = expr->get_children_reference();
     for (auto child : children) {
       traverse(*child, func, keys, nulls, context);
+    }
+  }
+}
+
+void joinProbe(jitlib::JITFunctionPointer& func,
+               JITValuePointer& join_res_buffer,
+               JITValuePointer& row_index,
+               JITValuePointer& join_res_len,
+               std::map<ExprPtr, size_t>& build_table_map,
+               JoinType& join_type,
+               const std::map<ExprPtr, std::vector<JITValuePointer>>& expr_map =
+                   std::map<ExprPtr, std::vector<JITValuePointer>>()) {
+  auto res_array = func->emitRuntimeFunctionCall(
+      "extract_join_res_array",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::POINTER,
+          .ret_sub_type = JITTypeTag::INT8,
+          .params_vector = {join_res_buffer.get(), row_index.get()}});
+
+  auto res_row_id = func->emitRuntimeFunctionCall(
+      "extract_join_row_id",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT64,
+          .params_vector = {join_res_buffer.get(), row_index.get()}});
+
+  std::map<ExprPtr, size_t>::iterator iter;
+  for (iter = build_table_map.begin(); iter != build_table_map.end(); iter++) {
+    auto expr = iter->first;
+    auto build_idx = func->createLiteral(JITTypeTag::INT64, iter->second);
+    auto child_arrow_array = func->emitRuntimeFunctionCall(
+        "extract_arrow_array_child",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                  .ret_sub_type = JITTypeTag::VOID,
+                                  .params_vector = {res_array.get(), build_idx.get()}});
+
+    int64_t buffer_num = utils::getBufferNum(expr->get_type_info().get_type());
+    utils::JITExprValue buffer_values(buffer_num, JITExprValueType::BATCH);
+    for (int64_t i = 0; i < buffer_num; ++i) {
+      auto buffer_idx = func->createLiteral(JITTypeTag::INT64, i);
+      auto array_buffer = func->emitRuntimeFunctionCall(
+          "extract_arrow_array_buffer",
+          JITFunctionEmitDescriptor{
+              .ret_type = JITTypeTag::POINTER,
+              .ret_sub_type = JITTypeTag::VOID,
+              .params_vector = {child_arrow_array.get(), buffer_idx.get()}});
+
+      buffer_values.append(array_buffer);
+    }
+    BuildTableReader reader(buffer_values, expr, res_row_id);
+    reader.read();
+
+    // in LLVM code, two parallel basicBlock cannot call each other's internally defined
+    // local variables, so the pre-defined variables are used here to get the result after
+    // read
+    if (join_type == JoinType::LEFT) {
+      auto& expr_val = expr->get_expr_value();
+      auto vector = expr_map.at(expr);
+      for (int i = 0; i < vector.size(); ++i) {
+        vector[i] = *expr_val[i];
+        expr_val[i].replace(vector[i]);
+      }
     }
   }
 }
@@ -181,14 +308,17 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
 
   // open up a section of buffer to reserve the join result
   auto join_res_buffer = context.registerBuffer(
-      16, "join_res_buffer", [](context::Buffer* buf) {}, false);
+      0,
+      "join_res_buffer",
+      [](context::Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
+      false);
 
   // pack join key values(support only one key now)
-  auto key_value = func->packJITValues<64>(keys);
-  // pack null
-  auto key_null = func->packJITValues<8>(nulls);
+  auto key_value = func->packJITValues<8>(keys);
+  // pack join key nulls
+  auto key_null = func->packJITValues<1>(nulls);
   // register hashtable
-  auto hashtable = context.registerHashTable();
+  auto hashtable = context.registerHashTable("hash_table");
 
   // TODO(qiuyang) : hashtable will be a base class pointer
   auto join_res_len = func->emitRuntimeFunctionCall(
@@ -200,56 +330,64 @@ void HashJoinTranslator::codegen(context::CodegenContext& context) {
 
   auto build_table_map = dynamic_cast<HashJoinNode*>(node_.get())->getBuildTableMap();
   auto row_index = func->createVariable(JITTypeTag::INT64, "row_index", 0l);
-  row_index = func->createLiteral(JITTypeTag::INT64, 0l);
-  func->createLoopBuilder()
-      ->condition([&row_index, &join_res_len]() { return row_index < join_res_len; })
-      ->loop([&](LoopBuilder*) {
-        auto res_array = func->emitRuntimeFunctionCall(
-            "extract_join_res_array",
-            JITFunctionEmitDescriptor{
-                .ret_type = JITTypeTag::POINTER,
-                .ret_sub_type = JITTypeTag::INT8,
-                .params_vector = {join_res_buffer.get(), row_index.get()}});
+  *row_index = func->createLiteral(JITTypeTag::INT64, 0l);
+  auto join_type = dynamic_cast<HashJoinNode*>(node_.get())->getJoinType();
+  std::map<ExprPtr, size_t>::iterator iter;
 
-        auto res_row_id = func->emitRuntimeFunctionCall(
-            "extract_join_row_id",
-            JITFunctionEmitDescriptor{
-                .ret_type = JITTypeTag::INT64,
-                .params_vector = {join_res_buffer.get(), row_index.get()}});
+  auto loop_builder = func->createLoopBuilder();
 
-        std::map<ExprPtr, size_t>::iterator iter;
-        for (iter = build_table_map.begin(); iter != build_table_map.end(); iter++) {
-          auto expr = iter->first;
-          auto build_idx = func->createLiteral(JITTypeTag::INT64, iter->second);
+  switch (join_type) {
+    case JoinType::INNER:
+      loop_builder
+          ->condition([&row_index, &join_res_len]() { return row_index < join_res_len; })
+          ->loop([&](LoopBuilder*) {
+            joinProbe(func,
+                      join_res_buffer,
+                      row_index,
+                      join_res_len,
+                      build_table_map,
+                      join_type);
+          })
+          ->update([&]() {
+            successor_->consume(context);
+            row_index = row_index + 1l;
+          })
+          ->build();
+      break;
+    case JoinType::LEFT:
+      func->createIfBuilder()
+          ->condition([&]() { return join_res_len != 0l; })
+          ->ifTrue([&] { row_index = row_index + 1l; })
+          ->build();
+      loop_builder
+          ->condition([&row_index, &join_res_len]() { return row_index <= join_res_len; })
+          ->loop([&](LoopBuilder*) {
+            std::map<ExprPtr, std::vector<JITValuePointer>> expr_map;
+            for (iter = build_table_map.begin(); iter != build_table_map.end(); iter++) {
+              auto expr = iter->first;
+              ExprDefaultValueSetter setter(expr, context, expr_map);
+              setter.setDefault();
+            }
 
-          auto child_arrow_array = func->emitRuntimeFunctionCall(
-              "extract_arrow_array_child",
-              JITFunctionEmitDescriptor{
-                  .ret_type = JITTypeTag::POINTER,
-                  .ret_sub_type = JITTypeTag::VOID,
-                  .params_vector = {res_array.get(), build_idx.get()}});
-
-          int64_t buffer_num = utils::getBufferNum(expr->get_type_info().get_type());
-          utils::JITExprValue buffer_values(buffer_num, JITExprValueType::BATCH);
-          for (int64_t i = 0; i < buffer_num; ++i) {
-            auto buffer_idx = func->createLiteral(JITTypeTag::INT64, i);
-
-            auto array_buffer = func->emitRuntimeFunctionCall(
-                "extract_arrow_array_buffer",
-                JITFunctionEmitDescriptor{
-                    .ret_type = JITTypeTag::POINTER,
-                    .ret_sub_type = JITTypeTag::VOID,
-                    .params_vector = {child_arrow_array.get(), buffer_idx.get()}});
-
-            buffer_values.append(array_buffer);
-          }
-
-          BuildTableReader reader(buffer_values, expr, res_row_id);
-          reader.read();
-        }
-        successor_->consume(context);
-      })
-      ->update([&row_index]() { row_index = row_index + 1l; })
-      ->build();
+            loop_builder->loopContinue(join_res_len == 0l);
+            row_index = row_index - 1l;
+            joinProbe(func,
+                      join_res_buffer,
+                      row_index,
+                      join_res_len,
+                      build_table_map,
+                      join_type,
+                      expr_map);
+            row_index = row_index + 1l;
+          })
+          ->update([&]() {
+            successor_->consume(context);
+            row_index = row_index + 1l;
+          })
+          ->build();
+      break;
+    default:
+      break;
+  }
 }
 }  // namespace cider::exec::nextgen::operators
