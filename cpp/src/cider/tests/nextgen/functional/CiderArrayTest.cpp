@@ -96,7 +96,7 @@ TEST_UNIT_MULTI_COL(PrimitiveTypeArrayBigintTest, bigintBaseMultiColTest)
             .setRowNum(10)                                                          \
             .addStructColumn(input_schema_->children[1], input_array_->children[1]) \
             .build();                                                               \
-    assertQuery("SELECT col_a FROM test",                                           \
+    assertQuery("SELECT col_b FROM test",                                           \
                 std::get<1>(schema_and_array_b),                                    \
                 std::get<0>(schema_and_array_b),                                    \
                 false);                                                             \
@@ -105,7 +105,7 @@ TEST_UNIT_MULTI_COL(PrimitiveTypeArrayBigintTest, bigintBaseMultiColTest)
             .setRowNum(10)                                                          \
             .addStructColumn(input_schema_->children[2], input_array_->children[2]) \
             .build();                                                               \
-    assertQuery("SELECT col_a FROM test",                                           \
+    assertQuery("SELECT col_c FROM test",                                           \
                 std::get<1>(schema_and_array_c),                                    \
                 std::get<0>(schema_and_array_c),                                    \
                 false);                                                             \
