@@ -327,8 +327,8 @@ COMPLEX_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTe
   }
 // TODO: (spevenhe) comment due to OR will fail back to loop join
 // while AND is still hash join
-DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ORJoinConditionTest1, *)
-DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ORJoinConditionTest2, *)
+DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest, ORJoinConditionTest1, *)  // NOLINT
+DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest, ORJoinConditionTest2, *)  // NOLINT
 DOUBLE_JOIN_OR_CONDITION_TEST_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest,
                                            ORJoinConditionWithAggTest1,
                                            SUM(l_bigint))
