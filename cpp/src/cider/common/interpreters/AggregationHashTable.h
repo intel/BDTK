@@ -41,7 +41,7 @@ using AggregateDataPtr = int8_t*;
 
 // It's a wrap for null key, "base" should be one of the HashTables.
 template <typename Base>
-struct AggregatedHashTableWithNullKey : public Base {
+struct AggregatedHashTableForNullKey : public Base {
   using Base::Base;
 
   bool hasNullKeyData() const { return has_null_key_data_; }
@@ -62,32 +62,37 @@ struct AggregatedHashTableWithNullKey : public Base {
   AggregateDataPtr null_key_data_ = nullptr;
 };
 
-using AggregatedHashTableWithUInt8Key =
+using AggregatedHashTableForUInt8Key =
     FixedImplicitZeroHashMapWithCalculatedSize<uint8_t, AggregateDataPtr>;
 
-using AggregatedHashTableWithUInt16Key =
+using AggregatedHashTableForUInt16Key =
     FixedImplicitZeroHashMapWithStoredSize<uint16_t, AggregateDataPtr>;
 
-using AggregatedHashTableWithUInt32Key =
+using AggregatedHashTableForUInt32Key =
     HashMap<uint32_t, AggregateDataPtr, HashCRC32<uint32_t>>;
 
-using AggregatedHashTableWithUInt64Key =
+using AggregatedHashTableForUInt64Key =
     HashMap<uint64_t, AggregateDataPtr, HashCRC32<uint64_t>>;
 
-using AggregatedHashTableWithFloatKey =
-    HashMap<float, AggregateDataPtr, HashCRC32<float>>;
+using AggregatedHashTableForFloatKey = HashMap<float, AggregateDataPtr, HashCRC32<float>>;
 
-using AggregatedHashTableWithDoubleKey =
+using AggregatedHashTableForDoubleKey =
     HashMap<double, AggregateDataPtr, HashCRC32<double>>;
 
+using AggregatedHashTableForKeys128 =
+    HashMap<UInt128, AggregateDataPtr, UInt128HashCRC32>;
+
+using AggregatedHashTableForKeys256 =
+    HashMap<UInt256, AggregateDataPtr, UInt256HashCRC32>;
+
 template <typename... Types>
-using HashTableWithNullKey = AggregatedHashTableWithNullKey<HashMapTable<Types...>>;
+using HashTableWithNullKey = AggregatedHashTableForNullKey<HashMapTable<Types...>>;
 
-using AggregatedHashTableWithNullableUInt8Key =
-    AggregatedHashTableWithNullKey<AggregatedHashTableWithUInt8Key>;
+using AggregatedHashTableForNullableUInt8Key =
+    AggregatedHashTableForNullKey<AggregatedHashTableForUInt8Key>;
 
-using AggregatedHashTableWithNullableUInt16Key =
-    AggregatedHashTableWithNullKey<AggregatedHashTableWithUInt16Key>;
+using AggregatedHashTableForNullableUInt16Key =
+    AggregatedHashTableForNullKey<AggregatedHashTableForUInt16Key>;
 
 class AggregationHashTable;
 
@@ -99,8 +104,10 @@ struct AggregationMethod : private boost::noncopyable {
     INT16 = 3,
     INT32 = 4,
     INT64 = 5,
-    FLOAT = 6,
-    DOUBLE = 7,
+    INT128 = 6,
+    INT256 = 7,
+    FLOAT = 8,
+    DOUBLE = 9,
     without_key,
   };
   Type type = Type::EMPTY;
@@ -186,12 +193,14 @@ class AggregationHashTable final {
   uint32_t init_len_;
   // std::unordered_set<AggKey> key_set_;
   AggregationMethod::Type agg_method_;
-  AggregatedHashTableWithUInt8Key agg_ht_uint8_;
-  AggregatedHashTableWithUInt16Key agg_ht_uint16_;
-  AggregatedHashTableWithUInt32Key agg_ht_uint32_;
-  AggregatedHashTableWithUInt64Key agg_ht_uint64_;
-  AggregatedHashTableWithFloatKey agg_ht_float_;
-  AggregatedHashTableWithDoubleKey agg_ht_double_;
+  AggregatedHashTableForUInt8Key agg_ht_uint8_;
+  AggregatedHashTableForUInt16Key agg_ht_uint16_;
+  AggregatedHashTableForUInt32Key agg_ht_uint32_;
+  AggregatedHashTableForUInt64Key agg_ht_uint64_;
+  AggregatedHashTableForKeys128 agg_ht_uint128_;
+  AggregatedHashTableForKeys256 agg_ht_uint256_;
+  AggregatedHashTableForFloatKey agg_ht_float_;
+  AggregatedHashTableForDoubleKey agg_ht_double_;
 
   // Select the aggregation method based on the number and types of keys.
   AggregationMethod::Type chooseAggregationMethod();
