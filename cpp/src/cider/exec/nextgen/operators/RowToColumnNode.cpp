@@ -109,7 +109,7 @@ class ColumnWriter {
     // get latest pointer to data buffer, will allocate data buffer on first call,
     // and will reallocate buffer if more capacity is needed
     auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
-        "get_data_buffer_with_realloc_on_demand",
+        "get_buffer_with_realloc_on_demand",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,
@@ -165,7 +165,7 @@ class ColumnWriter {
         [this]() { return context::codegen_utils::getArrowArrayChild(arrow_array_, 0); });
     auto bitmap_bytes_len = (values.getOffset() + 7) / 8;
     auto new_elem_null_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
-        "get_data_buffer_with_realloc_on_demand",
+        "get_buffer_with_realloc_on_demand",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,
@@ -179,7 +179,7 @@ class ColumnWriter {
         values.getOffset() *
         utils::getTypeBytes(expr_->get_type_info().getChildAt(0).get_type());
     auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
-        "get_data_buffer_with_realloc_on_demand",
+        "get_buffer_with_realloc_on_demand",
         JITFunctionEmitDescriptor{
             .ret_type = JITTypeTag::POINTER,
             .ret_sub_type = JITTypeTag::INT8,

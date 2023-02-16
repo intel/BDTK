@@ -199,7 +199,7 @@ extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE int8_t* get_data_buffer_with_realloc_on_demand(
+extern "C" ALWAYS_INLINE int8_t* get_buffer_with_realloc_on_demand(
     const int8_t* input_desc_ptr,
     const int32_t current_bytes,
     const int32_t index) {
