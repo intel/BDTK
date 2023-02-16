@@ -100,11 +100,9 @@ class HashJoinTest : public ::testing::Test {
     cider::exec::processor::JoinHashTable hm;
     auto join_key = build_batch.getArray()->children[1];
     for (int64_t i = 0; i < join_key->length; i++) {
-      // if (!*((reinterpret_cast<bool*>(const_cast<void*>(join_key->buffers[0]))) + i)) {
       int key =
           *((reinterpret_cast<COL_TYPE*>(const_cast<void*>(join_key->buffers[1]))) + i);
       hm.emplace(key, {&build_batch, i});
-      // }
     }
 
     codegen_ctx.setHashTable(std::make_shared<cider::exec::processor::JoinHashTable>(hm));

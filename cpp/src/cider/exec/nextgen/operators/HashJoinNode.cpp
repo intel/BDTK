@@ -136,8 +136,6 @@ class BuildTableReader {
   utils::JITExprValue& buffer_values_;
   ExprPtr& expr_;
   JITValuePointer index_;
-  // std::map<ExprPtr, std::vector<JITValuePointer>> expr_map_;
-  // ExprMapPtr& expr_map_;
 };
 
 // TODO(qiuyang): extract as a util class
@@ -177,8 +175,8 @@ class ExprDefaultValueSetter {
   void setDefalutFixSizedTypeCol() {
     auto func = context_.getJITFunction();
     JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
-    auto null_init = func->createVariable(JITTypeTag::BOOL, "fix_null_init", true);
-    auto val_init = func->createVariable(tag, "fix_val_init", 0);
+    auto null_init = func->createVariable(JITTypeTag::BOOL, "fixed_null_init", true);
+    auto val_init = func->createVariable(tag, "fixed_val_init", 0);
     *null_init = func->createLiteral(JITTypeTag::BOOL, true);
     *val_init = func->createLiteral(tag, 0l);
     expr_->set_expr_value(null_init, val_init);
@@ -189,8 +187,8 @@ class ExprDefaultValueSetter {
     // FIXME(qiuyang): how to set VariableSizeTypeCol default value
     auto func = context_.getJITFunction();
     JITTypeTag tag = utils::getJITTypeTag(expr_->get_type_info().get_type());
-    auto null_init = func->createVariable(JITTypeTag::BOOL, "varia_null_init", true);
-    auto val_init = func->createVariable(tag, "varia_val_init", 'a');
+    auto null_init = func->createVariable(JITTypeTag::BOOL, "variable_null_init", true);
+    auto val_init = func->createVariable(tag, "variable_val_init", 'a');
     auto length_init = func->createVariable(JITTypeTag::INT32, "length_init", 0);
     *null_init = func->createLiteral(JITTypeTag::BOOL, true);
     *length_init = func->createLiteral(JITTypeTag::INT32, 0);
