@@ -234,6 +234,8 @@ class ColumnWriter {
               })
               ->update([&count]() { count = count + 1l; })
               ->build();
+          // "count" is created in local variable zone for outer loop, need to initiate it
+          // everytime for inner loop to use
           count =
               context_.getJITFunction()->createVariable(JITTypeTag::INT32, "count", 0);
           // set values buffer
