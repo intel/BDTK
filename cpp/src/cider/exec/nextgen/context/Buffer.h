@@ -40,7 +40,7 @@ class Buffer {
   ~Buffer() { allocator_->deallocate(buffer_, capacity_); }
 
   void allocateBuffer(int32_t size) {
-    if (capacity_) {
+    if (buffer_) {
       buffer_ = allocator_->reallocate(buffer_, capacity_, size);
     } else {
       buffer_ = allocator_->allocate(size);

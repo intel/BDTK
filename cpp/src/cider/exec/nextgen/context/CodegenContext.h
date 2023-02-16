@@ -165,19 +165,16 @@ class CodegenContext {
   struct HashTableDescriptor {
     int64_t ctx_id;
     std::string name;
-    // TODO(qiuyang) : LinearProbeHashTable will provide the default template
-    cider::exec::processor::JoinHashTable* hash_table;
+    processor::JoinHashTablePtr hash_table;
 
     HashTableDescriptor(
         int64_t id,
         const std::string& n,
-        // TODO(qiuyang) : LinearProbeHashTable will provide the default template
-        cider::exec::processor::JoinHashTable* table =
-            new cider::exec::processor::JoinHashTable())
+        processor::JoinHashTablePtr table = std::make_shared<processor::JoinHashTable>())
         : ctx_id(id), name(n), hash_table(table) {}
   };
 
-  void setHashTable(cider::exec::processor::JoinHashTable* join_hash_table) {
+  void setHashTable(const std::shared_ptr<processor::JoinHashTable>& join_hash_table) {
     hashtable_descriptor_.first->hash_table = join_hash_table;
   }
 

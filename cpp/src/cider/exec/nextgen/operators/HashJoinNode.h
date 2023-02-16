@@ -29,27 +29,35 @@ class HashJoinNode : public OpNode {
  public:
   HashJoinNode(ExprPtrVector&& output_exprs,
                ExprPtrVector&& join_quals,
-               std::map<ExprPtr, size_t>&& build_table_map)
+               std::map<ExprPtr, size_t>&& build_table_map,
+               JoinType&& join_type)
       : OpNode("HashJoinNode", std::move(output_exprs), JITExprValueType::ROW)
       , join_quals_(std::move(join_quals))
-      , build_table_map_(std::move(build_table_map)) {}
+      , build_table_map_(std::move(build_table_map))
+      , join_type_(std::move(join_type)) {}
 
   HashJoinNode(const ExprPtrVector& output_exprs,
                const ExprPtrVector& join_quals,
-               std::map<ExprPtr, size_t>& build_table_map)
+               std::map<ExprPtr, size_t>& build_table_map,
+               JoinType& join_type)
       : OpNode("HashJoinNode", output_exprs, JITExprValueType::ROW)
       , join_quals_(join_quals)
-      , build_table_map_(build_table_map) {}
+      , build_table_map_(build_table_map)
+      , join_type_(join_type) {}
 
-  ExprPtrVector getJoinQuals() { return join_quals_; }
+  ExprPtrVector& getJoinQuals() { return join_quals_; }
 
   std::map<ExprPtr, size_t>& getBuildTableMap() { return build_table_map_; }
+
+  JoinType& getJoinType() { return join_type_; }
 
   TranslatorPtr toTranslator(const TranslatorPtr& succ = nullptr) override;
 
  private:
   ExprPtrVector join_quals_;
+  // save the desired build table expr and offset, such as selected expr and join key
   std::map<ExprPtr, size_t> build_table_map_;
+  JoinType join_type_;
 };
 
 class HashJoinTranslator : public Translator {

@@ -84,17 +84,17 @@ class HashJoinTest : public ::testing::Test {
     // Execution
     auto input_builder = ArrowArrayBuilder();
     auto&& [schema, array] =
-        input_builder.setRowNum(4)
+        input_builder.setRowNum(6)
             .addColumn<COL_TYPE>("l_a",
                                  CREATE_SUBSTRAIT_TYPE(I64),
-                                 {3, 4, 5, 6},
-                                 {false, false, false, true})
+                                 {2, 3, 7, 4, 5, 6},
+                                 {false, false, false, false, true, false})
             .template addColumn<COL_TYPE>("l_b",
                                           CREATE_SUBSTRAIT_TYPE(I64),
-                                          {1, 2, 3, 4},
-                                          {true, false, true, false})
+                                          {1, 2, 6, 3, 4, 5},
+                                          {true, false, false, true, false, false})
             .template addColumn<COL_TYPE>(
-                "l_c", CREATE_SUBSTRAIT_TYPE(I64), {555, 666, 777, 888})
+                "l_c", CREATE_SUBSTRAIT_TYPE(I64), {222, 333, 777, 444, 555, 666})
             .build();
 
     cider::exec::processor::JoinHashTable hm;
@@ -107,9 +107,7 @@ class HashJoinTest : public ::testing::Test {
       // }
     }
 
-    // TODO(Xinyi) : sethashtable in velox hashjoinbuild
-    auto tmp = hm.findAll(1);
-    codegen_ctx.setHashTable(&hm);
+    codegen_ctx.setHashTable(std::make_shared<cider::exec::processor::JoinHashTable>(hm));
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
@@ -123,16 +121,17 @@ class HashJoinTest : public ::testing::Test {
     // for test only, to print result
     auto print_array = [](ArrowArray* array, size_t expect_len) {
       // EXPECT_EQ(array->length, expect_len);
-      int64_t* data_buffer = (int64_t*)array->buffers[1];
+      COL_TYPE* data_buffer = (COL_TYPE*)array->buffers[1];
       for (size_t i = 0; i < array->length; ++i) {
         std::cout << data_buffer[i] << " ";
       }
       std::cout << std::endl;
     };
-    print_array(output_batch_array->children[0], 4);
-    print_array(output_batch_array->children[1], 4);
-    print_array(output_batch_array->children[2], 4);
-    print_array(output_batch_array->children[3], 4);
+    print_array(output_batch_array->children[0], 6);
+    print_array(output_batch_array->children[1], 6);
+    print_array(output_batch_array->children[2], 6);
+    print_array(output_batch_array->children[3], 6);
+    // print_array(output_batch_array->children[4], 6);
 
     EXPECT_EQ(output_batch_array->length, expected_row_len);
     auto check_array = [expected_row_len](ArrowArray* array,
@@ -155,85 +154,122 @@ TEST_F(HashJoinTest, basicINT32NotNullTest) {
   auto&& [build_schema, build_array] =
       build_table.setRowNum(4)
           .addColumn<int32_t>(
-              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {6, 7, 8, 9}, {true, false, true, false})
+              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {3, 4, 5, 6}, {true, false, true, false})
           .template addColumn<int32_t>("r_b",
                                        CREATE_SUBSTRAIT_TYPE(I64),
                                        {1, 2, 3, 4},
                                        {false, false, false, false})
           .template addColumn<int32_t>(
-              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {333, 444, 555, 666})
           .build();
   context::Batch build_batch(*build_schema, *build_array);
-  std::vector<std::vector<int32_t>> expected_res = {{3, 4, 5, 6},
+  std::vector<std::vector<int32_t>> expected_res = {{2, 3, 4, 5},
                                                     {1, 2, 3, 4},
-                                                    {555, 666, 777, 888},
-                                                    {6, 7, 8, 9},
+                                                    {222, 333, 444, 555},
+                                                    {3, 4, 5, 6},
                                                     {1, 2, 3, 4},
-                                                    {666, 777, 888, 999}};
+                                                    {333, 444, 555, 666}};
   std::string ddl =
       "CREATE TABLE table_probe(l_a INTEGER NOT NULL, l_b INTEGER NOT NULL, l_c INTEGER "
       "NOT NULL);"
       "CREATE TABLE table_build(r_a INTEGER NOT NULL, r_b INTEGER NOT NULL, r_c INTEGER "
       "NOT NULL);";
-  executeTest(ddl,
-              "select * from table_probe join table_build on table_probe.l_b = "
-              "table_build.r_b",
-              expected_res,
-              build_batch);
+  executeTest<int32_t>(ddl,
+                       "select * from table_probe join table_build on table_probe.l_b = "
+                       "table_build.r_b",
+                       expected_res,
+                       build_batch);
 }
 
-TEST_F(HashJoinTest, basicINT64NullableTest) {
+TEST_F(HashJoinTest, basicINT32NullableTest) {
   auto build_table = ArrowArrayBuilder();
   auto&& [build_schema, build_array] =
       build_table.setRowNum(4)
           .addColumn<int32_t>(
-              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {6, 7, 8, 9}, {true, false, true, false})
+              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {3, 4, 5, 6}, {true, false, true, false})
           .template addColumn<int32_t>("r_b",
                                        CREATE_SUBSTRAIT_TYPE(I64),
                                        {1, 2, 3, 4},
                                        {false, false, false, false})
           .template addColumn<int32_t>(
-              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {333, 444, 555, 666})
           .build();
   context::Batch build_batch(*build_schema, *build_array);
   std::vector<std::vector<int32_t>> expected_res = {
-      {4, 6}, {2, 4}, {666, 888}, {7, 9}, {2, 4}, {777, 999}};
+      {3, 5}, {2, 4}, {333, 555}, {4, 6}, {2, 4}, {444, 666}};
   std::string ddl =
       "CREATE TABLE table_probe(l_a INTEGER, l_b INTEGER, l_c INTEGER "
       "NOT NULL);"
       "CREATE TABLE table_build(r_a INTEGER, r_b INTEGER, r_c INTEGER "
       "NOT NULL);";
-  executeTest(ddl,
-              "select * from table_probe join table_build on table_probe.l_b = "
-              "table_build.r_b",
-              expected_res,
-              build_batch);
+  executeTest<int32_t>(ddl,
+                       "select * from table_probe join table_build on table_probe.l_b = "
+                       "table_build.r_b",
+                       expected_res,
+                       build_batch);
 }
 
-TEST_F(HashJoinTest, basicINT64Test) {
+TEST_F(HashJoinTest, basicRepeatableINT32NotNullTest) {
+  auto build_table = ArrowArrayBuilder();
+  auto&& [build_schema, build_array] =
+      build_table.setRowNum(6)
+          .addColumn<int32_t>("r_a",
+                              CREATE_SUBSTRAIT_TYPE(I32),
+                              {3, 4, 5, 6, 7, 8},
+                              {true, false, true, false, false, false})
+          .template addColumn<int32_t>("r_b",
+                                       CREATE_SUBSTRAIT_TYPE(I32),
+                                       {1, 2, 3, 3, 4, 4},
+                                       {false, false, true, false, false, false})
+          .template addColumn<int32_t>(
+              "r_c", CREATE_SUBSTRAIT_TYPE(I32), {333, 444, 555, 666, 777, 888})
+          .build();
+  context::Batch build_batch(*build_schema, *build_array);
+  std::vector<std::vector<int32_t>> expected_res = {{2, 3, 4, 4, 5, 5},
+                                                    {222, 333, 444, 444, 555, 555},
+                                                    {1, 2, 3, 3, 4, 4},
+                                                    {333, 444, 555, 666, 777, 888}};
+  std::string ddl =
+      "CREATE TABLE table_probe(l_a INTEGER NOT NULL, l_b INTEGER NOT NULL, l_c INTEGER "
+      "NOT NULL);"
+      "CREATE TABLE table_build(r_a INTEGER NOT NULL, r_b INTEGER NOT NULL, r_c INTEGER "
+      "NOT NULL);";
+  executeTest<int32_t>(
+      ddl,
+      "select l_a, l_c, r_b, r_c from table_probe join table_build on table_probe.l_b = "
+      "table_build.r_b",
+      expected_res,
+      build_batch);
+}
+
+TEST_F(HashJoinTest, basicINT32NotNullLeftJoinTest) {
   auto build_table = ArrowArrayBuilder();
   auto&& [build_schema, build_array] =
       build_table.setRowNum(4)
-          .addColumn<int64_t>(
-              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {6, 7, 8, 9}, {true, false, true, false})
-          .template addColumn<int64_t>("r_b",
+          .addColumn<int32_t>(
+              "r_a", CREATE_SUBSTRAIT_TYPE(I64), {3, 4, 5, 6}, {true, false, true, false})
+          .template addColumn<int32_t>("r_b",
                                        CREATE_SUBSTRAIT_TYPE(I64),
                                        {1, 2, 3, 4},
-                                       {false, false, true, false})
-          .template addColumn<int64_t>(
-              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {666, 777, 888, 999})
+                                       {false, false, false, false})
+          .template addColumn<int32_t>(
+              "r_c", CREATE_SUBSTRAIT_TYPE(I64), {333, 444, 555, 666})
           .build();
   context::Batch build_batch(*build_schema, *build_array);
-  std::vector<std::vector<int64_t>> expected_res = {
-      {3, 4, 5, 6}, {555, 666, 777, 888}, {1, 2, 3, 4}, {666, 777, 888, 999}};
+  std::vector<std::vector<int32_t>> expected_res = {{2, 3, 7, 4, 5, 6},
+                                                    {222, 333, 777, 444, 555, 666},
+                                                    {3, 4, 0, 5, 6, 0},
+                                                    {1, 2, 0, 3, 4, 0},
+                                                    {333, 444, 0, 555, 666, 0}};
   std::string ddl =
-      "CREATE TABLE table_probe(l_a BIGINT NOT NULL, l_b BIGINT NOT NULL, l_c BIGINT NOT "
-      "NULL);"
-      "CREATE TABLE table_build(r_a BIGINT NOT NULL, r_b BIGINT NOT NULL, r_c BIGINT NOT "
-      "NULL);";
-  executeTest(
+      "CREATE TABLE table_probe(l_a INTEGER NOT NULL, l_b INTEGER NOT NULL, l_c INTEGER "
+      "NOT NULL);"
+      "CREATE TABLE table_build(r_a INTEGER NOT NULL, r_b INTEGER NOT NULL, r_c INTEGER "
+      "NOT NULL);";
+  executeTest<int32_t>(
       ddl,
-      "select l_a, l_c, r_b, r_c from table_probe join table_build on table_probe.l_b = "
+      "select l_a, l_c, r_a, r_b, r_c from table_probe left join table_build on "
+      "table_probe.l_b = "
       "table_build.r_b",
       expected_res,
       build_batch);
