@@ -22,9 +22,12 @@
 
 #pragma once
 
+#include <common/base/wide_integer.h>
 #include <type_traits>
 
-#include <common/base/wide_integer.h>
+namespace cider::hashtable {
+
+using namespace cider::wide;
 
 static_assert(sizeof(Int256) == 32);
 static_assert(sizeof(UInt256) == 32);
@@ -175,3 +178,4 @@ struct is_big_int<UInt256> {
 
 template <typename T>
 inline constexpr bool is_big_int_v = is_big_int<T>::value;
+}  // namespace cider::hashtable

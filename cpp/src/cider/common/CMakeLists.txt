@@ -17,7 +17,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 add_subdirectory(contrib)
 
 add_library(cider_hashtable interpreters/AggregationHashTable.h
                             interpreters/AggregationHashTable.cpp)
+
+target_link_libraries(cider_hashtable ch_contrib::cityhash)

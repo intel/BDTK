@@ -24,9 +24,10 @@
 
 #include <common/base/extended_types.h>
 #include <common/base/unaligned.h>
-#include <common/base/wide_integer.h>
 #include <common/contrib/cityhash102/include/city.h>
 #include <type_traits>
+
+namespace cider::hashtable {
 
 /** Hash functions that are better than the trivial function std::hash.
  *
@@ -151,7 +152,7 @@ inline uint32_t updateWeakHash32(const uint8_t* pos,
         __builtin_memcpy(&value, pos, 7);
         break;
       default:
-        UNREACHABLE();
+        abort();
     }
 
     reinterpret_cast<unsigned char*>(&value)[7] = size;
@@ -322,9 +323,9 @@ inline uint32_t intHash32(uint64_t key) {
 template <typename T, uint64_t salt = 0>
 struct IntHash32 {
   size_t operator()(const T& key) const {
-    if constexpr (is_big_int_v<T> && sizeof(T) == 16) {
+    if constexpr (cider::hashtable::is_big_int_v<T> && sizeof(T) == 16) {
       return intHash32<salt>(key.items[0] ^ key.items[1]);
-    } else if constexpr (is_big_int_v<T> && sizeof(T) == 32) {
+    } else if constexpr (cider::hashtable::is_big_int_v<T> && sizeof(T) == 32) {
       return intHash32<salt>(key.items[0] ^ key.items[1] ^ key.items[2] ^ key.items[3]);
     } else {
       if constexpr (sizeof(T) <= sizeof(uint64_t)) {
@@ -333,11 +334,11 @@ struct IntHash32 {
         return intHash32<salt>(out);
       }
     }
-
-    UNREACHABLE();
+    abort();
   }
 };
 
 // TODO(Deegue): Implement and enable later
 // template <>
 // struct DefaultHash<StringRef> : public StringRefHash {};
+}  // namespace cider::hashtable
