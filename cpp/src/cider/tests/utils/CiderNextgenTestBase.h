@@ -80,6 +80,11 @@ class CiderNextgenTestBase : public testing::Test {
   cider::exec::nextgen::context::CodegenOptions codegen_options_ = {};
 };
 
+class CiderNextgenTestBaseWithoutDuckDB : public CiderNextgenTestBase {
+ public:
+  void SetUp() override { cider_nextgen_query_runner_->prepare(create_ddl_); }
+};
+
 }  // namespace cider::test::util
 
 #endif  // CIDER_TESTS_UTILS_NEXTGEN_TEST_BASE_H_

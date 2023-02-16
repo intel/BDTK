@@ -473,7 +473,11 @@ class ArrowArrayBuilder {
 
     if (col_data.empty()) {
       // append an empty buffer.
-      current_array = nullptr;
+      current_array = CiderBatchUtils::allocateArrowArray();
+      current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
+      current_array->buffers[0]=(void*)allocator_->allocate(0);
+      current_array->buffers[1]=(void*)allocator_->allocate(0);
+      current_array->n_buffers = 2;
       return {current_schema, current_array};
     } else {
       if (check_row_num) {
