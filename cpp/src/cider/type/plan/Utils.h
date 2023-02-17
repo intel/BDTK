@@ -93,4 +93,12 @@ inline int64_t get_min_value(SQLTypes type) {
 
   return min_val;
 }
+
+inline __int128_t exp_to_scale(const unsigned exp) {
+  __int128 res = 1;
+  for (unsigned i = 0; i < exp; ++i) {
+    res *= 10;
+  }
+  return res;
+}
 #endif

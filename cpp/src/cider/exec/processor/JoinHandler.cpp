@@ -35,4 +35,17 @@ void HashProbeHandler::onState(BatchProcessorState state) {
     }
   }
 }
+
+void CrossProbeHandler::onState(cider::exec::processor::BatchProcessorState state) {
+  if (BatchProcessorState::kWaiting == state) {
+    const auto& crossBuildTableSupplier =
+        batchProcessor_->getContext()->getCrossJoinBuildTableSupplier();
+    if (crossBuildTableSupplier) {
+      auto crossBuildData = crossBuildTableSupplier();
+      if (crossBuildData.has_value()) {
+        batchProcessor_->feedCrossBuildData(crossBuildData.value());
+      }
+    }
+  }
+}
 }  // namespace cider::exec::processor

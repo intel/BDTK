@@ -35,4 +35,4 @@ add_library(
   nextgen STATIC
   Nextgen.cpp $<TARGET_OBJECTS:cider_operators> $<TARGET_OBJECTS:cider_context>
   $<TARGET_OBJECTS:cider_parsers> $<TARGET_OBJECTS:cider_transformer>)
-target_link_libraries(nextgen ${NEXTGEN_DEPS} jitlib)
+target_link_libraries(nextgen ${NEXTGEN_DEPS} cider_hashtable_join jitlib)

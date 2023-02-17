@@ -54,8 +54,6 @@ class CrossProbeHandler : public JoinHandler {
   explicit CrossProbeHandler(const BatchProcessorPtr& batchProcessor)
       : batchProcessor_(batchProcessor) {}
 
-  std::shared_ptr<CiderBatch> onProcessBatch(std::shared_ptr<CiderBatch> batch) override;
-
   void onState(BatchProcessorState state) override;
 
  private:

@@ -84,6 +84,8 @@ if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
    OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
   add_dependencies(cider_function SUBSTRAITCPP)
 endif()
+message("------------------------------------------------------------")
+message(${SUBSTRAITCPP_COMMON_LIB})
 target_link_libraries(
   cider_function ${SUBSTRAITCPP_FUNCTION_LIB} ${SUBSTRAITCPP_TYPE_LIB}
-  ${SUBSTRAITCPP_COMMON_LIB} substrait re2)
+  ${SUBSTRAITCPP_COMMON_LIB} substrait yaml-cpp re2)
