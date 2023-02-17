@@ -59,23 +59,27 @@ void JoinHashTable::merge_other_hashtables(
   }
 }
 
-bool JoinHashTable::emplace(CiderJoinBaseKey key, CiderJoinBaseValue value) {
+bool JoinHashTable::emplace(int key, CiderJoinBaseValue value) {
+  auto key_row_tmp = new cider_hashtable::HT_Row();
+  key_row_tmp->make_row(key);
   switch (hashTableType_) {
     case cider_hashtable::HashTableType::LINEAR_PROBING:
-      return LPHashTableInstance_->emplace(key, value);
+      return LPHashTableInstance_->emplace(*key_row_tmp, value);
     case cider_hashtable::HashTableType::CHAINED:
-      return chainedHashTableInstance_->emplace(key, value);
+      return chainedHashTableInstance_->emplace(*key_row_tmp, value);
     default:
       return false;
   }
 }
 
-std::vector<CiderJoinBaseValue> JoinHashTable::findAll(const CiderJoinBaseKey key) {
+std::vector<CiderJoinBaseValue> JoinHashTable::findAll(const int key) {
+  cider_hashtable::HT_Row key_row_tmp;
+  key_row_tmp.make_row(key);
   switch (hashTableType_) {
     case cider_hashtable::HashTableType::LINEAR_PROBING:
-      return LPHashTableInstance_->findAll(key);
+      return LPHashTableInstance_->findAll(key_row_tmp);
     case cider_hashtable::HashTableType::CHAINED:
-      return chainedHashTableInstance_->findAll(key);
+      return chainedHashTableInstance_->findAll(key_row_tmp);
     default:
       return std::vector<CiderJoinBaseValue>();
   }

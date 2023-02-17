@@ -23,44 +23,40 @@
 namespace cider_hashtable {
 
 class HT_Row {
-  public:
-    HT_Row(int8_t* key_ptr, size_t key_size):key_ptr_(key_ptr_),key_size_(key_size) {}
-    HT_Row(){}
-    ~HT_Row() {
-      if(nullptr == key_ptr_) {
-        delete[] key_ptr_;
-        key_ptr_ = nullptr;
-      }
+ public:
+  HT_Row(int8_t* key_ptr, size_t key_size) : key_ptr_(key_ptr_), key_size_(key_size) {}
+  HT_Row() {}
+  ~HT_Row() {
+    if (nullptr == key_ptr_) {
+      delete[] key_ptr_;
+      key_ptr_ = nullptr;
     }
-    template <typename T>
-    void make_row(T& value){
-      if constexpr (std::is_same_v<T, std::string>){
-        key_size_ = value.size();
-        if(nullptr == key_ptr_){
-        key_ptr_ = new int8_t[key_size_+1];
+  }
+  template <typename T>
+  void make_row(T& value) {
+    if constexpr (std::is_same_v<T, std::string>) {
+      key_size_ = value.size();
+      if (nullptr == key_ptr_) {
+        key_ptr_ = new int8_t[key_size_ + 1];
         std::strcpy(reinterpret_cast<char*>(key_ptr_), value.c_str());
-        is_string = true;
       }
-      }else {
-        key_size_ = sizeof(T);
-        if(nullptr == key_ptr_){
-        key_ptr_ = new int8_t[key_size_];  
-        memcpy(key_ptr_,&value,key_size_);
-      }
+    } else {
+      key_size_ = sizeof(T);
+      if (nullptr == key_ptr_) {
+        key_ptr_ = new int8_t[key_size_];
+        memcpy(key_ptr_, &value, key_size_);
       }
     }
+  }
 
-    //todo(xinyihe): add append function to support build multi keys Row
-    template <typename... Args>
-    void make_row_from_multi_key(Args ...args){
-    }
+  // todo(xinyihe): add append function to support build multi keys Row
+  template <typename... Args>
+  void make_row_from_multi_key(Args... args) {}
 
-  public:
-    int8_t* key_ptr_ = nullptr;
-    size_t key_size_ = 0;
-    bool is_string = false;
+ public:
+  int8_t* key_ptr_ = nullptr;
+  size_t key_size_ = 0;
 };
-
 
 template <typename KeyType>
 struct table_key {
@@ -75,10 +71,10 @@ struct Equal {
 };
 
 struct HTRowEqual {
-  bool operator()(const HT_Row& lhs, const HT_Row& rhs) { 
-    return (lhs.key_size_ == rhs.key_size_) && (memcmp(lhs.key_ptr_, rhs.key_ptr_, lhs.key_size_) == 0); 
-    }
+  bool operator()(const HT_Row& lhs, const HT_Row& rhs) {
+    return (lhs.key_size_ == rhs.key_size_) &&
+           (memcmp(lhs.key_ptr_, rhs.key_ptr_, lhs.key_size_) == 0);
+  }
 };
-
 
 }  // namespace cider_hashtable
