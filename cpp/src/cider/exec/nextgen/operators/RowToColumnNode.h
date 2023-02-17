@@ -48,15 +48,11 @@ class RowToColumnTranslator : public Translator {
   using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
-  void consumeNull(context::CodegenContext& context) override;
 
  private:
   void codegenImpl(SuccessorEmitter successor_wrapper,
                    context::CodegenContext& context,
                    void* successor) override;
-
-  // FIXME: Workaround for null processing
-  bool for_null_{false};
 };
 
 }  // namespace cider::exec::nextgen::operators

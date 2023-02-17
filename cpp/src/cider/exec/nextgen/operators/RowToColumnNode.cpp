@@ -43,7 +43,7 @@ class ColumnWriter {
       , index_(index)
       , arrow_array_len_(arrow_array_len) {}
 
-  void write(bool for_null) {
+  void write() {
     switch (expr_->get_type_info().get_type()) {
       case kBOOLEAN:
       case kTINYINT:
@@ -56,15 +56,15 @@ class ColumnWriter {
       case kTIMESTAMP:
       case kTIME:
       case kDECIMAL:
-        writeFixSizedTypeCol(for_null);
+        writeFixSizedTypeCol();
         break;
       case kVARCHAR:
       case kCHAR:
       case kTEXT:
-        writeVariableSizeTypeCol(for_null);
+        writeVariableSizeTypeCol();
         break;
       case kARRAY:
-        writeVariableSizeArrayCol(for_null);
+        writeVariableSizeArrayCol();
         break;
       default:
         LOG(ERROR) << "Unsupported data type in ColumnWriter: "
@@ -73,17 +73,9 @@ class ColumnWriter {
   }
 
  private:
-  void writeVariableSizeTypeCol(bool for_null) {
+  void writeVariableSizeTypeCol() {
     // Get values need to write
     utils::VarSizeJITExprValue values(expr_->get_expr_value());
-
-    if (for_null) {
-      auto null = setNullBuffer(values.getNull(), for_null);
-      Analyzer::JITExprValueAdaptor(
-          context_.getArrowArrayValues(expr_->getLocalIndex()).second)
-          .setNull(null);
-      return;
-    }
 
     // Allocate buffer
     // offset, need array_len + 1 element.
@@ -136,8 +128,7 @@ class ColumnWriter {
 
     // Save JITValues of output buffers to corresponding exprs.
     buffers_.clear();
-    buffers_.append(
-        setNullBuffer(values.getNull(), for_null), raw_length_buffer, raw_data_buffer);
+    buffers_.append(setNullBuffer(values.getNull()), raw_length_buffer, raw_data_buffer);
   }
 
   // allocate and copy 4 buffers:
@@ -145,17 +136,9 @@ class ColumnWriter {
   // 2.offsets buffer in parent
   // 3.validity bitmap buffer(represent whether the element is null) in child arrow array
   // 4.actual values buffer in child
-  void writeVariableSizeArrayCol(bool for_null) {
+  void writeVariableSizeArrayCol() {
     // Get values need to write
     utils::VarSizeArrayExprValue values(expr_->get_expr_value());
-
-    if (for_null) {
-      auto null = setNullBuffer(values.getNull(), for_null);
-      Analyzer::JITExprValueAdaptor(
-          context_.getArrowArrayValues(expr_->getLocalIndex()).second)
-          .setNull(null);
-      return;
-    }
 
     // allocate offset buffer, need array_len + 1 element.
     auto new_offset_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
@@ -279,24 +262,16 @@ class ColumnWriter {
 
     // Save JITValues of output buffers to corresponding exprs.
     buffers_.clear();
-    buffers_.append(setNullBuffer(values.getNull(), for_null),
+    buffers_.append(setNullBuffer(values.getNull()),
                     values.getLength(),
                     new_elem_null_buffer,
                     raw_data_buffer,
                     values.getOffset());
   }
 
-  void writeFixSizedTypeCol(bool for_null) {
+  void writeFixSizedTypeCol() {
     // Get values need to write
     utils::FixSizeJITExprValue values(expr_->get_expr_value());
-
-    if (for_null) {
-      auto null = setNullBuffer(values.getNull(), for_null);
-      Analyzer::JITExprValueAdaptor(
-          context_.getArrowArrayValues(expr_->getLocalIndex()).second)
-          .setNull(null);
-      return;
-    }
 
     // Allocate buffer.
     // Write value
@@ -304,7 +279,7 @@ class ColumnWriter {
 
     // Save JITValues of output buffers to corresponding exprs.
     buffers_.clear();
-    buffers_.append(setNullBuffer(values.getNull(), for_null), raw_data_buffer);
+    buffers_.append(setNullBuffer(values.getNull()), raw_data_buffer);
   }
 
   JITValuePointer setFixSizeRawData(utils::FixSizeJITExprValue& fixsize_val) {
@@ -337,19 +312,15 @@ class ColumnWriter {
     }
   }
 
-  JITValuePointer setNullBuffer(JITValuePointer& null_val, bool for_null) {
+  JITValuePointer setNullBuffer(JITValuePointer& null_val) {
     // the null_buffer, raw_data_buffer not used anymore.
     // so it doesn't matter whether null_buffer is nullptr
     // or constant false.
     auto null_buffer = JITValuePointer(nullptr);
-    if ((!FLAGS_null_separate || for_null) && !expr_->get_type_info().get_notnull()) {
+    if (!expr_->get_type_info().get_notnull()) {
       // TBD: Null representation, bit-array or bool-array.
       null_buffer.replace(context_.getJITFunction()->createLocalJITValue(
           [this]() { return allocateBitwiseBuffer(0); }));
-      if (for_null) {
-        *null_buffer[index_] = null_val;
-        return null_buffer;
-      }
 
       std::string fname = "set_null_vector_bit";
       if (context_.getCodegenOptions().set_null_bit_vector_opt) {
@@ -406,19 +377,9 @@ TranslatorPtr RowToColumnNode::toTranslator(const TranslatorPtr& succ) {
 }
 
 void RowToColumnTranslator::consume(context::CodegenContext& context) {
-  for_null_ = false;
   codegen(context, [this](context::CodegenContext& context) {
     if (successor_) {
       successor_->consume(context);
-    }
-  });
-}
-
-void RowToColumnTranslator::consumeNull(context::CodegenContext& context) {
-  for_null_ = true;
-  codegen(context, [this](context::CodegenContext& context) {
-    if (successor_) {
-      successor_->consumeNull(context);
     }
   });
 }
@@ -439,16 +400,12 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   for (int64_t i = 0; i < exprs.size(); ++i) {
     ExprPtr& expr = exprs[i];
     ColumnWriter writer(context, expr, output_index, input_array_len);
-    writer.write(for_null_);
+    writer.write();
   }
   // Update index
   output_index = output_index + 1;
 
   successor_wrapper(successor, context);
-
-  if (for_null_) {
-    return;
-  }
 
   // Execute length field updating build function after C2R loop finished.
   prev_c2r_node->registerDeferFunc([output_index, &output_exprs, &context]() mutable {

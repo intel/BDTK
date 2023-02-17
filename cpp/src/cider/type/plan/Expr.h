@@ -171,7 +171,6 @@ class Expr : public std::enable_shared_from_this<Expr> {
  public:
   // change this to pure virtual method after all subclasses support codegen.
   virtual JITExprValue& codegen(CodegenContext& context);
-  virtual JITExprValue& codegenNull(CodegenContext& context);
 
   // for {JITValuePointer, ...}
   template <JITExprValueType type = JITExprValueType::ROW, typename... T>

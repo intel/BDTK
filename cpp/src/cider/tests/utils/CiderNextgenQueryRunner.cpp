@@ -68,7 +68,7 @@ std::string getFileContent(const std::string& file_name) {
 
   ::substrait::Plan plan;
   google::protobuf::util::JsonStringToMessage(json, &plan);
-  return std::move(plan);
+  return plan;
 }
 
 void CiderNextgenQueryRunner::runQueryOneBatch(

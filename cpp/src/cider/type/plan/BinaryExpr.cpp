@@ -19,6 +19,7 @@
  * under the License.
  */
 #include "type/plan/BinaryExpr.h"
+#include <cstddef>
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/template/Execute.h"  // for is_unnest
@@ -57,12 +58,8 @@ int32_t getBinOpRescaledFactor(const SQLOps ops,
     case kMULTIPLY:
       return 0;
     case kDIVIDE:
-    case kMODULO: {
-      if (first_operand)
-        return other_scale + res_scale - self_scale;
-      else
-        return 0;
-    }
+    case kMODULO:
+      return first_operand ? (other_scale + res_scale - self_scale) : 0;
     case kEQ:
     case kBW_EQ:
     case kNE:
@@ -82,8 +79,9 @@ JITValuePointer getRescaledValue(CodegenContext& context,
                                  const int32_t scaled_factor) {
   JITFunction& func = *context.getJITFunction();
   auto operand_val = expr_val.getValue();
-  if (scaled_factor == 0)
+  if (scaled_factor == 0) {
     return operand_val;
+  }
   // only do upscale to keep precision
   CHECK_GT(scaled_factor, 0);
   JITValuePointer scaled_val =
@@ -175,49 +173,6 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
   return expr_var_;
 }
 
-JITExprValue& BinOper::codegenNull(CodegenContext& context) {
-  // JITFunction& func = *context.getJITFunction();
-  // FIXME: how to use cache for not first call
-  // cann't use cache in the first call,
-  // cause codegen() generated null operation need to be updated
-  // if (auto& expr_var = get_expr_value()) {
-  //   return expr_var;
-  // }
-
-  auto lhs = const_cast<Analyzer::Expr*>(get_left_operand());
-  auto rhs = const_cast<Analyzer::Expr*>(get_right_operand());
-
-  if (is_unnest(lhs) || is_unnest(rhs)) {
-    CIDER_THROW(CiderCompileException, "Unnest not supported in comparisons");
-  }
-
-  const auto& lhs_ti = lhs->get_type_info();
-  const auto& rhs_ti = rhs->get_type_info();
-  if (lhs_ti.is_string()) {
-    CHECK(rhs_ti.is_string());
-  } else {
-    CHECK_EQ(lhs_ti.get_type(), rhs_ti.get_type());
-  }
-  if (lhs_ti.is_decimal() || lhs_ti.is_timeinterval()) {
-    CIDER_THROW(CiderCompileException,
-                "Decimal and TimeInterval are not supported in arithmetic codegen now.");
-  }
-  if (lhs_ti.is_string()) {
-    // string binops, should only be comparisons
-    // const auto optype = get_optype();
-    UNIMPLEMENTED();
-  } else {
-    // primitive type binops
-    JITExprValueAdaptor lhs_val(lhs->codegenNull(context));
-    JITExprValueAdaptor rhs_val(rhs->codegenNull(context));
-
-    // FIXME: propagate null, don't support kleene logic operation
-    return set_expr_null(lhs_val.getNull() && rhs_val.getNull());
-  }
-  UNREACHABLE();
-  return expr_var_;
-}
-
 JITValuePointer BinOper::codegenArithWithErrorCheck(JITValuePointer lhs,
                                                     JITValuePointer rhs) {
   switch (get_optype()) {
@@ -234,6 +189,7 @@ JITValuePointer BinOper::codegenArithWithErrorCheck(JITValuePointer lhs,
     default:
       UNREACHABLE();
   }
+  return JITValuePointer(nullptr);
 }
 
 JITExprValue& BinOper::codegenFixedSizeColArithFun(CodegenContext& context,
@@ -400,6 +356,7 @@ JITExprValue& BinOper::codegenFixedSizeDistinctFrom(JITFunction& func,
     default:
       UNREACHABLE();
   }
+  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenVarcharCmpFun(JITFunction& func,
@@ -450,14 +407,15 @@ JITExprValue& BinOper::codegenVarcharDistinctFrom(JITFunction& func,
       (!lhs.getNull() && !rhs.getNull() && cmp_res) || (lhs.getNull() != rhs.getNull());
   switch (get_optype()) {
     case kBW_NE: {
-      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), value);
+      return set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), value);
     }
     case kBW_EQ: {
-      return set_expr_value(func.createConstant(JITTypeTag::BOOL, false), !value);
+      return set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), !value);
     }
     default:
       UNREACHABLE();
   }
+  return expr_var_;
 }
 
 }  // namespace Analyzer
