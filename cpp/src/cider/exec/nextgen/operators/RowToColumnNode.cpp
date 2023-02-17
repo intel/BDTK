@@ -90,7 +90,14 @@ class ColumnWriter {
     auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
       auto bytes = (arrow_array_len_ + 1) *
                    context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
-      return allocateRawDataBuffer(1, bytes);
+      auto length_buffer = allocateRawDataBuffer(1, bytes);
+
+      // init offset[0] = 0;
+      auto length_buffer_i32 = length_buffer->castPointerSubType(JITTypeTag::INT32);
+      auto literal_0 = context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 0);
+      length_buffer_i32[*literal_0] = *literal_0;
+
+      return length_buffer;
     });
 
     auto actual_raw_length_buffer =

@@ -72,8 +72,8 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
   engine->engine->RegisterJITEventListener(
       llvm::JITEventListener::createIntelJITEventListener());
 
-  LOG(INFO) << "Enabled features: "
-            << engine->engine->getTargetMachine()->getTargetFeatureString().str();
+  DLOG(INFO) << "Enabled features: "
+             << engine->engine->getTargetMachine()->getTargetFeatureString().str();
 
   engine->engine->finalizeObject();
 
