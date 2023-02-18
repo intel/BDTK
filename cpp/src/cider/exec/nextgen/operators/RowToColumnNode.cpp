@@ -158,13 +158,16 @@ class ColumnWriter {
     }
 
     // allocate offset buffer, need array_len + 1 element.
-    auto new_offset_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+    auto new_offset_bufferi32 = context_.getJITFunction()->createLocalJITValue([this]() {
       auto offsets_bytes_num =
           (arrow_array_len_ + 1) *
           context_.getJITFunction()->createLiteral(JITTypeTag::INT64, 4);
-      return allocateRawDataBuffer(1, offsets_bytes_num);
+      auto new_offset_buffer = allocateRawDataBuffer(1, offsets_bytes_num)
+                                   ->castPointerSubType(JITTypeTag::INT32);
+      auto literal_0 = context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 0);
+      new_offset_buffer[*literal_0] = *literal_0;
+      return new_offset_buffer;
     });
-    auto new_offset_bufferi32 = new_offset_buffer->castPointerSubType(JITTypeTag::INT32);
 
     // allocate validity bitmap in child array
     // reallocate buffer on demand
