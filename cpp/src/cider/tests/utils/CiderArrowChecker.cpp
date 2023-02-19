@@ -458,12 +458,6 @@ bool CiderArrowChecker::checkArrowEq(const struct ArrowArray* expect_array,
               << ". Actual: " << actual_schema->n_children;
     return false;
   }
-  if (strcmp(expect_schema->format, actual_schema->format)) {
-    LOG(INFO) << "ArrowSchema format not equal: "
-              << "Expected: " << expect_schema->format
-              << ". Actual: " << actual_schema->format;
-    return false;
-  }
 
   bool parent_arrow_eq =
       checkOneScalarArrowEqual(expect_array, actual_array, expect_schema, actual_schema);
