@@ -475,10 +475,10 @@ bool CiderArrowChecker::checkArrowEq(const struct ArrowArray* expect_array,
     // duck db schema makes all int type as decimal
     // which does not keep consistency which our schema
     // so temp workaround by making actual schema as reference
-    bool child_arrow_eq = checkOneScalarArrowEqual(expect_array->children[i],
-                                                   actual_array->children[i],
-                                                   expect_schema->children[i],
-                                                   actual_schema->children[i]);
+    bool child_arrow_eq = checkArrowEq(expect_array->children[i],
+                                       actual_array->children[i],
+                                       expect_schema->children[i],
+                                       actual_schema->children[i]);
     if (!child_arrow_eq) {
       return false;
     }
