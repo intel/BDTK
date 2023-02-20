@@ -20,11 +20,11 @@
  * under the License.
  */
 
+#include "function/scalar/RuntimeFunctions.h"
 #include "exec/template/BufferCompaction.h"
 #include "exec/template/HyperLogLogRank.h"
 #include "exec/template/TypePunning.h"
 #include "function/hash/MurmurHash.h"
-#include "function/scalar/RuntimeFunctions.h"
 #include "type/data/funcannotations.h"
 #include "util/CiderBitUtils.h"
 #include "util/quantile.h"
@@ -1467,7 +1467,8 @@ get_str_length_from_dictionary_or_buffer(int8_t* dictionary,
     const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
         reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
     int32_t index_in_dict = offset_buffer[index];
-    int len = actual_offset_buffer[index_in_dict + 1] - actual_offset_buffer[index_in_dict];
+    int len =
+        actual_offset_buffer[index_in_dict + 1] - actual_offset_buffer[index_in_dict];
     return len;
   } else {
     return offset_buffer[index + 1] - offset_buffer[index];

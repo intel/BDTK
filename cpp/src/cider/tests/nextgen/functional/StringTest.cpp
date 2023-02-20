@@ -481,13 +481,12 @@ class CiderTrimOpTestNextGen : public CiderNextgenTestBase {
                                                "   3456789",
                                                "   3      ",
                                                "   3      ",
-                                                 "",
+                                               "",
                                                "",
                                                "0123456   ",
                                                "0123456   ",
                                                "xxx3456   ",
-                                               "xxx3456   "
-                                             };
+                                               "xxx3456   "};
     auto is_null = std::vector<bool>{
         false, true, false, true, false, true, false, true, false, true, false, true};
     auto [vc_data, vc_offsets] =
