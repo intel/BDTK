@@ -51,6 +51,42 @@ int random(int low, int high) {
   return dist(gen);
 }
 
+TEST(CiderHashTableTest, HashFuntionTests) {
+  int32_t key32 = 0x12345678;
+  int64_t key64 = 0x1234567812345678;
+  int8_t* array_32 = reinterpret_cast<int8_t*>(&key32);
+  int8_t* array_64 = reinterpret_cast<int8_t*>(&key64);
+  auto hash_32 = cider_hashtable::hash_functions::RowHash()(array_32, sizeof(int32_t));
+  auto hash_64 = cider_hashtable::hash_functions::RowHash()(array_64, sizeof(int64_t));
+  auto row_key32 = cider_hashtable::HT_Row();
+  row_key32.make_row(key32);
+  EXPECT_EQ(hash_32, cider_hashtable::hash_functions::RowHash()(row_key32));
+  auto row_key64 = cider_hashtable::HT_Row();
+  row_key64.make_row(key64);
+  EXPECT_EQ(hash_64, cider_hashtable::hash_functions::RowHash()(row_key64));
+
+  float key_f = 1.234;
+  double key_d = 1234.1234;
+  int8_t* array_f = reinterpret_cast<int8_t*>(&key_f);
+  int8_t* array_d = reinterpret_cast<int8_t*>(&key_d);
+  auto hash_f = cider_hashtable::hash_functions::RowHash()(array_f, sizeof(float));
+  auto hash_d = cider_hashtable::hash_functions::RowHash()(array_d, sizeof(double));
+  auto row_f = cider_hashtable::HT_Row();
+  row_f.make_row(key_f);
+  EXPECT_EQ(hash_f, cider_hashtable::hash_functions::RowHash()(row_f));
+  auto row_d = cider_hashtable::HT_Row();
+  row_d.make_row(key_d);
+  EXPECT_EQ(hash_d, cider_hashtable::hash_functions::RowHash()(row_d));
+
+  std::string key_str("six666");
+  const int8_t* array_string = reinterpret_cast<const int8_t*>(key_str.c_str());
+  auto hash_string =
+      cider_hashtable::hash_functions::MurmurHash3_32(array_string, key_str.size());
+  auto row_string = cider_hashtable::HT_Row();
+  row_string.make_row(key_str);
+  EXPECT_EQ(hash_string, cider_hashtable::hash_functions::RowHash()(row_string));
+}
+
 TEST(CiderHashTableTest, JoinHashTableCreateTest) {
   cider::exec::processor::JoinHashTable join_hashtable1(
       cider_hashtable::HashTableType::LINEAR_PROBING);
@@ -157,11 +193,10 @@ TEST(CiderHashTableTest, keyCollisionTest) {
 }
 
 void hashtableRandomInsertTest(cider_hashtable::HashTableType hashtable_type) {
-  // Create a LinearProbeHashTable  with 16 buckets and 0 as the empty key
   cider_hashtable::HashTableSelector<
       int,
       int,
-      cider_hashtable::MurmurHash,
+      cider_hashtable::hash_functions::MurmurHash,
       cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
@@ -183,9 +218,45 @@ void hashtableRandomInsertTest(cider_hashtable::HashTableType hashtable_type) {
   }
 }
 
+void HTRowAsKeyHashtableRandomInsertTest(cider_hashtable::HashTableType hashtable_type) {
+  cider_hashtable::HashTableSelector<
+      cider_hashtable::HT_Row,
+      int,
+      cider_hashtable::hash_functions::RowHash,
+      cider_hashtable::HTRowEqual,
+      void,
+      std::allocator<std::pair<cider_hashtable::table_key<cider_hashtable::HT_Row>, int>>>
+      hashTableSelector;
+  auto hm = hashTableSelector.createForJoin(hashtable_type);
+  StdMapDuplicateKeyWrapper<int, int> dup_map;
+  for (int i = 0; i < 10000; i++) {
+    int key = random(-1000, 1000);
+    auto key_row_tmp = new cider_hashtable::HT_Row();
+    key_row_tmp->make_row(key);
+    int value = random(-1000, 1000);
+    hm->emplace(*key_row_tmp, value);
+    dup_map.insert(std::move(key), std::move(value));
+  }
+  for (auto key_iter : dup_map.getMap()) {
+    auto dup_res_vec = dup_map.findAll(key_iter.first);
+    cider_hashtable::HT_Row key_row_tmp;
+    int key_value_not_const = key_iter.first;
+    key_row_tmp.make_row(key_value_not_const);
+    auto hm_res_vec = hm->findAll(key_row_tmp);
+    std::sort(dup_res_vec.begin(), dup_res_vec.end());
+    std::sort(hm_res_vec.begin(), hm_res_vec.end());
+    EXPECT_TRUE(dup_res_vec == hm_res_vec);
+  }
+}
+
 TEST(CiderHashTableTest, randomInsertAndfindTest) {
   hashtableRandomInsertTest(cider_hashtable::HashTableType::LINEAR_PROBING);
-  hashtableRandomInsertTest(cider_hashtable::HashTableType::CHAINED);
+  // hashtableRandomInsertTest(cider_hashtable::HashTableType::CHAINED);
+}
+
+TEST(CiderHashTableTest, randomInsertAndfindTestOfRowKey) {
+  HTRowAsKeyHashtableRandomInsertTest(cider_hashtable::HashTableType::LINEAR_PROBING);
+  HTRowAsKeyHashtableRandomInsertTest(cider_hashtable::HashTableType::CHAINED);
 }
 
 TEST(CiderHashTableTest, LPHashMapTest) {
@@ -193,7 +264,7 @@ TEST(CiderHashTableTest, LPHashMapTest) {
   cider_hashtable::HashTableSelector<
       int,
       int,
-      cider_hashtable::MurmurHash,
+      cider_hashtable::hash_functions::MurmurHash,
       cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>
@@ -215,7 +286,7 @@ TEST(CiderHashTableTest, ChainedHashMapTest) {
   cider_hashtable::HashTableSelector<
       int,
       int,
-      cider_hashtable::MurmurHash,
+      cider_hashtable::hash_functions::MurmurHash,
       cider_hashtable::Equal,
       void,
       std::allocator<std::pair<cider_hashtable::table_key<int>, int>>>

@@ -23,6 +23,7 @@
 #include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderChainedHashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
+#include "exec/operator/join/HashFunctions.h"
 #include "exec/operator/join/HashTableSelector.h"
 
 namespace cider::exec::processor {
@@ -32,18 +33,18 @@ struct BatchAndOffset {
   int64_t batch_offset;
 };
 
-using CiderJoinBaseKey = int;
+using CiderJoinBaseKey = cider_hashtable::HT_Row;
 using CiderJoinBaseValue = BatchAndOffset;
 
-#define LP_TEMPLATE                                                  \
-  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::MurmurHash, \
-      cider_hashtable::Equal, void,                                  \
-      std::allocator<                                                \
+#define LP_TEMPLATE                                                               \
+  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::hash_functions::RowHash, \
+      cider_hashtable::HTRowEqual, void,                                          \
+      std::allocator<                                                             \
           std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>
-#define CHAINED_TEMPLATE                                             \
-  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::MurmurHash, \
-      cider_hashtable::Equal, void,                                  \
-      std::allocator<                                                \
+#define CHAINED_TEMPLATE                                                          \
+  CiderJoinBaseKey, CiderJoinBaseValue, cider_hashtable::hash_functions::RowHash, \
+      cider_hashtable::HTRowEqual, void,                                          \
+      std::allocator<                                                             \
           std::pair<cider_hashtable::table_key<CiderJoinBaseKey>, CiderJoinBaseValue>>
 
 using JoinLPHashTable = cider_hashtable::BaseHashTable<LP_TEMPLATE>;
@@ -65,9 +66,11 @@ class JoinHashTable {
   void merge_other_hashtables(
       std::vector<std::unique_ptr<JoinHashTable>>& otherJoinTables);
 
-  bool emplace(CiderJoinBaseKey key, CiderJoinBaseValue value);
+  // todo: template
+  bool emplace(int key, CiderJoinBaseValue value);
 
-  std::vector<CiderJoinBaseValue> findAll(const CiderJoinBaseKey key);
+  // todo: template
+  std::vector<CiderJoinBaseValue> findAll(const int key);
 
   size_t size();
 

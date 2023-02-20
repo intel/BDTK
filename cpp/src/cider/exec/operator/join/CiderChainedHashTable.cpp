@@ -74,7 +74,7 @@ bool ChainedHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::contains_i
   size_t idx = key_to_idx(key);
   std::vector<value_type> slot = buckets_[idx];
   for (auto element : slot) {
-    if (element.first.key == key) {
+    if (key_equal()(element.first.key, key)) {
       return true;
     }
   }
@@ -94,7 +94,7 @@ Value ChainedHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::find_impl
   size_t idx = key_to_idx(key);
   std::vector<value_type> slot = buckets_[idx];
   for (auto element : slot) {
-    if (element.first.key == key) {
+    if (key_equal()(element.first.key, key)) {
       return element.second;
     }
   }
@@ -115,7 +115,7 @@ ChainedHashTable<Key, Value, Hash, KeyEqual, Grower, Allocator>::find_all_impl(
   size_t idx = key_to_idx(key);
   std::vector<value_type> slot = buckets_[idx];
   for (auto element : slot) {
-    if (element.first.key == key) {
+    if (key_equal()(element.first.key, key)) {
       result.push_back(element.second);
     }
   }

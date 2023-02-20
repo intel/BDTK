@@ -36,7 +36,7 @@ Disadvantages:
 #include <stdexcept>
 #include <vector>
 #include "exec/operator/join/BaseHashTable.h"
-#include "exec/operator/join/HashTableUtils.h"
+#include "exec/operator/join/HashFunctions.h"
 
 namespace cider_hashtable {
 
