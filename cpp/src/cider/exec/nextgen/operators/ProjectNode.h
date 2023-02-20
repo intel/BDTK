@@ -41,11 +41,9 @@ class ProjectTranslator : public Translator {
   using Translator::Translator;
 
   void consume(context::CodegenContext& context) override;
-  void consumeNull(context::CodegenContext& context) override;
 
  private:
   void codegen(context::CodegenContext& context);
-  void codegenNull(context::CodegenContext& context);
 };
 }  // namespace cider::exec::nextgen::operators
 #endif  // NEXTGEN_OPERATORS_PROJECTNODE_H

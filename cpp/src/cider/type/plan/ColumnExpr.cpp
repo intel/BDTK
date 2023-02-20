@@ -30,9 +30,6 @@ void ColumnVar::initAutoVectorizeFlag() {
 JITExprValue& ColumnVar::codegen(CodegenContext& context) {
   return get_expr_value();
 }
-JITExprValue& ColumnVar::codegenNull(CodegenContext& context) {
-  return get_expr_value();
-}
 
 JITExprValue& OutputColumnVar::codegen(CodegenContext& context) {
   if (auto& expr_value = get_expr_value()) {

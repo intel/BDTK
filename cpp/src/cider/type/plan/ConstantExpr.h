@@ -78,7 +78,6 @@ class Constant : public Expr {
   std::string toString() const override;
 
   JITExprValue& codegen(CodegenContext& context) override;
-  JITExprValue& codegenNull(CodegenContext& context) override;
 
   ExprPtrRefVector get_children_reference() override { return {}; }
 

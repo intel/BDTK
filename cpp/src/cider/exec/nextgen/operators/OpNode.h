@@ -82,7 +82,6 @@ class Translator {
   virtual ~Translator() = default;
 
   virtual void consume(context::CodegenContext& context) = 0;
-  virtual void consumeNull(context::CodegenContext& context) { UNIMPLEMENTED(); }
 
   OpNodePtr getOpNode() { return node_; }
 

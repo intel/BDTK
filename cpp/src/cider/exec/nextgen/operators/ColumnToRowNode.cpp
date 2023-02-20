@@ -35,7 +35,7 @@ class ColumnReader {
   ColumnReader(context::CodegenContext& ctx, ExprPtr& expr, JITValuePointer& index)
       : context_(ctx), expr_(expr), index_(index) {}
 
-  void read(bool for_null) {
+  void read() {
     switch (expr_->get_type_info().get_type()) {
       case kBOOLEAN:
       case kTINYINT:
@@ -48,15 +48,15 @@ class ColumnReader {
       case kTIME:
       case kTIMESTAMP:
       case kDECIMAL:
-        readFixSizedTypeCol(for_null);
+        readFixSizedTypeCol();
         break;
       case kVARCHAR:
       case kCHAR:
       case kTEXT:
-        readVariableSizeTypeCol(for_null);
+        readVariableSizeTypeCol();
         break;
       case kARRAY:
-        readVariableSizeArrayCol(for_null);
+        readVariableSizeArrayCol();
         break;
       default:
         LOG(ERROR) << "Unsupported data type in ColumnReader: "
@@ -65,21 +65,11 @@ class ColumnReader {
   }
 
  private:
-  void readVariableSizeTypeCol(bool for_null) {
+  void readVariableSizeTypeCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeJITExprValue varsize_values(buffers);
 
     auto& func = batch->getParentJITFunction();
-
-    if (for_null) {
-      if (expr_->get_type_info().get_notnull()) {
-        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
-      } else {
-        auto row_null_data = varsize_values.getNull()[index_];
-        expr_->set_expr_null(row_null_data);
-      }
-      return;
-    }
 
     // offset buffer
     auto offset_pointer =
@@ -90,7 +80,7 @@ class ColumnReader {
     auto value_pointer = varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8);
     auto row_data = value_pointer + cur_offset;  // still char*
 
-    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
+    if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), len, row_data);
     } else {
       // null buffer decoder
@@ -121,21 +111,11 @@ class ColumnReader {
   //| false    | 4          | 101111               | <0, -127,0, 50>| 3          |
   //|----------|------------|----------------------|----------------|------------|
   //| false    | 0          | 101111               | <>             | 7          |
-  void readVariableSizeArrayCol(bool for_null) {
+  void readVariableSizeArrayCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeArrayExprValue varsize_values(buffers);
 
     auto& func = batch->getParentJITFunction();
-
-    if (for_null) {
-      if (expr_->get_type_info().get_notnull()) {
-        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
-      } else {
-        auto row_null_data = varsize_values.getNull()[index_];
-        expr_->set_expr_null(row_null_data);
-      }
-      return;
-    }
 
     // offset buffer
     auto offset_pointer =
@@ -150,7 +130,7 @@ class ColumnReader {
     auto col_null_pointer =
         varsize_values.getElemNull()->castPointerSubType(JITTypeTag::INT8);
 
-    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
+    if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false),
                             len,
                             col_null_pointer,
@@ -168,24 +148,14 @@ class ColumnReader {
     }
   }
 
-  void readFixSizedTypeCol(bool for_null) {
+  void readFixSizedTypeCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::FixSizeJITExprValue fixsize_values(buffers);
 
     auto& func = batch->getParentJITFunction();
 
-    if (for_null) {
-      if (expr_->get_type_info().get_notnull()) {
-        expr_->set_expr_null(func.createLiteral(JITTypeTag::BOOL, false));
-      } else {
-        auto row_null_data = fixsize_values.getNull()[index_];
-        expr_->set_expr_value(row_null_data);
-      }
-      return;
-    }
-
     auto row_data = getFixSizeRowData(func, fixsize_values);
-    if ((FLAGS_null_separate && !for_null) || expr_->get_type_info().get_notnull()) {
+    if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), row_data);
     } else {
       // null buffer decoder
@@ -233,15 +203,8 @@ TranslatorPtr ColumnToRowNode::toTranslator(const TranslatorPtr& succ) {
 }
 
 void ColumnToRowTranslator::consume(context::CodegenContext& context) {
-  for_null_ = false;
   codegen(context,
           [this](context::CodegenContext& context) { successor_->consume(context); });
-}
-
-void ColumnToRowTranslator::consumeNull(context::CodegenContext& context) {
-  for_null_ = true;
-  codegen(context,
-          [this](context::CodegenContext& context) { successor_->consumeNull(context); });
 }
 
 void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
@@ -260,29 +223,19 @@ void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   auto len = func->createLocalJITValue([&input_array]() {
     return context::codegen_utils::getArrowArrayLength(input_array);
   });
-  if (!for_null_) {
-    static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
-  }
-  auto idx_upper = func->createVariable(JITTypeTag::INT64, "idx_upper", len);
-  if (for_null_) {
-    // pack 8 bit
-    idx_upper = len / 8 + 1;
-  }
+  static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
 
   func->createLoopBuilder()
-      ->condition([&index, &idx_upper]() { return index < idx_upper; })
+      ->condition([&index, &len]() { return index < len; })
       ->loop([&](LoopBuilder*) {
         for (auto& input : inputs) {
-          ColumnReader(context, input, index).read(for_null_);
+          ColumnReader(context, input, index).read();
         }
         successor_wrapper(successor, context);
       })
       ->update([&index]() { index = index + 1l; })
       ->build();
 
-  if (for_null_) {
-    return;
-  }
   // Execute defer build functions.
   auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
   for (auto& defer_func : c2r_node->getDeferFunctions()) {

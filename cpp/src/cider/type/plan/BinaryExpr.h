@@ -151,7 +151,6 @@ class BinOper : public Expr {
   }
 
   JITExprValue& codegen(CodegenContext& context) override;
-  JITExprValue& codegenNull(CodegenContext& context) override;
 
   JITExprValue& codegenFixedSizeColArithFun(CodegenContext& context,
                                             JITValuePointer null,
