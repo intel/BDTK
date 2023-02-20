@@ -68,13 +68,9 @@ class ColumnReader {
   void readVariableSizeTypeCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeJITExprValue varsize_values(buffers);
-
     auto& func = batch->getParentJITFunction();
-
     auto dictionary =
         varsize_values.getDictionary()->castPointerSubType(JITTypeTag::INT8);
-
-    auto ifBuilder = func.createIfBuilder();
 
     JITValuePointer len = func.emitRuntimeFunctionCall(
         "get_str_length_from_dictionary_or_buffer",
