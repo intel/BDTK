@@ -330,12 +330,7 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
     return false;
   }
 
-  if (expect_schema->n_children != 0 || actual_schema->n_children != 0) {
-    LOG(INFO) << "checkOneScalarArrowEqual only support ArrowSchema without children";
-    return false;
-  }
-
-  if (expect_schema->format != actual_schema->format) {
+  if (std::string(expect_schema->format) != std::string(actual_schema->format)) {
     LOG(INFO) << "ArrowSchema format not equal: "
               << "Expected: " << expect_schema->format
               << ". Actual: " << actual_schema->format;
@@ -345,11 +340,6 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
 
   if (!expect_array || !actual_array) {
     LOG(INFO) << "One or more Arrowarray are null in checkOneScalarArrowEqual.";
-    return false;
-  }
-
-  if (expect_array->n_children != 0 || actual_array->n_children != 0) {
-    LOG(INFO) << "checkOneScalarArrowEqual only support ArrowArray without children";
     return false;
   }
 
@@ -412,6 +402,17 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
       }
       LOG(ERROR) << "Not supported time type";
     }
+    case '+': {
+      switch (expect_schema->format[1]) {
+        case 's':
+          return true;
+        case 'l':
+          return checkArrowBuffer<int32_t>(expect_array, actual_array);
+        default:
+          LOG(ERROR) << "ArrowArray value buffer check not support for type: "
+                     << expect_schema->format;
+      }
+    } break;
     case 'u':
       return checkArrowStringBuffer(expect_array, actual_array);
     case 'e':
@@ -457,23 +458,21 @@ bool CiderArrowChecker::checkArrowEq(const struct ArrowArray* expect_array,
               << ". Actual: " << actual_schema->n_children;
     return false;
   }
-  if (strcmp(expect_schema->format, actual_schema->format)) {
-    LOG(INFO) << "ArrowSchema format not equal: "
-              << "Expected: " << expect_schema->format
-              << ". Actual: " << actual_schema->format;
+
+  bool parent_arrow_eq =
+      checkOneScalarArrowEqual(expect_array, actual_array, expect_schema, actual_schema);
+  if (!parent_arrow_eq) {
     return false;
   }
 
-  if (expect_array->n_children == 0) {
-    return checkOneScalarArrowEqual(
-        expect_array, actual_array, expect_schema, actual_schema);
-  }
-
   for (int64_t i = 0; i < expect_array->n_children; i++) {
-    bool child_arrow_eq = checkOneScalarArrowEqual(expect_array->children[i],
-                                                   actual_array->children[i],
-                                                   expect_schema->children[i],
-                                                   actual_schema->children[i]);
+    // duck db schema makes all int type as decimal
+    // which does not keep consistency which our schema
+    // so temp workaround by making actual schema as reference
+    bool child_arrow_eq = checkArrowEq(expect_array->children[i],
+                                       actual_array->children[i],
+                                       expect_schema->children[i],
+                                       actual_schema->children[i]);
     if (!child_arrow_eq) {
       return false;
     }
