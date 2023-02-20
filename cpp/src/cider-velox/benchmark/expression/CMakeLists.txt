@@ -31,3 +31,6 @@ set(TEST_ARGS "")
 
 add_executable(ArithmeticAndComparison ArithmeticAndComparison.cpp)
 target_link_libraries(ArithmeticAndComparison ${EXPRESSION_TEST_LIBS})
+
+add_executable(PipelineOperator PipelineOperator.cpp)
+target_link_libraries(PipelineOperator ${EXPRESSION_TEST_LIBS})
