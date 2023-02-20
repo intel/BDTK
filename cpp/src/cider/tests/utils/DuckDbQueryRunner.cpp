@@ -305,9 +305,18 @@ template <>
         CIDER_THROW(CiderException, "not supported time type to gen duck value");        \
       }                                                                                  \
       case 'u': {                                                                        \
-        return duckValueVarcharAt(static_cast<const int8_t*>(child_array->buffers[2]),   \
-                                  static_cast<const int32_t*>(child_array->buffers[1]),  \
-                                  row_idx);                                              \
+        if (child_array->dictionary) {                                                   \
+          int32_t offset = ((int32_t*)(child_array->buffers[1]))[row_idx];               \
+          return duckValueVarcharAt(                                                     \
+              static_cast<const int8_t*>(child_array->dictionary->buffers[2]),           \
+              static_cast<const int32_t*>(child_array->dictionary->buffers[1]),          \
+              offset);                                                                   \
+        } else {                                                                         \
+          return duckValueVarcharAt(                                                     \
+              static_cast<const int8_t*>(child_array->buffers[2]),                       \
+              static_cast<const int32_t*>(child_array->buffers[1]),                      \
+              row_idx);                                                                  \
+        }                                                                                \
       }                                                                                  \
       default:                                                                           \
         CIDER_THROW(CiderException, "not supported type to gen duck value");             \

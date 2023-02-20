@@ -20,6 +20,8 @@
  */
 
 #include <gtest/gtest.h>
+#include <ctime>
+#include <iostream>
 #include "exec/nextgen/Nextgen.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 
@@ -51,16 +53,21 @@ using namespace cider::exec::nextgen;
     ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '22%22'");                      \
     ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '_33%'");                       \
     ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '44_%'");                       \
+    ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'", \
+                "",                                                                      \
+                true);                                                                   \
     ASSERT_FUNC(                                                                         \
-        "SELECT col_2 FROM test where col_2 LIKE '5555%' OR col_2 LIKE '%6666'");        \
-    ASSERT_FUNC(                                                                         \
-        "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'");       \
+        "SELECT col_2 FROM test where col_2 LIKE '7777%' AND col_2 LIKE '%8888'",        \
+        "",                                                                              \
+        true);                                                                           \
     ASSERT_FUNC("SELECT col_2 FROM test where col_2 LIKE '%1111'", "like_wo_cast.json"); \
     ASSERT_FUNC("SELECT col_2 FROM test where col_2 NOT LIKE '1111%'");                  \
     ASSERT_FUNC("SELECT col_2 FROM test where col_2 NOT LIKE '44_4444444'");             \
     ASSERT_FUNC(                                                                         \
         "SELECT col_2 FROM test where col_2 NOT LIKE '44_4%' and col_2 NOT LIKE "        \
-        "'%111%'");                                                                      \
+        "'%111%'",                                                                       \
+        "",                                                                              \
+        true);                                                                           \
   }
 
 #define ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, ASSERT_FUNC)        \
@@ -73,84 +80,126 @@ using namespace cider::exec::nextgen;
   TEST_F(TEST_CLASS, UNIT_NAME) {                                                       \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE col_2 IN ('0000000000', '1111111111', '2222222222')", \
-        "in_string_array.json");                                                        \
+        "in_string_array.json",                                                         \
+        true);                                                                          \
     ASSERT_FUNC("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111')",  \
-                "in_string_2_array_with_substr.json");                                  \
+                "in_string_2_array_with_substr.json",                                   \
+                true);                                                                  \
     ASSERT_FUNC("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111')",  \
-                "in_string_2_array_with_substring.json");                               \
+                "in_string_2_array_with_substring.json",                                \
+                true);                                                                  \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
-        "in_string_array_with_substr.json");                                            \
+        "in_string_array_with_substr.json",                                             \
+        true);                                                                          \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE SUBSTRING(col_2, 1, 4) IN ('0000', '1111', '2222', "  \
         "'3333')",                                                                      \
-        "in_string_array_with_substring.json");                                         \
+        "in_string_array_with_substring.json",                                          \
+        true);                                                                          \
     ASSERT_FUNC(                                                                        \
         "SELECT * FROM test WHERE col_1 >= 0 and SUBSTRING(col_2, 1, 4) IN "            \
         "('0000', '1111', '2222', '3333')",                                             \
-        "in_string_nest_with_binop.json");                                              \
+        "in_string_nest_with_binop.json",                                               \
+        true);                                                                          \
   }
 
-#define BASIC_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+#define BASIC_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
   BASIC_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
-#define LIKE_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+#define LIKE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
   LIKE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
-#define ESCAPE_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+#define ESCAPE_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
   ESCAPE_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
-#define IN_STRING_TEST_UNIT_ARROW(TEST_CLASS, UNIT_NAME) \
+#define IN_STRING_TEST_UNIT(TEST_CLASS, UNIT_NAME) \
   IN_STRING_TEST_UNIT_BASE(TEST_CLASS, UNIT_NAME, assertQuery)
 
 // basic string functionalities
 
-class CiderStringTestNextGen : public CiderNextgenTestBase {
+class CiderDictStringTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderStringTestNextGen() {
+  CiderDictStringTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL);)";
 
+    int row_num = 50;
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = std::rand() % row_num;
+    }
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        dictSchema, dictArray, row_num, {"dict"}, {CREATE_SUBSTRAIT_TYPE(Varchar)});
     QueryArrowDataGenerator::generateBatchByTypes(
         input_schema_,
         input_array_,
-        50,
+        row_num,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {0, 0},
         GeneratePattern::Sequence,
         0,
         10);
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
   }
 };
 
-class CiderStringRandomTestNextGen : public CiderNextgenTestBase {
+class CiderDictStringRandomTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderStringRandomTestNextGen() {
+  CiderDictStringRandomTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER, col_2 VARCHAR(10));)";
 
+    int row_num = 30;
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = std::rand() % row_num;
+    }
+    QueryArrowDataGenerator::generateBatchByTypes(
+        dictSchema, dictArray, row_num, {"dict"}, {CREATE_SUBSTRAIT_TYPE(Varchar)});
     QueryArrowDataGenerator::generateBatchByTypes(
         input_schema_,
         input_array_,
-        30,
+        row_num,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {2, 2},
         GeneratePattern::Random,
         0,
         10);
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
   }
 };
 
-class CiderStringNullableTestNextGen : public CiderNextgenTestBase {
+class CiderDictStringNullableTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderStringNullableTestNextGen() {
+  CiderDictStringNullableTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_1 INTEGER , col_2 VARCHAR(10) );)";
 
+    int row_num = 50;
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = std::rand() % row_num;
+    }
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        dictSchema, dictArray, row_num, {"dict"}, {CREATE_SUBSTRAIT_TYPE(Varchar)});
     QueryArrowDataGenerator::generateBatchByTypes(
         input_schema_,
         input_array_,
@@ -161,142 +210,28 @@ class CiderStringNullableTestNextGen : public CiderNextgenTestBase {
         GeneratePattern::Sequence,
         0,
         10);
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
   }
 };
 
-BASIC_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, BasicStringTest)
-LIKE_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, LikeStringTest)
-ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, EscapeStringTest)
-IN_STRING_TEST_UNIT_ARROW(CiderStringTestNextGen, InStringTest)
+BASIC_STRING_TEST_UNIT(CiderDictStringTestNextGen, BasicStringTest)
+LIKE_STRING_TEST_UNIT(CiderDictStringTestNextGen, LikeStringTest)
+ESCAPE_STRING_TEST_UNIT(CiderDictStringTestNextGen, EscapeStringTest)
+IN_STRING_TEST_UNIT(CiderDictStringTestNextGen, InStringTest)
 
-BASIC_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, BasicRandomStringTest)
-LIKE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, LikeRandomStringTest)
-ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, EscapeRandomStringTest)
-IN_STRING_TEST_UNIT_ARROW(CiderStringRandomTestNextGen, InRandomStringTest)
+BASIC_STRING_TEST_UNIT(CiderDictStringRandomTestNextGen, BasicRandomStringTest)
+LIKE_STRING_TEST_UNIT(CiderDictStringRandomTestNextGen, LikeRandomStringTest)
+ESCAPE_STRING_TEST_UNIT(CiderDictStringRandomTestNextGen, EscapeRandomStringTest)
+IN_STRING_TEST_UNIT(CiderDictStringRandomTestNextGen, InRandomStringTest)
 
-BASIC_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, BasicStringTest)
-LIKE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, LikeStringTest)
-ESCAPE_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, EscapeStringTest)
-IN_STRING_TEST_UNIT_ARROW(CiderStringNullableTestNextGen, InStringTest)
-
-// duplicate string
-
-class CiderDuplicateStringTestNextGen : public CiderNextgenTestBase {
- public:
-  CiderDuplicateStringTestNextGen() {
-    table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_1 VARCHAR(10), col_2 VARCHAR(10));)";
-
-    std::string str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
-    std::vector<int> offset1{0, 7, 15, 15, 22, 25, 33, 33, 33};
-
-    std::string str2 = "123456";
-    std::vector<int> offset2{0, 1, 2, 3, 4, 5, 6, 7, 8};
-
-    std::tie(input_schema_, input_array_) = ArrowArrayBuilder()
-                                                .setRowNum(8)
-                                                .addUTF8Column("col_1", str1, offset1)
-                                                .addUTF8Column("col_2", str2, offset2)
-                                                .build();
-  }
-};
-
-TEST_F(CiderDuplicateStringTestNextGen, SingleGroupKeyTest) {
-  // TODO: (YBRua) Enable this after nextgen supports GROUP BY
-  GTEST_SKIP_("string group-by is not supported yet in nextgen");
-  std::string res_str = "aaaaaaaaabbccddddd";
-  std::vector<int> res_offset{0, 0, 7, 15, 18};
-  ArrowArray* array = nullptr;
-  ArrowSchema* schema = nullptr;
-
-  std::tie(schema, array) =
-      ArrowArrayBuilder()
-          .setRowNum(4)
-          .addUTF8Column("res_str", res_str, res_offset)
-          .addColumn<int64_t>("res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {3, 2, 2, 1})
-          .build();
-  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
-      schema, array, std::make_shared<CiderDefaultAllocator>());
-
-  assertQuery("SELECT col_1, COUNT(*) FROM test GROUP BY col_1", array, schema, true);
-}
-
-TEST_F(CiderDuplicateStringTestNextGen, MultiGroupKeyTest) {
-  // TODO: (YBRua) Enable this after nextgen supports GROUP BY
-  GTEST_SKIP_("string group-by is not supported yet in nextgen");
-  std::string res_str1 = "aaaaaaaaabbccddaaaaaaadddaabbccdd";
-  std::vector<int> res_offset1{0, 0, 7, 15, 15, 22, 25, 33};
-
-  std::string res_str2 = "123456";
-  std::vector<int> res_offset2{0, 1, 2, 3, 4, 5, 6, 7};
-
-  ArrowArray* array = nullptr;
-  ArrowSchema* schema = nullptr;
-
-  std::tie(schema, array) =
-      ArrowArrayBuilder()
-          .setRowNum(7)
-          .addUTF8Column("res_str1", res_str1, res_offset1)
-          .addColumn<int64_t>(
-              "res_cnt", CREATE_SUBSTRAIT_TYPE(I64), {2, 1, 1, 1, 1, 1, 1})
-          .addUTF8Column("res_str2", res_str2, res_offset2)
-          .build();
-  std::shared_ptr<CiderBatch> res_batch = std::make_shared<CiderBatch>(
-      schema, array, std::make_shared<CiderDefaultAllocator>());
-  assertQuery("SELECT col_1, COUNT(*), col_2 FROM test GROUP BY col_1, col_2",
-              array,
-              schema,
-              true);
-}
-
-// constant string
-
-class CiderConstantStringTestNextGen : public CiderNextgenTestBase {
- public:
-  CiderConstantStringTestNextGen() {
-    table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_1 VARCHAR(10));)";
-
-    auto vec =
-        std::vector<std::string>{"1111111", "1112222", "aaaaaaa", "bbbbbbbb", "aabbccdd"};
-
-    auto [data, offset] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(vec);
-    std::tie(input_schema_, input_array_) =
-        ArrowArrayBuilder().setRowNum(5).addUTF8Column("col_1", data, offset).build();
-  }
-};
-
-TEST_F(CiderConstantStringTestNextGen, LikeStringTest) {
-  auto expected_vec = std::vector<std::string>{"aaaaaaa", "aabbccdd"};
-  auto [data, offset] = ArrowBuilderUtils::createDataAndOffsetFromStrVector(expected_vec);
-
-  struct ArrowArray* expect_array{nullptr};
-  struct ArrowSchema* expect_schema{nullptr};
-  std::tie(expect_schema, expect_array) =
-      ArrowArrayBuilder().setRowNum(2).addUTF8Column("col_1", data, offset).build();
-
-  assertQuery(
-      "SELECT col_1 FROM test where col_1 LIKE '[aa]%'", expect_array, expect_schema);
-
-  // FIXME(jikunshang): Cider only support [],%,_ pattern, !/^ is not supported yet.
-  // listed on document.
-  // expected_vec.clear();
-  // expected_vec.push_back(CiderByteArray(7, reinterpret_cast<const
-  // uint8_t*>("1111111"))); expected_vec.push_back(CiderByteArray(8,
-  // reinterpret_cast<const uint8_t*>("bbbbbbbb"))); auto expected_batch_3 =
-  // CiderBatchBuilder()
-  //                             .setRowNum(2)
-  //                             .addColumn<CiderByteArray>(
-  //                                 "col_1", CREATE_SUBSTRAIT_TYPE(Varchar),
-  //                                 expected_vec)
-  //                             .build();
-  // assertQuery("SELECT col_1 FROM test where col_1 LIKE '[!aa]%'",
-  // expected_batch_3);
-}
+BASIC_STRING_TEST_UNIT(CiderDictStringNullableTestNextGen, BasicStringTest)
+LIKE_STRING_TEST_UNIT(CiderDictStringNullableTestNextGen, LikeStringTest)
+ESCAPE_STRING_TEST_UNIT(CiderDictStringNullableTestNextGen, EscapeStringTest)
+IN_STRING_TEST_UNIT(CiderDictStringNullableTestNextGen, InStringTest)
 
 // stringop: substring
-
-TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
+TEST_F(CiderDictStringNullableTestNextGen, SubstringTest) {
   // variable source string
   assertQuery("SELECT SUBSTRING(col_2, 1, 10) FROM test ");
   assertQuery("SELECT SUBSTRING(col_2, 1, 5) FROM test ");
@@ -317,21 +252,21 @@ TEST_F(CiderStringNullableTestNextGen, SubstringTest) {
   assertQuery("SELECT SUBSTRING(col_2, -4, 2) FROM test ");
 }
 
-TEST_F(CiderStringTestNextGen, NestedSubstringTest) {
+TEST_F(CiderDictStringTestNextGen, NestedSubstringTest) {
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
   assertQuery("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
-TEST_F(CiderStringNullableTestNextGen, NestedSubstringTest) {
+TEST_F(CiderDictStringNullableTestNextGen, NestedSubstringTest) {
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
   assertQuery("SELECT SUBSTRING(SUBSTRING(col_2, 1, 8), 1, 4) FROM test ");
 }
 
-TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
+TEST_F(CiderDictStringRandomTestNextGen, NestedSubstringTest) {
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) = 'aaa'");
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) <> 'bbb'");
   assertQuery("SELECT * FROM test WHERE SUBSTRING(col_2, 1, 3) > 'aaa'");
@@ -340,7 +275,7 @@ TEST_F(CiderStringRandomTestNextGen, NestedSubstringTest) {
 
 // stringop: upper/lower
 
-TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
+TEST_F(CiderDictStringTestNextGen, CaseConvertionTest) {
   // select column from table
   assertQuery("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower.json");
   assertQuery("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper.json");
@@ -376,7 +311,7 @@ TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
   // assertQuery("SELECT UPPER('abcdefg');", "stringop_upper_constexpr_null.json");
 }
 
-TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
+TEST_F(CiderDictStringNullableTestNextGen, CaseConvertionTest) {
   // select column from table
   assertQuery("SELECT col_2, LOWER(col_2) FROM test;", "stringop_lower_null.json");
   assertQuery("SELECT col_2, UPPER(col_2) FROM test;", "stringop_upper_null.json");
@@ -396,7 +331,7 @@ TEST_F(CiderStringNullableTestNextGen, CaseConvertionTest) {
 
 // stringop: concat
 
-TEST_F(CiderStringTestNextGen, ConcatTest) {
+TEST_F(CiderDictStringTestNextGen, ConcatTest) {
   // Skipped because Isthmus does not support concatenating two literals
   // assertQuery("SELECT 'foo' || 'bar' FROM test;");
 
@@ -416,7 +351,7 @@ TEST_F(CiderStringTestNextGen, ConcatTest) {
   assertQuery("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
-TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
+TEST_F(CiderDictStringNullableTestNextGen, ConcatTest) {
   // assertQuery("SELECT 'foo' || 'bar' FROM test;");
 
   assertQuery("SELECT col_2 || 'foobar' FROM test;");
@@ -437,7 +372,7 @@ TEST_F(CiderStringNullableTestNextGen, ConcatTest) {
 
 // stringop: char_length
 
-TEST_F(CiderStringTestNextGen, CharLengthTest) {
+TEST_F(CiderDictStringTestNextGen, CharLengthTest) {
   assertQuery("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1.json");
   assertQuery("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
               "stringop_charlen_project_2.json");
@@ -451,7 +386,7 @@ TEST_F(CiderStringTestNextGen, CharLengthTest) {
       "stringop_charlen_nested.json");
 }
 
-TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
+TEST_F(CiderDictStringNullableTestNextGen, CharLengthTest) {
   assertQuery("SELECT LENGTH(col_2) FROM test;", "stringop_charlen_project_1_null.json");
   assertQuery("SELECT LENGTH(col_2) FROM test WHERE SUBSTRING(col_2, 1, 5) = 'bar'",
               "stringop_charlen_project_2_null.json");
@@ -467,13 +402,13 @@ TEST_F(CiderStringNullableTestNextGen, CharLengthTest) {
 
 // stringop: trim
 
-class CiderTrimOpTestNextGen : public CiderNextgenTestBase {
+class CiderDictTrimOpTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderTrimOpTestNextGen() {
+  CiderDictTrimOpTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(10) NOT NULL, col_3 VARCHAR(10)))";
-
+    int row_num = 12;
     auto int_vec = std::vector<int32_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     auto string_vec = std::vector<std::string>{"xxxxxxxxxx",
                                                "xxxxxxxxxx",
@@ -481,17 +416,27 @@ class CiderTrimOpTestNextGen : public CiderNextgenTestBase {
                                                "   3456789",
                                                "   3      ",
                                                "   3      ",
-                                                 "",
-                                               "",
                                                "0123456   ",
                                                "0123456   ",
                                                "xxx3456   ",
-                                               "xxx3456   "
-                                             };
+                                               "xxx3456   ",
+                                               "",
+                                               ""};
     auto is_null = std::vector<bool>{
         false, true, false, true, false, true, false, true, false, true, false, true};
     auto [vc_data, vc_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = std::rand() % row_num;
+    }
+
+    std::tie(dictSchema, dictArray) =
+        ArrowArrayBuilder().addUTF8Column("dict", vc_data, vc_offsets).build();
 
     std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder()
@@ -499,10 +444,16 @@ class CiderTrimOpTestNextGen : public CiderNextgenTestBase {
             .addUTF8Column("col_2", vc_data, vc_offsets)
             .addUTF8Column("col_3", vc_data, vc_offsets, is_null)
             .build();
+    // col_2
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
+    // col_3
+    input_array_->children[2]->dictionary = dictArray->children[0];
+    input_array_->children[2]->buffers[1] = indice;
   }
 };
 
-TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
+TEST_F(CiderDictTrimOpTestNextGen, LiteralTrimTest) {
   // DuckDb syntax: TRIM(string, characters) trims <characters> from <string>
   // basic trim (defaults to trim spaces)
   assertQuery("SELECT TRIM('   3456   ') FROM test", "stringop_trim_literal_1.json");
@@ -513,7 +464,7 @@ TEST_F(CiderTrimOpTestNextGen, LiteralTrimTest) {
   assertQuery("SELECT RTRIM('xxx3456xxx', 'x') FROM test", "stringop_rtrim_literal.json");
 }
 
-TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
+TEST_F(CiderDictTrimOpTestNextGen, ColumnTrimTest) {
   assertQuery("SELECT TRIM(col_2), TRIM(col_3) FROM test", "stringop_trim_1.json");
   assertQuery("SELECT TRIM(col_2, ' x'), TRIM(col_3, ' x') FROM test",
               "stringop_trim_2.json");
@@ -527,37 +478,44 @@ TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
               "stringop_rtrim_2.json");
 }
 
-TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
+TEST_F(CiderDictTrimOpTestNextGen, NestedTrimTest) {
   assertQuery("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
-              "stringop_trim_nested_1.json");
+              "stringop_trim_nested_1.json",
+              true);
   assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR TRIM(col_3) = 'xxx3456'",
-      "stringop_trim_nested_2.json");
+      "stringop_trim_nested_2.json",
+      true);
 
   assertQuery("SELECT LTRIM(UPPER(col_2), ' X'), UPPER(LTRIM(col_3, 'x')) FROM test",
-              "stringop_ltrim_nested_1.json");
+              "stringop_ltrim_nested_1.json",
+              true);
   assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR LTRIM(col_3) = 'xxx3456'",
-      "stringop_ltrim_nested_2.json");
+      "stringop_ltrim_nested_2.json",
+      true);
 
   assertQuery("SELECT RTRIM(UPPER(col_2), ' X'), UPPER(RTRIM(col_3, 'x')) FROM test",
-              "stringop_rtrim_nested_1.json");
+              "stringop_rtrim_nested_1.json",
+              true);
   assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR RTRIM(col_3) = 'xxx3456'",
-      "stringop_rtrim_nested_2.json");
+      "stringop_rtrim_nested_2.json",
+      true);
 
   assertQuery("SELECT col_3 FROM test WHERE TRIM(TRIM(col_3, ' '), 'x') = '3456'",
-              "stringop_trim_nested_3.json");
+              "stringop_trim_nested_3.json",
+              true);
 }
 
 // stringop: split
 
-class CiderSplitPartTestNextGen : public CiderNextgenTestBase {
+class CiderDictSplitPartTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderSplitPartTestNextGen() {
+  CiderDictSplitPartTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(12) NOT NULL, col_3 VARCHAR(12)))";
@@ -568,6 +526,18 @@ class CiderSplitPartTestNextGen : public CiderNextgenTestBase {
     auto is_null = std::vector<bool>{false, true, false, true, false, true};
     auto [data, offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+    int row_num = 6;
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = i / 2 * 2;
+    }
+
+    std::tie(dictSchema, dictArray) =
+        ArrowArrayBuilder().addUTF8Column("dict", data, offsets).build();
 
     std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder()
@@ -575,10 +545,16 @@ class CiderSplitPartTestNextGen : public CiderNextgenTestBase {
             .addUTF8Column("col_2", data, offsets)
             .addUTF8Column("col_3", data, offsets, is_null)
             .build();
+    // col_2
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
+    // col_3
+    input_array_->children[2]->dictionary = dictArray->children[0];
+    input_array_->children[2]->buffers[1] = indice;
   }
 };
 
-TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
+TEST_F(CiderDictSplitPartTestNextGen, SplitAndIndexingTest) {
   // note that duckdb array indexing is one-based, so [2] references the second element
   assertQuery(
       "SELECT STRING_SPLIT(col_2, ',')[2], STRING_SPLIT(col_3, ',')[2] FROM test;",
@@ -610,7 +586,7 @@ TEST_F(CiderSplitPartTestNextGen, SplitAndIndexingTest) {
       "stringop_split_index_not_found.json");
 }
 
-TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
+TEST_F(CiderDictSplitPartTestNextGen, SplitWithLimitTest) {
   // test for prestodb extension split(input, delimiter, limit)
   auto is_null = std::vector<bool>{false, true, false, true, false, true};
   {
@@ -645,7 +621,7 @@ TEST_F(CiderSplitPartTestNextGen, SplitWithLimitTest) {
   }
 }
 
-TEST_F(CiderSplitPartTestNextGen, SplitPartTest) {
+TEST_F(CiderDictSplitPartTestNextGen, SplitPartTest) {
   // test for prestodb extension split_part(input, delimiter, part)
   // the underlying codegen and runtime function are the same as split-with-index
   // so a basic test for verifying runnability should suffice for now
@@ -668,9 +644,9 @@ TEST_F(CiderSplitPartTestNextGen, SplitPartTest) {
 
 // stringop: regular expressions
 
-class CiderRegexpTestNextGen : public CiderNextgenTestBase {
+class CiderDictRegexpTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderRegexpTestNextGen() {
+  CiderDictRegexpTestNextGen() {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 VARCHAR(15) NOT NULL, col_3 VARCHAR(15)))";
@@ -692,6 +668,17 @@ class CiderRegexpTestNextGen : public CiderNextgenTestBase {
         false, true, false, true, false, true, false, true, false, true, false, true};
     auto [vc_data, vc_offsets] =
         ArrowBuilderUtils::createDataAndOffsetFromStrVector(string_vec);
+    int row_num = 12;
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = i / 2 * 2;
+    }
+
+    std::tie(dictSchema, dictArray) =
+        ArrowArrayBuilder().addUTF8Column("dict", vc_data, vc_offsets).build();
 
     std::tie(input_schema_, input_array_) =
         ArrowArrayBuilder()
@@ -699,10 +686,16 @@ class CiderRegexpTestNextGen : public CiderNextgenTestBase {
             .addUTF8Column("col_2", vc_data, vc_offsets)
             .addUTF8Column("col_3", vc_data, vc_offsets, is_null)
             .build();
+    // col_2
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
+    // col_3
+    input_array_->children[2]->dictionary = dictArray->children[0];
+    input_array_->children[2]->buffers[1] = indice;
   }
 };
 
-TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
+TEST_F(CiderDictRegexpTestNextGen, RegexpReplaceBasicTest) {
   // replace first
   assertQuery(
       "SELECT "
@@ -806,7 +799,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceBasicTest) {
   }
 }
 
-TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
+TEST_F(CiderDictRegexpTestNextGen, RegexpReplaceExtendedTest) {
   /// NOTE: (YBRua) substrait requires occurrence >= 0 & position > 0
   /// but currently implementation also handled cases where occurence < 0 or position < 0
   /// these cases are also tested here for completeness
@@ -867,7 +860,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpReplaceExtendedTest) {
   }
 }
 
-TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
+TEST_F(CiderDictRegexpTestNextGen, RegexpSubstrTest) {
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -920,7 +913,7 @@ TEST_F(CiderRegexpTestNextGen, RegexpSubstrTest) {
   }
 }
 
-TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
+TEST_F(CiderDictRegexpTestNextGen, RegexpExtractTest) {
   const auto is_null = std::vector<bool>{
       false, true, false, true, false, true, false, true, false, true, false, true};
   {
@@ -979,23 +972,37 @@ TEST_F(CiderRegexpTestNextGen, RegexpExtractTest) {
 
 // string to date
 
-class CiderStringToDateTestNextGen : public CiderNextgenTestBase {
+class CiderDictStringToDateTestNextGen : public CiderNextgenTestBase {
  public:
-  CiderStringToDateTestNextGen() {
+  CiderDictStringToDateTestNextGen() {
     table_name_ = "test";
     create_ddl_ = R"(CREATE TABLE test(col_int INTEGER, col_str VARCHAR(10));)";
+    int row_num = 100;
+    ArrowArray* dictArray{nullptr};
+    ArrowSchema* dictSchema{nullptr};
+    std::srand(std::time(nullptr));
+    int32_t* indice = reinterpret_cast<int32_t*>(malloc(sizeof(int32_t) * row_num));
+    for (int i = 0; i < row_num; ++i) {
+      indice[i] = std::rand() % row_num;
+    }
+
+    QueryArrowDataGenerator::generateBatchByTypes(
+        dictSchema, dictArray, row_num, {"dict"}, {CREATE_SUBSTRAIT_TYPE(Varchar)});
     QueryArrowDataGenerator::generateBatchByTypes(
         input_schema_,
         input_array_,
-        100,
+        row_num,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_TYPE(I32), CREATE_SUBSTRAIT_TYPE(Varchar)},
         {2, 2},
         GeneratePattern::Special_Date_format_String);
+
+    input_array_->children[1]->dictionary = dictArray->children[0];
+    input_array_->children[1]->buffers[1] = indice;
   }
 };
 
-TEST_F(CiderStringToDateTestNextGen, NestedTryCastStringOpTest) {
+TEST_F(CiderDictStringToDateTestNextGen, NestedTryCastStringOpTest) {
   // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
   GTEST_SKIP_("casting strings to other types (date) is not supported yet in nextgen");
   assertQuery("SELECT * FROM test where CAST(col_str AS DATE) > date '1990-01-11'");
@@ -1006,7 +1013,7 @@ TEST_F(CiderStringToDateTestNextGen, NestedTryCastStringOpTest) {
       "SELECT * FROM test where extract(year from CAST(col_str AS DATE)) > col_int");
 }
 
-TEST_F(CiderStringToDateTestNextGen, DateStrTest) {
+TEST_F(CiderDictStringToDateTestNextGen, DateStrTest) {
   // TODO: (YBRua) Enable this after nextgen supports CAST string AS date
   GTEST_SKIP_("casting strings to other types (date) is not supported yet in nextgen");
   assertQuery(
