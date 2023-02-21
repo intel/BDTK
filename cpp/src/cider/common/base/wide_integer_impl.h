@@ -32,22 +32,12 @@
 #include <limits>
 #include <tuple>
 
-#include <boost/math/special_functions/fpclassify.hpp>
-#include <boost/multiprecision/cpp_bin_float.hpp>
 #include "cider/CiderException.h"
 
 // NOLINTBEGIN(*)
 
-/// Use same extended double for all platforms
-#if (LDBL_MANT_DIG == 64)
 #define CONSTEXPR_FROM_DOUBLE constexpr
 using FromDoubleIntermediateType = long double;
-#else
-/// `wide_integer_from_builtin` can't be constexpr with non-literal
-/// `cpp_bin_float_double_extended`
-#define CONSTEXPR_FROM_DOUBLE
-using FromDoubleIntermediateType = boost::multiprecision::cpp_bin_float_double_extended;
-#endif
 
 namespace cider::wide {
 
@@ -308,17 +298,11 @@ struct Integer<Bits, Signed>::_impl {
                   std::is_same_v<T, FromDoubleIntermediateType>);
     /// Implementation specific behaviour on overflow (if we don't check here, stack
     /// overflow will triggered in bigint_cast).
-    if constexpr (std::is_same_v<T, double>) {
-      if (!std::isfinite(t)) {
-        self = 0;
-        return;
-      }
-    } else {
-      if (!boost::math::isfinite(t)) {
-        self = 0;
-        return;
-      }
+    if (!std::isfinite(t)) {
+      self = 0;
+      return;
     }
+    // TODO(Deegue): Consider the case when `std::is_same_v<T, double>` is false.
 
     const T alpha = t / static_cast<T>(max_int);
 
