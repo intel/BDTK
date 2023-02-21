@@ -19,13 +19,9 @@
  * under the License.
  */
 
-#include <memory>
-#include "velox/core/PlanNode.h"
-#include "velox/exec/FilterProject.h"
-#include "velox/vector/ComplexVector.h"
-#define SHARED_LOGGER_H  // ignore util/Logger.h
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
+#include <memory>
 
 #include "Allocator.h"
 #include "cider/CiderOptions.h"
@@ -33,6 +29,8 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "util/CiderBitUtils.h"
+#include "velox/core/PlanNode.h"
+#include "velox/exec/FilterProject.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/expression/Expr.h"
 #include "velox/functions/Registerer.h"
@@ -42,6 +40,7 @@
 #include "velox/functions/prestosql/CheckedArithmetic.h"
 #include "velox/functions/prestosql/Comparisons.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
+#include "velox/vector/ComplexVector.h"
 #include "velox/vector/arrow/Bridge.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
 
@@ -51,7 +50,7 @@
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
 DEFINE_double(ratio, 0.5, "NULL ratio in batch");
-DEFINE_int64(batch_size, 1'024, "batch size for one loop");
+DEFINE_int64(batch_size, 1'0240, "batch size for one loop");
 DEFINE_int64(loop_count, 1'000'000, "loop count for benchmark");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
 
@@ -104,41 +103,24 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     registerBinaryScalar<LteFunction, bool>({"lte"});
     registerBinaryScalar<GteFunction, bool>({"gte"});
     registerFunction<BetweenFunction, bool, double, double, double>({"btw"});
-
-    // Set input schema.
-    inputType_ = ROW({
-        {"i8", TINYINT()},
-        {"i16", SMALLINT()},
-        {"i32", INTEGER()},
-        {"i64", BIGINT()},
-        {"a", DOUBLE()},
-        {"b", DOUBLE()},
-        {"constant", DOUBLE()},
-        {"d", BOOLEAN()},
-        {"e", BOOLEAN()},
-    });
-    rowVector_ = generateData();
   }
 
-  RowVectorPtr generateData() {
-    // Generate input data.
+  void generateData(
+      std::initializer_list<std::pair<const std::string, std::shared_ptr<const Type>>>&&
+          pairs) {
     VectorFuzzer::Options opts;
     opts.vectorSize = FLAGS_batch_size;
     opts.nullRatio = FLAGS_ratio;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
+    // overhead of import to arrow array is very high
     std::vector<VectorPtr> children;
-    children.emplace_back(fuzzer.fuzzFlat(TINYINT()));   // i8
-    children.emplace_back(fuzzer.fuzzFlat(SMALLINT()));  // i16
-    children.emplace_back(fuzzer.fuzzFlat(INTEGER()));   // i32
-    children.emplace_back(fuzzer.fuzzFlat(BIGINT()));    // i64
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // A
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // B
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // fake constant
-    children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // D
-    children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // E
+    for (auto& [_, type] : pairs) {
+      children.emplace_back(fuzzer.fuzzFlat(type));  // i64
+    }
 
-    return std::make_shared<RowVector>(
+    inputType_ = ROW(std::move(pairs));
+    rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, FLAGS_batch_size, std::move(children));
   }
 
@@ -163,7 +145,8 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
 
     size_t count = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
-      addInput(rowVector_);
+      auto shared = rowVector_;
+      addInput(shared);
       count += getOutput()->size();
     }
 
@@ -208,8 +191,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     for (size_t i = 0; i < input->childrenSize(); i++) {
       input->childAt(i)->mutableRawNulls();
     }
-    // this->input_ = std::move(input);
-    this->input_ = input;
+    this->input_ = std::move(input);
     ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
     exportToArrow(input_, *inputArrowArray);
     ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
@@ -221,16 +203,13 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     for (size_t i = 0; i < input->childrenSize(); i++) {
       input->childAt(i)->mutableRawNulls();
     }
-    // this->input_ = std::move(input);
     ArrowArray inputArrowArray;
     exportToArrow(input, inputArrowArray);
-    ArrowSchema inputArrowSchema;
-    exportToArrow(input, inputArrowSchema);
 
-    batchProcessor_->processNextBatch(&inputArrowArray, &inputArrowSchema);
+    batchProcessor_->processNextBatch(&inputArrowArray);
   }
 
-  // mimic `void CiderPipelineOperator::addInput(RowVectorPtr input)`
+  // mimic `void CiderPipelineOperator::getOutput()`
   RowVectorPtr getOutput() {
     struct ArrowArray array;
     struct ArrowSchema schema;
@@ -253,10 +232,17 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
 
 std::unique_ptr<PipelineOperator> benchmark;
 
-// for profile
-// auto profile_expr = "d AND e";
-auto profile_expr = "i32*i32*i32";
+// {
+//     // {"i8", TINYINT()},
+//     // {"i16", SMALLINT()},
+//     // {"i32", INTEGER()},
+//     // {"i64", BIGINT()},
+//     // {"b", BOOLEAN()},
+//     // {"d", DOUBLE()},
+// });
+auto profile_expr = "i64*i64*i64";
 BENCHMARK(velox) {
+  benchmark->generateData({{"i64", BIGINT()}});
   benchmark->veloxCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen) {
@@ -267,51 +253,6 @@ BENCHMARK_RELATIVE(nextgenOpt) {
   auto cgo = getBaseOption();
   benchmark->nextgenComputeOpt(profile_expr, cgo);
 }
-BENCHMARK_DRAW_LINE();
-
-#define BENCHMARK_GROUP(name, expr)                                      \
-  BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); } \
-  BENCHMARK_RELATIVE(name##Nextgen) {                                    \
-    CodegenOptions cgo;                                                  \
-    benchmark->nextgenCompute(expr, cgo);                                \
-  }                                                                      \
-  BENCHMARK_RELATIVE(name##NextgenOpt) {                                 \
-    CodegenOptions cgo;                                                  \
-    benchmark->nextgenComputeOpt(expr, cgo);                             \
-  }                                                                      \
-  BENCHMARK_DRAW_LINE()
-
-// BENCHMARK_GROUP(mulI8, "i8*i8");
-// BENCHMARK_GROUP(mulI8Deep, "i8*i8*i8*i8");
-// BENCHMARK_GROUP(mulI16, "i16*i16");
-// BENCHMARK_GROUP(mulI32, "i32*i32");
-// BENCHMARK_GROUP(mulI32Deep, "i32*i32*i32*i32");
-// BENCHMARK_GROUP(mulI64, "i64*i64");
-
-// BENCHMARK_GROUP(mulDouble, "a*b");
-// BENCHMARK_GROUP(mulDoubleSameColumn, "a*a");
-// BENCHMARK_GROUP(mulDoubleConstant, "a*constant");
-// BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
-// BENCHMARK_GROUP(mulDoubleNestedDeep, "(a*b*a)*(a*(a*b))");
-
-// BENCHMARK(PlusCheckedVeloxI64) {
-//   benchmark->veloxCompute("checkedPlus(i64, i64)");
-// }
-// BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
-
-// BENCHMARK_GROUP(mulAndAdd, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
-
-// // comparison
-// BENCHMARK_GROUP(eq, "eq(a, b)");
-// BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
-// BENCHMARK_GROUP(eqBool, "eq(d, e)");
-// BENCHMARK_GROUP(neq, "neq(a, b)");
-// BENCHMARK_GROUP(gt, "gt(a, b)");
-// BENCHMARK_GROUP(lt, "lt(a, b)");
-// BENCHMARK_GROUP(and, "d AND e");
-// BENCHMARK_GROUP(or, "d OR e");
-// BENCHMARK_GROUP(conjunctsNested,
-//                 "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
 }  // namespace
 
 int main(int argc, char* argv[]) {

@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#define SHARED_LOGGER_H  // ignore util/Logger.h
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 
@@ -155,7 +154,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
         {"i64", BIGINT()},
         {"a", DOUBLE()},
         {"b", DOUBLE()},
-        {"constant", DOUBLE()},
         {"d", BOOLEAN()},
         {"e", BOOLEAN()},
     });
@@ -172,7 +170,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     children.emplace_back(fuzzer.fuzzFlat(BIGINT()));    // i64
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // A
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // B
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // fake constant
     children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // D
     children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // E
 
@@ -466,9 +463,8 @@ BENCHMARK_GROUP(mulI16, "i16*i16");
 BENCHMARK_GROUP(mulI32, "i32*i32");
 BENCHMARK_GROUP(mulI64, "i64*i64");
 
-BENCHMARK_GROUP(mulDouble, "a*b");
-BENCHMARK_GROUP(mulDoubleSameColumn, "a*a");
-BENCHMARK_GROUP(mulDoubleConstant, "a*constant");
+BENCHMARK_GROUP(mulDouble, "a*a");
+BENCHMARK_GROUP(mulDoubleTwoColumn, "a*b");
 BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
 BENCHMARK_GROUP(mulDoubleNestedDeep, "(a*b*a)*(a*(a*b))");
 
