@@ -46,8 +46,8 @@ using FromDoubleIntermediateType = long double;
 // /// `wide_integer_from_builtin` can't be constexpr with non-literal
 // /// `cpp_bin_float_double_extended`
 // #define CONSTEXPR_FROM_DOUBLE
-// using FromDoubleIntermediateType = boost::multiprecision::cpp_bin_float_double_extended;
-// #endif
+// using FromDoubleIntermediateType =
+// boost::multiprecision::cpp_bin_float_double_extended; #endif
 
 namespace cider::wide {
 
@@ -1195,8 +1195,10 @@ constexpr Integer<Bits, Signed> operator+(const Integer<Bits, Signed>& lhs) noex
   return lhs;
 }
 
-#define CT(x) \
-  std::common_type_t<std::decay_t<decltype(rhs)>, std::decay_t<decltype(lhs)>> { x }
+#define CT(x)                                                                    \
+  std::common_type_t<std::decay_t<decltype(rhs)>, std::decay_t<decltype(lhs)>> { \
+    x                                                                            \
+  }
 
 // Binary operators
 template <size_t Bits, typename Signed, size_t Bits2, typename Signed2>
