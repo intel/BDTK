@@ -19,9 +19,6 @@
  * under the License.
  */
 
-#include <unistd.h>
-#include <iomanip>
-#include <iostream>
 #include <random>
 #include <vector>
 
@@ -140,13 +137,13 @@ static void BM_Lookup(benchmark::State& state) {
 
 template <typename KeyType>
 static void BM_Baseline_Lookup(benchmark::State& state) {
-  using BaselineLookup = HashMap<KeyType, uint8_t, HashCRC32<uint16_t>>;
+  using BaselineLookup = HashMap<KeyType, int8_t, HashCRC32<KeyType>>;
   BM_Lookup<KeyType, BaselineLookup>(state);
 }
 
 template <typename KeyType>
 static void BM_Optimized_Lookup(benchmark::State& state) {
-  using OptimizedLookup = FixedHashMap<KeyType, uint8_t>;
+  using OptimizedLookup = FixedHashMap<KeyType, int8_t>;
   BM_Lookup<KeyType, OptimizedLookup>(state);
 }
 
