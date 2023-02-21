@@ -79,7 +79,7 @@ inline CodegenOptions getBaseOption() {
 
 class PipelineOperator : public functions::test::FunctionBenchmarkBase {
  public:
-  explicit PipelineOperator() : FunctionBenchmarkBase() {
+  PipelineOperator() : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
     // we register uncheck version for integer and checkedPlus for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
