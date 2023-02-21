@@ -32,22 +32,22 @@
 #include <limits>
 #include <tuple>
 
-// #include <boost/math/special_functions/fpclassify.hpp>
-// #include <boost/multiprecismathion/cpp_bin_float.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/multiprecision/cpp_bin_float.hpp>
 #include "cider/CiderException.h"
 
 // NOLINTBEGIN(*)
 
 /// Use same extended double for all platforms
-// #if (LDBL_MANT_DIG == 64)
+#if (LDBL_MANT_DIG == 64)
 #define CONSTEXPR_FROM_DOUBLE constexpr
 using FromDoubleIntermediateType = long double;
-// #else
-// /// `wide_integer_from_builtin` can't be constexpr with non-literal
-// /// `cpp_bin_float_double_extended`
-// #define CONSTEXPR_FROM_DOUBLE
-// using FromDoubleIntermediateType =
-// boost::multiprecision::cpp_bin_float_double_extended; #endif
+#else
+/// `wide_integer_from_builtin` can't be constexpr with non-literal
+/// `cpp_bin_float_double_extended`
+#define CONSTEXPR_FROM_DOUBLE
+using FromDoubleIntermediateType = boost::multiprecision::cpp_bin_float_double_extended;
+#endif
 
 namespace cider::wide {
 
@@ -314,7 +314,7 @@ struct Integer<Bits, Signed>::_impl {
         return;
       }
     } else {
-      if (!std::isfinite(t)) {
+      if (!boost::math::isfinite(t)) {
         self = 0;
         return;
       }
@@ -1195,10 +1195,8 @@ constexpr Integer<Bits, Signed> operator+(const Integer<Bits, Signed>& lhs) noex
   return lhs;
 }
 
-#define CT(x)                                                                    \
-  std::common_type_t<std::decay_t<decltype(rhs)>, std::decay_t<decltype(lhs)>> { \
-    x                                                                            \
-  }
+#define CT(x) \
+  std::common_type_t<std::decay_t<decltype(rhs)>, std::decay_t<decltype(lhs)>> { x }
 
 // Binary operators
 template <size_t Bits, typename Signed, size_t Bits2, typename Signed2>
