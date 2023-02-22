@@ -112,7 +112,7 @@ void BM_ParquetRead(benchmark::State& state, const std::string& file_name) {
 
 void print_usage() {
   std::cout << R"(Usage:
-    '--iter'   or '-t' to specify the number of iterations to run the benchmark
+    '--iter'   or '-i' to specify the number of iterations to run the benchmark
     '--thread' or '-t' to specify the number of threads to run the benchmark
     '--file'   or '-f' to specify the name of parquet file to run the benchmark
     '--codec'  or '-c' to specify the backend codec to run the benchmark
