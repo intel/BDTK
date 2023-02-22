@@ -25,6 +25,8 @@
 #include <common/Arena.h>
 #include "type/data/funcannotations.h"
 
+namespace cider::hashtable {
+
 /**
  * In some aggregation scenarios, when adding a key to the hash table, we
  * start with a temporary key object, and if it turns out to be a new key,
@@ -87,3 +89,4 @@ inline void ALWAYS_INLINE keyHolderPersistKey(Key&&) {}
  */
 template <typename Key>
 inline void ALWAYS_INLINE keyHolderDiscardKey(Key&&) {}
+}  // namespace cider::hashtable

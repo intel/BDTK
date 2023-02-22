@@ -24,6 +24,8 @@
 
 #include <common/hashtable/FixedHashTable.h>
 
+namespace cider::hashtable {
+
 template <typename Key, typename Allocator = HashTableAllocator>
 class FixedHashSet
     : public FixedHashTable<Key,
@@ -49,3 +51,4 @@ class FixedHashSet
 
   // }
 };
+}  // namespace cider::hashtable

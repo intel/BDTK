@@ -22,9 +22,7 @@
 
 #pragma once
 
-// #include <common/base/defines.h>
 #include <common/base/time.h>
-// #include <common/base/types.h>
 
 #include <atomic>
 #include <cassert>

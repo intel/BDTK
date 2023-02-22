@@ -383,7 +383,7 @@ struct HashTableFixedGrower {
   size_t next(size_t pos) const { return pos + 1; }
   bool overflow(size_t /*elems*/) const { return false; }
 
-  void increaseSize() { UNREACHABLE(); }
+  void increaseSize() {}
   void set(size_t /*num_elems*/) {}
   void setBufSize(size_t /*buf_size_*/) {}
 };
@@ -486,9 +486,7 @@ class HashTable : private boost::noncopyable,
   Cell* buf;  /// A piece of memory for all elements except the element with zero key.
   Grower grower;
 
-#ifdef DBMS_HASH_MAP_COUNT_COLLISIONS
   mutable size_t collisions = 0;
-#endif
 
   /// Find a cell with the same key or an empty cell, starting from the specified position
   /// and further along the collision resolution chain.
@@ -498,9 +496,7 @@ class HashTable : private boost::noncopyable,
     while (!buf[place_value].isZero(*this) &&
            !buf[place_value].keyEquals(x, hash_value, *this)) {
       place_value = grower.next(place_value);
-#ifdef DBMS_HASH_MAP_COUNT_COLLISIONS
       ++collisions;
-#endif
     }
 
     return place_value;
@@ -511,9 +507,7 @@ class HashTable : private boost::noncopyable,
   size_t ALWAYS_INLINE findEmptyCell(size_t place_value) const {
     while (!buf[place_value].isZero(*this)) {
       place_value = grower.next(place_value);
-#ifdef DBMS_HASH_MAP_COUNT_COLLISIONS
       ++collisions;
-#endif
     }
 
     return place_value;
@@ -1337,9 +1331,7 @@ class HashTable : private boost::noncopyable,
     return ptr - buf + 1;
   }
 
-#ifdef DBMS_HASH_MAP_COUNT_COLLISIONS
   size_t getCollisions() const { return collisions; }
-#endif
 };
 
 }  // namespace cider::hashtable
