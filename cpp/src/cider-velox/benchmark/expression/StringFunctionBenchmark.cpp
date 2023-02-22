@@ -83,7 +83,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
   explicit StringFunctionBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     functions::prestosql::registerStringFunctions();
 
-    inputType_ = ROW({{"col_str", VARCHAR()}});
+    inputType_ = ROW({{"col_str", VARCHAR()},{"col_str2", VARCHAR()}});
 
     vectorSize_ = vectorSize;
     // Generate input data.
@@ -93,6 +93,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     std::vector<VectorPtr> children;
+    children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));  // varchar
     children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));  // varchar
 
     rowVector_ = std::make_shared<RowVector>(
@@ -194,7 +195,8 @@ std::unique_ptr<StringFunctionBenchmark> benchmark;
 // }
 // BENCHMARK_DRAW_LINE();
 
-std::string concat_expr = "concat(col_str, 'aaaa')";
+// std::string concat_expr = "concat(col_str, 'aaaa')";
+std::string concat_expr = "concat(col_str, col_str2)";
 
 BENCHMARK(nextgen_concat) {
   benchmark->nextgenCompute(concat_expr);

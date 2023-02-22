@@ -163,10 +163,10 @@ extern "C" void test_to_string(int value) {
 }
 
 extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
-                                              const char* lhs,
-                                              int lhs_len,
-                                              const char* rhs,
-                                              int rhs_len) {
+                                               const char* lhs,
+                                               int lhs_len,
+                                               const char* rhs,
+                                               int rhs_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(lhs_len + rhs_len);
 
@@ -177,6 +177,27 @@ extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" ALWAYS_INLINE int32_t cider_concat_len(int lhs_len, int rhs_len) {
+  return lhs_len + rhs_len;
+}
+
+extern "C" ALWAYS_INLINE void cider_concat_ptr(char* buffer_ptr,
+                                               const char* lhs,
+                                               int lhs_len,
+                                               const char* rhs,
+                                               int rhs_len) {
+  memcpy(buffer_ptr, lhs, lhs_len);
+  memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
+
+  // return (int8_t*)buffer_ptr;
+}
+
+extern "C" RUNTIME_EXPORT int8_t* allocate_from_string_heap(char* string_heap_ptr,
+                                                            int len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->emptyString(len);
+  return (int8_t*)s.getDataWriteable();
+}
 // to be deprecated.
 // rconcat is only used for backward compatibility with template codegen, which only
 // supports cases where the first arg is a variable.
@@ -199,7 +220,7 @@ extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE int8_t* get_buffer_with_realloc_on_demand(
+extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
     const int8_t* input_desc_ptr,
     const int32_t current_bytes,
     const int32_t index) {
@@ -211,7 +232,7 @@ extern "C" ALWAYS_INLINE int8_t* get_buffer_with_realloc_on_demand(
   size_t capacity = holder->getBufferSizeAt(index);
   if (capacity == 0) {
     // initialize buffer with a capacity of 4096 bytes
-    holder->allocBuffer(index, 4096);
+    holder->allocBuffer(index, 16384);
   } else if (current_bytes >= 0.9 * capacity) {
     // double capacity if current bytes take up 90% of capacity
     // assumes we would have enough space for next input after at most one resize op
