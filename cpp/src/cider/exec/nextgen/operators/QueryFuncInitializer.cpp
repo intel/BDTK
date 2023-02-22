@@ -75,10 +75,16 @@ void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
       }
     }
 
-    // append dictionary buffer as last element.
-    buffer_values.append(func->createLocalJITValue([&child_array]() {
-      return context::codegen_utils::getArrowArrayDictionary(child_array);
-    }));
+    if (col_var_expr->get_type_info().get_type() == kTEXT ||
+        col_var_expr->get_type_info().get_type() == kVARCHAR ||
+        col_var_expr->get_type_info().get_type() == kCHAR) {
+      // append dictionary buffer as last element if this is a string column, and if
+      // string dictionary is valid, the second pointer will be index in dictionary, the
+      // third pointer will be invalid.
+      buffer_values.append(func->createLocalJITValue([&child_array]() {
+        return context::codegen_utils::getArrowArrayDictionary(child_array);
+      }));
+    }
 
     // All ArrowArray related JITValues will be saved in CodegenContext, and associate
     // with exprs with local_offset.
