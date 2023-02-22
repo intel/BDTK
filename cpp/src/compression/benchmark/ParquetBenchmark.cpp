@@ -71,7 +71,7 @@ class ParquetReader {
   int64_t total_byte_size_;
 };
 
-int SetCurrentThreadAffinity(int cpu) {
+int setCurrentThreadAffinity(int cpu) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(cpu, &cpuset);
@@ -79,7 +79,7 @@ int SetCurrentThreadAffinity(int cpu) {
 }
 
 void BM_ParquetRead(benchmark::State& state, const std::string& file_name) {
-  SetCurrentThreadAffinity(state.thread_index() + 1);
+  setCurrentThreadAffinity(state.thread_index() + 1);
 
   double total_seconds = 0;
   for (auto _ : state) {
@@ -110,7 +110,7 @@ void BM_ParquetRead(benchmark::State& state, const std::string& file_name) {
       ratio, benchmark::Counter::kAvgThreads, benchmark::Counter::OneK::kIs1000);
 }
 
-void print_usage() {
+void printUsage() {
   std::cout << R"(Usage:
     '--iter'   or '-i' to specify the number of iterations to run the benchmark
     '--thread' or '-t' to specify the number of threads to run the benchmark
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
     } else if ((strcmp(argv[i], "--codec") == 0) || (strcmp(argv[i], "-c") == 0)) {
       codec = argv[i + 1];
     } else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
-      print_usage();
+      printUsage();
       return 0;
     }
   }
