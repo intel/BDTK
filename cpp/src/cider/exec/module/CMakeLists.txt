@@ -27,6 +27,11 @@ set(SRC_FILE
     batch/CiderBatchUtils.cpp
     batch/CiderArrowBufferHolder.cpp)
 add_library(cider SHARED ${SRC_FILE})
+if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
+   OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB
+   OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
+  add_dependencies(cider SUBSTRAITCPP)
+endif()
 target_link_libraries(
   cider
   QueryEngine
