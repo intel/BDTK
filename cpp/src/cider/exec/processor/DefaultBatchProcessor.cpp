@@ -136,6 +136,7 @@ void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& cro
   // switch state from waiting to running once cross build data is ready
   this->state_ = BatchProcessorState::kRunning;
   // TODO: feed cross build data into nextGen context
+  codegen_context_->setBuildTable(crossData);
 }
 
 std::unique_ptr<BatchProcessor> makeBatchProcessor(

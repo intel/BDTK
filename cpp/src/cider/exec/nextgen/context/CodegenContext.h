@@ -121,6 +121,7 @@ class CodegenContext {
       bool output_raw_buffer = true);
 
   jitlib::JITValuePointer registerHashTable(const std::string& name = "");
+  jitlib::JITValuePointer registerBuildTable(const std::string& name = "");
   jitlib::JITValuePointer registerCiderSet(const std::string& name,
                                            const SQLTypeInfo& type,
                                            CiderSetPtr c_set);
@@ -179,6 +180,21 @@ class CodegenContext {
     hashtable_descriptor_.first->hash_table = join_hash_table;
   }
 
+  struct CrossJoinBuildTableDescriptor {
+    int64_t ctx_id;
+    std::string name;
+    BatchSharedPtr build_table;
+
+    CrossJoinBuildTableDescriptor(int64_t id,
+                                  const std::string& n,
+                                  BatchSharedPtr table = std::make_shared<Batch>())
+        : ctx_id(id), name(n), build_table(table) {}
+  };
+
+  void setBuildTable(BatchSharedPtr batch) {
+    buildtable_descriptor_.first->build_table = std::move(batch);
+  }
+
   struct CiderSetDescriptor {
     int64_t ctx_id;
     std::string name;
@@ -204,6 +220,7 @@ class CodegenContext {
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
   using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
   using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
+  using BuildTableDescriptorPtr = std::shared_ptr<CrossJoinBuildTableDescriptor>;
   using CiderSetDescriptorPtr = std::shared_ptr<CiderSetDescriptor>;
   using TrimCharMapsPtr = std::shared_ptr<std::vector<std::vector<int8_t>>>;
 
@@ -229,6 +246,7 @@ class CodegenContext {
       cider_set_descriptors_{};
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
+  std::pair<BuildTableDescriptorPtr, jitlib::JITValuePointer> buildtable_descriptor_;
 
   jitlib::JITFunctionPointer jit_func_;
   int64_t id_counter_{0};
