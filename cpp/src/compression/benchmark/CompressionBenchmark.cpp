@@ -149,8 +149,7 @@ static void SetBenchmarkArgs(benchmark::internal::Benchmark* b) {
   BENCHMARK_TEMPLATE(FuncName, Compression)->Apply(SetBenchmarkArgs); \
   BENCHMARK_TEMPLATE(FuncName, Compression)                           \
       ->Arg(1024 * 1024)                                              \
-      ->RangeMultiplier(2)                                            \
-      ->ThreadRange(1, 128);
+      ->DenseThreadRange(1, 128, 2);
 
 COMPRESSION_BENCHMARK(Compression, arrow::Compression::SNAPPY);
 COMPRESSION_BENCHMARK(Compression, arrow::Compression::GZIP);
