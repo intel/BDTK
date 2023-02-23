@@ -123,17 +123,28 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
   explicit ArithmeticAndComparisonBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
+    // prestosql::registerAllScalarFunctions();
     // we register uncheck version for integer and checkedPlus for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
     registerFunction<MultiplyFunction, int16_t, int16_t, int16_t>({"multiply"});
     registerFunction<MultiplyFunction, int32_t, int32_t, int32_t>({"multiply"});
     registerFunction<MultiplyFunction, int64_t, int64_t, int64_t>({"multiply"});
     registerFunction<MultiplyFunction, double, double, double>({"multiply"});
+    registerFunction<CheckedDivideFunction, int8_t, int8_t, int8_t>({"divide"});
+    registerFunction<DivideFunction, int16_t, int16_t, int16_t>({"divide"});
+    registerFunction<DivideFunction, int32_t, int32_t, int32_t>({"divide"});
+    registerFunction<DivideFunction, int64_t, int64_t, int64_t>({"divide"});
+    registerFunction<DivideFunction, double, double, double>({"divide"});
     registerFunction<PlusFunction, int8_t, int8_t, int8_t>({"plus"});
     registerFunction<PlusFunction, int16_t, int16_t, int16_t>({"plus"});
     registerFunction<PlusFunction, int32_t, int32_t, int32_t>({"plus"});
     registerFunction<PlusFunction, int64_t, int64_t, int64_t>({"plus"});
     registerFunction<PlusFunction, double, double, double>({"plus"});
+    registerFunction<MinusFunction, int8_t, int8_t, int8_t>({"minus"});
+    registerFunction<MinusFunction, int16_t, int16_t, int16_t>({"minus"});
+    registerFunction<MinusFunction, int32_t, int32_t, int32_t>({"minus"});
+    registerFunction<MinusFunction, int64_t, int64_t, int64_t>({"minus"});
+    registerFunction<MinusFunction, double, double, double>({"minus"});
     // compare with uncheck plus
     registerFunction<CheckedPlusFunction, int64_t, int64_t, int64_t>({"checkedPlus"});
 
@@ -196,7 +207,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
     suspender.dismiss();
 
-    auto allocator = std::make_shared<CiderDefaultAllocator>();
+    auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context);
     return 1;
@@ -377,7 +388,8 @@ __attribute__((noinline)) void mulI8Specialized3(uint8_t* null_input1,
 
 // for profile
 // auto profile_expr = "d AND e";
-auto profile_expr = "i8 * i8";
+// auto profile_expr = "i8 * i8";
+auto profile_expr = "i8*i16*2 + i16/3 - 1";
 BENCHMARK(velox) {
   benchmark->veloxCompute(profile_expr);
 }
@@ -459,25 +471,26 @@ BENCHMARK_DRAW_LINE();
 
 BENCHMARK_GROUP(mulI8, "i8*i8");
 BENCHMARK_GROUP(mulI8Deep, "i8*i8*i8*i8");
-BENCHMARK_GROUP(mulI16, "i16*i16");
-BENCHMARK_GROUP(mulI32, "i32*i32");
 BENCHMARK_GROUP(mulI64, "i64*i64");
+BENCHMARK_GROUP(mulMix, "i8*i16*i32*i64");
 
-BENCHMARK_GROUP(mulDouble, "a*a");
-BENCHMARK_GROUP(mulDoubleTwoColumn, "a*b");
+BENCHMARK_GROUP(mulDouble, "a*b");
 BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
-BENCHMARK_GROUP(mulDoubleNestedDeep, "(a*b*a)*(a*(a*b))");
 
 BENCHMARK(PlusCheckedVeloxI64) {
   benchmark->veloxCompute("checkedPlus(i64, i64)");
 }
 BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
 
-BENCHMARK_GROUP(mulAndAdd, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+BENCHMARK_GROUP(divInt, "i64/3");
+BENCHMARK_GROUP(divDouble, "a/3.0");
+
+BENCHMARK_GROUP(mulAndAdd, "a*2.0 + a*3.0 + a*4.0 + a*5.0");
+BENCHMARK_GROUP(ArithInt, "i8*i16*2 + i16/3 - 1");
+BENCHMARK_GROUP(ArithDouble, "a*b*2.0 + a/3.0 - 1.0");
 
 // comparison
 BENCHMARK_GROUP(eq, "eq(a, b)");
-BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
 BENCHMARK_GROUP(eqBool, "eq(d, e)");
 BENCHMARK_GROUP(neq, "neq(a, b)");
 BENCHMARK_GROUP(gt, "gt(a, b)");

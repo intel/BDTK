@@ -21,6 +21,7 @@
 
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
+#include <google/protobuf/util/json_util.h>
 #include <memory>
 
 #include "Allocator.h"
@@ -40,6 +41,7 @@
 #include "velox/functions/prestosql/CheckedArithmetic.h"
 #include "velox/functions/prestosql/Comparisons.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
+#include "velox/type/Type.h"
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/arrow/Bridge.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
@@ -53,6 +55,7 @@ DEFINE_double(ratio, 0.5, "NULL ratio in batch");
 DEFINE_int64(batch_size, 1'0240, "batch size for one loop");
 DEFINE_int64(loop_count, 1'000'000, "loop count for benchmark");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
+DEFINE_bool(dump_plan, false, "dump substrait plan");
 
 using namespace cider::exec::processor;
 using namespace cider::exec::nextgen::context;
@@ -81,28 +84,27 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
  public:
   PipelineOperator() : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
-    // we register uncheck version for integer and checkedPlus for compare
+    // we register uncheck version for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
     registerFunction<MultiplyFunction, int16_t, int16_t, int16_t>({"multiply"});
     registerFunction<MultiplyFunction, int32_t, int32_t, int32_t>({"multiply"});
     registerFunction<MultiplyFunction, int64_t, int64_t, int64_t>({"multiply"});
     registerFunction<MultiplyFunction, double, double, double>({"multiply"});
+    registerFunction<CheckedDivideFunction, int8_t, int8_t, int8_t>({"divide"});
+    registerFunction<DivideFunction, int16_t, int16_t, int16_t>({"divide"});
+    registerFunction<DivideFunction, int32_t, int32_t, int32_t>({"divide"});
+    registerFunction<DivideFunction, int64_t, int64_t, int64_t>({"divide"});
+    registerFunction<DivideFunction, double, double, double>({"divide"});
     registerFunction<PlusFunction, int8_t, int8_t, int8_t>({"plus"});
     registerFunction<PlusFunction, int16_t, int16_t, int16_t>({"plus"});
     registerFunction<PlusFunction, int32_t, int32_t, int32_t>({"plus"});
     registerFunction<PlusFunction, int64_t, int64_t, int64_t>({"plus"});
     registerFunction<PlusFunction, double, double, double>({"plus"});
-    // compare with uncheck plus
-    registerFunction<CheckedPlusFunction, int64_t, int64_t, int64_t>({"checkedPlus"});
-
-    // for comparision
-    registerBinaryScalar<EqFunction, bool>({"eq"});
-    registerBinaryScalar<NeqFunction, bool>({"neq"});
-    registerBinaryScalar<LtFunction, bool>({"lt"});
-    registerBinaryScalar<GtFunction, bool>({"gt"});
-    registerBinaryScalar<LteFunction, bool>({"lte"});
-    registerBinaryScalar<GteFunction, bool>({"gte"});
-    registerFunction<BetweenFunction, bool, double, double, double>({"btw"});
+    registerFunction<MinusFunction, int8_t, int8_t, int8_t>({"minus"});
+    registerFunction<MinusFunction, int16_t, int16_t, int16_t>({"minus"});
+    registerFunction<MinusFunction, int32_t, int32_t, int32_t>({"minus"});
+    registerFunction<MinusFunction, int64_t, int64_t, int64_t>({"minus"});
+    registerFunction<MinusFunction, double, double, double>({"minus"});
   }
 
   void generateData(
@@ -179,6 +181,15 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     google::protobuf::Arena arena;
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
+    if (FLAGS_dump_plan) {
+      std::string output;
+      auto status = google::protobuf::util::MessageToJsonString(plan, &output);
+      if (!status.ok()) {
+        std::cerr << "Failed to dump plan as json: " + status.message().as_string()
+                  << std::endl;
+      }
+      std::cout << output << std::endl;
+    }
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
@@ -240,9 +251,9 @@ std::unique_ptr<PipelineOperator> benchmark;
 //     // {"b", BOOLEAN()},
 //     // {"d", DOUBLE()},
 // });
-auto profile_expr = "i64*i64*i64";
+auto profile_expr = "i16*i32";
 BENCHMARK(velox) {
-  benchmark->generateData({{"i64", BIGINT()}});
+  benchmark->generateData({{"i16", SMALLINT()}, {"i32", INTEGER()}});
   benchmark->veloxCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen) {
