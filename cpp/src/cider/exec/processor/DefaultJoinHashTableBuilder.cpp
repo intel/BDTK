@@ -20,24 +20,28 @@
  */
 
 #include "DefaultJoinHashTableBuilder.h"
+#include "util/CiderBitUtils.h"
 
 namespace cider::exec::processor {
 
 std::unique_ptr<JoinHashTable> DefaultJoinHashTableBuilder::build() {
   return std::move(hashTable_);
 }
+
 // TODO: get the join key. Right use hard-code col 0
 void DefaultJoinHashTableBuilder::appendBatch(
     std::shared_ptr<cider::exec::nextgen::context::Batch> batch) {
   int length = batch->getArray()->children[0]->length;
-  for (int i = 0; i < length; i++) {
-    int key = *((reinterpret_cast<int*>(
-                    const_cast<void*>(batch->getArray()->children[0]->buffers[1]))) +
-                i);
-
-    hashTable_->emplace(key, {batch.get(), i});
+  auto join_key = batch->getArray()->children[0];
+  for (int64_t i = 0; i < length; i++) {
+    auto bit_vector = reinterpret_cast<uint8_t*>(const_cast<void*>(join_key->buffers[0]));
+    if (CiderBitUtils::isBitSetAt(bit_vector, i)) {
+      int key =
+          *((reinterpret_cast<int64_t*>(const_cast<void*>(join_key->buffers[1]))) + i);
+      hashTable_->emplace(key, {batch.get(), i});
+    }
   }
-}
+  }
 
 std::shared_ptr<JoinHashTableBuilder> makeJoinHashTableBuilder(
     const ::substrait::JoinRel& joinRel,

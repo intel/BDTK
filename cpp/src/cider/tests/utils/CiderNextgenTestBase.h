@@ -80,6 +80,36 @@ class CiderNextgenTestBase : public testing::Test {
   cider::exec::nextgen::context::CodegenOptions codegen_options_ = {};
 };
 
+class CiderJoinNextgenTestBase : public CiderNextgenTestBase {
+ public:
+  void SetUp() override {
+    duckdb_query_runner_.createTableAndInsertArrowData(
+        table_name_, create_ddl_, *input_array_, *input_schema_);
+    duckdb_query_runner_.createTableAndInsertArrowData(
+        build_table_name_, build_table_ddl_, *build_array_, *build_schema_);
+    cider_nextgen_query_runner_->prepare(create_ddl_ + " " + build_table_ddl_);
+  }
+
+  void assertJoinQuery(const std::string& sql,
+                       const std::string& json_file = "",
+                       const bool ignore_order = true);
+
+  virtual void resetHashTable() {}
+
+  void assertNextGenJoinQuery(const std::string& sql,
+                              const std::string& json_file = "",
+                              const bool ignore_order = true) {
+    assertJoinQuery(sql, json_file, ignore_order);
+    resetHashTable();
+  }
+
+ protected:
+  std::string build_table_name_;
+  std::string build_table_ddl_;
+  ArrowArray* build_array_{nullptr};
+  ArrowSchema* build_schema_{nullptr};
+};
+
 class CiderNextgenTestBaseWithoutDuckDB : public CiderNextgenTestBase {
  public:
   void SetUp() override { cider_nextgen_query_runner_->prepare(create_ddl_); }

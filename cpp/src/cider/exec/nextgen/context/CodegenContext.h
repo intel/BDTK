@@ -197,6 +197,10 @@ class CodegenContext {
     codegen_options_ = codegen_options;
   }
 
+  void setHasOuterJoin(bool has_outer_join) { has_outer_join_ = has_outer_join; }
+
+  bool getHasOuterJoin() { return has_outer_join_; }
+
   using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
   using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
   using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
@@ -230,6 +234,8 @@ class CodegenContext {
   int64_t id_counter_{0};
   jitlib::JITModulePointer jit_module_;
   CodegenOptions codegen_options_;
+
+  bool has_outer_join_;
 
   // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
   TrimCharMapsPtr trim_char_maps_;

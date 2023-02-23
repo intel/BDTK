@@ -25,6 +25,7 @@
 #include <fstream>
 
 #include "exec/module/batch/ArrowABI.h"
+#include "exec/nextgen/context/Batch.h"
 #include "tests/utils/Utils.h"
 #include "util/measure.h"
 
@@ -83,6 +84,44 @@ void CiderNextgenQueryRunner::runQueryOneBatch(
 
   // Step 2: compile and gen runtime module
   processor_ = makeBatchProcessor(plan, context_, codegen_options);
+
+  // Step 3: run on this batch
+  processor_->processNextBatch(&input_array, &input_schema);
+
+  // Step 4: notify no more input to process
+  processor_->finish();
+
+  // Step 5: fetch data
+  processor_->getResult(output_array, output_schema);
+
+  return;
+}
+
+void CiderNextgenQueryRunner::runJoinQueryOneBatch(
+    const std::string& file_or_sql,
+    const struct ArrowArray& input_array,
+    const struct ArrowSchema& input_schema,
+    struct ArrowArray& build_array,
+    struct ArrowSchema& build_schema,
+    struct ArrowArray& output_array,
+    struct ArrowSchema& output_schema,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options) {
+  // Step 1: construct substrait plan
+  auto plan = genSubstraitPlan(file_or_sql);
+
+  // Step 2: compile and gen runtime module
+  processor_ = makeBatchProcessor(plan, context_, codegen_options);
+
+  auto table_build_context = std::make_shared<exec::processor::JoinHashTableBuildContext>(
+      context_->getAllocator());
+  auto join_hash_builder = makeJoinHashTableBuilder(
+      plan.relations(0).root().input().join(), table_build_context);
+
+  exec::nextgen::context::Batch build_batch(build_schema, build_array);
+  join_hash_builder->appendBatch(
+      std::make_shared<exec::nextgen::context::Batch>(build_batch));
+  auto hm = join_hash_builder->build();
+  processor_->feedHashBuildTable(std::move(hm));
 
   // Step 3: run on this batch
   processor_->processNextBatch(&input_array, &input_schema);

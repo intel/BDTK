@@ -30,3 +30,8 @@ add_executable(CiderBatchProcessorTest CiderBatchProcessorTest.cpp)
 target_link_libraries(CiderBatchProcessorTest ${PROCESSOR_TEST_LIBS})
 add_test(CiderStatelessProcessorTest
          ${EXECUTABLE_OUTPUT_PATH}/CiderBatchProcessorTest)
+
+add_executable(HashJoinBatchProcessorTest HashJoinBatchProcessorTest.cpp)
+target_link_libraries(HashJoinBatchProcessorTest ${PROCESSOR_TEST_LIBS})
+add_test(CiderStatelessProcessorTest
+         ${EXECUTABLE_OUTPUT_PATH}/HashJoinBatchProcessorTest)

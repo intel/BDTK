@@ -67,6 +67,51 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   output_schema.release(&output_schema);
 }
 
+void CiderJoinNextgenTestBase::assertJoinQuery(const std::string& sql,
+                                               const std::string& json_file,
+                                               const bool ignore_order) {
+  auto duck_res = duckdb_query_runner_.runSql(sql);
+  auto duck_res_arrow = DuckDbResultConvertor::fetchDataToArrow(duck_res);
+
+  struct ArrowArray output_array;
+  struct ArrowSchema output_schema;
+  // By default, SQL statement is used to generate Substrait plan through Isthmus.
+  // However, in some cases, the conversion result doesn't meet our expectations.
+  // For example, for `between and` case, Isthmus will translate it into `>=` and `<=`,
+  // rather than `between` function.
+  // As a result, in this case, we need feed a json file, which is delivered by Velox and
+  // will be used to generate Substrait plan.
+  auto file_or_sql = json_file.size() ? json_file : sql;
+  cider_nextgen_query_runner_->runJoinQueryOneBatch(file_or_sql,
+                                                    *input_array_,
+                                                    *input_schema_,
+                                                    *build_array_,
+                                                    *build_schema_,
+                                                    output_array,
+                                                    output_schema,
+                                                    codegen_options_);
+  if (0 == duck_res_arrow.size()) {
+    // result is empty.
+    CHECK_EQ(0, output_array.length);
+  } else {
+    if (ignore_order) {
+      EXPECT_TRUE(
+          CiderArrowChecker::checkArrowEqIgnoreOrder(duck_res_arrow[0].first.get(),
+                                                     &output_array,
+                                                     duck_res_arrow[0].second.get(),
+                                                     &output_schema));
+    } else {
+      EXPECT_TRUE(CiderArrowChecker::checkArrowEq(duck_res_arrow[0].first.get(),
+                                                  &output_array,
+                                                  duck_res_arrow[0].second.get(),
+                                                  &output_schema));
+    }
+  }
+
+  output_array.release(&output_array);
+  output_schema.release(&output_schema);
+}
+
 bool CiderNextgenTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
   try {
     struct ArrowArray output_array;

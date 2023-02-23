@@ -55,7 +55,7 @@ class InputAnalyzer {
     for (auto iter = eu_.input_col_descs.begin(); iter != eu_.input_col_descs.end();
          ++iter) {
       // record build table first column index
-      if (iter->get()->getTableId() == 101 && tag) {
+      if (iter->get()->getTableId() == right_table_id && tag) {
         build_table_offset_ = index;
         tag = false;
       }
