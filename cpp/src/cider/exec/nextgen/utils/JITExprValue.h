@@ -109,11 +109,14 @@ class FixSizeJITExprValue : public JITExprValueAdaptor {
 class VarSizeJITExprValue : public JITExprValueAdaptor {
  public:
   explicit VarSizeJITExprValue(JITExprValue& values) : JITExprValueAdaptor(values) {
-    values_.resize(3);
+    values_.resize(4);
   }
   jitlib::JITValuePointer& getLength() { return values_[1]; }
 
   jitlib::JITValuePointer& getValue() { return values_[2]; }
+
+  // For dictionary
+  jitlib::JITValuePointer& getDictionary() { return values_[3]; }
 };
 
 class VarSizeArrayExprValue : public JITExprValueAdaptor {

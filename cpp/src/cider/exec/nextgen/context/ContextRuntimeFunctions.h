@@ -61,6 +61,11 @@ extern "C" ALWAYS_INLINE void* extract_arrow_array_child(int8_t* arrow_pointer,
   return reinterpret_cast<void*>(array->children[index]);
 }
 
+extern "C" ALWAYS_INLINE int8_t* extract_arrow_array_dictionary(int8_t* arrow_pointer) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  return reinterpret_cast<int8_t*>(array->dictionary);
+}
+
 extern "C" ALWAYS_INLINE int64_t extract_arrow_array_len(int8_t* arrow_pointer) {
   ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
   return array->length;

@@ -68,17 +68,30 @@ class ColumnReader {
   void readVariableSizeTypeCol() {
     auto&& [batch, buffers] = context_.getArrowArrayValues(expr_->getLocalIndex());
     utils::VarSizeJITExprValue varsize_values(buffers);
-
     auto& func = batch->getParentJITFunction();
+    auto dictionary =
+        varsize_values.getDictionary()->castPointerSubType(JITTypeTag::INT8);
 
-    // offset buffer
-    auto offset_pointer =
-        varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32);
-    auto len = offset_pointer[index_ + 1] - offset_pointer[index_];
-    auto cur_offset = offset_pointer[index_];
-    // data buffer
-    auto value_pointer = varsize_values.getValue()->castPointerSubType(JITTypeTag::INT8);
-    auto row_data = value_pointer + cur_offset;  // still char*
+    JITValuePointer len = func.emitRuntimeFunctionCall(
+        "get_str_length_from_dictionary_or_buffer",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT32,
+            .params_vector = {{dictionary.get(),
+                               index_.get(),
+                               varsize_values.getLength()
+                                   ->castPointerSubType(JITTypeTag::INT32)
+                                   .get()}}});
+    JITValuePointer row_data = func.emitRuntimeFunctionCall(
+        "get_str_ptr_from_dictionary_or_buffer",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .params_vector = {
+                {dictionary.get(),
+                 index_.get(),
+                 varsize_values.getLength()->castPointerSubType(JITTypeTag::INT32).get(),
+                 varsize_values.getValue()
+                     ->castPointerSubType(JITTypeTag::INT8)
+                     .get()}}});
 
     if (expr_->get_type_info().get_notnull()) {
       expr_->set_expr_value(func.createLiteral(JITTypeTag::BOOL, false), len, row_data);
