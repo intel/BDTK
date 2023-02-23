@@ -61,8 +61,8 @@ using namespace facebook::velox::functions;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::substrait;
 
-static const std::shared_ptr<CiderAllocator> allocator =
-    std::make_shared<CiderDefaultAllocator>();
+// static const std::shared_ptr<PoolAllocator> allocator =
+//     std::make_shared<CiderDefaultAllocator>();
 namespace {
 std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
                                                         MemoryPool* pool) {
@@ -83,13 +83,15 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
   explicit StringFunctionBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     functions::prestosql::registerStringFunctions();
 
-    inputType_ = ROW({{"col_str", VARCHAR()},{"col_str2", VARCHAR()}});
+    inputType_ = ROW({{"col_str", VARCHAR()}, {"col_str2", VARCHAR()}});
 
     vectorSize_ = vectorSize;
     // Generate input data.
     VectorFuzzer::Options opts;
     opts.vectorSize = vectorSize;
-    opts.nullRatio = 0.5;
+    // opts.nullRatio = 0.5;
+    // opts.stringVariableLength = false;
+    // opts.stringLength = 16;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     std::vector<VectorPtr> children;
@@ -195,16 +197,17 @@ std::unique_ptr<StringFunctionBenchmark> benchmark;
 // }
 // BENCHMARK_DRAW_LINE();
 
-// std::string concat_expr = "concat(col_str, 'aaaa')";
-std::string concat_expr = "concat(col_str, col_str2)";
-
-BENCHMARK(nextgen_concat) {
-  benchmark->nextgenCompute(concat_expr);
-}
+std::string concat_expr = "concat(col_str, 'aaaa')";
+// std::string concat_expr = "concat(col_str, col_str2)";
 
 BENCHMARK(velox_concat) {
   benchmark->veloxCompute(concat_expr);
 }
+
+BENCHMARK_RELATIVE(nextgen_concat) {
+  benchmark->nextgenCompute(concat_expr);
+}
+
 BENCHMARK_DRAW_LINE();
 
 }  // namespace

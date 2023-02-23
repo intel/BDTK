@@ -220,6 +220,16 @@ extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" RUNTIME_EXPORT int8_t* get_buffer_without_realloc(
+    const int8_t* input_desc_ptr,
+    const int32_t index) {
+  const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
+
+  return holder->getBufferAs<int8_t>(index);
+    }
+
 extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
     const int8_t* input_desc_ptr,
     const int32_t current_bytes,
@@ -236,7 +246,7 @@ extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
   } else if (current_bytes >= 0.9 * capacity) {
     // double capacity if current bytes take up 90% of capacity
     // assumes we would have enough space for next input after at most one resize op
-    holder->allocBuffer(index, capacity * 2);
+    holder->allocBuffer(index, capacity * 1.5);
   }
 
   return holder->getBufferAs<int8_t>(index);
