@@ -59,7 +59,9 @@
                   }
                 },
                 "arguments": [{
-                  "enum": "QUARTER"
+                  "enum": {
+                    "specified": "QUARTER"
+                  }
                 }, {
                   "value": {
                     "selection": {

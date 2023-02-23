@@ -39,18 +39,18 @@ find_program(llvm_clangpp_cmd NAME clang++ HINTS ${LLVM_TOOLS_BINARY_DIR})
 list(APPEND ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/gen-cpp/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+add_library(QueryEngine ${query_engine_source_files})
+
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/CiderTypes.h
-        ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
-        ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/../../function/RuntimeFunctions.bc
+        ${CMAKE_CURRENT_BINARY_DIR}/../../function/ExtensionFunctions.ast
   DESTINATION QueryEngine
   COMPONENT "QE")
 
-add_library(QueryEngine ${query_engine_source_files})
-
 find_package(FMT REQUIRED)
 
-set(QUERY_ENGINE_LIBS cider_function cider_util cider_type_plan fmt::fmt)
+set(QUERY_ENGINE_LIBS cider_function cider_type_plan cider_util cider_type_plan
+                      fmt::fmt)
 
 list(APPEND QUERY_ENGINE_LIBS ${llvm_libs} ${ZLIB_LIBRARIES})
 

@@ -108,16 +108,12 @@ class CiderProjectAllTestNG : public CiderNextgenTestBase {
          CREATE_SUBSTRAIT_TYPE(Fp64),
          CREATE_SUBSTRAIT_TYPE(Date),
          CREATE_SUBSTRAIT_TYPE(Bool)},
-        {1, 2, 2, 2, 3, 3, 4, 1},
+        {1, 2, 2, 2, 3, 3, 4, 2},
         GeneratePattern::Random);
   }
 };
-/*
+
 TEST_F(CiderProjectAllTestNG, filterProjectAllTest) {
-  assertQuery("SELECT col_2 > 20 and col_8 FROM test");
-  assertQuery("SELECT col_2 < 20 or col_8 FROM test");
-  assertQuery("SELECT * FROM test where col_2 > 20 and col_8");
-  assertQuery("SELECT * FROM test where col_2 < 20 or col_8");
   assertQuery("SELECT * FROM test");
   assertQuery("SELECT * FROM test where TRUE");
   assertQuery(
@@ -308,7 +304,7 @@ TEST_F(CiderFilterRandomTestNG, integerNullFilterTest) {
   assertQuery("SELECT col_3 FROM test WHERE col_3 IS NOT NULL AND col_3 <= 77");
   assertQuery("SELECT col_4 FROM test WHERE col_4 IS NOT NULL AND col_4 >= 77");
 }
-*/
+
 TEST_F(CiderFilterRandomTestNG, DistinctFromTest) {
   // IS DISTINCT FROM
   assertQueryIgnoreOrder(

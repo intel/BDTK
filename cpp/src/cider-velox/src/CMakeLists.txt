@@ -23,7 +23,7 @@ add_subdirectory(ciderTransformer)
 
 set(VELOX_PLUGIN_SOURCES
     CiderPlanNode.cpp ArrowConvertorUtils.cpp CiderVeloxPluginCtx.cpp
-    CiderPipelineOperator.cpp CiderHashJoinBuild.cpp CiderCrossJoinBuild.cpp CiderVeloxOptions.cpp)
+    CiderPipelineOperator.cpp CiderHashJoinBuild.cpp CiderCrossJoinBuild.cpp)
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 

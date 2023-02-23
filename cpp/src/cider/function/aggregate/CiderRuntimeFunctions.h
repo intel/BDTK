@@ -26,7 +26,6 @@
 #include <cstdint>
 
 #include "cider/CiderTypes.h"
-// #include "exec/operator/aggregate/CiderAggHashTable.h"
 #include "exec/template/TypePunning.h"
 #include "type/data/funcannotations.h"
 #include "util/CiderBitUtils.h"

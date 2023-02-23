@@ -28,6 +28,7 @@
 
 #include "cider/processor/JoinHashTableBuilder.h"
 #include "exec/nextgen/context/Batch.h"
+#include "exec/plan/parser/TypeUtils.h"
 #include "exec/processor/StatefulProcessor.h"
 #include "exec/processor/StatelessProcessor.h"
 #include "tests/utils/QueryArrowDataGenerator.h"

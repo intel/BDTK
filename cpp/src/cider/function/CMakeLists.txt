@@ -21,9 +21,8 @@ set(function_source_files
     ../../cider/exec/template/DynamicWatchdog.cpp
     scalar/RuntimeFunctions.cpp
     RuntimeFunctions.bc
-    ExtensionFunctionsBinding.cpp
-    ExtensionFunctionsWhitelist.cpp
-    FunctionLookupEngine.cpp
+    # ExtensionFunctionsBinding.cpp ExtensionFunctionsWhitelist.cpp
+    # FunctionLookupEngine.cpp
     string/StringLike.cpp
     string/StringFunctions.cpp
     string/StringOpInfo.cpp
@@ -77,15 +76,6 @@ add_custom_command(
     ${CMAKE_SOURCE_DIR}/thirdparty/robin-hood-hashing/src/include
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
-add_library(cider_function ${function_source_files})
+add_library(cider_function SHARED ${function_source_files})
 
-if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
-   OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB
-   OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
-  add_dependencies(cider_function SUBSTRAITCPP)
-endif()
-message("------------------------------------------------------------")
-message(${SUBSTRAITCPP_COMMON_LIB})
-target_link_libraries(
-  cider_function ${SUBSTRAITCPP_FUNCTION_LIB} ${SUBSTRAITCPP_TYPE_LIB}
-  ${SUBSTRAITCPP_COMMON_LIB} substrait yaml-cpp re2)
+target_link_libraries(cider_function re2)
