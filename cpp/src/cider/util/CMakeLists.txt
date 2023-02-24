@@ -20,23 +20,13 @@
 find_package(FMT REQUIRED)
 
 set(cider_util_source_files
-    encode/Encoder.cpp
-    encode/StringNoneEncoder.cpp
     filesystem/cider_fs.cpp
     filesystem/cider_path.cpp
-    Regexp.cpp
-    ChunkIter.cpp
-    DdlUtils.cpp
     Logger.cpp
     Datum.cpp
     StringTransform.cpp
     DateTimeParser.cpp
-    StackTrace.cpp
-    base64.cpp
-    misc.cpp
-    thread_count.cpp
-    threading.cpp
-    MathUtils.cpp)
+    misc.cpp)
 
 add_library(cider_util ${cider_util_source_files})
 target_link_libraries(
@@ -47,4 +37,3 @@ target_link_libraries(
   dl
   fmt
   glog)
-add_subdirectory(memory)

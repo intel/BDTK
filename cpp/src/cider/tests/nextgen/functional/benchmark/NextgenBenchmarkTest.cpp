@@ -22,6 +22,7 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "tests/utils/CiderNextgenBenchmarkBase.h"
+#include "util/Logger.h"
 using namespace cider::test::util;
 
 int global_row_num = 0;

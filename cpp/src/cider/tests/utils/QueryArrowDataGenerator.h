@@ -26,9 +26,7 @@
 #include <random>
 #include <string>
 #include "ArrowArrayBuilder.h"
-#include "QueryDataGenerator.h"
 #include "Utils.h"
-#include "cider/CiderBatch.h"
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
 
@@ -46,6 +44,8 @@ static constexpr int64_t kMinTimestamp =
     kMinDay * kSecondsInOneDay * kMicrosecondsInSecond;
 static constexpr int64_t kMaxTimestamp =
     kMaxDay * kSecondsInOneDay * kMicrosecondsInSecond;
+
+enum GeneratePattern { Sequence, Random, Special_Date_format_String };
 
 // TODO(yizhong): Enable this after QueryDataGenerator is deleted.
 // enum GeneratePatternArrow { SequenceArrow, RandomArrow };

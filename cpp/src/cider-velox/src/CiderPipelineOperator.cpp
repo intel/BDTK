@@ -102,17 +102,19 @@ CiderPipelineOperator::CiderPipelineOperator(
   auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(substraitPlan);
   auto context =
       std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
-  auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
-      operatorCtx_->driverCtx()->splitGroupId, planNodeId());
 
   if (planUtil->hasCrossRel()) {
     cider::exec::processor::CrossBuildTableSupplier crossBuildTableSupplier = [&]() {
+      auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
+          operatorCtx_->driverCtx()->splitGroupId, planNodeId());
       auto ciderJoinBridge = std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
       return *ciderJoinBridge->hasDataOrFuture(&future_);
     };
     context->setCrossJoinBuildTableSupplier(crossBuildTableSupplier);
-  } else {
+  } else if (planUtil->hasJoinRel()) {
     cider::exec::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
+      auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
+          operatorCtx_->driverCtx()->splitGroupId, planNodeId());
       auto ciderJoinBridge = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);
       return ciderJoinBridge->hashBuildResultOrFuture(&future_);
     };

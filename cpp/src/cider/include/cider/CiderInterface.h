@@ -23,7 +23,6 @@
 #define CIDER_CIDERINTERFACE_H
 
 // user could include this file only instead of include below headers.
-#include "cider/CiderBatch.h"
 #include "cider/CiderOptions.h"
 #include "cider/CiderTableSchema.h"
 

@@ -21,6 +21,7 @@
  */
 #include "type/plan/Analyzer.h"
 #include "exec/template/DateTimeUtils.h"
+#include "function/datetime/DateTruncate.h"
 #include "type/data/sqltypes.h"
 #include "util/DateConverters.h"
 #include "util/misc.h"

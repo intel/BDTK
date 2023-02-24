@@ -24,7 +24,8 @@ set(PROCESSOR_TEST_LIBS
     duckdb
     substrait
     cider
-    cider_processor)
+    cider_processor
+    dl)
 
 add_executable(CiderBatchProcessorTest CiderBatchProcessorTest.cpp)
 target_link_libraries(CiderBatchProcessorTest ${PROCESSOR_TEST_LIBS})

@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "CiderOperator.h"
+#include "CiderPlanNode.h"
 #include "cider/processor/BatchProcessor.h"
 #include "velox/exec/Operator.h"
 

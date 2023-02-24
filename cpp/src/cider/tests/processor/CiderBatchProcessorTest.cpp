@@ -19,10 +19,13 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 #include <string>
+#include "util/Logger.h"
 
+#include "exec/plan/parser/TypeUtils.h"
 #include "exec/processor/StatefulProcessor.h"
 #include "exec/processor/StatelessProcessor.h"
 #include "tests/utils/QueryArrowDataGenerator.h"

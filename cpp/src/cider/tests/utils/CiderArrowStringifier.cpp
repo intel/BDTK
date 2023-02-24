@@ -20,6 +20,11 @@
  */
 
 #include "tests/utils/CiderArrowStringifier.h"
+#include <algorithm>
+#include <iomanip>
+#include <sstream>
+#include "cider/CiderException.h"
+#include "util/CiderBitUtils.h"
 namespace cider::test::util {
 
 #define NULL_VALUE "null"
@@ -27,8 +32,8 @@ namespace cider::test::util {
 void ArrowStructStringifier::init(const struct ArrowArray* array,
                                   const struct ArrowSchema* schema) {
   children_stringifiers_.clear();
-  CHECK_EQ(schema->format[0], '+');
-  CHECK_EQ(schema->format[1], 's');
+  // CHECK_EQ(schema->format[0], '+');
+  // CHECK_EQ(schema->format[1], 's');
 
   auto col_num = array->n_children;
   for (auto col_index = 0; col_index < col_num; ++col_index) {

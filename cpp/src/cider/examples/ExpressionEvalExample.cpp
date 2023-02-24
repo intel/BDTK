@@ -18,16 +18,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "cider/CiderCompileModule.h"
-#include "exec/module/CiderExprEvaluator.h"
 #include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/LiteralUtils.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/function.pb.h"
 #include "substrait/type.pb.h"
-#include "tests/utils/CiderBatchBuilder.h"
-#include "tests/utils/CiderBatchChecker.h"
 
 int main(int argc, char** argv) {
   // Example 1: generate for expression "a * b + b"
@@ -44,25 +40,26 @@ int main(int argc, char** argv) {
   // TODO: (yma11) build extended expression and replace old evalulator API
   // ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr, {"add_res"}}});
   // Make batch for evaluation, data should be transferred from frontend in real case
-  auto input_batch = CiderBatchBuilder()
-                         .setRowNum(2)
-                         .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I64), {1, 4})
-                         .addColumn<int64_t>("b", CREATE_SUBSTRAIT_TYPE(I64), {4, 3})
-                         .build();
-  auto expect_batch = CiderBatchBuilder()
-                          .setRowNum(2)
-                          .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {8, 15})
-                          .build();
-  auto allocator = std::make_shared<CiderDefaultAllocator>();
-  CiderExprEvaluator evaluator({add_expr},
-                               builder.funcsInfo(),
-                               builder.getSchema(),
-                               allocator,
-                               generator::ExprType::ProjectExpr);
-  auto out_batch = evaluator.eval(input_batch);
-  // Verify result
-  assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expect_batch),
-                                    std::make_shared<CiderBatch>(out_batch)));
+  // TODO : (yma11) switch to new expr evaluation API
+  //   auto input_batch = CiderBatchBuilder()
+  //                          .setRowNum(2)
+  //                          .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I64), {1, 4})
+  //                          .addColumn<int64_t>("b", CREATE_SUBSTRAIT_TYPE(I64), {4, 3})
+  //                          .build();
+  //   auto expect_batch = CiderBatchBuilder()
+  //                           .setRowNum(2)
+  //                           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {8,
+  //                           15}) .build();
+  //   auto allocator = std::make_shared<CiderDefaultAllocator>();
+  //   CiderExprEvaluator evaluator({add_expr},
+  //                                builder.funcsInfo(),
+  //                                builder.getSchema(),
+  //                                allocator,
+  //                                generator::ExprType::ProjectExpr);
+  //   auto out_batch = evaluator.eval(input_batch);
+  //   // Verify result
+  //   assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expect_batch),
+  //                                     std::make_shared<CiderBatch>(out_batch)));
 
   // Example 2 : generate for expression "a * b + 10"
   SubstraitExprBuilder inc_builder({"a", "b"},
@@ -78,20 +75,21 @@ int main(int argc, char** argv) {
       "add", {multiply_expr1, field4}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
   // ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr1,
   // {"add_res"}}}); Evaluate same batch as above
-  CiderExprEvaluator evaluator1({add_expr1},
-                                inc_builder.funcsInfo(),
-                                inc_schema,
-                                allocator,
-                                generator::ExprType::ProjectExpr);
-  auto out_batch1 = evaluator1.eval(input_batch);
-  // Verify result
-  auto expected_batch1 =
-      CiderBatchBuilder()
-          .setRowNum(2)
-          .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {14, 22})
-          .build();
-  assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expected_batch1),
-                                    std::make_shared<CiderBatch>(out_batch1)));
+  // TODO : (yma11) switch to new expr evaluation API
+  //   CiderExprEvaluator evaluator1({add_expr1},
+  //                                 inc_builder.funcsInfo(),
+  //                                 inc_schema,
+  //                                 allocator,
+  //                                 generator::ExprType::ProjectExpr);
+  //   auto out_batch1 = evaluator1.eval(input_batch);
+  //   // Verify result
+  //   auto expected_batch1 =
+  //       CiderBatchBuilder()
+  //           .setRowNum(2)
+  //           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {14, 22})
+  //           .build();
+  //   assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expected_batch1),
+  //                                     std::make_shared<CiderBatch>(out_batch1)));
   // Example 2 : generate for expression "sum(a), min(b)"
   SubstraitExprBuilder agg_builder({"a", "b"},
                                    {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),

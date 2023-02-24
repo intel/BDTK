@@ -19,13 +19,12 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-
 #include "exec/nextgen/parsers/Parser.h"
 #include "exec/nextgen/transformer/Transformer.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
-#include "tests/TestHelpers.h"
 #include "tests/utils/Utils.h"
 
 class NextGenParserTest : public ::testing::Test {

@@ -21,8 +21,9 @@
 #ifndef CIDER_ARROWARRAYBUILDER_H
 #define CIDER_ARROWARRAYBUILDER_H
 
-#include "cider/CiderBatch.h"
 #include "cider/batch/CiderBatchUtils.h"
+#include "exec/module/batch/CiderArrowBufferHolder.h"
+#include "util/CiderBitUtils.h"
 
 #ifndef CIDER_DUCKDBQUERYRUNNER_H
 #include "exec/module/batch/ArrowABI.h"

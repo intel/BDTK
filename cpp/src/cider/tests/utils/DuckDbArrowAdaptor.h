@@ -24,7 +24,6 @@
 
 #include <list>
 #include <vector>
-#include "cider/CiderBatch.h"
 #include "duckdb.hpp"
 
 // function interfaces from duckdb are different when enabling/disabling velox

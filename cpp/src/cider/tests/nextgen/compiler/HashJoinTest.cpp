@@ -21,12 +21,10 @@
 
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
-
 #include "exec/nextgen/Nextgen.h"
 #include "exec/nextgen/context/Batch.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/TestHelpers.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/Utils.h"
 

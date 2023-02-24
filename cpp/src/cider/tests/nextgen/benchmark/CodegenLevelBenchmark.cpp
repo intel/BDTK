@@ -1,4 +1,3 @@
-
 /*
  * Copyright(c) 2022-2023 Intel Corporation.
  *
@@ -26,7 +25,6 @@
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
-#include "tests/TestHelpers.h"
 #include "tests/nextgen/operator/MockSink.h"
 #include "type/plan/Analyzer.h"
 #include "util/sqldefs.h"

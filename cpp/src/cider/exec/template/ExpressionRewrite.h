@@ -58,10 +58,6 @@ struct OverlapsJoinConjunction {
 boost::optional<OverlapsJoinConjunction> rewrite_overlaps_conjunction(
     const std::shared_ptr<Analyzer::Expr> expr);
 
-std::list<std::shared_ptr<Analyzer::Expr>> strip_join_covered_filter_quals(
-    const std::list<std::shared_ptr<Analyzer::Expr>>& quals,
-    const JoinQualsPerNestingLevel& join_quals);
-
 std::shared_ptr<Analyzer::Expr> fold_expr(const Analyzer::Expr*);
 
 bool self_join_not_covered_by_left_deep_tree(const Analyzer::ColumnVar* lhs,

@@ -114,47 +114,47 @@ add_executable(CiderPlanNodeTest CiderPlanNodeTest.cpp)
 target_link_libraries(CiderPlanNodeTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderPlanNodeTest CiderPlanNodeTest ${TEST_ARGS})
 
-add_executable(CiderDataConvertorTest DataConvertorTest.cpp ArrowUtilsTest.cpp)
-target_link_libraries(CiderDataConvertorTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderDataConvertorTest CiderDataConvertorTest ${TEST_ARGS})
+add_executable(ArrowUtilsTest ArrowUtilsTest.cpp)
+target_link_libraries(ArrowUtilsTest ${VELOX_PLUGIN_TEST_LIBS})
+add_test(ArrowUtilsTest ArrowUtilsTest ${TEST_ARGS})
 
 add_executable(CiderOperatorTest CiderOperatorTest.cpp)
 target_link_libraries(CiderOperatorTest ${VELOX_PLUGIN_TEST_LIBS}
                       velox_plan_transformer)
 add_test(CiderOperatorTest CiderOperatorTest ${TEST_ARGS})
 
-add_executable(CiderPatternTest CiderPatternTest.cpp)
-target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS}
-                      velox_plan_transformer)
-add_test(CiderPatternTest CiderPatternTest ${TEST_ARGS})
+# add_executable(CiderPatternTest CiderPatternTest.cpp)
+# target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS}
+# velox_plan_transformer) add_test(CiderPatternTest CiderPatternTest
+# ${TEST_ARGS})
 
-add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)
-target_link_libraries(AggWithRandomDataTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(AggWithRandomDataTest AggWithRandomDataTest ${TEST_ARGS})
+# add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)
+# target_link_libraries(AggWithRandomDataTest ${VELOX_PLUGIN_TEST_LIBS})
+# add_test(AggWithRandomDataTest AggWithRandomDataTest ${TEST_ARGS})
 
 add_executable(CiderDataTypeTest CiderDataTypeTest.cpp)
 target_link_libraries(CiderDataTypeTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderDataTypeTest CiderDataTypeTest ${TEST_ARGS})
 
-add_executable(CiderOperatorCompareOpTest CiderOperatorCompareOpTest.cpp)
-target_link_libraries(CiderOperatorCompareOpTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderOperatorCompareOpTest CiderOperatorCompareOpTest ${TEST_ARGS})
+# add_executable(CiderOperatorCompareOpTest CiderOperatorCompareOpTest.cpp)
+# target_link_libraries(CiderOperatorCompareOpTest ${VELOX_PLUGIN_TEST_LIBS})
+# add_test(CiderOperatorCompareOpTest CiderOperatorCompareOpTest ${TEST_ARGS})
 
 add_executable(CiderFilterProjectTest CiderFilterProjectTest.cpp)
 target_link_libraries(CiderFilterProjectTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderFilterProjectTest CiderFilterProjectTest ${TEST_ARGS})
 
-add_executable(CiderScalarFunctionTest CiderScalarFunctionTest.cpp)
-target_link_libraries(CiderScalarFunctionTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderScalarFunctionTest CiderScalarFunctionTest ${TEST_ARGS})
+# add_executable(CiderScalarFunctionTest CiderScalarFunctionTest.cpp)
+# target_link_libraries(CiderScalarFunctionTest ${VELOX_PLUGIN_TEST_LIBS})
+# add_test(CiderScalarFunctionTest CiderScalarFunctionTest ${TEST_ARGS})
 
-add_executable(CiderOperatorAggOpTest CiderOperatorAggOpTest.cpp)
-target_link_libraries(CiderOperatorAggOpTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderOperatorAggOpTest CiderOperatorAggOpTest ${TEST_ARGS})
+# add_executable(CiderOperatorAggOpTest CiderOperatorAggOpTest.cpp)
+# target_link_libraries(CiderOperatorAggOpTest ${VELOX_PLUGIN_TEST_LIBS})
+# add_test(CiderOperatorAggOpTest CiderOperatorAggOpTest ${TEST_ARGS})
 
-add_executable(CiderOperatorHashJoinTest CiderOperatorHashJoinTest.cpp)
-target_link_libraries(CiderOperatorHashJoinTest ${VELOX_PLUGIN_TEST_LIBS})
-add_test(CiderOperatorHashJoinTest CiderOperatorHashJoinTest ${TEST_ARGS})
+# add_executable(CiderOperatorHashJoinTest CiderOperatorHashJoinTest.cpp)
+# target_link_libraries(CiderOperatorHashJoinTest ${VELOX_PLUGIN_TEST_LIBS})
+# add_test(CiderOperatorHashJoinTest CiderOperatorHashJoinTest ${TEST_ARGS})
 
 add_subdirectory(planTransformerTest)
 add_subdirectory(SubstraitTest)

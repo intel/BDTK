@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 #include "tests/utils/CiderNextgenTestBase.h"

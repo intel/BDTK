@@ -39,8 +39,6 @@
 #include "VariableContext.h"
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/Translator.h"
-#include "exec/template/QueryHint.h"
-#include "exec/template/common/descriptors/ColSlotContext.h"
 #include "exec/template/common/descriptors/InputDescriptors.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/extensions/extensions.pb.h"

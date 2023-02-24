@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
 #include "exec/module/batch/ArrowABI.h"
@@ -28,7 +29,6 @@
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/TestHelpers.h"
 #include "tests/nextgen/operator/MockRowToColumn.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 

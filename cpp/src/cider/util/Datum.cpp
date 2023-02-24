@@ -40,9 +40,9 @@
 #include "DateTimeParser.h"
 #include "StringTransform.h"
 #include "exec/template/DateTimeUtils.h"
-#include "misc.h"
 #include "type/data/sqltypes.h"
 #include "util/Logger.h"
+#include "util/misc.h"
 
 std::string SQLTypeInfo::type_name[kSQLTYPE_LAST] = {"NULL",
                                                      "BOOLEAN",

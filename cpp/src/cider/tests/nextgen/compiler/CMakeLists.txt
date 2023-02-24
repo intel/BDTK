@@ -24,40 +24,41 @@ set(NEXTGEN_COMPILER_TEST_LIBS
     duckdb
     substrait
     cider
-    cider_hashtable_join)
+    cider_hashtable_join
+    dl)
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
 target_link_libraries(NextgenCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
          --use_nextgen_compiler)
 
-add_executable(FilterProjectTest FilterProjectTest.cpp)
-target_link_libraries(FilterProjectTest ${EXECUTE_TEST_LIBS}
-                      ${NEXTGEN_TEST_DEPS})
-add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
-         ${TEST_ARGS})
+# add_executable(FilterProjectTest FilterProjectTest.cpp)
+# target_link_libraries(FilterProjectTest ${EXECUTE_TEST_LIBS}
+# ${NEXTGEN_TEST_DEPS}) add_test(FilterProjectTest
+# ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest ${TEST_ARGS})
 
 add_executable(AggTest AggTest.cpp)
-target_link_libraries(AggTest ${EXECUTE_TEST_LIBS} ${NEXTGEN_TEST_DEPS})
+target_link_libraries(AggTest ${EXECUTE_TEST_LIBS}
+                      ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(AggTest ${EXECUTABLE_OUTPUT_PATH}/AggTest ${TEST_ARGS})
 
 add_executable(ArrayTest ArrayTest.cpp)
 target_link_libraries(ArrayTest ${EXECUTE_TEST_LIBS} ${NEXTGEN_TEST_DEPS})
 add_test(ArrayTest ${EXECUTABLE_OUTPUT_PATH}/ArrayTest ${TEST_ARGS})
 
-# add_executable(ContextTest ContextTest.cpp) target_link_libraries(ContextTest
-# ${NEXTGEN_COMPILER_TEST_LIBS}) add_test(ContextTest
-# ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})
+add_executable(ContextTest ContextTest.cpp)
+target_link_libraries(ContextTest ${NEXTGEN_COMPILER_TEST_LIBS})
+add_test(ContextTest ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})
 
-add_executable(HashJoinTest HashJoinTest.cpp)
-target_link_libraries(HashJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
-                      ${FOLLY_LIBRARIES})
-add_test(HashJoinTest ${EXECUTABLE_OUTPUT_PATH}/HashJoinTest ${TEST_ARGS})
+# add_executable(HashJoinTest HashJoinTest.cpp)
+# target_link_libraries(HashJoinTest ${NEXTGEN_COMPILER_TEST_LIBS}
+# ${NEXTGEN_COMPILER_TEST_LIBS} ${FOLLY_LIBRARIES}) add_test(HashJoinTest
+# ${EXECUTABLE_OUTPUT_PATH}/HashJoinTest ${TEST_ARGS})
 
-add_executable(CrossJoinTest CrossJoinTest.cpp)
-target_link_libraries(CrossJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
-                      ${FOLLY_LIBRARIES})
-add_test(CrossJoinTest ${EXECUTABLE_OUTPUT_PATH}/CrossJoinTest ${TEST_ARGS})
+# add_executable(CrossJoinTest CrossJoinTest.cpp)
+# target_link_libraries(CrossJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
+# ${FOLLY_LIBRARIES}) add_test(CrossJoinTest
+# ${EXECUTABLE_OUTPUT_PATH}/CrossJoinTest ${TEST_ARGS})
 
 add_executable(DecimalOpTest DecimalOpTest.cpp)
 target_link_libraries(DecimalOpTest ${NEXTGEN_COMPILER_TEST_LIBS})

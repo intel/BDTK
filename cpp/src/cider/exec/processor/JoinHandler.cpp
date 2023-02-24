@@ -36,12 +36,6 @@ void HashProbeHandler::onState(BatchProcessorState state) {
   }
 }
 
-std::shared_ptr<CiderBatch> HashProbeHandler::onProcessBatch(
-    std::shared_ptr<CiderBatch> batch) {
-  // TODO: spill rows if the corresponding partition was spilled in build-side
-  return batch;
-}
-
 void CrossProbeHandler::onState(cider::exec::processor::BatchProcessorState state) {
   if (BatchProcessorState::kWaiting == state) {
     const auto& crossBuildTableSupplier =
@@ -54,10 +48,4 @@ void CrossProbeHandler::onState(cider::exec::processor::BatchProcessorState stat
     }
   }
 }
-
-std::shared_ptr<CiderBatch> CrossProbeHandler::onProcessBatch(
-    std::shared_ptr<CiderBatch> batch) {
-  return batch;
-}
-
 }  // namespace cider::exec::processor

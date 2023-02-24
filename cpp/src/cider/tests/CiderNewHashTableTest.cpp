@@ -21,11 +21,11 @@
 
 #include <common/base/wide_integer.h>
 #include <common/hashtable/HashTableAllocator.h>
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "TestHelpers.h"
 #include "common/hashtable/FixedHashMap.h"
+#include "util/Logger.h"
 
-using namespace TestHelpers;
 using namespace cider::hashtable;
 
 class CiderNewHashTableTest : public ::testing::Test {};

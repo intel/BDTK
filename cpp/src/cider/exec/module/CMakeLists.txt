@@ -19,24 +19,32 @@
 
 find_package(gflags COMPONENTS shared)
 set(SRC_FILE
-    CiderCompileModule.cpp
-    CiderRuntimeModule.cpp
-    CiderExprEvaluator.cpp
+    ../../function/ExtensionFunctionsBinding.cpp
+    ../../function/ExtensionFunctionsWhitelist.cpp
+    ../../function/FunctionLookupEngine.cpp
     CiderTypes.cpp
     CiderOptions.cpp
-    batch/CiderBatch.cpp
     batch/CiderBatchUtils.cpp
     batch/CiderArrowBufferHolder.cpp)
 add_library(cider SHARED ${SRC_FILE})
+if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
+   OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB
+   OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
+  add_dependencies(cider SUBSTRAITCPP)
+endif()
 target_link_libraries(
   cider
   QueryEngine
   nextgen
-  memory
   cider_plan_parser
+  cider_function
   ${Boost_LIBRARIES}
   ${GFLAGS_LIBRARIES}
   ${TBB_LIBS}
+  ${SUBSTRAITCPP_FUNCTION_LIB}
+  ${SUBSTRAITCPP_TYPE_LIB}
+  ${SUBSTRAITCPP_COMMON_LIB}
+  substrait
   yaml-cpp
   cider_hashtable_join)
 
@@ -48,12 +56,6 @@ install(
   DESTINATION "lib"
   COMPONENT "CIDER")
 install(
-  FILES CiderInterface.h
-        CiderRuntimeModule.h
-        CiderCompileModule.h
-        CiderBatch.h
-        CiderOptions.h
-        CiderTableSchema.h
-        CiderException.h
+  FILES CiderInterface.h CiderOptions.h CiderTableSchema.h CiderException.h
   DESTINATION "Cider"
   COMPONENT "include")

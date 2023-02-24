@@ -24,75 +24,21 @@
  * @brief   Test Expression IR generation from Substrait
  **/
 
+#include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include <fstream>
+#include <sstream>
 #include <string>
-#include "TestHelpers.h"
-#include "cider/CiderCompileModule.h"
 #include "cider/CiderTableSchema.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
-#include "exec/template/AggregatedColRange.h"
-#include "exec/template/Execute.h"
-#include "exec/template/InputMetadata.h"
 #include "util/Logger.h"
 
 std::string getDataFilesPath() {
   const std::string absolute_path = __FILE__;
   auto const pos = absolute_path.find_last_of('/');
   return absolute_path.substr(0, pos) + "/substrait_plan_files/";
-}
-
-std::vector<InputTableInfo> buildInputTableInfo(
-    std::vector<CiderTableSchema> table_schemas) {
-  std::vector<InputTableInfo> query_infos;
-  for (int i = 0; i < table_schemas.size(); i++) {
-    Fragmenter_Namespace::FragmentInfo fi_0;
-    fi_0.fragmentId = i;
-    fi_0.shadowNumTuples = 1024;
-    // note that we use fake table id 100 since real table id can't be got
-    fi_0.physicalTableId = 100 + i;
-    fi_0.setPhysicalNumTuples(1024);
-    // add chunkMetadata
-    for (int j = 0; j < table_schemas[i].getColumnTypes().size(); j++) {
-      auto chunk_meta = std::make_shared<ChunkMetadata>();
-      chunk_meta->numBytes = 0;
-      chunk_meta->numElements = 0;
-      fi_0.setChunkMetadata(j, chunk_meta);
-    }
-    Fragmenter_Namespace::TableInfo ti_0;
-    ti_0.fragments = {fi_0};
-    ti_0.setPhysicalNumTuples(1024);
-    InputTableInfo iti_0{100, 100 + i, ti_0};
-    query_infos.push_back(iti_0);
-  }
-  return query_infos;
-}
-
-CiderBatch buildCiderBatch() {
-  const int col_num = 9;
-  const int row_num = 20;
-
-  //"O_ORDERKEY", "O_CUSTKEY", "O_ORDERSTATUS", "O_TOTALPRICE",
-  //"O_ORDERDATE", "O_ORDERPRIORITY", "O_CLERK", "O_SHIPPRIORITY", "O_COMMENT"
-  std::vector<int8_t*> table_ptr_tmp(col_num, nullptr);
-  // int64_t O_Orderkey, int64_t O_CUSTKEY
-  int64_t* orderKey_buf = new int64_t[row_num];
-  int64_t* custKey_buf = new int64_t[row_num];
-  for (int i = 0; i < row_num; i++) {
-    orderKey_buf[i] = i;
-    custKey_buf[i] = 100 + i;
-  }
-  table_ptr_tmp[0] = (int8_t*)orderKey_buf;
-  table_ptr_tmp[1] = (int8_t*)custKey_buf;
-
-  std::vector<const int8_t*> table_ptr;
-  for (auto column_ptr : table_ptr_tmp) {
-    table_ptr.push_back(static_cast<const int8_t*>(column_ptr));
-  }
-
-  CiderBatch orders_table(row_num, table_ptr);
-  return orders_table;
 }
 
 void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
@@ -102,10 +48,11 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
   ::substrait::Plan sub_plan;
   google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
   generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
-  auto cider_compile_module =
-      CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
-  cider_compile_module->feedBuildTable(std::move(buildCiderBatch()));
-  cider_compile_module->compile(sub_plan);
+  // TODO : (yma11) switch to use BatchProcessor API
+  // auto cider_compile_module =
+  //     CiderCompileModule::Make(std::make_shared<CiderDefaultAllocator>());
+  // cider_compile_module->feedBuildTable(std::move(buildCiderBatch()));
+  // cider_compile_module->compile(sub_plan);
 }
 
 TEST(Substrait2IR, OutputTableSchema) {

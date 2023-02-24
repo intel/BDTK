@@ -19,9 +19,10 @@
  * under the License.
  */
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "TestHelpers.h"
 #include "cider/CiderException.h"
+#include "util/Logger.h"
 
 class CiderExceptionTest : public ::testing::Test {};
 

@@ -26,8 +26,6 @@
 #include <limits>
 #include <string>
 
-#include "cider/CiderBatch.h"
-
 class CiderInt128Utils {
  public:
   static std::string Int128ToString(__int128_t input);

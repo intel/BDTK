@@ -28,11 +28,11 @@
 
 #include "exec/plan/parser/ParserNode.h"
 #include "exec/template/DeepCopyVisitor.h"
-#include "exec/template/Execute.h"
 #include "exec/template/ScalarExprVisitor.h"
-#include "exec/template/WindowExpressionRewrite.h"
 #include "function/string/StringOps.h"
 #include "type/plan/Analyzer.h"
+#include "type/plan/InValues.h"
+#include "type/plan/Utils.h"
 #include "util/Logger.h"
 #include "util/sqldefs.h"
 
@@ -814,14 +814,6 @@ Analyzer::ExpressionPtr rewrite_array_elements(Analyzer::Expr const* expr) {
 }
 
 Analyzer::ExpressionPtr rewrite_expr(const Analyzer::Expr* expr) {
-  const auto sum_window = rewrite_sum_window(expr);
-  if (sum_window) {
-    return sum_window;
-  }
-  const auto avg_window = rewrite_avg_window(expr);
-  if (avg_window) {
-    return avg_window;
-  }
   // skip InValues expression rewrite
   auto in_values_expr = dynamic_cast<const Analyzer::InValues*>(expr);
   if (in_values_expr &&
@@ -917,30 +909,6 @@ class JoinCoveredQualVisitor : public ScalarExprVisitor<bool> {
  private:
   std::vector<std::pair<const Analyzer::Expr*, const Analyzer::Expr*>> join_qual_pairs;
 };
-
-std::list<std::shared_ptr<Analyzer::Expr>> strip_join_covered_filter_quals(
-    const std::list<std::shared_ptr<Analyzer::Expr>>& quals,
-    const JoinQualsPerNestingLevel& join_quals) {
-  if (!g_strip_join_covered_quals) {
-    return quals;
-  }
-
-  if (join_quals.empty()) {
-    return quals;
-  }
-
-  std::list<std::shared_ptr<Analyzer::Expr>> quals_to_return;
-
-  JoinCoveredQualVisitor visitor(join_quals);
-  for (const auto& qual : quals) {
-    if (!visitor.visit(qual.get())) {
-      // Not a covered qual, don't elide it from the filtered count
-      quals_to_return.push_back(qual);
-    }
-  }
-
-  return quals_to_return;
-}
 
 std::shared_ptr<Analyzer::Expr> fold_expr(const Analyzer::Expr* expr) {
   if (!expr) {

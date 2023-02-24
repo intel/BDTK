@@ -11,9 +11,6 @@ scripts/*
 *CMakeLists.txt
 *CiderAgg*
 *CiderRuntimeFunctions.h
-*CiderBuffer.h
-*CiderBatchDataProvider.h
-*CiderSchemaProvider.*
 *CiderBitUtils.h
 cpp/src/cider/exec/plan/builder/*
 cpp/src/cider/exec/plan/parser/*Utils*

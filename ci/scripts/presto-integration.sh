@@ -42,7 +42,7 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/processor/libcider_process
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/substrait/libcider_plan_substrait.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.so ./presto_cpp/main/lib
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
 rm -rf ./_build/${PRESTO_CPP_MODE}/presto_cpp/function

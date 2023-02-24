@@ -17,23 +17,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_FUNCTIONAL_TEST_LIBS gtest cider_util test_utils duckdb substrait
-                                 cider)
+set(NEXTGEN_FUNCTIONAL_TEST_LIBS
+    gtest
+    cider_util
+    test_utils
+    duckdb
+    substrait
+    cider
+    cider_function
+    QueryEngine
+    dl)
 
 file(GLOB next_gen_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(next_gen_test_file ${next_gen_test_files})
   string(REGEX MATCH "functional/.*" test_relative_path ${next_gen_test_file})
   string(REGEX REPLACE "functional/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
-  if(${target_name} MATCHES "ConstantQueryTest")
-    continue()
-  elseif(${target_name} MATCHES "ScalarFunctionExprNextgenTest")
+  if(${target_name} MATCHES "ScalarFunctionExprNextgenTest")
     continue()
   elseif(${target_name} MATCHES "SimpleCiderNextgenTest")
     continue()
-  elseif(${target_name} MATCHES "CiderCastNextgenTest")
-    continue()
-  elseif(${target_name} MATCHES "CiderExprNextgenTest")
+  elseif(${target_name} MATCHES "ConstantQueryTest")
     continue()
   endif()
   add_executable(${target_name} ${next_gen_test_file})
