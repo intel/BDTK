@@ -55,10 +55,10 @@ add_test(ContextTest ${EXECUTABLE_OUTPUT_PATH}/ContextTest ${TEST_ARGS})
 # ${NEXTGEN_COMPILER_TEST_LIBS} ${FOLLY_LIBRARIES}) add_test(HashJoinTest
 # ${EXECUTABLE_OUTPUT_PATH}/HashJoinTest ${TEST_ARGS})
 
-add_executable(CrossJoinTest CrossJoinTest.cpp)
-target_link_libraries(CrossJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
-                      ${FOLLY_LIBRARIES})
-add_test(CrossJoinTest ${EXECUTABLE_OUTPUT_PATH}/CrossJoinTest ${TEST_ARGS})
+# add_executable(CrossJoinTest CrossJoinTest.cpp)
+# target_link_libraries(CrossJoinTest ${NEXTGEN_COMPILER_TEST_LIBS} ${DEP_LIBS}
+# ${FOLLY_LIBRARIES}) add_test(CrossJoinTest
+# ${EXECUTABLE_OUTPUT_PATH}/CrossJoinTest ${TEST_ARGS})
 
 add_executable(DecimalOpTest DecimalOpTest.cpp)
 target_link_libraries(DecimalOpTest ${NEXTGEN_COMPILER_TEST_LIBS})

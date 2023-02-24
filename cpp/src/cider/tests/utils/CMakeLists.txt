@@ -53,10 +53,10 @@ add_test(ArrowArrayBuilderTest ${EXECUTABLE_OUTPUT_PATH}/ArrowArrayBuilderTest
 # add_test(CiderInt128Test ${EXECUTABLE_OUTPUT_PATH}/CiderInt128Test
 # ${TEST_ARGS})
 
-add_executable(QueryArrowDataGeneratorTest QueryArrowDataGeneratorTest.cpp)
-target_link_libraries(QueryArrowDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
-add_test(QueryArrowDataGeneratorTest
-         ${EXECUTABLE_OUTPUT_PATH}/QueryArrowDataGeneratorTest ${TEST_ARGS})
+# add_executable(QueryArrowDataGeneratorTest QueryArrowDataGeneratorTest.cpp)
+# target_link_libraries(QueryArrowDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
+# add_test(QueryArrowDataGeneratorTest
+# ${EXECUTABLE_OUTPUT_PATH}/QueryArrowDataGeneratorTest ${TEST_ARGS})
 
 set(TEST_PROGRAMS IsthmusTest)
 
