@@ -52,7 +52,7 @@ cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider-velox/src/substrait/libve
 cp -a ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider/exec/module/libcider.so* ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider/exec/template/libQueryEngine.a ${WORKER_DIR}/presto_cpp/main/lib
-cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider/function/libcider_function.a ${WORKER_DIR}/presto_cpp/main/lib
+cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider/function/libcider_function.so ${WORKER_DIR}/presto_cpp/main/lib
 
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON ${PRESTO_CPP_MODE}
