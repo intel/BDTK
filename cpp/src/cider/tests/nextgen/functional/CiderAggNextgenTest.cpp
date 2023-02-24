@@ -884,75 +884,75 @@ TEST_F(CiderPartialAVGFpArrowTest, mixedGroupbyPartialAVG) {
   delete[] expect_schemas;
 }
 
-class CiderCountDistinctConstantTest : public CiderNextgenTestBase {
- public:
-  CiderCountDistinctConstantTest() {
-    table_name_ = "test";
-    create_ddl_ = R"(CREATE TABLE test(col_i8 TINYINT, col_i32 INT);)";
-    std::vector<int8_t> vec_i8;
-    vec_i8.push_back(5);
-    vec_i8.push_back(3);
-    vec_i8.push_back(3);
-    std::vector<int32_t> vec_i32;
-    vec_i32.push_back(500);
-    vec_i32.push_back(500);
-    vec_i32.push_back(500);
-    auto batch_1 = std::make_shared<CiderBatch>(
-        CiderBatchBuilder()
-            .setRowNum(3)
-            .addColumn<int8_t>("col_i8", CREATE_SUBSTRAIT_TYPE(I8), vec_i8)
-            .addColumn<int32_t>("col_i32", CREATE_SUBSTRAIT_TYPE(I32), vec_i32)
-            .build());
-    vec_i8.clear();
-    vec_i8.push_back(4);
-    vec_i8.push_back(4);
-    vec_i8.push_back(4);
-    vec_i32.clear();
-    vec_i32.push_back(303);
-    vec_i32.push_back(304);
-    vec_i32.push_back(305);
-    auto batch_2 = std::make_shared<CiderBatch>(
-        CiderBatchBuilder()
-            .setRowNum(3)
-            .addColumn<int8_t>("col_i8", CREATE_SUBSTRAIT_TYPE(I8), vec_i8)
-            .addColumn<int32_t>("col_i32", CREATE_SUBSTRAIT_TYPE(I32), vec_i32)
-            .build());
-    // input_.push_back(batch_1);
-    // input_.push_back(batch_2);
-  }
-};
+// class CiderCountDistinctConstantTest : public CiderNextgenTestBase {
+//  public:
+//   CiderCountDistinctConstantTest() {
+//     table_name_ = "test";
+//     create_ddl_ = R"(CREATE TABLE test(col_i8 TINYINT, col_i32 INT);)";
+//     std::vector<int8_t> vec_i8;
+//     vec_i8.push_back(5);
+//     vec_i8.push_back(3);
+//     vec_i8.push_back(3);
+//     std::vector<int32_t> vec_i32;
+//     vec_i32.push_back(500);
+//     vec_i32.push_back(500);
+//     vec_i32.push_back(500);
+//     auto batch_1 = std::make_shared<CiderBatch>(
+//         CiderBatchBuilder()
+//             .setRowNum(3)
+//             .addColumn<int8_t>("col_i8", CREATE_SUBSTRAIT_TYPE(I8), vec_i8)
+//             .addColumn<int32_t>("col_i32", CREATE_SUBSTRAIT_TYPE(I32), vec_i32)
+//             .build());
+//     vec_i8.clear();
+//     vec_i8.push_back(4);
+//     vec_i8.push_back(4);
+//     vec_i8.push_back(4);
+//     vec_i32.clear();
+//     vec_i32.push_back(303);
+//     vec_i32.push_back(304);
+//     vec_i32.push_back(305);
+//     auto batch_2 = std::make_shared<CiderBatch>(
+//         CiderBatchBuilder()
+//             .setRowNum(3)
+//             .addColumn<int8_t>("col_i8", CREATE_SUBSTRAIT_TYPE(I8), vec_i8)
+//             .addColumn<int32_t>("col_i32", CREATE_SUBSTRAIT_TYPE(I32), vec_i32)
+//             .build());
+//     // input_.push_back(batch_1);
+//     // input_.push_back(batch_2);
+//   }
+// };
 
-TEST_F(CiderCountDistinctConstantTest, countDistinctConstantTest) {
-  GTEST_SKIP();
-  std::vector<int64_t> expect_col_a_1;
-  expect_col_a_1.push_back(2);
-  std::vector<int64_t> expect_col_b_1;
-  expect_col_b_1.push_back(1);
+// TEST_F(CiderCountDistinctConstantTest, countDistinctConstantTest) {
+//   GTEST_SKIP();
+//   std::vector<int64_t> expect_col_a_1;
+//   expect_col_a_1.push_back(2);
+//   std::vector<int64_t> expect_col_b_1;
+//   expect_col_b_1.push_back(1);
 
-  auto expect_batch_1 =
-      CiderBatchBuilder()
-          .setRowNum(1)
-          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_a_1)
-          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_b_1)
-          .build();
-  std::vector<int64_t> expect_col_a_2;
-  expect_col_a_2.push_back(1);
-  std::vector<int64_t> expect_col_b_2;
-  expect_col_b_2.push_back(3);
-  auto expect_batch_2 =
-      CiderBatchBuilder()
-          .setRowNum(1)
-          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_a_2)
-          .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_b_2)
-          .build();
-  std::vector<std::shared_ptr<CiderBatch>> expected_batches;
-  expected_batches.push_back(std::make_shared<CiderBatch>(std::move(expect_batch_1)));
-  expected_batches.push_back(std::make_shared<CiderBatch>(std::move(expect_batch_2)));
-  // based on non-groupby agg scenario, result returened based on each batch input
-  //   assertQueryForCountDistinct(
-  //       "SELECT COUNT(DISTINCT col_i8), COUNT(DISTINCT col_i32) FROM test",
-  //       expected_batches);
-}
+//   auto expect_batch_1 =
+//       CiderBatchBuilder()
+//           .setRowNum(1)
+//           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_a_1)
+//           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_b_1)
+//           .build();
+//   std::vector<int64_t> expect_col_a_2;
+//   expect_col_a_2.push_back(1);
+//   std::vector<int64_t> expect_col_b_2;
+//   expect_col_b_2.push_back(3);
+//   auto expect_batch_2 =
+//       CiderBatchBuilder()
+//           .setRowNum(1)
+//           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_a_2)
+//           .addColumn<int64_t>("", CREATE_SUBSTRAIT_TYPE(I64), expect_col_b_2)
+//           .build();
+//   std::vector<std::shared_ptr<CiderBatch>> expected_batches;
+//   expected_batches.push_back(std::make_shared<CiderBatch>(std::move(expect_batch_1)));
+//   expected_batches.push_back(std::make_shared<CiderBatch>(std::move(expect_batch_2)));
+//   // based on non-groupby agg scenario, result returened based on each batch input
+//   //   assertQueryForCountDistinct(
+//   //       "SELECT COUNT(DISTINCT col_i8), COUNT(DISTINCT col_i32) FROM test",
+//   //       expected_batches);
+// }
 
 int main(int argc, char** argv) {
   // gflags::ParseCommandLineFlags(&argc, &argv, true);
