@@ -78,4 +78,4 @@ add_custom_command(
 
 add_library(cider_function SHARED ${function_source_files})
 
-target_link_libraries(cider_function re2)
+target_link_libraries(cider_function nextgen re2)
