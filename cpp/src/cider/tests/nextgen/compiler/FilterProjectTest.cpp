@@ -27,8 +27,8 @@
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/Utils.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::exec::nextgen;
 

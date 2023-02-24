@@ -20,9 +20,9 @@
  */
 
 #include <gtest/gtest.h>
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::test::util;
 

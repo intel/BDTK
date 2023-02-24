@@ -111,7 +111,7 @@ class CiderJoinNextgenTestBase : public CiderNextgenTestBase {
   ArrowSchema* build_schema_{nullptr};
 };
 
-class CiderNextgenTestBaseWithoutDuckDB : public CiderNextgenTestBase {
+class CiderStandaloneNextgenTestBase : public CiderNextgenTestBase {
  public:
   void SetUp() override { cider_nextgen_query_runner_->prepare(create_ddl_); }
 };

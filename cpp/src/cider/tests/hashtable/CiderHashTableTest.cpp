@@ -34,8 +34,8 @@
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "exec/operator/join/HashTableSelector.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "type/data/sqltypes.h"
+#include "util/ArrowArrayBuilder.h"
 #include "util/Logger.h"
 
 // hash function for test collision

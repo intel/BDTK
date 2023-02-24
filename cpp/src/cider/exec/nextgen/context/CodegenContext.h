@@ -46,14 +46,21 @@ struct AggExprsInfo {
   int8_t start_offset_;
   int8_t null_offset_;
   std::string agg_name_;
+  bool is_partial_;
 
-  AggExprsInfo(SQLTypeInfo sql_type_info, SQLAgg agg_type, int8_t start_offset)
+  AggExprsInfo(SQLTypeInfo sql_type_info,
+               SQLTypeInfo arg_sql_type_info,
+               SQLAgg agg_type,
+               int8_t start_offset,
+               bool is_partial = false)
       : sql_type_info_(sql_type_info)
       , jit_value_type_(utils::getJITTypeTag(sql_type_info_.get_type()))
       , agg_type_(agg_type)
       , start_offset_(start_offset)
       , null_offset_(-1)
-      , agg_name_(getAggName(agg_type, sql_type_info_.get_type())) {}
+      , agg_name_(
+            getAggName(agg_type, sql_type_info_.get_type(), arg_sql_type_info.get_type()))
+      , is_partial_(is_partial) {}
 
   void setNotNull(bool n) {
     // true -- not null, flase -- nullable
@@ -61,7 +68,7 @@ struct AggExprsInfo {
   }
 
  private:
-  std::string getAggName(SQLAgg agg_type, SQLTypes sql_type);
+  std::string getAggName(SQLAgg agg_type, SQLTypes sql_type, SQLTypes arg_sql_type);
 };
 
 using AggExprsInfoVector = std::vector<AggExprsInfo>;

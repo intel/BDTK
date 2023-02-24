@@ -215,7 +215,9 @@ int CodegenContext::registerTrimStringOperCharMap(const std::string& trim_chars)
   return trim_char_maps_->size() - 1;
 }
 
-std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
+std::string AggExprsInfo::getAggName(SQLAgg agg_type,
+                                     SQLTypes sql_type,
+                                     SQLTypes arg_sql_type) {
   std::string agg_name = "nextgen_cider_agg";
   switch (agg_type) {
     case SQLAgg::kSUM: {
@@ -237,6 +239,9 @@ std::string AggExprsInfo::getAggName(SQLAgg agg_type, SQLTypes sql_type) {
     default:
       LOG(ERROR) << "unsupport agg function type: " << toString(agg_type);
       break;
+  }
+  if (agg_type == kSUM && sql_type != arg_sql_type) {
+    agg_name = agg_name + "_" + utils::getSQLTypeName(arg_sql_type);
   }
   return agg_name;
 }

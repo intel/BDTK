@@ -479,7 +479,8 @@ Substrait2AnalyzerExprConverter::updateOutputTypeOfAVGPartial(
                                              agg_expr->get_aggtype(),
                                              agg_expr->get_own_arg(),
                                              false,
-                                             agg_expr->get_arg1());
+                                             agg_expr->get_arg1(),
+                                             true);
 }
 
 std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(

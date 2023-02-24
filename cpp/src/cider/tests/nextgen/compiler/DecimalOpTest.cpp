@@ -25,11 +25,11 @@
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderInt128.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 #include "tests/utils/Utils.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::exec::nextgen;
 using namespace cider::test::util;

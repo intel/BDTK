@@ -22,9 +22,9 @@
 #include <gtest/gtest.h>
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::test::util;
 using namespace cider::exec::nextgen;

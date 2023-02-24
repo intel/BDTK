@@ -20,9 +20,9 @@
  */
 
 #include <gtest/gtest.h>
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
+#include "util/ArrowArrayBuilder.h"
 
 #define SQL_BETWEEN_AND_INT "SELECT c0 FROM tmp WHERE c0 between 0 and 5"
 #define SQL_BETWEEN_AND_FP "SELECT c0 FROM tmp WHERE c0 between 0.0 and 5.0"

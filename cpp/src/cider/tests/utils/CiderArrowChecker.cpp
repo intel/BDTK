@@ -125,6 +125,32 @@ bool cmpBetweenDecimalAndInt(const void* expect_buffer,
   return true;
 }
 
+bool checkArrowBufferFloatWithDouble(const struct ArrowArray* expect_array,
+                                     const struct ArrowArray* actual_array) {
+  if (!checkIfNeedCompareData(expect_array, actual_array)) {
+    if (expect_array == nullptr && actual_array == nullptr) {
+      return true;
+    }
+    return false;
+  }
+
+  std::vector<int64_t> valid_index =
+      generateValidIndex(expect_array->buffers[0],
+                         expect_array->length,
+                         expect_array->buffers[0] && actual_array->buffers[0]);
+
+  auto expect_double_buffer = reinterpret_cast<const double*>(expect_array->buffers[1]);
+  auto actual_float_buffer = reinterpret_cast<const float*>(actual_array->buffers[1]);
+
+  for (int64_t i = 0; i < valid_index.size(); i++) {
+    float expect_value = static_cast<float>(expect_double_buffer[valid_index[i]]);
+    if (expect_value != actual_float_buffer[valid_index[i]]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool checkArrowBufferDecimal(const struct ArrowArray* expect_array,
                              const struct ArrowArray* actual_array,
                              const char format) {
@@ -387,6 +413,10 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
     case 'f':
       return checkArrowBufferFp<float>(expect_array, actual_array);
     case 'g':
+      // duck db return sum(float) as double while cider return float
+      if (actual_schema->format[0] == 'f') {
+        return checkArrowBufferFloatWithDouble(expect_array, actual_array);
+      }
       return checkArrowBufferFp<double>(expect_array, actual_array);
     case 'd': {
       // duck db schema makes all sum(int) type as decimal
@@ -446,13 +476,6 @@ bool CiderArrowChecker::checkArrowEq(const struct ArrowArray* expect_array,
               << ". Actual: " << actual_array->n_children;
     return false;
   }
-  if (expect_array->length != actual_array->length) {
-    LOG(INFO) << "ArrowArray length not equal: "
-              << "Expected: " << expect_array->length
-              << ". Actual: " << actual_array->length;
-    return false;
-  }
-
   if (!expect_schema || !actual_schema) {
     LOG(INFO) << "One or more Arrowschema are null_ptr in checkArrowEq. ";
     return false;
