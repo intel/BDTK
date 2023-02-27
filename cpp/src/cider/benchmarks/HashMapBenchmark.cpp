@@ -151,5 +151,4 @@ BENCHMARK(BM_Optimized_Lookup<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
 BENCHMARK(BM_Baseline_Lookup<uint16_t>)->RangeMultiplier(10)->Range(100, 10000);
 BENCHMARK(BM_Optimized_Lookup<uint16_t>)->RangeMultiplier(10)->Range(100, 10000);
 
-
 BENCHMARK_MAIN();
