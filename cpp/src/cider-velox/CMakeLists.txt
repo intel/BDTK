@@ -35,7 +35,7 @@ include_directories(src)
 add_subdirectory(src)
 
 # required to set ${VELOX_ENABLE_PARQUET} ON in velox directory
-option(ENABLE_BENCHMARK "Build benchmark" ON )
+option(ENABLE_BENCHMARK "Build benchmark" ON)
 if(ENABLE_BENCHMARK)
   add_subdirectory(benchmark)
 endif()

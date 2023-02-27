@@ -321,13 +321,17 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
       "format_substring_pos",
       JITFunctionEmitDescriptor{
           .ret_type = JITTypeTag::INT32,
-          .params_vector = {pos_val.getValue().get(), arg_val.getLength().get()}});
+          .params_vector = {
+              pos_val.getValue()->castJITValuePrimitiveType(JITTypeTag::INT32).get(),
+              arg_val.getLength().get()}});
   auto len_param = func.emitRuntimeFunctionCall(
       "format_substring_len",
       JITFunctionEmitDescriptor{
           .ret_type = JITTypeTag::INT32,
           .params_vector = {
-              pos_param.get(), arg_val.getLength().get(), len_val.getValue().get()}});
+              pos_param.get(),
+              arg_val.getLength().get(),
+              len_val.getValue()->castJITValuePrimitiveType(JITTypeTag::INT32).get()}});
 
   // get string heap ptr
   auto string_heap_ptr = func.emitRuntimeFunctionCall(

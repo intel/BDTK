@@ -415,18 +415,14 @@ class CiderProjectTest : public CiderNextgenTestBase {
                                                   },
                                                   {CREATE_SUBSTRAIT_TYPE(I32),
                                                    CREATE_SUBSTRAIT_TYPE(I32),
-                                                   CREATE_SUBSTRAIT_TYPE(I32)}
-                                                  );
+                                                   CREATE_SUBSTRAIT_TYPE(I32)});
   }
 };
 TEST_F(CiderProjectTest, aTest) {
   assertQuery("SELECT col_1 * col_2 FROM test");
 
   assertQuery("SELECT col_1 * col_2 + col_3 FROM test");
-
 }
-
-
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
