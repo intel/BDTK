@@ -88,7 +88,7 @@ class StringOper : public Expr {
     chained_string_op_exprs_ = other_string_oper->chained_string_op_exprs_;
   }
 
-  void setIsOutput() { is_output_ = true; }
+  virtual void setIsOutput() { is_output_ = true; }
   bool isOutput() { return is_output_; }
   SqlStringOpKind get_kind() const { return kind_; }
 
@@ -370,6 +370,7 @@ class CharLengthStringOper : public StringOper {
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+  void setIsOutput() override { is_output_ = false; }
 
   size_t getMinArgs() const override { return 1UL; }
 

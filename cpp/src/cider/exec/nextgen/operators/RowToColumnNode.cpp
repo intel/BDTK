@@ -466,7 +466,10 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
     }
     // for string expressions, we dump the final buffer here.
     for (auto& expr : output_exprs) {
-      if (std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
+      if (auto strExpr = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
+        if (!strExpr->isOutput()) {
+          break;
+        }
         size_t local_offset = expr->getLocalIndex();
         auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
         auto& func = arrow_array->getParentJITFunction();
