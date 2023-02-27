@@ -128,9 +128,9 @@ add_test(CiderOperatorTest CiderOperatorTest ${TEST_ARGS})
 # velox_plan_transformer) add_test(CiderPatternTest CiderPatternTest
 # ${TEST_ARGS})
 
-# add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)
-# target_link_libraries(AggWithRandomDataTest ${VELOX_PLUGIN_TEST_LIBS})
-# add_test(AggWithRandomDataTest AggWithRandomDataTest ${TEST_ARGS})
+add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)
+target_link_libraries(AggWithRandomDataTest ${VELOX_PLUGIN_TEST_LIBS})
+add_test(AggWithRandomDataTest AggWithRandomDataTest ${TEST_ARGS})
 
 add_executable(CiderDataTypeTest CiderDataTypeTest.cpp)
 target_link_libraries(CiderDataTypeTest ${VELOX_PLUGIN_TEST_LIBS})
