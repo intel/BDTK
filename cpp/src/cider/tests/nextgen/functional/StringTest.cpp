@@ -352,10 +352,10 @@ TEST_F(CiderStringTestNextGen, CaseConvertionTest) {
               "stringop_upper_condition.json");
 
   // nested stringops
-  // assertQuery(
-  //     "SELECT col_2 FROM test "
-  //     "WHERE UPPER(SUBSTRING(col_2, 1, 4)) = LOWER(SUBSTRING(col_2, 1, 4));",
-  //     "stringop_upper_nested_1.json");
+  assertQuery(
+      "SELECT col_2 FROM test "
+      "WHERE UPPER(SUBSTRING(col_2, 1, 4)) = LOWER(SUBSTRING(col_2, 1, 4));",
+      "stringop_upper_nested_1.json");
   assertQuery("SELECT col_2 FROM test WHERE UPPER(LOWER(col_2)) = col_2;",
               "stringop_upper_nested_2.json");
 
@@ -403,13 +403,13 @@ TEST_F(CiderStringTestNextGen, ConcatTest) {
   assertQuery("SELECT 'foo' || col_2 || 'bar' FROM test;");
   assertQuery("SELECT col_2 || 'foo' || 'bar' FROM test;");
 
-  // assertQuery("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
-  // assertQuery("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
-  //             "stringop_concat_filter.json");
+  assertQuery("SELECT SUBSTRING(col_2, 1, 3) || 'yo' FROM test;");
+  assertQuery("SELECT col_2 FROM test WHERE UPPER('yo' || col_2) <> col_2;",
+              "stringop_concat_filter.json");
 
   // nextgen also supports concatenating two variable columns
   assertQuery("SELECT col_2 || col_2 FROM test;");
-  // assertQuery("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
+  assertQuery("SELECT col_2 FROM test WHERE col_2 || col_2 <> col_2;");
 }
 
 TEST_F(CiderStringNullableTestNextGen, ConcatTest) {

@@ -52,6 +52,12 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
   string_t s = ptr->addString(str + pos - 1, len);
   return pack_string_t(s);
 }
+extern "C" RUNTIME_EXPORT void cider_substring_extra_ptr(char* buffer_ptr,
+                                                         const char* str,
+                                                         int pos,
+                                                         int len) {
+  memcpy(buffer_ptr, str + pos - 1, len);
+}
 
 // pos starts with 1. A negative starting position is interpreted as being relative
 // to the end of the string
