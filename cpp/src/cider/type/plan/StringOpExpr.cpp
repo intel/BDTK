@@ -753,18 +753,20 @@ JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
               func.createLiteral<bool>(JITTypeTag::BOOL, reverse).get(),
               func.createLiteral<int>(JITTypeTag::INT32, limit_val).get(),
               func.createLiteral<int>(JITTypeTag::INT32, splitpart_val).get()}});
-
-  // decode result
-  auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_string_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .params_vector = {ptr_and_len.get()}});
-  auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_string_len",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                .params_vector = {ptr_and_len.get()}});
-
-  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  if (isOutput()) {
+    return set_expr_value(input_val.getNull(), ptr_and_len);
+  } else {
+    // decode result
+    auto ret_ptr = func.emitRuntimeFunctionCall(
+        "extract_string_ptr",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                  .params_vector = {ptr_and_len.get()}});
+    auto ret_len = func.emitRuntimeFunctionCall(
+        "extract_string_len",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {ptr_and_len.get()}});
+    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  }
 }
 
 std::shared_ptr<Analyzer::Expr> RegexpReplaceStringOper::deep_copy() const {
@@ -813,18 +815,20 @@ JITExprValue& RegexpReplaceStringOper::codegen(CodegenContext& context) {
               replace_val.getLength().get(),
               func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get(),
               func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get()}});
-
-  // decode result
-  auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_string_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .params_vector = {ptr_and_len.get()}});
-  auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_string_len",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                .params_vector = {ptr_and_len.get()}});
-
-  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  if (isOutput()) {
+    return set_expr_value(input_val.getNull(), ptr_and_len);
+  } else {
+    // decode result
+    auto ret_ptr = func.emitRuntimeFunctionCall(
+        "extract_string_ptr",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                  .params_vector = {ptr_and_len.get()}});
+    auto ret_len = func.emitRuntimeFunctionCall(
+        "extract_string_len",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {ptr_and_len.get()}});
+    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  }
 }
 
 std::shared_ptr<Analyzer::Expr> RegexpExtractStringOper::deep_copy() const {
@@ -864,18 +868,20 @@ JITExprValue& RegexpExtractStringOper::codegen(CodegenContext& context) {
               regex_pattern_val.getValue().get(),
               regex_pattern_val.getLength().get(),
               func.createLiteral<int>(JITTypeTag::INT32, group_val).get()}});
-
-  // decode result
-  auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_string_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .params_vector = {ptr_and_len.get()}});
-  auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_string_len",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                .params_vector = {ptr_and_len.get()}});
-
-  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  if (isOutput()) {
+    return set_expr_value(input_val.getNull(), ptr_and_len);
+  } else {
+    // decode result
+    auto ret_ptr = func.emitRuntimeFunctionCall(
+        "extract_string_ptr",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                  .params_vector = {ptr_and_len.get()}});
+    auto ret_len = func.emitRuntimeFunctionCall(
+        "extract_string_len",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {ptr_and_len.get()}});
+    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  }
 }
 
 std::shared_ptr<Analyzer::Expr> RegexpSubstrStringOper::deep_copy() const {
@@ -918,18 +924,20 @@ JITExprValue& RegexpSubstrStringOper::codegen(CodegenContext& context) {
               regex_pattern_val.getLength().get(),
               func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get(),
               func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get()}});
-
-  // decode result
-  auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_string_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .params_vector = {ptr_and_len.get()}});
-  auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_string_len",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                .params_vector = {ptr_and_len.get()}});
-
-  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  if (isOutput()) {
+    return set_expr_value(input_val.getNull(), ptr_and_len);
+  } else {
+    // decode result
+    auto ret_ptr = func.emitRuntimeFunctionCall(
+        "extract_string_ptr",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                  .params_vector = {ptr_and_len.get()}});
+    auto ret_len = func.emitRuntimeFunctionCall(
+        "extract_string_len",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                  .params_vector = {ptr_and_len.get()}});
+    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+  }
 }
 
 }  // namespace Analyzer
