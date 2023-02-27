@@ -368,6 +368,58 @@ extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" ALWAYS_INLINE int32_t cider_trim_start(const char* str_ptr,
+                                                  int str_len,
+                                                  const int8_t* trim_char_map,
+                                                  bool ltrim) {
+  int start_idx = 0;
+  if (ltrim) {
+    while (start_idx < str_len &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[start_idx]]) {
+      start_idx++;
+    }
+  }
+  return start_idx;
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_trim_len(const char* str_ptr,
+                                                int str_len,
+                                                const int8_t* trim_char_map,
+                                                bool ltrim,
+                                                bool rtrim) {
+  int start_idx = 0;
+  if (ltrim) {
+    while (start_idx < str_len &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[start_idx]]) {
+      start_idx++;
+    }
+  }
+
+  int end_idx = str_len - 1;
+  if (rtrim) {
+    while (end_idx >= start_idx &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[end_idx]]) {
+      end_idx--;
+    }
+  }
+
+  int len = 0;
+  if (start_idx > end_idx) {
+    // all chars are trimmed away, return an empty string
+    len = 0;
+  } else {
+    len = end_idx - start_idx + 1;
+  }
+  return len;
+}
+
+extern "C" ALWAYS_INLINE void cider_trim_ptr(char* buffer_ptr,
+                                             const char* str_ptr,
+                                             int start_idx,
+                                             int len) {
+  memcpy(buffer_ptr, str_ptr + start_idx, len);
+}
+
 #define DEF_CONVERT_INTEGER_TO_STRING(value_type, value_name)                         \
   extern "C" RUNTIME_EXPORT int64_t gen_string_from_##value_name(                     \
       const value_type operand, char* string_heap_ptr) {                              \

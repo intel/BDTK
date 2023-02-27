@@ -652,28 +652,54 @@ JITExprValue& TrimStringOper::codegen(CodegenContext& context) {
   bool do_rtrim =
       get_kind() == SqlStringOpKind::RTRIM || get_kind() == SqlStringOpKind::TRIM;
   std::string fn_name = "cider_trim";
-  auto ptr_and_len = func.emitRuntimeFunctionCall(
-      fn_name,
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT64,
-          .params_vector = {string_heap_ptr.get(),
-                            input_val.getValue().get(),
-                            input_val.getLength().get(),
-                            trim_char_map_ptr.get(),
-                            func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
-                            func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
+  if (isOutput()) {
+    auto ptr_and_len = func.emitRuntimeFunctionCall(
+        fn_name,
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT64,
+            .params_vector = {
+                string_heap_ptr.get(),
+                input_val.getValue().get(),
+                input_val.getLength().get(),
+                trim_char_map_ptr.get(),
+                func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
+                func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
 
-  // decode result
-  auto ret_ptr = func.emitRuntimeFunctionCall(
-      "extract_string_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .params_vector = {ptr_and_len.get()}});
-  auto ret_len = func.emitRuntimeFunctionCall(
-      "extract_string_len",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                .params_vector = {ptr_and_len.get()}});
+    return set_expr_value(input_val.getNull(), ptr_and_len);
+  } else {
+    auto start_val = func.emitRuntimeFunctionCall(
+        fn_name + "_start",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT32,
+            .params_vector = {
+                input_val.getValue().get(),
+                input_val.getLength().get(),
+                trim_char_map_ptr.get(),
+                func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get()}});
+    auto ret_len = func.emitRuntimeFunctionCall(
+        fn_name + "_len",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::INT32,
+            .params_vector = {
+                input_val.getValue().get(),
+                input_val.getLength().get(),
+                trim_char_map_ptr.get(),
+                func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
+                func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
 
-  return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+    auto ptr = func.emitRuntimeFunctionCall(
+        "allocate_from_string_heap",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .params_vector = {string_heap_ptr.get(), ret_len.get()}});
+    auto ret_ptr = func.emitRuntimeFunctionCall(
+        fn_name + "_ptr",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::VOID,
+            .params_vector = {
+                ptr.get(), input_val.getValue().get(), start_val.get(), ret_len.get()}});
+    return set_expr_value(input_val.getNull(), ret_len, ptr);
+  }
 }
 
 std::shared_ptr<Analyzer::Expr> SplitPartStringOper::deep_copy() const {
