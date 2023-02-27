@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include <common/hashtable/FixedHashMap.h>
 #include "exec/nextgen/context/Batch.h"
 #include "exec/operator/join/CiderChainedHashTable.h"
 #include "exec/operator/join/CiderLinearProbingHashTable.h"
@@ -31,6 +32,18 @@ namespace cider::exec::processor {
 struct BatchAndOffset {
   cider::exec::nextgen::context::Batch* batch_ptr;
   int64_t batch_offset;
+
+  BatchAndOffset() {}
+
+  BatchAndOffset(BatchAndOffset* other) {
+    this->batch_ptr = other->batch_ptr;
+    this->batch_offset = other->batch_offset;
+  }
+
+  BatchAndOffset(cider::exec::nextgen::context::Batch* ptr, int64_t offset) {
+    this->batch_ptr = ptr;
+    this->batch_offset = offset;
+  }
 };
 
 using CiderJoinBaseKey = cider_hashtable::HT_Row;
@@ -51,6 +64,12 @@ using JoinLPHashTable = cider_hashtable::BaseHashTable<LP_TEMPLATE>;
 
 using JoinChainedHashTable = cider_hashtable::BaseHashTable<CHAINED_TEMPLATE>;
 
+using JoinUInt8HashTable =
+    cider::hashtable::FixedJoinHashMapWithCalculatedSize<uint8_t, BatchAndOffset>;
+
+using JoinUInt16HashTable =
+    cider::hashtable::FixedJoinHashMapWithStoredSize<uint16_t, BatchAndOffset>;
+
 class JoinHashTable {
  public:
   JoinHashTable(cider_hashtable::HashTableType hashTableType =
@@ -61,6 +80,12 @@ class JoinHashTable {
   std::shared_ptr<JoinLPHashTable> getLPHashTable() { return LPHashTableInstance_; }
   std::shared_ptr<JoinChainedHashTable> getChainedHashTable() {
     return chainedHashTableInstance_;
+  }
+  std::shared_ptr<JoinUInt8HashTable> getUInt8HashTable() {
+    return uInt8HashTableInstance_;
+  }
+  std::shared_ptr<JoinUInt16HashTable> getUInt16HashTable() {
+    return uInt16HashTableInstance_;
   }
 
   void merge_other_hashtables(
@@ -78,6 +103,8 @@ class JoinHashTable {
   cider_hashtable::HashTableType hashTableType_;
   std::shared_ptr<JoinLPHashTable> LPHashTableInstance_;
   std::shared_ptr<JoinChainedHashTable> chainedHashTableInstance_;
+  std::shared_ptr<JoinUInt8HashTable> uInt8HashTableInstance_;
+  std::shared_ptr<JoinUInt16HashTable> uInt16HashTableInstance_;
 };
 
 using JoinHashTablePtr = std::shared_ptr<JoinHashTable>;

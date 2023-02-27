@@ -30,7 +30,7 @@ namespace cider_hashtable {
 // To be added
 // This enum is used for cider internal only
 // Outside cider will need to define their own enum
-enum HashTableType { LINEAR_PROBING, CHAINED, CK_INT8 };
+enum HashTableType { LINEAR_PROBING, CHAINED, FIXED_INT8, FIXED_INT16 };
 
 template <typename Key,
           typename Value,
