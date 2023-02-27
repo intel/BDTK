@@ -60,9 +60,14 @@ class ColumnWriter {
         break;
       case kVARCHAR:
       case kCHAR:
-      case kTEXT:
-        writeVariableSizeTypeCol();
+      case kTEXT: {
+        if (std::dynamic_pointer_cast<Analyzer::StringOper>(expr_)) {
+          writeVariableSizeTypeColForStrExpr();
+        } else {
+          writeVariableSizeTypeCol();
+        }
         break;
+      }
       case kARRAY:
         writeVariableSizeArrayCol();
         break;
@@ -144,6 +149,31 @@ class ColumnWriter {
               setNullBuffer(values.getNull()), raw_length_buffer, raw_data_buffer);
         })
         ->build();
+  }
+
+  void writeVariableSizeTypeColForStrExpr() {
+    // Get values need to write
+    utils::FixSizeJITExprValue values(expr_->get_expr_value());
+
+    // we will borrow offset buffer to store intermiedate result(string ptr and
+    // length, 64 bits), so allocate (arrow_array_len_ * 8) bytes, actual offset size
+    // should be (arrow_array_len_ + 1) * 4 bytes
+    auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+      auto bytes = (arrow_array_len_)*context_.getJITFunction()->createLiteral(
+          JITTypeTag::INT64, 8);
+      auto length_buffer = allocateRawDataBuffer(1, bytes);
+      return length_buffer;
+    });
+
+    // set null
+
+    // set offset
+    auto actual_raw_length_buffer =
+        raw_length_buffer->castPointerSubType(JITTypeTag::INT64);
+    actual_raw_length_buffer[index_] = *values.getValue();
+
+    buffers_.clear();
+    buffers_.append(setNullBuffer(values.getNull()), actual_raw_length_buffer);
   }
 
   // allocate and copy 4 buffers:
@@ -434,7 +464,38 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
       auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
       codegen_utils::setArrowArrayLength(arrow_array, output_index);
     }
-  });
+    // for string expressions, we dump the final buffer here.
+    for (auto& expr : output_exprs) {
+      if (std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
+        size_t local_offset = expr->getLocalIndex();
+        auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
+        auto& func = arrow_array->getParentJITFunction();
+        auto length = func.emitRuntimeFunctionCall(
+            "calculate_size",
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::INT32,
+                .params_vector = {arrow_array.get(), output_index.get()}});
+
+        auto buffer = func.emitRuntimeFunctionCall(
+            "get_buffer_with_allocate",
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::POINTER,
+                .params_vector = {arrow_array.get(),
+                                  length.get(),
+                                  func.createLiteral(JITTypeTag::INT32, 2).get()}});
+
+        func.emitRuntimeFunctionCall(
+            "copy_string_buffer",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {
+                                          arrow_array.get(),
+                                          buffer.get(),
+                                          output_index.get(),
+                                      }});
+      }
+    }
+  }  // namespace cider::exec::nextgen::operators
+  );
 }
 
 }  // namespace cider::exec::nextgen::operators

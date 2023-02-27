@@ -146,6 +146,10 @@ extern "C" ALWAYS_INLINE int64_t cider_ascii_lower(int8_t* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" ALWAYS_INLINE int64_t cider_ascii_lower_len(int str_len) {
+  return str_len;
+}
+
 extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
                                                    const char* str,
                                                    int str_len) {
@@ -156,6 +160,10 @@ extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
     sout[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
   }
   return pack_string_t(s);
+}
+
+extern "C" ALWAYS_INLINE int64_t cider_ascii_upper_len(int str_len) {
+  return str_len;
 }
 
 extern "C" void test_to_string(int value) {
@@ -188,8 +196,6 @@ extern "C" ALWAYS_INLINE void cider_concat_ptr(char* buffer_ptr,
                                                int rhs_len) {
   memcpy(buffer_ptr, lhs, lhs_len);
   memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
-
-  // return (int8_t*)buffer_ptr;
 }
 
 extern "C" RUNTIME_EXPORT int8_t* allocate_from_string_heap(char* string_heap_ptr,
@@ -220,15 +226,67 @@ extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" RUNTIME_EXPORT int8_t* get_buffer_without_realloc(
-    const int8_t* input_desc_ptr,
-    const int32_t index) {
+extern "C" ALWAYS_INLINE int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
+  return lhs_len + rhs_len;
+}
+
+extern "C" ALWAYS_INLINE void cider_rconcat_ptr(char* buffer_ptr,
+                                                const char* lhs,
+                                                int lhs_len,
+                                                const char* rhs,
+                                                int rhs_len) {
+  memcpy(buffer_ptr, rhs, rhs_len);
+  memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
+}
+
+extern "C" RUNTIME_EXPORT int8_t* get_buffer_without_realloc(const int8_t* input_desc_ptr,
+                                                             const int32_t index) {
   const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
   CiderArrowArrayBufferHolder* holder =
       reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
 
   return holder->getBufferAs<int8_t>(index);
-    }
+}
+
+extern "C" ALWAYS_INLINE void copy_string_buffer(const int8_t* input_desc_ptr,
+                                                 int8_t* buffer,
+                                                 int64_t total_row) {
+  const int64_t* offset_buffer = reinterpret_cast<const int64_t*>(
+      reinterpret_cast<const ArrowArray*>(input_desc_ptr)->buffers[1]);
+  int32_t* actual_writable_offset_buffer =
+      reinterpret_cast<int32_t*>(const_cast<int64_t*>(offset_buffer));
+  int32_t cur_offset = 0;
+  for (int i = 0; i < total_row; i++) {
+    int32_t cur_len = (offset_buffer[i] >> 48);
+    memcpy(buffer + cur_offset,
+           reinterpret_cast<int8_t*>(offset_buffer[i] & 0xffffffffffff),
+           cur_len);
+    cur_offset += cur_len;
+    actual_writable_offset_buffer[i + 1] = cur_offset;
+  }
+  actual_writable_offset_buffer[0] = 0;
+}
+
+extern "C" ALWAYS_INLINE int32_t calculate_size(int8_t* arrow_pointer,
+                                                int64_t total_row) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  const int64_t* buffer = reinterpret_cast<const int64_t*>(array->buffers[1]);
+  int32_t ret = 0;
+  for (int i = 0; i < total_row; i++) {
+    ret += (buffer[i] >> 48);
+  }
+  return ret;
+}
+
+extern "C" ALWAYS_INLINE int8_t* get_buffer_with_allocate(const int8_t* input_desc_ptr,
+                                                          const int32_t current_bytes,
+                                                          const int32_t index) {
+  const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
+  holder->allocBuffer(index, current_bytes);
+  return holder->getBufferAs<int8_t>(index);
+}
 
 extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
     const int8_t* input_desc_ptr,

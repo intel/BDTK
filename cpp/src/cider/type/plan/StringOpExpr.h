@@ -88,6 +88,8 @@ class StringOper : public Expr {
     chained_string_op_exprs_ = other_string_oper->chained_string_op_exprs_;
   }
 
+  void setIsOutput() { is_output_ = true; }
+  bool isOutput() { return is_output_; }
   SqlStringOpKind get_kind() const { return kind_; }
 
   ExprPtrRefVector get_children_reference() override {
@@ -209,6 +211,7 @@ class StringOper : public Expr {
     }
     return ret;
   }
+  bool is_output_ = false;
 
  private:
   static SQLTypeInfo get_return_type(
