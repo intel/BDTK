@@ -146,7 +146,15 @@ extern "C" ALWAYS_INLINE int64_t cider_ascii_lower(int8_t* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE int64_t cider_ascii_lower_len(int str_len) {
+extern "C" ALWAYS_INLINE void cider_ascii_lower_ptr(char* buffer_ptr,
+                                                    const char* str,
+                                                    int str_len) {
+  for (int i = 0; i < str_len; ++i) {
+    buffer_ptr[i] = ascii_char_lower_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  }
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_ascii_lower_len(int str_len) {
   return str_len;
 }
 
@@ -162,7 +170,15 @@ extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE int64_t cider_ascii_upper_len(int str_len) {
+extern "C" ALWAYS_INLINE void cider_ascii_upper_ptr(char* buffer_ptr,
+                                                    const char* str,
+                                                    int str_len) {
+  for (int i = 0; i < str_len; ++i) {
+    buffer_ptr[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  }
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_ascii_upper_len(int str_len) {
   return str_len;
 }
 
