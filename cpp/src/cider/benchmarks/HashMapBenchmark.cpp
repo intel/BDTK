@@ -113,11 +113,11 @@ static std::tuple<std::vector<T>, std::vector<bool>> generateAndFillVector(
 
 template <typename KeyType, typename HashTableType>
 static void BM_Lookup(benchmark::State& state) {
-  size_t row_num = 100;
+  size_t row_num = state.range(0);
   KeyType value_min = std::numeric_limits<KeyType>::min();
   KeyType value_max = std::numeric_limits<KeyType>::max();
   size_t null_chance = 0;
-  GeneratePattern pattern = GeneratePattern::Random;
+  GeneratePattern pattern = GeneratePattern::Sequence;
   std::vector<KeyType> data(row_num);
   std::vector<bool> data_null;
   {
@@ -128,10 +128,8 @@ static void BM_Lookup(benchmark::State& state) {
                   row_num, pattern, null_chance, value_min, value_max);
   }
   for (auto _ : state) {
-    for (int64_t i = state.range(0); i--;) {
-      auto collisions = bench<KeyType, HashTableType>(data);
-      state.counters["Collisions"] = collisions;
-    }
+    auto collisions = bench<KeyType, HashTableType>(data);
+    state.counters["Collisions"] = collisions;
   }
 }
 
@@ -147,10 +145,11 @@ static void BM_Optimized_Lookup(benchmark::State& state) {
   BM_Lookup<KeyType, OptimizedLookup>(state);
 }
 
-BENCHMARK(BM_Baseline_Lookup<uint8_t>)->RangeMultiplier(10)->Range(10, 1000);
-BENCHMARK(BM_Optimized_Lookup<uint8_t>)->RangeMultiplier(10)->Range(10, 1000);
+BENCHMARK(BM_Baseline_Lookup<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_Optimized_Lookup<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
 
-BENCHMARK(BM_Baseline_Lookup<uint16_t>)->RangeMultiplier(10)->Range(10, 1000);
-BENCHMARK(BM_Optimized_Lookup<uint16_t>)->RangeMultiplier(10)->Range(10, 1000);
+BENCHMARK(BM_Baseline_Lookup<uint16_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_Optimized_Lookup<uint16_t>)->RangeMultiplier(10)->Range(100, 10000);
+
 
 BENCHMARK_MAIN();
