@@ -101,7 +101,7 @@ class ColumnWriter {
         raw_length_buffer->castPointerSubType(JITTypeTag::INT32);
     auto ifBuilder = context_.getJITFunction()->createIfBuilder();
     ifBuilder->condition([&values]() { return values.getNull(); })
-        ->ifTrue([&]() {
+        ->ifTrue([&]() { // for null values.
           actual_raw_length_buffer[index_ + 1] = actual_raw_length_buffer[index_];
           auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
               "get_buffer_without_realloc",
@@ -165,9 +165,6 @@ class ColumnWriter {
       return length_buffer;
     });
 
-    // set null
-
-    // set offset
     auto actual_raw_length_buffer =
         raw_length_buffer->castPointerSubType(JITTypeTag::INT64);
     actual_raw_length_buffer[index_] = *values.getValue();

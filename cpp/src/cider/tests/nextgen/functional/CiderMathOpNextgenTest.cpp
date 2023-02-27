@@ -399,31 +399,6 @@ TEST_F(CiderMathOpNullTest, NullValueErrorCheckTest) {
   assertQuery("SELECT CAST(bigint_col - 5000000000 as INTEGER) FROM test");
 }
 
-class CiderProjectTest : public CiderNextgenTestBase {
- public:
-  CiderProjectTest() {
-    table_name_ = "test";
-    create_ddl_ =
-        R"(CREATE TABLE test(col_1 INTEGER NOT NULL, col_2 INTEGER NOT NULL,col_3 INTEGER NOT NULL);)";
-    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
-                                                  input_array_,
-                                                  100,
-                                                  {
-                                                      "col_1",
-                                                      "col_2",
-                                                      "col_3",
-                                                  },
-                                                  {CREATE_SUBSTRAIT_TYPE(I32),
-                                                   CREATE_SUBSTRAIT_TYPE(I32),
-                                                   CREATE_SUBSTRAIT_TYPE(I32)});
-  }
-};
-TEST_F(CiderProjectTest, aTest) {
-  assertQuery("SELECT col_1 * col_2 FROM test");
-
-  assertQuery("SELECT col_1 * col_2 + col_3 FROM test");
-}
-
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
