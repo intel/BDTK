@@ -355,14 +355,16 @@ class FixedJoinHashTable : private boost::noncopyable,
     return !buf[x].isZero(*this) ? &buf[x] : nullptr;
   }
 
-  ConstLookupResult ALWAYS_INLINE find(const Key& x) const { return *this->find(x); }
+  ConstLookupResult ALWAYS_INLINE find(const Key& x) const {
+    return const_cast<Self*>(this)->find(x);
+  }
 
   LookupResult ALWAYS_INLINE find(const Key&, size_t hash_value) {
     return !buf[hash_value].isZero(*this) ? &buf[hash_value] : nullptr;
   }
 
   ConstLookupResult ALWAYS_INLINE find(const Key& key, size_t hash_value) const {
-    return *this->find(key, hash_value);
+    return const_cast<Self*>(this)->find(key, hash_value);
   }
 
   bool ALWAYS_INLINE contains(const Key& x) const { return !buf[x].isZero(*this); }
