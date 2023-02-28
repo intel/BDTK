@@ -32,18 +32,6 @@ namespace cider::exec::processor {
 struct BatchAndOffset {
   cider::exec::nextgen::context::Batch* batch_ptr;
   int64_t batch_offset;
-
-  BatchAndOffset() {}
-
-  BatchAndOffset(BatchAndOffset* other) {
-    this->batch_ptr = other->batch_ptr;
-    this->batch_offset = other->batch_offset;
-  }
-
-  BatchAndOffset(cider::exec::nextgen::context::Batch* ptr, int64_t offset) {
-    this->batch_ptr = ptr;
-    this->batch_offset = offset;
-  }
 };
 
 using CiderJoinBaseKey = cider_hashtable::HT_Row;

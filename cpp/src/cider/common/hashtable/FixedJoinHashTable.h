@@ -22,50 +22,10 @@
 
 #pragma once
 
+#include <common/hashtable/HashTable.h>
 #include <vector>
 
-#include <common/hashtable/HashTable.h>
-
 namespace cider::hashtable {
-namespace ErrorCodes {
-extern const int NO_AVAILABLE_DATA;
-}
-
-// template <typename Key, typename TState = HashTableNoState>
-// struct FixedJoinHashTableCell {
-//   using State = TState;
-
-//   using value_type = Key;
-//   using mapped_type = VoidMapped;
-//   bool empty;
-
-//   FixedJoinHashTableCell() {}
-//   FixedJoinHashTableCell(const Key&, const State&) : empty(false) {}
-
-//   const VoidKey getKey() const { return {}; }
-//   VoidMapped getMapped() const { return {}; }
-
-//   bool isZero(const State&) const { return empty; }
-//   void setZero() { empty = true; }
-//   static constexpr bool need_zero_value_storage = false;
-
-//   /// This Cell is only stored inside an iterator. It's used to accommodate the fact
-//   ///  that the iterator based API always provide a reference to a continuous memory
-//   ///  containing the Key. As a result, we have to instantiate a real Key field.
-//   /// All methods that return a mutable reference to the Key field are named with
-//   ///  -Mutable suffix, indicating this is uncommon usage. As this is only for lookup
-//   ///  tables, it's totally fine to discard the Key mutations.
-//   struct CellExt {
-//     Key key;
-
-//     const VoidKey getKey() const { return {}; }
-//     VoidMapped getMapped() const { return {}; }
-//     const value_type& getValue() const { return key; }
-//     void update(Key&& key_, FixedJoinHashTableCell*) { key = key_; }
-//   };
-// };
-
-/// How to obtain the size of the table.
 
 template <typename Cell>
 struct FixedJoinHashTableStoredSize {
@@ -88,25 +48,32 @@ struct FixedJoinHashTableCalculatedSize {
   size_t getSize(const Cell* buf,
                  const typename Cell::State& state,
                  size_t num_cells) const {
-    if (!buf)
+    if (!buf) {
       return 0;
+    }
 
     size_t res = 0;
-    for (const Cell* end = buf + num_cells; buf != end; ++buf)
-      if (!buf->isZero(state))
+    for (const Cell* end = buf + num_cells; buf != end; ++buf) {
+      if (!buf->isZero(state)) {
         ++res;
+      }
+    }
     return res;
   }
 
   bool isEmpty(const Cell* buf,
                const typename Cell::State& state,
                size_t num_cells) const {
-    if (!buf)
+    if (!buf) {
       return true;
+    }
 
-    for (const Cell* end = buf + num_cells; buf != end; ++buf)
-      if (!buf->isZero(state))
+    for (const Cell* end = buf + num_cells; buf != end; ++buf) {
+      if (!buf->isZero(state)) {
         return false;
+      }
+    }
+
     return true;
   }
 
@@ -137,6 +104,8 @@ class FixedJoinHashTable : private boost::noncopyable,
                            protected Cell::State,
                            protected Size {
   static constexpr size_t NUM_CELLS = 1ULL << (sizeof(Key) * 8);
+  static_assert(std::is_same_v<Key, uint8_t> || std::is_same_v<Key, uint16_t>,
+                "Key must be int8_t or int16_t");
 
  protected:
   friend class const_iterator;
@@ -194,20 +163,23 @@ class FixedJoinHashTable : private boost::noncopyable,
 
       /// Skip empty cells in the main buffer.
       const auto* buf_end = container->buf + container->NUM_CELLS;
-      while (ptr < buf_end && ptr->isZero(*container))
+      while (ptr < buf_end && ptr->isZero(*container)) {
         ++ptr;
+      }
 
       return static_cast<Derived&>(*this);
     }
 
     auto& operator*() {
-      if (cell.key != ptr - container->buf)
+      if (cell.key != ptr - container->buf) {
         cell.update(ptr - container->buf, ptr);
+      }
       return cell;
     }
     auto* operator-> () {
-      if (cell.key != ptr - container->buf)
+      if (cell.key != ptr - container->buf) {
         cell.update(ptr - container->buf, ptr);
+      }
       return &cell;
     }
 
@@ -311,13 +283,15 @@ class FixedJoinHashTable : private boost::noncopyable,
   };
 
   const_iterator begin() const {
-    if (!buf)
+    if (!buf) {
       return end();
+    }
 
     const Cell* ptr = buf;
     auto buf_end = buf + NUM_CELLS;
-    while (ptr < buf_end && ptr->isZero(*this))
+    while (ptr < buf_end && ptr->isZero(*this)) {
       ++ptr;
+    }
 
     return const_iterator(this, ptr);
   }
@@ -325,13 +299,15 @@ class FixedJoinHashTable : private boost::noncopyable,
   const_iterator cbegin() const { return begin(); }
 
   iterator begin() {
-    if (!buf)
+    if (!buf) {
       return end();
+    }
 
     Cell* ptr = buf;
     auto buf_end = buf + NUM_CELLS;
-    while (ptr < buf_end && ptr->isZero(*this))
+    while (ptr < buf_end && ptr->isZero(*this)) {
       ++ptr;
+    }
 
     return iterator(this, ptr);
   }
@@ -364,8 +340,9 @@ class FixedJoinHashTable : private boost::noncopyable,
   std::pair<LookupResult, bool> ALWAYS_INLINE insert(const value_type& x) {
     std::pair<LookupResult, bool> res;
     emplace(Cell::getKey(x), res.first, res.second);
-    if (res.second)
+    if (res.second) {
       insertSetMapped(res.first->getMapped(), x);
+    }
 
     return res;
   }
@@ -378,16 +355,14 @@ class FixedJoinHashTable : private boost::noncopyable,
     return !buf[x].isZero(*this) ? &buf[x] : nullptr;
   }
 
-  ConstLookupResult ALWAYS_INLINE find(const Key& x) const {
-    return const_cast<std::decay_t<decltype(*this)>*>(this)->find(x);
-  }
+  ConstLookupResult ALWAYS_INLINE find(const Key& x) const { return *this->find(x); }
 
   LookupResult ALWAYS_INLINE find(const Key&, size_t hash_value) {
     return !buf[hash_value].isZero(*this) ? &buf[hash_value] : nullptr;
   }
 
   ConstLookupResult ALWAYS_INLINE find(const Key& key, size_t hash_value) const {
-    return const_cast<std::decay_t<decltype(*this)>*>(this)->find(key, hash_value);
+    return *this->find(key, hash_value);
   }
 
   bool ALWAYS_INLINE contains(const Key& x) const { return !buf[x].isZero(*this); }
@@ -503,8 +478,9 @@ class FixedJoinHashTable : private boost::noncopyable,
   /// because offset for zero value considered to be 0
   /// and for other values it will be `offset in buffer + 1`
   size_t offsetInternal(ConstLookupResult ptr) const {
-    if (ptr->isZero(*this))
+    if (ptr->isZero(*this)) {
       return 0;
+    }
     return ptr - buf + 1;
   }
 
