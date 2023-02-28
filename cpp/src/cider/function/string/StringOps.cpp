@@ -87,27 +87,8 @@ NullableStrType TryStringCast::operator()(const std::string& str) const {
   return NullableStrType();
 }
 
-Datum TryStringCast::numericEval(const std::string_view& str) const {
-  if (str.empty()) {
-    return NullDatum(return_ti_);
-  }
-  // Need to make copy for now b/c StringToDatum can mod SQLTypeInfo arg
-  SQLTypeInfo return_ti(return_ti_);
-  try {
-    return StringToDatum(str, return_ti);
-  } catch (std::runtime_error& e) {
-    return NullDatum(return_ti);
-  }
-}
-
 NullableStrType CharLength::operator()(const std::string& str) const {
   CIDER_THROW(CiderCompileException, "invalid call to operator() for CharLength");
-}
-
-Datum CharLength::numericEval(const std::string_view& str) const {
-  Datum res_datum;
-  res_datum.bigintval = static_cast<int64_t>(str.length());
-  return res_datum;
 }
 
 NullableStrType Lower::operator()(const std::string& str) const {
@@ -527,20 +508,6 @@ std::string_view StringOps::operator()(const std::string_view sv,
   return sv_storage;
 }
 
-Datum StringOps::numericEval(const std::string_view& str) const {
-  NullableStrType modified_str(str);
-  const auto num_string_producing_ops = string_ops_.size() - 1;
-  for (size_t string_op_idx = 0; string_op_idx < num_string_producing_ops;
-       ++string_op_idx) {
-    const auto& string_op = string_ops_[string_op_idx];
-    modified_str = string_op->operator()(modified_str.str);
-    if (modified_str.is_null) {
-      break;
-    }
-  }
-  return string_ops_.back()->numericEval(modified_str.str);
-}
-
 std::vector<std::unique_ptr<const StringOp>> StringOps::genStringOpsFromOpInfos(
     const std::vector<StringOpInfo>& string_op_infos) const {
   // Should we handle pure literal expressions here as well
@@ -768,12 +735,6 @@ std::pair<std::string, bool /* is null */> apply_string_op_to_literals(
   }
   const auto string_op = gen_string_op(string_op_info);
   return string_op->operator()().toPair();
-}
-
-Datum apply_numeric_op_to_literals(const StringOpInfo& string_op_info) {
-  CHECK(string_op_info.hasVarStringLiteral());
-  const auto string_op = gen_string_op(string_op_info);
-  return string_op->numericEval();
 }
 
 }  // namespace StringOps_Namespace

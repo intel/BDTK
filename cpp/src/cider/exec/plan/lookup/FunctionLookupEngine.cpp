@@ -19,7 +19,7 @@
  * under the License.
  */
 
-#include "function/FunctionLookupEngine.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "cider/CiderException.h"
 
 FunctionLookupEnginePtrMap FunctionLookupEngine::function_lookup_engine_ptr_map_ = {};

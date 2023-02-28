@@ -29,7 +29,8 @@ set(DEP_LIBS
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
-# add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
-# target_link_libraries(CiderPlanValidatorTest gtest cider_util test_utils dl
-# cider_plan_validator) add_test(CiderPlanValidatorTest
-# ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})
+add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
+target_link_libraries(CiderPlanValidatorTest gtest cider_util test_utils dl
+                      cider_plan_validator)
+add_test(CiderPlanValidatorTest
+         ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})

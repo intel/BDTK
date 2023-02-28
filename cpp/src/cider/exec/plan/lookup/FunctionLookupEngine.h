@@ -32,7 +32,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "function/SubstraitFunctionCiderMappings.h"
+#include "exec/plan/lookup/SubstraitFunctionCiderMappings.h"
 #include "include/cider/CiderSupportPlatType.h"
 #include "substrait/function/FunctionLookup.h"
 #include "substrait/function/FunctionSignature.h"

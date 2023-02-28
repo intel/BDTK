@@ -20,107 +20,117 @@
  */
 
 #include <gtest/gtest.h>
-#include "tests/utils/CiderTestBase.h"
+#include "exec/plan/parser/ConverterHelper.h"
+#include "exec/plan/parser/TypeUtils.h"
+#include "tests/utils/ArrowArrayBuilder.h"
+#include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 #include "util/ArrowArrayBuilder.h"
+
+using namespace cider::test::util;
+using namespace cider::exec::nextgen;
 
 #define SQL_BETWEEN_AND_INT "SELECT c0 FROM tmp WHERE c0 between 0 and 5"
 #define SQL_BETWEEN_AND_FP "SELECT c0 FROM tmp WHERE c0 between 0.0 and 5.0"
 #define SQL_BETWEEN_AND_DATE \
   "SELECT c0 FROM tmp WHERE c0 between date '1970-02-01' and date '1970-03-01'"
 
-#define GEN_BETWEEN_AND_ARROW_CLASS(S_TYPE, SQL_TYPE)                     \
-  class BetweenAndArrow##S_TYPE##Test : public CiderTestBase {            \
-   public:                                                                \
-    BetweenAndArrow##S_TYPE##Test() {                                     \
-      table_name_ = "tmp";                                                \
-      create_ddl_ = "CREATE TABLE tmp(c0 " #SQL_TYPE " NOT NULL);";       \
-      QueryArrowDataGenerator::generateBatchByTypes(                      \
-          schema_, array_, 100, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}); \
-    }                                                                     \
+#define GEN_BETWEEN_AND_CLASS(S_TYPE, SQL_TYPE)                                       \
+  class BetweenAnd##S_TYPE##Test : public CiderNextgenTestBase {                      \
+   public:                                                                            \
+    BetweenAnd##S_TYPE##Test() {                                                      \
+      table_name_ = "tmp";                                                            \
+      create_ddl_ = "CREATE TABLE tmp(c0 " #SQL_TYPE " NOT NULL);";                   \
+      QueryArrowDataGenerator::generateBatchByTypes(                                  \
+          input_schema_, input_array_, 100, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}); \
+    }                                                                                 \
   };
 
-GEN_BETWEEN_AND_ARROW_CLASS(I8, TINYINT)
-GEN_BETWEEN_AND_ARROW_CLASS(I16, SMALLINT)
-GEN_BETWEEN_AND_ARROW_CLASS(I32, INTEGER)
-GEN_BETWEEN_AND_ARROW_CLASS(I64, BIGINT)
-GEN_BETWEEN_AND_ARROW_CLASS(Fp32, FLOAT)
-GEN_BETWEEN_AND_ARROW_CLASS(Fp64, DOUBLE)
-GEN_BETWEEN_AND_ARROW_CLASS(Date, DATE)
+GEN_BETWEEN_AND_CLASS(I8, TINYINT)
+GEN_BETWEEN_AND_CLASS(I16, SMALLINT)
+GEN_BETWEEN_AND_CLASS(I32, INTEGER)
+GEN_BETWEEN_AND_CLASS(I64, BIGINT)
+GEN_BETWEEN_AND_CLASS(Fp32, FLOAT)
+GEN_BETWEEN_AND_CLASS(Fp64, DOUBLE)
+GEN_BETWEEN_AND_CLASS(Date, DATE)
 
-#define GEN_BETWEEN_AND_ARROW_NULL_CLASS(S_TYPE, SQL_TYPE)                     \
-  class BetweenAndArrow##S_TYPE##NullTest : public CiderTestBase {             \
-   public:                                                                     \
-    BetweenAndArrow##S_TYPE##NullTest() {                                      \
-      table_name_ = "tmp";                                                     \
-      create_ddl_ = "CREATE TABLE tmp(c0 " #SQL_TYPE ");";                     \
-      QueryArrowDataGenerator::generateBatchByTypes(                           \
-          schema_, array_, 100, {"c0"}, {CREATE_SUBSTRAIT_TYPE(S_TYPE)}, {2}); \
-    }                                                                          \
+#define GEN_BETWEEN_AND_NULL_CLASS(S_TYPE, SQL_TYPE)                                 \
+  class BetweenAnd##S_TYPE##NullTest : public CiderNextgenTestBase {                 \
+   public:                                                                           \
+    BetweenAnd##S_TYPE##NullTest() {                                                 \
+      table_name_ = "tmp";                                                           \
+      create_ddl_ = "CREATE TABLE tmp(c0 " #SQL_TYPE ");";                           \
+      QueryArrowDataGenerator::generateBatchByTypes(input_schema_,                   \
+                                                    input_array_,                    \
+                                                    100,                             \
+                                                    {"c0"},                          \
+                                                    {CREATE_SUBSTRAIT_TYPE(S_TYPE)}, \
+                                                    {2});                            \
+    }                                                                                \
   };
 
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(I8, TINYINT)
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(I16, SMALLINT)
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(I32, INTEGER)
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(I64, BIGINT)
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(Fp32, FLOAT)
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(Fp64, DOUBLE)
-GEN_BETWEEN_AND_ARROW_NULL_CLASS(Date, DATE)
+GEN_BETWEEN_AND_NULL_CLASS(I8, TINYINT)
+GEN_BETWEEN_AND_NULL_CLASS(I16, SMALLINT)
+GEN_BETWEEN_AND_NULL_CLASS(I32, INTEGER)
+GEN_BETWEEN_AND_NULL_CLASS(I64, BIGINT)
+GEN_BETWEEN_AND_NULL_CLASS(Fp32, FLOAT)
+GEN_BETWEEN_AND_NULL_CLASS(Fp64, DOUBLE)
+GEN_BETWEEN_AND_NULL_CLASS(Date, DATE)
 
-TEST_F(BetweenAndArrowI8Test, NotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
+TEST_F(BetweenAndI8Test, NotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
 }
 
-TEST_F(BetweenAndArrowI8NullTest, NullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
+TEST_F(BetweenAndI8NullTest, NullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i8_velox.json");
 }
 
-TEST_F(BetweenAndArrowI16Test, NotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i16_velox.json");
+TEST_F(BetweenAndI16Test, NotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i16_velox.json");
 }
 
-TEST_F(BetweenAndArrowI16NullTest, NullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i16_velox.json");
+TEST_F(BetweenAndI16NullTest, NullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i16_velox.json");
 }
 
-TEST_F(BetweenAndArrowI32Test, NotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i32_velox.json");
+TEST_F(BetweenAndI32Test, NotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i32_velox.json");
 }
 
-TEST_F(BetweenAndArrowI32NullTest, NullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i32_velox.json");
+TEST_F(BetweenAndI32NullTest, NullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i32_velox.json");
 }
 
-TEST_F(BetweenAndArrowI64Test, NotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i64_velox.json");
+TEST_F(BetweenAndI64Test, NotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i64_velox.json");
 }
 
-TEST_F(BetweenAndArrowI64NullTest, NullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_INT, "between_and_i64_velox.json");
+TEST_F(BetweenAndI64NullTest, NullTest) {
+  assertQuery(SQL_BETWEEN_AND_INT, "between_and_i64_velox.json");
 }
 
-TEST_F(BetweenAndArrowFp32Test, NotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_FP, "between_and_fp32_velox.json");
+TEST_F(BetweenAndFp32Test, NotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_FP, "between_and_fp32_velox.json");
 }
 
-TEST_F(BetweenAndArrowFp32NullTest, NullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_FP, "between_and_fp32_velox.json");
+TEST_F(BetweenAndFp32NullTest, NullTest) {
+  assertQuery(SQL_BETWEEN_AND_FP, "between_and_fp32_velox.json");
 }
 
-TEST_F(BetweenAndArrowFp64Test, NotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_FP, "between_and_fp64_velox.json");
+TEST_F(BetweenAndFp64Test, NotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_FP, "between_and_fp64_velox.json");
 }
 
-TEST_F(BetweenAndArrowFp64NullTest, NullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_FP, "between_and_fp64_velox.json");
+TEST_F(BetweenAndFp64NullTest, NullTest) {
+  assertQuery(SQL_BETWEEN_AND_FP, "between_and_fp64_velox.json");
 }
 
-TEST_F(BetweenAndArrowDateNullTest, DateNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
+TEST_F(BetweenAndDateNullTest, DateNullTest) {
+  assertQuery(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
 }
 
-TEST_F(BetweenAndArrowDateTest, DateNotNullTest) {
-  assertQueryArrow(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
+TEST_F(BetweenAndDateTest, DateNotNullTest) {
+  assertQuery(SQL_BETWEEN_AND_DATE, "between_and_date_velox.json");
 }
 
 int main(int argc, char** argv) {

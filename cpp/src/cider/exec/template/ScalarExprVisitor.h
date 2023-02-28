@@ -143,10 +143,6 @@ class ScalarExprVisitor {
     if (agg) {
       return visitAggExpr(agg);
     }
-    const auto string_oper = dynamic_cast<const Analyzer::StringOper*>(expr);
-    if (string_oper) {
-      return visitStringOper(string_oper);
-    }
     return defaultResult();
   }
 
@@ -323,14 +319,6 @@ class ScalarExprVisitor {
   virtual T visitAggExpr(const Analyzer::AggExpr* agg) const {
     T result = defaultResult();
     return aggregateResult(result, visit(agg->get_arg()));
-  }
-
-  virtual T visitStringOper(const Analyzer::StringOper* string_oper) const {
-    T result = defaultResult();
-    for (const auto& arg : string_oper->getOwnArgs()) {
-      result = aggregateResult(result, visit(arg.get()));
-    }
-    return result;
   }
 
  protected:

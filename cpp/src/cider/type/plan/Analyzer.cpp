@@ -1110,58 +1110,12 @@ void Constant::cast_to_string(const SQLTypeInfo& str_type_info) {
   type_info = str_type_info;
 }
 
-namespace {
-
-// TODO(adb): we should revisit this, as one could argue a Datum should never contain
-// a null sentinel. In fact, if we bundle Datum with a null boolean ("NullableDatum"),
-// the logic becomes more explicit. There are likely other bugs associated with the
-// current logic -- for example, boolean is set to -128 which is likely UB
-inline bool is_null_value(const SQLTypeInfo& ti, const Datum& constval) {
-  switch (ti.get_type()) {
-    case kBOOLEAN:
-      return constval.tinyintval == NULL_BOOLEAN;
-    case kTINYINT:
-      return constval.tinyintval == NULL_TINYINT;
-    case kINT:
-      return constval.intval == NULL_INT;
-    case kSMALLINT:
-      return constval.smallintval == NULL_SMALLINT;
-    case kBIGINT:
-    case kNUMERIC:
-    case kDECIMAL:
-      return constval.bigintval == NULL_BIGINT;
-    case kTIME:
-    case kTIMESTAMP:
-    case kDATE:
-      return constval.bigintval == NULL_BIGINT;
-    case kVARCHAR:
-    case kCHAR:
-    case kTEXT:
-      return constval.stringval == nullptr;
-    case kFLOAT:
-      return constval.floatval == NULL_FLOAT;
-    case kDOUBLE:
-      return constval.doubleval == NULL_DOUBLE;
-    case kNULLT:
-      return constval.bigintval == 0;
-    case kARRAY:
-      return constval.arrayval == nullptr;
-    default:
-      UNREACHABLE();
-  }
-  UNREACHABLE();
-  return false;
-}
-
-}  // namespace
-
 void Constant::do_cast(const SQLTypeInfo& new_type_info) {
   if (type_info == new_type_info) {
     return;
   }
   if (is_null && !new_type_info.get_notnull()) {
     type_info = new_type_info;
-    set_null_value();
     return;
   }
   if ((new_type_info.is_number() || new_type_info.get_type() == kTIMESTAMP) &&
@@ -1215,9 +1169,7 @@ void Constant::do_cast(const SQLTypeInfo& new_type_info) {
   } else if (get_is_null() && (new_type_info.is_number() || new_type_info.is_time() ||
                                new_type_info.is_string() || new_type_info.is_boolean())) {
     type_info = new_type_info;
-    set_null_value();
-  } else if (!is_null_value(type_info, constval) &&
-             get_nullable_type_info(type_info) == new_type_info) {
+  } else if (!get_is_null() && get_nullable_type_info(type_info) == new_type_info) {
     CHECK(!is_null);
     // relax nullability
     type_info = new_type_info;
@@ -1229,56 +1181,9 @@ void Constant::do_cast(const SQLTypeInfo& new_type_info) {
   }
 }
 
-void Constant::set_null_value() {
-  switch (type_info.get_type()) {
-    case kBOOLEAN:
-      constval.boolval = NULL_BOOLEAN;
-      break;
-    case kTINYINT:
-      constval.tinyintval = NULL_TINYINT;
-      break;
-    case kINT:
-      constval.intval = NULL_INT;
-      break;
-    case kSMALLINT:
-      constval.smallintval = NULL_SMALLINT;
-      break;
-    case kBIGINT:
-    case kNUMERIC:
-    case kDECIMAL:
-      constval.bigintval = NULL_BIGINT;
-      break;
-    case kTIME:
-    case kTIMESTAMP:
-    case kDATE:
-      constval.bigintval = NULL_BIGINT;
-      break;
-    case kVARCHAR:
-    case kCHAR:
-    case kTEXT:
-      constval.stringval = nullptr;
-      break;
-    case kFLOAT:
-      constval.floatval = NULL_FLOAT;
-      break;
-    case kDOUBLE:
-      constval.doubleval = NULL_DOUBLE;
-      break;
-    case kNULLT:
-      constval.bigintval = 0;
-      break;
-    case kARRAY:
-      constval.arrayval = nullptr;
-      break;
-    default:
-      CHECK(false);
-  }
-}
-
 std::shared_ptr<Analyzer::Expr> Constant::add_cast(const SQLTypeInfo& new_type_info) {
   if (is_null) {
     type_info = new_type_info;
-    set_null_value();
     return shared_from_this();
   }
   if (new_type_info.get_compression() != type_info.get_compression()) {

@@ -21,8 +21,8 @@
 
 #include "CiderVeloxPluginCtx.h"
 #include "CiderPlanNodeTranslator.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "exec/plan/parser/ConverterHelper.h"
-#include "function/FunctionLookupEngine.h"
 
 namespace facebook::velox::plugin {
 

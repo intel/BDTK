@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 add_subdirectory(parser)
+add_subdirectory(lookup)
 add_subdirectory(builder)
 add_subdirectory(validator)
 add_subdirectory(substrait)
