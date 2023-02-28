@@ -22,7 +22,7 @@
 #define NEXTGEN_UTILS_TYPEUTILS_H
 
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "util/Logger.h"
 
 namespace cider::exec::nextgen::utils {

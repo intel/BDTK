@@ -30,7 +30,7 @@
 #include "ConverterHelper.h"
 #include "include/cider/CiderSupportPlatType.h"
 #include "substrait/algebra.pb.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
 
 namespace generator {

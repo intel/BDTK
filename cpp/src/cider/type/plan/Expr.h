@@ -34,7 +34,7 @@
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;

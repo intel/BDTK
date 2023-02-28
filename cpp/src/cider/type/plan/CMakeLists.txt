@@ -30,7 +30,6 @@ set(cider_type_plan_source_files
     StringOpExpr.cpp
     InValues.cpp
     FunctionExpr.cpp
-    SqlTypes.cpp
     ../../exec/module/CiderOptions.cpp)
 add_library(cider_type_plan ${cider_type_plan_source_files})
 target_link_libraries(cider_type_plan cider_function gflags)

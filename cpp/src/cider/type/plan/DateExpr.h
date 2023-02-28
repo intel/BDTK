@@ -24,7 +24,7 @@
 #define TYPE_PLAN_DATE_EXPR_H
 
 #include "exec/nextgen/context/CodegenContext.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 #include "util/sqldefs.h"
 

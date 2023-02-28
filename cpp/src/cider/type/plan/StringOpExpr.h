@@ -25,7 +25,7 @@
 
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/ColumnExpr.h"
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/Expr.h"

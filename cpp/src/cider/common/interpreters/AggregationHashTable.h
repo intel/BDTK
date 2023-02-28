@@ -25,7 +25,7 @@
 #include <common/Arena.h>
 #include <common/hashtable/FixedHashMap.h>
 #include <common/hashtable/HashMap.h>
-#include <type/plan/SqlTypes.h>
+#include <type/data/sqltypes.h>
 
 #include <functional>
 #include <memory>

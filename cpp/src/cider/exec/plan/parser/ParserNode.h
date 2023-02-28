@@ -32,7 +32,7 @@
 #include <boost/process/search_path.hpp>
 
 #include "cider/CiderException.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/Analyzer.h"
 #include "util/DdlUtils.h"
 

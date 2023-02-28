@@ -27,7 +27,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "util/toString.h"
 
 enum class ExtArgumentType {

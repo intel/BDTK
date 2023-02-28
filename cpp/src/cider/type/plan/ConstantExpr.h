@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "exec/nextgen/context/CodegenContext.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/Expr.h"
 
 namespace Analyzer {

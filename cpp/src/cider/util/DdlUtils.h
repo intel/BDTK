@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 
 namespace ddl_utils {
 class SqlType {

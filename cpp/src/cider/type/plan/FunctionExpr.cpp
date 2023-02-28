@@ -22,7 +22,7 @@
 #include "type/plan/FunctionExpr.h"
 #include "function/ExtensionFunctionsBinding.h"
 #include "function/ExtensionFunctionsWhitelist.h"
-#include "type/plan/SqlTypes.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/UnaryExpr.h"
 
 namespace Analyzer {

@@ -19,7 +19,7 @@
  * under the License.
  */
 #include "InValues.h"
-#include <type/plan/SqlTypes.h>
+#include <type/data/sqltypes.h>
 #include "exec/nextgen/context/CiderSet.h"
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/Utils.h"
