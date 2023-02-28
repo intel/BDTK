@@ -44,19 +44,17 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int 
 }
 
 // pos parameter starts from 1 rather than 0
-extern "C" ALWAYS_INLINE int64_t cider_substring_extra(char* string_heap_ptr,
-                                                       const char* str,
-                                                       int pos,
-                                                       int len) {
-  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
-  string_t s = ptr->addString(str + pos - 1, len);
-  return pack_string_t(s);
-}
-extern "C" ALWAYS_INLINE void cider_substring_extra_ptr(char* buffer_ptr,
+extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
                                                         const char* str,
                                                         int pos,
                                                         int len) {
-  memcpy(buffer_ptr, str + pos - 1, len);
+  // StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  // string_t s = ptr->addString(str + pos - 1, len);
+  return pack_string((const int8_t*)(str + pos - 1), len);
+}
+extern "C" RUNTIME_EXPORT const char* cider_substring_extra_ptr(const char* str,
+                                                                int pos) {
+  return str + pos - 1;
 }
 
 // pos starts with 1. A negative starting position is interpreted as being relative

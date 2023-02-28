@@ -352,18 +352,18 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
     return set_expr_value(arg_val.getNull(), ptr_and_len);
   } else {
     auto ret_len = len_param;
-    auto ptr = func.emitRuntimeFunctionCall(
-        "allocate_from_string_heap",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .params_vector = {string_heap_ptr.get(), ret_len.get()}});
+    // auto ptr = func.emitRuntimeFunctionCall(
+    //     "allocate_from_string_heap",
+    //     JITFunctionEmitDescriptor{
+    //         .ret_type = JITTypeTag::POINTER,
+    //         .params_vector = {string_heap_ptr.get(), ret_len.get()}});
     auto ret_ptr = func.emitRuntimeFunctionCall(
         fn_name + "_ptr",
         JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::VOID,
+            .ret_type = JITTypeTag::POINTER,
             .params_vector = {
-                ptr.get(), arg_val.getValue().get(), pos_param.get(), len_param.get()}});
-    return set_expr_value(arg_val.getNull(), ret_len, ptr);
+                arg_val.getValue().get(), pos_param.get()}});
+    return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
   }
 }
 
