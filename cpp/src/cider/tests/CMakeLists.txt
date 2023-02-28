@@ -42,8 +42,10 @@ set(EXECUTE_TEST_LIBS
     dl
     cider_hashtable_join)
 
-target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS} cider_hashtable)
-target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS} cider_hashtable)
+target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
+                      cider_hashtable)
+target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS}
+                      cider_hashtable)
 target_link_libraries(Substrait2IRTest cider_plan_parser ${EXECUTE_TEST_LIBS})
 # target_link_libraries(ExpressionEvalTest ${EXECUTE_TEST_LIBS}
 # cider_expr_builder) target_link_libraries(CiderAllocatorTest
