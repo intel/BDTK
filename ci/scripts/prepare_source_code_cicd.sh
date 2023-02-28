@@ -27,5 +27,5 @@ PRESTO_BDTK_COMMIT_ID=67b3bf5251f81131328dbd183685fb50e5a7ac2c
 git clone https://github.com/prestodb/presto.git ${PRESTO_LOCAL_PATH}
 pushd ${PRESTO_LOCAL_PATH}
 git checkout -b cider ${PRESTO_BDTK_COMMIT_ID}
-popd
 git apply ./ci/scripts/${PATCH_NAME}
+popd
