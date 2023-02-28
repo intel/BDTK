@@ -124,7 +124,8 @@ target_link_libraries(CiderOperatorTest ${VELOX_PLUGIN_TEST_LIBS}
 add_test(CiderOperatorTest CiderOperatorTest ${TEST_ARGS})
 
 add_executable(CiderPatternTest CiderPatternTest.cpp)
-target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS} velox_plan_transformer)
+target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS}
+                      velox_plan_transformer)
 add_test(CiderPatternTest CiderPatternTest ${TEST_ARGS})
 
 add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)

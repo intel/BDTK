@@ -40,9 +40,9 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
-#include <string_view>
 
 // must not change because these values persist in catalogs.
 enum SQLTypes {
@@ -355,18 +355,22 @@ class SQLTypeInfo {
       auto num_elems =
           (size > 0) ? "[" + std::to_string(size / elem_ti.get_size()) + "]" : "";
       CHECK_LT(static_cast<int>(subtype), kSQLTYPE_LAST);
-      return "COLUMN<" + std::string{type_name[static_cast<int>(subtype)]} + ps + ">" + num_elems;
+      return "COLUMN<" + std::string{type_name[static_cast<int>(subtype)]} + ps + ">" +
+             num_elems;
     }
     if (type == kCOLUMN_LIST) {
       auto elem_ti = get_elem_type();
       auto num_elems =
           (size > 0) ? "[" + std::to_string(size / elem_ti.get_size()) + "]" : "";
       CHECK_LT(static_cast<int>(subtype), kSQLTYPE_LAST);
-      return "COLUMN_LIST<" + std::string{type_name[static_cast<int>(subtype)]} + ps + ">" + num_elems;
+      return "COLUMN_LIST<" + std::string{type_name[static_cast<int>(subtype)]} + ps +
+             ">" + num_elems;
     }
     return std::string{type_name[static_cast<int>(type)]} + ps;
   }
-  inline std::string get_compression_name() const { return std::string{comp_name[(int)compression]}; }
+  inline std::string get_compression_name() const {
+    return std::string{comp_name[(int)compression]};
+  }
   std::string toString() const { return to_string(); }  // for PRINT macro
   inline std::string to_string() const {
     return concat("(type=",
