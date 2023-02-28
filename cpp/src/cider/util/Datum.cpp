@@ -44,7 +44,7 @@
 #include "util/Logger.h"
 #include "util/misc.h"
 
-std::string SQLTypeInfo::type_name[kSQLTYPE_LAST] = {"NULL",
+std::string_view SQLTypeInfo::type_name[kSQLTYPE_LAST] = {"NULL",
                                                      "BOOLEAN",
                                                      "CHAR",
                                                      "VARCHAR",
@@ -69,7 +69,7 @@ std::string SQLTypeInfo::type_name[kSQLTYPE_LAST] = {"NULL",
                                                      "COLUMN",
                                                      "COLUMN_LIST",
                                                      "STRUCT"};
-std::string SQLTypeInfo::comp_name[kENCODING_LAST] =
+std::string_view SQLTypeInfo::comp_name[kENCODING_LAST] =
     {"NONE", "FIXED", "RL", "DIFF", "DICT", "SPARSE", "COMPRESSED", "DAYS"};
 
 namespace {
