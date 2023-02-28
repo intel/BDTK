@@ -23,8 +23,8 @@ include_directories(${CMAKE_SOURCE_DIR}/tests ${CMAKE_CURRENT_BINARY_DIR})
 set(TEST_BASE_PATH "./tmp")
 add_definitions("-DBASE_PATH=\"${TEST_BASE_PATH}\"")
 
-# add_executable(CiderNewHashTableTest CiderNewHashTableTest.cpp)
-# add_executable(CiderNewAggHashTableTest CiderNewAggHashTableTest.cpp)
+add_executable(CiderNewHashTableTest CiderNewHashTableTest.cpp)
+add_executable(CiderNewAggHashTableTest CiderNewAggHashTableTest.cpp)
 add_executable(Substrait2IRTest Substrait2IRTest.cpp)
 # add_executable(ExpressionEvalTest ExpressionEvalTest.cpp)
 # add_executable(CiderAllocatorTest CiderAllocatorTest.cpp)
@@ -42,9 +42,8 @@ set(EXECUTE_TEST_LIBS
     dl
     cider_hashtable_join)
 
-# target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
-# cider_hashtable) target_link_libraries(CiderNewAggHashTableTest
-# ${EXECUTE_TEST_LIBS} cider_hashtable)
+target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS} cider_hashtable)
+target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS} cider_hashtable)
 target_link_libraries(Substrait2IRTest cider_plan_parser ${EXECUTE_TEST_LIBS})
 # target_link_libraries(ExpressionEvalTest ${EXECUTE_TEST_LIBS}
 # cider_expr_builder) target_link_libraries(CiderAllocatorTest
@@ -53,8 +52,8 @@ target_link_libraries(Substrait2IRTest cider_plan_parser ${EXECUTE_TEST_LIBS})
 # target_link_libraries(StringHeapTest ${EXECUTE_TEST_LIBS})
 
 set(TEST_ARGS "--gtest_output=xml:../")
-# add_test(CiderNewHashTableTest CiderNewHashTableTest ${TEST_ARGS})
-# add_test(CiderNewAggHashTableTest CiderNewAggHashTableTest ${TEST_ARGS})
+add_test(CiderNewHashTableTest CiderNewHashTableTest ${TEST_ARGS})
+add_test(CiderNewAggHashTableTest CiderNewAggHashTableTest ${TEST_ARGS})
 add_test(Substrait2IRTest Substrait2IRTest ${TEST_ARGS})
 # add_test(ExpressionEvalTest ExpressionEvalTest ${TEST_ARGS})
 # add_test(CiderAllocatorTest CiderAllocatorTest ${TEST_ARGS})
