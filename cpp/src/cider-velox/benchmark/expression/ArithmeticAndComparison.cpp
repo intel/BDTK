@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#define SHARED_LOGGER_H  // ignore util/Logger.h
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 
@@ -46,8 +45,9 @@
 
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
-DEFINE_int64(batch_size, 1'000, "batch size for one loop");
-DEFINE_int64(loop_count, 2'000'000, "loop count for benchmark");
+DEFINE_double(ratio, 0.5, "NULL ratio in batch");
+DEFINE_int64(batch_size, 1'024, "batch size for one loop");
+DEFINE_int64(loop_count, 1'000'000, "loop count for benchmark");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
 
 using namespace cider::exec::processor;
@@ -60,9 +60,6 @@ using namespace facebook::velox::plugin;
 using namespace facebook::velox::functions;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::substrait;
-
-static const std::shared_ptr<CiderAllocator> allocator =
-    std::make_shared<CiderDefaultAllocator>();
 
 namespace {
 
@@ -157,15 +154,13 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
         {"i64", BIGINT()},
         {"a", DOUBLE()},
         {"b", DOUBLE()},
-        {"constant", DOUBLE()},
         {"d", BOOLEAN()},
         {"e", BOOLEAN()},
     });
-    vectorSize_ = vectorSize;
     // Generate input data.
     VectorFuzzer::Options opts;
     opts.vectorSize = vectorSize;
-    opts.nullRatio = 0.5;
+    opts.nullRatio = FLAGS_ratio;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     std::vector<VectorPtr> children;
@@ -175,7 +170,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     children.emplace_back(fuzzer.fuzzFlat(BIGINT()));    // i64
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // A
     children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // B
-    children.emplace_back(fuzzer.fuzzFlat(DOUBLE()));    // fake constant
     children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // D
     children.emplace_back(fuzzer.fuzzFlat(BOOLEAN()));   // E
 
@@ -219,7 +213,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
     cgo.co.dump_ir = FLAGS_dump_ir;
 
-    auto allocator = std::make_shared<CiderDefaultAllocator>();
+    auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context, cgo);
 
@@ -284,7 +278,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
   RowVectorPtr rowVector_;
   ArrowArray* inputArray_;
   ArrowArrayReleaser inputReleaser_;
-  size_t vectorSize_;
 };
 
 std::unique_ptr<ArithmeticAndComparisonBenchmark> benchmark;
@@ -470,9 +463,8 @@ BENCHMARK_GROUP(mulI16, "i16*i16");
 BENCHMARK_GROUP(mulI32, "i32*i32");
 BENCHMARK_GROUP(mulI64, "i64*i64");
 
-BENCHMARK_GROUP(mulDouble, "a*b");
-BENCHMARK_GROUP(mulDoubleSameColumn, "a*a");
-BENCHMARK_GROUP(mulDoubleConstant, "a*constant");
+BENCHMARK_GROUP(mulDouble, "a*a");
+BENCHMARK_GROUP(mulDoubleTwoColumn, "a*b");
 BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
 BENCHMARK_GROUP(mulDoubleNestedDeep, "(a*b*a)*(a*(a*b))");
 
