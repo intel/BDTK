@@ -293,99 +293,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
 std::unique_ptr<ArithmeticAndComparisonBenchmark> benchmark;
 
-bool isBitSet(uint8_t* null, size_t n) {
-  return null[n >> 3] & 1 << (n & 0x7);
-}
-
-void setBitAt(uint8_t* __restrict null_output, size_t index, bool is_null) {
-  uint8_t idx = index >> 3;
-  uint8_t bit = index & 0x7;
-  null_output[idx] = (null_output[idx] & ~(1 << bit)) | (is_null << bit);
-}
-
-// specialized func used to check performance upper limit
-// two loop to mimic null separate in codegen currently.
-// can't process kleene logic which null result depends on data
-__attribute__((noinline)) void mulI8Specialized1(uint8_t* null_input1,
-                                                 uint8_t* input1,
-                                                 uint8_t* null_input2,
-                                                 uint8_t* input2,
-                                                 uint8_t* __restrict null_output,
-                                                 uint8_t* __restrict output,
-                                                 size_t n) {
-  for (int i = 0; i < n; ++i) {
-    output[i] = input1[i] * input2[i];
-  }
-
-  // null process, ignore extra bit in last uint8
-  auto num = n / 8 + 1;
-  for (int i = 0; i < num; ++i) {
-    // 8bit packed
-    null_output[i] = null_input1[i] & null_input2[i];
-  }
-}
-
-// nested loop with null bit vector as bool vector
-__attribute__((noinline)) void mulI8Specialized2(uint8_t* null_input1,
-                                                 uint8_t* input1,
-                                                 uint8_t* null_input2,
-                                                 uint8_t* input2,
-                                                 uint8_t* __restrict null_output,
-                                                 uint8_t* __restrict output,
-                                                 size_t n) {
-  auto num = n / 8;
-  //#pragma clang loop vectorize(enable)
-  for (int i = 0; i < num; ++i) {
-    for (int j = 0; j < 8; ++j) {
-      auto idx = i * 8 + j;
-      output[idx] = input1[idx] * input2[idx];
-    }
-    // 8bit packed
-    null_output[i] = null_input1[i] & null_input2[i];
-  }
-
-  // tail
-  int i = num * 8;
-  while (i++ < n) {
-    output[i] = input1[i] * input2[i];
-    CiderBitUtils::setBitAtUnified(
-        null_output, i, isBitSet(null_input1, i) && isBitSet(null_input2, i));
-  }
-}
-
-// nested loop, outer process null
-__attribute__((noinline)) void mulI8Specialized3(uint8_t* null_input1,
-                                                 uint8_t* input1,
-                                                 uint8_t* null_input2,
-                                                 uint8_t* input2,
-                                                 uint8_t* __restrict null_output,
-                                                 uint8_t* __restrict output,
-                                                 size_t n) {
-  auto num = n / 8;
-  //#pragma clang loop vectorize(enable)
-  for (int i = 0; i < num; ++i) {
-    bool tmp[8] = {false};
-    for (int j = 0; j < 8; ++j) {
-      auto idx = i * 8 + j;
-      output[idx] = input1[idx] * input2[idx];
-      tmp[j] = isBitSet(null_input1, idx) && isBitSet(null_input2, idx);
-    }
-
-    uint8_t packed = 0;
-    for (int j = 0; j < 8; ++j) {
-      packed |= tmp[j] << j;
-    }
-    null_output[i] = packed;
-  }
-  // tail
-  int i = num * 8;
-  while (i++ < n) {
-    output[i] = input1[i] * input2[i];
-    CiderBitUtils::setBitAtUnified(
-        null_output, i, isBitSet(null_input1, i) && isBitSet(null_input2, i));
-  }
-}
-
 // for profile
 // auto profile_expr = "d AND e";
 // auto profile_expr = "i8 * i8";
@@ -417,15 +324,6 @@ BENCHMARK_RELATIVE(nextgenAVX512) {
   cgo.co.enable_avx2 = true;
   cgo.co.enable_avx512 = true;
   benchmark->nextgenCompute(profile_expr, cgo);
-}
-BENCHMARK_RELATIVE(specifialize1) {
-  benchmark->kernelCompute(mulI8Specialized1);
-}
-BENCHMARK_RELATIVE(specifialize2) {
-  benchmark->kernelCompute(mulI8Specialized2);
-}
-BENCHMARK_RELATIVE(specifialize3) {
-  benchmark->kernelCompute(mulI8Specialized3);
 }
 BENCHMARK_DRAW_LINE();
 
