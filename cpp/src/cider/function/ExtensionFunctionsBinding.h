@@ -24,7 +24,7 @@
 
 #include "function/ExtensionFunctionsWhitelist.h"
 
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "type/plan/Analyzer.h"
 
 #include <tuple>

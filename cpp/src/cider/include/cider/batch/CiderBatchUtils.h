@@ -23,7 +23,7 @@
 #define CIDER_BATCH_CIDERBATCHUTILS_H
 
 #include "cider/CiderAllocator.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 
 class CiderTableSchema;
 

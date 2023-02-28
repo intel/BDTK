@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 
 #include <optional>
 #include <ostream>

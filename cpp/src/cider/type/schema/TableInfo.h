@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "util/MemoryLevel.h"
 
 #include <memory>

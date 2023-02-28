@@ -40,37 +40,9 @@
 #include "DateTimeParser.h"
 #include "StringTransform.h"
 #include "exec/template/DateTimeUtils.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "util/Logger.h"
 #include "util/misc.h"
-
-std::string SQLTypeInfo::type_name[kSQLTYPE_LAST] = {"NULL",
-                                                     "BOOLEAN",
-                                                     "CHAR",
-                                                     "VARCHAR",
-                                                     "NUMERIC",
-                                                     "DECIMAL",
-                                                     "INTEGER",
-                                                     "SMALLINT",
-                                                     "FLOAT",
-                                                     "DOUBLE",
-                                                     "TIME",
-                                                     "TIMESTAMP",
-                                                     "BIGINT",
-                                                     "TEXT",
-                                                     "DATE",
-                                                     "ARRAY",
-                                                     "INTERVAL_DAY_TIME",
-                                                     "INTERVAL_YEAR_MONTH",
-                                                     "TINYINT",
-                                                     "EVAL_CONTEXT_TYPE",
-                                                     "VOID",
-                                                     "CURSOR",
-                                                     "COLUMN",
-                                                     "COLUMN_LIST",
-                                                     "STRUCT"};
-std::string SQLTypeInfo::comp_name[kENCODING_LAST] =
-    {"NONE", "FIXED", "RL", "DIFF", "DICT", "SPARSE", "COMPRESSED", "DAYS"};
 
 namespace {
 // Return decimal_value * 10^dscale

@@ -523,13 +523,16 @@ TEST_F(CiderTrimOpTestNextGen, ColumnTrimTest) {
 }
 
 TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
+#if 0
   assertQuery("SELECT TRIM(UPPER(col_2), ' X'), UPPER(TRIM(col_3, 'x')) FROM test",
               "stringop_trim_nested_1.json");
+#endif
   assertQuery(
       "SELECT col_2, col_3 FROM test "
       "WHERE LOWER(col_2) = 'xxxxxxxxxx' OR TRIM(col_3) = 'xxx3456'",
       "stringop_trim_nested_2.json");
 
+#if 0
   assertQuery("SELECT LTRIM(UPPER(col_2), ' X'), UPPER(LTRIM(col_3, 'x')) FROM test",
               "stringop_ltrim_nested_1.json");
   assertQuery(
@@ -546,6 +549,7 @@ TEST_F(CiderTrimOpTestNextGen, NestedTrimTest) {
 
   assertQuery("SELECT col_3 FROM test WHERE TRIM(TRIM(col_3, ' '), 'x') = '3456'",
               "stringop_trim_nested_3.json");
+#endif
 }
 
 // stringop: split

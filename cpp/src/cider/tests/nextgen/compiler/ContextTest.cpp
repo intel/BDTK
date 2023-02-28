@@ -28,7 +28,7 @@
 #include "exec/operator/join/CiderStdUnorderedHashTable.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/ArrowArrayBuilder.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 
 static const std::shared_ptr<CiderAllocator> allocator =
     std::make_shared<CiderDefaultAllocator>();

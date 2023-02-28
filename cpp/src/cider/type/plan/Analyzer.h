@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "cider/CiderException.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "type/plan/BinaryExpr.h"
 #include "type/plan/CaseExpr.h"
 #include "type/plan/ColumnExpr.h"

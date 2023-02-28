@@ -25,7 +25,7 @@
 //#include "Logger/Logger.h"
 #include "StringOpInfo.h"
 #include "cider/CiderException.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "util/sqldefs.h"
 
 #include <algorithm>

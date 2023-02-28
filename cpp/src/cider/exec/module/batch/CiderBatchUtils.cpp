@@ -26,7 +26,7 @@
 #include "substrait/type.pb.h"
 #include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderInt128.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 
 namespace CiderBatchUtils {
 

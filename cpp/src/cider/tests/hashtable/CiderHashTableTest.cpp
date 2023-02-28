@@ -35,7 +35,7 @@
 #include "exec/operator/join/HashTableSelector.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/ArrowArrayBuilder.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "util/Logger.h"
 
 // hash function for test collision

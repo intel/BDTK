@@ -32,7 +32,7 @@
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
 #include "substrait/type.pb.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "type/plan/Analyzer.h"
 #include "util/sqldefs.h"
 

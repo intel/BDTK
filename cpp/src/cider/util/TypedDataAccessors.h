@@ -26,7 +26,7 @@
 #include <cstring>
 #include "cider/CiderException.h"
 #include "type/data/InlineNullValues.h"
-#include "type/data/sqltypes.h"
+#include "type/plan/SqlTypes.h"
 #include "util/DateConverters.h"
 #include "util/Logger.h"
 
