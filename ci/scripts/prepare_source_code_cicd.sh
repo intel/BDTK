@@ -18,20 +18,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-CODE_BASE_PATH=/workspace/code
-PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
-VELOX_COMMIT_ID=`git submodule status -- cpp/thirdparty/velox | cut -d' ' -f2`
-echo "velox commit id: ${VELOX_COMMIT_ID}"
 
-pushd ${CODE_BASE_PATH}/velox
-git pull --rebase
-VELOX_BRANCH_NAME=`git branch -r --contains ${VELOX_COMMIT_ID} | cut -d' ' -f3`
-echo "branch name: ${VELOX_BRANCH_NAME}"
+PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
+rm -rf ${PRESTO_LOCAL_PATH}
+PATCH_NAME=presto-bdtk-67b3bf.patch
+PATCH_PATH=$(pwd)/ci/scripts/${PATCH_NAME}
+PRESTO_BDTK_COMMIT_ID=67b3bf5251f81131328dbd183685fb50e5a7ac2c
+
+git clone https://github.com/prestodb/presto.git ${PRESTO_LOCAL_PATH}
+pushd ${PRESTO_LOCAL_PATH}
+git checkout -b cider ${PRESTO_BDTK_COMMIT_ID}
+git apply ${PATCH_PATH}
 popd
 
-PRESTO_LOCAL_BRANCH_NAME=`echo ${VELOX_BRANCH_NAME} | cut -d '/' -f2`
-if [ -d $PRESTO_LOCAL_PATH ]; then
-    rm -rf $PRESTO_LOCAL_PATH
-fi
-git clone -b $PRESTO_LOCAL_BRANCH_NAME https://github.com/intel-innersource/frameworks.ai.modular-sql.presto.git $PRESTO_LOCAL_PATH
-mkdir $PRESTO_LOCAL_PATH/presto-native-execution/BDTK

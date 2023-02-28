@@ -43,6 +43,11 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/substrait/libcider_pl
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.so ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/jitlib/libjitlib.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/libnextgen.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/parser/libcider_plan_parser.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/util/libcider_util.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/type/plan/libcider_type_plan.a ./presto_cpp/main/lib
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
 rm -rf ./_build/${PRESTO_CPP_MODE}/presto_cpp/function
