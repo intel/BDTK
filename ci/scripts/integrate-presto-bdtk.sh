@@ -58,6 +58,7 @@ cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/function/libcider
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/exec/nextgen/jitlib/libjitlib.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/exec/nextgen/libnextgen.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/exec/plan/parser/libcider_plan_parser.a ${WORKER_DIR}/presto_cpp/main/lib
+cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/exec/plan/lookup/libcider_func_lkup.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/util/libcider_util.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/type/plan/libcider_type_plan.a ${WORKER_DIR}/presto_cpp/main/lib
 

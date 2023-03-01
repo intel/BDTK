@@ -22,7 +22,6 @@
 #include <gtest/gtest.h>
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
 #include "util/ArrowArrayBuilder.h"
