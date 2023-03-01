@@ -40,6 +40,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -354,22 +355,26 @@ class SQLTypeInfo {
       auto num_elems =
           (size > 0) ? "[" + std::to_string(size / elem_ti.get_size()) + "]" : "";
       CHECK_LT(static_cast<int>(subtype), kSQLTYPE_LAST);
-      return "COLUMN<" + type_name[static_cast<int>(subtype)] + ps + ">" + num_elems;
+      return "COLUMN<" + std::string{type_name[static_cast<int>(subtype)]} + ps + ">" +
+             num_elems;
     }
     if (type == kCOLUMN_LIST) {
       auto elem_ti = get_elem_type();
       auto num_elems =
           (size > 0) ? "[" + std::to_string(size / elem_ti.get_size()) + "]" : "";
       CHECK_LT(static_cast<int>(subtype), kSQLTYPE_LAST);
-      return "COLUMN_LIST<" + type_name[static_cast<int>(subtype)] + ps + ">" + num_elems;
+      return "COLUMN_LIST<" + std::string{type_name[static_cast<int>(subtype)]} + ps +
+             ">" + num_elems;
     }
-    return type_name[static_cast<int>(type)] + ps;
+    return std::string{type_name[static_cast<int>(type)]} + ps;
   }
-  inline std::string get_compression_name() const { return comp_name[(int)compression]; }
+  inline std::string get_compression_name() const {
+    return std::string{comp_name[(int)compression]};
+  }
   std::string toString() const { return to_string(); }  // for PRINT macro
   inline std::string to_string() const {
     return concat("(type=",
-                  type_name[static_cast<int>(type)],
+                  type_name[static_cast<int>(type)].data(),
                   ", dimension=",
                   get_dimension(),
                   ", scale=",
@@ -381,7 +386,7 @@ class SQLTypeInfo {
                   ", comp=",
                   get_comp_param(),
                   ", subtype=",
-                  type_name[static_cast<int>(subtype)],
+                  type_name[static_cast<int>(subtype)].data(),
                   ", size=",
                   get_size(),
                   ", element_size=",
@@ -795,8 +800,8 @@ class SQLTypeInfo {
   int comp_param;            // compression parameter when applicable for certain schemes
   int size;                  // size of the type in bytes.  -1 for variable size
   std::vector<SQLTypeInfo> children;
-  static std::string type_name[kSQLTYPE_LAST];
-  static std::string comp_name[kENCODING_LAST];
+  static std::string_view type_name[kSQLTYPE_LAST];
+  static std::string_view comp_name[kENCODING_LAST];
   inline int get_storage_size() const {
     switch (type) {
       case kBOOLEAN:

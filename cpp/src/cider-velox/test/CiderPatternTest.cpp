@@ -135,10 +135,11 @@ TEST_F(CiderPatternTest, ProjectExprPattern) {
                        .filter("p1 > 15")
                        .planNode();
 
-  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   auto duckdbSql = "SELECT c0 + 8, c1 + c0 FROM tmp WHERE c1 + c0 > 15";
 
   assertQuery(veloxPlan, duckdbSql);
+
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
 
   const ::substrait::Plan substraitPlan = ::substrait::Plan();

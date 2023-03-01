@@ -26,51 +26,49 @@
 
 class CiderExceptionTest : public ::testing::Test {};
 
-TEST_F(CiderExceptionTest, exception) {
+TEST_F(CiderExceptionTest, exception1) {
   try {
     CIDER_THROW(CiderRuntimeException, "test CiderRuntimeException");
   } catch (const std::exception& e) {
-    std::cout << e.what() << std::endl;
     std::string msg(e.what());
     std::string head = "[CiderRuntimeException]";
-    std::string tail =
-        "cider/tests/CiderExceptionTest.cpp:30]: test CiderRuntimeException";
+    std::string tail = "]: test CiderRuntimeException";
     CHECK(msg.find(head) != std::string::npos);
     CHECK(msg.rfind(tail) != std::string::npos);
   }
+}
 
+TEST_F(CiderExceptionTest, exception2) {
   try {
     CIDER_THROW(CiderCompileException, "test CiderCompileException");
   } catch (const std::exception& e) {
-    std::cout << e.what() << std::endl;
     std::string msg(e.what());
     std::string head = "[CiderCompileException]";
-    std::string tail =
-        "cider/tests/CiderExceptionTest.cpp:42]: test CiderCompileException";
+    std::string tail = "]: test CiderCompileException";
     CHECK(msg.find(head) != std::string::npos);
     CHECK(msg.rfind(tail) != std::string::npos);
   }
+}
 
+TEST_F(CiderExceptionTest, exception3) {
   try {
     CIDER_THROW(CiderRuntimeException, "test CiderRuntimeException");
   } catch (const CiderException& e) {
-    std::cout << e.what() << std::endl;
     std::string msg(e.what());
     std::string head = "[CiderRuntimeException]";
-    std::string tail =
-        "cider/tests/CiderExceptionTest.cpp:54]: test CiderRuntimeException";
+    std::string tail = "]: test CiderRuntimeException";
     CHECK(msg.find(head) != std::string::npos);
     CHECK(msg.rfind(tail) != std::string::npos);
   }
+}
 
+TEST_F(CiderExceptionTest, exception4) {
   try {
     CIDER_THROW(CiderCompileException, "test CiderCompileException");
   } catch (const CiderException& e) {
-    std::cout << e.what() << std::endl;
     std::string msg(e.what());
     std::string head = "[CiderCompileException]";
-    std::string tail =
-        "cider/tests/CiderExceptionTest.cpp:66]: test CiderCompileException";
+    std::string tail = "]: test CiderCompileException";
     CHECK(msg.find(head) != std::string::npos);
     CHECK(msg.rfind(tail) != std::string::npos);
   }
@@ -80,12 +78,5 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  int err{0};
-  try {
-    err = RUN_ALL_TESTS();
-  } catch (const std::exception& e) {
-    LOG(ERROR) << e.what();
-  }
-
-  return err;
+  return RUN_ALL_TESTS();
 }

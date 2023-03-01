@@ -35,7 +35,7 @@ endif()
 
 include_directories(${folly_INCLUDE_DIRS})
 
-# add_executable(CiderHashTableTest CiderHashTableTest.cpp)
-# target_link_libraries(CiderHashTableTest ${DEP_LIBS} ${FOLLY_LIBRARIES})
-# add_test(CiderHashTableTest ${EXECUTABLE_OUTPUT_PATH}/CiderHashTableTest
-# ${TEST_ARGS})
+add_executable(CiderHashTableTest CiderHashTableTest.cpp)
+target_link_libraries(CiderHashTableTest ${DEP_LIBS} ${FOLLY_LIBRARIES})
+add_test(CiderHashTableTest ${EXECUTABLE_OUTPUT_PATH}/CiderHashTableTest
+         ${TEST_ARGS})

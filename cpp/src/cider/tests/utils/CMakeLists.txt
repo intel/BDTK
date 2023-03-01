@@ -39,24 +39,23 @@ set(EXECUTE_TEST_UTILS_LIBS gtest cider_util test_utils duckdb substrait cider)
 set(EXECUTE_TEST_UTILS_LIBS
     ${EXECUTE_TEST_UTILS_LIBS}
     PARENT_SCOPE)
-# add_executable(IsthmusTest IsthmusTest.cpp) target_link_libraries(IsthmusTest
-# ${EXECUTE_TEST_UTILS_LIBS}) add_test(IsthmusTest
-# ${EXECUTABLE_OUTPUT_PATH}/IsthmusTest ${TEST_ARGS})
+add_executable(IsthmusTest IsthmusTest.cpp)
+target_link_libraries(IsthmusTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(IsthmusTest ${EXECUTABLE_OUTPUT_PATH}/IsthmusTest ${TEST_ARGS})
 
 add_executable(ArrowArrayBuilderTest ArrowArrayBuilderTest.cpp)
 target_link_libraries(ArrowArrayBuilderTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(ArrowArrayBuilderTest ${EXECUTABLE_OUTPUT_PATH}/ArrowArrayBuilderTest
          ${TEST_ARGS})
 
-# add_executable(CiderInt128Test CiderInt128Test.cpp)
-# target_link_libraries(CiderInt128Test ${EXECUTE_TEST_UTILS_LIBS})
-# add_test(CiderInt128Test ${EXECUTABLE_OUTPUT_PATH}/CiderInt128Test
-# ${TEST_ARGS})
+add_executable(CiderInt128Test CiderInt128Test.cpp)
+target_link_libraries(CiderInt128Test ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderInt128Test ${EXECUTABLE_OUTPUT_PATH}/CiderInt128Test ${TEST_ARGS})
 
-# add_executable(QueryArrowDataGeneratorTest QueryArrowDataGeneratorTest.cpp)
-# target_link_libraries(QueryArrowDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
-# add_test(QueryArrowDataGeneratorTest
-# ${EXECUTABLE_OUTPUT_PATH}/QueryArrowDataGeneratorTest ${TEST_ARGS})
+add_executable(QueryArrowDataGeneratorTest QueryArrowDataGeneratorTest.cpp)
+target_link_libraries(QueryArrowDataGeneratorTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(QueryArrowDataGeneratorTest
+         ${EXECUTABLE_OUTPUT_PATH}/QueryArrowDataGeneratorTest ${TEST_ARGS})
 
 set(TEST_PROGRAMS IsthmusTest)
 
