@@ -100,7 +100,7 @@ class SubstraitFunctionCiderMappings {
         {"in", SQLOps::kIN},
     };
     return mapping;
-  };
+  }
 
   // string function name and sql-ops mapping.
   virtual const FunctionSQLStringOpsMappings& stringMappings() const {
@@ -132,10 +132,9 @@ class SubstraitFunctionCiderMappings {
         {"string_split", SqlStringOpKind::STRING_SPLIT},
         {"split_part", SqlStringOpKind::SPLIT_PART},  // split_part()
         {"split", SqlStringOpKind::STRING_SPLIT}      // split(input, delimiter, limit)
-
     };
     return mapping;
-  };
+  }
 
   // aggregate function names and sql-agg mapping.
   virtual const FunctionSQLAggOpsMappings& aggregateMappings() const {
@@ -147,7 +146,7 @@ class SubstraitFunctionCiderMappings {
         {"count", SQLAgg::kCOUNT},
     };
     return mapping;
-  };
+  }
 
   // scalar and agg function and expr-type mapping.
   virtual const FunctionSQLOpSupportTypeMappings& opsSupportTypeMappings() const {
@@ -213,11 +212,9 @@ class SubstraitFunctionCiderMappings {
         {"like", OpSupportExprType::kLIKE_EXPR},
         {"split_part", OpSupportExprType::kSPLIT_PART_OPER},
         {"string_split", OpSupportExprType::kSTRING_SPLIT_OPER},
-        {"split", OpSupportExprType::kSTRING_SPLIT_OPER},
-
-    };
+        {"split", OpSupportExprType::kSTRING_SPLIT_OPER}};
     return mapping;
-  };
+  }
 };
 
 using SubstraitFunctionCiderMappingsPtr =
