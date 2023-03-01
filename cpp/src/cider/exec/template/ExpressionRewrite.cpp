@@ -672,6 +672,12 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
                                        rhs);
   }
 
+  std::shared_ptr<Analyzer::Expr> visitStringOper(
+      const Analyzer::StringOper* string_oper) const override {
+    // FIXME: (yma11) we actually do no rewrite on stringop
+    return string_oper->deep_copy();
+  }
+
  protected:
   mutable bool in_string_op_chain_{false};
   mutable std::vector<std::shared_ptr<Analyzer::Expr>> chained_string_op_exprs_;

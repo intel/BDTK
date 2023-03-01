@@ -29,8 +29,8 @@ using namespace cider::jitlib;
 using namespace cider::exec::nextgen::context;
 namespace {
 
-bool is_expr_nullable(const Analyzer::Expr* expr) {
-  const auto const_expr = dynamic_cast<const Analyzer::Constant*>(expr);
+bool is_expr_nullable(const std::shared_ptr<Analyzer::Expr>& expr) {
+  const auto const_expr = dynamic_cast<const Analyzer::Constant*>(expr.get());
   if (const_expr) {
     return const_expr->get_is_null();
   }
@@ -40,11 +40,11 @@ bool is_expr_nullable(const Analyzer::Expr* expr) {
 
 bool is_in_values_nullable(const std::shared_ptr<Analyzer::Expr>& a,
                            const std::list<std::shared_ptr<Analyzer::Expr>>& l) {
-  if (is_expr_nullable(a.get())) {
+  if (is_expr_nullable(a)) {
     return true;
   }
   for (const auto& v : l) {
-    if (is_expr_nullable(v.get())) {
+    if (is_expr_nullable(v)) {
       return true;
     }
   }
