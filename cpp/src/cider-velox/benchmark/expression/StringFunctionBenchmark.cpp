@@ -196,7 +196,7 @@ std::unique_ptr<StringFunctionBenchmark> benchmark;
 // }
 // BENCHMARK_DRAW_LINE();
 
-std::string concat_expr = "concat(col_str, 'aaaa')";
+std::string concat_expr = "concat(col_str, 'aaaa')";  // NOLINT
 // std::string concat_expr = "concat(col_str, col_str2)";
 
 BENCHMARK(velox_concat) {
