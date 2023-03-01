@@ -370,6 +370,8 @@ class CharLengthStringOper : public StringOper {
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+  // char length expression returns a int value rather than a string value, so don't need
+  // to mark this as a output expression.
   void setIsOutput() override { is_output_ = false; }
 
   size_t getMinArgs() const override { return 1UL; }

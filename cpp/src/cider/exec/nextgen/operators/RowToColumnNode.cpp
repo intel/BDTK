@@ -494,8 +494,7 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
                                       }});
       }
     }
-  }  // namespace cider::exec::nextgen::operators
-  );
+  });
 }
 
 }  // namespace cider::exec::nextgen::operators
