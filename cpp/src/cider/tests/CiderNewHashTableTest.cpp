@@ -493,7 +493,6 @@ TEST_F(CiderNewHashTableTest, aggUInt64LargeDatasetTest) {
     keys.emplace_back(i);
     values.emplace_back(10);
   }
-
   for (int i = 0; i < keys.size(); i++) {
     Block& block = ht_uint64[keys[i]];
     block.add(values[i]);
@@ -510,7 +509,6 @@ TEST_F(CiderNewHashTableTest, aggUInt64LargeDatasetTest) {
     keys2.emplace_back(i);
     values2.emplace_back(40);
   }
-
   for (int i = 0; i < keys2.size(); i++) {
     Block& block = ht_uint64[keys2[i]];
     block.add(values2[i]);
