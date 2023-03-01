@@ -719,23 +719,27 @@ class AggExpr : public Expr {
           SQLAgg a,
           std::shared_ptr<Analyzer::Expr> g,
           bool d,
-          std::shared_ptr<Analyzer::Constant> e)
-      : Expr(ti, true), aggtype(a), arg(g), is_distinct(d), arg1(e) {}
+          std::shared_ptr<Analyzer::Constant> e,
+          bool p = false)
+      : Expr(ti, true), aggtype(a), arg(g), is_distinct(d), is_partial(p), arg1(e) {}
   AggExpr(SQLTypes t,
           SQLAgg a,
           Expr* g,
           bool d,
           std::shared_ptr<Analyzer::Constant> e,
-          int idx)
+          int idx,
+          bool p = false)
       : Expr(SQLTypeInfo(t, g == nullptr ? true : g->get_type_info().get_notnull()), true)
       , aggtype(a)
       , arg(g)
       , is_distinct(d)
+      , is_partial(p)
       , arg1(e) {}
   SQLAgg get_aggtype() const { return aggtype; }
   Expr* get_arg() const { return arg.get(); }
   std::shared_ptr<Analyzer::Expr> get_own_arg() const { return arg; }
   bool get_is_distinct() const { return is_distinct; }
+  bool get_is_partial() const { return is_partial; }
   std::shared_ptr<Analyzer::Constant> get_arg1() const { return arg1; }
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
   void group_predicates(std::list<const Expr*>& scan_predicates,
@@ -776,6 +780,7 @@ class AggExpr : public Expr {
   SQLAgg aggtype;                       // aggregate type: kAVG, kMIN, kMAX, kSUM, kCOUNT
   std::shared_ptr<Analyzer::Expr> arg;  // argument to aggregate
   bool is_distinct;                     // true only if it is for COUNT(DISTINCT x)
+  bool is_partial;                      // true if it is sum/count in a partial avg
   // APPROX_COUNT_DISTINCT error_rate, APPROX_QUANTILE quantile
   std::shared_ptr<Analyzer::Constant> arg1;
 };

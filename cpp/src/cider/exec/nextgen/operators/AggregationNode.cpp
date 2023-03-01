@@ -51,7 +51,13 @@ context::AggExprsInfoVector initExpersInfo(ExprPtrVector& exprs) {
   int8_t start_addr = 0;
   for (const auto& expr : exprs) {
     auto agg_expr = dynamic_cast<const Analyzer::AggExpr*>(expr.get());
-    infos.emplace_back(agg_expr->get_type_info(), agg_expr->get_aggtype(), start_addr);
+    auto arg_type_info = agg_expr->get_arg() ? agg_expr->get_arg()->get_type_info()
+                                             : agg_expr->get_type_info();
+    infos.emplace_back(agg_expr->get_type_info(),
+                       arg_type_info,
+                       agg_expr->get_aggtype(),
+                       start_addr,
+                       agg_expr->get_is_partial());
     outputNullableCheck(agg_expr, infos.back());
     start_addr += expr->get_type_info().get_size();
   }

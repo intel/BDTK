@@ -24,9 +24,9 @@
 #include "cider/CiderTableSchema.h"
 #include "include/cider/CiderException.h"
 #include "substrait/type.pb.h"
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderInt128.h"
 #include "type/data/sqltypes.h"
+#include "util/ArrowArrayBuilder.h"
 
 namespace CiderBatchUtils {
 

@@ -24,7 +24,7 @@
 #include <gtest/gtest.h>
 
 #include "exec/plan/parser/TypeUtils.h"
-#include "tests/utils/ArrowArrayBuilder.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::test::util;
 

@@ -462,20 +462,6 @@ Analyzer::Expr* getExpr(std::shared_ptr<Analyzer::Expr> expr, bool is_partial_av
                                u_oper_expr->get_non_const_own_operand());
   }
   if (auto agg_expr = std::dynamic_pointer_cast<Analyzer::AggExpr>(expr)) {
-    // A special case for sum() in avg partial, following cider's rules
-    // This will only affect the RelAlgExecutionUnit, output table schema still keeps
-    // consistent with substrait plan
-    if (is_partial_avg && agg_expr->get_aggtype() == SQLAgg::kSUM) {
-      auto arg_expr = agg_expr->get_arg();
-      auto agg_type_info = arg_expr->get_type_info().is_integer()
-                               ? SQLTypeInfo(SQLTypes::kBIGINT, false)
-                               : arg_expr->get_type_info();
-      return new Analyzer::AggExpr(agg_type_info,
-                                   agg_expr->get_aggtype(),
-                                   agg_expr->get_own_arg(),
-                                   false,
-                                   agg_expr->get_arg1());
-    }
     return new Analyzer::AggExpr(agg_expr->get_type_info(),
                                  agg_expr->get_aggtype(),
                                  agg_expr->get_own_arg(),

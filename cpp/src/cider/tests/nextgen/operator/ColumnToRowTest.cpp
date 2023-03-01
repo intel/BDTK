@@ -30,7 +30,7 @@
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/nextgen/operator/MockRowToColumn.h"
-#include "tests/utils/ArrowArrayBuilder.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::jitlib;
 using namespace cider::exec::nextgen;

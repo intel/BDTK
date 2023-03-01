@@ -25,10 +25,10 @@
 #include <limits>
 #include <random>
 #include <string>
-#include "ArrowArrayBuilder.h"
 #include "Utils.h"
 #include "cider/CiderTypes.h"
 #include "substrait/type.pb.h"
+#include "util/ArrowArrayBuilder.h"
 
 // test date data within [970-01-01..2970-01-01].
 static constexpr int32_t kMinDay = -1000 * 365;

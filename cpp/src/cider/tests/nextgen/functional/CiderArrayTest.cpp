@@ -20,33 +20,32 @@
  */
 
 #include <gtest/gtest.h>
-#include "tests/utils/ArrowArrayBuilder.h"
 #include "tests/utils/CiderNextgenTestBase.h"
 #include "tests/utils/QueryArrowDataGenerator.h"
+#include "util/ArrowArrayBuilder.h"
 
 using namespace cider::test::util;
 
-#define GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME)   \
-  class PrimitiveTypeArray##C_TYPE_NAME##Test                                        \
-      : public CiderNextgenTestBaseWithoutDuckDB {                                   \
-   public:                                                                           \
-    PrimitiveTypeArray##C_TYPE_NAME##Test() {                                        \
-      table_name_ = "test";                                                          \
-      create_ddl_ = "CREATE TABLE test(col_a " #TYPE " ARRAY NOT NULL, col_b " #TYPE \
-                    " ARRAY, col_c " #TYPE " ARRAY);";                               \
-      QueryArrowDataGenerator::generateBatchByTypes(                                 \
-          input_schema_,                                                             \
-          input_array_,                                                              \
-          10,                                                                        \
-          {"col_a", "col_b", "col_c"},                                               \
-          {CREATE_SUBSTRAIT_LIST_TYPE(SUBSTRAIT_TYPE_NAME),                          \
-           CREATE_SUBSTRAIT_LIST_TYPE(SUBSTRAIT_TYPE_NAME),                          \
-           CREATE_SUBSTRAIT_LIST_TYPE(SUBSTRAIT_TYPE_NAME)},                         \
-          {0, 1, 2},                                                                 \
-          GeneratePattern::Random,                                                   \
-          0,                                                                         \
-          0);                                                                        \
-    }                                                                                \
+#define GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME)      \
+  class PrimitiveTypeArray##C_TYPE_NAME##Test : public CiderStandaloneNextgenTestBase { \
+   public:                                                                              \
+    PrimitiveTypeArray##C_TYPE_NAME##Test() {                                           \
+      table_name_ = "test";                                                             \
+      create_ddl_ = "CREATE TABLE test(col_a " #TYPE " ARRAY NOT NULL, col_b " #TYPE    \
+                    " ARRAY, col_c " #TYPE " ARRAY);";                                  \
+      QueryArrowDataGenerator::generateBatchByTypes(                                    \
+          input_schema_,                                                                \
+          input_array_,                                                                 \
+          10,                                                                           \
+          {"col_a", "col_b", "col_c"},                                                  \
+          {CREATE_SUBSTRAIT_LIST_TYPE(SUBSTRAIT_TYPE_NAME),                             \
+           CREATE_SUBSTRAIT_LIST_TYPE(SUBSTRAIT_TYPE_NAME),                             \
+           CREATE_SUBSTRAIT_LIST_TYPE(SUBSTRAIT_TYPE_NAME)},                            \
+          {0, 1, 2},                                                                    \
+          GeneratePattern::Random,                                                      \
+          0,                                                                            \
+          0);                                                                           \
+    }                                                                                   \
   };
 
 #define TEST_UNIT_MULTI_COL(TEST_CLASS, UNIT_NAME)                                   \
@@ -123,7 +122,7 @@ TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayIntegerTest, integerBaseSingleColTest)
 
 TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayBigintTest, bigintBaseSingleColTest)
 
-class PrimitiveTypeArrayMixed1Test : public CiderNextgenTestBaseWithoutDuckDB {
+class PrimitiveTypeArrayMixed1Test : public CiderStandaloneNextgenTestBase {
  public:
   PrimitiveTypeArrayMixed1Test() {
     table_name_ = "test";
@@ -149,7 +148,7 @@ TEST_F(PrimitiveTypeArrayMixed1Test, ArrayMixed1Test) {
   assertQuery("SELECT col_a, col_b, col_c FROM test", input_array_, input_schema_, false);
 }
 
-class PrimitiveTypeArrayMixed2Test : public CiderNextgenTestBaseWithoutDuckDB {
+class PrimitiveTypeArrayMixed2Test : public CiderStandaloneNextgenTestBase {
  public:
   PrimitiveTypeArrayMixed2Test() {
     table_name_ = "test";

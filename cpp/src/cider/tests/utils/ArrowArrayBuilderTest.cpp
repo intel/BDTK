@@ -21,8 +21,8 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "ArrowArrayBuilder.h"
 #include "exec/plan/parser/TypeUtils.h"
+#include "util/ArrowArrayBuilder.h"
 
 TEST(ArrowArrayBuilderTest, EmptyBatch) {
   // should not build an empty batch.

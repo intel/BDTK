@@ -22,6 +22,7 @@
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/operators/extractor/AggExtractorBuilder.h"
+#include "util/ArrowArrayBuilder.h"
 
 namespace cider::exec::nextgen::context {
 void RuntimeContext::addBatch(const CodegenContext::BatchDescriptorPtr& descriptor) {
@@ -117,6 +118,7 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
   // allocate mem
   // row struct
   auto arrow_array = batch->getArray();
+  auto arrow_schema = batch->getSchema();
   allocateBatchMem(arrow_array, 1);
 
   // child value
@@ -128,6 +130,34 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
   for (size_t i = 0; i < info.size(); ++i) {
     operators::NextgenAggExtractorBuilder::buildNextgenAggExtractor(buf, info[i])
         ->extract({buf}, arrow_array->children[i]);
+  }
+
+  // for partial avg, recombinate the sum&count columns as a new struct column
+  auto partial_avg_count = std::count_if(
+      info.begin(), info.end(), [](const AggExprsInfo i) { return i.is_partial_; });
+  // assert sum&count in partial avg appear in pairs and adjoin
+  if (partial_avg_count > 0 && partial_avg_count % 2 == 0) {
+    ArrowArrayBuilder builder;
+    auto row_num = arrow_array->length;
+    builder.setRowNum(row_num);
+    for (auto i = 0; i < info.size(); i++) {
+      if (info[i].is_partial_ && info[i + 1].is_partial_) {
+        auto schema_and_array =
+            ArrowArrayBuilder()
+                .setRowNum(row_num)
+                .addStructColumn(arrow_schema->children[i], arrow_array->children[i])
+                .addStructColumn(arrow_schema->children[i + 1],
+                                 arrow_array->children[i + 1])
+                .build();
+        i++;
+        builder.addStructColumn(std::get<0>(schema_and_array),
+                                std::get<1>(schema_and_array));
+      } else {
+        builder.addStructColumn(arrow_schema->children[i], arrow_array->children[i]);
+      }
+    }
+    auto schema_and_array = builder.build();
+    batch = new Batch(*std::get<0>(schema_and_array), *std::get<1>(schema_and_array));
   }
 
   return batch;
