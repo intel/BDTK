@@ -37,6 +37,9 @@ void BinOper::initAutoVectorizeFlag() {
       case kPLUS:
       case kMINUS:
       case kMULTIPLY:
+      case kAND:
+      case kOR:
+      case kNOT:
         auto_vectorizable_ = true;
         break;
       case kDIVIDE: {
