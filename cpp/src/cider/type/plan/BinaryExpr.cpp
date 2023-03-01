@@ -258,14 +258,16 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
   if (branchless_logic) {
     switch (get_optype()) {
       case kAND: {
-        // If one side is not null and false, return not null and FALSE
-        // else no special handle needed
+        //|     |TRUE |FALSE|NULL |
+        //|TRUE |TRUE |FALSE|NULL |
+        //|FALSE|FALSE|FALSE|FALSE|
+        //|NULL |NULL |FALSE|NULL |
         auto lhs_null = lhs_val.getNull();
         auto lhs_data = lhs_val.getValue();
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
-        auto null =
-            (lhs_null && rhs_null) || (lhs_null && lhs_data) || (rhs_null && rhs_data);
+        auto null = (lhs_null && rhs_null) || (lhs_null && rhs_data && !rhs_null) ||
+                    (rhs_null && lhs_data && !lhs_null);
         return set_expr_value(null, lhs_data && rhs_data);
       }
       case kOR: {
