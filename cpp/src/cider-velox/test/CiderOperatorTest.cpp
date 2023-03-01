@@ -75,8 +75,6 @@ class CiderOperatorTest : public OperatorTestBase {
   std::vector<RowVectorPtr> vectors;
 };
 
-// test with arrow format will failed until update submodule after
-// https://github.com/Intel-bigdata/velox/pull/16
 TEST_F(CiderOperatorTest, filter) {
   const std::string& filter = "l_quantity  > 24.0";
   auto veloxPlan = PlanBuilder().values(vectors).filter(filter).planNode();
@@ -169,8 +167,6 @@ TEST_F(CiderOperatorTest, fil_proj_filter_transformer) {
       "l_quantity < 0.5 and revenue > 0.1";
   assertQuery(resultPtr, duckDbSql);
 }
-// FIXME: (yma11) agg is not validated yet, skip for now
-/*
 TEST_F(CiderOperatorTest, agg) {
   auto veloxPlan = PlanBuilder()
                        .values(vectors)
@@ -281,8 +277,8 @@ TEST_F(CiderOperatorTest, aggOnExpr_withoutCond) {
   assertQuery(resultPtr, duckDbSql);
 }
 
-// Below AVG tests with arrow format will failed until update submodule after
-// https://github.com/Intel-bigdata/velox/pull/16
+// Enable below UTs after groupby agg is supported.
+/*
 TEST_F(CiderOperatorTest, avg_on_col_cider) {
   auto veloxPlan =
       PlanBuilder()
@@ -359,6 +355,7 @@ TEST_F(CiderOperatorTest, avg_on_col_null) {
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
+*/
 
 TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
   RowVectorPtr vector =
@@ -448,7 +445,7 @@ TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
-*/
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, false);

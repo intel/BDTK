@@ -20,16 +20,18 @@
  */
 
 #include <gtest/gtest.h>
-#include "tests/utils/CiderTestBase.h"
+#include "tests/utils/CiderNextgenTestBase.h"
+
+using namespace cider::test::util;
 
 // Extends CiderTestBase and create a (100 rows, 2 BIGINT columns) table for basic test.
-class SimpleCiderArrowTest : public CiderTestBase {
+class SimpleCiderArrowTest : public CiderNextgenTestBase {
  public:
   SimpleCiderArrowTest() {
     table_name_ = "test";
     create_ddl_ = "CREATE TABLE test(col_a BIGINT NOT NULL, col_b BIGINT, col_c BIGINT);";
-    QueryArrowDataGenerator::generateBatchByTypes(schema_,
-                                                  array_,
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
                                                   100,
                                                   {"col_a", "col_b", "col_c"},
                                                   {
@@ -42,108 +44,104 @@ class SimpleCiderArrowTest : public CiderTestBase {
 };
 
 TEST_F(SimpleCiderArrowTest, selectTest) {
-  assertQueryArrow("SELECT * FROM test");
+  assertQuery("SELECT * FROM test");
 
-  assertQueryArrow("SELECT col_a FROM test");
+  assertQuery("SELECT col_a FROM test");
 
-  assertQueryArrow("SELECT col_b FROM test");
+  assertQuery("SELECT col_b FROM test");
 
-  assertQueryArrow("SELECT col_a, col_b FROM test");
+  assertQuery("SELECT col_a, col_b FROM test");
 
-  assertQueryArrow("SELECT col_b, col_a FROM test");
+  assertQuery("SELECT col_b, col_a FROM test");
 }
 
 TEST_F(SimpleCiderArrowTest, nullTest) {
   // select * with single null
-  assertQueryArrow("SELECT * FROM test WHERE col_a IS NULL");
-  assertQueryArrow("SELECT * FROM test WHERE col_b IS NULL");
-  assertQueryArrow("SELECT * FROM test WHERE col_c IS NULL");
+  assertQuery("SELECT * FROM test WHERE col_a IS NULL");
+  assertQuery("SELECT * FROM test WHERE col_b IS NULL");
+  assertQuery("SELECT * FROM test WHERE col_c IS NULL");
 
   // select * with single not null
-  assertQueryArrow("SELECT * FROM test WHERE col_a IS NOT NULL");
-  assertQueryArrow("SELECT * FROM test WHERE col_b IS NOT NULL");
-  assertQueryArrow("SELECT * FROM test WHERE col_c IS NOT NULL");
+  assertQuery("SELECT * FROM test WHERE col_a IS NOT NULL");
+  assertQuery("SELECT * FROM test WHERE col_b IS NOT NULL");
+  assertQuery("SELECT * FROM test WHERE col_c IS NOT NULL");
 
   // select all with single null
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_a IS NULL");
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NULL");
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_c IS NULL");
+  assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_a IS NULL");
+  assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NULL");
+  assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_c IS NULL");
 
   // select one column with single null
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_b IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_b IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_b IS NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_c IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_c IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_c IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_b IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_b IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_b IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_c IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_c IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_c IS NULL");
 
   // select all with single not null
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_a IS NOT NULL");
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NOT NULL");
-  assertQueryArrow("SELECT col_a, col_b, col_c FROM test WHERE col_c IS NOT NULL");
+  assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_a IS NOT NULL");
+  assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_b IS NOT NULL");
+  assertQuery("SELECT col_a, col_b, col_c FROM test WHERE col_c IS NOT NULL");
 
   // select one column with single not null
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NOT NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NOT NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_b IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_b IS NOT NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_b IS NOT NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_c IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NOT NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_b IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_b IS NOT NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_b IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_c IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_c IS NOT NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_c IS NOT NULL");
 
   // select one column with two conditions
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL AND col_b IS NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL AND col_c IS NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL AND col_c IS NOT NULL");
-  assertQueryArrow(
-      "SELECT col_a FROM test WHERE col_a IS NOT NULL AND col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL AND col_b IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL AND col_c IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL AND col_c IS NOT NULL");
-  assertQueryArrow(
-      "SELECT col_b FROM test WHERE col_a IS NOT NULL AND col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL AND col_b IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NULL AND col_c IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NULL AND col_c IS NOT NULL");
-  assertQueryArrow(
-      "SELECT col_c FROM test WHERE col_a IS NOT NULL AND col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL OR col_b IS NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL OR col_c IS NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NULL OR col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_a FROM test WHERE col_a IS NOT NULL OR col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL OR col_b IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL OR col_c IS NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NULL OR col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_b FROM test WHERE col_a IS NOT NULL OR col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NULL OR col_b IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NULL OR col_c IS NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NULL OR col_c IS NOT NULL");
-  assertQueryArrow("SELECT col_c FROM test WHERE col_a IS NOT NULL OR col_c IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL AND col_b IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL AND col_c IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL AND col_c IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NOT NULL AND col_c IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL AND col_b IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL AND col_c IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL AND col_c IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NOT NULL AND col_c IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL AND col_b IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NULL AND col_c IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NULL AND col_c IS NOT NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NOT NULL AND col_c IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL OR col_b IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL OR col_c IS NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NULL OR col_c IS NOT NULL");
+  assertQuery("SELECT col_a FROM test WHERE col_a IS NOT NULL OR col_c IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL OR col_b IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL OR col_c IS NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NULL OR col_c IS NOT NULL");
+  assertQuery("SELECT col_b FROM test WHERE col_a IS NOT NULL OR col_c IS NOT NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NULL OR col_b IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NULL OR col_c IS NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NULL OR col_c IS NOT NULL");
+  assertQuery("SELECT col_c FROM test WHERE col_a IS NOT NULL OR col_c IS NOT NULL");
 
   // select * column with three conditions
-  assertQueryArrow(
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NULL AND col_b IS NULL AND col_c IS NULL");
-  assertQueryArrow(
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NULL AND col_b IS NULL AND col_c IS NOT NULL");
-  assertQueryArrow(
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NULL AND col_b IS NOT NULL AND col_c IS NOT "
       "NULL");
-  assertQueryArrow(
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NOT NULL AND col_b IS NOT NULL AND col_c IS NOT "
       "NULL");
-  assertQueryArrow(
-      "SELECT * FROM test WHERE col_a IS NULL OR col_b IS NULL OR col_c IS NULL");
-  assertQueryArrow(
+  assertQuery("SELECT * FROM test WHERE col_a IS NULL OR col_b IS NULL OR col_c IS NULL");
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NULL OR col_b IS NULL OR col_c IS NOT NULL");
-  assertQueryArrow(
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NULL OR col_b IS NOT NULL OR col_c IS NOT "
       "NULL");
-  assertQueryArrow(
+  assertQuery(
       "SELECT * FROM test WHERE col_a IS NOT NULL OR col_b IS NOT NULL OR col_c IS NOT "
       "NULL");
 }
