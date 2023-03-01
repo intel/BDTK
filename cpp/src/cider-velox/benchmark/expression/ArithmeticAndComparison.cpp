@@ -123,17 +123,28 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
   explicit ArithmeticAndComparisonBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
+    // prestosql::registerAllScalarFunctions();
     // we register uncheck version for integer and checkedPlus for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
     registerFunction<MultiplyFunction, int16_t, int16_t, int16_t>({"multiply"});
     registerFunction<MultiplyFunction, int32_t, int32_t, int32_t>({"multiply"});
     registerFunction<MultiplyFunction, int64_t, int64_t, int64_t>({"multiply"});
     registerFunction<MultiplyFunction, double, double, double>({"multiply"});
+    registerFunction<CheckedDivideFunction, int8_t, int8_t, int8_t>({"divide"});
+    registerFunction<DivideFunction, int16_t, int16_t, int16_t>({"divide"});
+    registerFunction<DivideFunction, int32_t, int32_t, int32_t>({"divide"});
+    registerFunction<DivideFunction, int64_t, int64_t, int64_t>({"divide"});
+    registerFunction<DivideFunction, double, double, double>({"divide"});
     registerFunction<PlusFunction, int8_t, int8_t, int8_t>({"plus"});
     registerFunction<PlusFunction, int16_t, int16_t, int16_t>({"plus"});
     registerFunction<PlusFunction, int32_t, int32_t, int32_t>({"plus"});
     registerFunction<PlusFunction, int64_t, int64_t, int64_t>({"plus"});
     registerFunction<PlusFunction, double, double, double>({"plus"});
+    registerFunction<MinusFunction, int8_t, int8_t, int8_t>({"minus"});
+    registerFunction<MinusFunction, int16_t, int16_t, int16_t>({"minus"});
+    registerFunction<MinusFunction, int32_t, int32_t, int32_t>({"minus"});
+    registerFunction<MinusFunction, int64_t, int64_t, int64_t>({"minus"});
+    registerFunction<MinusFunction, double, double, double>({"minus"});
     // compare with uncheck plus
     registerFunction<CheckedPlusFunction, int64_t, int64_t, int64_t>({"checkedPlus"});
 
@@ -196,7 +207,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
     suspender.dismiss();
 
-    auto allocator = std::make_shared<CiderDefaultAllocator>();
+    auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = makeBatchProcessor(plan, context);
     return 1;
@@ -282,102 +293,10 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
 std::unique_ptr<ArithmeticAndComparisonBenchmark> benchmark;
 
-bool isBitSet(uint8_t* null, size_t n) {
-  return null[n >> 3] & 1 << (n & 0x7);
-}
-
-void setBitAt(uint8_t* __restrict null_output, size_t index, bool is_null) {
-  uint8_t idx = index >> 3;
-  uint8_t bit = index & 0x7;
-  null_output[idx] = (null_output[idx] & ~(1 << bit)) | (is_null << bit);
-}
-
-// specialized func used to check performance upper limit
-// two loop to mimic null separate in codegen currently.
-// can't process kleene logic which null result depends on data
-__attribute__((noinline)) void mulI8Specialized1(uint8_t* null_input1,
-                                                 uint8_t* input1,
-                                                 uint8_t* null_input2,
-                                                 uint8_t* input2,
-                                                 uint8_t* __restrict null_output,
-                                                 uint8_t* __restrict output,
-                                                 size_t n) {
-  for (int i = 0; i < n; ++i) {
-    output[i] = input1[i] * input2[i];
-  }
-
-  // null process, ignore extra bit in last uint8
-  auto num = n / 8 + 1;
-  for (int i = 0; i < num; ++i) {
-    // 8bit packed
-    null_output[i] = null_input1[i] & null_input2[i];
-  }
-}
-
-// nested loop with null bit vector as bool vector
-__attribute__((noinline)) void mulI8Specialized2(uint8_t* null_input1,
-                                                 uint8_t* input1,
-                                                 uint8_t* null_input2,
-                                                 uint8_t* input2,
-                                                 uint8_t* __restrict null_output,
-                                                 uint8_t* __restrict output,
-                                                 size_t n) {
-  auto num = n / 8;
-  //#pragma clang loop vectorize(enable)
-  for (int i = 0; i < num; ++i) {
-    for (int j = 0; j < 8; ++j) {
-      auto idx = i * 8 + j;
-      output[idx] = input1[idx] * input2[idx];
-    }
-    // 8bit packed
-    null_output[i] = null_input1[i] & null_input2[i];
-  }
-
-  // tail
-  int i = num * 8;
-  while (i++ < n) {
-    output[i] = input1[i] * input2[i];
-    CiderBitUtils::setBitAtUnified(
-        null_output, i, isBitSet(null_input1, i) && isBitSet(null_input2, i));
-  }
-}
-
-// nested loop, outer process null
-__attribute__((noinline)) void mulI8Specialized3(uint8_t* null_input1,
-                                                 uint8_t* input1,
-                                                 uint8_t* null_input2,
-                                                 uint8_t* input2,
-                                                 uint8_t* __restrict null_output,
-                                                 uint8_t* __restrict output,
-                                                 size_t n) {
-  auto num = n / 8;
-  //#pragma clang loop vectorize(enable)
-  for (int i = 0; i < num; ++i) {
-    bool tmp[8] = {false};
-    for (int j = 0; j < 8; ++j) {
-      auto idx = i * 8 + j;
-      output[idx] = input1[idx] * input2[idx];
-      tmp[j] = isBitSet(null_input1, idx) && isBitSet(null_input2, idx);
-    }
-
-    uint8_t packed = 0;
-    for (int j = 0; j < 8; ++j) {
-      packed |= tmp[j] << j;
-    }
-    null_output[i] = packed;
-  }
-  // tail
-  int i = num * 8;
-  while (i++ < n) {
-    output[i] = input1[i] * input2[i];
-    CiderBitUtils::setBitAtUnified(
-        null_output, i, isBitSet(null_input1, i) && isBitSet(null_input2, i));
-  }
-}
-
 // for profile
 // auto profile_expr = "d AND e";
-auto profile_expr = "i8 * i8";
+// auto profile_expr = "i8 * i8";
+auto profile_expr = "i8*i16*2 + i16/3 - 1";
 BENCHMARK(velox) {
   benchmark->veloxCompute(profile_expr);
 }
@@ -405,15 +324,6 @@ BENCHMARK_RELATIVE(nextgenAVX512) {
   cgo.co.enable_avx2 = true;
   cgo.co.enable_avx512 = true;
   benchmark->nextgenCompute(profile_expr, cgo);
-}
-BENCHMARK_RELATIVE(specifialize1) {
-  benchmark->kernelCompute(mulI8Specialized1);
-}
-BENCHMARK_RELATIVE(specifialize2) {
-  benchmark->kernelCompute(mulI8Specialized2);
-}
-BENCHMARK_RELATIVE(specifialize3) {
-  benchmark->kernelCompute(mulI8Specialized3);
 }
 BENCHMARK_DRAW_LINE();
 
@@ -458,26 +368,26 @@ BENCHMARK_DRAW_LINE();
   BENCHMARK_DRAW_LINE()
 
 BENCHMARK_GROUP(mulI8, "i8*i8");
-BENCHMARK_GROUP(mulI8Deep, "i8*i8*i8*i8");
-BENCHMARK_GROUP(mulI16, "i16*i16");
-BENCHMARK_GROUP(mulI32, "i32*i32");
 BENCHMARK_GROUP(mulI64, "i64*i64");
+BENCHMARK_GROUP(mulMix, "i8*i16*i32*i64");
 
-BENCHMARK_GROUP(mulDouble, "a*a");
-BENCHMARK_GROUP(mulDoubleTwoColumn, "a*b");
+BENCHMARK_GROUP(mulDouble, "a*b");
 BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
-BENCHMARK_GROUP(mulDoubleNestedDeep, "(a*b*a)*(a*(a*b))");
 
 BENCHMARK(PlusCheckedVeloxI64) {
   benchmark->veloxCompute("checkedPlus(i64, i64)");
 }
 BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
 
-BENCHMARK_GROUP(mulAndAdd, "a * 2.0 + a * 3.0 + a * 4.0 + a * 5.0");
+BENCHMARK_GROUP(divInt, "i64/3");
+BENCHMARK_GROUP(divDouble, "a/3.0");
+
+BENCHMARK_GROUP(mulAndAdd, "a*2.0 + a*3.0 + a*4.0 + a*5.0");
+BENCHMARK_GROUP(ArithInt, "i8*i16*2 + i16/3 - 1");
+BENCHMARK_GROUP(ArithDouble, "a*b*2.0 + a/3.0 - 1.0");
 
 // comparison
 BENCHMARK_GROUP(eq, "eq(a, b)");
-BENCHMARK_GROUP(eqConstant, "eq(a, constant)");
 BENCHMARK_GROUP(eqBool, "eq(d, e)");
 BENCHMARK_GROUP(neq, "neq(a, b)");
 BENCHMARK_GROUP(gt, "gt(a, b)");

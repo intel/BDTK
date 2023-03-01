@@ -22,6 +22,7 @@
 #include <cstddef>
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
+#include "type/plan/ConstantExpr.h"
 #include "type/plan/Utils.h"  // for is_unnest
 #include "util/Logger.h"
 
@@ -37,7 +38,15 @@ void BinOper::initAutoVectorizeFlag() {
       case kMINUS:
       case kMULTIPLY:
         auto_vectorizable_ = true;
-        return;
+        break;
+      case kDIVIDE: {
+        if (dynamic_cast<Constant*>(right_operand.get())) {
+          auto_vectorizable_ = true;
+        } else {
+          auto_vectorizable_ = false;
+        }
+        break;
+      }
       default:
         auto_vectorizable_ = false;
     }

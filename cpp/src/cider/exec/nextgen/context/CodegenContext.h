@@ -260,7 +260,7 @@ class CodegenContext {
   jitlib::JITModulePointer jit_module_;
   CodegenOptions codegen_options_;
 
-  bool has_outer_join_;
+  bool has_outer_join_ = false;
 
   // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
   TrimCharMapsPtr trim_char_maps_;

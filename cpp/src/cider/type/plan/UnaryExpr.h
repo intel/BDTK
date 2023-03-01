@@ -43,11 +43,15 @@ namespace Analyzer {
 class UOper : public Expr {
  public:
   UOper(const SQLTypeInfo& ti, bool has_agg, SQLOps o, std::shared_ptr<Analyzer::Expr> p)
-      : Expr(ti, has_agg), optype(o), operand(p) {}
+      : Expr(ti, has_agg), optype(o), operand(p) {
+    initAutoVectorizeFlag();
+  }
   UOper(SQLTypes t, SQLOps o, std::shared_ptr<Analyzer::Expr> p)
       : Expr(t, o == kISNULL ? true : p->get_type_info().get_notnull())
       , optype(o)
-      , operand(p) {}
+      , operand(p) {
+    initAutoVectorizeFlag();
+  }
   SQLOps get_optype() const { return optype; }
   const Expr* get_operand() const { return operand.get(); }
   std::shared_ptr<Analyzer::Expr> get_non_const_own_operand() const { return operand; }
@@ -101,6 +105,17 @@ class UOper : public Expr {
  protected:
   SQLOps optype;  // operator type, e.g., kUMINUS, kISNULL, kEXISTS
   std::shared_ptr<Analyzer::Expr> operand;  // operand expression
+  void initAutoVectorizeFlag() {
+    switch (optype) {
+      case kCAST:
+      case kUMINUS: {
+        auto_vectorizable_ = operand->isAutoVectorizable();
+        break;
+      }
+      default:
+        auto_vectorizable_ = false;
+    }
+  }
 };
 }  // namespace Analyzer
 

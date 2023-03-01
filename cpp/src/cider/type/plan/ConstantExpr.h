@@ -46,6 +46,7 @@ class Constant : public Expr {
     } else {
       type_info.set_notnull(true);
     }
+    initAutoVectorizeFlag();
   }
   Constant(SQLTypes t, bool n, Datum v) : Expr(t, !n), is_null(n), constval(v) {
     if (n) {
@@ -53,6 +54,7 @@ class Constant : public Expr {
     } else {
       type_info.set_notnull(true);
     }
+    initAutoVectorizeFlag();
   }
   Constant(const SQLTypeInfo& ti, bool n, Datum v) : Expr(ti), is_null(n), constval(v) {
     if (n) {
@@ -60,11 +62,14 @@ class Constant : public Expr {
     } else {
       type_info.set_notnull(true);
     }
+    initAutoVectorizeFlag();
   }
   Constant(const SQLTypeInfo& ti,
            bool n,
            const std::list<std::shared_ptr<Analyzer::Expr>>& l)
-      : Expr(ti), is_null(n), constval(Datum{0}), value_list(l) {}
+      : Expr(ti), is_null(n), constval(Datum{0}), value_list(l) {
+    initAutoVectorizeFlag();
+  }
   ~Constant() override;
   bool get_is_null() const { return is_null; }
   Datum get_constval() const { return constval; }
@@ -91,6 +96,21 @@ class Constant : public Expr {
   void cast_to_string(const SQLTypeInfo& new_type_info);
   void do_cast(const SQLTypeInfo& new_type_info);
   void set_null_value();
+  void initAutoVectorizeFlag() {
+    switch (type_info.get_type()) {
+      case kTINYINT:
+      case kSMALLINT:
+      case kINT:
+      case kBIGINT:
+      case kFLOAT:
+      case kDOUBLE: {
+        auto_vectorizable_ = true;
+        break;
+      }
+      default:
+        auto_vectorizable_ = false;
+    }
+  }
 };
 
 }  // namespace Analyzer
