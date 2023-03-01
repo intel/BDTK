@@ -465,7 +465,7 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
     for (auto& expr : output_exprs) {
       if (auto strExpr = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
         if (!strExpr->isOutput()) {
-          break;
+          continue;
         }
         size_t local_offset = expr->getLocalIndex();
         auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);

@@ -44,24 +44,24 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int 
 }
 
 // pos parameter starts from 1 rather than 0
-extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
-                                                        const char* str,
-                                                        int pos,
-                                                        int len) {
+extern "C" ALWAYS_INLINE int64_t cider_substring_extra(char* string_heap_ptr,
+                                                       const char* str,
+                                                       int pos,
+                                                       int len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(str + pos - 1, len);
   return pack_string_t(s);
 }
-extern "C" RUNTIME_EXPORT void cider_substring_extra_ptr(char* buffer_ptr,
-                                                         const char* str,
-                                                         int pos,
-                                                         int len) {
+extern "C" ALWAYS_INLINE void cider_substring_extra_ptr(char* buffer_ptr,
+                                                        const char* str,
+                                                        int pos,
+                                                        int len) {
   memcpy(buffer_ptr, str + pos - 1, len);
 }
 
 // pos starts with 1. A negative starting position is interpreted as being relative
 // to the end of the string
-extern "C" RUNTIME_EXPORT int32_t format_substring_pos(int pos, int str_len) {
+extern "C" ALWAYS_INLINE int32_t format_substring_pos(int pos, int str_len) {
   int32_t ret = 1;
   if (pos > 0) {
     if (pos > str_len) {
@@ -78,9 +78,9 @@ extern "C" RUNTIME_EXPORT int32_t format_substring_pos(int pos, int str_len) {
 }
 
 // pos should be [1, str_len+1]
-extern "C" RUNTIME_EXPORT int32_t format_substring_len(int pos,
-                                                       int str_len,
-                                                       int target_len) {
+extern "C" ALWAYS_INLINE int32_t format_substring_len(int pos,
+                                                      int str_len,
+                                                      int target_len) {
   // already out of range, return empty string.
   if (pos == str_len + 1) {
     return 0;
@@ -321,7 +321,7 @@ extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
   // assumes arrow_array is an array for var-size binary (with 3 buffers)
   size_t capacity = holder->getBufferSizeAt(index);
   if (capacity == 0) {
-    // initialize buffer with a capacity of 4096 bytes
+    // initialize buffer with a capacity of 16384 bytes
     holder->allocBuffer(index, 16384);
   } else if (current_bytes >= 0.9 * capacity) {
     // double capacity if current bytes take up 90% of capacity

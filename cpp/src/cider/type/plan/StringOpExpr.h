@@ -89,7 +89,7 @@ class StringOper : public Expr {
   }
 
   virtual void setIsOutput() { is_output_ = true; }
-  bool isOutput() { return is_output_; }
+  bool isOutput() { return is_output_ && type_info.is_string(); }
   SqlStringOpKind get_kind() const { return kind_; }
 
   ExprPtrRefVector get_children_reference() override {
