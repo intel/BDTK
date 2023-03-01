@@ -39,16 +39,19 @@ JITValue& LLVMJITValue::assign(JITValue& value) {
 }
 
 JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
+  CHECK(rh.getValueTypeTag() == getValueTypeTag());
+
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case JITTypeTag::BOOL: {
-      if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_rh.llvm_value_)) {
-        return const_bool->isOne() ? JITValuePointer(this) : JITValuePointer(&rh);
-      }
+    case JITTypeTag::BOOL:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateAnd(load(), llvm_rh.load());
       break;
-    }
     default:
       LOG(ERROR) << "Invalid JITValue type for and operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -59,16 +62,19 @@ JITValuePointer LLVMJITValue::andOp(JITValue& rh) {
 }
 
 JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
+  CHECK(rh.getValueTypeTag() == getValueTypeTag());
+
   LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case JITTypeTag::BOOL: {
-      if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_rh.llvm_value_)) {
-        return const_bool->isOne() ? JITValuePointer(&rh) : JITValuePointer(this);
-      }
+    case JITTypeTag::BOOL:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateOr(load(), llvm_rh.load());
       break;
-    }
     default:
       LOG(ERROR) << "Invalid JITValue type for or operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -81,14 +87,14 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
 JITValuePointer LLVMJITValue::notOp() {
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {
-    case JITTypeTag::BOOL: {
-      if (auto const_bool = llvm::dyn_cast<llvm::ConstantInt>(llvm_value_)) {
-        bool literal = const_bool->isOne() ? false : true;
-        return parent_function_.createLiteral(JITTypeTag::BOOL, literal);
-      }
+    case JITTypeTag::BOOL:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
       ans = getFunctionBuilder(parent_function_).CreateNot(load());
       break;
-    }
     default:
       LOG(ERROR) << "Invalid JITValue type for not operation. Name=" << getValueName()
                  << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
@@ -530,6 +536,10 @@ JITValuePointer LLVMJITValue::castPointerSubType(JITTypeTag type_tag) {
 }
 
 JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_tag) {
+  if (target_jit_tag == getValueTypeTag()) {
+    return JITValuePointer(this);
+  }
+
   llvm::Type* source_type =
       getLLVMType(getValueTypeTag(), parent_function_.getLLVMContext());
   llvm::Type* target_type =
@@ -537,17 +547,23 @@ JITValuePointer LLVMJITValue::castJITValuePrimitiveType(JITTypeTag target_jit_ta
   CHECK(source_type && target_type);
   llvm::Value* source_lv = load();
   llvm::Value* target_lv = nullptr;
-  if (source_type->isIntegerTy() && target_type->isIntegerTy()) {
-    target_lv = getFunctionBuilder(parent_function_)
-                    .CreateIntCast(
-                        source_lv, target_type, source_type->getScalarSizeInBits() != 1);
-  } else if (source_type->isIntegerTy() && target_type->isFloatingPointTy()) {
-    target_lv = getFunctionBuilder(parent_function_).CreateSIToFP(source_lv, target_type);
-  } else if (source_type->isFloatingPointTy() && target_type->isIntegerTy()) {
-    target_lv = getFunctionBuilder(parent_function_).CreateFPToSI(source_lv, target_type);
-  } else if (source_type->isFloatingPointTy() && target_type->isFloatingPointTy()) {
-    target_lv = getFunctionBuilder(parent_function_).CreateFPCast(source_lv, target_type);
+  auto& builder = getFunctionBuilder(parent_function_);
+
+  if (JITTypeTag::BOOL == target_jit_tag) {
+    return *this != 0;
   }
+
+  if (source_type->isIntegerTy() && target_type->isIntegerTy()) {
+    target_lv = builder.CreateIntCast(
+        source_lv, target_type, JITTypeTag::BOOL != getValueTypeTag());
+  } else if (source_type->isIntegerTy() && target_type->isFloatingPointTy()) {
+    target_lv = builder.CreateSIToFP(source_lv, target_type);
+  } else if (source_type->isFloatingPointTy() && target_type->isIntegerTy()) {
+    target_lv = builder.CreateFPToSI(source_lv, target_type);
+  } else if (source_type->isFloatingPointTy() && target_type->isFloatingPointTy()) {
+    target_lv = builder.CreateFPCast(source_lv, target_type);
+  }
+
   CHECK(target_lv) << "error when cast JITValue type from:"
                    << getJITTypeName(getValueTypeTag())
                    << " into type:" << getJITTypeName(target_jit_tag);

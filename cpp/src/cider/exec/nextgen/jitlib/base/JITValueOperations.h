@@ -39,50 +39,6 @@ template <typename T>
 using IsJITValueConvertable =
     typename std::enable_if_t<is_jitvalue_convertable_v<T>, bool>;
 
-inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
-  return lh.andOp(rh);
-}
-
-// disable pointer to bool implicit cast
-template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
-inline JITValuePointer operator&&(JITValue& lh, T rh) {
-  if (rh) {
-    return JITValuePointer(&lh);
-  }
-  auto& func = lh.getParentJITFunction();
-  return func.createLiteral(JITTypeTag::BOOL, false);
-}
-
-// disable pointer to bool implicit cast
-template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
-inline JITValuePointer operator&&(T lh, JITValue& rh) {
-  return rh && lh;
-}
-
-inline JITValuePointer operator||(JITValue& lh, JITValue& rh) {
-  return lh.orOp(rh);
-}
-
-// disable pointer to bool implicit cast
-template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
-inline JITValuePointer operator||(JITValue& lh, T rh) {
-  if (!rh) {
-    return JITValuePointer(&lh);
-  }
-  auto& func = lh.getParentJITFunction();
-  return func.createLiteral(JITTypeTag::BOOL, true);
-}
-
-// disable pointer to bool implicit cast
-template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
-inline JITValuePointer operator||(T lh, JITValue& rh) {
-  return rh || lh;
-}
-
-inline JITValuePointer operator!(JITValue& value) {
-  return value.notOp();
-}
-
 inline JITValuePointer operator+(JITValue& lh, JITValue& rh) {
   return lh.add(rh);
 }
@@ -297,6 +253,82 @@ inline JITValuePointer operator>=(T lh, JITValue& rh) {
 
 inline JITValuePointer operator*(JITValue& value) {
   return value.dereference();
+}
+
+inline JITValuePointer operator&&(JITValue& lh, JITValue& rh) {
+  return lh.castJITValuePrimitiveType(JITTypeTag::BOOL)
+      ->andOp(rh.castJITValuePrimitiveType(JITTypeTag::BOOL));
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator&&(JITValue& lh, T rh) {
+  if (rh) {
+    return lh.castJITValuePrimitiveType(JITTypeTag::BOOL);
+  }
+  auto& func = lh.getParentJITFunction();
+  return func.createLiteral(JITTypeTag::BOOL, false);
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator&&(T lh, JITValue& rh) {
+  return rh && lh;
+}
+
+inline JITValuePointer operator||(JITValue& lh, JITValue& rh) {
+  return lh.castJITValuePrimitiveType(JITTypeTag::BOOL)
+      ->orOp(rh.castJITValuePrimitiveType(JITTypeTag::BOOL));
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator||(JITValue& lh, T rh) {
+  if (!rh) {
+    return lh.castJITValuePrimitiveType(JITTypeTag::BOOL);
+  }
+  auto& func = lh.getParentJITFunction();
+  return func.createLiteral(JITTypeTag::BOOL, true);
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator||(T lh, JITValue& rh) {
+  return rh || lh;
+}
+
+inline JITValuePointer operator!(JITValue& value) {
+  return value.castJITValuePrimitiveType(JITTypeTag::BOOL)->notOp();
+}
+
+inline JITValuePointer operator&(JITValue& lh, JITValue& rh) {
+  return lh.andOp(rh);
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator&(JITValue& lh, T rh) {
+  auto& func = lh.getParentJITFunction();
+  return lh.andOp(func.createLiteral(lh.getValueTypeTag(), rh));
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator&(T lh, JITValue& rh) {
+  return rh & lh;
+}
+
+inline JITValuePointer operator|(JITValue& lh, JITValue& rh) {
+  return lh.orOp(rh);
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator|(JITValue& lh, T rh) {
+  auto& func = lh.getParentJITFunction();
+  return lh.orOp(func.createLiteral(lh.getValueTypeTag(), rh));
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator|(T lh, JITValue& rh) {
+  return rh | lh;
+}
+
+inline JITValuePointer operator~(JITValue& value) {
+  return value.notOp();
 }
 };  // namespace cider::jitlib
 
