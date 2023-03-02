@@ -439,33 +439,55 @@ JITExprValue& LowerStringOper::codegen(CodegenContext& context) {
                                 .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {func.getArgument(0).get()}});
   std::string fn_name = "cider_ascii_lower";
-
+  auto if_builder = func.createIfBuilder();
   if (isOutput()) {
-    // call external function
-    auto emit_desc = JITFunctionEmitDescriptor{
-        .ret_type = JITTypeTag::INT64,
-        .params_vector = {
-            string_heap_ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}};
-    auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
-
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return arg_val.getNull(); })
+        ->ifFalse([&]() {
+          // call external function
+          auto emit_desc =
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {string_heap_ptr.get(),
+                                                          arg_val.getValue().get(),
+                                                          arg_val.getLength().get()}};
+          *ptr_and_len = *func.emitRuntimeFunctionCall(fn_name, emit_desc);
+        })
+        ->build();
     return set_expr_value(arg_val.getNull(), ptr_and_len);
   } else {
-    auto ret_len = func.emitRuntimeFunctionCall(
-        fn_name + "_len",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {arg_val.getLength().get()}});
-    auto ptr = func.emitRuntimeFunctionCall(
-        "allocate_from_string_heap",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .params_vector = {string_heap_ptr.get(), ret_len.get()}});
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        fn_name + "_ptr",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::VOID,
-            .params_vector = {
-                ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}});
-    return set_expr_value(arg_val.getNull(), ret_len, ptr);
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return arg_val.getNull(); })
+        ->ifFalse([&]() {
+          auto ret_len = func.emitRuntimeFunctionCall(
+              fn_name + "_len",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                        .params_vector = {arg_val.getLength().get()}});
+          auto ptr = func.emitRuntimeFunctionCall(
+              "allocate_from_string_heap",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::POINTER,
+                  .params_vector = {string_heap_ptr.get(), ret_len.get()}});
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              fn_name + "_ptr",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::VOID,
+                  .params_vector = {
+                      ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        arg_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
@@ -489,33 +511,55 @@ JITExprValue& UpperStringOper::codegen(CodegenContext& context) {
                                 .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {func.getArgument(0).get()}});
   std::string fn_name = "cider_ascii_upper";
-
+  auto if_builder = func.createIfBuilder();
   if (isOutput()) {
-    // call external function
-    auto emit_desc = JITFunctionEmitDescriptor{
-        .ret_type = JITTypeTag::INT64,
-        .params_vector = {
-            string_heap_ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}};
-    auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
-
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return arg_val.getNull(); })
+        ->ifFalse([&]() {
+          // call external function
+          auto emit_desc =
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {string_heap_ptr.get(),
+                                                          arg_val.getValue().get(),
+                                                          arg_val.getLength().get()}};
+          *ptr_and_len = *func.emitRuntimeFunctionCall(fn_name, emit_desc);
+        })
+        ->build();
     return set_expr_value(arg_val.getNull(), ptr_and_len);
   } else {
-    auto ret_len = func.emitRuntimeFunctionCall(
-        fn_name + "_len",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {arg_val.getLength().get()}});
-    auto ptr = func.emitRuntimeFunctionCall(
-        "allocate_from_string_heap",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .params_vector = {string_heap_ptr.get(), ret_len.get()}});
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        fn_name + "_ptr",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::VOID,
-            .params_vector = {
-                ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}});
-    return set_expr_value(arg_val.getNull(), ret_len, ptr);
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return arg_val.getNull(); })
+        ->ifFalse([&]() {
+          auto ret_len = func.emitRuntimeFunctionCall(
+              fn_name + "_len",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                        .params_vector = {arg_val.getLength().get()}});
+          auto ptr = func.emitRuntimeFunctionCall(
+              "allocate_from_string_heap",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::POINTER,
+                  .params_vector = {string_heap_ptr.get(), ret_len.get()}});
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              fn_name + "_ptr",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::VOID,
+                  .params_vector = {
+                      ptr.get(), arg_val.getValue().get(), arg_val.getLength().get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        arg_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
