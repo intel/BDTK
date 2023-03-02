@@ -104,3 +104,4 @@ set(CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES
     cider_plan_parser)
 
 add_subdirectory(expression)
+add_subdirectory(tpch)

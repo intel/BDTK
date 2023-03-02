@@ -101,6 +101,10 @@ if(BDTK_ENABLE_CIDER)
     set(CMAKE_CXX_FLAGS "-g -ggdb -fno-omit-frame-pointer")
   endif()
 
+  if(ENABLE_BENCHMARK)
+    set(VELOX_ENABLE_TPCH_CONNECTOR ON)
+  endif()
+
   if(CIDER_ENABLE_BENCHMARK)
     set(BENCHMARK_ENABLE_INSTALL OFF)
     set(BENCHMARK_ENABLE_TESTING OFF)
