@@ -316,53 +316,98 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
   auto pos_val = FixSizeJITExprValue(pos->codegen(context));
   auto len_val = FixSizeJITExprValue(len->codegen(context));
 
-  // format parameters
-  auto pos_param = func.emitRuntimeFunctionCall(
-      "format_substring_pos",
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT32,
-          .params_vector = {
-              pos_val.getValue()->castJITValuePrimitiveType(JITTypeTag::INT32).get(),
-              arg_val.getLength().get()}});
-  auto len_param = func.emitRuntimeFunctionCall(
-      "format_substring_len",
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT32,
-          .params_vector = {
-              pos_param.get(),
-              arg_val.getLength().get(),
-              len_val.getValue()->castJITValuePrimitiveType(JITTypeTag::INT32).get()}});
-
-  // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
-  std::string fn_name = "cider_substring_extra";
+  auto if_builder = func.createIfBuilder();
 
   if (isOutput()) {
-    auto emit_desc = JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                               .params_vector = {string_heap_ptr.get(),
-                                                                 arg_val.getValue().get(),
-                                                                 pos_param.get(),
-                                                                 len_param.get()}};
+    auto ret_ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder
+        ->condition([&]() {
+          auto condition = arg_val.getNull();
+          return condition;
+        })
+        ->ifFalse([&]() {
+          // format parameters
+          auto pos_param = func.emitRuntimeFunctionCall(
+              "format_substring_pos",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT32,
+                  .params_vector = {pos_val.getValue()
+                                        ->castJITValuePrimitiveType(JITTypeTag::INT32)
+                                        .get(),
+                                    arg_val.getLength().get()}});
+          auto len_param = func.emitRuntimeFunctionCall(
+              "format_substring_len",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT32,
+                  .params_vector = {pos_param.get(),
+                                    arg_val.getLength().get(),
+                                    len_val.getValue()
+                                        ->castJITValuePrimitiveType(JITTypeTag::INT32)
+                                        .get()}});
 
-    auto ptr_and_len = func.emitRuntimeFunctionCall(fn_name, emit_desc);
-    return set_expr_value(arg_val.getNull(), ptr_and_len);
+          // get string heap ptr
+          auto string_heap_ptr = func.emitRuntimeFunctionCall(
+              "get_query_context_string_heap_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .ret_sub_type = JITTypeTag::INT8,
+                                        .params_vector = {func.getArgument(0).get()}});
+          std::string fn_name = "cider_substring_extra";
+          auto emit_desc =
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {string_heap_ptr.get(),
+                                                          arg_val.getValue().get(),
+                                                          pos_param.get(),
+                                                          len_param.get()}};
+          *ret_ptr_and_len = *func.emitRuntimeFunctionCall(fn_name, emit_desc);
+        })
+        ->build();
+    return set_expr_value(arg_val.getNull(), ret_ptr_and_len);
   } else {
-    auto ret_len = len_param;
-    // auto ptr = func.emitRuntimeFunctionCall(
-    //     "allocate_from_string_heap",
-    //     JITFunctionEmitDescriptor{
-    //         .ret_type = JITTypeTag::POINTER,
-    //         .params_vector = {string_heap_ptr.get(), ret_len.get()}});
     auto ret_ptr = func.emitRuntimeFunctionCall(
-        fn_name + "_ptr",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .params_vector = {
-                arg_val.getValue().get(), pos_param.get()}});
+        "create_a_pointer",
+        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER, .params_vector = {}});
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder
+        ->condition([&]() {
+          auto condition = arg_val.getNull();
+          return condition;
+        })
+        ->ifFalse([&]() {
+          // format parameters
+          auto pos_param = func.emitRuntimeFunctionCall(
+              "format_substring_pos",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT32,
+                  .params_vector = {pos_val.getValue()
+                                        ->castJITValuePrimitiveType(JITTypeTag::INT32)
+                                        .get(),
+                                    arg_val.getLength().get()}});
+          auto len_param = func.emitRuntimeFunctionCall(
+              "format_substring_len",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT32,
+                  .params_vector = {pos_param.get(),
+                                    arg_val.getLength().get(),
+                                    len_val.getValue()
+                                        ->castJITValuePrimitiveType(JITTypeTag::INT32)
+                                        .get()}});
+
+          // get string heap ptr
+          auto string_heap_ptr = func.emitRuntimeFunctionCall(
+              "get_query_context_string_heap_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .ret_sub_type = JITTypeTag::INT8,
+                                        .params_vector = {func.getArgument(0).get()}});
+          std::string fn_name = "cider_substring_extra";
+          *ret_len = *len_param;
+
+          *ret_ptr = func.emitRuntimeFunctionCall(
+              fn_name + "_ptr",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::POINTER,
+                  .params_vector = {arg_val.getValue().get(), pos_param.get()}});
+        })
+        ->build();
     return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
   }
 }
