@@ -148,6 +148,10 @@ TEST_F(CiderNextgenCompilerTestBase, noGroupbyTest) {
   assertQuery("SELECT SUM(col_1), SUM(col_2) FROM test WHERE col_1 <= col_2");
 }
 
+TEST_F(CiderNextgenCompilerTestBase, multiExpressions) {
+  assertQuery("SELECT (col_1 + col_2) * col_3, (col_1 + col_2) + 2 FROM test");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

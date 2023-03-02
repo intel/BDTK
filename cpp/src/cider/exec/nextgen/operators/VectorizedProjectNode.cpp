@@ -133,7 +133,7 @@ VectorizedProjectTranslator::groupOutputExprs() {
       if (utils::isSubsetExprVector(input_columnvars[i], input_columnvars[j]) ||
           utils::isSubsetExprVector(input_columnvars[j], input_columnvars[i])) {
         expr_groups.connect(i, j, [&input_columnvars](size_t a, size_t b) {
-          return input_columnvars[a] >= input_columnvars[b];
+          return input_columnvars[a].size() >= input_columnvars[b].size();
         });
       }
     }
