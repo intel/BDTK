@@ -459,7 +459,7 @@ JITExprValue& LowerStringOper::codegen(CodegenContext& context) {
     auto ret_len = func.createVariable(JITTypeTag::INT32);
     if_builder->condition([&]() { return arg_val.getNull(); })
         ->ifFalse([&]() {
-          auto ret_len = func.emitRuntimeFunctionCall(
+          *ret_len = *func.emitRuntimeFunctionCall(
               fn_name + "_len",
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                         .params_vector = {arg_val.getLength().get()}});
@@ -531,7 +531,7 @@ JITExprValue& UpperStringOper::codegen(CodegenContext& context) {
     auto ret_len = func.createVariable(JITTypeTag::INT32);
     if_builder->condition([&]() { return arg_val.getNull(); })
         ->ifFalse([&]() {
-          auto ret_len = func.emitRuntimeFunctionCall(
+          *ret_len = *func.emitRuntimeFunctionCall(
               fn_name + "_len",
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                         .params_vector = {arg_val.getLength().get()}});
@@ -771,53 +771,77 @@ JITExprValue& TrimStringOper::codegen(CodegenContext& context) {
   bool do_rtrim =
       get_kind() == SqlStringOpKind::RTRIM || get_kind() == SqlStringOpKind::TRIM;
   std::string fn_name = "cider_trim";
-  if (isOutput()) {
-    auto ptr_and_len = func.emitRuntimeFunctionCall(
-        fn_name,
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::INT64,
-            .params_vector = {
-                string_heap_ptr.get(),
-                input_val.getValue().get(),
-                input_val.getLength().get(),
-                trim_char_map_ptr.get(),
-                func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
-                func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
+  auto if_builder = func.createIfBuilder();
 
+  if (isOutput()) {
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          *ptr_and_len = *func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      trim_char_map_ptr.get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
+        })
+        ->build();
     return set_expr_value(input_val.getNull(), ptr_and_len);
   } else {
-    auto start_val = func.emitRuntimeFunctionCall(
-        fn_name + "_start",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::INT32,
-            .params_vector = {
-                input_val.getValue().get(),
-                input_val.getLength().get(),
-                trim_char_map_ptr.get(),
-                func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get()}});
-    auto ret_len = func.emitRuntimeFunctionCall(
-        fn_name + "_len",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::INT32,
-            .params_vector = {
-                input_val.getValue().get(),
-                input_val.getLength().get(),
-                trim_char_map_ptr.get(),
-                func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
-                func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          auto start_val = func.emitRuntimeFunctionCall(
+              fn_name + "_start",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT32,
+                  .params_vector = {
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      trim_char_map_ptr.get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get()}});
+          *ret_len = *func.emitRuntimeFunctionCall(
+              fn_name + "_len",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT32,
+                  .params_vector = {
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      trim_char_map_ptr.get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, do_ltrim).get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, do_rtrim).get()}});
 
-    auto ptr = func.emitRuntimeFunctionCall(
-        "allocate_from_string_heap",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .params_vector = {string_heap_ptr.get(), ret_len.get()}});
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        fn_name + "_ptr",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::VOID,
-            .params_vector = {
-                ptr.get(), input_val.getValue().get(), start_val.get(), ret_len.get()}});
-    return set_expr_value(input_val.getNull(), ret_len, ptr);
+          auto ptr = func.emitRuntimeFunctionCall(
+              "allocate_from_string_heap",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::POINTER,
+                  .params_vector = {string_heap_ptr.get(), ret_len.get()}});
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              fn_name + "_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
+                                        .params_vector = {ptr.get(),
+                                                          input_val.getValue().get(),
+                                                          start_val.get(),
+                                                          ret_len.get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ptr.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        input_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
@@ -859,32 +883,69 @@ JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
                                 .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {func.getArgument(0).get()}});
   std::string fn_name = "cider_split";
-  auto ptr_and_len = func.emitRuntimeFunctionCall(
-      fn_name,
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT64,
-          .params_vector = {
-              string_heap_ptr.get(),
-              input_val.getValue().get(),
-              input_val.getLength().get(),
-              delimiter_val.getValue().get(),
-              delimiter_val.getLength().get(),
-              func.createLiteral<bool>(JITTypeTag::BOOL, reverse).get(),
-              func.createLiteral<int>(JITTypeTag::INT32, limit_val).get(),
-              func.createLiteral<int>(JITTypeTag::INT32, splitpart_val).get()}});
+  auto if_builder = func.createIfBuilder();
+
   if (isOutput()) {
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          *ptr_and_len = *func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      delimiter_val.getValue().get(),
+                      delimiter_val.getLength().get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, reverse).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, limit_val).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, splitpart_val).get()}});
+        })
+        ->build();
     return set_expr_value(input_val.getNull(), ptr_and_len);
   } else {
-    // decode result
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        "extract_string_ptr",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                  .params_vector = {ptr_and_len.get()}});
-    auto ret_len = func.emitRuntimeFunctionCall(
-        "extract_string_len",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {ptr_and_len.get()}});
-    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          auto ptr_and_len = func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      delimiter_val.getValue().get(),
+                      delimiter_val.getLength().get(),
+                      func.createLiteral<bool>(JITTypeTag::BOOL, reverse).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, limit_val).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, splitpart_val).get()}});
+          // decode result
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              "extract_string_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .params_vector = {ptr_and_len.get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
+          *ret_len = *func.emitRuntimeFunctionCall(
+              "extract_string_len",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                        .params_vector = {ptr_and_len.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        input_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
@@ -920,33 +981,71 @@ JITExprValue& RegexpReplaceStringOper::codegen(CodegenContext& context) {
                                 .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {func.getArgument(0).get()}});
   std::string fn_name = "cider_regexp_replace";
-  auto ptr_and_len = func.emitRuntimeFunctionCall(
-      fn_name,
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT64,
-          .params_vector = {
-              string_heap_ptr.get(),
-              input_val.getValue().get(),
-              input_val.getLength().get(),
-              regex_pattern_val.getValue().get(),
-              regex_pattern_val.getLength().get(),
-              replace_val.getValue().get(),
-              replace_val.getLength().get(),
-              func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get(),
-              func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get()}});
+
+  auto if_builder = func.createIfBuilder();
   if (isOutput()) {
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          *ptr_and_len = *func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      regex_pattern_val.getValue().get(),
+                      regex_pattern_val.getLength().get(),
+                      replace_val.getValue().get(),
+                      replace_val.getLength().get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get()}});
+        })
+        ->build();
     return set_expr_value(input_val.getNull(), ptr_and_len);
   } else {
-    // decode result
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        "extract_string_ptr",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                  .params_vector = {ptr_and_len.get()}});
-    auto ret_len = func.emitRuntimeFunctionCall(
-        "extract_string_len",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {ptr_and_len.get()}});
-    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          auto ptr_and_len = func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      regex_pattern_val.getValue().get(),
+                      regex_pattern_val.getLength().get(),
+                      replace_val.getValue().get(),
+                      replace_val.getLength().get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get()}});
+          // decode result
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              "extract_string_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .params_vector = {ptr_and_len.get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
+          *ret_len = *func.emitRuntimeFunctionCall(
+              "extract_string_len",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                        .params_vector = {ptr_and_len.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        input_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
@@ -976,30 +1075,65 @@ JITExprValue& RegexpExtractStringOper::codegen(CodegenContext& context) {
                                 .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {func.getArgument(0).get()}});
   std::string fn_name = "cider_regexp_extract";
-  auto ptr_and_len = func.emitRuntimeFunctionCall(
-      fn_name,
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT64,
-          .params_vector = {
-              string_heap_ptr.get(),
-              input_val.getValue().get(),
-              input_val.getLength().get(),
-              regex_pattern_val.getValue().get(),
-              regex_pattern_val.getLength().get(),
-              func.createLiteral<int>(JITTypeTag::INT32, group_val).get()}});
+  auto if_builder = func.createIfBuilder();
+
   if (isOutput()) {
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          *ptr_and_len = *func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      regex_pattern_val.getValue().get(),
+                      regex_pattern_val.getLength().get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, group_val).get()}});
+        })
+        ->build();
     return set_expr_value(input_val.getNull(), ptr_and_len);
   } else {
-    // decode result
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        "extract_string_ptr",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                  .params_vector = {ptr_and_len.get()}});
-    auto ret_len = func.emitRuntimeFunctionCall(
-        "extract_string_len",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {ptr_and_len.get()}});
-    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          auto ptr_and_len = func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      regex_pattern_val.getValue().get(),
+                      regex_pattern_val.getLength().get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, group_val).get()}});
+          // decode result
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              "extract_string_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .params_vector = {ptr_and_len.get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
+          *ret_len = *func.emitRuntimeFunctionCall(
+              "extract_string_len",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                        .params_vector = {ptr_and_len.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        input_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
@@ -1031,31 +1165,67 @@ JITExprValue& RegexpSubstrStringOper::codegen(CodegenContext& context) {
                                 .ret_sub_type = JITTypeTag::INT8,
                                 .params_vector = {func.getArgument(0).get()}});
   std::string fn_name = "cider_regexp_substring";
-  auto ptr_and_len = func.emitRuntimeFunctionCall(
-      fn_name,
-      JITFunctionEmitDescriptor{
-          .ret_type = JITTypeTag::INT64,
-          .params_vector = {
-              string_heap_ptr.get(),
-              input_val.getValue().get(),
-              input_val.getLength().get(),
-              regex_pattern_val.getValue().get(),
-              regex_pattern_val.getLength().get(),
-              func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get(),
-              func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get()}});
+  auto if_builder = func.createIfBuilder();
+
   if (isOutput()) {
+    auto ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          *ptr_and_len = *func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      regex_pattern_val.getValue().get(),
+                      regex_pattern_val.getLength().get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get()}});
+        })
+        ->build();
     return set_expr_value(input_val.getNull(), ptr_and_len);
   } else {
-    // decode result
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        "extract_string_ptr",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                  .params_vector = {ptr_and_len.get()}});
-    auto ret_len = func.emitRuntimeFunctionCall(
-        "extract_string_len",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
-                                  .params_vector = {ptr_and_len.get()}});
-    return set_expr_value(input_val.getNull(), ret_len, ret_ptr);
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
+    auto ret_len = func.createVariable(JITTypeTag::INT32);
+    if_builder->condition([&]() { return input_val.getNull(); })
+        ->ifFalse([&]() {
+          auto ptr_and_len = func.emitRuntimeFunctionCall(
+              fn_name,
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {
+                      string_heap_ptr.get(),
+                      input_val.getValue().get(),
+                      input_val.getLength().get(),
+                      regex_pattern_val.getValue().get(),
+                      regex_pattern_val.getLength().get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, occurence_val).get(),
+                      func.createLiteral<int>(JITTypeTag::INT32, start_pos_val).get()}});
+          // decode result
+          auto ret_ptr = func.emitRuntimeFunctionCall(
+              "extract_string_ptr",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                        .params_vector = {ptr_and_len.get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
+          *ret_len = *func.emitRuntimeFunctionCall(
+              "extract_string_len",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
+                                        .params_vector = {ptr_and_len.get()}});
+        })
+        ->build();
+
+    return set_expr_value(
+        input_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
