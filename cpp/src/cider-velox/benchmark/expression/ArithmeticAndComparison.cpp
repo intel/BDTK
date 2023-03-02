@@ -21,6 +21,7 @@
 
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
+#include <initializer_list>
 
 #include "Allocator.h"
 #include "cider/CiderOptions.h"
@@ -36,6 +37,7 @@
 #include "velox/functions/prestosql/Arithmetic.h"
 #include "velox/functions/prestosql/CheckedArithmetic.h"
 #include "velox/functions/prestosql/Comparisons.h"
+#include "velox/parse/Expressions.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 #include "velox/vector/arrow/Bridge.h"
 #include "velox/vector/fuzzer/VectorFuzzer.h"
@@ -198,13 +200,16 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
   ~ArithmeticAndComparisonBenchmark() { inputReleaser_(inputArray_); }
 
-  __attribute__((noinline)) size_t nextgenCompile(const std::string& expression) {
+  __attribute__((noinline)) size_t nextgenCompile(
+      CodegenOptions cgo,
+      const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
-    auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
+    auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
+    cgo.co.dump_ir = FLAGS_dump_ir;
     suspender.dismiss();
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
@@ -213,11 +218,12 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     return 1;
   }
 
-  __attribute__((noinline)) size_t nextgenCompute(const std::string& expression,
-                                                  CodegenOptions cgo = CodegenOptions{}) {
+  __attribute__((noinline)) size_t nextgenCompute(
+      CodegenOptions cgo,
+      const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
-    auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
+    auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
@@ -247,9 +253,16 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     return rows_size;
   }
 
-  __attribute__((noinline)) size_t veloxCompute(const std::string& expression) {
+  __attribute__((noinline)) size_t veloxCompute(
+      const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
-    auto exprSet = compileExpression(expression, inputType_);
+    std::vector<core::TypedExprPtr> expressions;
+    for (auto& expr : exprs) {
+      auto untypedExpr = parse::parseExpr(expr, options_);
+      expressions.push_back(
+          core::Expressions::inferTypes(untypedExpr, inputType_, execCtx_.pool()));
+    }
+    auto exprSet = exec::ExprSet(expressions, &execCtx_);
     suspender.dismiss();
 
     size_t count = 0;
@@ -294,20 +307,13 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 std::unique_ptr<ArithmeticAndComparisonBenchmark> benchmark;
 
 // for profile
-// auto profile_expr = "d AND e";
-// auto profile_expr = "i8 * i8";
-auto profile_expr = "i8*i16*2 + i16/3 - 1";
+std::initializer_list<std::string> profile_expr = {"(i8+i16)*2", "(i8+i16)=2"};
 BENCHMARK(velox) {
   benchmark->veloxCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen) {
   auto cgo = getBaseOption();
-  benchmark->nextgenCompute(profile_expr, cgo);
-}
-BENCHMARK_DRAW_LINE();
-BENCHMARK(nextgen____base) {
-  auto cgo = getBaseOption();
-  benchmark->nextgenCompute(profile_expr, cgo);
+  benchmark->nextgenCompute(cgo, profile_expr);
 }
 BENCHMARK_RELATIVE(nextgenAVX2) {
   auto cgo = getBaseOption();
@@ -315,7 +321,7 @@ BENCHMARK_RELATIVE(nextgenAVX2) {
   cgo.co.enable_vectorize = true;
   cgo.co.enable_avx2 = true;
   cgo.co.enable_avx512 = false;
-  benchmark->nextgenCompute(profile_expr, cgo);
+  benchmark->nextgenCompute(cgo, profile_expr);
 }
 BENCHMARK_RELATIVE(nextgenAVX512) {
   auto cgo = getBaseOption();
@@ -323,7 +329,7 @@ BENCHMARK_RELATIVE(nextgenAVX512) {
   cgo.co.enable_vectorize = true;
   cgo.co.enable_avx2 = true;
   cgo.co.enable_avx512 = true;
-  benchmark->nextgenCompute(profile_expr, cgo);
+  benchmark->nextgenCompute(cgo, profile_expr);
 }
 BENCHMARK_DRAW_LINE();
 
@@ -331,11 +337,7 @@ BENCHMARK_DRAW_LINE();
   BENCHMARK(name##Velox_________Base) { benchmark->veloxCompute(expr); } \
   BENCHMARK_RELATIVE(name##NextGen) {                                    \
     auto cgo = getBaseOption();                                          \
-    benchmark->nextgenCompute(expr, cgo);                                \
-  }                                                                      \
-  BENCHMARK(name##NextGen_______Base) {                                  \
-    auto cgo = getBaseOption();                                          \
-    benchmark->nextgenCompute(expr, cgo);                                \
+    benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK_RELATIVE(name##NextgenAVX2) {                                \
     CodegenOptions cgo;                                                  \
@@ -343,7 +345,7 @@ BENCHMARK_DRAW_LINE();
     cgo.co.enable_vectorize = true;                                      \
     cgo.co.enable_avx2 = true;                                           \
     cgo.co.enable_avx512 = false;                                        \
-    benchmark->nextgenCompute(expr, cgo);                                \
+    benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK_RELATIVE(name##NextgenAVX512) {                              \
     CodegenOptions cgo;                                                  \
@@ -351,7 +353,7 @@ BENCHMARK_DRAW_LINE();
     cgo.co.enable_vectorize = true;                                      \
     cgo.co.enable_avx2 = true;                                           \
     cgo.co.enable_avx512 = true;                                         \
-    benchmark->nextgenCompute(expr, cgo);                                \
+    benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK_RELATIVE(name##NextgenAllOpt) {                              \
     CodegenOptions cgo;                                                  \
@@ -362,40 +364,50 @@ BENCHMARK_DRAW_LINE();
     cgo.co.enable_vectorize = true;                                      \
     cgo.co.enable_avx2 = true;                                           \
     cgo.co.enable_avx512 = true;                                         \
-    benchmark->nextgenCompute(expr, cgo);                                \
+    benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
-  BENCHMARK(name##Compile) { benchmark->nextgenCompile(expr); }          \
+  BENCHMARK(name##Compile) {                                             \
+    CodegenOptions cgo;                                                  \
+    cgo.check_bit_vector_clear_opt = true;                               \
+    cgo.set_null_bit_vector_opt = true;                                  \
+    cgo.branchless_logic = true;                                         \
+    cgo.enable_vectorize = true;                                         \
+    cgo.co.enable_vectorize = true;                                      \
+    cgo.co.enable_avx2 = true;                                           \
+    cgo.co.enable_avx512 = true;                                         \
+    benchmark->nextgenCompile(cgo, expr);                                \
+  }                                                                      \
   BENCHMARK_DRAW_LINE()
 
-BENCHMARK_GROUP(mulI8, "i8*i8");
-BENCHMARK_GROUP(mulI64, "i64*i64");
-BENCHMARK_GROUP(mulMix, "i8*i16*i32*i64");
+BENCHMARK_GROUP(mulI8, {"i8*i8"});
+BENCHMARK_GROUP(mulI64, {"i64*i64"});
+BENCHMARK_GROUP(mulMix, {"i8*i16*i32*i64"});
 
-BENCHMARK_GROUP(mulDouble, "a*b");
-BENCHMARK_GROUP(mulDoubleNested, "a*b*b");
+BENCHMARK_GROUP(mulDouble, {"a*b"});
+BENCHMARK_GROUP(mulDoubleNested, {"a*b*b"});
 
 BENCHMARK(PlusCheckedVeloxI64) {
-  benchmark->veloxCompute("checkedPlus(i64, i64)");
+  benchmark->veloxCompute({"checkedPlus(i64, i64)"});
 }
-BENCHMARK_GROUP(plusI64, "plus(i64, i64)");
+BENCHMARK_GROUP(plusI64, {"plus(i64, i64)"});
 
-BENCHMARK_GROUP(divInt, "i64/3");
-BENCHMARK_GROUP(divDouble, "a/3.0");
+BENCHMARK_GROUP(divInt, {"i64/3"});
+BENCHMARK_GROUP(divDouble, {"a/3.0"});
 
-BENCHMARK_GROUP(mulAndAdd, "a*2.0 + a*3.0 + a*4.0 + a*5.0");
-BENCHMARK_GROUP(ArithInt, "i8*i16*2 + i16/3 - 1");
-BENCHMARK_GROUP(ArithDouble, "a*b*2.0 + a/3.0 - 1.0");
+BENCHMARK_GROUP(mulAndAdd, {"a*2.0 + a*3.0 + a*4.0 + a*5.0"});
+BENCHMARK_GROUP(ArithInt, {"i8*i16*2 + i16/3 - 1"});
+BENCHMARK_GROUP(ArithDouble, {"a*b*2.0 + a/3.0 - 1.0"});
 
 // comparison
-BENCHMARK_GROUP(eq, "eq(a, b)");
-BENCHMARK_GROUP(eqBool, "eq(d, e)");
-BENCHMARK_GROUP(neq, "neq(a, b)");
-BENCHMARK_GROUP(gt, "gt(a, b)");
-BENCHMARK_GROUP(lt, "lt(a, b)");
-BENCHMARK_GROUP(and, "d AND e");
-BENCHMARK_GROUP(or, "d OR e");
+BENCHMARK_GROUP(eq, {"eq(a, b)"});
+BENCHMARK_GROUP(eqBool, {"eq(d, e)"});
+BENCHMARK_GROUP(neq, {"neq(a, b)"});
+BENCHMARK_GROUP(gt, {"gt(a, b)"});
+BENCHMARK_GROUP(lt, {"lt(a, b)"});
+BENCHMARK_GROUP(and, {"d AND e"});
+BENCHMARK_GROUP(or, {"d OR e"});
 BENCHMARK_GROUP(conjunctsNested,
-                "(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))");
+                {"(d OR e) AND ((d AND (neq(d, (d OR e)))) OR (eq(a, b)))"});
 }  // namespace
 
 int main(int argc, char* argv[]) {

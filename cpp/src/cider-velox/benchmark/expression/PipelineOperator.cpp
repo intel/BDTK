@@ -22,6 +22,7 @@
 #include <folly/Benchmark.h>
 #include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
+#include <initializer_list>
 #include <memory>
 
 #include "Allocator.h"
@@ -105,29 +106,45 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     registerFunction<MinusFunction, int32_t, int32_t, int32_t>({"minus"});
     registerFunction<MinusFunction, int64_t, int64_t, int64_t>({"minus"});
     registerFunction<MinusFunction, double, double, double>({"minus"});
+
+    // for comparision
+    registerBinaryScalar<EqFunction, bool>({"eq"});
+    registerBinaryScalar<NeqFunction, bool>({"neq"});
+    registerBinaryScalar<LtFunction, bool>({"lt"});
+    registerBinaryScalar<GtFunction, bool>({"gt"});
+    registerBinaryScalar<LteFunction, bool>({"lte"});
+    registerBinaryScalar<GteFunction, bool>({"gte"});
   }
 
-  void generateData(
-      std::initializer_list<std::pair<const std::string, std::shared_ptr<const Type>>>&&
-          pairs) {
+  void generateData(std::vector<std::string> names) {
     VectorFuzzer::Options opts;
     opts.vectorSize = FLAGS_batch_size;
     opts.nullRatio = FLAGS_ratio;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     // overhead of import to arrow array is very high
+    std::vector<std::shared_ptr<const Type>> types;
     std::vector<VectorPtr> children;
-    for (auto& [_, type] : pairs) {
-      children.emplace_back(fuzzer.fuzzFlat(type));  // i64
+    for (auto& name : names) {
+      auto& type = typeDict_[name];
+      types.emplace_back(typeDict_[name]);
+      children.emplace_back(fuzzer.fuzzFlat(type));
     }
 
-    inputType_ = ROW(std::move(pairs));
+    inputType_ = ROW(std::move(names), std::move(types));
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, FLAGS_batch_size, std::move(children));
   }
 
-  __attribute__((noinline)) size_t veloxCompute(const std::string& expression) {
-    auto exprSet = compileExpression(expression, inputType_);
+  __attribute__((noinline)) size_t veloxCompute(
+      const std::initializer_list<std::string>& exprs) {
+    std::vector<core::TypedExprPtr> expressions;
+    for (auto& expr : exprs) {
+      auto untypedExpr = parse::parseExpr(expr, options_);
+      expressions.push_back(
+          core::Expressions::inferTypes(untypedExpr, inputType_, execCtx_.pool()));
+    }
+    auto exprSet = exec::ExprSet(expressions, &execCtx_);
 
     size_t count = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
@@ -136,10 +153,11 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     return count;
   }
 
-  __attribute__((noinline)) size_t nextgenCompute(const std::string& expression,
-                                                  CodegenOptions cgo = CodegenOptions{}) {
+  __attribute__((noinline)) size_t nextgenCompute(
+      CodegenOptions cgo,
+      const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
-    auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
+    auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
     cgo.co.dump_ir = FLAGS_dump_ir;
     suspender.dismiss();
 
@@ -156,10 +174,10 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
   }
 
   __attribute__((noinline)) size_t nextgenComputeOpt(
-      const std::string& expression,
-      CodegenOptions cgo = CodegenOptions{}) {
+      CodegenOptions cgo,
+      const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
-    auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
+    auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
     cgo.co.dump_ir = FLAGS_dump_ir;
     suspender.dismiss();
 
@@ -239,30 +257,30 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
 
   TypePtr inputType_;
   RowVectorPtr rowVector_;
+  std::unordered_map<std::string, std::shared_ptr<const Type>> typeDict_ = {
+      {"i8", TINYINT()},
+      {"i16", SMALLINT()},
+      {"i32", INTEGER()},
+      {"i64", BIGINT()},
+      {"b", BOOLEAN()},
+      {"d", DOUBLE()},
+  };
 };
 
 std::unique_ptr<PipelineOperator> benchmark;
 
-// {
-//     // {"i8", TINYINT()},
-//     // {"i16", SMALLINT()},
-//     // {"i32", INTEGER()},
-//     // {"i64", BIGINT()},
-//     // {"b", BOOLEAN()},
-//     // {"d", DOUBLE()},
-// });
-auto profile_expr = "i16*i32";
+std::initializer_list<std::string> profile_expr = {"i16*i32 + 2", "i16*i32 > 2"};
 BENCHMARK(velox) {
-  benchmark->generateData({{"i16", SMALLINT()}, {"i32", INTEGER()}});
+  benchmark->generateData({"i16", "i32"});
   benchmark->veloxCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen) {
   auto cgo = getBaseOption();
-  benchmark->nextgenCompute(profile_expr, cgo);
+  benchmark->nextgenCompute(cgo, profile_expr);
 }
 BENCHMARK_RELATIVE(nextgenOpt) {
   auto cgo = getBaseOption();
-  benchmark->nextgenComputeOpt(profile_expr, cgo);
+  benchmark->nextgenComputeOpt(cgo, profile_expr);
 }
 }  // namespace
 
