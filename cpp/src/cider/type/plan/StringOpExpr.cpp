@@ -477,7 +477,7 @@ JITExprValue& LowerStringOper::codegen(CodegenContext& context) {
           *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
               "cast_ptr_to_int64",
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                        .params_vector = {ret_ptr.get()}});
+                                        .params_vector = {ptr.get()}});
         })
         ->build();
 
@@ -549,7 +549,7 @@ JITExprValue& UpperStringOper::codegen(CodegenContext& context) {
           *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
               "cast_ptr_to_int64",
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
-                                        .params_vector = {ret_ptr.get()}});
+                                        .params_vector = {ptr.get()}});
         })
         ->build();
 
