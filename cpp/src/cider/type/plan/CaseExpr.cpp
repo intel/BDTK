@@ -264,6 +264,7 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
   } else if (case_ti.is_string()) {
     JITValuePointer value =
         func.createVariable(JITTypeTag::INT64, "case_when_value_init");
+    *value = func.createLiteral(JITTypeTag::INT64, 0);
     JITValuePointer length =
         func.createVariable(JITTypeTag::INT32, "case_when_length_init");
     *length = func.createLiteral(JITTypeTag::INT32, 0);
@@ -287,11 +288,7 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
               ->ifTrue([&]() {
                 cider::exec::nextgen::utils::VarSizeJITExprValue then_jit_expr_value(
                     expr_pair.second->codegen(context));
-                *value = *func.emitRuntimeFunctionCall(
-                    "cast_ptr_to_int64",
-                    JITFunctionEmitDescriptor{
-                        .ret_type = JITTypeTag::INT64,
-                        .params_vector = {then_jit_expr_value.getValue().get()}});
+                *value = *then_jit_expr_value.getValue();
                 *length = *then_jit_expr_value.getLength();
                 *null = *then_jit_expr_value.getNull();
                 *is_case = func.createLiteral(JITTypeTag::BOOL, true);
@@ -303,23 +300,12 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::VarSizeJITExprValue else_jit_expr_value(
               else_expr->codegen(context));
-          *value = *func.emitRuntimeFunctionCall(
-              "cast_ptr_to_int64",
-              JITFunctionEmitDescriptor{
-                  .ret_type = JITTypeTag::INT64,
-                  .params_vector = {else_jit_expr_value.getValue().get()}});
+          *value = *else_jit_expr_value.getValue();
           *length = *else_jit_expr_value.getLength();
           *null = *else_jit_expr_value.getNull();
         })
         ->build();
-
-    return set_expr_value(null,
-                          length,
-                          func.emitRuntimeFunctionCall(
-                              "cast_int64_to_ptr",
-                              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                                        .ret_sub_type = JITTypeTag::INT8,
-                                                        .params_vector = {value.get()}}));
+    return set_expr_value(null, length, value);
   } else {
     UNREACHABLE();
   }
