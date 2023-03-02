@@ -1067,16 +1067,16 @@ extern "C" ALWAYS_INLINE const int32_t
 get_str_length_from_dictionary_or_buffer(int8_t* dictionary,
                                          uint64_t index,
                                          int32_t* offset_buffer) {
-  // if (dictionary) {
-  //   const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
-  //       reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
-  //   int32_t index_in_dict = offset_buffer[index];
-  //   int len =
-  //       actual_offset_buffer[index_in_dict + 1] - actual_offset_buffer[index_in_dict];
-  //   return len;
-  // } else {
+  if (dictionary) {
+    const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
+        reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
+    int32_t index_in_dict = offset_buffer[index];
+    int len =
+        actual_offset_buffer[index_in_dict + 1] - actual_offset_buffer[index_in_dict];
+    return len;
+  } else {
     return offset_buffer[index + 1] - offset_buffer[index];
-  // }
+  }
 }
 
 extern "C" ALWAYS_INLINE const int8_t* get_str_ptr_from_dictionary_or_buffer(
@@ -1084,16 +1084,16 @@ extern "C" ALWAYS_INLINE const int8_t* get_str_ptr_from_dictionary_or_buffer(
     uint64_t index,
     int32_t* offset_buffer,
     int8_t* data_buffer) {
-  // if (dictionary) {
-  //   int32_t index_in_dict = offset_buffer[index];
-  //   const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
-  //       reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
-  //   const int8_t* actual_data_buffer = reinterpret_cast<const int8_t*>(
-  //       reinterpret_cast<ArrowArray*>(dictionary)->buffers[2]);
-  //   return actual_data_buffer + actual_offset_buffer[index_in_dict];
-  // } else {
+  if (dictionary) {
+    int32_t index_in_dict = offset_buffer[index];
+    const int32_t* actual_offset_buffer = reinterpret_cast<const int32_t*>(
+        reinterpret_cast<ArrowArray*>(dictionary)->buffers[1]);
+    const int8_t* actual_data_buffer = reinterpret_cast<const int8_t*>(
+        reinterpret_cast<ArrowArray*>(dictionary)->buffers[2]);
+    return actual_data_buffer + actual_offset_buffer[index_in_dict];
+  } else {
     return data_buffer + offset_buffer[index];
-  // }
+  }
 }
 
 extern "C" ALWAYS_INLINE bool check_bit_vector_set(uint8_t* bit_vector, uint64_t index) {
