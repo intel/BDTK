@@ -317,7 +317,7 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
   auto len_val = FixSizeJITExprValue(len->codegen(context));
 
   auto if_builder = func.createIfBuilder();
-
+  std::string fn_name = "cider_substring_extra";
   if (isOutput()) {
     auto ret_ptr_and_len = func.createVariable(JITTypeTag::INT64, "ptr_and_len", 0);
     if_builder
@@ -351,7 +351,7 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                         .ret_sub_type = JITTypeTag::INT8,
                                         .params_vector = {func.getArgument(0).get()}});
-          std::string fn_name = "cider_substring_extra";
+
           auto emit_desc =
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
                                         .params_vector = {string_heap_ptr.get(),
@@ -363,9 +363,7 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
         ->build();
     return set_expr_value(arg_val.getNull(), ret_ptr_and_len);
   } else {
-    auto ret_ptr = func.emitRuntimeFunctionCall(
-        "create_a_pointer",
-        JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER, .params_vector = {}});
+    auto ret_ptr_int64 = func.createVariable(JITTypeTag::INT64);
     auto ret_len = func.createVariable(JITTypeTag::INT32);
     if_builder
         ->condition([&]() {
@@ -398,17 +396,26 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                         .ret_sub_type = JITTypeTag::INT8,
                                         .params_vector = {func.getArgument(0).get()}});
-          std::string fn_name = "cider_substring_extra";
           *ret_len = *len_param;
 
-          *ret_ptr = func.emitRuntimeFunctionCall(
+          auto ret_ptr = func.emitRuntimeFunctionCall(
               fn_name + "_ptr",
               JITFunctionEmitDescriptor{
                   .ret_type = JITTypeTag::POINTER,
                   .params_vector = {arg_val.getValue().get(), pos_param.get()}});
+          *ret_ptr_int64 = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {ret_ptr.get()}});
         })
         ->build();
-    return set_expr_value(arg_val.getNull(), ret_len, ret_ptr);
+    return set_expr_value(
+        arg_val.getNull(),
+        ret_len,
+        func.emitRuntimeFunctionCall(
+            "cast_int64_to_ptr",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {ret_ptr_int64.get()}}));
   }
 }
 
