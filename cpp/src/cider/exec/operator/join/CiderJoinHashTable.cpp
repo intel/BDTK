@@ -32,6 +32,10 @@ JoinHashTable::JoinHashTable(cider_hashtable::HashTableType hashTableType) {
     case cider_hashtable::HashTableType::CHAINED:
       chainedHashTableInstance_ =
           std::make_shared<cider_hashtable::ChainedHashTable<CHAINED_TEMPLATE>>();
+    case cider_hashtable::HashTableType::FIXED_INT8:
+      uInt8HashTableInstance_ = std::make_shared<JoinUInt8HashTable>();
+    case cider_hashtable::HashTableType::FIXED_INT16:
+      uInt16HashTableInstance_ = std::make_shared<JoinUInt16HashTable>();
   }
 }
 
@@ -40,18 +44,30 @@ void JoinHashTable::merge_other_hashtables(
   switch (hashTableType_) {
     case cider_hashtable::HashTableType::LINEAR_PROBING: {
       std::vector<std::shared_ptr<JoinLPHashTable>> otherHashTables;
-      for (auto& otherJoinTable : otherJoinTables) {
-        otherHashTables.emplace_back(otherJoinTable->getLPHashTable());
+      for (auto& other : otherJoinTables) {
+        otherHashTables.emplace_back(other->getLPHashTable());
       }
       LPHashTableInstance_->merge_other_hashtables(otherHashTables);
       break;
     }
     case cider_hashtable::HashTableType::CHAINED: {
       std::vector<std::shared_ptr<JoinChainedHashTable>> otherHashTables;
-      for (auto& otherJoinTable : otherJoinTables) {
-        otherHashTables.emplace_back(otherJoinTable->getChainedHashTable());
+      for (auto& other : otherJoinTables) {
+        otherHashTables.emplace_back(other->getChainedHashTable());
       }
       chainedHashTableInstance_->merge_other_hashtables(otherHashTables);
+      break;
+    }
+    case cider_hashtable::HashTableType::FIXED_INT8: {
+      for (auto& other : otherJoinTables) {
+        uInt8HashTableInstance_->merge_other_hashtables(*(other->getUInt8HashTable()));
+      }
+      break;
+    }
+    case cider_hashtable::HashTableType::FIXED_INT16: {
+      for (auto& other : otherJoinTables) {
+        uInt16HashTableInstance_->merge_other_hashtables(*(other->getUInt16HashTable()));
+      }
       break;
     }
     default:
@@ -67,6 +83,12 @@ bool JoinHashTable::emplace(int key, CiderJoinBaseValue value) {
       return LPHashTableInstance_->emplace(*key_row_tmp, value);
     case cider_hashtable::HashTableType::CHAINED:
       return chainedHashTableInstance_->emplace(*key_row_tmp, value);
+    case cider_hashtable::HashTableType::FIXED_INT8:
+      uInt8HashTableInstance_->insert(key, value);
+      return true;
+    case cider_hashtable::HashTableType::FIXED_INT16:
+      uInt16HashTableInstance_->insert(key, value);
+      return true;
     default:
       return false;
   }
@@ -80,6 +102,10 @@ std::vector<CiderJoinBaseValue> JoinHashTable::findAll(const int key) {
       return LPHashTableInstance_->findAll(key_row_tmp);
     case cider_hashtable::HashTableType::CHAINED:
       return chainedHashTableInstance_->findAll(key_row_tmp);
+    case cider_hashtable::HashTableType::FIXED_INT8:
+      return uInt8HashTableInstance_->findAll(key);
+    case cider_hashtable::HashTableType::FIXED_INT16:
+      return uInt16HashTableInstance_->findAll(key);
     default:
       return std::vector<CiderJoinBaseValue>();
   }
@@ -91,6 +117,10 @@ size_t JoinHashTable::size() {
       return LPHashTableInstance_->size();
     case cider_hashtable::HashTableType::CHAINED:
       return chainedHashTableInstance_->size();
+    case cider_hashtable::HashTableType::FIXED_INT8:
+      return uInt8HashTableInstance_->size();
+    case cider_hashtable::HashTableType::FIXED_INT16:
+      return uInt16HashTableInstance_->size();
     default:
       return LPHashTableInstance_->size();
   }
