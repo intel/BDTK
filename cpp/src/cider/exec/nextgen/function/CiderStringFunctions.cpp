@@ -139,7 +139,7 @@ const uint8_t ascii_char_lower_map[] = {
     240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255};
 
 ALWAYS_INLINE void do_lower(char* out, const char* in, int str_len) {
-  #pragma clang loop vectorize(enable) 
+#pragma clang loop vectorize(enable)
   for (int i = 0; i < str_len; ++i) {
     if (in[i] >= 'A' && in[i] <= 'Z') {
       out[i] = in[i] + 0x20;
@@ -174,7 +174,7 @@ extern "C" ALWAYS_INLINE int32_t cider_ascii_lower_len(int str_len) {
 }
 
 ALWAYS_INLINE void do_upper(char* out, const char* in, int str_len) {
-  #pragma clang loop vectorize(enable) 
+#pragma clang loop vectorize(enable)
   for (int i = 0; i < str_len; ++i) {
     if (in[i] >= 'a' && in[i] <= 'z') {
       out[i] = in[i] - 0x20;
