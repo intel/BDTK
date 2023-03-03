@@ -60,9 +60,14 @@ class ColumnWriter {
         break;
       case kVARCHAR:
       case kCHAR:
-      case kTEXT:
-        writeVariableSizeTypeCol();
+      case kTEXT: {
+        if (std::dynamic_pointer_cast<Analyzer::StringOper>(expr_)) {
+          writeVariableSizeTypeColForStrExpr();
+        } else {
+          writeVariableSizeTypeCol();
+        }
         break;
+      }
       case kARRAY:
         writeVariableSizeArrayCol();
         break;
@@ -96,39 +101,76 @@ class ColumnWriter {
         raw_length_buffer->castPointerSubType(JITTypeTag::INT32);
     auto ifBuilder = context_.getJITFunction()->createIfBuilder();
     ifBuilder->condition([&values]() { return values.getNull(); })
-        ->ifTrue([&]() {
+        ->ifTrue([&]() {  // for null values.
           actual_raw_length_buffer[index_ + 1] = actual_raw_length_buffer[index_];
+          auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
+              "get_buffer_without_realloc",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::POINTER,
+                  .ret_sub_type = JITTypeTag::INT8,
+                  .params_vector = {arrow_array_.get(),
+                                    context_.getJITFunction()
+                                        ->createLiteral(JITTypeTag::INT32, 2)
+                                        .get()}});
+          // Save JITValues of output buffers to corresponding exprs.
+          buffers_.clear();
+          buffers_.append(
+              setNullBuffer(values.getNull()), raw_length_buffer, raw_data_buffer);
         })
         ->ifFalse([&]() {
           actual_raw_length_buffer[index_ + 1] =
               actual_raw_length_buffer[index_] + *values.getLength();
+
+          // get latest pointer to data buffer, will allocate data buffer on first call,
+          // and will reallocate buffer if more capacity is needed
+          auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
+              "get_buffer_with_realloc_on_demand",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::POINTER,
+                  .ret_sub_type = JITTypeTag::INT8,
+                  .params_vector = {arrow_array_.get(),
+                                    actual_raw_length_buffer[index_].get(),
+                                    context_.getJITFunction()
+                                        ->createLiteral(JITTypeTag::INT32, 2)
+                                        .get()}});
+          auto actual_raw_data_buffer =
+              raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
+          auto cur_pointer = actual_raw_data_buffer + actual_raw_length_buffer[index_];
+
+          context_.getJITFunction()->emitRuntimeFunctionCall(
+              "do_memcpy",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
+                                        .params_vector = {cur_pointer.get(),
+                                                          values.getValue().get(),
+                                                          values.getLength().get()}});
+          // Save JITValues of output buffers to corresponding exprs.
+          buffers_.clear();
+          buffers_.append(
+              setNullBuffer(values.getNull()), raw_length_buffer, raw_data_buffer);
         })
         ->build();
+  }
 
-    // get latest pointer to data buffer, will allocate data buffer on first call,
-    // and will reallocate buffer if more capacity is needed
-    auto raw_data_buffer = context_.getJITFunction()->emitRuntimeFunctionCall(
-        "get_buffer_with_realloc_on_demand",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::POINTER,
-            .ret_sub_type = JITTypeTag::INT8,
-            .params_vector = {
-                arrow_array_.get(),
-                actual_raw_length_buffer[index_].get(),
-                context_.getJITFunction()->createLiteral(JITTypeTag::INT32, 2).get()}});
-    auto actual_raw_data_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::INT8);
-    auto cur_pointer = actual_raw_data_buffer + actual_raw_length_buffer[index_];
+  void writeVariableSizeTypeColForStrExpr() {
+    // Get values need to write
+    utils::FixSizeJITExprValue values(expr_->get_expr_value());
 
-    context_.getJITFunction()->emitRuntimeFunctionCall(
-        "do_memcpy",
-        JITFunctionEmitDescriptor{
-            .ret_type = JITTypeTag::VOID,
-            .params_vector = {
-                cur_pointer.get(), values.getValue().get(), values.getLength().get()}});
+    // we will borrow offset buffer to store intermiedate result(string ptr and
+    // length, 64 bits), so allocate (arrow_array_len_ * 8) bytes, actual offset size
+    // should be (arrow_array_len_ + 1) * 4 bytes
+    auto raw_length_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+      auto bytes = (arrow_array_len_)*context_.getJITFunction()->createLiteral(
+          JITTypeTag::INT64, 8);
+      auto length_buffer = allocateRawDataBuffer(1, bytes);
+      return length_buffer;
+    });
 
-    // Save JITValues of output buffers to corresponding exprs.
+    auto actual_raw_length_buffer =
+        raw_length_buffer->castPointerSubType(JITTypeTag::INT64);
+    actual_raw_length_buffer[index_] = *values.getValue();
+
     buffers_.clear();
-    buffers_.append(setNullBuffer(values.getNull()), raw_length_buffer, raw_data_buffer);
+    buffers_.append(setNullBuffer(values.getNull()), actual_raw_length_buffer);
   }
 
   // allocate and copy 4 buffers:
@@ -418,6 +460,39 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
 
       auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
       codegen_utils::setArrowArrayLength(arrow_array, output_index);
+    }
+    // for string expressions, we dump the final buffer here.
+    for (auto& expr : output_exprs) {
+      if (auto strExpr = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
+        if (!strExpr->isOutput()) {
+          continue;
+        }
+        size_t local_offset = expr->getLocalIndex();
+        auto&& [arrow_array, _] = context.getArrowArrayValues(local_offset);
+        auto& func = arrow_array->getParentJITFunction();
+        auto length = func.emitRuntimeFunctionCall(
+            "calculate_size",
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::INT32,
+                .params_vector = {arrow_array.get(), output_index.get()}});
+
+        auto buffer = func.emitRuntimeFunctionCall(
+            "get_buffer_with_allocate",
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::POINTER,
+                .params_vector = {arrow_array.get(),
+                                  length.get(),
+                                  func.createLiteral(JITTypeTag::INT32, 2).get()}});
+
+        func.emitRuntimeFunctionCall(
+            "copy_string_buffer",
+            JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                      .params_vector = {
+                                          arrow_array.get(),
+                                          buffer.get(),
+                                          output_index.get(),
+                                      }});
+      }
     }
   });
 }

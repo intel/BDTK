@@ -48,13 +48,14 @@ class StringHeap {
  public:
   StringHeap(const CiderAllocatorPtr& parent_alloctor =
                  std::make_shared<CiderDefaultAllocator>())
-      : allocator_(parent_alloctor), total_num_(0) {}
+      : allocator_(parent_alloctor), total_num_(0), total_size_(0) {}
   ~StringHeap() { destroy(); }
 
   // Destroy all allocated buffer.
   void destroy() {
     allocator_.destory();
     total_num_ = 0;
+    total_size_ = 0;
   }
 
   // Add a string to the string heap, returns a pointer to the string
@@ -66,6 +67,7 @@ class StringHeap {
   // Allocates space for an empty string of size "len" on the heap
   string_t emptyString(size_t len) {
     total_num_++;
+    total_size_ += len;
     auto pointer = (const char*)allocator_.allocate(len);
     return string_t(pointer, len);
   }
@@ -83,6 +85,7 @@ class StringHeap {
 
   CiderArenaAllocator allocator_;
   size_t total_num_;
+  size_t total_size_;
 };
 
 #endif

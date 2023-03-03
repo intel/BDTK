@@ -44,18 +44,24 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int 
 }
 
 // pos parameter starts from 1 rather than 0
-extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
-                                                        const char* str,
-                                                        int pos,
-                                                        int len) {
+extern "C" ALWAYS_INLINE int64_t cider_substring_extra(char* string_heap_ptr,
+                                                       const char* str,
+                                                       int pos,
+                                                       int len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(str + pos - 1, len);
   return pack_string_t(s);
 }
+extern "C" ALWAYS_INLINE void cider_substring_extra_ptr(char* buffer_ptr,
+                                                        const char* str,
+                                                        int pos,
+                                                        int len) {
+  memcpy(buffer_ptr, str + pos - 1, len);
+}
 
 // pos starts with 1. A negative starting position is interpreted as being relative
 // to the end of the string
-extern "C" RUNTIME_EXPORT int32_t format_substring_pos(int pos, int str_len) {
+extern "C" ALWAYS_INLINE int32_t format_substring_pos(int pos, int str_len) {
   int32_t ret = 1;
   if (pos > 0) {
     if (pos > str_len) {
@@ -72,9 +78,9 @@ extern "C" RUNTIME_EXPORT int32_t format_substring_pos(int pos, int str_len) {
 }
 
 // pos should be [1, str_len+1]
-extern "C" RUNTIME_EXPORT int32_t format_substring_len(int pos,
-                                                       int str_len,
-                                                       int target_len) {
+extern "C" ALWAYS_INLINE int32_t format_substring_len(int pos,
+                                                      int str_len,
+                                                      int target_len) {
   // already out of range, return empty string.
   if (pos == str_len + 1) {
     return 0;
@@ -146,6 +152,18 @@ extern "C" ALWAYS_INLINE int64_t cider_ascii_lower(int8_t* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" ALWAYS_INLINE void cider_ascii_lower_ptr(char* buffer_ptr,
+                                                    const char* str,
+                                                    int str_len) {
+  for (int i = 0; i < str_len; ++i) {
+    buffer_ptr[i] = ascii_char_lower_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  }
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_ascii_lower_len(int str_len) {
+  return str_len;
+}
+
 extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
                                                    const char* str,
                                                    int str_len) {
@@ -158,15 +176,27 @@ extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" ALWAYS_INLINE void cider_ascii_upper_ptr(char* buffer_ptr,
+                                                    const char* str,
+                                                    int str_len) {
+  for (int i = 0; i < str_len; ++i) {
+    buffer_ptr[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  }
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_ascii_upper_len(int str_len) {
+  return str_len;
+}
+
 extern "C" void test_to_string(int value) {
   std::printf("test_to_string: %s\n", std::to_string(value).c_str());
 }
 
-extern "C" ALWAYS_INLINE int64_t cider_concat(char* string_heap_ptr,
-                                              const char* lhs,
-                                              int lhs_len,
-                                              const char* rhs,
-                                              int rhs_len) {
+extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
+                                               const char* lhs,
+                                               int lhs_len,
+                                               const char* rhs,
+                                               int rhs_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(lhs_len + rhs_len);
 
@@ -177,6 +207,25 @@ extern "C" ALWAYS_INLINE int64_t cider_concat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
+extern "C" ALWAYS_INLINE int32_t cider_concat_len(int lhs_len, int rhs_len) {
+  return lhs_len + rhs_len;
+}
+
+extern "C" ALWAYS_INLINE void cider_concat_ptr(char* buffer_ptr,
+                                               const char* lhs,
+                                               int lhs_len,
+                                               const char* rhs,
+                                               int rhs_len) {
+  memcpy(buffer_ptr, lhs, lhs_len);
+  memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
+}
+
+extern "C" RUNTIME_EXPORT int8_t* allocate_from_string_heap(char* string_heap_ptr,
+                                                            int len) {
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->emptyString(len);
+  return (int8_t*)s.getDataWriteable();
+}
 // to be deprecated.
 // rconcat is only used for backward compatibility with template codegen, which only
 // supports cases where the first arg is a variable.
@@ -199,7 +248,69 @@ extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE int8_t* get_buffer_with_realloc_on_demand(
+extern "C" ALWAYS_INLINE int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
+  return lhs_len + rhs_len;
+}
+
+extern "C" ALWAYS_INLINE void cider_rconcat_ptr(char* buffer_ptr,
+                                                const char* lhs,
+                                                int lhs_len,
+                                                const char* rhs,
+                                                int rhs_len) {
+  memcpy(buffer_ptr, rhs, rhs_len);
+  memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
+}
+
+extern "C" RUNTIME_EXPORT int8_t* get_buffer_without_realloc(const int8_t* input_desc_ptr,
+                                                             const int32_t index) {
+  const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
+
+  return holder->getBufferAs<int8_t>(index);
+}
+
+extern "C" ALWAYS_INLINE void copy_string_buffer(const int8_t* input_desc_ptr,
+                                                 int8_t* buffer,
+                                                 int64_t total_row) {
+  const int64_t* offset_buffer = reinterpret_cast<const int64_t*>(
+      reinterpret_cast<const ArrowArray*>(input_desc_ptr)->buffers[1]);
+  int32_t* actual_writable_offset_buffer =
+      reinterpret_cast<int32_t*>(const_cast<int64_t*>(offset_buffer));
+  int32_t cur_offset = 0;
+  for (int i = 0; i < total_row; i++) {
+    int32_t cur_len = (offset_buffer[i] >> 48);
+    memcpy(buffer + cur_offset,
+           reinterpret_cast<int8_t*>(offset_buffer[i] & 0xffffffffffff),
+           cur_len);
+    cur_offset += cur_len;
+    actual_writable_offset_buffer[i + 1] = cur_offset;
+  }
+  actual_writable_offset_buffer[0] = 0;
+}
+
+extern "C" ALWAYS_INLINE int32_t calculate_size(int8_t* arrow_pointer,
+                                                int64_t total_row) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  const int64_t* buffer = reinterpret_cast<const int64_t*>(array->buffers[1]);
+  int32_t ret = 0;
+  for (int i = 0; i < total_row; i++) {
+    ret += (buffer[i] >> 48);
+  }
+  return ret;
+}
+
+extern "C" ALWAYS_INLINE int8_t* get_buffer_with_allocate(const int8_t* input_desc_ptr,
+                                                          const int32_t current_bytes,
+                                                          const int32_t index) {
+  const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
+  CiderArrowArrayBufferHolder* holder =
+      reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
+  holder->allocBuffer(index, current_bytes);
+  return holder->getBufferAs<int8_t>(index);
+}
+
+extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
     const int8_t* input_desc_ptr,
     const int32_t current_bytes,
     const int32_t index) {
@@ -210,12 +321,12 @@ extern "C" ALWAYS_INLINE int8_t* get_buffer_with_realloc_on_demand(
   // assumes arrow_array is an array for var-size binary (with 3 buffers)
   size_t capacity = holder->getBufferSizeAt(index);
   if (capacity == 0) {
-    // initialize buffer with a capacity of 4096 bytes
-    holder->allocBuffer(index, 4096);
+    // initialize buffer with a capacity of 16384 bytes
+    holder->allocBuffer(index, 16384);
   } else if (current_bytes >= 0.9 * capacity) {
     // double capacity if current bytes take up 90% of capacity
     // assumes we would have enough space for next input after at most one resize op
-    holder->allocBuffer(index, capacity * 2);
+    holder->allocBuffer(index, capacity * 1.5);
   }
 
   return holder->getBufferAs<int8_t>(index);
@@ -255,6 +366,58 @@ extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
 
   string_t s = ptr->addString(str_ptr + start_idx, len);
   return pack_string_t(s);
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_trim_start(const char* str_ptr,
+                                                  int str_len,
+                                                  const int8_t* trim_char_map,
+                                                  bool ltrim) {
+  int start_idx = 0;
+  if (ltrim) {
+    while (start_idx < str_len &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[start_idx]]) {
+      start_idx++;
+    }
+  }
+  return start_idx;
+}
+
+extern "C" ALWAYS_INLINE int32_t cider_trim_len(const char* str_ptr,
+                                                int str_len,
+                                                const int8_t* trim_char_map,
+                                                bool ltrim,
+                                                bool rtrim) {
+  int start_idx = 0;
+  if (ltrim) {
+    while (start_idx < str_len &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[start_idx]]) {
+      start_idx++;
+    }
+  }
+
+  int end_idx = str_len - 1;
+  if (rtrim) {
+    while (end_idx >= start_idx &&
+           trim_char_map[reinterpret_cast<const uint8_t*>(str_ptr)[end_idx]]) {
+      end_idx--;
+    }
+  }
+
+  int len = 0;
+  if (start_idx > end_idx) {
+    // all chars are trimmed away, return an empty string
+    len = 0;
+  } else {
+    len = end_idx - start_idx + 1;
+  }
+  return len;
+}
+
+extern "C" ALWAYS_INLINE void cider_trim_ptr(char* buffer_ptr,
+                                             const char* str_ptr,
+                                             int start_idx,
+                                             int len) {
+  memcpy(buffer_ptr, str_ptr + start_idx, len);
 }
 
 #define DEF_CONVERT_INTEGER_TO_STRING(value_type, value_name)                         \

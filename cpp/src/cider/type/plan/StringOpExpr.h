@@ -88,6 +88,8 @@ class StringOper : public Expr {
     chained_string_op_exprs_ = other_string_oper->chained_string_op_exprs_;
   }
 
+  virtual void setIsOutput() { is_output_ = true; }
+  bool isOutput() { return is_output_ && type_info.is_string(); }
   SqlStringOpKind get_kind() const { return kind_; }
 
   ExprPtrRefVector get_children_reference() override {
@@ -209,6 +211,7 @@ class StringOper : public Expr {
     }
     return ret;
   }
+  bool is_output_ = false;
 
  private:
   static SQLTypeInfo get_return_type(
@@ -367,6 +370,9 @@ class CharLengthStringOper : public StringOper {
       : StringOper(string_oper) {}
 
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
+  // char length expression returns a int value rather than a string value, so don't need
+  // to mark this as a output expression.
+  void setIsOutput() override { is_output_ = false; }
 
   size_t getMinArgs() const override { return 1UL; }
 

@@ -33,6 +33,12 @@ void ProjectTranslator::consume(context::CodegenContext& context) {
 void ProjectTranslator::codegen(context::CodegenContext& context) {
   auto&& [output_type, exprs] = node_->getOutputExprs();
   for (auto& expr : exprs) {
+    // set a flag for output string expr. Nested expression like `substring(concat(col_a,
+    // col_b), 1, 5)` will have different process logical for output expression and
+    // internal expression.
+    if (auto strOper = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
+      strOper->setIsOutput();
+    }
     expr->codegen(context);
   }
   successor_->consume(context);
