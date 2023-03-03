@@ -95,12 +95,11 @@ TEST_F(AggWithRandomDataTest, SUM_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_linenumber), sum(l_discount) from tmp group by "
       "l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -115,12 +114,11 @@ TEST_F(AggWithRandomDataTest, SUM_COUNT_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, count(l_linenumber), sum(l_discount) from tmp group "
       "by l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -136,12 +134,11 @@ TEST_F(AggWithRandomDataTest, MIN_MAX_Test) {
                        false)
           .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, min(l_linenumber), max(l_linenumber), "
       "sum(l_discount) from tmp group by l_orderkey ";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -231,12 +228,11 @@ TEST_F(AggWithRandomDataTest, Filter_LT_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_extendedprice), sum(l_discount) from tmp where "
       "l_quantity < 5.0 group by l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -252,12 +248,11 @@ TEST_F(AggWithRandomDataTest, Filter_GT_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_extendedprice), sum(l_discount) from tmp where "
       "l_linenumber > 1000 group by l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -272,12 +267,11 @@ TEST_F(AggWithRandomDataTest, Filter_Proj_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_extendedprice * l_discount) from tmp group by "
       "l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -330,12 +324,11 @@ TEST_F(IncrementalDataTest, SUM_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_linenumber), sum(l_discount) from tmp group by "
       "l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -350,12 +343,11 @@ TEST_F(IncrementalDataTest, SUM_COUNT_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, count(l_linenumber), sum(l_discount) from tmp group "
       "by l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -371,12 +363,11 @@ TEST_F(IncrementalDataTest, MIN_MAX_Test) {
                        false)
           .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, min(l_linenumber), max(l_linenumber), "
       "sum(l_discount) from tmp group by l_orderkey ";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -392,12 +383,11 @@ TEST_F(IncrementalDataTest, Filter_LT_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_extendedprice), sum(l_discount) from tmp where "
       "l_quantity < 5.0 group by l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -413,12 +403,11 @@ TEST_F(IncrementalDataTest, Filter_GT_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_extendedprice), sum(l_discount) from tmp where "
       "l_linenumber > 1000 group by l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 
@@ -433,12 +422,11 @@ TEST_F(IncrementalDataTest, Filter_Proj_Test) {
                                     false)
                        .planNode();
 
-  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select l_orderkey, sum(l_extendedprice * l_discount) from tmp group by "
       "l_orderkey";
   assertQuery(veloxPlan, duckDbSql);
+  auto ciderPlanNode = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(ciderPlanNode, duckDbSql);
 }
 

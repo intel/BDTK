@@ -144,6 +144,10 @@ TEST_F(CiderExprNextgenTest, logicalOpTest) {
       "CREATE TABLE test(col_bool_a BOOLEAN, col_bool_b BOOLEAN, col_int_c INTEGER);",
       "select col_int_c from test where col_bool_a or col_bool_b",
       4);
+  executeTest(
+      "CREATE TABLE test(col_bool_a BOOLEAN, col_bool_b BOOLEAN, col_int_c INTEGER);",
+      "select col_bool_a and col_bool_b from test",
+      8);
 }
 
 TEST_F(CiderExprNextgenTest, isNullAndDistinctFromTest) {
