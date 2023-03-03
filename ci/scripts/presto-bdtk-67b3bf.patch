@@ -42,7 +42,7 @@ index be98b34..e5580ae 100644
  
  build:					#: Build the software based in BUILD_DIR and BUILD_TYPE variables
 diff --git a/presto-native-execution/presto_cpp/main/CMakeLists.txt b/presto-native-execution/presto_cpp/main/CMakeLists.txt
-index 1ade5b2..e39f06a 100644
+index 1ade5b2..04fe82a 100644
 --- a/presto-native-execution/presto_cpp/main/CMakeLists.txt
 +++ b/presto-native-execution/presto_cpp/main/CMakeLists.txt
 @@ -16,6 +16,8 @@ add_subdirectory(common)
@@ -54,7 +54,7 @@ index 1ade5b2..e39f06a 100644
  add_library(
    presto_server_lib
    Announcer.cpp
-@@ -29,6 +31,32 @@ add_library(
+@@ -29,6 +31,36 @@ add_library(
    TaskManager.cpp
    TaskResource.cpp)
  
@@ -77,6 +77,10 @@ index 1ade5b2..e39f06a 100644
 +  cider_plan_parser
 +  cider_type_plan
 +  cider_func_lkup
++  substrait_common
++  substrait_function
++  substrait_type
++  yaml-cpp
 +  cider_util
 +  QueryEngine
 +  LLVM
@@ -87,7 +91,7 @@ index 1ade5b2..e39f06a 100644
  add_dependencies(presto_server_lib presto_protocol presto_types
                   presto_thrift-cpp2 presto_thrift_extra)
  
-@@ -61,7 +89,13 @@ target_link_libraries(
+@@ -61,7 +93,13 @@ target_link_libraries(
    ${ANTLR4_RUNTIME}
    ${GLOG}
    ${GFLAGS_LIBRARIES}
@@ -102,7 +106,7 @@ index 1ade5b2..e39f06a 100644
  
  add_executable(presto_server PrestoMain.cpp)
  
-@@ -79,6 +113,6 @@ if(PRESTO_ENABLE_PARQUET)
+@@ -79,6 +117,6 @@ if(PRESTO_ENABLE_PARQUET)
    target_link_libraries(presto_server velox_dwio_parquet_reader)
  endif()
  
