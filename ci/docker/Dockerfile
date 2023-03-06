@@ -104,7 +104,7 @@ RUN mkdir -p ~/.gradle/ && \
 
 # build isthmus
 # 63cfcb33fa7818e91303d79317c12b8489a9014f is at main branch on 20230129
-# @link: https://github.com/substrait-io/substrait-java/commit/5045aa3840156198d4251d4f3eb79440fc00e0e7
+# @link: https://github.com/substrait-io/substrait-java/commit/63cfcb33fa7818e91303d79317c12b8489a9014f
 RUN git clone https://github.com/substrait-io/substrait-java /substrait-java && \
     pushd /substrait-java && \
     git checkout 63cfcb33fa7818e91303d79317c12b8489a9014f && \
