@@ -96,8 +96,9 @@ JITValuePointer getRescaledValue(CodegenContext& context,
   JITValuePointer scaled_val =
       func.createLiteral(operand_val->getValueTypeTag(), exp_to_scale(scaled_factor));
   // TODO(kaidi): cast overflow check
-  JITValuePointer rescaled_val = func.createVariable(
-      operand_val->getValueTypeTag(), "rescaled_val", scaled_val * operand_val);
+  JITValuePointer rescaled_val =
+      func.createVariable(operand_val->getValueTypeTag(), "rescaled_val", 0);
+  rescaled_val = scaled_val * operand_val;
   return rescaled_val;
 }
 
