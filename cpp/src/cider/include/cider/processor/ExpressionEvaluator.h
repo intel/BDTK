@@ -47,7 +47,10 @@ class ExpressionEvaluator {
 
   ~ExpressionEvaluator();
 
-  std::unique_ptr<Batch> evaluate(const std::shared_ptr<Batch>& inBatch);
+  void evaluate(const struct ArrowArray* inputArray,
+                const struct ArrowSchema* inputSchema,
+                struct ArrowArray& outputArray,
+                struct ArrowSchema& outputSchema);
 
  private:
   std::unique_ptr<BatchProcessor> batchProcessor_;

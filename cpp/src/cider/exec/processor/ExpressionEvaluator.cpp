@@ -36,13 +36,12 @@ ExpressionEvaluator::ExpressionEvaluator(
       std::make_shared<StatelessProcessor>(extendedExpression, batchProcessorContext);
 }
 
-std::unique_ptr<Batch> ExpressionEvaluator::evaluate(
-    const std::shared_ptr<Batch>& inBatch) {
-  batchProcessor_->processNextBatch(inBatch->getArray(), inBatch->getSchema());
-  struct ArrowArray array;
-  struct ArrowSchema schema;
-  batchProcessor_->getResult(array, schema);
-  return std::make_unique<Batch>(schema, array);
+void ExpressionEvaluator::evaluate(const struct ArrowArray* inputArray,
+                                   const struct ArrowSchema* inputSchema,
+                                   struct ArrowArray& outputArray,
+                                   struct ArrowSchema& outputSchema) {
+  batchProcessor_->processNextBatch(inputArray, inputSchema);
+  batchProcessor_->getResult(outputArray, outputSchema);
 }
 
 ExpressionEvaluator::~ExpressionEvaluator() {
