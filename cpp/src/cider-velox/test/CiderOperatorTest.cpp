@@ -54,8 +54,6 @@ class CiderOperatorTest : public OperatorTestBase {
     }
     createDuckDbTable(vectors);
     CiderVeloxPluginCtx::init();
-    v2SPlanConvertor = std::make_shared<VeloxPlanFragmentToSubstraitPlan>();
-    plan = std::make_shared<::substrait::Plan>();
   }
 
   void TearDown() override { OperatorTestBase::TearDown(); }
@@ -70,13 +68,36 @@ class CiderOperatorTest : public OperatorTestBase {
            "l_shipdate"},
           {BIGINT(), INTEGER(), DOUBLE(), DOUBLE(), DOUBLE(), DOUBLE()})};
 
-  std::shared_ptr<VeloxPlanFragmentToSubstraitPlan> v2SPlanConvertor;
-  std::shared_ptr<::substrait::Plan> plan;
   std::vector<RowVectorPtr> vectors;
 };
 
+TEST_F(CiderOperatorTest, cider_plan) {
+  std::string filter = "l_quantity  > 24.0";
+  auto veloxPlan = PlanBuilder()
+                      .values(vectors)
+                      .project({"l_orderkey", "l_linenumber", "l_discount"})
+                      .aggregation({"l_orderkey"},
+                                   {"sum(l_linenumber)", "sum(l_discount)"},
+                                   {},
+                                   core::AggregationNode::Step::kPartial,
+                                   false)
+                      .planNode();
+  auto ciderPlan = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  auto originVeloxPlan = PlanBuilder()
+                      .values(vectors)
+                      .project({"l_orderkey", "l_linenumber", "l_discount"})
+                      .aggregation({"l_orderkey"},
+                                   {"sum(l_linenumber)", "sum(l_discount)"},
+                                   {},
+                                   core::AggregationNode::Step::kPartial,
+                                   false)
+                      .planNode();
+ 
+  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(veloxPlan, originVeloxPlan));
+}
+
 TEST_F(CiderOperatorTest, filter) {
-  const std::string& filter = "l_quantity  > 24.0";
+  std::string filter = "l_quantity  > 24.0";
   auto veloxPlan = PlanBuilder().values(vectors).filter(filter).planNode();
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, "SELECT * FROM tmp WHERE " + filter);
@@ -112,9 +133,13 @@ TEST_F(CiderOperatorTest, Q6) {
   assertQuery(resultPtr, duckDbSql);
 }
 */
+
 TEST_F(CiderOperatorTest, filter_only) {
-  const std::string& filter = "l_quantity < 0.5";
-  auto veloxPlan = PlanBuilder().values(vectors).filter(filter).planNode();
+  std::string filter = "l_quantity < 0.5";
+  auto veloxPlan = PlanBuilder()
+                      .values(vectors)
+                      .filter(filter)
+                      .planNode();
 
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
 
@@ -167,6 +192,7 @@ TEST_F(CiderOperatorTest, fil_proj_filter_transformer) {
       "l_quantity < 0.5 and revenue > 0.1";
   assertQuery(resultPtr, duckDbSql);
 }
+
 TEST_F(CiderOperatorTest, agg) {
   auto veloxPlan = PlanBuilder()
                        .values(vectors)
@@ -174,12 +200,13 @@ TEST_F(CiderOperatorTest, agg) {
                        .project({"l_extendedprice * l_discount as revenue"})
                        .partialAggregation({}, {"sum(revenue)"})
                        .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
 
   std::string duckDbSql =
       "select sum(l_extendedprice * l_discount) as revenue from tmp where "
       "l_quantity < 0.5";
+
+  assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -191,12 +218,12 @@ TEST_F(CiderOperatorTest, multi_agg) {
           .project({"l_extendedprice * l_discount as revenue", "l_quantity as sum_quan"})
           .partialAggregation({}, {"sum(revenue)", "sum(sum_quan)"})
           .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   std::string duckDbSql =
       "select sum(l_extendedprice * l_discount) as revenue, sum(l_quantity) as "
       "sum_quan from tmp where l_quantity < 0.5";
+
+  assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -209,12 +236,13 @@ TEST_F(CiderOperatorTest, min_max) {
           .partialAggregation({}, {"min(min_extendprice)", "max(max_discount)"})
           .planNode();
 
-  auto transformer = CiderPlanTransformerFactory().getTransformer(veloxPlan);
-  auto resultPtr = transformer->transform();
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
 
   std::string duckDbSql =
       "select min(l_extendedprice) as  min_extendprice, max(l_discount) as max_discount "
       "from tmp where l_quantity < 0.5";
+
+  assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -225,12 +253,13 @@ TEST_F(CiderOperatorTest, sumOnExpr_withoutCond) {
                                  "l_discount * 0.5 as max_discount"})
                        .partialAggregation({}, {"sum(revenue)", "max(max_discount)"})
                        .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
 
   std::string duckDbSql =
       "select sum(l_extendedprice * l_discount) as revenue, max(l_discount * 0.5) as "
       "max_discount from tmp";
+
+  assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -241,11 +270,14 @@ TEST_F(CiderOperatorTest, maxMinExpr_withoutCond) {
                        .partialAggregation({}, {"max(discount)", "min(discount)"})
                        .planNode();
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   std::string duckDbSql =
       "select "
       " max(l_discount * 0.5) as max_discount,"
       " min(l_discount * 0.5) as min_discount "
       "from tmp";
+
+  assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -266,6 +298,7 @@ TEST_F(CiderOperatorTest, aggOnExpr_withoutCond) {
                                             "count(l_linenumber)"})
                        .planNode();
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   std::string duckDbSql =
       "select sum(l_extendedprice * l_discount) as revenue, "
       "sum((l_extendedprice + 2.5) * l_discount) as revenue1, "
@@ -274,11 +307,14 @@ TEST_F(CiderOperatorTest, aggOnExpr_withoutCond) {
       " sum(cast(l_linenumber as bigint)) as sum_linenumber,"
       " count(l_linenumber) as cnt "
       " from tmp";
+
+  assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
-
+#if 0
 // Enable below UTs after groupby agg is supported.
-/*
+// Below AVG tests with arrow format will failed until update submodule after
+// https://github.com/Intel-bigdata/velox/pull/16
 TEST_F(CiderOperatorTest, avg_on_col_cider) {
   auto veloxPlan =
       PlanBuilder()
@@ -355,7 +391,7 @@ TEST_F(CiderOperatorTest, avg_on_col_null) {
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
-*/
+#endif
 
 TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
   RowVectorPtr vector =
@@ -375,8 +411,8 @@ TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
                        .partialAggregation({}, {"avg(c4) as avg_price"}, {})
                        .finalAggregation()
                        .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   auto duckdbSql = "SELECT avg(c4) as avg_price FROM tmp WHERE c2 < 24.0 ";
 
   assertQuery(veloxPlan, duckdbSql);
@@ -385,28 +421,19 @@ TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
 
 TEST_F(CiderOperatorTest, partial_avg) {
   auto data = makeRowVector({makeFlatVector<int64_t>(10, [](auto row) { return row; })});
+
   createDuckDbTable({data});
   auto veloxPlan = PlanBuilder()
                        .values({data})
                        .project({"c0"})
                        .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
                        .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
 
   auto duckdbSql = "SELECT row(45, 10)";
 
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
-
-  const ::substrait::Plan substraitPlan = ::substrait::Plan();
-  auto expectedPlan = PlanBuilder()
-                          .values({data})
-                          .project({"c0"})
-                          .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
-                          .planNode();
-
-  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
 }
 
 TEST_F(CiderOperatorTest, partial_avg_null) {
@@ -419,13 +446,12 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
                        .project({"c0"})
                        .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
                        .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   auto duckdbSql = "SELECT row(null, 0)";
-  // assertQuery(resultPtr, duckdbSql);
-  // TODO(yizhong): something wrong with generating veloxPlan
-  GTEST_SKIP();
+
   assertQuery(veloxPlan, duckdbSql);
+  assertQuery(resultPtr, duckdbSql);
 }
 
 TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
@@ -439,15 +465,17 @@ TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
                        .project({"c0"})
                        .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
                        .planNode();
-
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   auto duckdbSql = "SELECT row(4, 4)";
+
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::init(&argc, &argv, false);
   return RUN_ALL_TESTS();
 }

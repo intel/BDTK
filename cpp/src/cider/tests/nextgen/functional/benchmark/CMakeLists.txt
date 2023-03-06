@@ -19,7 +19,7 @@
 
 set(TEST_ARGS "--gtest_output=xml:../")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
 file(GLOB nextgen_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
   string(REGEX MATCH "benchmark/.*" test_relative_path

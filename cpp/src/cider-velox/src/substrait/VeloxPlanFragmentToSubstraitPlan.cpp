@@ -166,7 +166,6 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
                                                  joinNode->outputType());
         });
       }
-
     } else {
       VELOX_UNSUPPORTED("Unsupported node '{}'", riter->get()->name());
     }

@@ -41,4 +41,5 @@ class CiderPlanUtil {
       const VeloxNodeAddrPlanSection& planSection,
       const VeloxPlanNodeAddrList& srcList);
 };
+
 }  // namespace facebook::velox::plugin::plantransformer

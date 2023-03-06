@@ -33,12 +33,12 @@ FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
       from_platform == PlatformType::PrestoPlatform) {
     if (function_lookup_engine_ptr_map_.find(from_platform) !=
         function_lookup_engine_ptr_map_.end()) {
-      return function_lookup_engine_ptr_map_[from_platform];
+      return function_lookup_engine_ptr_map_.at(from_platform);
     }
     std::lock_guard<std::mutex> lk(s_mutex_);
     if (function_lookup_engine_ptr_map_.find(from_platform) !=
         function_lookup_engine_ptr_map_.end()) {
-      return function_lookup_engine_ptr_map_[from_platform];
+      return function_lookup_engine_ptr_map_.at(from_platform);
     }
     function_lookup_engine_ptr_map_.insert(std::pair(
         from_platform,

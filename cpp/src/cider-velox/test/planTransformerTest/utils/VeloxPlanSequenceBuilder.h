@@ -33,4 +33,5 @@ class VeloxPlanSequenceBuilder : public CiderPlanBuilder {
  public:
   const VeloxPlanNodePtr& planNode();
 };
+
 }  // namespace facebook::velox::plugin::plantransformer::test

@@ -97,26 +97,31 @@ CiderPipelineOperator::CiderPipelineOperator(
     , ciderPlanNode_(ciderPlanNode)
     , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
   auto substraitPlan = ciderPlanNode->getSubstraitPlan();
+
+  // printf("----------------------- substraitPlan1 = %s\n", substraitPlan.ShortDebugString().c_str());
   auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(substraitPlan);
+  // printf("----------------------- substraitPlan1 = %s\n", substraitPlan.ShortDebugString().c_str());
+
   auto context =
       std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
 
-  if (planUtil->hasCrossRel()) {
-    cider::exec::processor::CrossBuildTableSupplier crossBuildTableSupplier = [&]() {
-      auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
-          operatorCtx_->driverCtx()->splitGroupId, planNodeId());
-      auto ciderJoinBridge = std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
-      return *ciderJoinBridge->hasDataOrFuture(&future_);
-    };
-    context->setCrossJoinBuildTableSupplier(crossBuildTableSupplier);
-  } else if (planUtil->hasJoinRel()) {
-    cider::exec::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
-      auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
-          operatorCtx_->driverCtx()->splitGroupId, planNodeId());
-      auto ciderJoinBridge = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);
-      return ciderJoinBridge->hashBuildResultOrFuture(&future_);
-    };
-    context->setHashBuildTableSupplier(buildTableSupplier);
+  if (planUtil->hasJoinRel() || planUtil->hasCrossRel()) {
+    auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
+        operatorCtx_->driverCtx()->splitGroupId, planNodeId());
+
+    if (planUtil->hasCrossRel()) {
+      cider::exec::processor::CrossBuildTableSupplier crossBuildTableSupplier = [&]() {
+        auto ciderJoinBridge = std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
+        return *ciderJoinBridge->hasDataOrFuture(&future_);
+      };
+      context->setCrossJoinBuildTableSupplier(crossBuildTableSupplier);
+    } else {
+      cider::exec::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
+        auto ciderJoinBridge = std::dynamic_pointer_cast<CiderHashJoinBridge>(joinBridge);
+        return ciderJoinBridge->hashBuildResultOrFuture(&future_);
+      };
+      context->setHashBuildTableSupplier(buildTableSupplier);
+    }
   }
 
   batchProcessor_ = cider::exec::processor::makeBatchProcessor(substraitPlan, context);

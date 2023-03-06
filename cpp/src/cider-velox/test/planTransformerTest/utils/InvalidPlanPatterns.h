@@ -28,7 +28,7 @@ namespace facebook::velox::plugin::plantransformer::test {
 class InvalidPlanPattern : public PlanPattern {
  public:
   std::pair<bool, VeloxNodeAddrPlanSection> matchFromSrc(
-      BranchSrcToTargetIterator branchIte) const override {
+      BranchSrcToTargetIterator& branchIte) const override {
     VeloxPlanNodeAddr curAddr = VeloxPlanNodeAddr::invalid();
     VeloxPlanNodeAddr prevAddr = VeloxPlanNodeAddr::invalid();
     VeloxNodeAddrPlanSection planSection{};
