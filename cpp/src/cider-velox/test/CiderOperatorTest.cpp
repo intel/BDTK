@@ -47,6 +47,7 @@ using facebook::velox::test::BatchMaker;
 
 class CiderOperatorTest : public OperatorTestBase {
   void SetUp() override {
+    FLAGS_partial_agg_pattern = true;
     for (int32_t i = 0; i < 10; ++i) {
       auto vector = std::dynamic_pointer_cast<RowVector>(
           BatchMaker::createBatch(rowType_, 100, *pool_));
@@ -409,6 +410,9 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
                        .planNode();
 
   auto duckdbSql = "SELECT row(null, 0)";
+  // FIXME: For partial avg, duckdb returns a row (null, 0) while velox returns a null row
+  // when input is an all null column.
+
   // assertQuery(veloxPlan, duckdbSql);
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
