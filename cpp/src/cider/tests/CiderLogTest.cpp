@@ -20,8 +20,8 @@
  */
 
 #include <gflags/gflags.h>
-#include <gtest/gtest.h>
 #include <glog/logging.h>
+#include <gtest/gtest.h>
 #include "cider/CiderException.h"
 #include "util/Logger.h"
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
   try {
     RUN_ALL_TESTS();
-  } catch(const CheckFatalException& e) {
+  } catch (const CheckFatalException& e) {
     std::cout << "CheckFatalException exception" << std::endl;
   } catch (...) {
     std::cout << "unknown exception" << std::endl;

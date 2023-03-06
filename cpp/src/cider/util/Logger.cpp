@@ -36,7 +36,6 @@ bool g_enable_debug_timer{false};
 #include <iostream>
 #include <mutex>
 #include <regex>
-#include <filesystem>
 #include "cider/CiderException.h"
 
 namespace logger {

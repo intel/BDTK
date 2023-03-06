@@ -74,25 +74,25 @@ class CiderOperatorTest : public OperatorTestBase {
 TEST_F(CiderOperatorTest, cider_plan) {
   std::string filter = "l_quantity  > 24.0";
   auto veloxPlan = PlanBuilder()
-                      .values(vectors)
-                      .project({"l_orderkey", "l_linenumber", "l_discount"})
-                      .aggregation({"l_orderkey"},
-                                   {"sum(l_linenumber)", "sum(l_discount)"},
-                                   {},
-                                   core::AggregationNode::Step::kPartial,
-                                   false)
-                      .planNode();
+                       .values(vectors)
+                       .project({"l_orderkey", "l_linenumber", "l_discount"})
+                       .aggregation({"l_orderkey"},
+                                    {"sum(l_linenumber)", "sum(l_discount)"},
+                                    {},
+                                    core::AggregationNode::Step::kPartial,
+                                    false)
+                       .planNode();
   auto ciderPlan = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   auto originVeloxPlan = PlanBuilder()
-                      .values(vectors)
-                      .project({"l_orderkey", "l_linenumber", "l_discount"})
-                      .aggregation({"l_orderkey"},
-                                   {"sum(l_linenumber)", "sum(l_discount)"},
-                                   {},
-                                   core::AggregationNode::Step::kPartial,
-                                   false)
-                      .planNode();
- 
+                             .values(vectors)
+                             .project({"l_orderkey", "l_linenumber", "l_discount"})
+                             .aggregation({"l_orderkey"},
+                                          {"sum(l_linenumber)", "sum(l_discount)"},
+                                          {},
+                                          core::AggregationNode::Step::kPartial,
+                                          false)
+                             .planNode();
+
   EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(veloxPlan, originVeloxPlan));
 }
 
@@ -136,10 +136,7 @@ TEST_F(CiderOperatorTest, Q6) {
 
 TEST_F(CiderOperatorTest, filter_only) {
   std::string filter = "l_quantity < 0.5";
-  auto veloxPlan = PlanBuilder()
-                      .values(vectors)
-                      .filter(filter)
-                      .planNode();
+  auto veloxPlan = PlanBuilder().values(vectors).filter(filter).planNode();
 
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
 

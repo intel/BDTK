@@ -98,9 +98,11 @@ CiderPipelineOperator::CiderPipelineOperator(
     , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
   auto substraitPlan = ciderPlanNode->getSubstraitPlan();
 
-  // printf("----------------------- substraitPlan1 = %s\n", substraitPlan.ShortDebugString().c_str());
+  // printf("----------------------- substraitPlan1 = %s\n",
+  // substraitPlan.ShortDebugString().c_str());
   auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(substraitPlan);
-  // printf("----------------------- substraitPlan1 = %s\n", substraitPlan.ShortDebugString().c_str());
+  // printf("----------------------- substraitPlan1 = %s\n",
+  // substraitPlan.ShortDebugString().c_str());
 
   auto context =
       std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
@@ -111,7 +113,8 @@ CiderPipelineOperator::CiderPipelineOperator(
 
     if (planUtil->hasCrossRel()) {
       cider::exec::processor::CrossBuildTableSupplier crossBuildTableSupplier = [&]() {
-        auto ciderJoinBridge = std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
+        auto ciderJoinBridge =
+            std::dynamic_pointer_cast<CiderCrossJoinBridge>(joinBridge);
         return *ciderJoinBridge->hasDataOrFuture(&future_);
       };
       context->setCrossJoinBuildTableSupplier(crossBuildTableSupplier);

@@ -21,7 +21,6 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include <gflags/gflags.h>
 
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/CiderNextgenTestBase.h"

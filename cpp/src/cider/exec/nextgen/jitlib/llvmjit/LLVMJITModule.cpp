@@ -48,7 +48,6 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
 #include "util/filesystem/cider_path.h"
-#include <filesystem>
 
 namespace cider::jitlib {
 

@@ -30,5 +30,11 @@ set(cider_util_source_files
 
 add_library(cider_util ${cider_util_source_files})
 
-target_link_libraries(cider_util ${BLOSC_LIBRARIES}
-                      ${Boost_LIBRARIES} folly dl fmt glog)
+target_link_libraries(
+  cider_util
+  ${BLOSC_LIBRARIES}
+  ${Boost_LIBRARIES}
+  folly
+  dl
+  fmt
+  glog)
