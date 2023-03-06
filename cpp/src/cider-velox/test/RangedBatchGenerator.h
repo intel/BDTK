@@ -26,11 +26,14 @@
 #include "velox/vector/FlatVector.h"
 
 namespace RangedBatchGenerator {
-using namespace facebook::velox::test;
-using namespace facebook::velox;
 
 struct MinMaxRange;
 using MinMaxRangeVec = std::vector<MinMaxRange>;
+using facebook::velox::TypeKind;
+using facebook::velox::Type;
+using facebook::velox::BaseVector;
+using facebook::velox::VectorPtr;
+using facebook::velox::RowVector;
 
 template <typename T>
 static T getDefaultMaxValue() {
@@ -66,7 +69,7 @@ struct MinMaxRange {
 };
 
 template <TypeKind kind,
-          typename NativeT = typename TypeTraits<kind>::NativeType,
+          typename NativeT = typename facebook::velox::TypeTraits<kind>::NativeType,
           typename std::enable_if_t<(kind == TypeKind::SHORT_DECIMAL ||
                                      kind == TypeKind::LONG_DECIMAL) ||
                                         !std::is_trivial_v<NativeT>,
@@ -81,7 +84,7 @@ static void generateRangedVector(const std::shared_ptr<const Type>& type,
 }
 
 template <TypeKind kind,
-          typename NativeT = typename TypeTraits<kind>::NativeType,
+          typename NativeT = typename facebook::velox::TypeTraits<kind>::NativeType,
           typename std::enable_if_t<(kind != TypeKind::SHORT_DECIMAL &&
                                      kind != TypeKind::LONG_DECIMAL) &&
                                         std::is_trivial_v<NativeT>,
@@ -109,7 +112,7 @@ static void generateRangedVector(const std::shared_ptr<const Type>& type,
   if (rangeVec[colIndex].nullProb.has_value()) {
     auto rawNulls = dataVector->mutableNulls(capacity);
     VELOX_CHECK(rawNulls);
-    bits::fillBits(rawNulls->template asMutable<uint64_t>(), 0, capacity, true);
+    facebook::velox::bits::fillBits(rawNulls->template asMutable<uint64_t>(), 0, capacity, true);
   }
 
   NativeT* data = dataVector->mutableRawValues();
@@ -151,7 +154,7 @@ void generateRangedVector<TypeKind::ROW>(const std::shared_ptr<const Type>& type
 
 VectorPtr createRangedBatch(const std::shared_ptr<const Type>& type,
                             uint64_t capacity,
-                            memory::MemoryPool& memoryPool,
+                            facebook::velox::memory::MemoryPool& memoryPool,
                             const MinMaxRangeVec& rangeVec,
                             std::mt19937::result_type seed) {
   std::mt19937 gen{seed};

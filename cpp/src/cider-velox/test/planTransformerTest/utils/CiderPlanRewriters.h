@@ -24,24 +24,24 @@
 #include "planTransformer/PlanRewriter.h"
 
 namespace facebook::velox::plugin::plantransformer::test {
-using namespace facebook::velox::core;
-class TestCiderPlanNode : public PlanNode {
+
+class TestCiderPlanNode : public core::PlanNode {
  public:
-  TestCiderPlanNode(const PlanNodeId& id, std::shared_ptr<const PlanNode> source)
-      : PlanNode(id), sources_{source} {}
+  TestCiderPlanNode(const core::PlanNodeId& id, std::shared_ptr<const core::PlanNode> source)
+      : core::PlanNode(id), sources_{source} {}
 
-  TestCiderPlanNode(const PlanNodeId& id,
-                    std::vector<std::shared_ptr<const PlanNode>> source)
-      : PlanNode(id), sources_(source) {}
+  TestCiderPlanNode(const core::PlanNodeId& id,
+                    std::vector<std::shared_ptr<const core::PlanNode>> source)
+      : core::PlanNode(id), sources_(source) {}
 
-  const std::vector<std::shared_ptr<const PlanNode>>& sources() const override;
+  const std::vector<std::shared_ptr<const core::PlanNode>>& sources() const override;
 
   std::string_view name() const override;
 
   const RowTypePtr& outputType() const override;
 
  private:
-  const std::vector<std::shared_ptr<const PlanNode>> sources_;
+  const std::vector<std::shared_ptr<const core::PlanNode>> sources_;
   void addDetails(std::stringstream& stream) const override;
 };
 

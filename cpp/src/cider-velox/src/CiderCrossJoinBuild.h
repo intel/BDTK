@@ -26,8 +26,6 @@
 #include "velox/exec/JoinBridge.h"
 #include "velox/exec/Operator.h"
 
-using namespace cider::exec::nextgen::context;
-
 namespace facebook::velox::plugin {
 
 // Hands over all batches from a multi-threads build pipeline to a
