@@ -201,6 +201,40 @@ TEST_F(CiderOperatorTest, multi_agg) {
   assertQuery(resultPtr, duckDbSql);
 }
 
+TEST_F(CiderOperatorTest, multi_col_count) {
+  auto duckDbSql =
+      "SELECT COUNT(*), SUM(l_extendedprice * l_discount) AS "
+      "revenue, SUM(l_quantity) AS sum_quan FROM tmp";
+  std::vector<std::string> projects = {"l_extendedprice * l_discount AS revenue",
+                                       "l_quantity AS sum_quan"};
+  std::vector<std::string> aggs = {"COUNT(1)", "SUM(revenue)", "SUM(sum_quan)"};
+
+  auto veloxPlan = PlanBuilder()
+                       .values(vectors)
+                       .project(projects)
+                       .partialAggregation({}, aggs)
+                       .planNode();
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
+  assertQuery(resultPtr, duckDbSql);
+}
+
+TEST_F(CiderOperatorTest, single_col_count) {
+  std::string duckDbSql = "SELECT COUNT(l_discount) FROM tmp";
+
+  std::vector<std::string> projects = {"l_discount"};
+  std::vector<std::string> aggs = {"COUNT(l_discount)"};
+
+  auto veloxPlan = PlanBuilder()
+                       .values(vectors)
+                       .project(projects)
+                       .partialAggregation({}, aggs)
+                       .planNode();
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
+  assertQuery(resultPtr, duckDbSql);
+}
+
 TEST_F(CiderOperatorTest, min_max) {
   auto veloxPlan =
       PlanBuilder()
