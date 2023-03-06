@@ -251,7 +251,7 @@ void insertSetMapped(MappedType& dest, const ValueType& src) {
  * Has very small state (one uint8_t) and useful for Set-s allocated in automatic memory
  * (see uniqExact as an example).
  */
-template <size_t initial_size_degree = 8>
+template <size_t initial_size_degree = 12>
 struct HashTableGrower {
   /// The state of this structure is enough to get the buffer size of the hash table.
 
@@ -305,7 +305,7 @@ struct HashTableGrower {
  * Precalculates some values to speed up lookups and insertion into the HashTable (and
  * thus has bigger memory footprint than HashTableGrower).
  */
-template <size_t initial_size_degree = 8>
+template <size_t initial_size_degree = 12>
 class alignas(64) HashTableGrowerWithPrecalculation {
   /// The state of this structure is enough to get the buffer size of the hash table.
 
@@ -516,6 +516,7 @@ class HashTable : private boost::noncopyable,
   void alloc(const Grower& new_grower) {
     buf =
         reinterpret_cast<Cell*>(Allocator::allocate(new_grower.bufSize() * sizeof(Cell)));
+    // TODO(Deegue): Remove std::memset when new allocator is ready.
     // Initialize all bits to mark as empty.
     std::memset(buf, 0, new_grower.bufSize() * sizeof(Cell));
     grower = new_grower;
@@ -572,13 +573,10 @@ class HashTable : private boost::noncopyable,
              reinterpret_cast<const void*>(old_buffer.get()),
              old_buffer_size);
     } else {
-      // TODO(Deegue): Use realloc after new allocator is implemented.
-      // buf = reinterpret_cast<Cell*>(
-      // Allocator::realloc(buf, old_buffer_size, new_grower.bufSize() * sizeof(Cell)));
-
-      free();
       buf = reinterpret_cast<Cell*>(
-          Allocator::allocate(new_grower.bufSize() * sizeof(Cell)));
+          Allocator::reallocate(reinterpret_cast<int8_t*>(buf),
+                                old_buffer_size,
+                                new_grower.bufSize() * sizeof(Cell)));
     }
 
     grower = new_grower;
