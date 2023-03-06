@@ -33,15 +33,8 @@ PlanTransformer::PlanTransformer(const PatternRewriterList& rewriterList,
 
 VeloxPlanNodePtr PlanTransformer::transform() {
   matchFromSrcToTarget();
-  // printf("in PlanTransformer::transform, hasMatchResult_ = %d\n", hasMatchResult_);
   if (hasMatchResult_) {
-    // std::string s1 = root_->toString(true, true);
-    VeloxPlanNodePtr resultPtr = rewriteAllBranches();
-    // std::string s2 = root_->toString(true, true);
-
-    // printf("in PlanTransformer::transform, root_ s1 = %s\n", s1.c_str());
-    // printf("in PlanTransformer::transform, root_ s2 = %s\n", s2.c_str());
-    return resultPtr;
+    return rewriteAllBranches();
   } else {
     return root_;
   }
@@ -176,14 +169,8 @@ void PlanTransformer::matchSourceBranch(BranchSrcToTargetIterator& srcBranchIte)
 
 VeloxPlanNodePtr PlanTransformer::rewriteAllBranches() {
   for (int32_t branchId : orgBranches_->getSrcToRootBranchIds()) {
-    // printf("in PlanTransformer::rewriteAllBranches, brandId = %d\n", branchId);
-    // the whole branch is not covered by match results
     if (!coveredByMatchResult(branchId)) {
-      // std::string s1 = root_->toString(true, true);
       rewriteBranch(branchId);
-      // std::string s2 = root_->toString(true, true);
-      // printf("in PlanTransformer::rewriteAllBranches, root_ s1 = %s\n", s1.c_str());
-      // printf("in PlanTransformer::rewriteAllBranches, root_ s2 = %s\n", s2.c_str());
     }
   }
   return lookupRewrittenMap(1, 0);

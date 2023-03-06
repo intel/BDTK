@@ -98,11 +98,7 @@ CiderPipelineOperator::CiderPipelineOperator(
     , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
   auto substraitPlan = ciderPlanNode->getSubstraitPlan();
 
-  // printf("----------------------- substraitPlan1 = %s\n",
-  // substraitPlan.ShortDebugString().c_str());
   auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(substraitPlan);
-  // printf("----------------------- substraitPlan1 = %s\n",
-  // substraitPlan.ShortDebugString().c_str());
 
   auto context =
       std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
