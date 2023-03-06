@@ -61,18 +61,6 @@ class Substrait2AnalyzerExprConverter {
           expr_map_ptr = nullptr,
       std::string return_type = "");
 
-  // new_table_id is used when updating a ColumnVar to new index in join node
-  std::shared_ptr<Analyzer::Expr> updateAnalyzerExpr(
-      std::shared_ptr<Analyzer::Expr> expr,
-      std::int32_t pre_index,
-      std::int32_t cur_index,
-      int table_id,
-      int rte_idx,
-      std::shared_ptr<Analyzer::Expr> cur_expr,
-      const substrait::Type& s_type,
-      ContextUpdateType update_type,
-      int new_table_id = 0);
-
   std::shared_ptr<Analyzer::AggExpr> updateOutputTypeOfAVGPartial(
       std::shared_ptr<Analyzer::Expr> expr,
       const substrait::Type& s_type);

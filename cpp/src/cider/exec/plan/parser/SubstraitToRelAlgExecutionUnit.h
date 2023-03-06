@@ -64,14 +64,6 @@ class SubstraitToRelAlgExecutionUnit {
       , plan_(substrait::Plan())
       , output_cider_table_schema_(nullptr) {}
 
-  std::shared_ptr<RelAlgExecutionUnit> createRelAlgExecutionUnit(
-      const std::vector<substrait::Expression*> exprs,
-      const substrait::NamedStruct& schema,
-      const std::vector<
-          substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction*>
-          func_infos,
-      const ExprType& expr_type);
-
   /**
    * public API for generating RelAlgExecutionUnit with substrait plan as input
    * @param plan: substrait plan
