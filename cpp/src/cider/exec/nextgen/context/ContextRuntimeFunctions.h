@@ -37,11 +37,6 @@ extern "C" ALWAYS_INLINE int8_t* get_query_context_string_heap_ptr(int8_t* conte
   return reinterpret_cast<int8_t*>(context_ptr->getStringHeapPtr());
 }
 
-extern "C" ALWAYS_INLINE int8_t* create_a_pointer() {
-  int8_t* ptr = nullptr;
-  return ptr;
-}
-
 extern "C" ALWAYS_INLINE int8_t* cast_int64_to_ptr(int64_t address) {
   return (int8_t*)address;
 }

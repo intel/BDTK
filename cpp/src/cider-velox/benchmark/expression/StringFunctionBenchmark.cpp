@@ -61,8 +61,6 @@ using namespace facebook::velox::functions;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::substrait;
 
-// static const std::shared_ptr<PoolAllocator> allocator =
-//     std::make_shared<CiderDefaultAllocator>();
 namespace {
 std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
                                                         MemoryPool* pool) {
@@ -92,7 +90,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
     VectorFuzzer::Options opts;
     opts.vectorSize = vectorSize;
     opts.nullRatio = FLAGS_ratio;
-    opts.stringVariableLength = true;
+    opts.stringVariableLength = false;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     std::vector<VectorPtr> children;
