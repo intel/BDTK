@@ -25,7 +25,7 @@
 FunctionLookupEnginePtrMap FunctionLookupEngine::function_lookup_engine_ptr_map_ = {};
 
 std::mutex FunctionLookupEngine::s_mutex_;
-std::string FunctionLookupEngine::data_path_ = "";
+std::string FunctionLookupEngine::data_path_ = ""; // NOLINT
 
 FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
     const PlatformType from_platform) {

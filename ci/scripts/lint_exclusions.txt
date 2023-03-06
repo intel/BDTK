@@ -8,4 +8,3 @@
 *src/cider/type/data/sqltypes.h
 */src/cider/type/data/InlineNullValues.h
 */src/cider/common/contrib/*
-*/src/cider/exec/plan/lookup/FunctionLookupEngine.cpp
