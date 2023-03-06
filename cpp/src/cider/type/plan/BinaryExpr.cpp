@@ -39,7 +39,6 @@ void BinOper::initAutoVectorizeFlag() {
       case kMULTIPLY:
       case kAND:
       case kOR:
-      case kNOT:
         auto_vectorizable_ = true;
         break;
       case kDIVIDE: {
@@ -278,9 +277,9 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
         auto lhs_data = lhs_val.getValue();
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
-        auto null = (lhs_null && rhs_null) || (lhs_null && rhs_data && !rhs_null) ||
-                    (rhs_null && lhs_data && !lhs_null);
-        return set_expr_value(null, lhs_data && rhs_data);
+        auto null =
+            (lhs_null & rhs_null) | (lhs_null & lhs_data) | (rhs_null & rhs_data);
+        return set_expr_value(null, lhs_data & rhs_data);
       }
       case kOR: {
         // If one side is not null and true, return not null and TRUE
@@ -290,8 +289,8 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
         auto null =
-            (lhs_null && rhs_null) || (lhs_null && !rhs_data) || (rhs_null && !lhs_data);
-        return set_expr_value(null, lhs_data || rhs_data);
+            (lhs_null & rhs_null) | (lhs_null & ~rhs_data) | (rhs_null & ~lhs_data);
+        return set_expr_value(null, lhs_data | rhs_data);
       }
       default:
         UNREACHABLE();

@@ -101,6 +101,117 @@ class NullableGuard {
   std::unordered_set<ExprPtr::element_type*> nullable_ptrs_;
 };
 
+// Spilt expression tree into sub-trees as three types like BoolIOTree, BoolOutputTree,
+// NoBoolTree. All of the sub-trees are sorted in topological order and all of input exprs
+// are ordered.
+class ExpressionTreeSpilter {
+  using ExprGroup = VectorizedProjectTranslator::ExprsGroup;
+  using ExprTreeType = VectorizedProjectTranslator::ExprTreeType;
+
+ public:
+  ExpressionTreeSpilter(const ExprPtrVector& exprs) {
+    for (auto&& expr : exprs) {
+      addExprTrees(expr);
+    }
+  }
+
+  void addExprTrees(const ExprPtr& expr) {
+    utils::RecursiveFunctor traverser{
+        [this](auto&& traverser, const ExprPtr& expr) -> ExprGroup {
+          CHECK(expr);
+
+          auto&& children = expr->get_children_reference();
+
+          if (children.empty()) {
+            return spilt(expr, {});
+          }
+
+          std::vector<ExprGroup> sub_trees;
+          sub_trees.reserve(children.size());
+          for (auto&& child : children) {
+            sub_trees.emplace_back(traverser(*child));
+          }
+
+          return spilt(expr, sub_trees);
+        }};
+
+    sub_expr_trees_.emplace_back(traverser(expr));
+  }
+
+  const std::vector<ExprGroup>& getSubExprTrees() const { return sub_expr_trees_; }
+
+ private:
+  ExprGroup spilt(const ExprPtr& curr, const std::vector<ExprGroup>& children_trees) {
+    // Just pass leaves.
+    if (children_trees.empty()) {
+      ExprTreeType type;
+      switch (curr->get_type_info().get_type()) {
+        case kBOOLEAN:
+          type = ExprTreeType::BoolOutputTree;
+          break;
+        default:
+          type = ExprTreeType::NoBoolTree;
+      }
+      return ExprGroup{.group_type = type, .exprs = {curr}, .input_exprs = {curr}};
+    }
+
+    auto combined_sorted_inputs =
+        ExpressionTreeSpilter::combineInputExprs(children_trees);
+    switch (curr->get_type_info().get_type()) {
+      case kBOOLEAN: {
+        if (std::all_of(
+                children_trees.begin(), children_trees.end(), [](const ExprGroup& child) {
+                  return child.group_type == ExprTreeType::BoolIOTree ||
+                         child.group_type == ExprTreeType::BoolOutputTree;
+                })) {
+          // BoolIOTree
+          return ExprGroup{.group_type = ExprTreeType::BoolIOTree,
+                           .exprs = {curr},
+                           .input_exprs = combined_sorted_inputs};
+        } else {
+          // BoolOutputTree
+          // Split sub-tree.
+          sub_expr_trees_.emplace_back(
+              ExprGroup{.group_type = ExprTreeType::BoolOutputTree,
+                        .exprs = {curr},
+                        .input_exprs = combined_sorted_inputs});
+
+          return ExprGroup{.group_type = ExprTreeType::BoolOutputTree,
+                           .exprs = {curr},
+                           .input_exprs = {curr}};
+        }
+      }
+      default: {
+        // NoBoolTree
+        return ExprGroup{.group_type = ExprTreeType::NoBoolTree,
+                         .exprs = {curr},
+                         .input_exprs = combined_sorted_inputs};
+      }
+    }
+  }
+
+  // Combine and sort input exprs of sub-trees, and remove duplicate items.
+  static std::vector<ExprPtr> combineInputExprs(const std::vector<ExprGroup>& exprs) {
+    size_t num = 0;
+    for (auto&& expr : exprs) {
+      num += expr.input_exprs.size();
+    }
+    std::vector<ExprPtr> ans;
+    ans.reserve(num);
+
+    for (auto&& expr : exprs) {
+      ans.insert(ans.end(), expr.input_exprs.begin(), expr.input_exprs.end());
+    }
+    std::sort(ans.begin(), ans.end());
+    ans.erase(std::unique(ans.begin(), ans.end()), ans.end());
+
+    return ans;
+  }
+
+ private:
+  std::vector<ExprGroup> sub_expr_trees_;
+};
+
 TranslatorPtr VectorizedProjectNode::toTranslator(const TranslatorPtr& succ) {
   return createOpTranslator<VectorizedProjectTranslator>(shared_from_this(), succ);
 }
