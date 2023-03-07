@@ -47,6 +47,7 @@ using facebook::velox::test::BatchMaker;
 
 class CiderOperatorTest : public OperatorTestBase {
   void SetUp() override {
+    FLAGS_partial_agg_pattern = true;
     for (int32_t i = 0; i < 10; ++i) {
       auto vector = std::dynamic_pointer_cast<RowVector>(
           BatchMaker::createBatch(rowType_, 100, *pool_));
@@ -197,6 +198,40 @@ TEST_F(CiderOperatorTest, multi_agg) {
   std::string duckDbSql =
       "select sum(l_extendedprice * l_discount) as revenue, sum(l_quantity) as "
       "sum_quan from tmp where l_quantity < 0.5";
+  assertQuery(resultPtr, duckDbSql);
+}
+
+TEST_F(CiderOperatorTest, multi_col_count) {
+  auto duckDbSql =
+      "SELECT COUNT(*), SUM(l_extendedprice * l_discount) AS "
+      "revenue, SUM(l_quantity) AS sum_quan FROM tmp";
+  std::vector<std::string> projects = {"l_extendedprice * l_discount AS revenue",
+                                       "l_quantity AS sum_quan"};
+  std::vector<std::string> aggs = {"COUNT(1)", "SUM(revenue)", "SUM(sum_quan)"};
+
+  auto veloxPlan = PlanBuilder()
+                       .values(vectors)
+                       .project(projects)
+                       .partialAggregation({}, aggs)
+                       .planNode();
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
+  assertQuery(resultPtr, duckDbSql);
+}
+
+TEST_F(CiderOperatorTest, single_col_count) {
+  std::string duckDbSql = "SELECT COUNT(l_discount) FROM tmp";
+
+  std::vector<std::string> projects = {"l_discount"};
+  std::vector<std::string> aggs = {"COUNT(l_discount)"};
+
+  auto veloxPlan = PlanBuilder()
+                       .values(vectors)
+                       .project(projects)
+                       .partialAggregation({}, aggs)
+                       .planNode();
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   assertQuery(resultPtr, duckDbSql);
 }
 
@@ -376,10 +411,9 @@ TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
                        .finalAggregation()
                        .planNode();
 
-  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   auto duckdbSql = "SELECT avg(c4) as avg_price FROM tmp WHERE c2 < 24.0 ";
-
   assertQuery(veloxPlan, duckdbSql);
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
 }
 
@@ -392,21 +426,10 @@ TEST_F(CiderOperatorTest, partial_avg) {
                        .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
                        .planNode();
 
-  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
-
   auto duckdbSql = "SELECT row(45, 10)";
-
   assertQuery(veloxPlan, duckdbSql);
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
-
-  const ::substrait::Plan substraitPlan = ::substrait::Plan();
-  auto expectedPlan = PlanBuilder()
-                          .values({data})
-                          .project({"c0"})
-                          .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
-                          .planNode();
-
-  EXPECT_TRUE(PlanTansformerTestUtil::comparePlanSequence(resultPtr, expectedPlan));
 }
 
 TEST_F(CiderOperatorTest, partial_avg_null) {
@@ -420,12 +443,13 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
                        .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
                        .planNode();
 
-  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   auto duckdbSql = "SELECT row(null, 0)";
-  // assertQuery(resultPtr, duckdbSql);
-  // TODO(yizhong): something wrong with generating veloxPlan
-  GTEST_SKIP();
-  assertQuery(veloxPlan, duckdbSql);
+  // FIXME: For partial avg, duckdb returns a row (null, 0) while velox returns a null row
+  // when input is an all null column.
+
+  // assertQuery(veloxPlan, duckdbSql);
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+  assertQuery(resultPtr, duckdbSql);
 }
 
 TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
@@ -440,9 +464,9 @@ TEST_F(CiderOperatorTest, partial_avg_notAllNull) {
                        .partialAggregation({}, {"avg(c0) as avg_ccccc"}, {})
                        .planNode();
 
-  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   auto duckdbSql = "SELECT row(4, 4)";
   assertQuery(veloxPlan, duckdbSql);
+  auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
 }
 
