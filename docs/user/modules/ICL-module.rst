@@ -419,5 +419,5 @@ Limitation
 
 In order to take full advantage of hardware acceleration, Intel Codec Library only supports block-based interface for compression, aka “one shot”, so the data compressed by ICL can’t be decompressed by stream-based software like Gzip. 
 
-Limitation
-**********
+To Be Add
+*********
