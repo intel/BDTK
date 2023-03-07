@@ -20,11 +20,11 @@
  * under the License.
  */
 
+#pragma once
+
 #include <common/Arena.h>
 #include <common/base/StringRef.h>
 #include "type/data/funcannotations.h"
-
-using namespace cider::hashtable;
 
 /**
  * In some aggregation scenarios, when adding a key to the hash table, we
@@ -100,8 +100,6 @@ struct ArenaKeyHolder {
   Arena& pool;
 };
 
-}  // namespace cider::hashtable
-
 inline StringRef& ALWAYS_INLINE keyHolderGetKey(ArenaKeyHolder& holder) {
   return holder.key;
 }
@@ -114,8 +112,6 @@ inline void ALWAYS_INLINE keyHolderPersistKey(ArenaKeyHolder& holder) {
 
 inline void ALWAYS_INLINE keyHolderDiscardKey(ArenaKeyHolder&) {}
 
-namespace cider::hashtable {
-
 /** SerializedKeyHolder is a key holder for a StringRef key that is already
  * serialized to an Arena. The key must be the last allocation in this Arena,
  * and is discarded by rolling back the allocation.
@@ -124,8 +120,6 @@ struct SerializedKeyHolder {
   StringRef key;
   Arena& pool;
 };
-
-}  // namespace cider::hashtable
 
 inline StringRef& ALWAYS_INLINE keyHolderGetKey(SerializedKeyHolder& holder) {
   return holder.key;
@@ -139,3 +133,4 @@ inline void ALWAYS_INLINE keyHolderDiscardKey(SerializedKeyHolder& holder) {
   holder.key.data = nullptr;
   holder.key.size = 0;
 }
+}  // namespace cider::hashtable

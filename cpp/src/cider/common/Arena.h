@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <../include/cider/CiderAllocator.h>
+#include <cider/CiderAllocator.h>
 #include <boost/noncopyable.hpp>
 
 #include <unistd.h>

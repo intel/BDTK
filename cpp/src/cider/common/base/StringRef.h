@@ -22,15 +22,10 @@
 
 #pragma once
 
-#include <cassert>
-#include <functional>
-#include <iosfwd>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
 #include <common/base/unaligned.h>
 #include <common/contrib/cityhash102/include/city.h>
+#include <cassert>
+#include <string>
 
 #include <emmintrin.h>
 #include <nmmintrin.h>
@@ -72,8 +67,6 @@ struct StringRef {
     return std::string_view(data, size);
   }
 };
-
-using StringRefs = std::vector<StringRef>;
 
 /** Compare strings for equality.
  * The approach is controversial and does not win in all cases.
