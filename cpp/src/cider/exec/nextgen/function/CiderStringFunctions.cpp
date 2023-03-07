@@ -48,8 +48,6 @@ extern "C" RUNTIME_EXPORT int64_t cider_substring_extra(char* string_heap_ptr,
                                                         const char* str,
                                                         int pos,
                                                         int len) {
-  // StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
-  // string_t s = ptr->addString(str + pos - 1, len);
   return pack_string((const int8_t*)(str + pos - 1), len);
 }
 extern "C" RUNTIME_EXPORT const char* cider_substring_extra_ptr(const char* str,
