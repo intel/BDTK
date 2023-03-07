@@ -20,7 +20,6 @@
  */
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include "cider/CiderException.h"
 #include "util/Logger.h"
@@ -34,16 +33,13 @@ TEST_F(CiderLogTest, log) {
   // EXPECT_THROW({ LOG(FATAL) << "FATAL log"; }, CheckFatalException);
 }
 
+/*
+ * Run the CiderLogTest test file alone, for example: ./CiderLogTest
+ * Or run CiderLogTest with parameters, for example: ./CiderLogTest --log-directory
+ * bdtk_log --log-file-name bdtk_log
+ */
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  try {
-    RUN_ALL_TESTS();
-  } catch (const CheckFatalException& e) {
-    std::cout << "CheckFatalException exception" << std::endl;
-  } catch (...) {
-    std::cout << "unknown exception" << std::endl;
-  }
-  return 0;
+  return RUN_ALL_TESTS();
 }
