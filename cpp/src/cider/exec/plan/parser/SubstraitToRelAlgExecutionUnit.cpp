@@ -87,44 +87,6 @@ substrait::Type SubstraitToRelAlgExecutionUnit::reconstructStructType(size_t ind
   return s_type;
 }
 
-std::shared_ptr<CiderTableSchema>
-SubstraitToRelAlgExecutionUnit::getOutputCiderTableSchema() {
-  if (output_cider_table_schema_ == nullptr) {
-    if (plan_.relations_size() == 0) {
-      CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
-    }
-    if (!plan_.relations(0).has_root()) {
-      CIDER_THROW(CiderCompileException, "invalid plan with no root node.");
-    }
-    if (!ctx_) {
-      CIDER_THROW(CiderCompileException, "RelAlgExecutionUnit not generated yet!");
-    }
-    // get output column names in depth order
-    std::vector<std::string> names;
-    for (int i = 0; i < plan_.relations(0).root().names_size(); i++) {
-      names.push_back(plan_.relations(0).root().names(i));
-    }
-    // get output column types
-    std::vector<substrait::Type> column_types;
-    std::vector<ColumnHint> col_hints;
-    for (size_t i_target = 0, i_struct = 0; i_target < ctx_->target_exprs_.size();
-         i_struct++) {
-      col_hints.push_back(ctx_->col_hint_records_[i_struct].first);
-      size_t length = ctx_->col_hint_records_[i_struct].second;
-      if (length < 2) {
-        column_types.push_back(
-            getSubstraitType(ctx_->target_exprs_[i_target]->get_type_info()));
-      } else {
-        column_types.push_back(reconstructStructType(i_target, length));
-      }
-      i_target += length;
-    }
-    output_cider_table_schema_ =
-        std::make_shared<CiderTableSchema>(names, column_types, "", col_hints);
-  }
-  return output_cider_table_schema_;
-}
-
 void SubstraitToRelAlgExecutionUnit::updateGeneratorContext(
     const substrait::Rel& rel_node,
     const std::unordered_map<int, std::string>& function_map) {

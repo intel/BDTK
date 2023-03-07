@@ -53,16 +53,14 @@ class SubstraitToRelAlgExecutionUnit {
       : toAnalyzerExprConverter_(from_platform)
       , ctx_{nullptr}
       , input_table_schemas_{}
-      , plan_(plan)
-      , output_cider_table_schema_(nullptr) {}
+      , plan_(plan) {}
 
   explicit SubstraitToRelAlgExecutionUnit(
       const PlatformType from_platform = PlatformType::PrestoPlatform)
       : toAnalyzerExprConverter_(from_platform)
       , ctx_{nullptr}
       , input_table_schemas_{}
-      , plan_(substrait::Plan())
-      , output_cider_table_schema_(nullptr) {}
+      , plan_(substrait::Plan()) {}
 
   /**
    * public API for generating RelAlgExecutionUnit with substrait plan as input
@@ -77,16 +75,6 @@ class SubstraitToRelAlgExecutionUnit {
    * @param length: the number of flatten types that make up the struct type
    */
   substrait::Type reconstructStructType(size_t index, size_t length);
-
-  /**
-   * return the output table schema info
-   * @param plan: substrait plan
-   */
-  std::shared_ptr<CiderTableSchema> getOutputCiderTableSchema();
-
-  const std::vector<CiderTableSchema> getInputCiderTableSchema() const {
-    return input_table_schemas_;
-  }
 
  private:
   /**
@@ -121,6 +109,5 @@ class SubstraitToRelAlgExecutionUnit {
   std::shared_ptr<GeneratorContext> ctx_;
   std::vector<CiderTableSchema> input_table_schemas_;
   const substrait::Plan& plan_;
-  std::shared_ptr<CiderTableSchema> output_cider_table_schema_;
 };
 }  // namespace generator
