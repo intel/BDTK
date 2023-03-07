@@ -23,7 +23,8 @@
 
 namespace facebook::velox::plugin::plantransformer::test {
 
-const std::vector<std::shared_ptr<const core::PlanNode>>& TestCiderPlanNode::sources() const {
+const std::vector<std::shared_ptr<const core::PlanNode>>& TestCiderPlanNode::sources()
+    const {
   return sources_;
 }
 

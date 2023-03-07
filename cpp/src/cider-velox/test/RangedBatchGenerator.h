@@ -29,11 +29,11 @@ namespace RangedBatchGenerator {
 
 struct MinMaxRange;
 using MinMaxRangeVec = std::vector<MinMaxRange>;
-using facebook::velox::TypeKind;
-using facebook::velox::Type;
 using facebook::velox::BaseVector;
-using facebook::velox::VectorPtr;
 using facebook::velox::RowVector;
+using facebook::velox::Type;
+using facebook::velox::TypeKind;
+using facebook::velox::VectorPtr;
 
 template <typename T>
 static T getDefaultMaxValue() {
@@ -112,7 +112,8 @@ static void generateRangedVector(const std::shared_ptr<const Type>& type,
   if (rangeVec[colIndex].nullProb.has_value()) {
     auto rawNulls = dataVector->mutableNulls(capacity);
     VELOX_CHECK(rawNulls);
-    facebook::velox::bits::fillBits(rawNulls->template asMutable<uint64_t>(), 0, capacity, true);
+    facebook::velox::bits::fillBits(
+        rawNulls->template asMutable<uint64_t>(), 0, capacity, true);
   }
 
   NativeT* data = dataVector->mutableRawValues();

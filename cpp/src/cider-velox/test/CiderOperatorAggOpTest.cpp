@@ -25,6 +25,7 @@
 #include "CiderOperatorTestBase.h"
 #include "CiderPlanBuilder.h"
 
+using namespace facebook::velox;
 using namespace facebook::velox::plugin::test;
 
 class CiderOperatorAggOpTest : public CiderOperatorTestBase {

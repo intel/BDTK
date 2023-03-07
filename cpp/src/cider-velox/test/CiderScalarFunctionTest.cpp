@@ -28,8 +28,13 @@
 #include "CiderPlanNodeTranslator.h"
 #include "planTransformerTest/utils/PlanTansformerTestUtil.h"
 
+using namespace facebook::velox;
 using namespace facebook::velox::plugin::test;
 using namespace facebook::velox::plugin::plantransformer::test;
+
+using facebook::velox::exec::test::PlanBuilder;
+using facebook::velox::plugin::CiderPlanNode;
+using facebook::velox::plugin::test::CiderPlanBuilder;
 
 class CiderScalarFunctionMathOpTest : public CiderOperatorTestBase {};
 
@@ -209,7 +214,7 @@ TEST_F(CiderScalarFunctionLogicalOpTest, likeTest) {
       PlanBuilder()
           .values(vectors)
           .addNode([&](std::string id, std::shared_ptr<const core::PlanNode> input) {
-            return std::make_shared<facebook::velox::plugin::CiderPlanNode>(
+            return std::make_shared<CiderPlanNode>(
                 CiderPlanNode(id, {input}, input->outputType(), substraitPlan));
           })
           .planNode();

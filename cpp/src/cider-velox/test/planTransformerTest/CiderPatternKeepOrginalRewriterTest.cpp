@@ -23,7 +23,10 @@
 #include "CiderPlanTransformerIncludes.h"
 
 namespace facebook::velox::plugin::plantransformer::test {
+
+using facebook::velox::exec::test::PlanBuilder;
 using namespace facebook::velox::core;
+
 class CiderPatternKeepOrginalRewriterTest : public PlanTransformerTestBase {
  public:
   CiderPatternKeepOrginalRewriterTest() {

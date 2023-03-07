@@ -22,10 +22,11 @@
 #include <folly/init/Init.h>
 #include "CiderPlanTransformerIncludes.h"
 
-using namespace facebook::velox::plugin;
-
 namespace facebook::velox::plugin::plantransformer::test {
+
+using facebook::velox::exec::test::PlanBuilder;
 using namespace facebook::velox::core;
+
 class CiderCompoundPatternTest : public PlanTransformerTestBase {
  public:
   CiderCompoundPatternTest() {

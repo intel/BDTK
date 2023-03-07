@@ -27,7 +27,8 @@ namespace facebook::velox::plugin::plantransformer::test {
 
 class TestCiderPlanNode : public core::PlanNode {
  public:
-  TestCiderPlanNode(const core::PlanNodeId& id, std::shared_ptr<const core::PlanNode> source)
+  TestCiderPlanNode(const core::PlanNodeId& id,
+                    std::shared_ptr<const core::PlanNode> source)
       : core::PlanNode(id), sources_{source} {}
 
   TestCiderPlanNode(const core::PlanNodeId& id,

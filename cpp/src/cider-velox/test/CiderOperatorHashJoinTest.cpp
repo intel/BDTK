@@ -101,7 +101,7 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
 
   void assertPlanConversion(const std::shared_ptr<const core::PlanNode>& plan,
                             const std::string& duckDbSql) {
-    auto ciderPlan = CiderVeloxPluginCtx::transformVeloxPlan(plan);
+    auto ciderPlan = plugin::CiderVeloxPluginCtx::transformVeloxPlan(plan);
     assertQuery(ciderPlan, duckDbSql);
   }
 

@@ -24,6 +24,7 @@
 #include "CiderOperatorTestBase.h"
 #include "CiderPlanBuilder.h"
 
+using namespace facebook::velox;
 using namespace facebook::velox::plugin::test;
 
 #define ROW_TPYE_LIST TINYINT(), SMALLINT(), INTEGER(), BIGINT()
