@@ -58,7 +58,7 @@ std::unique_ptr<context::CodegenContext> compile(
 
   module->finish();
 
-  codegen_ctx->setJITModule(std::move(module));
+  codegen_ctx->setJITModule(module);
 
   return codegen_ctx;
 }
