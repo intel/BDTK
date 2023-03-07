@@ -482,6 +482,45 @@ TEST_F(CiderNewHashTableTest, aggDoubleTest) {
   }
 }
 
+// Large data set test cases
+TEST_F(CiderNewHashTableTest, aggUInt64LargeDatasetTest) {
+  using AggregatedHashTableForUInt64Key = HashMap<uint64_t, Block, HashCRC32<uint64_t>>;
+  AggregatedHashTableForUInt64Key ht_uint64;
+
+  std::vector<uint64_t> keys;
+  std::vector<int64_t> values;
+  for (int i = 0; i < 5000; i++) {
+    keys.emplace_back(i);
+    values.emplace_back(10);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_uint64[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_uint64[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_uint64[keys[i]].getCount(), 1);
+  }
+
+  std::vector<uint64_t> keys2;
+  std::vector<int64_t> values2;
+  for (int i = 0; i < 5000; i++) {
+    keys2.emplace_back(i);
+    values2.emplace_back(40);
+  }
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_uint64[keys2[i]];
+    block.add(values2[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_uint64[keys[i]].getSum(), 50);
+    CHECK_EQ(ht_uint64[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_uint64[keys[i]].getAvg(), 25);
+  }
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

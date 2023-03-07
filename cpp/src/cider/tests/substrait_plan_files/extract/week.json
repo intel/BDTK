@@ -59,9 +59,7 @@
                   }
                 },
                 "arguments": [{
-                  "enum": {
-                    "specified": "WEEK"
-                  }
+                  "enum": "WEEK"
                 }, {
                   "value": {
                     "selection": {

@@ -82,9 +82,7 @@
                                     },
                                     "arguments": [
                                         {
-                                            "enum": {
-                                                "specified": "SECOND"
-                                            }
+                                            "enum": "SECOND"
                                         },
                                         {
                                             "value": {

@@ -46,7 +46,7 @@ createBatchProcessorFromSql(const std::string& sql, const std::string& ddl) {
   google::protobuf::util::JsonStringToMessage(json, &plan);
   auto allocator = std::make_shared<CiderDefaultAllocator>();
   auto context = std::make_shared<BatchProcessorContext>(allocator);
-  auto processor = makeBatchProcessor(plan, context);
+  auto processor = cider::exec::processor::BatchProcessor::Make(plan, context);
   auto table_build_context = std::make_shared<JoinHashTableBuildContext>(allocator);
   auto join_hash_builder = makeJoinHashTableBuilder(
       plan.relations(0).root().input().join(), table_build_context);

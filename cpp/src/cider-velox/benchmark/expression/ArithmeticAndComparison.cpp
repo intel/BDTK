@@ -214,7 +214,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = makeBatchProcessor(plan, context);
+    auto processor = exec::processor::BatchProcessor::Make(plan, context);
     return 1;
   }
 
@@ -232,7 +232,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = makeBatchProcessor(plan, context, cgo);
+    auto processor = exec::processor::BatchProcessor::Make(plan, context, cgo);
 
     suspender.dismiss();
 

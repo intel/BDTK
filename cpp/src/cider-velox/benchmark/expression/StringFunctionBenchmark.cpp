@@ -134,7 +134,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
 
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = makeBatchProcessor(plan, context);
+    auto processor = cider::exec::processor::BatchProcessor::Make(plan, context);
     return 1;
   }
 
@@ -154,7 +154,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
 
     auto allocator = std::make_shared<CiderDefaultAllocator>();
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = makeBatchProcessor(plan, context, cgo);
+    auto processor = cider::exec::processor::BatchProcessor::Make(plan, context, cgo);
 
     suspender.dismiss();
 

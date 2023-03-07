@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "cider/CiderException.h"
+#include "cider/processor/BatchProcessor.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/processor/DefaultBatchProcessor.h"
@@ -53,26 +54,39 @@ DefaultBatchProcessor::DefaultBatchProcessor(
     const plan::SubstraitPlanPtr& plan,
     const BatchProcessorContextPtr& context,
     const cider::exec::nextgen::context::CodegenOptions& codegen_options)
-    : plan_(plan), context_(context) {
+    : context_(context) {
   auto allocator = context->getAllocator();
-  if (plan_->hasJoinRel()) {
+  if (plan->hasJoinRel()) {
     // TODO: currently we can't distinguish the joinRel is either a hashJoin rel
     // or a mergeJoin rel, just hard-code as HashJoinHandler for now and will refactor to
     // initialize joinHandler accordingly once the
     joinHandler_ = std::make_shared<HashProbeHandler>(shared_from_this());
     this->state_ = BatchProcessorState::kWaiting;
-  } else if (plan_->hasCrossRel()) {
+  } else if (plan->hasCrossRel()) {
     joinHandler_ = std::make_shared<CrossProbeHandler>(shared_from_this());
     this->state_ = BatchProcessorState::kWaiting;
   }
 
   auto translator =
-      std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan_->getPlan());
+      std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan->getPlan());
   RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
   codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
   runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(
       codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
+}
+
+DefaultBatchProcessor::DefaultBatchProcessor(
+    const substrait::ExtendedExpression& extendedExpression,
+    const BatchProcessorContextPtr& context,
+    const cider::exec::nextgen::context::CodegenOptions& codegen_options)
+    : context_(context) {
+  //  RelAlgExecutionUnit ra_exe_unit;
+  //  codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
+  //  runtime_context_ = codegen_context_->generateRuntimeCTX( context->getAllocator());
+  //  query_func_ = reinterpret_cast<nextgen::QueryFunc>(
+  //      codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*,
+  //      int8_t*>());
 }
 
 void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
@@ -139,10 +153,10 @@ void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& cro
   codegen_context_->setBuildTable(crossData);
 }
 
-std::unique_ptr<BatchProcessor> makeBatchProcessor(
-    const ::substrait::Plan& plan,
+std::unique_ptr<BatchProcessor> BatchProcessor::Make(
+    const substrait::Plan& plan,
     const BatchProcessorContextPtr& context,
-    const cider::exec::nextgen::context::CodegenOptions& codegen_options) {
+    const nextgen::context::CodegenOptions& codegen_options) {
   auto substraitPlan = std::make_shared<plan::SubstraitPlan>(plan);
   if (substraitPlan->hasAggregateRel()) {
     return std::make_unique<StatefulProcessor>(substraitPlan, context, codegen_options);
@@ -150,5 +164,4 @@ std::unique_ptr<BatchProcessor> makeBatchProcessor(
     return std::make_unique<StatelessProcessor>(substraitPlan, context, codegen_options);
   }
 }
-
 }  // namespace cider::exec::processor

@@ -676,7 +676,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::buildExtractExp
     auto from_expr = toAnalyzerExpr(
         s_scalar_function.arguments(1).value(), function_map, expr_map_ptr);
     CHECK(s_scalar_function.arguments(0).has_enum_());
-    std::string time_unit = s_scalar_function.arguments(0).enum_().specified();
+    std::string time_unit = s_scalar_function.arguments(0).enum_();
     CHECK_NE(time_unit, "");
     return ExtractExpr::generate(from_expr, time_unit);
   } else {
