@@ -25,8 +25,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include "type/data/CiderTypes.h"
-#include "type/data/funcannotations.h"
+#include "../../type/data/CiderTypes.h"
+#include "../../type/data/funcannotations.h"
 #ifdef ENABLE_VELOX_FUNCTION
 #include "velox/functions/prestosql/Arithmetic.h"
 #include "velox/functions/prestosql/Comparisons.h"
@@ -1172,6 +1172,3 @@ double Cbrt(const double x) {
   return r;
 }
 #endif
-
-#include "ExtensionFunctionsArray.hpp"
-#include "ExtensionFunctionsTesting.hpp"

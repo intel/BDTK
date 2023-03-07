@@ -42,7 +42,7 @@ class Constant : public Expr {
  public:
   Constant(SQLTypes t, bool n) : Expr(t, !n), is_null(n) {
     if (n) {
-      set_null_value();
+      type_info.set_notnull(false);
     } else {
       type_info.set_notnull(true);
     }
@@ -50,7 +50,7 @@ class Constant : public Expr {
   }
   Constant(SQLTypes t, bool n, Datum v) : Expr(t, !n), is_null(n), constval(v) {
     if (n) {
-      set_null_value();
+      type_info.set_notnull(false);
     } else {
       type_info.set_notnull(true);
     }
@@ -58,7 +58,7 @@ class Constant : public Expr {
   }
   Constant(const SQLTypeInfo& ti, bool n, Datum v) : Expr(ti), is_null(n), constval(v) {
     if (n) {
-      set_null_value();
+      type_info.set_notnull(false);
     } else {
       type_info.set_notnull(true);
     }
@@ -112,7 +112,6 @@ class Constant : public Expr {
     }
   }
 };
-
 }  // namespace Analyzer
 
 #endif

@@ -155,7 +155,7 @@ bool StringOpInfo::isLiteralArgNull(const SQLTypes datum_type, const Datum& datu
   }
   if (IS_INTEGER(datum_type)) {
     const SQLTypeInfo ti(datum_type, false);
-    return ti.is_null(datum);
+    return false;
   }
   CHECK(IS_STRING(datum_type));
   // Currently null strings are empty strings

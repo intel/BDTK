@@ -18,20 +18,9 @@
 # under the License.
 
 find_package(gflags COMPONENTS shared)
-set(SRC_FILE
-    ../../function/ExtensionFunctionsBinding.cpp
-    ../../function/ExtensionFunctionsWhitelist.cpp
-    ../../function/FunctionLookupEngine.cpp
-    CiderTypes.cpp
-    CiderOptions.cpp
-    batch/CiderBatchUtils.cpp
-    batch/CiderArrowBufferHolder.cpp)
+set(SRC_FILE CiderTypes.cpp CiderOptions.cpp batch/CiderBatchUtils.cpp
+             batch/CiderArrowBufferHolder.cpp)
 add_library(cider SHARED ${SRC_FILE})
-if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
-   OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB
-   OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
-  add_dependencies(cider SUBSTRAITCPP)
-endif()
 target_link_libraries(
   cider
   QueryEngine
@@ -41,9 +30,6 @@ target_link_libraries(
   ${Boost_LIBRARIES}
   ${GFLAGS_LIBRARIES}
   ${TBB_LIBS}
-  ${SUBSTRAITCPP_FUNCTION_LIB}
-  ${SUBSTRAITCPP_TYPE_LIB}
-  ${SUBSTRAITCPP_COMMON_LIB}
   substrait
   yaml-cpp
   cider_hashtable_join)

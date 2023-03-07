@@ -22,9 +22,9 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "cider/CiderException.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
+#include "exec/plan/lookup/SubstraitFunctionCiderMappings.h"
 #include "function/ExtensionFunctionsWhitelist.h"
-#include "function/FunctionLookupEngine.h"
-#include "function/SubstraitFunctionCiderMappings.h"
 
 class SubstraitFunctionLookupTest : public ::testing::Test {
  protected:

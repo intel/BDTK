@@ -284,47 +284,6 @@ inline SQLTypes get_type_for_datum(const SQLTypeInfo& ti) {
 
 }  // namespace
 
-Datum NullDatum(const SQLTypeInfo& ti) {
-  Datum d;
-  const auto type = get_type_for_datum(ti);
-  switch (type) {
-    case kBOOLEAN:
-      d.boolval = inline_fixed_encoding_null_val(ti);
-      break;
-    case kBIGINT:
-      d.bigintval = inline_fixed_encoding_null_val(ti);
-      break;
-    case kINT:
-      d.intval = inline_fixed_encoding_null_val(ti);
-      break;
-    case kSMALLINT:
-      d.smallintval = inline_fixed_encoding_null_val(ti);
-      break;
-    case kTINYINT:
-      d.tinyintval = inline_fixed_encoding_null_val(ti);
-      break;
-    case kFLOAT:
-      d.floatval = NULL_FLOAT;
-      break;
-    case kDOUBLE:
-      d.doubleval = NULL_DOUBLE;
-      break;
-    case kTIME:
-    case kTIMESTAMP:
-    case kDATE:
-      d.bigintval = inline_fixed_encoding_null_val(ti);
-      break;
-    default:
-      throw std::runtime_error("Internal error: invalid type in NullDatum.");
-  }
-  return d;
-}
-
-bool IsNullDatum(const Datum datum, const SQLTypeInfo& ti) {
-  const Datum null_datum = NullDatum(ti);
-  return DatumEqual(datum, null_datum, ti);
-}
-
 /*
  * @brief convert string to a datum
  */

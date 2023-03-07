@@ -75,20 +75,6 @@ struct StringOp {
                              ? NullableStrType()
                              : NullableStrType(var_str_optional_literal.value())) {}
 
-  virtual Datum numericEval(const std::string_view& str) const {
-    UNREACHABLE() << "numericEval not allowed for this method";
-    // Make compiler happy
-    return NullDatum(SQLTypeInfo());
-  }
-
-  virtual Datum numericEval() const {
-    CHECK(hasVarStringLiteral());
-    if (var_str_literal_.is_null) {
-      return NullDatum(return_ti_);
-    }
-    return numericEval(var_str_literal_.str);
-  }
-
   virtual const SQLTypeInfo& getReturnType() const { return return_ti_; }
 
   virtual NullableStrType operator()(std::string const&) const = 0;
@@ -129,7 +115,6 @@ struct TryStringCast : public StringOp {
       : StringOp(SqlStringOpKind::TRY_STRING_CAST, return_ti, var_str_optional_literal) {}
 
   NullableStrType operator()(const std::string& str) const override;
-  Datum numericEval(const std::string_view& str) const override;
 };
 
 struct CharLength : public StringOp {
@@ -140,7 +125,6 @@ struct CharLength : public StringOp {
                  var_str_optional_literal) {}
 
   NullableStrType operator()(const std::string& str) const override;
-  Datum numericEval(const std::string_view& str) const override;
 };
 
 struct Lower : public StringOp {
@@ -459,8 +443,6 @@ std::unique_ptr<const StringOp> gen_string_op(const StringOpInfo& string_op_info
 std::pair<std::string, bool /* is null */> apply_string_op_to_literals(
     const StringOpInfo& string_op_info);
 
-Datum apply_numeric_op_to_literals(const StringOpInfo& string_op_info);
-
 class StringOps {
  public:
   StringOps() : string_ops_(genStringOpsFromOpInfos({})), num_ops_(0UL) {}
@@ -468,8 +450,6 @@ class StringOps {
   StringOps(const std::vector<StringOpInfo>& string_op_infos)
       : string_ops_(genStringOpsFromOpInfos(string_op_infos))
       , num_ops_(string_op_infos.size()) {}
-
-  Datum numericEval(const std::string_view& str) const;
 
   std::string operator()(const std::string& str) const;
 

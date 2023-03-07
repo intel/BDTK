@@ -32,7 +32,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "function/SubstraitFunctionCiderMappings.h"
+#include "exec/plan/lookup/SubstraitFunctionCiderMappings.h"
 #include "include/cider/CiderSupportPlatType.h"
 #include "substrait/function/FunctionLookup.h"
 #include "substrait/function/FunctionSignature.h"
@@ -139,7 +139,8 @@ class FunctionLookupEngine {
   static void setDataPath(const std::string& conf_path) { data_path_ = conf_path; }
 
  private:
-  FunctionLookupEngine(const PlatformType from_platform) : from_platform_(from_platform) {
+  explicit FunctionLookupEngine(const PlatformType from_platform)
+      : from_platform_(from_platform) {
     registerFunctionLookUpContext(getDataPath(), from_platform);
   }
   void registerFunctionLookUpContext(const std::string& yaml_conf_path,

@@ -25,7 +25,7 @@
 #include "substrait/plan.pb.h"
 #include "substrait/type.pb.h"
 
-#include "function/FunctionLookupEngine.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 
 namespace validator {
 

@@ -1,5 +1,5 @@
 diff --git a/presto-native-execution/CMakeLists.txt b/presto-native-execution/CMakeLists.txt
-index 4eadf42a7e..6b5972e128 100644
+index 4eadf42..6b5972e 100644
 --- a/presto-native-execution/CMakeLists.txt
 +++ b/presto-native-execution/CMakeLists.txt
 @@ -58,6 +58,10 @@ if(PRESTO_ENABLE_PARQUET)
@@ -14,7 +14,7 @@ index 4eadf42a7e..6b5972e128 100644
      OFF
      CACHE BOOL "Enable Velox tests")
 diff --git a/presto-native-execution/Makefile b/presto-native-execution/Makefile
-index be98b34c54..e5580ae10b 100644
+index be98b34..e5580ae 100644
 --- a/presto-native-execution/Makefile
 +++ b/presto-native-execution/Makefile
 @@ -21,12 +21,14 @@ CPU_TARGET ?= "avx"
@@ -42,7 +42,7 @@ index be98b34c54..e5580ae10b 100644
  
  build:					#: Build the software based in BUILD_DIR and BUILD_TYPE variables
 diff --git a/presto-native-execution/presto_cpp/main/CMakeLists.txt b/presto-native-execution/presto_cpp/main/CMakeLists.txt
-index 1ade5b20e4..c420907cfc 100644
+index 1ade5b2..04fe82a 100644
 --- a/presto-native-execution/presto_cpp/main/CMakeLists.txt
 +++ b/presto-native-execution/presto_cpp/main/CMakeLists.txt
 @@ -16,6 +16,8 @@ add_subdirectory(common)
@@ -54,7 +54,7 @@ index 1ade5b20e4..c420907cfc 100644
  add_library(
    presto_server_lib
    Announcer.cpp
-@@ -29,6 +31,31 @@ add_library(
+@@ -29,6 +31,36 @@ add_library(
    TaskManager.cpp
    TaskResource.cpp)
  
@@ -76,6 +76,11 @@ index 1ade5b20e4..c420907cfc 100644
 +  jitlib
 +  cider_plan_parser
 +  cider_type_plan
++  cider_func_lkup
++  substrait_common
++  substrait_function
++  substrait_type
++  yaml-cpp
 +  cider_util
 +  QueryEngine
 +  LLVM
@@ -86,7 +91,7 @@ index 1ade5b20e4..c420907cfc 100644
  add_dependencies(presto_server_lib presto_protocol presto_types
                   presto_thrift-cpp2 presto_thrift_extra)
  
-@@ -61,7 +88,13 @@ target_link_libraries(
+@@ -61,7 +93,13 @@ target_link_libraries(
    ${ANTLR4_RUNTIME}
    ${GLOG}
    ${GFLAGS_LIBRARIES}
@@ -101,7 +106,7 @@ index 1ade5b20e4..c420907cfc 100644
  
  add_executable(presto_server PrestoMain.cpp)
  
-@@ -79,6 +112,6 @@ if(PRESTO_ENABLE_PARQUET)
+@@ -79,6 +117,6 @@ if(PRESTO_ENABLE_PARQUET)
    target_link_libraries(presto_server velox_dwio_parquet_reader)
  endif()
  
@@ -112,7 +117,7 @@ index 1ade5b20e4..c420907cfc 100644
 +#   add_subdirectory(tests)
 +# endif()
 diff --git a/presto-native-execution/presto_cpp/main/PrestoServer.cpp b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
-index 8433765d7d..c5787c0d3f 100644
+index 8433765..c5787c0 100644
 --- a/presto-native-execution/presto_cpp/main/PrestoServer.cpp
 +++ b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
 @@ -40,6 +40,7 @@
@@ -139,7 +144,7 @@ index 8433765d7d..c5787c0d3f 100644
        systemConfig->values(), nodeConfig->values());
    taskManager_->setBaseUri(fmt::format(kBaseUriFormat, address_, servicePort));
 diff --git a/presto-native-execution/presto_cpp/main/TaskResource.cpp b/presto-native-execution/presto_cpp/main/TaskResource.cpp
-index 05d83ffea0..ca5ff17e16 100644
+index 05d83ff..ca5ff17 100644
 --- a/presto-native-execution/presto_cpp/main/TaskResource.cpp
 +++ b/presto-native-execution/presto_cpp/main/TaskResource.cpp
 @@ -21,6 +21,9 @@
@@ -165,7 +170,7 @@ index 05d83ffea0..ca5ff17e16 100644
            const auto& session = taskUpdateRequest.session;
            auto configs = std::unordered_map<std::string, std::string>(
 diff --git a/presto-native-execution/presto_cpp/main/TaskResource.h b/presto-native-execution/presto_cpp/main/TaskResource.h
-index fc1e6cc78e..c1cde3c438 100644
+index fc1e6cc..c1cde3c 100644
 --- a/presto-native-execution/presto_cpp/main/TaskResource.h
 +++ b/presto-native-execution/presto_cpp/main/TaskResource.h
 @@ -17,6 +17,8 @@
@@ -178,7 +183,7 @@ index fc1e6cc78e..c1cde3c438 100644
  
  class TaskResource {
 diff --git a/presto-native-execution/presto_cpp/main/common/Configs.cpp b/presto-native-execution/presto_cpp/main/common/Configs.cpp
-index 86c9eabd6c..124a866832 100644
+index 86c9eab..124a866 100644
 --- a/presto-native-execution/presto_cpp/main/common/Configs.cpp
 +++ b/presto-native-execution/presto_cpp/main/common/Configs.cpp
 @@ -52,6 +52,10 @@ std::string SystemConfig::discoveryUri() const {
@@ -193,7 +198,7 @@ index 86c9eabd6c..124a866832 100644
    auto opt = optionalProperty<int32_t>(std::string(kMaxDriversPerTask));
    if (opt.has_value()) {
 diff --git a/presto-native-execution/presto_cpp/main/common/Configs.h b/presto-native-execution/presto_cpp/main/common/Configs.h
-index 6127e049ed..b2ea974e0f 100644
+index 6127e04..b2ea974 100644
 --- a/presto-native-execution/presto_cpp/main/common/Configs.h
 +++ b/presto-native-execution/presto_cpp/main/common/Configs.h
 @@ -77,6 +77,7 @@ class SystemConfig : public ConfigBase {
@@ -214,7 +219,7 @@ index 6127e049ed..b2ea974e0f 100644
  
    int32_t concurrentLifespansPerTask() const;
 diff --git a/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp b/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp
-index 98fcbcc69d..c2031ea54f 100644
+index 98fcbcc..c2031ea 100644
 --- a/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp
 +++ b/presto-native-execution/presto_cpp/main/connectors/hive/storage_adapters/FileSystems.cpp
 @@ -18,12 +18,19 @@
@@ -238,7 +243,7 @@ index 98fcbcc69d..c2031ea54f 100644
  
  } // namespace facebook::presto
 diff --git a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
-index ac43dd58da..c8c480f32c 100644
+index ac43dd5..c8c480f 100644
 --- a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
 +++ b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
 @@ -582,9 +582,9 @@ std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
