@@ -119,7 +119,7 @@ CiderPipelineOperator::CiderPipelineOperator(
     context->setHashBuildTableSupplier(buildTableSupplier);
   }
 
-  batchProcessor_ = cider::exec::processor::makeBatchProcessor(substraitPlan, context);
+  batchProcessor_ = cider::exec::processor::BatchProcessor::Make(substraitPlan, context);
 }
 
 }  // namespace facebook::velox::plugin

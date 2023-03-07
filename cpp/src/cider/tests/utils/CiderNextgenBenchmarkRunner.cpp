@@ -21,6 +21,7 @@
 
 #include "CiderNextgenBenchmarkRunner.h"
 #include "util/measure.h"
+
 extern bool g_enable_debug_timer;
 
 namespace cider::test::util {
@@ -40,7 +41,7 @@ void CiderNextgenBenchmarkRunner::runQueryOneBatch(
   {
     INJECT_TIMER(create);
     // Step 2: compile and gen runtime module
-    processor_ = makeBatchProcessor(plan, context_);
+    processor_ = exec::processor::BatchProcessor::Make(plan, context_);
   }
 
   {

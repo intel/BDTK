@@ -83,7 +83,7 @@ void CiderNextgenQueryRunner::runQueryOneBatch(
   auto plan = genSubstraitPlan(file_or_sql);
 
   // Step 2: compile and gen runtime module
-  processor_ = makeBatchProcessor(plan, context_, codegen_options);
+  processor_ = exec::processor::BatchProcessor::Make(plan, context_, codegen_options);
 
   // Step 3: run on this batch
   processor_->processNextBatch(&input_array, &input_schema);
@@ -110,7 +110,7 @@ void CiderNextgenQueryRunner::runJoinQueryOneBatch(
   auto plan = genSubstraitPlan(file_or_sql);
 
   // Step 2: compile and gen runtime module
-  processor_ = makeBatchProcessor(plan, context_, codegen_options);
+  processor_ = exec::processor::BatchProcessor::Make(plan, context_, codegen_options);
 
   auto table_build_context = std::make_shared<exec::processor::JoinHashTableBuildContext>(
       context_->getAllocator());

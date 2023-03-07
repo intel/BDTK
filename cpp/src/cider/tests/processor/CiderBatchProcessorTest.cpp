@@ -42,7 +42,7 @@ std::shared_ptr<BatchProcessor> createBatchProcessorFromSql(const std::string& s
   google::protobuf::util::JsonStringToMessage(json, &plan);
   auto allocator = std::make_shared<CiderDefaultAllocator>();
   auto context = std::make_shared<BatchProcessorContext>(allocator);
-  auto processor = makeBatchProcessor(plan, context);
+  auto processor = cider::exec::processor::BatchProcessor::Make(plan, context);
   return processor;
 }
 

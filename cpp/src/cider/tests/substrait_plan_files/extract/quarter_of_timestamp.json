@@ -82,9 +82,7 @@
                                     },
                                     "arguments": [
                                         {
-                                            "enum": {
-                                                "specified": "QUARTER"
-                                            }
+                                            "enum": "QUARTER"
                                         },
                                         {
                                             "value": {

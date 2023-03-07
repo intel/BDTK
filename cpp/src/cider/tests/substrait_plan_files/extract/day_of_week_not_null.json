@@ -59,9 +59,7 @@
               }
             },
             "arguments": [{
-              "enum": {
-                "specified": "DOW"
-              }
+                "enum": "DOW"
             }, {
               "value": {
                 "selection": {

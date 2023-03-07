@@ -26,17 +26,21 @@
 #include "exec/nextgen/Nextgen.h"
 #include "exec/plan/substrait/SubstraitPlan.h"
 #include "exec/processor/JoinHandler.h"
+#include "substrait/extended_expression.pb.h"
 
 namespace cider::exec::processor {
 
 class DefaultBatchProcessor : public BatchProcessor {
  public:
-  DefaultBatchProcessor(
+  explicit DefaultBatchProcessor(
       const plan::SubstraitPlanPtr& plan,
       const BatchProcessorContextPtr& context,
       const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
-  virtual ~DefaultBatchProcessor() = default;
+  explicit DefaultBatchProcessor(
+      const substrait::ExtendedExpression& extendedExpression,
+      const BatchProcessorContextPtr& context,
+      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
   const BatchProcessorContextPtr& getContext() const override { return context_; }
 
@@ -52,8 +56,6 @@ class DefaultBatchProcessor : public BatchProcessor {
   void feedCrossBuildData(const std::shared_ptr<Batch>& crossData) override;
 
  protected:
-  plan::SubstraitPlanPtr plan_;
-
   BatchProcessorContextPtr context_;
 
   BatchProcessorState state_{BatchProcessorState::kRunning};

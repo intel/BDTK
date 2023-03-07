@@ -59,9 +59,7 @@
                 }
               },
               "arguments": [{
-                "enum": {
-                  "specified": "ISODOW"
-                }
+                "enum": "ISODOW"
               }, {
                 "value": {
                   "selection": {

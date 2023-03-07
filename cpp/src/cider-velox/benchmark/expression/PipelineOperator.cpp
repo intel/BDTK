@@ -212,7 +212,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
 
-    batchProcessor_ = makeBatchProcessor(plan, context, cgo);
+    batchProcessor_ = cider::exec::processor::BatchProcessor::Make(plan, context, cgo);
   }
 
   // mimic `void CiderPipelineOperator::addInput(RowVectorPtr input)`
