@@ -19,13 +19,13 @@
  * under the License.
  */
 
-#include "function/FunctionLookupEngine.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "cider/CiderException.h"
 
 FunctionLookupEnginePtrMap FunctionLookupEngine::function_lookup_engine_ptr_map_ = {};
 
 std::mutex FunctionLookupEngine::s_mutex_;
-std::string FunctionLookupEngine::data_path_ = "";
+std::string FunctionLookupEngine::data_path_ = ""; // NOLINT
 
 FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
     const PlatformType from_platform) {
@@ -299,7 +299,6 @@ const FunctionDescriptor FunctionLookupEngine::lookupFunction(
             from_platform_));
   }
   function_signature.func_name = getRealFunctionName(function_signature.func_name);
-  ;
   function_descriptor.func_sig = function_signature;
   auto funtion_op_support_type_result = getFunctionOpSupportType(function_signature);
   function_descriptor.op_support_expr_type = funtion_op_support_type_result;
@@ -566,7 +565,7 @@ const io::substrait::TypePtr FunctionLookupEngine::getArgueTypePtr(
 
 const std::string FunctionLookupEngine::getTypeSignatureRealTypeName(
     const std::string& argue_type_signature_str) const {
-  const static std::unordered_map<std::string, std::string> type_signature_map = {
+  static const std::unordered_map<std::string, std::string> type_signature_map = {
       {"varchar", "varchar<L1>"},
       {"vchar", "varchar<L1>"},
       {"fixedchar", "fixedchar<L1>"},

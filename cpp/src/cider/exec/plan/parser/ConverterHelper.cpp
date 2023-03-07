@@ -27,8 +27,8 @@
 #include "ConverterHelper.h"
 #include "TypeUtils.h"
 #include "cider/CiderTypes.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "function/ExtensionFunctionsBinding.h"
-#include "function/FunctionLookupEngine.h"
 
 namespace generator {
 void registerExtensionFunctions() {

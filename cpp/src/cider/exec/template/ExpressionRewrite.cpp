@@ -674,79 +674,8 @@ class ConstantFoldingVisitor : public DeepCopyVisitor {
 
   std::shared_ptr<Analyzer::Expr> visitStringOper(
       const Analyzer::StringOper* string_oper) const override {
-    // Todo(todd): For clarity and modularity we should move string
-    // operator rewrites into their own visitor class.
-    // String operation rewrites were originally put here as they only
-    // handled string operators on rewrite, but now handle variable
-    // inputs as well.
-    const auto original_args = string_oper->getOwnArgs();
-    std::vector<std::shared_ptr<Analyzer::Expr>> rewritten_args;
-    const bool parent_in_string_op_chain = in_string_op_chain_;
-    if (!parent_in_string_op_chain) {
-      chained_string_op_exprs_.clear();
-      in_string_op_chain_ = true;
-    }
-    size_t rewritten_arg_literal_arity = 0;
-    for (auto original_arg : original_args) {
-      rewritten_args.emplace_back(visit(original_arg.get()));
-      if (dynamic_cast<const Analyzer::Constant*>(rewritten_args.back().get())) {
-        rewritten_arg_literal_arity++;
-      }
-    }
-    if (!parent_in_string_op_chain) {
-      in_string_op_chain_ = false;
-    }
-    const auto kind = string_oper->get_kind();
-    const auto& return_ti = string_oper->get_type_info();
-
-    if (string_oper->getArity() == rewritten_arg_literal_arity) {
-      // NOTE (YBRua): OmniSci applies runtime stringops at compile time to pre-compute
-      // stringops on pure literals as an optimization, this may need to be removed or
-      // updated after full migration to nextgen because nextgen framework will not have
-      // runtime StringOp operators
-      Analyzer::StringOper literal_string_oper(
-          kind, string_oper->get_type_info(), rewritten_args);
-      const auto literal_args = literal_string_oper.getLiteralArgs();
-      const auto string_op_info =
-          StringOps_Namespace::StringOpInfo(kind, return_ti, literal_args);
-      if (return_ti.is_string()) {
-        const auto literal_result =
-            StringOps_Namespace::apply_string_op_to_literals(string_op_info);
-        return Parser::StringLiteral::analyzeValue(literal_result.first,
-                                                   literal_result.second);
-      }
-      const auto literal_datum =
-          StringOps_Namespace::apply_numeric_op_to_literals(string_op_info);
-      auto nullable_return_ti = return_ti;
-      nullable_return_ti.set_notnull(false);
-      return makeExpr<Analyzer::Constant>(nullable_return_ti,
-                                          IsNullDatum(literal_datum, nullable_return_ti),
-                                          literal_datum);
-    }
-    chained_string_op_exprs_.emplace_back(
-        makeExpr<Analyzer::StringOper>(kind, return_ti, rewritten_args));
-    if (parent_in_string_op_chain) {
-      CHECK(in_string_op_chain_);
-      CHECK(rewritten_args[0]->get_type_info().is_string());
-      CHECK(
-          dynamic_cast<const Analyzer::ColumnVar*>(remove_cast(rewritten_args[0].get())));
-      // return rewritten_args[0]->deep_copy();
-      // NOTE: (YBRua) Original return stmt is the line above.
-      // In OmniSci, a chain of nested stringops are folded into chained_string_op_exprs_
-      // and will be batch-processed during codegen to generate a sequence of stringops
-      // Only the input ColumnVar is returned in the inner stringops
-      // because the actual stringops are kept in chained_string_op_exprs_
-      // However, Cider does not handle chained_string_op_exprs_
-      // so we should return the original stringop here
-      // or otherwise the folded stringops will be mistakenly dropped and never processed
-      // NOTE: (YBRua) do not instantiate StringOper base class, it breaks virtual
-      // functions such as codegen() in nextgen framework.
-      // construct derived classes instead
-      return makeStringOperExpr(kind, return_ti, rewritten_args);
-    } else {
-      CHECK(!in_string_op_chain_);
-      return makeStringOperExpr(kind, return_ti, rewritten_args);
-    }
+    // FIXME: (yma11) we actually do no rewrite on stringop
+    return string_oper->deep_copy();
   }
 
  protected:

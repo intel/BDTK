@@ -17,19 +17,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(cider_type_plan_source_files
-    Analyzer.cpp
-    Expr.cpp
-    BinaryExpr.cpp
-    UnaryExpr.cpp
-    ColumnExpr.cpp
-    ConstantExpr.cpp
-    CaseExpr.cpp
-    LikeExpr.cpp
-    DateExpr.cpp
-    StringOpExpr.cpp
-    InValues.cpp
-    FunctionExpr.cpp
-    ../../exec/module/CiderOptions.cpp)
-add_library(cider_type_plan ${cider_type_plan_source_files})
-target_link_libraries(cider_type_plan gflags)
+set(FUNC_LOOKUP_SRC_FILE FunctionLookupEngine.cpp)
+add_library(cider_func_lkup STATIC ${FUNC_LOOKUP_SRC_FILE})
+if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
+   OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB
+   OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
+  add_dependencies(cider_func_lkup SUBSTRAITCPP)
+endif()
+target_link_libraries(
+  cider_func_lkup ${SUBSTRAITCPP_FUNCTION_LIB} ${SUBSTRAITCPP_TYPE_LIB}
+  ${SUBSTRAITCPP_COMMON_LIB} substrait yaml-cpp)

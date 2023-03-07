@@ -20,9 +20,8 @@
 set(function_source_files
     ../../cider/exec/template/DynamicWatchdog.cpp
     scalar/RuntimeFunctions.cpp
-    RuntimeFunctions.bc
-    # ExtensionFunctionsBinding.cpp ExtensionFunctionsWhitelist.cpp
-    # FunctionLookupEngine.cpp
+    ExtensionFunctionsBinding.cpp
+    ExtensionFunctionsWhitelist.cpp
     string/StringLike.cpp
     string/StringFunctions.cpp
     string/StringOpInfo.cpp
@@ -76,6 +75,30 @@ add_custom_command(
     ${CMAKE_SOURCE_DIR}/thirdparty/robin-hood-hashing/src/include
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar/RuntimeFunctions.cpp)
 
-add_library(cider_function SHARED ${function_source_files})
+set(PYTHON_EXECUTABLE "/usr/bin/python")
+add_custom_command(
+  DEPENDS scalar/ExtensionFunctions.hpp
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast.raw
+  COMMAND
+    ${llvm_clangpp_cmd} ARGS -DNO_BOOST -std=c++17 -fsyntax-only -Xclang
+    -ast-dump -fno-diagnostics-color -Wno-return-type-c-linkage -I
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/scalar/ExtensionFunctions.hpp >
+    ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast.raw)
 
-target_link_libraries(cider_function nextgen re2)
+add_custom_command(
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast.raw
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast
+  COMMAND
+    ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/parse_ast.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast.raw >
+    ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast)
+
+add_custom_target(
+  QueryEngineFunctionsTargets
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
+          ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast)
+
+add_library(cider_function SHARED ${function_source_files})
+add_dependencies(cider_function QueryEngineFunctionsTargets)
+target_link_libraries(cider_function nextgen re2 cider_type_plan substrait)

@@ -26,8 +26,8 @@ cpp/src/cider/exec/processor/*
 cpp/src/cider/exec/operator/join/*
 cpp/src/cider/type/plan/*Expr.cpp
 cpp/src/cider/type/plan/InValues.cpp
-cpp/src/cider/function/FunctionLookupEngine.*
-cpp/src/cider/function/SubstraitFunctionCiderMappings.h
+cpp/src/cider/exec/plan/lookup/FunctionLookupEngine.*
+cpp/src/cider/exec/plan/lookup/SubstraitFunctionCiderMappings.h
 cpp/src/cider/function/substrait/*
 Makefile
 cpp/src/compression/*

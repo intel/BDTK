@@ -206,8 +206,6 @@ enum EncodingType {
 #define IS_INTERVAL(T) ((T) == kINTERVAL_DAY_TIME || (T) == kINTERVAL_YEAR_MONTH)
 #define IS_DECIMAL(T) ((T) == kNUMERIC || (T) == kDECIMAL)
 
-#include "type/data/InlineNullValues.h"
-
 #define INF_FLOAT HUGE_VALF
 #define INF_DOUBLE HUGE_VAL
 #define TRANSIENT_DICT_ID 0
@@ -637,112 +635,6 @@ class SQLTypeInfo {
     }
   }
 
-  inline bool is_null(const Datum& d) const {
-    // assuming Datum is always uncompressed
-    switch (type) {
-      case kBOOLEAN:
-        return (int8_t)d.boolval == NULL_BOOLEAN;
-      case kTINYINT:
-        return d.tinyintval == NULL_TINYINT;
-      case kSMALLINT:
-        return d.smallintval == NULL_SMALLINT;
-      case kINT:
-        return d.intval == NULL_INT;
-      case kBIGINT:
-      case kNUMERIC:
-      case kDECIMAL:
-        return d.bigintval == NULL_BIGINT;
-      case kFLOAT:
-        return d.floatval == NULL_FLOAT;
-      case kDOUBLE:
-        return d.doubleval == NULL_DOUBLE;
-      case kTIME:
-      case kTIMESTAMP:
-      case kDATE:
-        return d.bigintval == NULL_BIGINT;
-      case kTEXT:
-      case kVARCHAR:
-      case kCHAR:
-        // @TODO handle null strings
-        break;
-      case kNULLT:
-        return true;
-      case kARRAY:
-        return d.arrayval == NULL || d.arrayval->is_null;
-      default:
-        break;
-    }
-    return false;
-  }
-  inline bool is_null(const int8_t* val) const {
-    if (type == kFLOAT) {
-      return *(float*)val == NULL_FLOAT;
-    }
-    if (type == kDOUBLE) {
-      return *(double*)val == NULL_DOUBLE;
-    }
-    // val can be either compressed or uncompressed
-    switch (size) {
-      case 1:
-        return *val == NULL_TINYINT;
-      case 2:
-        return *(int16_t*)val == NULL_SMALLINT;
-      case 4:
-        return *(int32_t*)val == NULL_INT;
-      case 8:
-        return *(int64_t*)val == NULL_BIGINT;
-      case kNULLT:
-        return true;
-      default:
-        // @TODO(wei) handle null strings
-        break;
-    }
-    return false;
-  }
-  inline bool is_null_fixlen_array(const int8_t* val, int array_size) const {
-    // Check if fixed length array has a NULL_ARRAY sentinel as the first element
-    if (type == kARRAY && val && array_size > 0 && array_size == size) {
-      // Need to create element type to get the size, but can't call get_elem_type()
-      auto elem_ti{*this};
-      elem_ti.set_type(subtype);
-      elem_ti.set_subtype(kNULLT);
-      auto elem_size = elem_ti.get_storage_size();
-      if (elem_size < 1) {
-        return false;
-      }
-      if (subtype == kFLOAT) {
-        return *(float*)val == NULL_ARRAY_FLOAT;
-      }
-      if (subtype == kDOUBLE) {
-        return *(double*)val == NULL_ARRAY_DOUBLE;
-      }
-      switch (elem_size) {
-        case 1:
-          return *val == NULL_ARRAY_TINYINT;
-        case 2:
-          return *(int16_t*)val == NULL_ARRAY_SMALLINT;
-        case 4:
-          return *(int32_t*)val == NULL_ARRAY_INT;
-        case 8:
-          return *(int64_t*)val == NULL_ARRAY_BIGINT;
-        default:
-          return false;
-      }
-    }
-    return false;
-  }
-  inline bool is_null_point_coord_array(const int8_t* val, int array_size) const {
-    if (type == kARRAY && subtype == kTINYINT && val && array_size > 0 &&
-        array_size == size) {
-      if (array_size == 2 * sizeof(double)) {
-        return *(double*)val == NULL_ARRAY_DOUBLE;
-      }
-      if (array_size == 2 * sizeof(int32_t)) {
-        return *(uint32_t*)val == NULL_ARRAY_COMPRESSED_32;
-      }
-    }
-    return false;
-  }
   inline SQLTypeInfo get_elem_type() const {
     return SQLTypeInfo(
         subtype, dimension, scale, notnull, compression, comp_param, kNULLT);
@@ -959,8 +851,6 @@ inline std::ostream& operator<<(std::ostream& os, const SQLTypeInfo& ti) {
 
 #include <string_view>
 
-Datum NullDatum(const SQLTypeInfo& ti);
-bool IsNullDatum(const Datum d, const SQLTypeInfo& ti);
 Datum StringToDatum(const std::string_view s, SQLTypeInfo& ti);
 std::string DatumToString(const Datum d, const SQLTypeInfo& ti);
 int64_t extract_int_type_from_datum(const Datum datum, const SQLTypeInfo& ti);

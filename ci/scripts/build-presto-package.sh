@@ -72,6 +72,11 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.so .
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/jitlib/libjitlib.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/libnextgen.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/parser/libcider_plan_parser.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/lookup/libcider_func_lkup.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/common/libsubstrait_common.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/function/libsubstrait_function.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/type/libsubstrait_type.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/third_party/yaml-cpp/libyaml-cpp.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/util/libcider_util.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/type/plan/libcider_type_plan.a ./presto_cpp/main/lib
 
