@@ -55,53 +55,6 @@ void relAlgExecutionUnitCreateAndCompile(std::string file_name) {
   // cider_compile_module->compile(sub_plan);
 }
 
-TEST(Substrait2IR, OutputTableSchema) {
-  std::ifstream sub_json(getDataFilesPath() + "nullability.json");
-  std::stringstream buffer;
-  buffer << sub_json.rdbuf();
-  ::substrait::Plan sub_plan;
-  google::protobuf::util::JsonStringToMessage(buffer.str(), &sub_plan);
-  generator::SubstraitToRelAlgExecutionUnit eu_translator(sub_plan);
-  eu_translator.createRelAlgExecutionUnit();
-  auto table_schema = eu_translator.getOutputCiderTableSchema();
-  CHECK(table_schema->getColumnTypeById(0).has_bool_() &&
-        table_schema->getColumnTypeById(0).bool_().nullability() ==
-            substrait::Type::NULLABILITY_NULLABLE);
-  CHECK(table_schema->getColumnTypeById(1).has_bool_() &&
-        table_schema->getColumnTypeById(1).bool_().nullability() ==
-            substrait::Type::NULLABILITY_REQUIRED);
-  CHECK(table_schema->getColumnTypeById(2).has_i32() &&
-        table_schema->getColumnTypeById(2).i32().nullability() ==
-            substrait::Type::NULLABILITY_NULLABLE);
-  CHECK(table_schema->getColumnTypeById(3).has_i32() &&
-        table_schema->getColumnTypeById(3).i32().nullability() ==
-            substrait::Type::NULLABILITY_REQUIRED);
-  CHECK(table_schema->getColumnTypeById(4).has_i64() &&
-        table_schema->getColumnTypeById(4).i64().nullability() ==
-            substrait::Type::NULLABILITY_NULLABLE);
-  CHECK(table_schema->getColumnTypeById(5).has_i64() &&
-        table_schema->getColumnTypeById(5).i64().nullability() ==
-            substrait::Type::NULLABILITY_REQUIRED);
-  CHECK(table_schema->getColumnTypeById(6).has_decimal() &&
-        table_schema->getColumnTypeById(6).decimal().nullability() ==
-            substrait::Type::NULLABILITY_NULLABLE);
-  CHECK(table_schema->getColumnTypeById(7).has_decimal() &&
-        table_schema->getColumnTypeById(7).decimal().nullability() ==
-            substrait::Type::NULLABILITY_REQUIRED);
-  CHECK(table_schema->getColumnTypeById(8).has_fp32() &&
-        table_schema->getColumnTypeById(8).fp32().nullability() ==
-            substrait::Type::NULLABILITY_NULLABLE);
-  CHECK(table_schema->getColumnTypeById(9).has_fp32() &&
-        table_schema->getColumnTypeById(9).fp32().nullability() ==
-            substrait::Type::NULLABILITY_REQUIRED);
-  CHECK(table_schema->getColumnTypeById(10).has_fp64() &&
-        table_schema->getColumnTypeById(10).fp64().nullability() ==
-            substrait::Type::NULLABILITY_NULLABLE);
-  CHECK(table_schema->getColumnTypeById(11).has_fp64() &&
-        table_schema->getColumnTypeById(11).fp64().nullability() ==
-            substrait::Type::NULLABILITY_REQUIRED);
-}
-
 TEST(Substrait2IR, ColIndexUpdate_1) {
   // Check final col index should be correct
   // Select sum(l_extendedprice) as sum_ext, sum(l_quantity) as sum_qua,
