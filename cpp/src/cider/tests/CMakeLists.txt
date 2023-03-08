@@ -48,8 +48,14 @@ target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
 target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS}
                       cider_hashtable)
 target_link_libraries(Substrait2IRTest cider_plan_parser ${EXECUTE_TEST_LIBS})
-target_link_libraries(ExpressionEvalTest ${EXECUTE_TEST_LIBS}
-                      cider_expr_builder cider_plan_validator)
+target_link_libraries(
+  ExpressionEvalTest
+  gtest
+  cider_util
+  test_utils
+  cider_expr_builder
+  substrait
+  cider_plan_validator)
 target_link_libraries(CiderAllocatorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
