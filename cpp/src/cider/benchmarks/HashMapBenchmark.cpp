@@ -27,6 +27,8 @@
 #include <common/hashtable/HashMap.h>
 #include <common/hashtable/HashTable.h>
 #include <common/hashtable/HashTableAllocator.h>
+#include <folly/container/F14Map.h>
+
 #include <tests/utils/Utils.h>
 
 using namespace cider::hashtable;
@@ -42,19 +44,19 @@ template <typename KeyType, typename Map>
 int32_t NO_INLINE bench(const std::vector<KeyType>& data) {
   Map map;
 
-  for (auto value : data) {
+  for (auto key : data) {
     typename Map::LookupResult it;
     bool inserted;
 
-    map.emplace(value, it, inserted);
+    map.emplace(key, it, inserted);
     if (inserted)
       it->getMapped() = 1;
     else
       ++it->getMapped();
   }
 
-  for (auto value : data) {
-    auto it = map.find(value);
+  for (auto key : data) {
+    auto it = map.find(key);
     auto curr = ++it;
     if (curr)
       curr->getMapped();
@@ -114,6 +116,59 @@ static std::tuple<std::vector<T>, std::vector<bool>> generateAndFillVector(
 template <typename KeyType, typename HashTableType>
 static void BM_Lookup(benchmark::State& state) {
   size_t row_num = state.range(0);
+  std::vector<KeyType> data = prepare_data<KeyType>(row_num);
+  for (auto _ : state) {
+    int32_t collisions = bench<KeyType, HashTableType>(data);
+    state.counters["Collisions"] = collisions;
+  }
+}
+
+template <typename KeyType>
+void NO_INLINE bench_std(const std::vector<KeyType>& data) {
+  std::map<KeyType, int8_t> map;
+  for (auto key : data) {
+    map.emplace(key, 1);
+  }
+
+  for (auto key : data) {
+    auto it = map.find(key);
+  }
+}
+
+template <typename KeyType>
+void NO_INLINE bench_folly_f14(const std::vector<KeyType>& data) {
+  folly::F14FastMap<KeyType, int8_t> map;
+  for (auto key : data) {
+    map[key] = 1;
+  }
+
+  for (auto key : data) {
+    auto it = map.find(key);
+  }
+}
+
+template <typename KeyType>
+static void BM_std_Lookup(benchmark::State& state) {
+  size_t row_num = state.range(0);
+  std::vector<KeyType> data = prepare_data<KeyType>(row_num);
+  for (auto _ : state) {
+    bench_std<KeyType>(data);
+    state.counters["Collisions"] = -1;
+  }
+}
+
+template <typename KeyType>
+static void BM_folly_f14_Lookup(benchmark::State& state) {
+  size_t row_num = state.range(0);
+  std::vector<KeyType> data = prepare_data<KeyType>(row_num);
+  for (auto _ : state) {
+    bench_folly_f14<KeyType>(data);
+    state.counters["Collisions"] = -1;
+  }
+}
+
+template <typename KeyType>
+static std::vector<KeyType> prepare_data(size_t row_num) {
   KeyType value_min = std::numeric_limits<KeyType>::min();
   KeyType value_max = std::numeric_limits<KeyType>::max();
   size_t null_chance = 0;
@@ -127,10 +182,7 @@ static void BM_Lookup(benchmark::State& state) {
             : generateAndFillVector<KeyType>(
                   row_num, pattern, null_chance, value_min, value_max);
   }
-  for (auto _ : state) {
-    auto collisions = bench<KeyType, HashTableType>(data);
-    state.counters["Collisions"] = collisions;
-  }
+  return data;
 }
 
 template <typename KeyType>
@@ -145,10 +197,12 @@ static void BM_Optimized_Lookup(benchmark::State& state) {
   BM_Lookup<KeyType, OptimizedLookup>(state);
 }
 
-BENCHMARK(BM_Baseline_Lookup<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
-BENCHMARK(BM_Optimized_Lookup<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_std_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_folly_f14_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_cider_basic_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_cider_optimzied_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
 
-BENCHMARK(BM_Baseline_Lookup<uint16_t>)->RangeMultiplier(10)->Range(100, 10000);
-BENCHMARK(BM_Optimized_Lookup<uint16_t>)->RangeMultiplier(10)->Range(100, 10000);
+// Remove uint16_t benchmark to make the report clear.
+// Besides, the result of uint16_t is same to uint8_t.
 
 BENCHMARK_MAIN();

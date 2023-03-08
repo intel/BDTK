@@ -30,5 +30,8 @@ if(CIDER_ENABLE_AVX512)
 endif()
 
 target_compile_options(jitlib_benchmark PRIVATE ${JITlibBenchmarkCompileFlag})
+target_compile_options(HashMapBenchmark PRIVATE -msse4.2 -msse2)
+
 target_link_libraries(jitlib_benchmark ${DEP_LIBS} folly fmt::fmt)
-target_link_libraries(HashMapBenchmark benchmark::benchmark cider_hashtable)
+target_link_libraries(HashMapBenchmark benchmark::benchmark ${DEP_LIBS} folly
+                      cider_hashtable)
