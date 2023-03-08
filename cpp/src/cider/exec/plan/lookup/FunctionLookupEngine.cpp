@@ -31,19 +31,15 @@ FunctionLookupEnginePtr FunctionLookupEngine::getInstance(
     const PlatformType from_platform) {
   if (from_platform == PlatformType::SubstraitPlatform ||
       from_platform == PlatformType::PrestoPlatform) {
-    if (function_lookup_engine_ptr_map_.find(from_platform) !=
-        function_lookup_engine_ptr_map_.end()) {
-      return function_lookup_engine_ptr_map_.at(from_platform);
+    if (auto it = function_lookup_engine_ptr_map_.find(from_platform);
+        it != function_lookup_engine_ptr_map_.end()) {
+      return it->second;
     }
     std::lock_guard<std::mutex> lk(s_mutex_);
-    if (function_lookup_engine_ptr_map_.find(from_platform) !=
-        function_lookup_engine_ptr_map_.end()) {
-      return function_lookup_engine_ptr_map_.at(from_platform);
-    }
-    function_lookup_engine_ptr_map_.insert(std::pair(
-        from_platform,
-        std::shared_ptr<FunctionLookupEngine>(new FunctionLookupEngine(from_platform))));
-    return function_lookup_engine_ptr_map_[from_platform];
+    auto ptr =
+        std::shared_ptr<FunctionLookupEngine>(new FunctionLookupEngine(from_platform));
+    function_lookup_engine_ptr_map_.emplace(from_platform, ptr);
+    return ptr;
   } else {
     CIDER_THROW(CiderCompileException,
                 fmt::format("Function lookup unsupported platform {}", from_platform));

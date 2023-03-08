@@ -343,10 +343,9 @@ TEST_F(CiderOperatorTest, aggOnExpr_withoutCond) {
   assertQuery(veloxPlan, duckDbSql);
   assertQuery(resultPtr, duckDbSql);
 }
-#if 0
+
 // Enable below UTs after groupby agg is supported.
-// Below AVG tests with arrow format will failed until update submodule after
-// https://github.com/Intel-bigdata/velox/pull/16
+/*
 TEST_F(CiderOperatorTest, avg_on_col_cider) {
   auto veloxPlan =
       PlanBuilder()
@@ -423,7 +422,7 @@ TEST_F(CiderOperatorTest, avg_on_col_null) {
   assertQuery(veloxPlan, duckdbSql);
   assertQuery(resultPtr, duckdbSql);
 }
-#endif
+*/
 
 TEST_F(CiderOperatorTest, avg_on_col_null_nogroupby) {
   RowVectorPtr vector =
@@ -478,6 +477,8 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
                        .planNode();
 
   auto duckdbSql = "SELECT row(null, 0)";
+  // FIXME: For partial avg, duckdb returns a row (null, 0) while velox returns a null row
+  // when input is an all null column.
   // assertQuery(veloxPlan, duckdbSql); // fail to assert
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
