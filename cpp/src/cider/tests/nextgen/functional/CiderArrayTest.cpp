@@ -174,6 +174,37 @@ TEST_F(PrimitiveTypeArrayMixed2Test, ArrayMixed2Test) {
   assertQuery("SELECT col_a, col_b, col_c FROM test", input_array_, input_schema_, false);
 }
 
+class DuckDBQueryTest : public CiderNextgenTestBase {
+ public:
+  DuckDBQueryTest() {
+    table_name_ = "test";
+    duckdb_create_ddl_ =
+        "CREATE TABLE test(col_a TINYINT[] NOT NULL, col_b BIGINT[], col_c DOUBLE[]);";
+    create_ddl_ =
+        "CREATE TABLE test(col_a TINYINT ARRAY NOT NULL, col_b BIGINT"
+        " ARRAY, col_c DOUBLE ARRAY);";
+    QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
+                                                  input_array_,
+                                                  10,
+                                                  {"col_a", "col_b", "col_c"},
+                                                  {CREATE_SUBSTRAIT_LIST_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_LIST_TYPE(I64),
+                                                   CREATE_SUBSTRAIT_LIST_TYPE(Fp64)},
+                                                  {0, 1, 2},
+                                                  GeneratePattern::Random,
+                                                  0,
+                                                  0);
+  }
+};
+
+TEST_F(DuckDBQueryTest, duckdbQueryTest) {
+  assertQuery("SELECT col_a FROM test");
+  assertQuery("SELECT col_b FROM test");
+  assertQuery("SELECT col_c FROM test");
+  assertQuery("SELECT * FROM test");
+  assertQuery("SELECT col_a, col_b, col_c FROM test");
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
