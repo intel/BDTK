@@ -346,11 +346,7 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
                                         .get()}});
 
           // get string heap ptr
-          auto string_heap_ptr = func.emitRuntimeFunctionCall(
-              "get_query_context_string_heap_ptr",
-              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                        .ret_sub_type = JITTypeTag::INT8,
-                                        .params_vector = {func.getArgument(0).get()}});
+          auto string_heap_ptr = context.registerStringHeap();
 
           auto emit_desc =
               JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
@@ -391,11 +387,8 @@ JITExprValue& SubstringStringOper::codegen(CodegenContext& context) {
                                         .get()}});
 
           // get string heap ptr
-          auto string_heap_ptr = func.emitRuntimeFunctionCall(
-              "get_query_context_string_heap_ptr",
-              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                        .ret_sub_type = JITTypeTag::INT8,
-                                        .params_vector = {func.getArgument(0).get()}});
+          auto string_heap_ptr = context.registerStringHeap();
+
           *ret_len = *len_param;
 
           auto ret_ptr = func.emitRuntimeFunctionCall(
@@ -433,11 +426,8 @@ JITExprValue& LowerStringOper::codegen(CodegenContext& context) {
   auto arg_val = VarSizeJITExprValue(arg->codegen(context));
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name = "cider_ascii_lower";
   auto if_builder = func.createIfBuilder();
   if (isOutput()) {
@@ -505,11 +495,8 @@ JITExprValue& UpperStringOper::codegen(CodegenContext& context) {
   auto arg_val = VarSizeJITExprValue(arg->codegen(context));
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name = "cider_ascii_upper";
   auto if_builder = func.createIfBuilder();
   if (isOutput()) {
@@ -601,11 +588,8 @@ JITExprValue& ConcatStringOper::codegen(CodegenContext& context) {
   auto rhs_val = VarSizeJITExprValue(rhs->codegen(context));
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name =
       get_kind() == SqlStringOpKind::CONCAT ? "cider_concat" : "cider_rconcat";
   auto if_builder = func.createIfBuilder();
@@ -750,11 +734,8 @@ JITExprValue& TrimStringOper::codegen(CodegenContext& context) {
   int trim_char_map_idx = context.registerTrimStringOperCharMap(trim_char_val);
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   // get runtime trim_char_map ptr
   auto trim_char_map_ptr = func.emitRuntimeFunctionCall(
       "get_query_context_trim_char_map_by_id",
@@ -877,11 +858,8 @@ JITExprValue& SplitPartStringOper::codegen(CodegenContext& context) {
   splitpart_val = splitpart_val == 0 ? 1 : std::abs(splitpart_val);
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name = "cider_split";
   auto if_builder = func.createIfBuilder();
 
@@ -975,11 +953,8 @@ JITExprValue& RegexpReplaceStringOper::codegen(CodegenContext& context) {
       dynamic_cast<const Analyzer::Constant*>(getArg(4))->get_constval().intval;
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name = "cider_regexp_replace";
 
   auto if_builder = func.createIfBuilder();
@@ -1069,11 +1044,8 @@ JITExprValue& RegexpExtractStringOper::codegen(CodegenContext& context) {
       dynamic_cast<const Analyzer::Constant*>(getArg(2))->get_constval().intval;
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name = "cider_regexp_extract";
   auto if_builder = func.createIfBuilder();
 
@@ -1159,11 +1131,8 @@ JITExprValue& RegexpSubstrStringOper::codegen(CodegenContext& context) {
       dynamic_cast<const Analyzer::Constant*>(getArg(3))->get_constval().intval;
 
   // get string heap ptr
-  auto string_heap_ptr = func.emitRuntimeFunctionCall(
-      "get_query_context_string_heap_ptr",
-      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
-                                .ret_sub_type = JITTypeTag::INT8,
-                                .params_vector = {func.getArgument(0).get()}});
+  auto string_heap_ptr = context.registerStringHeap();
+
   std::string fn_name = "cider_regexp_substring";
   auto if_builder = func.createIfBuilder();
 

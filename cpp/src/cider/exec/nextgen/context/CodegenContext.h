@@ -24,6 +24,7 @@
 #include "common/interpreters/AggregationHashTable.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
+#include "exec/nextgen/context/StringHeap.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "exec/nextgen/utils/TypeUtils.h"
@@ -110,6 +111,8 @@ class CodegenContext {
   jitlib::JITValuePointer registerBatch(const SQLTypeInfo& type,
                                         const std::string& name = "",
                                         bool arrow_array_output = true);
+
+  jitlib::JITValuePointer registerStringHeap();
 
   // TBD: HashTable (GroupBy, Join), other objects registration.
   jitlib::JITValuePointer registerBuffer(
