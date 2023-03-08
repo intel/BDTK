@@ -92,12 +92,18 @@ class LoopBuilder {
     loopContinueImpl(condition.get());
   }
 
+  LoopBuilder* setNoAlias(bool flag) {
+    scope_noalias = flag;
+    return this;
+  }
+
  protected:
   virtual void loopContinueImpl(JITValue* condition) = 0;
 
   std::function<JITValuePointer()> condition_;
   std::function<void(LoopBuilder*)> loop_body_;
   std::function<void()> update_;
+  bool scope_noalias{false};
 };
 
 using IfBuilderPointer = std::unique_ptr<IfBuilder>;

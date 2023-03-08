@@ -232,19 +232,23 @@ void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   auto len = context.getInputLength();
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
 
-  func->createLoopBuilder()
-      ->condition([&index, &len]() { return index < len; })
+  auto builder = func->createLoopBuilder();
+  builder->condition([&index, &len]() { return index < len; })
       ->loop([&](LoopBuilder*) {
         for (auto& input : inputs) {
           ColumnReader(context, input, index).read();
         }
         successor_wrapper(successor, context);
       })
-      ->update([&index]() { index = index + 1l; })
-      ->build();
+      ->update([&index]() { index = index + 1l; });
+
+  auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
+  if (c2r_node->isVectorizable()) {
+    builder->setNoAlias(true);
+  }
+  builder->build();
 
   // Execute defer build functions.
-  auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
   for (auto& defer_func : c2r_node->getDeferFunctions()) {
     defer_func();
   }

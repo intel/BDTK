@@ -20,8 +20,12 @@
  */
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
 
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
@@ -112,9 +116,34 @@ void LLVMLoopBuilder::build() {
   if (update_) {
     update_();
   }
-  builder_.CreateBr(condition_bb);
+  auto loop_br = builder_.CreateBr(condition_bb);
 
   builder_.SetInsertPoint(after_for);
+
+  if (scope_noalias) {
+    llvm::MDNode* access_group = llvm::MDNode::getDistinct(func_.getContext(), {});
+    for (llvm::BasicBlock* block : {condition_bb, for_body, for_update}) {
+      for (auto& inst : block->getInstList()) {
+        if (inst.mayReadOrWriteMemory()) {
+          inst.setMetadata(llvm::LLVMContext::MD_access_group, access_group);
+        }
+      }
+    }
+
+    llvm::MDNode* parallel_access = llvm::MDNode::get(
+        func_.getContext(),
+        {llvm::MDString::get(func_.getContext(), "llvm.loop.parallel_accesses"),
+         access_group});
+    llvm::MDNode* loop_vectorize = llvm::MDNode::get(
+        func_.getContext(),
+        {llvm::MDString::get(func_.getContext(), "llvm.loop.vectorize.enable"),
+         llvm::ConstantAsMetadata::get(
+             llvm::ConstantInt::get(llvm::Type::getInt1Ty(func_.getContext()), 1))});
+    llvm::MDNode* loop =
+        llvm::MDNode::get(func_.getContext(), {nullptr, parallel_access, loop_vectorize});
+    loop->replaceOperandWith(0, loop);
+    loop_br->setMetadata(llvm::LLVMContext::MD_loop, loop);
+  }
 }
 
 void LLVMLoopBuilder::loopContinueImpl(JITValue* condition) {

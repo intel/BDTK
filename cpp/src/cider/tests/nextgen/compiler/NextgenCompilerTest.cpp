@@ -39,7 +39,8 @@ static const std::shared_ptr<CiderAllocator> allocator =
 
 class NextgenCompilerTest : public ::testing::Test {
  public:
-  void executeTest(const std::string& sql, size_t expect_row_num) {
+  template <typename T>
+  void executeTest(const std::string& sql, T&& checker) {
     // SQL Parsing
     auto json = RunIsthmus::processSql(sql, create_ddl_);
     ::substrait::Plan plan;
@@ -91,36 +92,86 @@ class NextgenCompilerTest : public ::testing::Test {
                 "a", CREATE_SUBSTRAIT_TYPE(I64), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
             .addColumn<int64_t>(
                 "b", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
+            .addBoolColumn<bool>(
+                "c", {true, false, false, true, true, false, false, true, true, false})
+            .addBoolColumn<bool>(
+                "d",
+                {true, false, true, false, true, false, true, false, true, false},
+                {false, false, false, false, true, true, true, true, false, false})
             .build();
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
-    EXPECT_EQ(output_batch_array->length, expect_row_num);
 
-    auto check_array = [](ArrowArray* array, size_t expect_len) {
-      EXPECT_EQ(array->length, expect_len);
-      int64_t* data_buffer = (int64_t*)array->buffers[1];
-      for (size_t i = 0; i < expect_len; ++i) {
-        std::cout << data_buffer[i] << " ";
-      }
-      std::cout << std::endl;
-    };
-
-    check_array(output_batch_array->children[0], expect_row_num);
-    check_array(output_batch_array->children[1], expect_row_num);
+    checker(output_batch_array);
   }
 
  private:
-  std::string create_ddl_ = "CREATE TABLE test(a BIGINT, b BIGINT NOT NULL);";
+  std::string create_ddl_ =
+      "CREATE TABLE test(a BIGINT, b BIGINT NOT NULL, c BOOLEAN NOT NULL, d BOOLEAN);";
 };
 
+void integerChecker(ArrowArray* array, int expected_len) {
+  EXPECT_EQ(array->length, expected_len);
+
+  auto check_array = [](ArrowArray* array, size_t expect_len) {
+    EXPECT_EQ(array->length, expect_len);
+    int64_t* data_buffer = (int64_t*)array->buffers[1];
+    for (size_t i = 0; i < expect_len; ++i) {
+      std::cout << data_buffer[i] << " ";
+    }
+    std::cout << std::endl;
+  };
+
+  check_array(array->children[0], expected_len);
+  check_array(array->children[1], expected_len);
+}
+
 TEST_F(NextgenCompilerTest, FrameworkTest1) {
-  executeTest("select a + b, a - b from test where a < b", 5);
+  executeTest("select a + b, a - b from test where a < b",
+              [](ArrowArray* array) { integerChecker(array, 5); });
 }
 
 TEST_F(NextgenCompilerTest, FrameworkTest2) {
-  executeTest("select a + b, a - b from test", 10);
+  executeTest("select a + b, a - b from test",
+              [](ArrowArray* array) { integerChecker(array, 10); });
+}
+
+void boolChecker(ArrowArray* array, int expected_len) {
+  EXPECT_EQ(array->length, expected_len);
+
+  auto check_array = [](ArrowArray* array, size_t expect_len) {
+    EXPECT_EQ(array->length, expect_len);
+    uint8_t* data_buffer = (uint8_t*)array->buffers[1];
+    uint8_t* null_buffer = (uint8_t*)array->buffers[0];
+    if (null_buffer) {
+      // Nullable
+      for (size_t i = 0; i < expect_len; ++i) {
+        if (CiderBitUtils::isBitSetAt(null_buffer, i)) {
+          std::cout << (CiderBitUtils::isBitSetAt(data_buffer, i) ? "T" : "F") << " ";
+        } else {
+          std::cout << "N"
+                    << " ";
+        }
+      }
+    } else {
+      // Not nullable
+      for (size_t i = 0; i < expect_len; ++i) {
+        std::cout << (CiderBitUtils::isBitSetAt(data_buffer, i) ? "T" : "F") << " ";
+      }
+    }
+    std::cout << std::endl;
+  };
+
+  for (size_t i = 0; i < array->n_children; ++i) {
+    check_array(array->children[i], expected_len);
+  }
+}
+
+TEST_F(NextgenCompilerTest, FrameworkTest3) {
+  executeTest("select c AND d, c OR d, NOT c, NOT d from test",
+              [](ArrowArray* array) { boolChecker(array, 10); });
 }
 
 class CiderNextgenCompilerTestBase : public CiderNextgenTestBase {
