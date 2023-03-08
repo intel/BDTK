@@ -84,6 +84,7 @@ TEST_F(CiderOperatorCompareOpTest, compareOpForDoubleAndRealTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::init(&argc, &argv, false);
   return RUN_ALL_TESTS();
 }
