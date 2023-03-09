@@ -46,11 +46,78 @@
 <h1>Expression Evaluation Module Introduction<a class="headerlink" href="#expression-evaluation-module-introduction" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-descritption">
 <h2>Module descritption<a class="headerlink" href="#module-descritption" title="Permalink to this headline">¶</a></h2>
-<p>Expression evaluation module could do Projection/Filter computation effectively. It provides a runtime expression evaluation API which accept Substrait based expression representation and Apache Arrow based column format data representation. It only handles projection and filters currently.</p>
+<p>Expression evaluation module could do computation for Project/Filter expressions effectively. It provides a runtime expression evaluation API which accepts Substrait based expression representation and Apache Arrow based column format data representation.</p>
 </div>
 <div class="section" id="sdk-api">
 <h2>SDK API<a class="headerlink" href="#sdk-api" title="Permalink to this headline">¶</a></h2>
-<p>To be added.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// validate expression can be evaluated by Cider</span>
+<span class="kt">bool</span> <span class="n">is_supported</span> <span class="o">=</span> <span class="n">ExpressionValidator</span><span class="o">::</span><span class="n">validate</span><span class="p">(</span><span class="n">extended_expression</span><span class="p">);</span>
+<span class="c1">// compile and prepare runtime context</span>
+<span class="k">auto</span> <span class="n">expr_evaluator</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">ExpressionEvaluator</span><span class="o">&gt;</span><span class="p">(</span><span class="n">extended_expression</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">ExprEvaluatorContext</span><span class="o">&gt;</span><span class="p">(</span><span class="n">allocator</span><span class="p">));</span>
+<span class="c1">// return computation result in arrow-array format</span>
+<span class="k">struct</span> <span class="n">ArrowArray</span> <span class="n">output_array</span><span class="p">;</span>
+<span class="k">struct</span> <span class="n">ArrowSchema</span> <span class="n">output_schema</span><span class="p">;</span>
+<span class="n">expr_evaluator</span><span class="o">::</span><span class="n">eval</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">input_schema</span><span class="p">,</span> <span class="n">output_array</span><span class="p">,</span> <span class="n">output_schema</span><span class="p">);</span>
+<span class="c1">// schema check API for input array</span>
+<span class="kt">bool</span> <span class="n">is_matched</span> <span class="o">=</span> <span class="n">expr_evaluator</span><span class="o">::</span><span class="n">schemaCheck</span><span class="p">(</span><span class="n">input_schema</span><span class="p">,</span> <span class="n">substrait_schema</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Please refer <a class="reference external" href="https://github.com/intel/BDTK/blob/main/cpp/src/cider/examples/ExpressionEvalExample.cpp">ExpressionEvalExample</a> for detailed usage.</p>
+</div>
+<div class="section" id="supported-functions">
+<h2>Supported functions<a class="headerlink" href="#supported-functions" title="Permalink to this headline">¶</a></h2>
+<p>Here is a list of all scalar functions supported in expression evaluation.</p>
+<table border="1" class="rows colwidths-auto docutils">
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="6">Scalar Functions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>plus</td>
+<td>minus</td>
+<td>multiply</td>
+<td>devide</td>
+<td>mod</td>
+<td>gt</td>
+</tr>
+<tr class="row-odd"><td>lt</td>
+<td>equal</td>
+<td>not_equal</td>
+<td>gte</td>
+<td>lte</td>
+<td>cast</td>
+</tr>
+<tr class="row-even"><td>in</td>
+<td>is_distinct_from</td>
+<td>is_not_distinct_from</td>
+<td>is_null</td>
+<td>is_not_null</td>
+<td>and</td>
+</tr>
+<tr class="row-odd"><td>or</td>
+<td>not</td>
+<td>lower</td>
+<td>upper</td>
+<td>trim</td>
+<td>substring</td>
+</tr>
+<tr class="row-even"><td>regexp_replace</td>
+<td>regexp_substring</td>
+<td>char_length</td>
+<td>ltrim</td>
+<td>rtrim</td>
+<td>split</td>
+</tr>
+<tr class="row-odd"><td>extract</td>
+<td>concat</td>
+<td>like</td>
+<td>regex_like</td>
+<td>&#160;</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>For other SQL syntax support, like case…when…, coalesce, IF, time ± intervals, etc, you can refer details under <a class="reference external" href="https://github.com/yma11/BDTK/tree/doc/docs/user/feature">feature</a>.</p>
 </div>
 </div>
 
@@ -65,6 +132,7 @@
 <li><a class="reference internal" href="#">Expression Evaluation Module Introduction</a><ul>
 <li><a class="reference internal" href="#module-descritption">Module descritption</a></li>
 <li><a class="reference internal" href="#sdk-api">SDK API</a></li>
+<li><a class="reference internal" href="#supported-functions">Supported functions</a></li>
 </ul>
 </li>
 </ul>
