@@ -29,28 +29,29 @@ using namespace cider::jitlib;
 
 class JITLibTests : public ::testing::Test {};
 
-template <JITTypeTag Type, typename NativeType, typename BuilderType>
+template <JITTypeTag Type, JITTypeTag Ret, typename NativeType, typename BuilderType>
 void executeSingleParamTest(NativeType input, NativeType output, BuilderType builder) {
+  using RetNativeType = typename JITTypeTraits<Ret>::NativeType;
   LLVMJITModule module("TestModule");
 
   JITFunctionPointer func = JITFunctionBuilder()
                                 .setFuncName("test_func")
                                 .registerModule(module)
                                 .addParameter(Type, "x")
-                                .addReturn(Type)
+                                .addReturn(Ret)
                                 .addProcedureBuilder(builder)
                                 .build();
   module.finish();
 
-  auto func_ptr = func->getFunctionPointer<NativeType, NativeType>();
-  EXPECT_EQ(func_ptr(input), output);
+  auto func_ptr = func->getFunctionPointer<RetNativeType, NativeType>();
+  EXPECT_EQ(func_ptr(input), (RetNativeType)output);
 }
 
 using OpFunc = JITValuePointer(JITValue&, JITValue&);
-template <JITTypeTag Type, typename T>
+template <JITTypeTag Type, JITTypeTag Ret = Type, typename T>
 void executeBinaryOp(T left, T right, T output, OpFunc op) {
   using NativeType = typename JITTypeTraits<Type>::NativeType;
-  executeSingleParamTest<Type>(
+  executeSingleParamTest<Type, Ret>(
       static_cast<NativeType>(left),
       static_cast<NativeType>(output),
       [&, right = static_cast<NativeType>(right)](JITFunctionPointer func) {
@@ -172,6 +173,30 @@ TEST_F(JITLibTests, LogicalOpTest) {
       true, false, false, [](JITValue& a, JITValue& b) { return !a; });
   executeBinaryOp<JITTypeTag::BOOL>(
       false, true, true, [](JITValue& a, JITValue& b) { return !a; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      100, 0, 0, [](JITValue& a, JITValue& b) { return !a; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      101, 0, 0, [](JITValue& a, JITValue& b) { return !a; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      0, 0, 1, [](JITValue& a, JITValue& b) { return !a; });
+
+  // Bitwise Not
+  executeBinaryOp<JITTypeTag::INT8>(
+      100, 0, ~100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      100, 0, ~100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      100, 0, ~100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      100, 0, ~100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT8>(
+      -100, 0, ~-100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      -100, 0, ~-100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      -100, 0, ~-100, [](JITValue& a, JITValue& b) { return ~a; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      -100, 0, ~-100, [](JITValue& a, JITValue& b) { return ~a; });
 
   // and
   executeBinaryOp<JITTypeTag::BOOL>(
@@ -182,6 +207,36 @@ TEST_F(JITLibTests, LogicalOpTest) {
       true, false, false, [](JITValue& a, JITValue& b) { return false && a && b; });
   executeBinaryOp<JITTypeTag::BOOL>(
       false, false, false, [](JITValue& a, JITValue& b) { return true && a && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, true, false, [](JITValue& a, JITValue& b) { return a && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, false, false, [](JITValue& a, JITValue& b) { return a && b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, true, true, [](JITValue& a, JITValue& b) { return a && b; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      100, 0, 0, [](JITValue& a, JITValue& b) { return a && b; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      0, 0, 0, [](JITValue& a, JITValue& b) { return a && b; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      101, 100, 1, [](JITValue& a, JITValue& b) { return a && b; });
+
+  // Bitwise And
+  executeBinaryOp<JITTypeTag::INT8>(
+      100, 56, 100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      100, 56, 100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      100, 56, 100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      100, 56, 100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT8>(
+      -100, 56, -100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      -100, 56, -100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      -100, 56, -100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      -100, 56, -100 & 56, [](JITValue& a, JITValue& b) { return a & b; });
 
   // or
   executeBinaryOp<JITTypeTag::BOOL>(
@@ -192,6 +247,36 @@ TEST_F(JITLibTests, LogicalOpTest) {
       false, true, true, [](JITValue& a, JITValue& b) { return true || a || b; });
   executeBinaryOp<JITTypeTag::BOOL>(
       false, false, false, [](JITValue& a, JITValue& b) { return a || false || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, true, true, [](JITValue& a, JITValue& b) { return a || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      false, false, false, [](JITValue& a, JITValue& b) { return a || b; });
+  executeBinaryOp<JITTypeTag::BOOL>(
+      true, true, true, [](JITValue& a, JITValue& b) { return a || b; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      100, 0, 1, [](JITValue& a, JITValue& b) { return a || b; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      0, 0, 0, [](JITValue& a, JITValue& b) { return a || b; });
+  executeBinaryOp<JITTypeTag::INT32, JITTypeTag::BOOL>(
+      101, 100, 1, [](JITValue& a, JITValue& b) { return a || b; });
+
+  // Bitwise Or
+  executeBinaryOp<JITTypeTag::INT8>(
+      100, 56, 100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      100, 56, 100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      100, 56, 100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      100, 56, 100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT8>(
+      -100, 56, -100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      -100, 56, -100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      -100, 56, -100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      -100, 56, -100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
 }
 
 TEST_F(JITLibTests, CompareOpTest) {

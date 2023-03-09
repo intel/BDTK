@@ -27,7 +27,11 @@
 
 namespace cider::jitlib {
 LLVMJITEngine::~LLVMJITEngine() {
+  engine->UnregisterJITEventListener(perf_listener);
+  engine->UnregisterJITEventListener(intel_listener);
   LLVMDisposeExecutionEngine(llvm::wrap(engine));
+  delete perf_listener;
+  delete intel_listener;
 }
 
 LLVMJITEngineBuilder::LLVMJITEngineBuilder(LLVMJITModule& module, llvm::TargetMachine* tm)
@@ -67,10 +71,10 @@ std::unique_ptr<LLVMJITEngine> LLVMJITEngineBuilder::build() {
   engine->engine->DisableLazyCompilation(false);
   engine->engine->setVerifyModules(false);
 
-  engine->engine->RegisterJITEventListener(
-      llvm::JITEventListener::createPerfJITEventListener());
-  engine->engine->RegisterJITEventListener(
-      llvm::JITEventListener::createIntelJITEventListener());
+  engine->perf_listener = llvm::JITEventListener::createPerfJITEventListener();
+  engine->engine->RegisterJITEventListener(engine->perf_listener);
+  engine->intel_listener = llvm::JITEventListener::createIntelJITEventListener();
+  engine->engine->RegisterJITEventListener(engine->intel_listener);
 
   DLOG(INFO) << "Enabled features: "
              << engine->engine->getTargetMachine()->getTargetFeatureString().str();

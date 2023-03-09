@@ -25,6 +25,7 @@
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
+#include <type_traits>
 
 namespace cider::jitlib {
 inline llvm::Type* getLLVMType(JITTypeTag tag, llvm::LLVMContext& ctx) {
@@ -87,9 +88,12 @@ inline llvm::Value* getLLVMConstantInt(NativeType value, llvm::LLVMContext& ctx)
     case JITTypeTag::INT64:
       return llvm::ConstantInt::get(type, (uint64_t)value, true);
     case JITTypeTag::INT128:
-      return llvm::ConstantInt::get(
-          ctx,
-          ((llvm::APInt(128, value >> 64) << 64) | llvm::APInt(128, (uint64_t)value)));
+      if constexpr (std::is_same_v<NativeType,
+                                   JITTypeTraits<JITTypeTag::INT128>::NativeType>) {
+        return llvm::ConstantInt::get(
+            ctx,
+            ((llvm::APInt(128, value >> 64) << 64) | llvm::APInt(128, (uint64_t)value)));
+      }
     default:
       return nullptr;
   }

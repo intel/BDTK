@@ -38,6 +38,8 @@ struct CompilationOptions {
 
 struct LLVMJITEngine {
   llvm::ExecutionEngine* engine{nullptr};
+  llvm::JITEventListener* perf_listener{nullptr};
+  llvm::JITEventListener* intel_listener{nullptr};
 
   ~LLVMJITEngine();
 };
