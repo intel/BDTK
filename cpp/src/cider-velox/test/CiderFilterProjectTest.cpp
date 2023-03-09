@@ -23,7 +23,10 @@
 #include "CiderOperatorTestBase.h"
 #include "CiderPlanBuilder.h"
 
-using namespace facebook::velox::plugin::test;
+using namespace facebook::velox;
+
+using facebook::velox::exec::test::PlanBuilder;
+using facebook::velox::plugin::test::CiderPlanBuilder;
 
 class CiderOperatorFilterProjectOpTest : public CiderOperatorTestBase {};
 
@@ -40,6 +43,7 @@ TEST_F(CiderOperatorFilterProjectOpTest, asteriskProjectTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::init(&argc, &argv, false);
   return RUN_ALL_TESTS();
 }

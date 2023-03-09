@@ -26,13 +26,11 @@
 #include "CiderVeloxPluginCtx.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 
-using namespace facebook::velox::exec::test;
-
 namespace facebook::velox::plugin::test {
 
 class CiderPlanBuilder {
  public:
-  CiderPlanBuilder() : planBuilder_{PlanBuilder()} {};
+  CiderPlanBuilder() : planBuilder_{exec::test::PlanBuilder()} {};
 
   CiderPlanBuilder& values(const std::vector<RowVectorPtr>& batches);
   CiderPlanBuilder& filter(const std::string& filter);
@@ -44,7 +42,7 @@ class CiderPlanBuilder {
   const VeloxPlanNodePtr planNode();
 
  private:
-  PlanBuilder planBuilder_;
+  exec::test::PlanBuilder planBuilder_;
 };
 
 }  // namespace facebook::velox::plugin::test

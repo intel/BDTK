@@ -79,107 +79,111 @@ core::PlanNodePtr VeloxPlanFragmentToSubstraitPlan::constructVeloxPlan(
 void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
     const std::vector<core::PlanNodePtr>& planNodeList) {
   for (auto riter = planNodeList.rbegin(); riter != planNodeList.rend(); riter++) {
-    if (auto projNode = std::dynamic_pointer_cast<const ProjectNode>(*riter)) {
+    if (auto projNode = std::dynamic_pointer_cast<const core::ProjectNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
         return std::make_shared<core::ProjectNode>(projNode->id(),
                                                    projNode->names(),
                                                    projNode->projections(),
                                                    planBuilder_->planNode());
       });
-    } else if (auto aggNode = std::dynamic_pointer_cast<const AggregationNode>(*riter)) {
+    } else if (auto aggNode =
+                   std::dynamic_pointer_cast<const core::AggregationNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<AggregationNode>(aggNode->id(),
-                                                 aggNode->step(),
-                                                 aggNode->groupingKeys(),
-                                                 aggNode->preGroupedKeys(),
-                                                 aggNode->aggregateNames(),
-                                                 aggNode->aggregates(),
-                                                 aggNode->aggregateMasks(),
-                                                 aggNode->ignoreNullKeys(),
-                                                 planBuilder_->planNode());
+        return std::make_shared<core::AggregationNode>(aggNode->id(),
+                                                       aggNode->step(),
+                                                       aggNode->groupingKeys(),
+                                                       aggNode->preGroupedKeys(),
+                                                       aggNode->aggregateNames(),
+                                                       aggNode->aggregates(),
+                                                       aggNode->aggregateMasks(),
+                                                       aggNode->ignoreNullKeys(),
+                                                       planBuilder_->planNode());
       });
-    } else if (auto filterNode = std::dynamic_pointer_cast<const FilterNode>(*riter)) {
+    } else if (auto filterNode =
+                   std::dynamic_pointer_cast<const core::FilterNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<FilterNode>(
+        return std::make_shared<core::FilterNode>(
             filterNode->id(), filterNode->filter(), planBuilder_->planNode());
       });
-    } else if (auto orderByNode = std::dynamic_pointer_cast<const OrderByNode>(*riter)) {
+    } else if (auto orderByNode =
+                   std::dynamic_pointer_cast<const core::OrderByNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<OrderByNode>(orderByNode->id(),
-                                             orderByNode->sortingKeys(),
-                                             orderByNode->sortingOrders(),
-                                             orderByNode->isPartial(),
-                                             planBuilder_->planNode());
+        return std::make_shared<core::OrderByNode>(orderByNode->id(),
+                                                   orderByNode->sortingKeys(),
+                                                   orderByNode->sortingOrders(),
+                                                   orderByNode->isPartial(),
+                                                   planBuilder_->planNode());
       });
-    } else if (auto limitNode = std::dynamic_pointer_cast<const LimitNode>(*riter)) {
+    } else if (auto limitNode =
+                   std::dynamic_pointer_cast<const core::LimitNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<LimitNode>(limitNode->id(),
-                                           limitNode->offset(),
-                                           limitNode->count(),
-                                           limitNode->isPartial(),
-                                           planBuilder_->planNode());
+        return std::make_shared<core::LimitNode>(limitNode->id(),
+                                                 limitNode->offset(),
+                                                 limitNode->count(),
+                                                 limitNode->isPartial(),
+                                                 planBuilder_->planNode());
       });
-    } else if (auto topNNode = std::dynamic_pointer_cast<const TopNNode>(*riter)) {
+    } else if (auto topNNode = std::dynamic_pointer_cast<const core::TopNNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<TopNNode>(topNNode->id(),
-                                          topNNode->sortingKeys(),
-                                          topNNode->sortingOrders(),
-                                          topNNode->count(),
-                                          topNNode->isPartial(),
-                                          planBuilder_->planNode());
+        return std::make_shared<core::TopNNode>(topNNode->id(),
+                                                topNNode->sortingKeys(),
+                                                topNNode->sortingOrders(),
+                                                topNNode->count(),
+                                                topNNode->isPartial(),
+                                                planBuilder_->planNode());
       });
-    } else if (auto valuesNode = std::dynamic_pointer_cast<const ValuesNode>(*riter)) {
+    } else if (auto valuesNode =
+                   std::dynamic_pointer_cast<const core::ValuesNode>(*riter)) {
       planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-        return std::make_shared<ValuesNode>(valuesNode->id(), valuesNode->values());
+        return std::make_shared<core::ValuesNode>(valuesNode->id(), valuesNode->values());
       });
     } else if (auto joinNode =
-                   std::dynamic_pointer_cast<const AbstractJoinNode>(*riter)) {
+                   std::dynamic_pointer_cast<const core::AbstractJoinNode>(*riter)) {
       // TODO: current does not support for pattern like "filter-project->join->filter"
       const auto& joinLeftSource = joinNode->sources()[0];
       const auto& joinRightSource = joinNode->sources()[1];
 
-      auto leftValuesNode = std::make_shared<ValuesNode>(
+      auto leftValuesNode = std::make_shared<core::ValuesNode>(
           joinLeftSource->id(), makeVectors(joinLeftSource->outputType()));
-      auto rigthValuesNode = std::make_shared<ValuesNode>(
+      auto rigthValuesNode = std::make_shared<core::ValuesNode>(
           joinRightSource->id(), makeVectors(joinRightSource->outputType()));
 
-      if (std::dynamic_pointer_cast<const HashJoinNode>(*riter)) {
+      if (std::dynamic_pointer_cast<const core::HashJoinNode>(*riter)) {
         planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-          return std::make_shared<HashJoinNode>(joinNode->id(),
-                                                joinNode->joinType(),
-                                                joinNode->leftKeys(),
-                                                joinNode->rightKeys(),
-                                                joinNode->filter(),
-                                                leftValuesNode,
-                                                rigthValuesNode,
-                                                joinNode->outputType());
+          return std::make_shared<core::HashJoinNode>(joinNode->id(),
+                                                      joinNode->joinType(),
+                                                      joinNode->leftKeys(),
+                                                      joinNode->rightKeys(),
+                                                      joinNode->filter(),
+                                                      leftValuesNode,
+                                                      rigthValuesNode,
+                                                      joinNode->outputType());
         });
       } else {
         planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
-          return std::make_shared<MergeJoinNode>(joinNode->id(),
-                                                 joinNode->joinType(),
-                                                 joinNode->leftKeys(),
-                                                 joinNode->rightKeys(),
-                                                 joinNode->filter(),
-                                                 leftValuesNode,
-                                                 rigthValuesNode,
-                                                 joinNode->outputType());
+          return std::make_shared<core::MergeJoinNode>(joinNode->id(),
+                                                       joinNode->joinType(),
+                                                       joinNode->leftKeys(),
+                                                       joinNode->rightKeys(),
+                                                       joinNode->filter(),
+                                                       leftValuesNode,
+                                                       rigthValuesNode,
+                                                       joinNode->outputType());
         });
       }
-
     } else {
       VELOX_UNSUPPORTED("Unsupported node '{}'", riter->get()->name());
     }
   }
 }
 
-std::shared_ptr<const ValuesNode> VeloxPlanFragmentToSubstraitPlan::makeValuesNode(
+std::shared_ptr<const core::ValuesNode> VeloxPlanFragmentToSubstraitPlan::makeValuesNode(
     const core::PlanNodePtr& sourceNode) {
   // Here we only consider that all nodes in the plan only have one source.
   auto previousNode = sourceNode->sources()[0];
 
-  return std::make_shared<ValuesNode>(previousNode->id(),
-                                      makeVectors(previousNode->outputType()));
+  return std::make_shared<core::ValuesNode>(previousNode->id(),
+                                            makeVectors(previousNode->outputType()));
 }
 
 std::vector<RowVectorPtr> VeloxPlanFragmentToSubstraitPlan::makeVectors(
@@ -195,7 +199,7 @@ std::vector<RowVectorPtr> VeloxPlanFragmentToSubstraitPlan::makeVectors(
 }
 
 bool VeloxPlanFragmentToSubstraitPlan::shouldAppendValuesNode(
-    const PlanNodePtr& sourceNode) const {
+    const core::PlanNodePtr& sourceNode) const {
   return !std::dynamic_pointer_cast<const core::ValuesNode>(sourceNode) &&
          !std::dynamic_pointer_cast<const core::AbstractJoinNode>(sourceNode);
 }

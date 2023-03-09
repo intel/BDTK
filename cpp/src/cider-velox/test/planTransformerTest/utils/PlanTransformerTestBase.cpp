@@ -27,10 +27,14 @@
 using namespace facebook::velox::plugin::plantransformer;
 
 namespace facebook::velox::plugin::plantransformer::test {
+
+using facebook::velox::exec::test::PlanBuilder;
+
 bool PlanTransformerTestBase::compareWithExpected(VeloxPlanNodePtr result,
                                                   VeloxPlanNodePtr expected) {
   return PlanTansformerTestUtil::comparePlanSequence(result, expected);
 }
+
 std::shared_ptr<PlanTransformer> PlanTransformerTestBase::getTransformer(
     VeloxPlanNodePtr root) {
   return transformerFactory_.getTransformer(root);

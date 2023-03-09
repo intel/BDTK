@@ -140,6 +140,7 @@ TEST_F(CiderPatternTest, ProjectExprPattern) {
   assertQuery(veloxPlan, duckdbSql);
 
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
+
   assertQuery(resultPtr, duckdbSql);
 
   const ::substrait::Plan substraitPlan = ::substrait::Plan();

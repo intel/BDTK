@@ -26,13 +26,9 @@
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/type/Type.h"
 
-using namespace facebook::velox;
-using namespace facebook::velox::exec::test;
-using namespace facebook::velox::plugin;
-
 using facebook::velox::test::BatchMaker;
 
-class CiderOperatorTestBase : public OperatorTestBase {
+class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBase {
  protected:
   void SetUp() override {
     FLAGS_left_deep_join_pattern = true;
@@ -42,26 +38,28 @@ class CiderOperatorTestBase : public OperatorTestBase {
     // supported patterns in our tests.
     // FLAGS_top_n_pattern = true;
     // FLAGS_order_by_pattern = true;
-    CiderVeloxPluginCtx::init();
+    facebook::velox::plugin::CiderVeloxPluginCtx::init();
   }
 
  protected:
-  const std::vector<RowVectorPtr> generateTestBatch(RowTypePtr& rowType,
-                                                    bool withNull = false) {
-    std::vector<RowVectorPtr> batches;
+  const std::vector<facebook::velox::RowVectorPtr> generateTestBatch(
+      facebook::velox::RowTypePtr& rowType,
+      bool withNull = false) {
+    std::vector<facebook::velox::RowVectorPtr> batches;
     for (int32_t i = 0; i < 10; ++i) {
-      auto batch = std::dynamic_pointer_cast<RowVector>(BatchMaker::createBatch(
-          rowType, 100, *pool_, withNull ? randomNulls(7) : nullptr));
+      auto batch =
+          std::dynamic_pointer_cast<facebook::velox::RowVector>(BatchMaker::createBatch(
+              rowType, 100, *pool_, withNull ? randomNulls(7) : nullptr));
       batches.push_back(batch);
     }
     createDuckDbTable(batches);
     return batches;
   }
 
-  void verify(const VeloxPlanNodePtr& ciderPlan,
+  void verify(const facebook::velox::plugin::VeloxPlanNodePtr& ciderPlan,
               const std::string& referenceQuery,
               int numThreads = 1) {
-    CursorParameters params;
+    facebook::velox::exec::test::CursorParameters params;
     params.planNode = ciderPlan;
     params.maxDrivers = numThreads;
 
@@ -69,7 +67,9 @@ class CiderOperatorTestBase : public OperatorTestBase {
   }
 
  private:
-  std::function<bool(vector_size_t /*index*/)> randomNulls(int32_t n) {
-    return [n](vector_size_t /*index*/) { return folly::Random::rand32() % n == 0; };
+  std::function<bool(facebook::velox::vector_size_t /*index*/)> randomNulls(int32_t n) {
+    return [n](facebook::velox::vector_size_t /*index*/) {
+      return folly::Random::rand32() % n == 0;
+    };
   }
 };

@@ -23,7 +23,10 @@
 #include "CiderPlanTransformerIncludes.h"
 
 namespace facebook::velox::plugin::plantransformer::test {
+
 using namespace facebook::velox::core;
+using facebook::velox::exec::test::PlanBuilder;
+
 class CiderPatternJoinMixedTest : public PlanTransformerTestBase {
  public:
   CiderPatternJoinMixedTest() {

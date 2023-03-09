@@ -24,6 +24,7 @@
 #include "CiderOperatorTestBase.h"
 #include "CiderPlanBuilder.h"
 
+using namespace facebook::velox;
 using namespace facebook::velox::plugin::test;
 
 #define ROW_TPYE_LIST TINYINT(), SMALLINT(), INTEGER(), BIGINT()
@@ -83,6 +84,7 @@ TEST_F(CiderOperatorCompareOpTest, compareOpForDoubleAndRealTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::init(&argc, &argv, false);
   return RUN_ALL_TESTS();
 }
