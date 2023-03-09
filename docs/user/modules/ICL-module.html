@@ -46,14 +46,46 @@
 <span id="icl-user-guide-reference-link"></span><h1>Intel Codec Library User Guide<a class="headerlink" href="#intel-codec-library-user-guide" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-description">
 <span id="icl-description-reference-link"></span><h2>Module description<a class="headerlink" href="#module-description" title="Permalink to this headline">¶</a></h2>
-<p>The Intel Codec Library (ICL) provides compression and decompression library for Apache Hadoop/Spark/Parquet and so on to make use of the hardware accelerator, and/or software for compression/decompression. It not only supports the use of Intel hardware accelerator such as QAT and IAA to accelerate the deflate-compatible data compression algorithm but also supports the use of Intel optimized software solutions such as Intel ISA-L(Intel Intelligent Storage Acceleration Library) and IPP(Intel Integrated Performance Primitives Library) to accelerate the data compression.</p>
+<p>The Intel Codec Library (ICL) provides compression and decompression library for Apache Hadoop/Spark/Parquet/Arrow to make use of the hardware accelerator, and/or software for compression/decompression. It not only supports the use of Intel hardware accelerator such as QAT and IAA to accelerate the deflate-compatible data compression algorithm but also supports the use of Intel optimized software solutions such as ISA-L(Intel Intelligent Storage Acceleration Library) and IPP(Intel Integrated Performance Primitives Library) which utilize the latest CPU features (such as AVX-512) to accelerate the data compression.</p>
 <p>Currently the Intel Codec Library supports the following backends:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">IGZIP</span></code> - use ISA-L software to accelerate the compression</li>
-<li><code class="docutils literal notranslate"><span class="pre">QPL</span></code> - use IAA hardware accelerator to accelerate the compression</li>
 <li><code class="docutils literal notranslate"><span class="pre">QAT</span></code> - use QAT hardware accelerator to accelerate the compression</li>
-<li><code class="docutils literal notranslate"><span class="pre">IPP</span></code> - use IPP software to accelerate the compression. <strong>Note:</strong> <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">license</span> <span class="pre">is</span> <span class="pre">needed</span> <span class="pre">to</span> <span class="pre">use</span> <span class="pre">IPP</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">QPL</span></code> - use IAA hardware accelerator to accelerate the compression</li>
+<li><code class="docutils literal notranslate"><span class="pre">IPP</span></code> - use IPP software to accelerate the compression. <strong>Note:</strong> Please refer <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/articles/troubleshooting/oneapi-commercial-faq.html">FAQ</a> for IPP commercial products support.</li>
 </ul>
+<p>Please check the table below to see which compression codecs are supported by each backend.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="40%" />
+<col width="30%" />
+<col width="30%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">&#160;</th>
+<th class="head">Deflate</th>
+<th class="head">LZ4</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IGZIP</td>
+<td>Y</td>
+<td>X</td>
+</tr>
+<tr class="row-odd"><td>QAT</td>
+<td>Y</td>
+<td>Y</td>
+</tr>
+<tr class="row-even"><td>QPL</td>
+<td>Y</td>
+<td>X</td>
+</tr>
+<tr class="row-odd"><td>IPP</td>
+<td>Y</td>
+<td>Y</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="sdk-api">
 <span id="icl-sdk-api-reference-link"></span><h2>SDK API<a class="headerlink" href="#sdk-api" title="Permalink to this headline">¶</a></h2>
@@ -69,7 +101,6 @@
 <li>nasm 2.14.0 or higher (e.g., can be obtained from <a class="reference external" href="https://www.nasm.us">https://www.nasm.us</a>)</li>
 <li>A C++17-enabled compiler. GCC 8 and higher should be sufficient</li>
 <li>CMake version 3.16 or higher</li>
-<li><code class="docutils literal notranslate"><span class="pre">libaccel-config</span></code> library version 3.2 or higher is required for building Intel Codec Library with QPL support. Refer to <a class="reference external" href="https://github.com/intel/idxd-config/">accel-config releases</a> for how to install.</li>
 </ul>
 </div>
 <div class="section" id="build">
@@ -81,43 +112,105 @@
 </pre></div>
 </div>
 </li>
-<li><p class="first">Build the library and tests by executing the following commands in <code class="docutils literal notranslate"><span class="pre">&lt;BDTK&gt;</span></code></p>
+<li><p class="first">Build the library by executing the following commands in <code class="docutils literal notranslate"><span class="pre">&lt;BDTK&gt;</span></code></p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir build
 <span class="nb">cd</span> build
-cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF -DCMAKE_INSTALL_PREFIX<span class="o">=</span>&lt;install_dir&gt; ..
-cmake --build . --target install
+cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF ../cpp
+cmake --build .
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">You need to see more options to customize your build. See <a class="reference internal" href="#icl-build-options-reference-link"><span class="std std-ref">Build Options</span></a> for details.</p>
+<p class="last">You need to set more options to customize your build. See <a class="reference internal" href="#icl-build-options-reference-link"><span class="std std-ref">Build Options</span></a> for details.</p>
 </div>
 </li>
 </ol>
 </div>
 <div class="section" id="build-options">
 <span id="icl-build-options-reference-link"></span><h3>Build Options<a class="headerlink" href="#build-options" title="Permalink to this headline">¶</a></h3>
-<p>By default, the C++ build system creates a fairly minimal build. Intel Codec Library supports the following build options which you can opt into building by passing
-boolean flags to <code class="docutils literal notranslate"><span class="pre">cmake</span></code>.</p>
+<p>By default, the C++ build system creates a fairly minimal build. Intel Codec Library supports the following build options which you can configure into build system by passing boolean flags to <code class="docutils literal notranslate"><span class="pre">cmake</span></code>.</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_QPL=[ON|OFF]</span></code> - Build ICL with QPL codec (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
-<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_QAT=[ON|OFF]</span></code> - Build ICL with QAT codec (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
-<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_IGZIP=[ON|OFF]</span></code> - Build ICL with IGZIP codec (<code class="docutils literal notranslate"><span class="pre">ON</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_IGZIP=[ON|OFF]</span></code> - Build ICL with IGZIP backend (<code class="docutils literal notranslate"><span class="pre">ON</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_QAT=[ON|OFF]</span></code> - Build ICL with QAT backend (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_QPL=[ON|OFF]</span></code> - Build ICL with QPL backend (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
+<li><code class="docutils literal notranslate"><span class="pre">-DICL_WITH_IPP=[ON|OFF]</span></code> - Build ICL with IPP backend (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
 <li><code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_TESTS=[ON|OFF]</span></code> - Build the ICL googletest unit tests (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
 <li><code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=[ON|OFF]</span></code> - Build the ICL micro benchmarks (<code class="docutils literal notranslate"><span class="pre">OFF</span></code> by default).</li>
 </ul>
 </div>
 <div class="section" id="modular-build-target">
 <h3>Modular Build Target<a class="headerlink" href="#modular-build-target" title="Permalink to this headline">¶</a></h3>
-<p>Since there are several suport codes of the ICL, we have provided
-modular CMake target for building each supported codecs, group of unit tests
-and benchmarks:</p>
+<p>Since there are several suport backends of the ICL, we have provided modular Make target for building each supported backends, group of unit tests and benchmarks:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl</span></code> for ICL libraries which enable only <em>igzip</em> codec support.</li>
-<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-qpl</span></code> for ICL libraries which enable only <em>qpl</em> codec support.</li>
-<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-qat</span></code> for ICL libraries which enable only <em>qat</em> codec support.</li>
-<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-all</span></code> for ICL libraries which enable all supported codes.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl</span></code> for ICL libraries which enable only <em>igzip</em> backend support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-qat</span></code> for ICL libraries which enable only <em>qat</em> backend support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-qpl</span></code> for ICL libraries which enable only <em>qpl</em> backend support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-ipp</span></code> for ICL libraries which enable only <em>ipp</em> backend support.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-all</span></code> for ICL libraries which enable all supported backends.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-test</span></code> for ICL libraries which enable unit tests for all supported backends.</li>
+<li><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">icl-benchmark</span></code> for ICL libraries which enable benchmark for all supported backends.</li>
 </ul>
+</div>
+<div class="section" id="additional-requirements-for-qat-backend">
+<h3>Additional requirements for QAT backend<a class="headerlink" href="#additional-requirements-for-qat-backend" title="Permalink to this headline">¶</a></h3>
+<p>QAT backend is based on <a class="reference external" href="https://www.intel.com/content/www/us/en/search.html?ws=idsa-default#q=quickassist&amp;sort=relevancy&amp;f:&#64;tabfilter=[Downloads]">QAT driver</a> and <a class="reference external" href="https://github.com/intel/QATzip">QATzip library</a>. Please manually download QAT driver for your system and follow its README to build and install QAT driver. In addition to install the QAT driver you also need follow QATZip library README to manually build and install the QATZip library.</p>
+<p>After installing the QAT driver and QATZip library, you need to do some confiugration on the QAT to enable QAT backend at run-time.</p>
+<ol class="arabic">
+<li><p class="first">Enable huge page</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span> <span class="m">1024</span> &gt; /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+rmmod usdm_drv
+insmod <span class="nv">$ICP_ROOT</span>/build/usdm_drv.ko <span class="nv">max_huge_pages</span><span class="o">=</span><span class="m">1024</span> <span class="nv">max_huge_pages_per_process</span><span class="o">=</span><span class="m">48</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Update configuration files</p>
+<p>You need have the right QAT configuration files at the directory of <code class="docutils literal notranslate"><span class="pre">/etc</span></code>. Please see <a class="reference external" href="https://www.intel.com/content/www/us/en/content-details/743913/intel-quickassist-technology-intel-qat-software-for-linux-programmers-guide-hardware-version-2-0.html">QAT Programmer’s Guide</a>  for how to configure QAT. We provide an example <a class="reference external" href="https://github.com/intel/BDTK/src/compression/resource/qat/4xxx_dev0.conf">configuration file</a> for your reference. This configuration file sets up to 4 processes that can bind to 1 QAT, and each process can use up to 16 QAT DC instances. Please modify this configuration file according to your requirements and copy the configuration file to directory of <code class="docutils literal notranslate"><span class="pre">/etc/</span></code>.</p>
+</li>
+<li><p class="first">Restart QAT driver</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adf_ctrl restart
+</pre></div>
+</div>
+<p>You can check the QAT hardware status use the below command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adf_ctrl status
+</pre></div>
+</div>
+<p>If all goes well, the output should be like:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>There is <span class="m">8</span> QAT acceleration device<span class="o">(</span>s<span class="o">)</span> in the system:
+qat_dev0 - type: 4xxx,  inst_id: <span class="m">0</span>,  node_id: <span class="m">0</span>,  bsf: <span class="m">0000</span>:6b:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev1 - type: 4xxx,  inst_id: <span class="m">1</span>,  node_id: <span class="m">1</span>,  bsf: <span class="m">0000</span>:70:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev2 - type: 4xxx,  inst_id: <span class="m">2</span>,  node_id: <span class="m">2</span>,  bsf: <span class="m">0000</span>:75:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev3 - type: 4xxx,  inst_id: <span class="m">3</span>,  node_id: <span class="m">3</span>,  bsf: <span class="m">0000</span>:7a:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev4 - type: 4xxx,  inst_id: <span class="m">4</span>,  node_id: <span class="m">4</span>,  bsf: <span class="m">0000</span>:e8:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev5 - type: 4xxx,  inst_id: <span class="m">5</span>,  node_id: <span class="m">5</span>,  bsf: <span class="m">0000</span>:ed:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev6 - type: 4xxx,  inst_id: <span class="m">6</span>,  node_id: <span class="m">6</span>,  bsf: <span class="m">0000</span>:f2:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+qat_dev7 - type: 4xxx,  inst_id: <span class="m">7</span>,  node_id: <span class="m">7</span>,  bsf: <span class="m">0000</span>:f7:00.0,  <span class="c1">#accel: 1 #engines: 9 state: up</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="simple">
+<li>For non-root user, you nedd <code class="docutils literal notranslate"><span class="pre">add</span> <span class="pre">Non-root</span> <span class="pre">user</span> <span class="pre">to</span> <span class="pre">qat</span> <span class="pre">group</span></code></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo usermod -g qat username <span class="c1"># need to relogin</span>
+or
+sudo newgrp qat  <span class="c1"># effective immediately</span>
+</pre></div>
+</div>
+<ul class="last simple">
+<li>The above additional requirements are not required when building the Intel Codec Library but only at runtime.</li>
+</ul>
+</div>
+</li>
+</ol>
+<p>For more Intel® QuickAssist Technology resources go to <a class="reference external" href="https://developer.intel.com/quickassist">Intel® QuickAssist Technology (Intel® QAT)</a>.</p>
+</div>
+<div class="section" id="additional-requirements-for-qpl-backend">
+<h3>Additional requirements for QPL backend<a class="headerlink" href="#additional-requirements-for-qpl-backend" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">libaccel-config</span></code> library version 3.2 or higher is required for building Intel Codec Library with QPL support. Refer to <a class="reference external" href="https://github.com/intel/idxd-config/">accel-config releases</a> for how to install.</p>
+</div>
+<div class="section" id="additional-requirements-for-ipp-backend">
+<h3>Additional requirements for IPP backend<a class="headerlink" href="#additional-requirements-for-ipp-backend" title="Permalink to this headline">¶</a></h3>
+<p>To be added</p>
 </div>
 </div>
 <div class="section" id="how-to-use-intel-codec-library">
@@ -131,7 +224,7 @@ and benchmarks:</p>
 <div class="section" id="icl-c-api">
 <h3>ICL C++ API<a class="headerlink" href="#icl-c-api" title="Permalink to this headline">¶</a></h3>
 <p>Intel Codec Library provides C++ API that the end users can directly call the C++ API to integrate into their own applications.</p>
-<p>Let’s walk through the below example that compresses and decompresses data with <cite>igzip</cite> codec to learn the basic workflow of Intel Codec Library C++ API.</p>
+<p>Let’s walk through the below example that compresses and decompresses data with <cite>igzip</cite> backend with compression leve one to learn the basic workflow of Intel Codec Library C++ API.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;icl/icl.h&quot;</span><span class="cp"></span>
 
 <span class="k">auto</span> <span class="n">codec</span> <span class="o">=</span> <span class="n">IclCompressionCodec</span><span class="o">::</span><span class="n">MakeIclCompressionCodec</span><span class="p">(</span><span class="s">&quot;igzip&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
@@ -207,14 +300,14 @@ git am <span class="m">0001</span>-Add-ICL-support.patch
 </ul>
 </div>
 </li>
-<li><p class="first">Set the environment <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> to enable Intel Codec Library, for example, to enable <code class="docutils literal notranslate"><span class="pre">igzip</span></code> codec, you can set <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> with the following command:</p>
+<li><p class="first">Set the environment <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> to enable Intel Codec Library, for example, to enable <code class="docutils literal notranslate"><span class="pre">igzip</span></code> backend, you can set <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> with the following command:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">GZIP_BACKEND</span><span class="o">=</span><span class="s2">&quot;igzip&quot;</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <ul class="last simple">
-<li>The supported <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> can be set  to one of <code class="docutils literal notranslate"><span class="pre">igzip</span></code>, <code class="docutils literal notranslate"><span class="pre">qpl</span></code>, or <code class="docutils literal notranslate"><span class="pre">qat</span></code></li>
+<li>The supported <code class="docutils literal notranslate"><span class="pre">GZIP_BACKEND</span></code> can be set  to one of <code class="docutils literal notranslate"><span class="pre">igzip</span></code>, <code class="docutils literal notranslate"><span class="pre">qat</span></code>, <code class="docutils literal notranslate"><span class="pre">qpl</span></code>, or <code class="docutils literal notranslate"><span class="pre">ipp</span></code></li>
 <li>The Arrow Codec must be set to <code class="docutils literal notranslate"><span class="pre">Compression::GZIP</span></code></li>
 </ul>
 </div>
@@ -259,15 +352,15 @@ git am <span class="m">0001</span>-Add-ICL-support.patch
 <li><p class="first">Build Intel Codec Library with benchmark option on:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir build
 <span class="nb">cd</span> build
-cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DICL_BUILD_BENCHMARKS<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF ..
+cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DICL_BUILD_BENCHMARKS<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF ../cpp
 cmake --build .
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <ul class="last simple">
-<li>To build benchmark, you need build Arrow first, please see <a class="reference internal" href="#icl-arrow-reference-link"><span class="std std-ref">ICL Arrow Compression Codec API</span></a> for how to build Arrow.</li>
-<li>Please see <span class="xref std std-ref">icl_building_the_library_reference_link</span> for how to customize your build and enable required codec.</li>
+<li>To build benchmark, you need build Arrow with ICL patch first, please see <a class="reference internal" href="#icl-arrow-reference-link"><span class="std std-ref">ICL Arrow Compression Codec API</span></a> for how to build Arrow.</li>
+<li>Please see <span class="xref std std-ref">icl_building_the_library_reference_link</span> for how to customize your build and enable required backend.</li>
 <li>Please make sure to turn on the option <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=ON</span></code> when build</li>
 <li>Please make sure build ICL with the correct Arrow package which build with ICL patch, you can set the environment <code class="docutils literal notranslate"><span class="pre">ARROW_HOME</span></code> to the folder where installed the Arrow with ICL patch.</li>
 </ul>
@@ -275,6 +368,10 @@ cmake --build .
 </li>
 <li><p class="first">Prepare the <code class="docutils literal notranslate"><span class="pre">Calgary</span> <span class="pre">corpus</span></code> data for benchmark
 You can download the data from <a class="reference external" href="http://www.data-compression.info/files/corpora/largecalgarycorpus.zip">here</a>, then unzip it and tar these files to a tar file <code class="docutils literal notranslate"><span class="pre">calgary.tar</span></code></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>unzip largecalgarycorpus.zip -d calgary
+tar cvf calgary.tar calgary
+</pre></div>
+</div>
 </li>
 <li><p class="first">Copy the calgary.tar to folder where you run the CompressionBenchmark which generated in step 1.</p>
 <div class="admonition note">
@@ -288,12 +385,57 @@ You can download the data from <a class="reference external" href="http://www.da
 </div>
 <div class="section" id="benchmark-for-parquet-file">
 <h3>Benchmark for parquet file<a class="headerlink" href="#benchmark-for-parquet-file" title="Permalink to this headline">¶</a></h3>
-<p>To be Added</p>
+<p>We use TPC-H lineitem table as the source to benchmark the parquet reader performance by reading all the columns in this table. Please follow the below steps to generate the Parquet file for TPC-H lineitem table and run the benchmark.</p>
+<ol class="arabic">
+<li><p class="first">Build Intel Codec Library with benchmark option on:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir build
+<span class="nb">cd</span> build
+cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DBDTK_ENABLE_ICL<span class="o">=</span>ON -DICL_BUILD_BENCHMARKS<span class="o">=</span>ON -DBDTK_ENABLE_CIDER<span class="o">=</span>OFF ../cpp
+cmake --build .
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>To build benchmark, you need build Arrow with ICL patch first, please see <a class="reference internal" href="#icl-arrow-reference-link"><span class="std std-ref">ICL Arrow Compression Codec API</span></a> for how to build Arrow.</li>
+<li>Please see <span class="xref std std-ref">icl_building_the_library_reference_link</span> for how to customize your build and enable required backend.</li>
+<li>Please make sure to turn on the option <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=ON</span></code> when build</li>
+<li>Please make sure build ICL with the correct Arrow package which build with ICL patch, you can set the environment <code class="docutils literal notranslate"><span class="pre">ARROW_HOME</span></code> to the folder where installed the Arrow with ICL patch.</li>
+</ul>
+</div>
+</li>
+<li><p class="first">Generate the Parquet file for TPC-H lineitem using the <code class="docutils literal notranslate"><span class="pre">TpchDataGen</span></code> tool, in your <code class="docutils literal notranslate"><span class="pre">build</span></code> directory, run the following command will generate parquet file <code class="docutils literal notranslate"><span class="pre">lineitem.igzip.parquet</span></code> with <code class="docutils literal notranslate"><span class="pre">igzip</span></code> backend with compression level one at TPC-H SF1.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./TpchDataGen -s <span class="m">1</span> -c <span class="s1">&#39;igzip&#39;</span> -l <span class="m">1</span> -f lineitem.igzip.parquet
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>You can specify the backend use <code class="docutils literal notranslate"><span class="pre">-c</span></code> parameter, <code class="docutils literal notranslate"><span class="pre">-f</span></code> to specify the name for parquet file, <code class="docutils literal notranslate"><span class="pre">-l</span></code> to specify the compression level and <code class="docutils literal notranslate"><span class="pre">-s</span></code> to specify the scale factor for TPCH datagen.</li>
+</ul>
+</div>
+</li>
+<li><p class="first">Run the bechmark using the <code class="docutils literal notranslate"><span class="pre">ParquetBenchmark</span></code> tool. As a example, the following command will benchmark <code class="docutils literal notranslate"><span class="pre">igzip</span></code> backend for single thread which will run 10 iterations.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./ParquetBenchmark -c <span class="s1">&#39;igzip&#39;</span> -f lineitem.igzip.parquet -i <span class="m">10</span> -t <span class="m">1</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>You can specify the backend use <code class="docutils literal notranslate"><span class="pre">-c</span></code> parameter, <code class="docutils literal notranslate"><span class="pre">-f</span></code> to specify the name for parquet file, <code class="docutils literal notranslate"><span class="pre">-i</span></code> to specify the iterations and <code class="docutils literal notranslate"><span class="pre">-t</span></code> to specify the threads run the benchmark.</li>
+<li>Please make sure that the file specified by <code class="docutils literal notranslate"><span class="pre">-f</span></code> is generated by <code class="docutils literal notranslate"><span class="pre">-c</span></code> backend in step 2.</li>
+</ul>
+</div>
+</li>
+</ol>
 </div>
 </div>
 <div class="section" id="limitation">
 <h2>Limitation<a class="headerlink" href="#limitation" title="Permalink to this headline">¶</a></h2>
 <p>In order to take full advantage of hardware acceleration, Intel Codec Library only supports block-based interface for compression, aka “one shot”, so the data compressed by ICL can’t be decompressed by stream-based software like Gzip.</p>
+</div>
+<div class="section" id="to-be-add">
+<h2>To Be Add<a class="headerlink" href="#to-be-add" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -313,6 +455,9 @@ You can download the data from <a class="reference external" href="http://www.da
 <li><a class="reference internal" href="#build">Build</a></li>
 <li><a class="reference internal" href="#build-options">Build Options</a></li>
 <li><a class="reference internal" href="#modular-build-target">Modular Build Target</a></li>
+<li><a class="reference internal" href="#additional-requirements-for-qat-backend">Additional requirements for QAT backend</a></li>
+<li><a class="reference internal" href="#additional-requirements-for-qpl-backend">Additional requirements for QPL backend</a></li>
+<li><a class="reference internal" href="#additional-requirements-for-ipp-backend">Additional requirements for IPP backend</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#how-to-use-intel-codec-library">How to use Intel Codec Library</a><ul>
@@ -327,6 +472,7 @@ You can download the data from <a class="reference external" href="http://www.da
 </ul>
 </li>
 <li><a class="reference internal" href="#limitation">Limitation</a></li>
+<li><a class="reference internal" href="#to-be-add">To Be Add</a></li>
 </ul>
 </li>
 </ul>
