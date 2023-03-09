@@ -17,17 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-find_package(gflags COMPONENTS shared)
-find_library(GLOG glog)
-find_package(folly CONFIG REQUIRED)
-
-set(FOLLY_BENCHMARK Folly::follybenchmark)
-
-set(EXPRESSION_TEST_LIBS
-    velox_vector_fuzzer cider cider_processor ${FOLLY_BENCHMARK}
-    ${VELOX_BENCHMARKS_DEPENDENCIES}
-    ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES})
-set(TEST_ARGS "")
+set(EXPRESSION_TEST_LIBS ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES}
+                         ${VELOX_BENCHMARKS_DEPENDENCIES})
 
 add_executable(ArithmeticAndComparison ArithmeticAndComparison.cpp)
 target_link_libraries(ArithmeticAndComparison ${EXPRESSION_TEST_LIBS})

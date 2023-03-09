@@ -50,11 +50,17 @@ set(FOLLY_WITH_DEPENDENCIES ${FOLLY_LIBRARIES} ${Boost_LIBRARIES}
 set(FOLLY_BENCHMARK Folly::follybenchmark)
 set(FOLLY ${FOLLY_LIBRARIES})
 set(VELOX_BENCHMARKS_DEPENDENCIES
+    cider
+    cider_processor
+    velox_plan_transformer
+    cider_plan_transformer
+    cider_plan_parser
     velox_aggregates
     velox_exec
     velox_exec_test_lib
     velox_dwio_common
     velox_dwio_common_exception
+    velox_dwio_common_test_utils
     velox_dwio_parquet_reader
     velox_dwio_type_fbhive
     velox_dwrf_test_utils
@@ -97,11 +103,7 @@ set(CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES
     ${gflags_LIBRARIES}
     ${GLOG}
     ${FILESYSTEM}
-    ${LLVM_LIB}
-    cider
-    velox_plan_transformer
-    cider_plan_transformer
-    cider_plan_parser)
+    ${LLVM_LIB})
 
 add_subdirectory(expression)
 add_subdirectory(tpch)
