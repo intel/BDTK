@@ -1,5 +1,6 @@
 /*
  * Copyright(c) 2022-2023 Intel Corporation.
+ * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -87,7 +88,8 @@ class ArrowArrayBuilder {
   ArrowArrayBuilder& addColumn(const std::string& col_name,
                                const ::substrait::Type& col_type,
                                const uint8_t* arrow_null_buffer,
-                               const uint8_t* arrow_data_buffer) {
+                               const uint8_t* arrow_data_buffer,
+                               const int64_t null_count) {
     CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
     ArrowArray* current_array = CiderBatchUtils::allocateArrowArray();
     ArrowSchema* current_schema = CiderBatchUtils::allocateArrowSchema();
@@ -109,6 +111,7 @@ class ArrowArrayBuilder {
       current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
       current_array->buffers[0] = arrow_null_buffer;
       current_array->buffers[1] = arrow_data_buffer;
+      current_array->null_count = null_count;
       current_array->n_buffers = 2;
       current_array->private_data = nullptr;
       current_array->dictionary = nullptr;
