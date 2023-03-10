@@ -243,10 +243,7 @@ void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
       ->update([&index]() { index = index + 1l; });
 
   auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
-  if (c2r_node->isVectorizable()) {
-    builder->setNoAlias(true);
-  }
-  builder->build();
+  builder->setNoAlias(c2r_node->isVectorizable())->build();
 
   // Execute defer build functions.
   for (auto& defer_func : c2r_node->getDeferFunctions()) {

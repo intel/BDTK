@@ -93,7 +93,7 @@ class LoopBuilder {
   }
 
   LoopBuilder* setNoAlias(bool flag) {
-    scope_noalias = flag;
+    scope_noalias_ = flag;
     return this;
   }
 
@@ -103,7 +103,7 @@ class LoopBuilder {
   std::function<JITValuePointer()> condition_;
   std::function<void(LoopBuilder*)> loop_body_;
   std::function<void()> update_;
-  bool scope_noalias{false};
+  bool scope_noalias_{false};
 };
 
 using IfBuilderPointer = std::unique_ptr<IfBuilder>;

@@ -120,7 +120,7 @@ void LLVMLoopBuilder::build() {
 
   builder_.SetInsertPoint(after_for);
 
-  if (scope_noalias) {
+  if (scope_noalias_) {
     llvm::MDNode* access_group = llvm::MDNode::getDistinct(func_.getContext(), {});
     for (llvm::BasicBlock* block : {condition_bb, for_body, for_update}) {
       for (auto& inst : block->getInstList()) {
