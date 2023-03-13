@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Q6Task.h"
+#include "TpchQ6DummyTask.h"
 
 // #include "velox/exec/tests/utils/TpchQueryBuilder.h"
 #include "velox/dwio/common/Options.h"
@@ -25,6 +25,7 @@
 #include "velox/dwio/parquet/duckdb_reader/ParquetReader.h"
 
 #include <gflags/gflags.h>
+#include "velox/vector/arrow/Bridge.h"
 
 using namespace facebook::velox;
 
@@ -65,7 +66,9 @@ void printResult(const RowVectorPtr result) {
 
 };  // namespace
 
-Q6Task::Q6Task() {
+namespace trino::velox {
+
+TpchQ6DummyTask::TpchQ6DummyTask() {
   CiderVeloxPluginCtx::init();
   functions::prestosql::registerAllScalarFunctions();
   parse::registerTypeResolver();
@@ -147,15 +150,30 @@ Q6Task::Q6Task() {
   }
   task_->noMoreSplits(lineitemPlanNodeId);
   VELOX_CHECK(task_->supportsSingleThreadedExecution());
+  is_finished_ = false;
 }
 
-RowVectorPtr Q6Task::getOutput() {
+void TpchQ6DummyTask::nextBatch(ArrowSchema* c_schema, ArrowArray* c_array) {
   auto result = task_->next();
   if (result) {
     for (auto& child : result->children()) {
       child->loadedVector();
     }
     printResult(result);
+    // exportToArrow(result, *c_array);
+    // exportToArrow(result, *c_schema);
+  } else {
+    is_finished_ = true;
   }
-  return result;
 }
+
+bool TpchQ6DummyTask::isFinished() {
+  return is_finished_;
+}
+
+void TpchQ6DummyTask::close() {}
+
+std::shared_ptr<TpchQ6Task> TpchQ6Task::Make() {
+  return std::make_shared<TpchQ6DummyTask>();
+}
+}  // namespace trino::velox

@@ -19,24 +19,16 @@
  * under the License.
  */
 
-#include "Q6Task.h"
+#include "TpchQ6Task.h"
 #include "velox/vector/arrow/Bridge.h"
 
-class Q6TaskTest : public testing::Test {};
+class TpchQ6DummyTaskTest : public testing::Test {};
 
-TEST_F(Q6TaskTest, test) {
-  auto task = std::make_shared<Q6Task>();
-  for (;;) {
+TEST_F(TpchQ6DummyTaskTest, test) {
+  auto task = trino::velox::TpchQ6Task::Make();
+  while (!task->isFinished()) {
     struct ArrowArray* output_array;
     struct ArrowSchema* output_schema;
-    auto result = task->getOutput();
-    if (!result) {
-      break;
-    }
-    for (size_t i = 0; i < result->childrenSize(); i++) {
-      result->childAt(i)->mutableRawNulls();
-    }
-    // exportToArrow(result, *output_array);
-    // exportToArrow(result, *output_schema);
+    task->nextBatch(output_schema, output_array);
   }
 }

@@ -28,11 +28,17 @@
 using namespace facebook::velox;
 using namespace facebook::velox::exec::test;
 
-class Q6Task {
+namespace trino::velox {
+class TpchQ6Task {
  public:
-  Q6Task();
-  RowVectorPtr getOutput();
+  ~TpchQ6Task() = default;
 
- private:
-  std::shared_ptr<exec::Task> task_;
+  static std::shared_ptr<TpchQ6Task> Make();
+
+  virtual void nextBatch(ArrowSchema* c_schema, ArrowArray* c_array) = 0;
+
+  virtual bool isFinished() = 0;
+
+  virtual void close() = 0;
 };
+}  // namespace trino::velox

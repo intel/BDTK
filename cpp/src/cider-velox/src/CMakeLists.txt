@@ -28,7 +28,7 @@ set(VELOX_PLUGIN_SOURCES
     CiderPipelineOperator.cpp
     CiderHashJoinBuild.cpp
     CiderCrossJoinBuild.cpp
-    Q6Task.cpp)
+    TpchQ6DummyTask.cpp)
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 

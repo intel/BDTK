@@ -123,10 +123,10 @@ target_link_libraries(CiderOperatorTest ${VELOX_PLUGIN_TEST_LIBS}
                       velox_plan_transformer)
 add_test(CiderOperatorTest CiderOperatorTest ${TEST_ARGS})
 
-add_executable(Q6TaskTest Q6TaskTest.cpp)
-target_link_libraries(Q6TaskTest ${VELOX_PLUGIN_TEST_LIBS}
+add_executable(TpchQ6DummyTaskTest TpchQ6DummyTaskTest.cpp)
+target_link_libraries(TpchQ6DummyTaskTest ${VELOX_PLUGIN_TEST_LIBS}
                       velox_dwio_parquet_reader velox_plan_transformer)
-add_test(Q6TaskTest Q6TaskTest ${TEST_ARGS})
+add_test(TpchQ6DummyTaskTest TpchQ6DummyTaskTest ${TEST_ARGS})
 
 add_executable(CiderPatternTest CiderPatternTest.cpp)
 target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS}
