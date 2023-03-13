@@ -65,6 +65,68 @@ template <>
   return timestamp;
 }
 
+// generate the values vector
+template <typename T>
+std::vector<::duckdb::Value> generateValueList(const int8_t* data_buf,
+                                               const uint8_t* null_buf,
+                                               const int32_t offset,
+                                               const int32_t length) {
+  std::vector<::duckdb::Value> list_values{};
+  for (int32_t i = 0; i < length; i++) {
+    if (!null_buf || CiderBitUtils::isBitSetAt(null_buf, i + offset)) {
+      list_values.push_back(duckValueAt<T>(data_buf, i + offset));
+    } else {
+      list_values.push_back(nullptr);
+    }
+  }
+  return list_values;
+}
+
+::duckdb::Value duckValueListAt(const ArrowArray* list_array,
+                                const ArrowSchema* list_schema,
+                                const int32_t* offset_buf,
+                                const int64_t offset) {
+  auto data_buf = static_cast<const int8_t*>(list_array->buffers[1]);
+  auto null_buf = static_cast<const uint8_t*>(list_array->buffers[0]);
+  int32_t start_idx = offset_buf[offset];
+  int32_t length = offset_buf[offset + 1] - offset_buf[offset];
+
+  switch (list_schema->format[0]) {
+    case 'c': {
+      return ::duckdb::Value::LIST(
+          ::duckdb::LogicalType::TINYINT,
+          generateValueList<int8_t>(data_buf, null_buf, start_idx, length));
+    }
+    case 's': {
+      return ::duckdb::Value::LIST(
+          ::duckdb::LogicalType::SMALLINT,
+          generateValueList<int16_t>(data_buf, null_buf, start_idx, length));
+    }
+    case 'i': {
+      return ::duckdb::Value::LIST(
+          ::duckdb::LogicalType::INTEGER,
+          generateValueList<int32_t>(data_buf, null_buf, start_idx, length));
+    }
+    case 'l': {
+      return ::duckdb::Value::LIST(
+          ::duckdb::LogicalType::BIGINT,
+          generateValueList<int64_t>(data_buf, null_buf, start_idx, length));
+    }
+    case 'f': {
+      return ::duckdb::Value::LIST(
+          ::duckdb::LogicalType::FLOAT,
+          generateValueList<float>(data_buf, null_buf, start_idx, length));
+    }
+    case 'g': {
+      return ::duckdb::Value::LIST(
+          ::duckdb::LogicalType::DOUBLE,
+          generateValueList<double>(data_buf, null_buf, start_idx, length));
+    }
+    default:
+      CIDER_THROW(CiderException, "not supported array type to gen duck list value");
+  }
+}
+
 #define GEN_DUCK_VALUE_FUNC                                                  \
   [&]() {                                                                    \
     switch (s_type.kind_case()) {                                            \
@@ -174,6 +236,17 @@ template <>
               row_idx);                                                                  \
         }                                                                                \
       }                                                                                  \
+      case '+':                                                                          \
+        switch (child_schema->format[1]) {                                               \
+          case 'l':                                                                      \
+          case 'L':                                                                      \
+            return duckValueListAt(child_array->children[0],                             \
+                                   child_schema->children[0],                            \
+                                   static_cast<const int32_t*>(child_array->buffers[1]), \
+                                   row_idx);                                             \
+          default:                                                                       \
+            CIDER_THROW(CiderException, "not supported type to gen duck value");         \
+        }                                                                                \
       default:                                                                           \
         CIDER_THROW(CiderException, "not supported type to gen duck value");             \
     }                                                                                    \
@@ -305,13 +378,14 @@ bool isDuckDb2CiderBatchSupportType(const ::duckdb::LogicalType& type) {
 
 void updateChildrenNullCnt(struct ArrowArray* array) {
   int64_t length = array->length;
+  const uint8_t* validity_map = reinterpret_cast<const uint8_t*>(array->buffers[0]);
+  if (validity_map) {
+    array->null_count = length - CiderBitUtils::countSetBits(validity_map, length);
+  } else {
+    array->null_count = 0;
+  }
   for (int i = 0; i < array->n_children; i++) {
-    int null_count = 0;
-    auto child = array->children[i];
-    const uint8_t* validity_map = reinterpret_cast<const uint8_t*>(child->buffers[0]);
-    if (validity_map) {
-      child->null_count = length - CiderBitUtils::countSetBits(validity_map, length);
-    }
+    updateChildrenNullCnt(array->children[i]);
   }
 }
 

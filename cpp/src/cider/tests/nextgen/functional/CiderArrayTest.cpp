@@ -27,10 +27,12 @@
 using namespace cider::test::util;
 
 #define GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(C_TYPE_NAME, TYPE, SUBSTRAIT_TYPE_NAME)      \
-  class PrimitiveTypeArray##C_TYPE_NAME##Test : public CiderStandaloneNextgenTestBase { \
+  class PrimitiveTypeArray##C_TYPE_NAME##Test : public CiderNextgenTestBase {           \
    public:                                                                              \
     PrimitiveTypeArray##C_TYPE_NAME##Test() {                                           \
       table_name_ = "test";                                                             \
+      duckdb_create_ddl_ = "CREATE TABLE test(col_a " #TYPE "[] NOT NULL, col_b " #TYPE \
+                           "[], col_c " #TYPE "[]);";                                   \
       create_ddl_ = "CREATE TABLE test(col_a " #TYPE " ARRAY NOT NULL, col_b " #TYPE    \
                     " ARRAY, col_c " #TYPE " ARRAY);";                                  \
       QueryArrowDataGenerator::generateBatchByTypes(                                    \
@@ -48,11 +50,13 @@ using namespace cider::test::util;
     }                                                                                   \
   };
 
-#define TEST_UNIT_MULTI_COL(TEST_CLASS, UNIT_NAME)                                   \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                    \
-    assertQuery("SELECT * FROM test", input_array_, input_schema_, false);           \
-    assertQuery(                                                                     \
-        "SELECT col_a, col_b, col_c FROM test", input_array_, input_schema_, false); \
+#define TEST_UNIT_PRIMITIVE_COL(TEST_CLASS, UNIT_NAME)   \
+  TEST_F(TEST_CLASS, UNIT_NAME) {                        \
+    assertQuery("SELECT col_a FROM test");               \
+    assertQuery("SELECT col_b FROM test");               \
+    assertQuery("SELECT col_c FROM test");               \
+    assertQuery("SELECT * FROM test");                   \
+    assertQuery("SELECT col_a, col_b, col_c FROM test"); \
   }
 
 GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(Float, FLOAT, Fp32)
@@ -67,65 +71,24 @@ GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(Integer, INTEGER, I32)
 
 GEN_PRIMITIVETYPE_ARRAY_TEST_CLASS(Bigint, BIGINT, I64)
 
-TEST_UNIT_MULTI_COL(PrimitiveTypeArrayFloatTest, floatBaseMultiColTest)
+TEST_UNIT_PRIMITIVE_COL(PrimitiveTypeArrayFloatTest, floatBaseMultiColTest)
 
-TEST_UNIT_MULTI_COL(PrimitiveTypeArrayDoubleTest, doubleBaseMultiColTest)
+TEST_UNIT_PRIMITIVE_COL(PrimitiveTypeArrayDoubleTest, doubleBaseMultiColTest)
 
-TEST_UNIT_MULTI_COL(PrimitiveTypeArrayTinyintTest, tinyIntBaseMultiColTest)
+TEST_UNIT_PRIMITIVE_COL(PrimitiveTypeArrayTinyintTest, tinyIntBaseMultiColTest)
 
-TEST_UNIT_MULTI_COL(PrimitiveTypeArraySmallintTest, smallIntBaseMultiColTest)
+TEST_UNIT_PRIMITIVE_COL(PrimitiveTypeArraySmallintTest, smallIntBaseMultiColTest)
 
-TEST_UNIT_MULTI_COL(PrimitiveTypeArrayIntegerTest, integerBaseMultiColTest)
+TEST_UNIT_PRIMITIVE_COL(PrimitiveTypeArrayIntegerTest, integerBaseMultiColTest)
 
-TEST_UNIT_MULTI_COL(PrimitiveTypeArrayBigintTest, bigintBaseMultiColTest)
+TEST_UNIT_PRIMITIVE_COL(PrimitiveTypeArrayBigintTest, bigintBaseMultiColTest)
 
-#define TEST_UNIT_SINGLE_COL(TEST_CLASS, UNIT_NAME)                                 \
-  TEST_F(TEST_CLASS, UNIT_NAME) {                                                   \
-    auto schema_and_array_a =                                                       \
-        ArrowArrayBuilder()                                                         \
-            .setRowNum(10)                                                          \
-            .addStructColumn(input_schema_->children[0], input_array_->children[0]) \
-            .build();                                                               \
-    assertQuery("SELECT col_a FROM test",                                           \
-                std::get<1>(schema_and_array_a),                                    \
-                std::get<0>(schema_and_array_a),                                    \
-                false);                                                             \
-    auto schema_and_array_b =                                                       \
-        ArrowArrayBuilder()                                                         \
-            .setRowNum(10)                                                          \
-            .addStructColumn(input_schema_->children[1], input_array_->children[1]) \
-            .build();                                                               \
-    assertQuery("SELECT col_b FROM test",                                           \
-                std::get<1>(schema_and_array_b),                                    \
-                std::get<0>(schema_and_array_b),                                    \
-                false);                                                             \
-    auto schema_and_array_c =                                                       \
-        ArrowArrayBuilder()                                                         \
-            .setRowNum(10)                                                          \
-            .addStructColumn(input_schema_->children[2], input_array_->children[2]) \
-            .build();                                                               \
-    assertQuery("SELECT col_c FROM test",                                           \
-                std::get<1>(schema_and_array_c),                                    \
-                std::get<0>(schema_and_array_c),                                    \
-                false);                                                             \
-  }
-
-TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayFloatTest, floatBaseSingleColTest)
-
-TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayDoubleTest, doubleBaseSingleColTest)
-
-TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayTinyintTest, tinyIntBaseSingleColTest)
-
-TEST_UNIT_SINGLE_COL(PrimitiveTypeArraySmallintTest, smallIntBaseSingleColTest)
-
-TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayIntegerTest, integerBaseSingleColTest)
-
-TEST_UNIT_SINGLE_COL(PrimitiveTypeArrayBigintTest, bigintBaseSingleColTest)
-
-class PrimitiveTypeArrayMixed1Test : public CiderStandaloneNextgenTestBase {
+class PrimitiveTypeArrayMixed1Test : public CiderNextgenTestBase {
  public:
   PrimitiveTypeArrayMixed1Test() {
     table_name_ = "test";
+    duckdb_create_ddl_ =
+        "CREATE TABLE test(col_a TINYINT[], col_b SMALLINT[], col_c INTEGER[]);";
     create_ddl_ =
         "CREATE TABLE test(col_a TINYINT ARRAY, col_b SMALLINT ARRAY, col_c INTEGER "
         "ARRAY);";
@@ -144,14 +107,16 @@ class PrimitiveTypeArrayMixed1Test : public CiderStandaloneNextgenTestBase {
 };
 
 TEST_F(PrimitiveTypeArrayMixed1Test, ArrayMixed1Test) {
-  assertQuery("SELECT * FROM test", input_array_, input_schema_, false);
-  assertQuery("SELECT col_a, col_b, col_c FROM test", input_array_, input_schema_, false);
+  assertQuery("SELECT * FROM test");
+  assertQuery("SELECT col_a, col_b, col_c FROM test");
 }
 
-class PrimitiveTypeArrayMixed2Test : public CiderStandaloneNextgenTestBase {
+class PrimitiveTypeArrayMixed2Test : public CiderNextgenTestBase {
  public:
   PrimitiveTypeArrayMixed2Test() {
     table_name_ = "test";
+    duckdb_create_ddl_ =
+        "CREATE TABLE test(col_a BIGINT[], col_b FLOAT[], col_c DOUBLE[]);";
     create_ddl_ =
         "CREATE TABLE test(col_a BIGINT ARRAY, col_b FLOAT ARRAY, col_c DOUBLE "
         "ARRAY);";
@@ -170,8 +135,8 @@ class PrimitiveTypeArrayMixed2Test : public CiderStandaloneNextgenTestBase {
 };
 
 TEST_F(PrimitiveTypeArrayMixed2Test, ArrayMixed2Test) {
-  assertQuery("SELECT * FROM test", input_array_, input_schema_, false);
-  assertQuery("SELECT col_a, col_b, col_c FROM test", input_array_, input_schema_, false);
+  assertQuery("SELECT * FROM test");
+  assertQuery("SELECT col_a, col_b, col_c FROM test");
 }
 
 int main(int argc, char** argv) {
