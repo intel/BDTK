@@ -22,13 +22,24 @@ add_subdirectory(planTransformer)
 add_subdirectory(ciderTransformer)
 
 set(VELOX_PLUGIN_SOURCES
-    CiderPlanNode.cpp ArrowConvertorUtils.cpp CiderVeloxPluginCtx.cpp
-    CiderPipelineOperator.cpp CiderHashJoinBuild.cpp CiderCrossJoinBuild.cpp)
+    CiderPlanNode.cpp
+    ArrowConvertorUtils.cpp
+    CiderVeloxPluginCtx.cpp
+    CiderPipelineOperator.cpp
+    CiderHashJoinBuild.cpp
+    CiderCrossJoinBuild.cpp
+    Q6Task.cpp)
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 
-target_link_libraries(velox_plugin velox_substrait_convertor cider_processor
-                      velox_plan_transformer velox_exec ${GLOG})
+target_link_libraries(
+  velox_plugin
+  velox_substrait_convertor
+  cider_processor
+  velox_plan_transformer
+  velox_exec
+  velox_dwio_parquet_reader
+  ${GLOG})
 
 # install headers
 set(VELOX_PLUGIN_HEADERS CiderPlanNode.h CiderPlanNodeTranslator.h
