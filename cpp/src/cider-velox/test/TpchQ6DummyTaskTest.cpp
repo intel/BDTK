@@ -20,6 +20,7 @@
  */
 
 #include "TpchQ6Task.h"
+#include "cider/batch/CiderBatchUtils.h"
 #include "velox/vector/arrow/Bridge.h"
 
 class TpchQ6DummyTaskTest : public testing::Test {};
@@ -27,8 +28,8 @@ class TpchQ6DummyTaskTest : public testing::Test {};
 TEST_F(TpchQ6DummyTaskTest, test) {
   auto task = trino::velox::TpchQ6Task::Make();
   while (!task->isFinished()) {
-    struct ArrowArray* output_array;
-    struct ArrowSchema* output_schema;
+    ArrowArray* output_array = CiderBatchUtils::allocateArrowArray();
+    ArrowSchema* output_schema = CiderBatchUtils::allocateArrowSchema();
     task->nextBatch(output_schema, output_array);
   }
 }

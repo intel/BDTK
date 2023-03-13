@@ -160,8 +160,11 @@ void TpchQ6DummyTask::nextBatch(ArrowSchema* c_schema, ArrowArray* c_array) {
       child->loadedVector();
     }
     printResult(result);
-    // exportToArrow(result, *c_array);
-    // exportToArrow(result, *c_schema);
+    for (size_t i = 0; i < result->childrenSize(); i++) {
+      result->childAt(i)->mutableRawNulls();
+    }
+    exportToArrow(result, *c_array);
+    exportToArrow(result, *c_schema);
   } else {
     is_finished_ = true;
   }
