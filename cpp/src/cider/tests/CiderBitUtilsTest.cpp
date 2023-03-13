@@ -149,8 +149,8 @@ TEST_F(CiderBitUtilsTest, CheckEqTest) {
 TEST_F(CiderBitUtilsTest, ByteToBitTest) {
   std::random_device rand_dev;
   std::mt19937 rand_engine(rand_dev());
-  std::uniform_int_distribution<uint8_t> dist(0,1);
-  auto gen = [&dist, &rand_engine]() {return dist(rand_engine);};
+  std::uniform_int_distribution<uint8_t> dist(0, 1);
+  auto gen = [&dist, &rand_engine]() { return dist(rand_engine); };
 
   auto check_byte_bit = [](uint8_t* byte, uint8_t* bit, size_t len) {
     for (size_t i = 0; i < len; ++i) {

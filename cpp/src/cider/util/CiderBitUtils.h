@@ -243,8 +243,9 @@ inline void ENABLE_AVX256 bitwiseAnd(uint8_t* __restrict output,
 inline void ENABLE_AVX256 byteToBit(uint8_t* __restrict byte,
                                     uint8_t* __restrict bit,
                                     size_t bit_num) {
-  __m256i* byte_256 = (__m256i*) byte;  
-  int* bit_32 = (int*) bit;
+  __m256i* byte_256 = (__m256i*)byte;
+  int* bit_32 = (int*)bit;
+  bit_num += 31;
   bit_num >>= 5;
   for (size_t i = 0; i < bit_num; ++i) {
     __m256i byte_reg = _mm256_loadu_si256(byte_256 + i);
@@ -254,4 +255,4 @@ inline void ENABLE_AVX256 byteToBit(uint8_t* __restrict byte,
 }
 };  // namespace CiderBitUtils
 
-#endif // CIDER_UTIL_CIDERBITUTILS_H
+#endif  // CIDER_UTIL_CIDERBITUTILS_H

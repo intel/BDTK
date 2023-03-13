@@ -174,6 +174,11 @@ TEST_F(NextgenCompilerTest, FrameworkTest3) {
               [](ArrowArray* array) { boolChecker(array, 10); });
 }
 
+TEST_F(NextgenCompilerTest, FrameworkTest4) {
+  executeTest("select b > a AND c from test",
+              [](ArrowArray* array) { boolChecker(array, 10); });
+}
+
 class CiderNextgenCompilerTestBase : public CiderNextgenTestBase {
  public:
   CiderNextgenCompilerTestBase() {

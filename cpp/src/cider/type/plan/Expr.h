@@ -210,7 +210,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   JITTypeTag getJITTag(const SQLTypes& st) {
     return cider::exec::nextgen::utils::getJITTypeTag(st);
   }
-  
+
  protected:
   SQLTypeInfo type_info;  // SQLTypeInfo of the return result of this expression
   bool contains_agg;
