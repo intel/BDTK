@@ -17,14 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(EXPRESSION_TEST_LIBS ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES}
-                         ${VELOX_BENCHMARKS_DEPENDENCIES})
+add_executable(TpchInMemBenchmark TpchInMemBenchmark.cpp TpchInMemBuilder.cpp)
+target_link_libraries(
+  TpchInMemBenchmark ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES}
+  ${VELOX_BENCHMARKS_DEPENDENCIES})
 
-add_executable(ArithmeticAndComparison ArithmeticAndComparison.cpp)
-target_link_libraries(ArithmeticAndComparison ${EXPRESSION_TEST_LIBS})
-
-add_executable(PipelineOperator PipelineOperator.cpp)
-target_link_libraries(PipelineOperator ${EXPRESSION_TEST_LIBS})
-
-add_executable(StringFunctionBenchmark StringFunctionBenchmark.cpp)
-target_link_libraries(StringFunctionBenchmark ${EXPRESSION_TEST_LIBS})
+add_executable(TpchFromFileBenchmark TpchFromFileBenchmark.cpp)
+target_link_libraries(
+  TpchFromFileBenchmark ${CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES}
+  ${VELOX_BENCHMARKS_DEPENDENCIES})

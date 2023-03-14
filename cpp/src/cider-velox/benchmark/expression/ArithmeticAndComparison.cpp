@@ -48,8 +48,8 @@
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
 DEFINE_double(ratio, 0.5, "NULL ratio in batch");
-DEFINE_int64(batch_size, 1'024, "batch size for one loop");
-DEFINE_int64(loop_count, 1'000'000, "loop count for benchmark");
+DEFINE_int64(batch_size, 10'240, "batch size for one loop");
+DEFINE_int64(loop_count, 1'000, "loop count for benchmark");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
 
 using namespace cider::exec::processor;
@@ -214,7 +214,8 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = cider::exec::processor::BatchProcessor::Make(plan, context);
+    auto processor = BatchProcessor::Make(plan, context);
+
     return 1;
   }
 
@@ -232,7 +233,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
-    auto processor = cider::exec::processor::BatchProcessor::Make(plan, context, cgo);
+    auto processor = BatchProcessor::Make(plan, context, cgo);
 
     suspender.dismiss();
 
