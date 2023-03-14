@@ -54,6 +54,20 @@ JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
   return ret;
 }
 
+jitlib::JITValuePointer CodegenContext::registerStringHeap() {
+  JITValuePointer ret = jit_func_->createLocalJITValue([this]() {
+    auto pointer = this->jit_func_->emitRuntimeFunctionCall(
+        "get_query_context_string_heap_ptr",
+        JITFunctionEmitDescriptor{
+            .ret_type = JITTypeTag::POINTER,
+            .ret_sub_type = JITTypeTag::INT8,
+            .params_vector = {this->jit_func_->getArgument(0).get()}});
+    return pointer;
+  });
+
+  return ret;
+}
+
 JITValuePointer CodegenContext::getBufferContentPtr(
     int64_t id,
     bool output_raw_buffer,
@@ -113,7 +127,6 @@ jitlib::JITValuePointer CodegenContext::registerCiderSet(const std::string& name
                                                          const SQLTypeInfo& type,
                                                          CiderSetPtr c_set) {
   int64_t id = acquireContextID();
-  auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
     auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
     auto pointer = this->jit_func_->emitRuntimeFunctionCall(
@@ -134,7 +147,6 @@ jitlib::JITValuePointer CodegenContext::registerCiderSet(const std::string& name
 
 JITValuePointer CodegenContext::registerHashTable(const std::string& name) {
   int64_t id = acquireContextID();
-  auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
     auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
     auto pointer = this->jit_func_->emitRuntimeFunctionCall(
@@ -155,7 +167,6 @@ JITValuePointer CodegenContext::registerHashTable(const std::string& name) {
 
 JITValuePointer CodegenContext::registerBuildTable(const std::string& name) {
   int64_t id = acquireContextID();
-  auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
     auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
     auto pointer = this->jit_func_->emitRuntimeFunctionCall(

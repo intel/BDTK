@@ -45,6 +45,7 @@
 
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
+DEFINE_double(ratio, 0.5, "NULL ratio in batch");
 DEFINE_int64(batch_size, 1000, "batch size for one loop");
 DEFINE_int64(loop_count, 100'000, "loop count for benchmark");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
@@ -60,8 +61,6 @@ using namespace facebook::velox::functions;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::substrait;
 
-// static const std::shared_ptr<PoolAllocator> allocator =
-//     std::make_shared<CiderDefaultAllocator>();
 namespace {
 std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
                                                         MemoryPool* pool) {
@@ -82,20 +81,31 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
   explicit StringFunctionBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     functions::prestosql::registerStringFunctions();
 
-    inputType_ = ROW({{"col_str", VARCHAR()}, {"col_str2", VARCHAR()}});
+    inputType_ = ROW({{"col_str_10", VARCHAR()},
+                      {"col_str_100", VARCHAR()},
+                      {"col_str_500", VARCHAR()}});
 
     vectorSize_ = vectorSize;
     // Generate input data.
     VectorFuzzer::Options opts;
     opts.vectorSize = vectorSize;
-    // opts.nullRatio = 0.5;
-    // opts.stringVariableLength = false;
-    // opts.stringLength = 16;
+    opts.nullRatio = FLAGS_ratio;
+    opts.stringVariableLength = false;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     std::vector<VectorPtr> children;
-    children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));  // varchar
-    children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));  // varchar
+    // column 1: 10 bytes;
+    opts.stringLength = 10;
+    fuzzer.setOptions(opts);
+    children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));
+    // column 2: 100 bytes;
+    opts.stringLength = 100;
+    fuzzer.setOptions(opts);
+    children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));
+    // column 3: 500 bytes;
+    opts.stringLength = 500;
+    fuzzer.setOptions(opts);
+    children.emplace_back(fuzzer.fuzzFlat(VARCHAR()));
 
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, vectorSize, std::move(children));
@@ -185,29 +195,63 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
 
 std::unique_ptr<StringFunctionBenchmark> benchmark;
 
-// std::string expr = "substr(substr(col_str, 1, 3),1 ,1)";
+// col_str_10, col_str_100, col_str_500; (short, mid, long)
 
-// BENCHMARK(nextgen_substr) {
-//   benchmark->nextgenCompute(expr);
-// }
+#define GEN_BENCHMARK(name, expr)                                         \
+  BENCHMARK(velox_##name) { benchmark->veloxCompute(expr); }              \
+  BENCHMARK_RELATIVE(nextgen_##name) { benchmark->nextgenCompute(expr); } \
+  BENCHMARK_DRAW_LINE();
 
-// BENCHMARK(velox_substr) {
-//   benchmark->veloxCompute(expr);
-// }
-// BENCHMARK_DRAW_LINE();
+// concat
+GEN_BENCHMARK(concat_short_short, "concat(col_str_10, col_str_10)");
+GEN_BENCHMARK(concat_short_literal, "concat(col_str_10, 'abcdefg123')");
 
-std::string concat_expr = "concat(col_str, 'aaaa')";  // NOLINT
-// std::string concat_expr = "concat(col_str, col_str2)";
+GEN_BENCHMARK(concat_mid_mid, "concat(col_str_100, col_str_100)");
+GEN_BENCHMARK(concat_mid_literal, "concat(col_str_100, 'abcdefg123')");
 
-BENCHMARK(velox_concat) {
-  benchmark->veloxCompute(concat_expr);
-}
+GEN_BENCHMARK(concat_long_long, "concat(col_str_500, col_str_500)");
+GEN_BENCHMARK(concat_long_literal, "concat(col_str_500, 'abcdefg123')");
 
-BENCHMARK_RELATIVE(nextgen_concat) {
-  benchmark->nextgenCompute(concat_expr);
-}
+GEN_BENCHMARK(concat_long_short, "concat(col_str_500, col_str_10)");
+GEN_BENCHMARK(concat_long_mid, "concat(col_str_500, col_str_100)");
+GEN_BENCHMARK(concat_mid_short, "concat(col_str_100, col_str_10)");
 
-BENCHMARK_DRAW_LINE();
+GEN_BENCHMARK(concat_short_mid_short,
+              "concat(col_str_10, concat(col_str_100, col_str_10))");
+GEN_BENCHMARK(concat_short_mid_mid,
+              "concat(col_str_10, concat(col_str_100, col_str_100))");
+GEN_BENCHMARK(concat_short_mid_long,
+              "concat(col_str_10, concat(col_str_100, col_str_500))");
+
+// substring
+GEN_BENCHMARK(substring_short_1, "substr(col_str_10, 1, 10)");
+GEN_BENCHMARK(substring_short_2, "substr(col_str_10, 5, 5)");
+
+GEN_BENCHMARK(substring_mid_1, "substr(col_str_100, 1, 100)");
+GEN_BENCHMARK(substring_mid_2, "substr(col_str_100, 50, 50)");
+
+GEN_BENCHMARK(substring_long_1, "substr(col_str_500, 1, 500)");
+GEN_BENCHMARK(substring_long_2, "substr(col_str_500, 50, 100)");
+GEN_BENCHMARK(substring_long_3, "substr(col_str_500, 50, 300)");
+
+GEN_BENCHMARK(substring_nested_1, "substr(substr(col_str_500, 50, 300), 20, 100)");
+
+// lower/upper
+GEN_BENCHMARK(lower_short, "lower(col_str_10)");
+GEN_BENCHMARK(upper_short, "upper(col_str_10)");
+
+GEN_BENCHMARK(lower_mid, "lower(col_str_100)");
+GEN_BENCHMARK(upper_mid, "upper(col_str_100)");
+
+GEN_BENCHMARK(lower_long, "lower(col_str_500)");
+GEN_BENCHMARK(upper_long, "upper(col_str_500)");
+
+// nested
+GEN_BENCHMARK(nested_1, "concat(col_str_10, substr(col_str_100, 10, 20))");
+GEN_BENCHMARK(nested_2, "concat(col_str_10, lower(col_str_10))");
+GEN_BENCHMARK(nested_3, "concat(col_str_10, upper(col_str_10))");
+GEN_BENCHMARK(nested_4, "upper(concat(col_str_10, col_str_100))");
+GEN_BENCHMARK(nested_5, "upper(substr(concat(col_str_10, col_str_100), 5, 30))");
 
 }  // namespace
 

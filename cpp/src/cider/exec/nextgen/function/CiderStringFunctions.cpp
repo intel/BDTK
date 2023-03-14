@@ -38,25 +38,20 @@ ALWAYS_INLINE uint64_t pack_string_t(const string_t& s) {
 }
 
 // not in use.
-extern "C" RUNTIME_EXPORT int64_t cider_substring(const char* str, int pos, int len) {
+extern "C" ALWAYS_INLINE int64_t cider_substring(const char* str, int pos, int len) {
   const char* ret_ptr = str + pos - 1;
   return pack_string((const int8_t*)ret_ptr, (const int32_t)len);
 }
 
 // pos parameter starts from 1 rather than 0
 extern "C" ALWAYS_INLINE int64_t cider_substring_extra(char* string_heap_ptr,
-                                                       const char* str,
-                                                       int pos,
-                                                       int len) {
-  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
-  string_t s = ptr->addString(str + pos - 1, len);
-  return pack_string_t(s);
-}
-extern "C" ALWAYS_INLINE void cider_substring_extra_ptr(char* buffer_ptr,
                                                         const char* str,
                                                         int pos,
                                                         int len) {
-  memcpy(buffer_ptr, str + pos - 1, len);
+  return pack_string((const int8_t*)(str + pos - 1), len);
+}
+extern "C" ALWAYS_INLINE const char* cider_substring_extra_ptr(const char* str, int pos) {
+  return str + pos - 1;
 }
 
 // pos starts with 1. A negative starting position is interpreted as being relative
@@ -140,48 +135,74 @@ const uint8_t ascii_char_lower_map[] = {
     224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
     240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255};
 
+void do_lower(char* __restrict out, const char* __restrict in, int str_len) {
+#pragma clang loop vectorize(enable)
+  for (int i = 0; i < str_len; ++i) {
+    if (in[i] >= 'A' && in[i] <= 'Z') {
+      out[i] = in[i] + 0x20;
+    } else {
+      out[i] = in[i];
+    }
+  }
+}
+
 extern "C" ALWAYS_INLINE int64_t cider_ascii_lower(int8_t* string_heap_ptr,
-                                                   const char* str,
+                                                   const char* __restrict str,
                                                    int str_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(str_len);
   char* sout = s.getDataWriteable();
-  for (int i = 0; i < str_len; ++i) {
-    sout[i] = ascii_char_lower_map[reinterpret_cast<const uint8_t*>(str)[i]];
-  }
+
+  do_lower(sout, str, str_len);
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE void cider_ascii_lower_ptr(char* buffer_ptr,
-                                                    const char* str,
+extern "C" ALWAYS_INLINE void cider_ascii_lower_ptr(char* __restrict buffer_ptr,
+                                                    const char* __restrict str,
                                                     int str_len) {
-  for (int i = 0; i < str_len; ++i) {
-    buffer_ptr[i] = ascii_char_lower_map[reinterpret_cast<const uint8_t*>(str)[i]];
-  }
+  // for (int i = 0; i < str_len; ++i) {
+  //   buffer_ptr[i] = ascii_char_lower_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  // }
+  do_lower(buffer_ptr, str, str_len);
 }
 
 extern "C" ALWAYS_INLINE int32_t cider_ascii_lower_len(int str_len) {
   return str_len;
 }
 
-extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* string_heap_ptr,
-                                                   const char* str,
+ALWAYS_INLINE void do_upper(char* __restrict out,
+                            const char* __restrict in,
+                            int str_len) {
+#pragma clang loop vectorize(enable)
+  for (int i = 0; i < str_len; ++i) {
+    if (in[i] >= 'a' && in[i] <= 'z') {
+      out[i] = in[i] - 0x20;
+    } else {
+      out[i] = in[i];
+    }
+  }
+}
+
+extern "C" ALWAYS_INLINE int64_t cider_ascii_upper(int8_t* __restrict string_heap_ptr,
+                                                   const char* __restrict str,
                                                    int str_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(str_len);
   char* sout = s.getDataWriteable();
-  for (int i = 0; i < str_len; ++i) {
-    sout[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
-  }
+  // for (int i = 0; i < str_len; ++i) {
+  //   sout[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  // }
+  do_upper(sout, str, str_len);
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE void cider_ascii_upper_ptr(char* buffer_ptr,
-                                                    const char* str,
+extern "C" ALWAYS_INLINE void cider_ascii_upper_ptr(char* __restrict buffer_ptr,
+                                                    const char* __restrict str,
                                                     int str_len) {
-  for (int i = 0; i < str_len; ++i) {
-    buffer_ptr[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
-  }
+  // for (int i = 0; i < str_len; ++i) {
+  //   buffer_ptr[i] = ascii_char_upper_map[reinterpret_cast<const uint8_t*>(str)[i]];
+  // }
+  do_upper(buffer_ptr, str, str_len);
 }
 
 extern "C" ALWAYS_INLINE int32_t cider_ascii_upper_len(int str_len) {
@@ -192,11 +213,11 @@ extern "C" void test_to_string(int value) {
   std::printf("test_to_string: %s\n", std::to_string(value).c_str());
 }
 
-extern "C" RUNTIME_EXPORT int64_t cider_concat(char* string_heap_ptr,
-                                               const char* lhs,
-                                               int lhs_len,
-                                               const char* rhs,
-                                               int rhs_len) {
+extern "C" ALWAYS_INLINE int64_t cider_concat(char* string_heap_ptr,
+                                              const char* __restrict lhs,
+                                              int lhs_len,
+                                              const char* __restrict rhs,
+                                              int rhs_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(lhs_len + rhs_len);
 
@@ -212,9 +233,9 @@ extern "C" ALWAYS_INLINE int32_t cider_concat_len(int lhs_len, int rhs_len) {
 }
 
 extern "C" ALWAYS_INLINE void cider_concat_ptr(char* buffer_ptr,
-                                               const char* lhs,
+                                               const char* __restrict lhs,
                                                int lhs_len,
-                                               const char* rhs,
+                                               const char* __restrict rhs,
                                                int rhs_len) {
   memcpy(buffer_ptr, lhs, lhs_len);
   memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
@@ -231,12 +252,12 @@ extern "C" RUNTIME_EXPORT int8_t* allocate_from_string_heap(char* string_heap_pt
 // supports cases where the first arg is a variable.
 // for concat ops like "constant || var", it will be converted to "var || constant" and
 // then concatenated in the REVERSED order (RCONCAT).
-// However, nextgen allows both arguments to be variables, so this function can be removed
-// after full migration to nextgen
+// However, nextgen allows both arguments to be variables, so this function can be
+// removed after full migration to nextgen
 extern "C" ALWAYS_INLINE int64_t cider_rconcat(char* string_heap_ptr,
-                                               const char* lhs,
+                                               const char* __restrict lhs,
                                                int lhs_len,
-                                               const char* rhs,
+                                               const char* __restrict rhs,
                                                int rhs_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(lhs_len + rhs_len);
@@ -253,9 +274,9 @@ extern "C" ALWAYS_INLINE int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
 }
 
 extern "C" ALWAYS_INLINE void cider_rconcat_ptr(char* buffer_ptr,
-                                                const char* lhs,
+                                                const char* __restrict lhs,
                                                 int lhs_len,
-                                                const char* rhs,
+                                                const char* __restrict rhs,
                                                 int rhs_len) {
   memcpy(buffer_ptr, rhs, rhs_len);
   memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
@@ -271,7 +292,7 @@ extern "C" RUNTIME_EXPORT int8_t* get_buffer_without_realloc(const int8_t* input
 }
 
 extern "C" ALWAYS_INLINE void copy_string_buffer(const int8_t* input_desc_ptr,
-                                                 int8_t* buffer,
+                                                 int8_t* __restrict buffer,
                                                  int64_t total_row) {
   const int64_t* offset_buffer = reinterpret_cast<const int64_t*>(
       reinterpret_cast<const ArrowArray*>(input_desc_ptr)->buffers[1]);
@@ -333,9 +354,9 @@ extern "C" RUNTIME_EXPORT int8_t* get_buffer_with_realloc_on_demand(
 }
 
 extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
-                                            const char* str_ptr,
+                                            const char* __restrict str_ptr,
                                             int str_len,
-                                            const int8_t* trim_char_map,
+                                            const int8_t* __restrict trim_char_map,
                                             bool ltrim,
                                             bool rtrim) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
@@ -368,9 +389,9 @@ extern "C" ALWAYS_INLINE int64_t cider_trim(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" ALWAYS_INLINE int32_t cider_trim_start(const char* str_ptr,
+extern "C" ALWAYS_INLINE int32_t cider_trim_start(const char* __restrict str_ptr,
                                                   int str_len,
-                                                  const int8_t* trim_char_map,
+                                                  const int8_t* __restrict trim_char_map,
                                                   bool ltrim) {
   int start_idx = 0;
   if (ltrim) {
@@ -382,9 +403,9 @@ extern "C" ALWAYS_INLINE int32_t cider_trim_start(const char* str_ptr,
   return start_idx;
 }
 
-extern "C" ALWAYS_INLINE int32_t cider_trim_len(const char* str_ptr,
+extern "C" ALWAYS_INLINE int32_t cider_trim_len(const char* __restrict str_ptr,
                                                 int str_len,
-                                                const int8_t* trim_char_map,
+                                                const int8_t* __restrict trim_char_map,
                                                 bool ltrim,
                                                 bool rtrim) {
   int start_idx = 0;
@@ -413,8 +434,8 @@ extern "C" ALWAYS_INLINE int32_t cider_trim_len(const char* str_ptr,
   return len;
 }
 
-extern "C" ALWAYS_INLINE void cider_trim_ptr(char* buffer_ptr,
-                                             const char* str_ptr,
+extern "C" ALWAYS_INLINE void cider_trim_ptr(char* __restrict buffer_ptr,
+                                             const char* __restrict str_ptr,
                                              int start_idx,
                                              int len) {
   memcpy(buffer_ptr, str_ptr + start_idx, len);
@@ -599,10 +620,10 @@ extern "C" ALWAYS_INLINE size_t cider_find_str_from_right(const char* str1,
 // str_ptr & str_len: the input string
 // delimiter_ptr & delimiter_len: A character used for splitting the string.
 // reverse: default value is false, will be true if split_part < 0.
-// limit: Must be positive. Returns an array of size at most 'limit', and the last element
-// in array contains everything left in the string.
-// split_part: Field index to be returned. Index starts from 1. If the index is larger
-// than the number of fields, a null string is returned.
+// limit: Must be positive. Returns an array of size at most 'limit', and the last
+// element in array contains everything left in the string. split_part: Field index to
+// be returned. Index starts from 1. If the index is larger than the number of fields, a
+// null string is returned.
 extern "C" ALWAYS_INLINE int64_t cider_split(char* string_heap_ptr,
                                              const char* str_ptr,
                                              int str_len,
@@ -735,11 +756,9 @@ std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
 // Search a string for a substring that matches a given regular expression pattern and
 // replace it with a replacement string.
 // str_ptr & str_len: input string.
-// regex_pattern_ptr & regex_pattern_len: the regular expression to search for within the
-// input string.
-// replace_ptr & replace_len: the replacement string.
-// start_pos: the position to start the search.
-// occurrence: which occurrence of the match to replace.
+// regex_pattern_ptr & regex_pattern_len: the regular expression to search for within
+// the input string. replace_ptr & replace_len: the replacement string. start_pos: the
+// position to start the search. occurrence: which occurrence of the match to replace.
 extern "C" ALWAYS_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
                                                       const char* str_ptr,
                                                       int str_len,
