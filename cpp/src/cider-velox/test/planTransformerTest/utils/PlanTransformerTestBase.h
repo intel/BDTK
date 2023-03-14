@@ -51,4 +51,5 @@ class PlanTransformerTestBase : public CiderOperatorTestBase {
   PlanTransformerFactory transformerFactory_;
   RowTypePtr rowType_;
 };
+
 }  // namespace facebook::velox::plugin::plantransformer::test

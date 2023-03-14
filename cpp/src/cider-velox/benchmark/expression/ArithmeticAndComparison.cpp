@@ -215,6 +215,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
     auto processor = BatchProcessor::Make(plan, context);
+
     return 1;
   }
 

@@ -24,37 +24,26 @@
 #include <gtest/gtest.h>
 
 namespace facebook::velox::plugin::plantransformer::test {
-bool PlanTansformerTestUtil::comparePlanSequence(VeloxPlanNodePtr first,
-                                                 VeloxPlanNodePtr second) {
-  if (first == nullptr && second == nullptr) {
+bool PlanTansformerTestUtil::comparePlanSequence(VeloxPlanNodePtr plan1,
+                                                 VeloxPlanNodePtr plan2) {
+  if (plan1 == nullptr && plan2 == nullptr) {
     return true;
-  } else if (!(first != nullptr && second != nullptr)) {
+  } else if (plan1 == nullptr || plan2 == nullptr) {
     return false;
   }
-  bool isRootEqual = typeid(*first) == typeid(*second);
-  if (isRootEqual) {
-    auto firstSrc = first->sources();
-    auto secondSrc = second->sources();
-    if (!firstSrc.empty() && !secondSrc.empty()) {
-      auto firstSrcCount = firstSrc.size();
-      auto secondSrcCount = secondSrc.size();
-      if (firstSrcCount == secondSrcCount) {
-        for (int idx = 0; idx < firstSrcCount; idx++) {
-          if (firstSrc[idx] != nullptr && secondSrc[idx] != nullptr) {
-            bool isSrcEqual = comparePlanSequence(firstSrc[idx], secondSrc[idx]);
-            if (!isSrcEqual) {
-              return false;
-            }
-          } else if (!(firstSrc[idx] == nullptr && secondSrc[idx] == nullptr)) {
-            return false;
-          }
-        }
-        return true;
-      }
-    } else if (firstSrc.empty() && secondSrc.empty()) {
-      return true;
+  if (typeid(plan1.get()) != typeid(plan2.get())) {
+    return false;
+  }
+  auto size1 = plan1->sources().size();
+  auto size2 = plan2->sources().size();
+  if (size1 != size2) {
+    return false;
+  }
+  for (size_t idx = 0; idx < size1; ++idx) {
+    if (!comparePlanSequence(plan1->sources().at(idx), plan2->sources().at(idx))) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 }  // namespace facebook::velox::plugin::plantransformer::test

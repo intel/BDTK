@@ -24,13 +24,13 @@
 #include "../../CiderPlanBuilder.h"
 #include "planTransformer/PlanNodeAddr.h"
 
-using namespace facebook::velox::exec::test;
-using namespace facebook::velox::plugin::test;
-
 namespace facebook::velox::plugin::plantransformer::test {
+
+using facebook::velox::plugin::test::CiderPlanBuilder;
 
 class VeloxPlanSequenceBuilder : public CiderPlanBuilder {
  public:
   const VeloxPlanNodePtr& planNode();
 };
+
 }  // namespace facebook::velox::plugin::plantransformer::test

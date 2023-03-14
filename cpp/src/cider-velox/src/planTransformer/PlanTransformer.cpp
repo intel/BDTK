@@ -169,7 +169,6 @@ void PlanTransformer::matchSourceBranch(BranchSrcToTargetIterator& srcBranchIte)
 
 VeloxPlanNodePtr PlanTransformer::rewriteAllBranches() {
   for (int32_t branchId : orgBranches_->getSrcToRootBranchIds()) {
-    // the whole branch is not covered by match results
     if (!coveredByMatchResult(branchId)) {
       rewriteBranch(branchId);
     }

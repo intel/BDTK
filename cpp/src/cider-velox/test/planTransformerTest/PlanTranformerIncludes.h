@@ -26,7 +26,8 @@
 #include "utils/VeloxPlanSequenceBuilder.h"
 
 namespace facebook::velox::plugin::plantransformer::test {
-using namespace facebook::velox::core;
+
 using VeloxPlanBuilder =
     facebook::velox::plugin::plantransformer::test::VeloxPlanSequenceBuilder;
+
 }  // namespace facebook::velox::plugin::plantransformer::test

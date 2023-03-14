@@ -40,7 +40,10 @@ class CiderNextgenTestBase : public testing::Test {
   void SetUp() override {
     if (input_array_ && input_schema_) {
       duckdb_query_runner_.createTableAndInsertArrowData(
-          table_name_, create_ddl_, *input_array_, *input_schema_);
+          table_name_,
+          duckdb_create_ddl_ == "" ? create_ddl_ : duckdb_create_ddl_,
+          *input_array_,
+          *input_schema_);
     }
     cider_nextgen_query_runner_->prepare(create_ddl_);
   }
@@ -73,6 +76,7 @@ class CiderNextgenTestBase : public testing::Test {
  protected:
   std::string table_name_;
   std::string create_ddl_;
+  std::string duckdb_create_ddl_ = "";
   ArrowArray* input_array_{nullptr};
   ArrowSchema* input_schema_{nullptr};
   DuckDbQueryRunner duckdb_query_runner_;

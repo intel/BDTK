@@ -24,8 +24,6 @@
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 
-using namespace facebook::velox::core;
-
 namespace facebook::velox::substrait {
 
 class VeloxPlanFragmentToSubstraitPlan {
@@ -54,11 +52,12 @@ class VeloxPlanFragmentToSubstraitPlan {
 
   /// Given a sourceNode of plan section, test whether we should append a ValuesNode
   /// for it in case of the source node is neither a ValuesNode nor a AbstraitJoinNode.
-  bool shouldAppendValuesNode(const PlanNodePtr& sourceNode) const;
+  bool shouldAppendValuesNode(const core::PlanNodePtr& sourceNode) const;
 
   /// Make a ValuesNode as the input of planFragment source node if the
   /// source node is not a valuesNode.
-  std::shared_ptr<const ValuesNode> makeValuesNode(const core::PlanNodePtr& sourceNode);
+  std::shared_ptr<const core::ValuesNode> makeValuesNode(
+      const core::PlanNodePtr& sourceNode);
 
   VeloxToSubstraitPlanConvertor v2SPlanConvertor_;
   std::shared_ptr<exec::test::PlanBuilder> planBuilder_;
@@ -68,4 +67,5 @@ class VeloxPlanFragmentToSubstraitPlan {
   std::unique_ptr<memory::MemoryPool> pool_{memory::getDefaultScopedMemoryPool()};
   google::protobuf::Arena arena_;
 };
+
 }  // namespace facebook::velox::substrait

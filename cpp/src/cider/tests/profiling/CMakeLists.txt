@@ -18,7 +18,7 @@
 # under the License.
 
 set(TEST_ARGS "--gtest_output=xml:../")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
 file(GLOB cider_profiling_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(cider_profiling_file ${cider_profiling_files})
   string(REGEX MATCH "profiling/.*" test_relative_path ${cider_profiling_file})

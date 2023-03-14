@@ -37,29 +37,31 @@ int main(int argc, char** argv) {
   ::substrait::Expression* add_expr = builder.makeScalarExpr(
       "add", {multiply_expr, field1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
 
-  // TODO: (yma11) build extended expression and replace old evalulator API
-  // ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr, {"add_res"}}});
+  // TODO: (yma11) enable following code when ExpressionEvaluator implemented
+  /*
+  ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr, {"add_res"}}});
   // Make batch for evaluation, data should be transferred from frontend in real case
-  // TODO : (yma11) switch to new expr evaluation API
-  //   auto input_batch = CiderBatchBuilder()
-  //                          .setRowNum(2)
-  //                          .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I64), {1, 4})
-  //                          .addColumn<int64_t>("b", CREATE_SUBSTRAIT_TYPE(I64), {4, 3})
-  //                          .build();
-  //   auto expect_batch = CiderBatchBuilder()
-  //                           .setRowNum(2)
-  //                           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {8,
-  //                           15}) .build();
-  //   auto allocator = std::make_shared<CiderDefaultAllocator>();
-  //   CiderExprEvaluator evaluator({add_expr},
-  //                                builder.funcsInfo(),
-  //                                builder.getSchema(),
-  //                                allocator,
-  //                                generator::ExprType::ProjectExpr);
-  //   auto out_batch = evaluator.eval(input_batch);
-  //   // Verify result
-  //   assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expect_batch),
-  //                                     std::make_shared<CiderBatch>(out_batch)));
+  auto&& [schema, array] =
+      ArrowArrayBuilder()
+          .setRowNum(2)
+          .addColumn<int64_t>("a", CREATE_SUBSTRAIT_TYPE(I64), {1, 4})
+          .addColumn<int64_t>("b", CREATE_SUBSTRAIT_TYPE(I64), {4, 3})
+          .build();
+  auto&& [expected_schema, expected_array] =
+      ArrowArrayBuilder()
+          .setRowNum(2)
+          .addColumn<int64_t>("c", CREATE_SUBSTRAIT_TYPE(I64), {8, 15})
+          .build();
+  auto allocator = std::make_shared<CiderDefaultAllocator>();
+  ExpressionEvaluator evaluator({ext_expr},
+                                std::make_shared<ExprEvaluatorContext>(allocator));
+  struct ArrowArray out_array;
+  struct ArrowSchema out_schema;
+  evaluator.eval(array, schema, out_array, out_schema);
+  // Verify result
+  assert(CiderArrowChecker::checkArrowEq(
+      expected_array, out_array, expected_schema, out_schema));
+  */
 
   // Example 2 : generate for expression "a * b + 10"
   SubstraitExprBuilder inc_builder({"a", "b"},
@@ -73,33 +75,21 @@ int main(int argc, char** argv) {
       "multiply", {field2, field3}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
   ::substrait::Expression* add_expr1 = inc_builder.makeScalarExpr(
       "add", {multiply_expr1, field4}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  // ::substrait::ExtendedExpression* ext_expr = builder.build({{add_expr1,
-  // {"add_res"}}}); Evaluate same batch as above
-  // TODO : (yma11) switch to new expr evaluation API
-  //   CiderExprEvaluator evaluator1({add_expr1},
-  //                                 inc_builder.funcsInfo(),
-  //                                 inc_schema,
-  //                                 allocator,
-  //                                 generator::ExprType::ProjectExpr);
-  //   auto out_batch1 = evaluator1.eval(input_batch);
-  //   // Verify result
-  //   auto expected_batch1 =
-  //       CiderBatchBuilder()
-  //           .setRowNum(2)
-  //           .addColumn<int64_t>("0", CREATE_SUBSTRAIT_TYPE(I64), {14, 22})
-  //           .build();
-  //   assert(CiderBatchChecker::checkEq(std::make_shared<CiderBatch>(expected_batch1),
-  //                                     std::make_shared<CiderBatch>(out_batch1)));
-  // Example 2 : generate for expression "sum(a), min(b)"
-  SubstraitExprBuilder agg_builder({"a", "b"},
-                                   {CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false),
-                                    CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false)});
-  ::substrait::Expression* arg_1 = agg_builder.makeFieldReference("a");
-  ::substrait::Expression* arg_2 = agg_builder.makeFieldReference("b");
-  ::substrait::AggregateFunction* sum =
-      agg_builder.makeAggExpr("sum", {arg_1}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  ::substrait::AggregateFunction* min =
-      agg_builder.makeAggExpr("min", {arg_2}, CREATE_SUBSTRAIT_TYPE_FULL_PTR(I64, false));
-  // ::substrait::ExtendedExpression* ext_expr = builder.build({{sum, {"sum_a"}}, {min,
-  // {"min_b"}}});
+  /*
+  ::substrait::ExtendedExpression* ext_expr1 = builder.build({{add_expr1, {"add_res"}}});
+  // Evaluate same batch as above
+  ExpressionEvaluator evaluator1({ext_expr1},
+                                 std::make_shared<ExprEvaluatorContext>(allocator));
+  struct ArrowArray out_array_1;
+  struct ArrowSchema out_schema_1;
+  evaluator1.eval(array, schema, out_array_1, out_schema_1);
+  auto&& [expected_schema_1, expected_array_1] =
+      ArrowArrayBuilder()
+          .setRowNum(2)
+          .addColumn<int64_t>("c", CREATE_SUBSTRAIT_TYPE(I64), {14, 22})
+          .build();
+  // Verify result
+  assert(CiderArrowChecker::checkArrowEq(
+      expected_array_1, out_array_1, expected_schema_1, out_schema_1));
+  */
 }

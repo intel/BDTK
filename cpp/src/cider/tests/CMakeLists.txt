@@ -40,7 +40,8 @@ set(EXECUTE_TEST_LIBS
     substrait
     cider
     dl
-    cider_hashtable_join)
+    cider_hashtable_join
+    fmt::fmt)
 
 target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
                       cider_hashtable)

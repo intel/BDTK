@@ -25,6 +25,7 @@
 #include "CiderOperatorTestBase.h"
 #include "CiderPlanBuilder.h"
 
+using namespace facebook::velox;
 using namespace facebook::velox::plugin::test;
 
 class CiderOperatorAggOpTest : public CiderOperatorTestBase {
@@ -172,6 +173,7 @@ TEST_F(CiderOperatorAggOpTest, having_agg) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::init(&argc, &argv, false);
   return RUN_ALL_TESTS();
 }

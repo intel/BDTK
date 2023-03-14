@@ -28,13 +28,13 @@ class NullptrRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
       const VeloxNodeAddrPlanSection& planSection,
       const VeloxPlanNodeAddr& source) const override {
-    return std::pair<bool, VeloxPlanNodePtr>(true, nullptr);
+    return {true, nullptr};
   };
 
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
       const VeloxNodeAddrPlanSection& planSection,
       const VeloxPlanNodeAddrList& srcList) const override {
-    return std::pair<bool, VeloxPlanNodePtr>(true, nullptr);
+    return {true, nullptr};
   };
 };
 
@@ -42,13 +42,13 @@ class KeepOrginalRewriter : public PlanRewriter {
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithSingleSource(
       const VeloxNodeAddrPlanSection& planSection,
       const VeloxPlanNodeAddr& source) const override {
-    return std::pair<bool, VeloxPlanNodePtr>(false, nullptr);
+    return {false, nullptr};
   };
 
   std::pair<bool, VeloxPlanNodePtr> rewritePlanSectionWithMultiSources(
       const VeloxNodeAddrPlanSection& planSection,
       const VeloxPlanNodeAddrList& srcList) const override {
-    return std::pair<bool, VeloxPlanNodePtr>(false, nullptr);
+    return {false, nullptr};
   };
 };
 
