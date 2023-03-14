@@ -31,9 +31,7 @@ namespace cider::exec::nextgen::context {
 void Batch::reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator) {
   release();
 
-  auto schema = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
-  schema_ = *schema;
-  CiderBatchUtils::freeArrowSchema(schema);
+  schema_ = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
 
   auto builder = utils::RecursiveFunctor{
       [&allocator](auto&& builder, ArrowSchema* schema, ArrowArray* array) -> void {

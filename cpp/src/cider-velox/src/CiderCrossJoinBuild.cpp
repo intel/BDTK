@@ -109,12 +109,12 @@ void CiderCrossJoinBuild::noMoreInput() {
     rowVectorPtr->append(batch.get());
   }
 
-  ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
-  exportToArrow(rowVectorPtr, *inputArrowArray);
-  ArrowSchema* inputArrowSchema = CiderBatchUtils::allocateArrowSchema();
-  exportToArrow(rowVectorPtr, *inputArrowSchema);
+  ArrowArray inputArrowArray;
+  exportToArrow(rowVectorPtr, inputArrowArray);
+  ArrowSchema inputArrowSchema;
+  exportToArrow(rowVectorPtr, inputArrowSchema);
 
-  Batch inBatch(*inputArrowSchema, *inputArrowArray);
+  Batch inBatch(inputArrowSchema, inputArrowArray);
   joinBridge_->setData(std::make_shared<Batch>(std::move(inBatch)));
 }
 
