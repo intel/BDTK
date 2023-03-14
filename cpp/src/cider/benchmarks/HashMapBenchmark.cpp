@@ -28,7 +28,6 @@
 #include <common/hashtable/HashTable.h>
 #include <common/hashtable/HashTableAllocator.h>
 #include <folly/container/F14Map.h>
-
 #include <tests/utils/Utils.h>
 
 using namespace cider::hashtable;
@@ -119,13 +118,27 @@ static void BM_Lookup(benchmark::State& state) {
   std::vector<KeyType> data = prepare_data<KeyType>(row_num);
   for (auto _ : state) {
     int32_t collisions = bench<KeyType, HashTableType>(data);
-    state.counters["Collisions"] = collisions;
+    // state.counters["Collisions"] = collisions;
   }
 }
 
 template <typename KeyType>
-void NO_INLINE bench_std(const std::vector<KeyType>& data) {
+void NO_INLINE bench_std_tree(const std::vector<KeyType>& data) {
   std::map<KeyType, int8_t> map;
+
+  for (auto key : data) {
+    map.emplace(key, 1);
+  }
+
+  for (auto key : data) {
+    auto it = map.find(key);
+  }
+}
+
+template <typename KeyType>
+void NO_INLINE bench_std_unordered(const std::vector<KeyType>& data) {
+  std::unordered_map<KeyType, int8_t> map;
+
   for (auto key : data) {
     map.emplace(key, 1);
   }
@@ -148,22 +161,32 @@ void NO_INLINE bench_folly_f14(const std::vector<KeyType>& data) {
 }
 
 template <typename KeyType>
-static void BM_std_Lookup(benchmark::State& state) {
+static void BM_std_treemap(benchmark::State& state) {
   size_t row_num = state.range(0);
   std::vector<KeyType> data = prepare_data<KeyType>(row_num);
   for (auto _ : state) {
-    bench_std<KeyType>(data);
-    state.counters["Collisions"] = -1;
+    bench_std_tree<KeyType>(data);
+    // state.counters["Collisions"] = -1;
   }
 }
 
 template <typename KeyType>
-static void BM_folly_f14_Lookup(benchmark::State& state) {
+static void BM_std_hashmap(benchmark::State& state) {
+  size_t row_num = state.range(0);
+  std::vector<KeyType> data = prepare_data<KeyType>(row_num);
+  for (auto _ : state) {
+    bench_std_unordered<KeyType>(data);
+    // state.counters["Collisions"] = -1;
+  }
+}
+
+template <typename KeyType>
+static void BM_folly_f14_hashmap(benchmark::State& state) {
   size_t row_num = state.range(0);
   std::vector<KeyType> data = prepare_data<KeyType>(row_num);
   for (auto _ : state) {
     bench_folly_f14<KeyType>(data);
-    state.counters["Collisions"] = -1;
+    // state.counters["Collisions"] = -1;
   }
 }
 
@@ -186,21 +209,23 @@ static std::vector<KeyType> prepare_data(size_t row_num) {
 }
 
 template <typename KeyType>
-static void BM_Baseline_Lookup(benchmark::State& state) {
+static void BM_cider_basic_hashmap(benchmark::State& state) {
   using BaselineLookup = HashMap<KeyType, int8_t, HashCRC32<KeyType>>;
   BM_Lookup<KeyType, BaselineLookup>(state);
 }
-
 template <typename KeyType>
-static void BM_Optimized_Lookup(benchmark::State& state) {
+static void BM_cider_optimzied_hashmap(benchmark::State& state) {
   using OptimizedLookup = FixedHashMap<KeyType, int8_t>;
   BM_Lookup<KeyType, OptimizedLookup>(state);
 }
 
-BENCHMARK(BM_std_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
-BENCHMARK(BM_folly_f14_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
-BENCHMARK(BM_cider_basic_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
-BENCHMARK(BM_cider_optimzied_hashmap<uint8_t>)->RangeMultiplier(10)->Range(100, 10000);
+BENCHMARK(BM_std_treemap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
+BENCHMARK(BM_std_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
+BENCHMARK(BM_folly_f14_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
+BENCHMARK(BM_cider_basic_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
+BENCHMARK(BM_cider_optimzied_hashmap<uint8_t>)
+    ->RangeMultiplier(10)
+    ->Range(10000, 10000000);
 
 // Remove uint16_t benchmark to make the report clear.
 // Besides, the result of uint16_t is same to uint8_t.
