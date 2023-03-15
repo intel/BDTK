@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <../../cider/include/cider/CiderAllocator.h>
+#include <cider/CiderAllocator.h>
 
 /**
  * We are going to use the entire memory we allocated when resizing a hash

@@ -36,6 +36,8 @@ namespace cider::hashtable {
 /**
  * The std::string_view-like container to avoid creating strings to find substrings in the
  * hash table.
+ * We should notice that it will sometimes be unsafe since all constructors save
+ * pointers instead of values.
  */
 struct StringRef {
   const char* data = nullptr;

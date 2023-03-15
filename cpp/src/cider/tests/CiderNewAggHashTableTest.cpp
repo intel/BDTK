@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <common/base/StringRef.h>
 #include <common/base/wide_integer.h>
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
@@ -43,8 +44,8 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   //     2         1       30
 
   // key of HT: int8
-  std::vector<SQLTypes> key_types;
-  key_types.push_back(SQLTypes::kTINYINT);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kTINYINT));
 
   // 1byte is_null(bool) + 1byte padding + 1byte int8 + 1byte padding
   uint8_t key_len = 4;
@@ -74,7 +75,7 @@ TEST_F(CiderNewAggHashTableTest, aggUInt8Test) {
   *reinterpret_cast<int8_t*>(init_value_ptr + offset_vec[2]) = min_init_val;
   *reinterpret_cast<int8_t*>(init_value_ptr + offset_vec[3]) = max_init_val;
 
-  AggregationHashTable agg_ht(key_types, init_value_ptr, init_value_len);
+  AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
 
   // Row0:
   // Generate a key = 1
@@ -172,8 +173,8 @@ TEST_F(CiderNewAggHashTableTest, aggUInt16Test) {
   //     2         1       30
 
   // key of HT: int16
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kSMALLINT);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kSMALLINT));
 
   // 1byte is_null(bool) + 1byte padding + 2bytes int16
   uint8_t key_len = 4;
@@ -301,8 +302,8 @@ TEST_F(CiderNewAggHashTableTest, aggUInt32Test) {
   //     2         1       30
 
   // key of HT: int32
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kINT);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kINT));
 
   // 1byte is_null(bool) + 1byte padding + 4bytes int32
   uint8_t key_len = 6;
@@ -430,8 +431,8 @@ TEST_F(CiderNewAggHashTableTest, aggUInt64Test) {
   //     2         1       30
 
   // key of HT: int64
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kBIGINT);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kBIGINT));
 
   // 1byte is_null(bool) + 1byte padding + 8bytes int64
   uint8_t key_len = 10;
@@ -558,8 +559,8 @@ TEST_F(CiderNewAggHashTableTest, aggKeys128Test) {
   //     2         1       30
 
   // key of HT: int128
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kINT128);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kINT128));
 
   // 1byte is_null(bool) + 1byte padding + 16bytes int128
   uint8_t key_len = 18;
@@ -686,8 +687,8 @@ TEST_F(CiderNewAggHashTableTest, aggKeys256Test) {
   //     2         1       30
 
   // key of HT: int256
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kINT256);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kINT256));
 
   // 1byte is_null(bool) + 1byte padding + 32bytes int256
   uint8_t key_len = 34;
@@ -816,8 +817,8 @@ TEST_F(CiderNewAggHashTableTest, aggFloatTest) {
   //     2         1.1       30
 
   // key of HT: float
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kFLOAT);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kFLOAT));
 
   // 1byte is_null(bool) + 1byte padding + 4bytes float
   uint8_t key_len = 6;
@@ -945,8 +946,8 @@ TEST_F(CiderNewAggHashTableTest, aggDoubleTest) {
   //     2         1.1       30
 
   // key of HT: int64
-  std::vector<SQLTypes> keys;
-  keys.push_back(SQLTypes::kDOUBLE);
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kDOUBLE));
 
   // 1byte is_null(bool) + 1byte padding + 8bytes double
   uint8_t key_len = 10;
@@ -1054,6 +1055,136 @@ TEST_F(CiderNewAggHashTableTest, aggDoubleTest) {
   int8_t* key2_check_ptr = default_allocator->allocate(key_len);
   *reinterpret_cast<bool*>(key2_check_ptr) = key_null;
   *reinterpret_cast<double*>(key2_check_ptr + offset_vec[0]) = key2;
+  // Use get api and return value address
+  int8_t* value2_check_ptr = agg_ht.get(key2_check_ptr);
+
+  // Check agg result value
+  CHECK_EQ(reinterpret_cast<int64_t*>(value2_check_ptr)[0], 20);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value2_check_ptr + offset_vec[1])[0], 1);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value2_check_ptr + offset_vec[2])[0], 20);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value2_check_ptr + offset_vec[3])[0], 20);
+}
+
+// Large dataset test cases
+TEST_F(CiderNewAggHashTableTest, aggStringTest) {
+  // SQL:
+  // SELECT SUM(int64), COUNT(int64), MIN(int64), MAX(int64) FROM table GROUP BY int64.
+  // The example below has 3 rows of data.
+  // Row number   key    value
+  //     0         1       10
+  //     1         2       20
+  //     2         1       30
+
+  // key of HT: int64
+  std::vector<SQLTypeInfo> keys;
+  keys.push_back(SQLTypeInfo(SQLTypes::kTEXT, 1, 0));
+
+  // 1byte is_null(bool) + 1byte padding + 1byte string
+  uint8_t key_len = 3;
+  bool key_null = false;
+
+  StringRef key1("1");
+  StringRef key2("2");
+  StringRef key3("1");
+
+  int64_t val1 = 10;
+  int64_t val2 = 20;
+  int64_t val3 = 30;
+
+  // `offset_vec[0]` is key offset and `offset_vec[1]` to `offset_vec[3]` are values'
+  std::vector<int8_t> offset_vec{2, 8, 12, 20};
+
+  // value of HT: SUM(int64)-int64 + COUNT(int64)-int32 + MIN(int64)-int64 +
+  // MAX(int64)-int64
+  uint32_t init_value_len = 28;
+  int8_t* init_value_ptr = default_allocator->allocate(init_value_len);
+  int64_t sum_init_val = 0;
+  int32_t cnt_init_val = 0;
+  int64_t min_init_val = std::numeric_limits<int64_t>::max();
+  int64_t max_init_val = std::numeric_limits<int64_t>::min();
+  *reinterpret_cast<int64_t*>(init_value_ptr) = sum_init_val;
+  *reinterpret_cast<int32_t*>(init_value_ptr + offset_vec[1]) = cnt_init_val;
+  *reinterpret_cast<int64_t*>(init_value_ptr + offset_vec[2]) = min_init_val;
+  *reinterpret_cast<int64_t*>(init_value_ptr + offset_vec[3]) = max_init_val;
+
+  AggregationHashTable agg_ht(keys, init_value_ptr, init_value_len);
+
+  // Row0:
+  // Generate a key = 1
+  int8_t* key1_ptr = default_allocator->allocate(key_len);
+  *reinterpret_cast<bool*>(key1_ptr) = key_null;
+  *reinterpret_cast<StringRef*>(key1_ptr + offset_vec[0]) = key1;
+  // Use get api and return value address
+  int8_t* value1_ptr = agg_ht.get(key1_ptr);
+
+  // Check init value
+  CHECK_EQ(reinterpret_cast<int64_t*>(value1_ptr)[0], 0);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value1_ptr + offset_vec[1])[0], 0);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value1_ptr + offset_vec[2])[0], min_init_val);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value1_ptr + offset_vec[3])[0], max_init_val);
+
+  // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
+  *reinterpret_cast<int64_t*>(value1_ptr) += val1;
+  *reinterpret_cast<int32_t*>(value1_ptr + offset_vec[1]) += 1;
+  *reinterpret_cast<int64_t*>(value1_ptr + offset_vec[2]) =
+      std::min(reinterpret_cast<int64_t*>(value1_ptr + offset_vec[2])[0], val1);
+  *reinterpret_cast<int64_t*>(value1_ptr + offset_vec[3]) =
+      std::max(reinterpret_cast<int64_t*>(value1_ptr + offset_vec[3])[0], val1);
+
+  // Row1:
+  int8_t* key2_ptr = default_allocator->allocate(key_len);
+  *reinterpret_cast<bool*>(key2_ptr) = key_null;
+  *reinterpret_cast<StringRef*>(key2_ptr + offset_vec[0]) = key2;
+  // Use get api and return value address
+  int8_t* value2_ptr = agg_ht.get(key2_ptr);
+
+  // Check init value
+  CHECK_EQ(reinterpret_cast<int64_t*>(value2_ptr)[0], 0);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value2_ptr + offset_vec[1])[0], 0);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value2_ptr + offset_vec[2])[0], min_init_val);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value2_ptr + offset_vec[3])[0], max_init_val);
+
+  // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
+  *reinterpret_cast<int64_t*>(value2_ptr) += val2;
+  *reinterpret_cast<int32_t*>(value2_ptr + offset_vec[1]) += 1;
+  *reinterpret_cast<int64_t*>(value2_ptr + offset_vec[2]) =
+      std::min(reinterpret_cast<int64_t*>(value2_ptr + offset_vec[2])[0], val2);
+  *reinterpret_cast<int64_t*>(value2_ptr + offset_vec[3]) =
+      std::max(reinterpret_cast<int64_t*>(value2_ptr + offset_vec[3])[0], val2);
+
+  // Row2:
+  int8_t* key3_ptr = default_allocator->allocate(key_len);
+  *reinterpret_cast<bool*>(key3_ptr) = key_null;
+  *reinterpret_cast<StringRef*>(key3_ptr + offset_vec[0]) = key3;
+  // Use get api and return value address
+  int8_t* value3_ptr = agg_ht.get(key3_ptr);
+
+  // Some agg operations and update the value, like SUM, COUNT, MIN, MAX
+  *reinterpret_cast<int64_t*>(value3_ptr) += val3;
+  *reinterpret_cast<int32_t*>(value3_ptr + offset_vec[1]) += 1;
+  *reinterpret_cast<int64_t*>(value3_ptr + offset_vec[2]) =
+      std::min(reinterpret_cast<int64_t*>(value3_ptr + offset_vec[2])[0], val3);
+  *reinterpret_cast<int64_t*>(value3_ptr + offset_vec[3]) =
+      std::max(reinterpret_cast<int64_t*>(value3_ptr + offset_vec[3])[0], val3);
+
+  // Final check
+  // Check key = 1
+  int8_t* key1_check_ptr = default_allocator->allocate(key_len);
+  *reinterpret_cast<bool*>(key1_check_ptr) = key_null;
+  *reinterpret_cast<StringRef*>(key1_check_ptr + offset_vec[0]) = key1;
+  // Use get api and return value address
+  int8_t* value1_check_ptr = agg_ht.get(key1_check_ptr);
+
+  // Check agg result value
+  CHECK_EQ(reinterpret_cast<int64_t*>(value1_check_ptr)[0], 40);
+  CHECK_EQ(reinterpret_cast<int32_t*>(value1_check_ptr + offset_vec[1])[0], 2);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value1_check_ptr + offset_vec[2])[0], 10);
+  CHECK_EQ(reinterpret_cast<int64_t*>(value1_check_ptr + offset_vec[3])[0], 30);
+
+  // Check key = 2
+  int8_t* key2_check_ptr = default_allocator->allocate(key_len);
+  *reinterpret_cast<bool*>(key2_check_ptr) = key_null;
+  *reinterpret_cast<StringRef*>(key2_check_ptr + offset_vec[0]) = key2;
   // Use get api and return value address
   int8_t* value2_check_ptr = agg_ht.get(key2_check_ptr);
 

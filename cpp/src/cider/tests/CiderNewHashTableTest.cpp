@@ -21,6 +21,7 @@
 
 #include <common/base/wide_integer.h>
 #include <common/hashtable/HashTableAllocator.h>
+#include <common/hashtable/StringHashMap.h>
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "common/hashtable/FixedHashMap.h"
@@ -518,6 +519,80 @@ TEST_F(CiderNewHashTableTest, aggUInt64LargeDatasetTest) {
     CHECK_EQ(ht_uint64[keys[i]].getSum(), 50);
     CHECK_EQ(ht_uint64[keys[i]].getCount(), 2);
     CHECK_EQ(ht_uint64[keys[i]].getAvg(), 25);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggShortStringTest) {
+  using AggregatedHashTableForShortStringKey = StringHashMap<Block>;
+  AggregatedHashTableForShortStringKey ht_short_str;
+
+  std::vector<std::string> keys{"1", "2", "3", "4", "5"};
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_short_str[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_short_str[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_short_str[keys[i]].getCount(), 1);
+  }
+
+  std::vector<std::string> keys2{"1", "2", "3", "4", "5"};
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_short_str[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_short_str[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_short_str[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_short_str[keys[i]].getAvg(), 30);
+  }
+}
+
+TEST_F(CiderNewHashTableTest, aggLongStringTest) {
+  using AggregatedHashTableForLongStringKey = HashMapWithSavedHash<StringRef, Block>;
+  AggregatedHashTableForLongStringKey ht_long_str;
+
+  std::string base_str = "Basic string of long string test.";
+
+  std::vector<std::string> keys;
+  for (size_t i = 0; i < 5; i++) {
+    std::string tmp_str;
+    for (int j = 0; j < i * 100; j++) {
+      tmp_str = tmp_str + base_str;
+    }
+    keys.push_back(tmp_str);
+  }
+
+  std::vector<int64_t> values{10, 20, 30, 40, 50};
+
+  for (int i = 0; i < keys.size(); i++) {
+    Block& block = ht_long_str[keys[i]];
+    block.add(values[i]);
+  }
+
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_long_str[keys[i]].getSum(), values[i]);
+    CHECK_EQ(ht_long_str[keys[i]].getCount(), 1);
+  }
+
+  std::vector<std::string> keys2;
+  for (size_t i = 0; i < 5; i++) {
+    keys2.push_back(keys[i]);
+  }
+
+  std::vector<int64_t> values2{50, 40, 30, 20, 10};
+  for (int i = 0; i < keys2.size(); i++) {
+    Block& block = ht_long_str[keys2[i]];
+    block.add(values2[i]);
+  }
+  for (int i = 0; i < keys.size(); i++) {
+    CHECK_EQ(ht_long_str[keys[i]].getSum(), 60);
+    CHECK_EQ(ht_long_str[keys[i]].getCount(), 2);
+    CHECK_EQ(ht_long_str[keys[i]].getAvg(), 30);
   }
 }
 

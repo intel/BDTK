@@ -31,7 +31,7 @@ HashTableAllocator allocator;
 // init_len: initial value length
 // `init_addr` and `init_len` describe the init value of a value in HashTable.
 // The memory layout can of any kind and should be designed by users.
-AggregationHashTable::AggregationHashTable(std::vector<SQLTypes> key_types,
+AggregationHashTable::AggregationHashTable(std::vector<SQLTypeInfo> key_types,
                                            int8_t* addr,
                                            uint32_t len)
     : key_types_(key_types), init_val_(addr), init_len_(len) {
@@ -52,7 +52,7 @@ AggregateDataPtr AggregationHashTable::get(int8_t* raw_key) {
   // key_set_.emplace(key);
 
   for (int i = 0; i < key_types_.size(); i++) {
-    if (SQLTypes::kTINYINT == key_types_[i]) {
+    if (SQLTypes::kTINYINT == key_types_[i].get_type()) {
       uint8_t key_v = (reinterpret_cast<uint8_t*>(key.getAddr()))[0];
       if (agg_ht_uint8_[key_v] == nullptr) {
         // Allocate memory of values here since value type like non-fixed length address
@@ -62,7 +62,7 @@ AggregateDataPtr AggregationHashTable::get(int8_t* raw_key) {
         std::memcpy(agg_ht_uint8_[key_v], init_val_, init_len_);
       }
       return agg_ht_uint8_[key_v];
-    } else if (SQLTypes::kSMALLINT == key_types_[i]) {
+    } else if (SQLTypes::kSMALLINT == key_types_[i].get_type()) {
       uint16_t key_v = (reinterpret_cast<uint16_t*>(key.getAddr()))[0];
       if (agg_ht_uint16_[key_v] == nullptr) {
         // Allocate memory of values here since value type like non-fixed length address
@@ -72,48 +72,65 @@ AggregateDataPtr AggregationHashTable::get(int8_t* raw_key) {
         std::memcpy(agg_ht_uint16_[key_v], init_val_, init_len_);
       }
       return agg_ht_uint16_[key_v];
-    } else if (SQLTypes::kINT == key_types_[i]) {
+    } else if (SQLTypes::kINT == key_types_[i].get_type()) {
       uint32_t key_v = (reinterpret_cast<uint32_t*>(key.getAddr()))[0];
       if (agg_ht_uint32_[key_v] == nullptr) {
         agg_ht_uint32_[key_v] = allocator.allocate(init_len_);
         std::memcpy(agg_ht_uint32_[key_v], init_val_, init_len_);
       }
       return agg_ht_uint32_[key_v];
-    } else if (SQLTypes::kBIGINT == key_types_[i]) {
+    } else if (SQLTypes::kBIGINT == key_types_[i].get_type()) {
       uint64_t key_v = (reinterpret_cast<uint64_t*>(key.getAddr()))[0];
       if (agg_ht_uint64_[key_v] == nullptr) {
         agg_ht_uint64_[key_v] = allocator.allocate(init_len_);
         std::memcpy(agg_ht_uint64_[key_v], init_val_, init_len_);
       }
       return agg_ht_uint64_[key_v];
-    } else if (SQLTypes::kINT128 == key_types_[i]) {
+    } else if (SQLTypes::kINT128 == key_types_[i].get_type()) {
       UInt128 key_v = (reinterpret_cast<UInt128*>(key.getAddr()))[0];
       if (agg_ht_uint128_[key_v] == nullptr) {
         agg_ht_uint128_[key_v] = allocator.allocate(init_len_);
         std::memcpy(agg_ht_uint128_[key_v], init_val_, init_len_);
       }
       return agg_ht_uint128_[key_v];
-    } else if (SQLTypes::kINT256 == key_types_[i]) {
+    } else if (SQLTypes::kINT256 == key_types_[i].get_type()) {
       UInt256 key_v = (reinterpret_cast<UInt256*>(key.getAddr()))[0];
       if (agg_ht_uint256_[key_v] == nullptr) {
         agg_ht_uint256_[key_v] = allocator.allocate(init_len_);
         std::memcpy(agg_ht_uint256_[key_v], init_val_, init_len_);
       }
       return agg_ht_uint256_[key_v];
-    } else if (SQLTypes::kFLOAT == key_types_[i]) {
+    } else if (SQLTypes::kFLOAT == key_types_[i].get_type()) {
       float key_v = (reinterpret_cast<float*>(key.getAddr()))[0];
       if (agg_ht_float_[key_v] == nullptr) {
         agg_ht_float_[key_v] = allocator.allocate(init_len_);
         std::memcpy(agg_ht_float_[key_v], init_val_, init_len_);
       }
       return agg_ht_float_[key_v];
-    } else if (SQLTypes::kDOUBLE == key_types_[i]) {
+    } else if (SQLTypes::kDOUBLE == key_types_[i].get_type()) {
       double key_v = (reinterpret_cast<double*>(key.getAddr()))[0];
       if (agg_ht_double_[key_v] == nullptr) {
         agg_ht_double_[key_v] = allocator.allocate(init_len_);
         std::memcpy(agg_ht_double_[key_v], init_val_, init_len_);
       }
       return agg_ht_double_[key_v];
+    } else if (SQLTypes::kCHAR == key_types_[i].get_type() ||
+               SQLTypes::kVARCHAR == key_types_[i].get_type() ||
+               SQLTypes::kTEXT == key_types_[i].get_type()) {
+      StringRef key_v = (reinterpret_cast<StringRef*>(key.getAddr()))[0];
+      if (key_types_[i].get_dimension() <= 32) {
+        if (agg_ht_short_str_[key_v] == nullptr) {
+          agg_ht_short_str_[key_v] = allocator.allocate(init_len_);
+          std::memcpy(agg_ht_short_str_[key_v], init_val_, init_len_);
+        }
+        return agg_ht_short_str_[key_v];
+      } else {
+        if (agg_ht_str_[key_v] == nullptr) {
+          agg_ht_str_[key_v] = allocator.allocate(init_len_);
+          std::memcpy(agg_ht_str_[key_v], init_val_, init_len_);
+        }
+        return agg_ht_str_[key_v];
+      }
     }
   }
   CIDER_THROW(CiderRuntimeException, "Unsupported key type");
@@ -131,37 +148,43 @@ AggregateDataPtr AggregationHashTable::get(std::vector<AggKey> agg_keys) {
 AggKey AggregationHashTable::transferToAggKey(int8_t* key_addr) {
   // Single key
   if (1 == key_types_.size()) {
-    if (SQLTypes::kTINYINT == key_types_[0]) {
+    if (SQLTypes::kTINYINT == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 1);
       return key;
-    } else if (SQLTypes::kSMALLINT == key_types_[0]) {
+    } else if (SQLTypes::kSMALLINT == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 2);
       return key;
-    } else if (SQLTypes::kINT == key_types_[0]) {
+    } else if (SQLTypes::kINT == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 4);
       return key;
-    } else if (SQLTypes::kBIGINT == key_types_[0]) {
+    } else if (SQLTypes::kBIGINT == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 8);
       return key;
-    } else if (SQLTypes::kINT128 == key_types_[0]) {
+    } else if (SQLTypes::kINT128 == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 16);
       return key;
-    } else if (SQLTypes::kINT256 == key_types_[0]) {
+    } else if (SQLTypes::kINT256 == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 32);
       return key;
-    } else if (SQLTypes::kFLOAT == key_types_[0]) {
+    } else if (SQLTypes::kFLOAT == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 4);
       return key;
-    } else if (SQLTypes::kDOUBLE == key_types_[0]) {
+    } else if (SQLTypes::kDOUBLE == key_types_[0].get_type()) {
       bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
       AggKey key(is_null, key_addr + 2, 8);
+      return key;
+    } else if (SQLTypes::kCHAR == key_types_[0].get_type() ||
+               SQLTypes::kVARCHAR == key_types_[0].get_type() ||
+               SQLTypes::kTEXT == key_types_[0].get_type()) {
+      bool is_null = (reinterpret_cast<bool*>(key_addr))[0];
+      AggKey key(is_null, key_addr + 2, key_types_[0].get_dimension());
       return key;
     }
     // TODO(Deegue): Support more types.
@@ -176,11 +199,11 @@ AggKey AggregationHashTable::transferToAggKey(int8_t* key_addr) {
 // std::vector<AggregateDataPtr> dump() {
 //   std::vector<AggregateDataPtr> res(key_set_.size());
 //   for (auto key : key_set_) {
-//     if (SQLTypes::kTINYINT == key_types_[0]) {
+//     if (SQLTypes::kTINYINT == key_types_[0].get_type()) {
 //       int8_t key_v = (reinterpret_cast<int8_t*>(key.addr))[0];
 //       ;
 //       res.emplace(agg_ht_uint8_[key_v]);
-//     } else if (SQLTypes::kSMALLINT == key_types_[0]) {
+//     } else if (SQLTypes::kSMALLINT == key_types_[0].get_type()) {
 //       int16_t key_v = (reinterpret_cast<int16_t*>(key.addr))[0];
 //       ;
 //       res.emplace(agg_ht_uint16_[key_v]);
@@ -193,21 +216,21 @@ AggKey AggregationHashTable::transferToAggKey(int8_t* key_addr) {
 AggregationMethod::Type AggregationHashTable::chooseAggregationMethod() {
   // Single key
   if (1 == key_types_.size()) {
-    if (SQLTypes::kTINYINT == key_types_[0]) {
+    if (SQLTypes::kTINYINT == key_types_[0].get_type()) {
       return AggregationMethod::Type::INT8;
-    } else if (SQLTypes::kSMALLINT == key_types_[0]) {
+    } else if (SQLTypes::kSMALLINT == key_types_[0].get_type()) {
       return AggregationMethod::Type::INT16;
-    } else if (SQLTypes::kINT == key_types_[0]) {
+    } else if (SQLTypes::kINT == key_types_[0].get_type()) {
       return AggregationMethod::Type::INT32;
-    } else if (SQLTypes::kBIGINT == key_types_[0]) {
+    } else if (SQLTypes::kBIGINT == key_types_[0].get_type()) {
       return AggregationMethod::Type::INT64;
-    } else if (SQLTypes::kINT128 == key_types_[0]) {
+    } else if (SQLTypes::kINT128 == key_types_[0].get_type()) {
       return AggregationMethod::Type::INT128;
-    } else if (SQLTypes::kINT256 == key_types_[0]) {
+    } else if (SQLTypes::kINT256 == key_types_[0].get_type()) {
       return AggregationMethod::Type::INT256;
-    } else if (SQLTypes::kFLOAT == key_types_[0]) {
+    } else if (SQLTypes::kFLOAT == key_types_[0].get_type()) {
       return AggregationMethod::Type::FLOAT;
-    } else if (SQLTypes::kDOUBLE == key_types_[0]) {
+    } else if (SQLTypes::kDOUBLE == key_types_[0].get_type()) {
       return AggregationMethod::Type::DOUBLE;
     }
     // TODO(Deegue): Support more types.

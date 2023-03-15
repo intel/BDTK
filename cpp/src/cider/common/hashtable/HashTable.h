@@ -37,12 +37,6 @@
 #include "type/data/funcannotations.h"
 #include "util/Logger.h"
 
-#ifdef DBMS_HASH_MAP_DEBUG_RESIZES
-#include <Common/Stopwatch.h>
-#include <iomanip>
-#include <iostream>
-#endif
-
 /** NOTE HashTable could only be used for memmoveable (position independent) types.
  * Example: std::string is not position independent in libstdc++ with C++11 ABI or in
  * libc++. Also, key in hash table must be of type, that zero bytes is compared equals to
@@ -50,10 +44,6 @@
  */
 
 namespace cider::hashtable {
-namespace ErrorCodes {
-extern const int LOGICAL_ERROR;
-extern const int NO_AVAILABLE_DATA;
-}  // namespace ErrorCodes
 
 /** The state of the hash table that affects the properties of its cells.
  * Used as a template parameter.
@@ -531,10 +521,6 @@ class HashTable : private boost::noncopyable,
 
   /// Increase the size of the buffer.
   void resize(size_t for_num_elems = 0, size_t for_buf_size = 0) {
-#ifdef DBMS_HASH_MAP_DEBUG_RESIZES
-    Stopwatch watch;
-#endif
-
     size_t old_size = grower.bufSize();
 
     /** In case of exception for the object to remain in the correct state,
@@ -567,8 +553,8 @@ class HashTable : private boost::noncopyable,
     std::unique_ptr<Cell, Deleter> old_buffer(buf, buffer_deleter);
 
     if constexpr (Cell::need_to_notify_cell_during_move) {
-      buf =
-          reinterpret_cast<Cell*>(Allocator::alloc(new_grower.bufSize() * sizeof(Cell)));
+      buf = reinterpret_cast<Cell*>(
+          Allocator::allocate(new_grower.bufSize() * sizeof(Cell)));
       memcpy(reinterpret_cast<void*>(buf),
              reinterpret_cast<const void*>(old_buffer.get()),
              old_buffer_size);
@@ -612,13 +598,6 @@ class HashTable : private boost::noncopyable,
         if (&buf[i] != &buf[updated_place_value])
           Cell::move(&buf[i], &buf[updated_place_value]);
     }
-
-#ifdef DBMS_HASH_MAP_DEBUG_RESIZES
-    watch.stop();
-    std::cerr << std::fixed << std::setprecision(3) << "Resize from " << old_size
-              << " to " << grower.bufSize() << " took " << watch.elapsedSeconds()
-              << " sec." << std::endl;
-#endif
   }
 
   /** Paste into the new buffer the value that was in the old buffer.
