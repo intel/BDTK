@@ -29,6 +29,7 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
+#include "cider/CiderException.h"
 #include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
@@ -63,6 +64,7 @@ void LLVMJITFunction::finish() {
     func_.print(error_os);
     error_os << "\n-----\n";
     LOG(ERROR) << error_msg.str();
+    CIDER_THROW(CiderCompileException, "Codegen failed!");
   }
 }
 
