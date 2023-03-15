@@ -311,6 +311,7 @@ std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
   for (int i = 0; i < buffersPtr.size(); i++) {
     if (sqlTypeVector_[i] == parquet::ConvertedType::type::INT_8 ||
         sqlTypeVector_[i] == parquet::ConvertedType::type::INT_16) {
+      // tinyint and smallint are stored as int32 in parquet
       compressDataBuffer(buffersPtr[i], sqlTypeVector_[i], rowsToRead);
     }
     if (sqlTypeVector_[i] == parquet::ConvertedType::type::NONE) {

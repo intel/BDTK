@@ -20,17 +20,89 @@
  */
 
 #include <gtest/gtest.h>
+#include "tests/utils/CiderArrowChecker.h"
 #include "util/CiderParquetReader.h"
 
 using namespace CiderParquetReader;
+using namespace cider::test::util;
 
-TEST(a, b) {
+std::string getParquetFilesPath() {
+  const std::string absolute_path = __FILE__;
+  auto const pos = absolute_path.find_last_of('/');
+  return absolute_path.substr(0, pos) + "/../parquet_files/";
+}
+
+#define GENERATE_READER_TEST(type_name, substrait_type, c_type)               \
+  TEST(CiderParquetReaderTest, type_name##_single_col) {                      \
+    Reader* reader = new Reader();                                            \
+    reader->init(getParquetFilesPath() + "" #type_name "_single_col.parquet", \
+                 {"col_" #type_name ""},                                      \
+                 0,                                                           \
+                 1);                                                          \
+    ArrowSchema* actual_schema;                                               \
+    ArrowArray* actual_array;                                                 \
+    reader->readBatch(5, actual_schema, actual_array);                        \
+    auto schema_and_array =                                                   \
+        ArrowArrayBuilder()                                                   \
+            .setRowNum(5)                                                     \
+            .addColumn<c_type>("",                                            \
+                               CREATE_SUBSTRAIT_TYPE(substrait_type),         \
+                               {0, 1, 2, 3, 4},                               \
+                               {false, true, false, true, false})             \
+            .build();                                                         \
+    CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),      \
+                                          actual_array,                       \
+                                          std::get<0>(schema_and_array),      \
+                                          actual_schema));                    \
+  }
+
+GENERATE_READER_TEST(i8, I8, int8_t)
+GENERATE_READER_TEST(i16, I16, int16_t)
+GENERATE_READER_TEST(i32, I32, int32_t)
+GENERATE_READER_TEST(i64, I64, int64_t)
+GENERATE_READER_TEST(float, Fp32, float)
+GENERATE_READER_TEST(double, Fp64, double)
+
+TEST(CiderParquetReaderTest, mixed_cols) {
   Reader* reader = new Reader();
-  reader->init("/i8_single_col.parquet", {"col_i8"}, 0, 1);
-  ArrowSchema* schema;
-  ArrowArray* array;
-  reader->readBatch(6, schema, array);
-  reader->hasNext();
+  reader->init(getParquetFilesPath() + "mixed_cols.parquet",
+               {"col_i8", "col_i16", "col_i32", "col_i64", "col_float", "col_double"},
+               0,
+               1);
+  ArrowSchema* actual_schema;
+  ArrowArray* actual_array;
+  reader->readBatch(5, actual_schema, actual_array);
+  auto schema_and_array = ArrowArrayBuilder()
+                              .setRowNum(5)
+                              .addColumn<int8_t>("",
+                                                 CREATE_SUBSTRAIT_TYPE(I8),
+                                                 {0, 1, 2, 3, 4},
+                                                 {false, true, false, true, false})
+                              .addColumn<int16_t>("",
+                                                  CREATE_SUBSTRAIT_TYPE(I16),
+                                                  {0, 1, 2, 3, 4},
+                                                  {false, true, false, true, false})
+                              .addColumn<int32_t>("",
+                                                  CREATE_SUBSTRAIT_TYPE(I32),
+                                                  {0, 1, 2, 3, 4},
+                                                  {false, true, false, true, false})
+                              .addColumn<int64_t>("",
+                                                  CREATE_SUBSTRAIT_TYPE(I64),
+                                                  {0, 1, 2, 3, 4},
+                                                  {false, true, false, true, false})
+                              .addColumn<float>("",
+                                                CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                {0, 1, 2, 3, 4},
+                                                {false, true, false, true, false})
+                              .addColumn<double>("",
+                                                 CREATE_SUBSTRAIT_TYPE(Fp64),
+                                                 {0, 1, 2, 3, 4},
+                                                 {false, true, false, true, false})
+                              .build();
+  CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),
+                                        actual_array,
+                                        std::get<0>(schema_and_array),
+                                        actual_schema));
 }
 
 int main(int argc, char** argv) {
