@@ -115,15 +115,15 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
   has_result_ = true;
 
   if (!need_spill_) {
-    if (input_arrow_array_->release) {
-      input_arrow_array_->release(const_cast<struct ArrowArray*>(input_arrow_array_));
-    }
-    input_arrow_array_ = nullptr;
+    // if (input_arrow_array_->release) {
+    //   input_arrow_array_->release(const_cast<struct ArrowArray*>(input_arrow_array_));
+    // }
+    // input_arrow_array_ = nullptr;
 
-    if (input_arrow_schema_ && input_arrow_schema_->release) {
-      input_arrow_schema_->release(const_cast<struct ArrowSchema*>(input_arrow_schema_));
-      input_arrow_schema_ = nullptr;
-    }
+    // if (input_arrow_schema_ && input_arrow_schema_->release) {
+    //   input_arrow_schema_->release(const_cast<struct
+    //   ArrowSchema*>(input_arrow_schema_)); input_arrow_schema_ = nullptr;
+    // }
   }
 }
 

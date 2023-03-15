@@ -463,6 +463,10 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
 
   for (int64_t i = 0; i < exprs.size(); ++i) {
     ExprPtr& expr = exprs[i];
+    if (dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
+      // ignore bare columns
+      continue;
+    }
     ColumnWriter writer(context, expr, output_index, input_array_len, bitwise_bool);
     writer.write();
   }

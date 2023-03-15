@@ -98,7 +98,7 @@ void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
     exprs[index]->setLocalIndex(local_offset);
   }
 
-  // Prepare target columns
+  // Prepare output columns
   ExprPtrVector& target_exprs =
       static_cast<QueryFuncInitializer*>(node_.get())->getTargetExprs();
   // Target output ArrowArray will always be the first Batch in CodegenCTX.
@@ -115,6 +115,7 @@ void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
                   }()),
       "output",
       true);
+  context.setOutputBatch(output_arrow_array);
   context.appendArrowArrayValues(output_arrow_array,
                                  utils::JITExprValue(1, JITExprValueType::BATCH));
 

@@ -106,6 +106,13 @@ class CodegenContext {
                                         const std::string& name = "",
                                         bool arrow_array_output = true);
 
+  void setOutputBatch(jitlib::JITValuePointer& array_array) {
+    output_arrow_array_.replace(array_array);
+    return;
+  }
+
+  jitlib::JITValuePointer& getOutputBatch() { return output_arrow_array_; }
+
   jitlib::JITValuePointer registerStringHeap();
 
   // TBD: HashTable (GroupBy, Join), other objects registration.
@@ -161,6 +168,7 @@ class CodegenContext {
       cider_set_descriptors_{};
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
+  jitlib::JITValuePointer output_arrow_array_;
   std::pair<BuildTableDescriptorPtr, jitlib::JITValuePointer> buildtable_descriptor_;
 
   jitlib::JITFunctionPointer jit_func_;
@@ -190,6 +198,10 @@ jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array
 
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
                                            int64_t index);
+
+void setArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                        jitlib::JITValuePointer& child_array,
+                        int64_t index);
 
 jitlib::JITValuePointer getArrowArrayDictionary(jitlib::JITValuePointer& arrow_array);
 

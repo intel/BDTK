@@ -33,6 +33,7 @@ void Batch::reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator) {
 
   schema_ = CiderBatchUtils::convertCiderTypeInfoToArrowSchema(type);
 
+  // FIXME(majian): should ignore bare columns which reuse input array
   auto builder = utils::RecursiveFunctor{
       [&allocator](auto&& builder, ArrowSchema* schema, ArrowArray* array) -> void {
         array->length = 0;
