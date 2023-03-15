@@ -22,11 +22,25 @@
 
 #pragma once
 
+#include <cider/CiderAllocator.h>
+#include <boost/noncopyable.hpp>
+
+#include <unistd.h>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
+#if !defined(likely)
+#define likely(x) (__builtin_expect(!!(x), 1))
+#endif
+#if !defined(unlikely)
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+#endif
+
+#define PADDING_FOR_SIMD 64
+
+#define NO_INLINE __attribute__((__noinline__))
 
 namespace cider::hashtable {
 
@@ -40,27 +54,126 @@ namespace cider::hashtable {
  */
 class Arena : private boost::noncopyable {
  private:
-  static size_t roundUpToPageSize(size_t s, size_t page_size) { return 0; }
+  static constexpr size_t pad_right = PADDING_FOR_SIMD - 1;
 
-  /// If MemoryChunks size is less than 'linear_growth_threshold', then use exponential
-  /// growth, otherwise - linear growth
-  ///  (to not allocate too much excessive memory).
-  size_t nextSize(size_t min_next_size) const { return 0; }
+  // Contiguous MemoryChunk of memory and pointer to free space inside it. Member of
+  // single-linked list.
+  struct alignas(16) MemoryChunk : private CiderDefaultAllocator {
+    char* begin;
+    char* pos;
+    char* end;  // does not include padding.
 
-  /// Add next contiguous MemoryChunk of memory with size not less than specified.
-  void addMemoryChunk(size_t min_size) {}
+    MemoryChunk* prev;
+
+    MemoryChunk(size_t size_, MemoryChunk* prev_) {
+      begin = reinterpret_cast<char*>(CiderDefaultAllocator::allocate(size_));
+      pos = begin;
+      end = begin + size_ - pad_right;
+      prev = prev_;
+    }
+
+    ~MemoryChunk() {
+      CiderDefaultAllocator::deallocate(reinterpret_cast<int8_t*>(begin), size());
+      delete prev;
+    }
+
+    size_t size() const { return end + pad_right - begin; }
+    size_t remaining() const { return end - pos; }
+  };
+
+  size_t growth_factor;
+  size_t linear_growth_threshold;
+
+  // Last contiguous MemoryChunk of memory.
+  MemoryChunk* head;
+  size_t size_in_bytes;
+  size_t page_size;
+
+  static size_t roundUpToPageSize(size_t s, size_t page_size) {
+    return (s + page_size - 1) / page_size * page_size;
+  }
+
+  // If MemoryChunks size is less than 'linear_growth_threshold', then use exponential
+  // growth, otherwise - linear growth
+  //  (to not allocate too much excessive memory).
+  size_t nextSize(size_t min_next_size) const {
+    size_t size_after_grow = 0;
+
+    if (head->size() < linear_growth_threshold) {
+      size_after_grow = std::max(min_next_size, head->size() * growth_factor);
+    } else {
+      // allocContinue() combined with linear growth results in quadratic
+      // behavior: we append the data by small amounts, and when it
+      // doesn't fit, we create a new MemoryChunk and copy all the previous data
+      // into it. The number of times we do this is directly proportional
+      // to the total size of data that is going to be serialized. To make
+      // the copying happen less often, round the next size up to the
+      // linear_growth_threshold.
+      size_after_grow =
+          ((min_next_size + linear_growth_threshold - 1) / linear_growth_threshold) *
+          linear_growth_threshold;
+    }
+
+    return roundUpToPageSize(size_after_grow, page_size);
+  }
+
+  // Add next contiguous MemoryChunk of memory with size not less than specified.
+  void NO_INLINE addMemoryChunk(size_t min_size) {
+    head = new MemoryChunk(nextSize(min_size + pad_right), head);
+    size_in_bytes += head->size();
+  }
+
+  friend class ArenaAllocator;
+  template <size_t>
+  friend class AlignedArenaAllocator;
 
  public:
-  /// Get piece of memory, without alignment.
-  char* alloc(size_t size) { return nullptr; }
+  explicit Arena(size_t initial_size_ = 4096,
+                 size_t growth_factor_ = 2,
+                 size_t linear_growth_threshold_ = 128 * 1024 * 1024)
+      : growth_factor(growth_factor_)
+      , linear_growth_threshold(linear_growth_threshold_)
+      , head(new MemoryChunk(initial_size_, nullptr))
+      , size_in_bytes(head->size()) {
+    page_size = sysconf(_SC_PAGESIZE);
+    if (page_size < 0) {
+      abort();
+    }
+  }
 
-  /// Get piece of memory with alignment
-  char* alignedAlloc(size_t size, size_t alignment) { return nullptr; }
+  ~Arena() { delete head; }
 
-  // TODO(Deegue): Implement and enable later
+  // Get piece of memory, without alignment.
+  char* alloc(size_t size) {
+    if (unlikely(static_cast<std::ptrdiff_t>(size) > head->end - head->pos)) {
+      addMemoryChunk(size);
+    }
+
+    char* res = head->pos;
+    head->pos += size;
+    return res;
+  }
+
+  // Get piece of memory with alignment
+  char* alignedAlloc(size_t size, size_t alignment) {
+    do {
+      void* head_pos = head->pos;
+      size_t space = head->end - head->pos;
+
+      auto* res = static_cast<char*>(std::align(alignment, size, head_pos, space));
+      if (res) {
+        head->pos = static_cast<char*>(head_pos);
+        head->pos += size;
+        return res;
+      }
+
+      addMemoryChunk(size + alignment);
+    } while (true);
+  }
+
   template <typename T>
   T* alloc() {
-    return nullptr;
+    return reinterpret_cast<T*>(alignedAlloc(sizeof(T), alignof(T)));
   }
 
   /** Rollback just performed allocation.
@@ -68,7 +181,10 @@ class Arena : private boost::noncopyable {
    * Return the resulting head pointer, so that the caller can assert that
    * the allocation it intended to roll back was indeed the last one.
    */
-  void* rollback(size_t size) { return nullptr; }
+  void* rollback(size_t size) {
+    head->pos -= size;
+    return head->pos;
+  }
 
   /** Begin or expand a contiguous range of memory.
    * 'range_start' is the start of range. If nullptr, a new range is
@@ -85,38 +201,87 @@ class Arena : private boost::noncopyable {
   char* allocContinue(size_t additional_bytes,
                       char const*& range_start,
                       size_t start_alignment = 0) {
-    // TODO(Deegue): Implement and enable later
-    return nullptr;
+    if (!range_start) {
+      // Start a new memory range.
+      char* result = start_alignment ? alignedAlloc(additional_bytes, start_alignment)
+                                     : alloc(additional_bytes);
+
+      range_start = result;
+      return result;
+    }
+
+    if (head->pos + additional_bytes <= head->end) {
+      // The new size fits into the last MemoryChunk, so just alloc the
+      // additional size. We can alloc without alignment here, because it
+      // only applies to the start of the range, and we don't change it.
+      return alloc(additional_bytes);
+    }
+
+    // New range doesn't fit into this MemoryChunk, will copy to a new one.
+    //
+    // Note: among other things, this method is used to provide a hack-ish
+    // implementation of realloc over Arenas in ArenaAllocators. It wastes a
+    // lot of memory -- quadratically so when we reach the linear allocation
+    // threshold. This deficiency is intentionally left as is, and should be
+    // solved not by complicating this method, but by rethinking the
+    // approach to memory management for aggregate function states, so that
+    // we can provide a proper realloc().
+    const size_t existing_bytes = head->pos - range_start;
+    const size_t new_bytes = existing_bytes + additional_bytes;
+    const char* old_range = range_start;
+
+    char* new_range =
+        start_alignment ? alignedAlloc(new_bytes, start_alignment) : alloc(new_bytes);
+
+    memcpy(new_range, old_range, existing_bytes);
+
+    range_start = new_range;
+    return new_range + existing_bytes;
   }
 
-  // TODO(Deegue): Implement and enable later
-  /// NOTE Old memory region is wasted.
+  // NOTE Old memory region is wasted.
   char* realloc(const char* old_data, size_t old_size, size_t new_size) {
-    return nullptr;
+    char* res = alloc(new_size);
+    if (old_data) {
+      memcpy(res, old_data, old_size);
+    }
+    return res;
   }
 
-  // TODO(Deegue): Implement and enable later
   char* alignedRealloc(const char* old_data,
                        size_t old_size,
                        size_t new_size,
                        size_t alignment) {
-    return nullptr;
+    char* res = alignedAlloc(new_size, alignment);
+    if (old_data) {
+      memcpy(res, old_data, old_size);
+    }
+    return res;
   }
 
-  /// Insert string without alignment.
-  const char* insert(const char* data, size_t size) { return nullptr; }
+  // Insert string without alignment.
+  const char* insert(const char* data, size_t size) {
+    char* res = alloc(size);
+    memcpy(res, data, size);
+    return res;
+  }
 
   const char* alignedInsert(const char* data, size_t size, size_t alignment) {
-    return nullptr;
+    char* res = alignedAlloc(size, alignment);
+    memcpy(res, data, size);
+    return res;
   }
 
   /// Size of MemoryChunks in bytes.
-  size_t size() const { return 0; }
+  size_t size() const { return size_in_bytes; }
 
   /// Bad method, don't use it -- the MemoryChunks are not your business, the entire
   /// purpose of the arena code is to manage them for you, so if you find
   /// yourself having to use this method, probably you're doing something wrong.
-  size_t remainingSpaceInCurrentMemoryChunk() const { return 0; }
+  size_t remainingSpaceInCurrentMemoryChunk() const { return head->remaining(); }
 };
+
+using ArenaPtr = std::shared_ptr<Arena>;
+using Arenas = std::vector<ArenaPtr>;
 
 }  // namespace cider::hashtable
