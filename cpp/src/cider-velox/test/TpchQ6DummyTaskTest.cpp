@@ -21,15 +21,27 @@
 
 #include "TpchQ6Task.h"
 #include "cider/batch/CiderBatchUtils.h"
+// #include "velox/common/time/CpuWallTimer.h"
+// #include "velox/common/time/Timer.h"
+#include <ctime>
 #include "velox/vector/arrow/Bridge.h"
 
 class TpchQ6DummyTaskTest : public testing::Test {};
 
 TEST_F(TpchQ6DummyTaskTest, test) {
+  // CpuWallTiming t;
+  // {
+  //   CpuWallTimer timer(t);
   auto task = trino::velox::TpchQ6Task::Make();
   while (!task->isFinished()) {
     ArrowArray* output_array = CiderBatchUtils::allocateArrowArray();
     ArrowSchema* output_schema = CiderBatchUtils::allocateArrowSchema();
+    time_t start = time(nullptr);
     task->nextBatch(output_schema, output_array);
+    time_t stop = time(nullptr);
+    std::cout << start << "    " << stop << std::endl;
   }
+  //   std::cout << t.toString() << std::endl;
+  //   t.clear();
+  // }
 }

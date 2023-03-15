@@ -25,7 +25,12 @@
 #include "velox/dwio/parquet/duckdb_reader/ParquetReader.h"
 
 #include <gflags/gflags.h>
+#include "velox/common/base/tests/Fs.h"
+#include "velox/functions/prestosql/aggregates/AggregateNames.h"
+#include "velox/functions/prestosql/aggregates/SumAggregate.h"
 #include "velox/vector/arrow/Bridge.h"
+
+using namespace facebook::velox::aggregate;
 
 using namespace facebook::velox;
 
@@ -71,6 +76,7 @@ namespace trino::velox {
 TpchQ6DummyTask::TpchQ6DummyTask() {
   CiderVeloxPluginCtx::init();
   functions::prestosql::registerAllScalarFunctions();
+  registerSumAggregate<SumAggregate>(kSum);
   parse::registerTypeResolver();
   filesystems::registerLocalFileSystem();
   parquet::registerParquetReaderFactory(parquet::ParquetReaderType::NATIVE);
@@ -81,13 +87,22 @@ TpchQ6DummyTask::TpchQ6DummyTask() {
   connector::registerConnector(hiveConnector);
   std::vector<std::string> selectedColumns = {
       "l_shipdate", "l_extendedprice", "l_quantity", "l_discount"};
-
+  auto path = "/WorkSpace/nextgen/BDTK/lineitem-10/lineitem";
+  std::string singleFilePath;
+  for (auto const& dirEntry : fs::directory_iterator{path}) {
+    if (!dirEntry.is_regular_file()) {
+      continue;
+    }
+    if (dirEntry.path().filename().c_str()[0] == '.') {
+      continue;
+    }
+    singleFilePath = dirEntry.path();
+  }
   dwio::common::ReaderOptions readerOptions;
   readerOptions.setFileFormat(dwio::common::FileFormat::PARQUET);
   std::unique_ptr<dwio::common::Reader> reader =
       dwio::common::getReaderFactory(readerOptions.getFileFormat())
-          ->createReader(std::make_unique<dwio::common::FileInputStream>(
-                             "/WorkSpace/nextgen/BDTK/lineitem/lineitem"),
+          ->createReader(std::make_unique<dwio::common::FileInputStream>(singleFilePath),
                          readerOptions);
   const auto fileType = reader->rowType();
   const auto fileColumnNames = fileType->names();
@@ -112,42 +127,39 @@ TpchQ6DummyTask::TpchQ6DummyTask() {
       getFormatDateFilter(shipDate, selectedRowType, "'1994-01-01'", "'1994-12-31'");
 
   core::PlanNodeId lineitemPlanNodeId;
-  // auto plan =
-  //     PlanBuilder()
-  //         .tableScan(
-  //             kLineitem,
-  //             selectedRowType,
-  //             fileColumnNames,
-  //             {shipDateFilter, "l_discount between 0.05 and 0.07", "l_quantity
-  //             < 24.0"})
-  //         .capturePlanNodeId(lineitemPlanNodeId)
-  //         .project({"l_extendedprice * l_discount"})
-  //         .partialAggregation({}, {"sum(p0)"})
-  //         .localPartition({})
-  //         .finalAggregation()
-  //         .planNode();
-  auto plan =
-      PlanBuilder()
-          .tableScan("lineitem", selectedRowType, fileColumnNamesMap)
-          .capturePlanNodeId(lineitemPlanNodeId)
-          .filter(shipDateFilter +
-                  " and l_quantity < 24.0 and l_discount >= 0.05 and l_discount <= 0.07")
-          // .filter("l_discount between 0.05 and 0.07")
-          // .filter("l_quantity < 24.0")
-          .project({"l_extendedprice * l_discount"})
-          .partialAggregation({}, {"sum(p0)"})
-          .planFragment();
+  auto plan = PlanBuilder()
+                  .tableScan("lineitem", selectedRowType, fileColumnNamesMap)
+                  .capturePlanNodeId(lineitemPlanNodeId)
+                  .filter(
+                      "l_shipdate <= '1994-12-31' and l_shipdate >= '1994-01-01' and "
+                      "l_quantity < 24.0 and l_discount >= 0.05 and l_discount <= 0.07")
+                  // .filter(shipDateFilter + // velox btw_varchar_varchar
+                  //         " and l_quantity < 24.0 and l_discount >= 0.05 and l_discount
+                  //         <= 0.07")
+                  // .filter("l_discount between 0.05 and 0.07")
+                  // .filter("l_quantity < 24.0")
+                  .project({"l_extendedprice * l_discount"})
+                  .partialAggregation({}, {"sum(p0)"})
+                  .planFragment();
   auto rootNode = plan.planNode;
   plan.planNode = CiderVeloxPluginCtx::transformVeloxPlan(rootNode);
   task_ = std::make_shared<exec::Task>(
       "single.execution.task.0", plan, 0, std::make_shared<core::QueryCtx>());
-  auto path = "/WorkSpace/nextgen/BDTK/lineitem/lineitem";
-  // 100 spilts in the file
-  auto const splits = HiveConnectorTestBase::makeHiveConnectorSplits(
-      path, 100, dwio::common::FileFormat::PARQUET);
-  for (const auto& split : splits) {
-    task_->addSplit(lineitemPlanNodeId, exec::Split(split));
+  for (auto const& dirEntry : fs::directory_iterator{path}) {
+    if (!dirEntry.is_regular_file()) {
+      continue;
+    }
+    if (dirEntry.path().filename().c_str()[0] == '.') {
+      continue;
+    }
+    // 1 spilt in the file
+    auto const splits = HiveConnectorTestBase::makeHiveConnectorSplits(
+        dirEntry.path(), 1, dwio::common::FileFormat::PARQUET);
+    for (const auto& split : splits) {
+      task_->addSplit(lineitemPlanNodeId, exec::Split(split));
+    }
   }
+
   task_->noMoreSplits(lineitemPlanNodeId);
   VELOX_CHECK(task_->supportsSingleThreadedExecution());
   is_finished_ = false;
@@ -159,12 +171,12 @@ void TpchQ6DummyTask::nextBatch(ArrowSchema* c_schema, ArrowArray* c_array) {
     for (auto& child : result->children()) {
       child->loadedVector();
     }
-    printResult(result);
-    for (size_t i = 0; i < result->childrenSize(); i++) {
-      result->childAt(i)->mutableRawNulls();
-    }
-    exportToArrow(result, *c_array);
-    exportToArrow(result, *c_schema);
+    // printResult(result);
+    // for (size_t i = 0; i < result->childrenSize(); i++) {
+    //   result->childAt(i)->mutableRawNulls();
+    // }
+    // exportToArrow(result, *c_array);
+    // exportToArrow(result, *c_schema);
   } else {
     is_finished_ = true;
   }
