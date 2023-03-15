@@ -108,6 +108,7 @@ class UOper : public Expr {
   void initAutoVectorizeFlag() {
     switch (optype) {
       case kCAST:
+      case kNOT:
       case kUMINUS: {
         auto_vectorizable_ = operand->isAutoVectorizable();
         break;

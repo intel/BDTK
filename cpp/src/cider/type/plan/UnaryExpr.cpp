@@ -167,8 +167,6 @@ JITExprValue& UOper::codegenIsNull(CodegenContext& context,
 }
 
 JITExprValue& UOper::codegenNot(CodegenContext& context, Analyzer::Expr* operand) {
-  const auto& ti = get_type_info();
-
   // should be bool, or otherwise will throw in notOp()
   FixSizeJITExprValue operand_val(operand->codegen(context));
 

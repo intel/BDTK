@@ -42,6 +42,7 @@ class VectorizedProjectTranslator : public Translator {
   struct ExprsGroup {
     ExprPtrVector exprs;
     ExprPtrVector input_exprs;
+    bool bool_input;
   };
 
  public:

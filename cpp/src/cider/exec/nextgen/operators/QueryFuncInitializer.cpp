@@ -43,6 +43,11 @@ void QueryFuncInitializerTranslator::codegen(context::CodegenContext& context) {
   // get input ArrowArray pointer, generated query function signature likes
   // void query_func(RuntimeContext* ctx, ArrowArray* input).
   auto arrow_pointer = func->getArgument(1);
+  auto input_len = func->createLocalJITValue([&arrow_pointer]() {
+    return context::codegen_utils::getArrowArrayLength(arrow_pointer);
+  });
+  CHECK(input_len.get());
+  context.setInputLength(input_len);
 
   // Load input columns
   for (int64_t index = 0; index < exprs.size(); ++index) {
