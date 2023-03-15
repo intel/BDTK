@@ -37,13 +37,6 @@ class ColumnToRowNode : public OpNode {
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
-  jitlib::JITValuePointer& getColumnRowNum() { return column_row_num_; }
-
-  void setColumnRowNum(jitlib::JITValuePointer& row_num) {
-    CHECK(column_row_num_.get() == nullptr);
-    column_row_num_.replace(row_num);
-  }
-
   using DeferFunc = void (*)(void*);
 
   template <typename FuncT>

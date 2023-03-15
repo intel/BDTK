@@ -458,9 +458,7 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
 
   auto output_index = func->createVariable(JITTypeTag::INT64, "output_index", 0);
 
-  // Get input ArrowArray length from previous C2RNode
-  auto prev_c2r_node = static_cast<RowToColumnNode*>(node_.get())->getColumnToRowNode();
-  auto input_array_len = prev_c2r_node->getColumnRowNum();
+  auto input_array_len = context.getInputLength();
   bool bitwise_bool = static_cast<RowToColumnNode*>(node_.get())->writeBitwiseBool();
 
   for (int64_t i = 0; i < exprs.size(); ++i) {
@@ -474,6 +472,7 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   successor_wrapper(successor, context);
 
   // Execute length field updating build function after C2R loop finished.
+  auto prev_c2r_node = static_cast<RowToColumnNode*>(node_.get())->getColumnToRowNode();
   prev_c2r_node->registerDeferFunc([output_index, &output_exprs, &context]() mutable {
     for (auto& expr : output_exprs) {
       size_t local_offset = expr->getLocalIndex();
