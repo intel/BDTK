@@ -38,22 +38,22 @@
 namespace CiderParquetReader {
 class Reader {
  public:
-  Reader(/* args */);
+  Reader();
   ~Reader();
   void init(std::string fileName,
-            std::string requiredSchema,
+            std::vector<std::string> requiredColumnNames,
             int firstRowGroup,
             int rowGroupToRead);
 
   void close();
-  int readBatch(int32_t batchSize, ArrowSchema* outputSchema, ArrowArray* outputArray);
+  int readBatch(int32_t batchSize, ArrowSchema*& outputSchema, ArrowArray*& outputArray);
   bool hasNext();
 
  private:
-  void convertSchema(std::string requiredSchema);
-  void doReadBatch(int rowsToRead,
-                   std::vector<int64_t*>& buffersPtr,
-                   std::vector<uint8_t*>& nullsPtr);
+  void convertSchema(std::vector<std::string> requiredColumnNames);
+  int doReadBatch(int rowsToRead,
+                  std::vector<int64_t*>& buffersPtr,
+                  std::vector<uint8_t*>& nullsPtr);
   void initRowGroupReaders();
   bool checkEndOfRowGroup();
   void allocateBuffers(int rowsToRead,
@@ -73,7 +73,7 @@ class Reader {
   int totalRowGroups_ = 0;
   int totalColumns_ = 0;
   int currentRowGroup_ = 0;
-  int initRequiredColumnCount_ = 0;
+  int requiredColumnNum_ = 0;
   int currentBatchSize_ = 0;
 
   int64_t totalRowsRead_ = 0;
@@ -85,10 +85,14 @@ class Reader {
 
   std::vector<int> requiredColumnIndex_;
   std::vector<std::string> requiredColumnNames_;
-  std::vector<int> usedInitBufferIndex_;
   std::vector<int64_t> nullCountVector_;
 
-  std::vector<parquet::Type::type> typeVector_ = std::vector<parquet::Type::type>();
+  std::vector<parquet::Type::type> parquetTypeVector_ =
+      std::vector<parquet::Type::type>();
+  std::vector<parquet::ConvertedType::type> sqlTypeVector_ =
+      std::vector<parquet::ConvertedType::type>();
+
+  std::shared_ptr<CiderAllocator> allocator_ = std::make_shared<CiderDefaultAllocator>();
 };
 }  // namespace CiderParquetReader
 

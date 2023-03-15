@@ -25,14 +25,11 @@
 using namespace CiderParquetReader;
 
 TEST(a, b) {
-  GTEST_SKIP();
   Reader* reader = new Reader();
-  reader->init("/i32_single_col.parquet", "{\"fields\":[{\"name\":\"col_i32\"}]}", 0, 1);
-  int64_t* buf = new int64_t[20];
-  int64_t* null = new int64_t[20];
+  reader->init("/i8_single_col.parquet", {"col_i8"}, 0, 1);
   ArrowSchema* schema;
   ArrowArray* array;
-  reader->readBatch(10, schema, array);
+  reader->readBatch(6, schema, array);
   reader->hasNext();
 }
 

@@ -21,14 +21,13 @@
  */
 
 #include "util/CiderParquetReader.h"
-#include <nlohmann/json.hpp>
 
 namespace CiderParquetReader {
 Reader::Reader() {}
 Reader::~Reader() {}
 
 void Reader::init(std::string fileName,
-                  std::string requiredSchema,
+                  std::vector<std::string> requiredColumnNames,
                   int firstRowGroup,
                   int rowGroupToRead) {
   file_ = arrow::io::ReadableFile::Open(fileName).ValueOrDie();
@@ -43,74 +42,121 @@ void Reader::init(std::string fileName,
   totalColumns_ = fileMetaData_->num_columns();
 
   LOG(INFO) << "schema is " << fileMetaData_->schema()->ToString();
-  LOG(INFO) << "required schema is " << requiredSchema;
-  convertSchema(requiredSchema);
+  convertSchema(requiredColumnNames);
 
   currentRowGroup_ = firstRowGroupIndex_;
-
   columnReaders_.resize(requiredColumnIndex_.size());
-  initRequiredColumnCount_ = requiredColumnIndex_.size();
+  requiredColumnNum_ = requiredColumnIndex_.size();
+  nullCountVector_.resize(requiredColumnNum_);
+
+  initRowGroupReaders();
 }
 
-void Reader::convertSchema(std::string requiredColumnName) {
-  auto j = nlohmann::json::parse(requiredColumnName);
-  int filedsNum = j["fields"].size();
-  for (int i = 0; i < filedsNum; i++) {
-    std::string columnName = j["fields"][i]["name"];
-    int columnIndex = fileMetaData_->schema()->ColumnIndex(columnName);
+void Reader::convertSchema(std::vector<std::string> requiredColumnName) {
+  requiredColumnNames_ = std::vector<std::string>(requiredColumnName);
+  for (int i = 0; i < requiredColumnNames_.size(); i++) {
+    int columnIndex = fileMetaData_->schema()->ColumnIndex(requiredColumnNames_[i]);
+    auto columnSchema = fileMetaData_->schema()->Column(columnIndex);
     if (columnIndex >= 0) {
-      usedInitBufferIndex_.push_back(i);
       requiredColumnIndex_.push_back(columnIndex);
-      requiredColumnNames_.push_back(columnName);
+      parquetTypeVector_.push_back(columnSchema->physical_type());
+      sqlTypeVector_.push_back(columnSchema->converted_type());
     }
   }
+}
+
+void Reader::initRowGroupReaders() {
+  if (rowGroupReaders_.size() > 0) {
+    return;
+  }
+
+  rowGroupReaders_.resize(totalRowGroups_);
+  for (int i = 0; i < totalRowGroups_; i++) {
+    rowGroupReaders_[i] = parquetReader_->RowGroup(firstRowGroupIndex_ + i);
+    totalRows_ += rowGroupReaders_[i]->metadata()->num_rows();
+    LOG(INFO) << "this rg have rows: " << rowGroupReaders_[i]->metadata()->num_rows();
+  }
+}
+
+bool Reader::checkEndOfRowGroup() {
+  if (totalRowsRead_ != totalRowsLoadedSoFar_) {
+    return false;
+  }
+
+  // rowGroupReaders index starts from 0
+  rowGroupReader_ = rowGroupReaders_[currentRowGroup_ - firstRowGroupIndex_];
+  currentRowGroup_++;
+  totalRowGroupsRead_++;
+
+  for (int i = 0; i < requiredColumnIndex_.size(); i++) {
+    columnReaders_[i] = rowGroupReader_->Column(requiredColumnIndex_[i]);
+  }
+
+  totalRowsLoadedSoFar_ += rowGroupReader_->metadata()->num_rows();
+  LOG(INFO) << "totalRowsLoadedSoFar: " << totalRowsLoadedSoFar_;
+  return true;
 }
 
 void Reader::allocateBuffers(int rowsToRead,
                              std::vector<int64_t*>& buffersPtr,
                              std::vector<uint8_t*>& nullsPtr) {
   for (int i = 0; i < buffersPtr.size(); i++) {
-    buffersPtr[i] = new int64_t[rowsToRead];
-    memset(buffersPtr[i], 0x00, 8 * rowsToRead);
-    nullsPtr[i] = new uint8_t[(rowsToRead + 7) >> 3];
-    memset(nullsPtr[i], 0x00, rowsToRead);
+    switch (parquetTypeVector_[i]) {
+      case parquet::Type::INT32:
+      case parquet::Type::FLOAT:
+        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 4);
+        break;
+      case parquet::Type::INT64:
+      case parquet::Type::DOUBLE:
+        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 8);
+        break;
+      case parquet::Type::INT96:
+        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 12);
+        break;
+      default:
+        CIDER_THROW(CiderCompileException, "unsupport type");
+    }
+    nullsPtr[i] = (uint8_t*)allocator_->allocate((rowsToRead + 7) >> 3);
   }
 }
 
+// return rows actually read
 int Reader::readBatch(int32_t batchSize,
-                      ArrowSchema* outputSchema,
-                      ArrowArray* outputArray) {
-  initRowGroupReaders();
-
+                      ArrowSchema*& outputSchema,
+                      ArrowArray*& outputArray) {
   // this reader have read all rows
   if (totalRowsRead_ >= totalRows_) {
     return -1;
   }
+
+  // at most read to the end of current row group
   checkEndOfRowGroup();
 
-  nullCountVector_.resize(columnReaders_.size());
   int rowsToRead = std::min((int64_t)batchSize, totalRowsLoadedSoFar_ - totalRowsRead_);
 
-  std::vector<int64_t*> buffersPtr(initRequiredColumnCount_);
-  std::vector<uint8_t*> nullsPtr(initRequiredColumnCount_);
+  std::vector<int64_t*> buffersPtr(requiredColumnNum_);
+  std::vector<uint8_t*> nullsPtr(requiredColumnNum_);
 
   allocateBuffers(rowsToRead, buffersPtr, nullsPtr);
 
   currentBatchSize_ = batchSize;
 
-  doReadBatch(rowsToRead, buffersPtr, nullsPtr);
-  totalRowsRead_ += rowsToRead;
+  int rowsActualRead = doReadBatch(rowsToRead, buffersPtr, nullsPtr);
+
+  totalRowsRead_ += rowsActualRead;
   LOG(INFO) << "total rows read yet: " << totalRowsRead_;
-  LOG(INFO) << "ret rows " << batchSize;
-  auto schema_and_arrow = convert2Arrow(rowsToRead, buffersPtr, nullsPtr);
-  memcpy(outputSchema, std::get<0>(schema_and_arrow), sizeof(ArrowSchema*));
-  memcpy(outputArray, std::get<1>(schema_and_arrow), sizeof(ArrowArray*));
-  return 0;
+  LOG(INFO) << "ret rows " << rowsActualRead;
+
+  auto schema_and_array = convert2Arrow(rowsToRead, buffersPtr, nullsPtr);
+  outputSchema = std::get<0>(schema_and_array);
+  outputArray = std::get<1>(schema_and_array);
+
+  return rowsActualRead;
 }
 
-void Reader::doReadBatch(int rowsToRead,
-                         std::vector<int64_t*>& buffersPtr,
-                         std::vector<uint8_t*>& nullsPtr) {
+int Reader::doReadBatch(int rowsToRead,
+                        std::vector<int64_t*>& buffersPtr,
+                        std::vector<uint8_t*>& nullsPtr) {
   std::vector<int16_t> defLevel(rowsToRead);
   std::vector<int16_t> repLevel(rowsToRead);
   LOG(INFO) << "will read " << rowsToRead << " rows";
@@ -121,9 +167,8 @@ void Reader::doReadBatch(int rowsToRead,
     // ReadBatchSpaced API will return rows left in a data page
     while (rows < rowsToRead) {
       // TODO: refactor. it's ugly, but didn't find some better way.
-      switch (typeVector_[i]) {
+      switch (parquetTypeVector_[i]) {
         case parquet::Type::INT32: {
-          int64_t* tmp = (int64_t*)(new int32_t[10]);
           parquet::Int32Reader* int32Reader =
               static_cast<parquet::Int32Reader*>(columnReaders_[i].get());
           tmpRows = int32Reader->ReadBatchSpaced(rowsToRead - rows,
@@ -194,8 +239,7 @@ void Reader::doReadBatch(int rowsToRead,
           break;
         }
         default:
-          LOG(WARNING) << "Unsupported Type!";
-          break;
+          CIDER_THROW(CiderCompileException, "unsupport type");
       }
       rows += tmpRows;
       nullCountVector_[i] = nullCount;
@@ -203,52 +247,60 @@ void Reader::doReadBatch(int rowsToRead,
     assert(rowsToRead == rows);
     LOG(INFO) << "columnReader read rows: " << rows;
   }
+  return rowsToRead;
 }
 
 void Reader::close() {
   file_->Close();
 }
+
 bool Reader::hasNext() {
-  return columnReaders_[0]->HasNext();
+  return totalRowsRead_ < totalRows_;
 }
 
-void Reader::initRowGroupReaders() {
-  if (rowGroupReaders_.size() > 0) {
-    return;
-  }
-
-  rowGroupReaders_.resize(totalRowGroups_);
-  for (int i = 0; i < totalRowGroups_; i++) {
-    rowGroupReaders_[i] = parquetReader_->RowGroup(firstRowGroupIndex_ + i);
-    totalRows_ += rowGroupReaders_[i]->metadata()->num_rows();
-    LOG(INFO) << "this rg have rows: " << rowGroupReaders_[i]->metadata()->num_rows();
+::substrait::Type parquetType2Substrait(parquet::Type::type type) {
+  switch (type) {
+    case parquet::Type::FLOAT:
+      return CREATE_SUBSTRAIT_TYPE(Fp32);
+    case parquet::Type::DOUBLE:
+      return CREATE_SUBSTRAIT_TYPE(Fp64);
+    default:
+      CIDER_THROW(CiderCompileException, "unsupport type");
   }
 }
 
-bool Reader::checkEndOfRowGroup() {
-  if (totalRowsRead_ != totalRowsLoadedSoFar_) {
-    return false;
+::substrait::Type convertedType2Substrait(parquet::ConvertedType::type type) {
+  switch (type) {
+    case parquet::ConvertedType::INT_8:
+      return CREATE_SUBSTRAIT_TYPE(I8);
+    case parquet::ConvertedType::INT_16:
+      return CREATE_SUBSTRAIT_TYPE(I16);
+    case parquet::ConvertedType::INT_32:
+      return CREATE_SUBSTRAIT_TYPE(I32);
+    case parquet::ConvertedType::INT_64:
+      return CREATE_SUBSTRAIT_TYPE(I64);
+    default:
+      CIDER_THROW(CiderCompileException, "unsupport type");
   }
+}
 
-  // rowGroupReaders index starts from 0
-  LOG(INFO) << "totalRowsLoadedSoFar: " << totalRowsLoadedSoFar_;
-  rowGroupReader_ = rowGroupReaders_[currentRowGroup_ - firstRowGroupIndex_];
-  currentRowGroup_++;
-  totalRowGroupsRead_++;
-
-  for (int i = 0; i < requiredColumnIndex_.size(); i++) {
-    columnReaders_[i] = rowGroupReader_->Column(requiredColumnIndex_[i]);
-  }
-
-  if (typeVector_.size() == 0) {
-    for (int i = 0; i < requiredColumnIndex_.size(); i++) {
-      typeVector_.push_back(
-          fileMetaData_->schema()->Column(requiredColumnIndex_[i])->physical_type());
+void compressDataBuffer(int64_t* dataBuffer,
+                        parquet::ConvertedType::type type,
+                        int rowsToRead) {
+  if (type == parquet::ConvertedType::INT_8) {
+    std::vector<int8_t> values{};
+    for (int i = 0; i < rowsToRead; i++) {
+      values.push_back(*((int32_t*)(dataBuffer) + i));
     }
+    memcpy(dataBuffer, values.data(), sizeof(int8_t) * values.size());
   }
-
-  totalRowsLoadedSoFar_ += rowGroupReader_->metadata()->num_rows();
-  return true;
+  if (type == parquet::ConvertedType::INT_16) {
+    std::vector<int16_t> values{};
+    for (int i = 0; i < rowsToRead; i++) {
+      values.push_back(*((int32_t*)(dataBuffer) + i));
+    }
+    memcpy(dataBuffer, values.data(), sizeof(int16_t) * values.size());
+  }
 }
 
 std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
@@ -257,11 +309,23 @@ std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
     std::vector<uint8_t*>& nullsPtr) {
   auto builder = ArrowArrayBuilder().setRowNum(rowsToRead);
   for (int i = 0; i < buffersPtr.size(); i++) {
-    builder.addColumn(requiredColumnNames_[i],
-                      CREATE_SUBSTRAIT_TYPE(I64),
-                      (uint8_t*)buffersPtr[i],
-                      nullsPtr[i],
-                      nullCountVector_[i]);
+    if (sqlTypeVector_[i] == parquet::ConvertedType::type::INT_8 ||
+        sqlTypeVector_[i] == parquet::ConvertedType::type::INT_16) {
+      compressDataBuffer(buffersPtr[i], sqlTypeVector_[i], rowsToRead);
+    }
+    if (sqlTypeVector_[i] == parquet::ConvertedType::type::NONE) {
+      builder.addColumn(requiredColumnNames_[i],
+                        parquetType2Substrait(parquetTypeVector_[i]),
+                        nullsPtr[i],
+                        (uint8_t*)buffersPtr[i],
+                        nullCountVector_[i]);
+    } else {
+      builder.addColumn(requiredColumnNames_[i],
+                        convertedType2Substrait(sqlTypeVector_[i]),
+                        nullsPtr[i],
+                        (uint8_t*)buffersPtr[i],
+                        nullCountVector_[i]);
+    }
   }
   return builder.build();
 }
