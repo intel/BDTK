@@ -117,7 +117,7 @@ bool FunctionOperWithCustomTypeHandling::operator==(const Expr& rhs) const {
 
 inline JITTypeTag ext_arg_type_to_JIT_type_tag(const ExtArgumentType ext_arg_type) {
   switch (ext_arg_type) {
-    case ExtArgumentType::Bool:  
+    case ExtArgumentType::Bool:
       return JITTypeTag::BOOL;
     case ExtArgumentType::Int8:
       return JITTypeTag::INT8;
@@ -293,5 +293,4 @@ JITExprValue& FunctionOper::codegen(CodegenContext& context) {
       JITFunctionEmitDescriptor{.ret_type = ret_ty, .params_vector = args});
   return set_expr_value(null, ext_call);
 }
-
 }  // namespace Analyzer
