@@ -211,4 +211,12 @@ extern "C" NEVER_INLINE void convert_bool_to_bit(uint8_t* byte,
   CiderBitUtils::byteToBit(byte, bit, len);
 }
 
+extern "C" ALWAYS_INLINE size_t get_lowest_set_bit(size_t data) {
+  return CiderBitUtils::countTailZero(data);
+}
+
+extern "C" ALWAYS_INLINE size_t reset_tail_set_bit(size_t data) {
+  return CiderBitUtils::setTailOneToZero(data);
+}
+
 #endif  // NEXTGEN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H

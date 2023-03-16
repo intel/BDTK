@@ -253,6 +253,13 @@ inline void ENABLE_AVX256 byteToBit(uint8_t* __restrict byte,
     bit_32[i] = _mm256_movemask_epi8(byte_reg);
   }
 }
-};  // namespace CiderBitUtils
 
-#endif  // CIDER_UTIL_CIDERBITUTILS_H
+inline size_t ENABLE_AVX256 countTailZero(size_t num) {
+  return __builtin_ctzll(num);
+}
+
+inline size_t setTailOneToZero(size_t num) {
+  return num & (num - 1);
+}
+};  // namespace CiderBitUtils
+#endif // CIDER_UTIL_CIDERBITUTILS_H
