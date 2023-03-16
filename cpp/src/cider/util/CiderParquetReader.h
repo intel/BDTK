@@ -62,9 +62,10 @@ class Reader {
   std::tuple<ArrowSchema*&, ArrowArray*&> convert2Arrow(int rowsToRead,
                                                         std::vector<int64_t*>& buffersPtr,
                                                         std::vector<uint8_t*>& nullsPtr);
-  void compressDataBuffer(int64_t* dataBuffer,
-                          parquet::ConvertedType::type type,
-                          int rowsToRead);
+  void compressDataBuffer(int64_t* dataBuffer, int rowsToRead, int colIdx);
+  int32_t* compressVarSizeDataBuffer(int64_t* dataBuffer,
+                                     uint8_t* nullsPtr,
+                                     int rowsToRead);
 
   std::shared_ptr<arrow::io::RandomAccessFile> file_;
   std::unique_ptr<parquet::ParquetFileReader> parquetReader_;
@@ -92,7 +93,7 @@ class Reader {
 
   std::vector<parquet::Type::type> parquetTypeVector_ =
       std::vector<parquet::Type::type>();
-  std::vector<parquet::ConvertedType::type> sqlTypeVector_ =
+  std::vector<parquet::ConvertedType::type> convertedTypeVector_ =
       std::vector<parquet::ConvertedType::type>();
 
   std::shared_ptr<CiderAllocator> allocator_ = std::make_shared<CiderDefaultAllocator>();

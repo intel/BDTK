@@ -21,6 +21,7 @@
  */
 
 #include "util/CiderParquetReader.h"
+#include <parquet/types.h>
 
 namespace CiderParquetReader {
 Reader::Reader() {}
@@ -60,7 +61,7 @@ void Reader::convertSchema(std::vector<std::string> requiredColumnName) {
     if (columnIndex >= 0) {
       requiredColumnIndex_.push_back(columnIndex);
       parquetTypeVector_.push_back(columnSchema->physical_type());
-      sqlTypeVector_.push_back(columnSchema->converted_type());
+      convertedTypeVector_.push_back(columnSchema->converted_type());
     }
   }
 }
@@ -114,6 +115,10 @@ void Reader::allocateBuffers(int rowsToRead,
         break;
       case parquet::Type::INT96:
         buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 12);
+        break;
+      case parquet::Type::BYTE_ARRAY:
+        // need to optimizer
+        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 255);
         break;
       default:
         CIDER_THROW(CiderCompileException, "unsupport type");
@@ -252,6 +257,39 @@ int Reader::doReadBatch(int rowsToRead,
                                                   &nullCountVector_[i]);
           break;
         }
+        case parquet::Type::BYTE_ARRAY: {
+          parquet::ByteArrayReader* byteArrayReader =
+              static_cast<parquet::ByteArrayReader*>(columnReaders_[i].get());
+          tmpRows =
+              byteArrayReader->ReadBatchSpaced(rowsToRead - rows,
+                                               defLevel.data(),
+                                               repLevel.data(),
+                                               (parquet::ByteArray*)buffersPtr[i] + rows,
+                                               nullsPtr[i],
+                                               0,
+                                               &levelsRead,
+                                               &valuesRead,
+                                               &nullCountVector_[i]);
+          // we do need to read twice, buffer may be overwrite, so let's do an extra
+          // memory copy.
+          // parquet::ByteArray* p = (parquet::ByteArray*)buffersPtr[i] + rows;
+          // if (tmpRows + rows < rowsToRead) {
+          //   ARROW_LOG(DEBUG) << "read rows: " << tmpRows << " need to do memory copy!";
+          //   // calculate total size
+          //   uint32_t totalLen = 0;
+          //   for (int k = 0; k < tmpRows; k++) {
+          //     totalLen += p[k].len;
+          //   }
+          //   char* buffer = new char[totalLen];
+          //   uint32_t write = 0;
+          //   for (int k = 0; k < tmpRows; k++) {
+          //     std::memcpy(buffer + write, p[k].ptr, p[k].len);
+          //     p[k].ptr = (uint8_t*)(buffer + write);
+          //     write += p[k].len;
+          //   }
+          // }
+          break;
+        }
         default:
           CIDER_THROW(CiderCompileException, "unsupport type");
       }
@@ -294,30 +332,29 @@ bool Reader::hasNext() {
       return CREATE_SUBSTRAIT_TYPE(I32);
     case parquet::ConvertedType::INT_64:
       return CREATE_SUBSTRAIT_TYPE(I64);
+    case parquet::ConvertedType::UTF8:
+      return CREATE_SUBSTRAIT_TYPE(Varchar);
     default:
       CIDER_THROW(CiderCompileException, "unsupport type");
   }
 }
 
-void Reader::compressDataBuffer(int64_t* dataBuffer,
-                                parquet::ConvertedType::type type,
-                                int rowsToRead) {
-  if (type == parquet::ConvertedType::INT_8) {
+void Reader::compressDataBuffer(int64_t* dataBuffer, int rowsToRead, int colIdx) {
+  if (convertedTypeVector_[colIdx] == parquet::ConvertedType::INT_8) {
     std::vector<int8_t> values{};
     for (int i = 0; i < rowsToRead; i++) {
       values.push_back(*((int32_t*)(dataBuffer) + i));
     }
     memcpy(dataBuffer, values.data(), sizeof(int8_t) * values.size());
   }
-  if (type == parquet::ConvertedType::INT_16) {
+  if (convertedTypeVector_[colIdx] == parquet::ConvertedType::INT_16) {
     std::vector<int16_t> values{};
     for (int i = 0; i < rowsToRead; i++) {
       values.push_back(*((int32_t*)(dataBuffer) + i));
     }
     memcpy(dataBuffer, values.data(), sizeof(int16_t) * values.size());
   }
-  // Boolean
-  if (type == parquet::ConvertedType::NONE) {
+  if (parquetTypeVector_[colIdx] == parquet::Type::BOOLEAN) {
     int bitmapSize = (rowsToRead + 7) >> 3;
     uint8_t* bitmap = (uint8_t*)allocator_->allocate(bitmapSize);
     memset(bitmap, 0x00, bitmapSize);
@@ -330,20 +367,55 @@ void Reader::compressDataBuffer(int64_t* dataBuffer,
   }
 }
 
+int32_t* Reader::compressVarSizeDataBuffer(int64_t* dataBuffer,
+                                           uint8_t* nullsPtr,
+                                           int rowsToRead) {
+  parquet::ByteArray* p = (parquet::ByteArray*)dataBuffer;
+  int compressedLength = 0;
+
+  // generate offset buffer in the first loop
+  std::vector<int32_t> offsetsBuffer{0};
+  for (int i = 0; i < rowsToRead; i++) {
+    if (CiderBitUtils::isBitSetAt(nullsPtr, i)) {
+      compressedLength += p[i].len;
+      offsetsBuffer.push_back(p[i].len + offsetsBuffer[i]);
+    } else {
+      offsetsBuffer.push_back(offsetsBuffer[i]);
+    }
+  }
+  int offsetsBufferLen = (rowsToRead + 1) * sizeof(int32_t);
+  int32_t* offsetsPtr = (int32_t*)allocator_->allocate(offsetsBufferLen);
+  memcpy(offsetsPtr, offsetsBuffer.data(), offsetsBufferLen);
+
+  // compressed data buffer in the second loop
+  char* compressedDataBuffer = (char*)allocator_->allocate(compressedLength);
+  int writeIdx = 0;
+  for (int i = 0; i < rowsToRead; i++) {
+    if (CiderBitUtils::isBitSetAt(nullsPtr, i)) {
+      memcpy(compressedDataBuffer + writeIdx, p[i].ptr, p[i].len);
+      writeIdx += p[i].len;
+    }
+  }
+  memcpy(dataBuffer, compressedDataBuffer, compressedLength);
+  return offsetsPtr;
+}
+
 std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
     int rowsToRead,
     std::vector<int64_t*>& buffersPtr,
     std::vector<uint8_t*>& nullsPtr) {
+  int32_t* offsetsBuffer = nullptr;
   auto builder = ArrowArrayBuilder().setRowNum(rowsToRead);
   for (int i = 0; i < buffersPtr.size(); i++) {
-    if (sqlTypeVector_[i] == parquet::ConvertedType::type::INT_8 ||
-        sqlTypeVector_[i] == parquet::ConvertedType::type::INT_16 ||
-        parquetTypeVector_[i] == parquet::Type::BOOLEAN) {
+    // utf8 need to remove null values and generate offset buffer
+    if (parquetTypeVector_[i] == parquet::Type::BYTE_ARRAY) {
+      offsetsBuffer = compressVarSizeDataBuffer(buffersPtr[i], nullsPtr[i], rowsToRead);
+    } else {
       // tinyint and smallint are stored as int32 in parquet
       // bool type need convert it to bitmap
-      compressDataBuffer(buffersPtr[i], sqlTypeVector_[i], rowsToRead);
+      compressDataBuffer(buffersPtr[i], rowsToRead, i);
     }
-    if (sqlTypeVector_[i] == parquet::ConvertedType::type::NONE) {
+    if (convertedTypeVector_[i] == parquet::ConvertedType::type::NONE) {
       builder.addColumn(requiredColumnNames_[i],
                         parquetType2Substrait(parquetTypeVector_[i]),
                         nullsPtr[i],
@@ -351,10 +423,11 @@ std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
                         nullCountVector_[i]);
     } else {
       builder.addColumn(requiredColumnNames_[i],
-                        convertedType2Substrait(sqlTypeVector_[i]),
+                        convertedType2Substrait(convertedTypeVector_[i]),
                         nullsPtr[i],
                         (uint8_t*)buffersPtr[i],
-                        nullCountVector_[i]);
+                        nullCountVector_[i],
+                        offsetsBuffer);
     }
   }
   return builder.build();
