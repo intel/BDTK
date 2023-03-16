@@ -20,6 +20,7 @@
  */
 
 #include "type/plan/FunctionExpr.h"
+#include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "function/ExtensionFunctionsBinding.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "type/data/sqltypes.h"
@@ -116,7 +117,8 @@ bool FunctionOperWithCustomTypeHandling::operator==(const Expr& rhs) const {
 
 inline JITTypeTag ext_arg_type_to_JIT_type_tag(const ExtArgumentType ext_arg_type) {
   switch (ext_arg_type) {
-    case ExtArgumentType::Bool:  // pass thru to Int8
+    case ExtArgumentType::Bool:  
+      return JITTypeTag::BOOL;
     case ExtArgumentType::Int8:
       return JITTypeTag::INT8;
     case ExtArgumentType::Int16:
