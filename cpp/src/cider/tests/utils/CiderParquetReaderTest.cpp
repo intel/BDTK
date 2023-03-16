@@ -32,6 +32,24 @@ std::string getParquetFilesPath() {
   return absolute_path.substr(0, pos) + "/../parquet_files/";
 }
 
+TEST(CiderParquetReaderTest, bool_single_col) {
+  Reader* reader = new Reader();
+  reader->init(getParquetFilesPath() + "bool_single_col.parquet", {"col_bool"}, 0, 1);
+  ArrowSchema* actual_schema;
+  ArrowArray* actual_array;
+  reader->readBatch(5, actual_schema, actual_array);
+  auto schema_and_array =
+      ArrowArrayBuilder()
+          .setRowNum(5)
+          .addBoolColumn<bool>(
+              "", {true, true, false, false, true}, {false, true, false, true, false})
+          .build();
+  CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),
+                                        actual_array,
+                                        std::get<0>(schema_and_array),
+                                        actual_schema));
+}
+
 #define GENERATE_READER_TEST(type_name, substrait_type, c_type)               \
   TEST(CiderParquetReaderTest, type_name##_single_col) {                      \
     Reader* reader = new Reader();                                            \

@@ -62,6 +62,9 @@ class Reader {
   std::tuple<ArrowSchema*&, ArrowArray*&> convert2Arrow(int rowsToRead,
                                                         std::vector<int64_t*>& buffersPtr,
                                                         std::vector<uint8_t*>& nullsPtr);
+  void compressDataBuffer(int64_t* dataBuffer,
+                          parquet::ConvertedType::type type,
+                          int rowsToRead);
 
   std::shared_ptr<arrow::io::RandomAccessFile> file_;
   std::unique_ptr<parquet::ParquetFileReader> parquetReader_;

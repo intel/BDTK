@@ -102,6 +102,8 @@ void Reader::allocateBuffers(int rowsToRead,
                              std::vector<uint8_t*>& nullsPtr) {
   for (int i = 0; i < buffersPtr.size(); i++) {
     switch (parquetTypeVector_[i]) {
+      case parquet::Type::BOOLEAN:
+        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead);
       case parquet::Type::INT32:
       case parquet::Type::FLOAT:
         buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 4);
@@ -161,13 +163,25 @@ int Reader::doReadBatch(int rowsToRead,
   std::vector<int16_t> repLevel(rowsToRead);
   LOG(INFO) << "will read " << rowsToRead << " rows";
   for (int i = 0; i < columnReaders_.size(); i++) {
-    int64_t levelsRead = 0, valuesRead = 0, nullCount = 0;
+    int64_t levelsRead = 0, valuesRead = 0;
     int rows = 0;
     int tmpRows = 0;
-    // ReadBatchSpaced API will return rows left in a data page
     while (rows < rowsToRead) {
-      // TODO: refactor. it's ugly, but didn't find some better way.
       switch (parquetTypeVector_[i]) {
+        case parquet::Type::BOOLEAN: {
+          parquet::BoolReader* boolReader =
+              static_cast<parquet::BoolReader*>(columnReaders_[i].get());
+          tmpRows = boolReader->ReadBatchSpaced(rowsToRead - rows,
+                                                defLevel.data(),
+                                                repLevel.data(),
+                                                (bool*)buffersPtr[i] + rows,
+                                                nullsPtr[i],
+                                                0,
+                                                &levelsRead,
+                                                &valuesRead,
+                                                &nullCountVector_[i]);
+          break;
+        }
         case parquet::Type::INT32: {
           parquet::Int32Reader* int32Reader =
               static_cast<parquet::Int32Reader*>(columnReaders_[i].get());
@@ -179,7 +193,7 @@ int Reader::doReadBatch(int rowsToRead,
                                                  0,
                                                  &levelsRead,
                                                  &valuesRead,
-                                                 &nullCount);
+                                                 &nullCountVector_[i]);
           break;
         }
         case parquet::Type::INT64: {
@@ -193,7 +207,7 @@ int Reader::doReadBatch(int rowsToRead,
                                                  0,
                                                  &levelsRead,
                                                  &valuesRead,
-                                                 &nullCount);
+                                                 &nullCountVector_[i]);
           break;
         }
         case parquet::Type::INT96: {
@@ -207,7 +221,7 @@ int Reader::doReadBatch(int rowsToRead,
                                                  0,
                                                  &levelsRead,
                                                  &valuesRead,
-                                                 &nullCount);
+                                                 &nullCountVector_[i]);
           break;
         }
         case parquet::Type::FLOAT: {
@@ -221,7 +235,7 @@ int Reader::doReadBatch(int rowsToRead,
                                                  0,
                                                  &levelsRead,
                                                  &valuesRead,
-                                                 &nullCount);
+                                                 &nullCountVector_[i]);
           break;
         }
         case parquet::Type::DOUBLE: {
@@ -235,14 +249,13 @@ int Reader::doReadBatch(int rowsToRead,
                                                   0,
                                                   &levelsRead,
                                                   &valuesRead,
-                                                  &nullCount);
+                                                  &nullCountVector_[i]);
           break;
         }
         default:
           CIDER_THROW(CiderCompileException, "unsupport type");
       }
       rows += tmpRows;
-      nullCountVector_[i] = nullCount;
     }
     assert(rowsToRead == rows);
     LOG(INFO) << "columnReader read rows: " << rows;
@@ -260,6 +273,8 @@ bool Reader::hasNext() {
 
 ::substrait::Type parquetType2Substrait(parquet::Type::type type) {
   switch (type) {
+    case parquet::Type::BOOLEAN:
+      return CREATE_SUBSTRAIT_TYPE(Bool);
     case parquet::Type::FLOAT:
       return CREATE_SUBSTRAIT_TYPE(Fp32);
     case parquet::Type::DOUBLE:
@@ -284,9 +299,9 @@ bool Reader::hasNext() {
   }
 }
 
-void compressDataBuffer(int64_t* dataBuffer,
-                        parquet::ConvertedType::type type,
-                        int rowsToRead) {
+void Reader::compressDataBuffer(int64_t* dataBuffer,
+                                parquet::ConvertedType::type type,
+                                int rowsToRead) {
   if (type == parquet::ConvertedType::INT_8) {
     std::vector<int8_t> values{};
     for (int i = 0; i < rowsToRead; i++) {
@@ -301,6 +316,18 @@ void compressDataBuffer(int64_t* dataBuffer,
     }
     memcpy(dataBuffer, values.data(), sizeof(int16_t) * values.size());
   }
+  // Boolean
+  if (type == parquet::ConvertedType::NONE) {
+    int bitmapSize = (rowsToRead + 7) >> 3;
+    uint8_t* bitmap = (uint8_t*)allocator_->allocate(bitmapSize);
+    memset(bitmap, 0x00, bitmapSize);
+    for (int i = 0; i < rowsToRead; i++) {
+      if (*((bool*)(dataBuffer) + i)) {
+        CiderBitUtils::setBitAt(bitmap, i);
+      }
+    }
+    memcpy(dataBuffer, bitmap, bitmapSize);
+  }
 }
 
 std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
@@ -310,8 +337,10 @@ std::tuple<ArrowSchema*&, ArrowArray*&> Reader::convert2Arrow(
   auto builder = ArrowArrayBuilder().setRowNum(rowsToRead);
   for (int i = 0; i < buffersPtr.size(); i++) {
     if (sqlTypeVector_[i] == parquet::ConvertedType::type::INT_8 ||
-        sqlTypeVector_[i] == parquet::ConvertedType::type::INT_16) {
+        sqlTypeVector_[i] == parquet::ConvertedType::type::INT_16 ||
+        parquetTypeVector_[i] == parquet::Type::BOOLEAN) {
       // tinyint and smallint are stored as int32 in parquet
+      // bool type need convert it to bitmap
       compressDataBuffer(buffersPtr[i], sqlTypeVector_[i], rowsToRead);
     }
     if (sqlTypeVector_[i] == parquet::ConvertedType::type::NONE) {
