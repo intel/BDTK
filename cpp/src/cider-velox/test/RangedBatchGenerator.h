@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/FlatVector.h"
 

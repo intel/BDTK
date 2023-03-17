@@ -28,7 +28,6 @@
 #include "substrait/VeloxPlanFragmentToSubstraitPlan.h"
 #include "substrait/plan.pb.h"
 #include "util/ArrowArrayBuilder.h"
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
@@ -38,8 +37,6 @@ using namespace facebook::velox::exec;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::plugin;
 using namespace facebook::velox::substrait;
-
-using facebook::velox::test::BatchMaker;
 
 class AggWithRandomDataTest : public OperatorTestBase {
   void SetUp() override {

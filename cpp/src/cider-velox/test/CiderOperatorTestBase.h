@@ -22,7 +22,6 @@
 #pragma once
 
 #include "CiderVeloxPluginCtx.h"
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/type/Type.h"
 
@@ -36,7 +35,6 @@ using facebook::velox::TypeKind;
 using facebook::velox::TypePtr;
 using facebook::velox::vector_size_t;
 using facebook::velox::VectorPtr;
-using facebook::velox::test::BatchMaker;
 
 class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBase {
  protected:
