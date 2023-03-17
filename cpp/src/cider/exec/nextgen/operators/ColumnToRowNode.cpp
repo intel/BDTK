@@ -229,28 +229,23 @@ void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
 
   // for row loop
   auto index = func->createVariable(JITTypeTag::INT64, "index", 0);
-
-  // get input row num from input arrow array
-  // assumes signature be like: query_func(context, array)
-  auto input_array = func->getArgument(1);  // array
-  auto len = func->createLocalJITValue([&input_array]() {
-    return context::codegen_utils::getArrowArrayLength(input_array);
-  });
+  auto len = context.getInputLength();
   static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
 
-  func->createLoopBuilder()
-      ->condition([&index, &len]() { return index < len; })
+  auto builder = func->createLoopBuilder();
+  builder->condition([&index, &len]() { return index < len; })
       ->loop([&](LoopBuilder*) {
         for (auto& input : inputs) {
           ColumnReader(context, input, index).read();
         }
         successor_wrapper(successor, context);
       })
-      ->update([&index]() { index = index + 1l; })
-      ->build();
+      ->update([&index]() { index = index + 1l; });
+
+  auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
+  builder->setNoAlias(c2r_node->isVectorizable())->build();
 
   // Execute defer build functions.
-  auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
   for (auto& defer_func : c2r_node->getDeferFunctions()) {
     defer_func();
   }

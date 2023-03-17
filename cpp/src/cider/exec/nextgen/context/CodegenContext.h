@@ -21,6 +21,8 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
+#include <utility>
+
 #include "common/interpreters/AggregationHashTable.h"
 #include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CiderSet.h"
@@ -88,12 +90,21 @@ class CodegenContext {
  public:
   CodegenContext() : jit_func_(nullptr) {}
 
-  void setJITFunction(jitlib::JITFunctionPointer jit_func) {
+  void setJITFunction(jitlib::JITFunctionPointer& jit_func) {
     CHECK(nullptr == jit_func_);
     jit_func_ = jit_func;
   }
 
   jitlib::JITFunctionPointer getJITFunction() { return jit_func_; }
+
+  // FIXME (bigPYJ1151)
+  [[deprecated]] void setJITModule(jitlib::JITModulePointer jit_module) {
+    jit_module_ = std::move(jit_module);
+  }
+
+  void setInputLength(jitlib::JITValuePointer& len) { input_len_.replace(len); }
+
+  jitlib::JITValuePointer& getInputLength() { return input_len_; }
 
   CodegenOptions getCodegenOptions() { return codegen_options_; }
 
@@ -217,8 +228,6 @@ class CodegenContext {
         : ctx_id(id), name(n), type(t), cider_set(std::move(c_set)) {}
   };
 
-  void setJITModule(jitlib::JITModulePointer jit_module) { jit_module_ = jit_module; }
-
   void setCodegenOptions(CodegenOptions codegen_options) {
     codegen_options_ = codegen_options;
   }
@@ -259,10 +268,11 @@ class CodegenContext {
   std::pair<BuildTableDescriptorPtr, jitlib::JITValuePointer> buildtable_descriptor_;
 
   jitlib::JITFunctionPointer jit_func_;
-  int64_t id_counter_{0};
   jitlib::JITModulePointer jit_module_;
-  CodegenOptions codegen_options_;
+  jitlib::JITValuePointer input_len_;
 
+  int64_t id_counter_{0};
+  CodegenOptions codegen_options_;
   bool has_outer_join_ = false;
 
   // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx

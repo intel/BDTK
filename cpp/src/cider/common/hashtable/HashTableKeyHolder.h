@@ -23,9 +23,8 @@
 #pragma once
 
 #include <common/Arena.h>
+#include <common/base/StringRef.h>
 #include "type/data/funcannotations.h"
-
-namespace cider::hashtable {
 
 /**
  * In some aggregation scenarios, when adding a key to the hash table, we
@@ -72,6 +71,8 @@ namespace cider::hashtable {
  * Returns the key. Can return the temporary key initially.
  * After the call to keyHolderPersistKey(), must return the persistent key.
  */
+namespace cider::hashtable {
+
 template <typename Key>
 inline Key& ALWAYS_INLINE keyHolderGetKey(Key&& key) {
   return key;
@@ -89,4 +90,47 @@ inline void ALWAYS_INLINE keyHolderPersistKey(Key&&) {}
  */
 template <typename Key>
 inline void ALWAYS_INLINE keyHolderDiscardKey(Key&&) {}
+
+/**
+ * ArenaKeyHolder is a key holder for hash tables that serializes a StringRef
+ * key to an Arena.
+ */
+struct ArenaKeyHolder {
+  StringRef key;
+  Arena& pool;
+};
+
+inline StringRef& ALWAYS_INLINE keyHolderGetKey(ArenaKeyHolder& holder) {
+  return holder.key;
+}
+
+inline void ALWAYS_INLINE keyHolderPersistKey(ArenaKeyHolder& holder) {
+  // Hash table shouldn't ask us to persist a zero key
+  assert(holder.key.size > 0);
+  holder.key.data = holder.pool.insert(holder.key.data, holder.key.size);
+}
+
+inline void ALWAYS_INLINE keyHolderDiscardKey(ArenaKeyHolder&) {}
+
+/** SerializedKeyHolder is a key holder for a StringRef key that is already
+ * serialized to an Arena. The key must be the last allocation in this Arena,
+ * and is discarded by rolling back the allocation.
+ */
+struct SerializedKeyHolder {
+  StringRef key;
+  Arena& pool;
+};
+
+inline StringRef& ALWAYS_INLINE keyHolderGetKey(SerializedKeyHolder& holder) {
+  return holder.key;
+}
+
+inline void ALWAYS_INLINE keyHolderPersistKey(SerializedKeyHolder&) {}
+
+inline void ALWAYS_INLINE keyHolderDiscardKey(SerializedKeyHolder& holder) {
+  [[maybe_unused]] void* new_head = holder.pool.rollback(holder.key.size);
+  assert(new_head == holder.key.data);
+  holder.key.data = nullptr;
+  holder.key.size = 0;
+}
 }  // namespace cider::hashtable

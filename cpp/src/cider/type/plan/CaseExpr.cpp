@@ -288,7 +288,11 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
               ->ifTrue([&]() {
                 cider::exec::nextgen::utils::VarSizeJITExprValue then_jit_expr_value(
                     expr_pair.second->codegen(context));
-                *value = *then_jit_expr_value.getValue();
+                *value = *func.emitRuntimeFunctionCall(
+                    "cast_ptr_to_int64",
+                    JITFunctionEmitDescriptor{
+                        .ret_type = JITTypeTag::INT64,
+                        .params_vector = {then_jit_expr_value.getValue().get()}});
                 *length = *then_jit_expr_value.getLength();
                 *null = *then_jit_expr_value.getNull();
                 *is_case = func.createLiteral(JITTypeTag::BOOL, true);
@@ -300,12 +304,22 @@ JITExprValue& CaseExpr::codegen(CodegenContext& context) {
         ->ifTrue([&]() {
           cider::exec::nextgen::utils::VarSizeJITExprValue else_jit_expr_value(
               else_expr->codegen(context));
-          *value = *else_jit_expr_value.getValue();
+          *value = *func.emitRuntimeFunctionCall(
+              "cast_ptr_to_int64",
+              JITFunctionEmitDescriptor{
+                  .ret_type = JITTypeTag::INT64,
+                  .params_vector = {else_jit_expr_value.getValue().get()}});
           *length = *else_jit_expr_value.getLength();
           *null = *else_jit_expr_value.getNull();
         })
         ->build();
-    return set_expr_value(null, length, value);
+    return set_expr_value(null,
+                          length,
+                          func.emitRuntimeFunctionCall(
+                              "cast_int64_to_ptr",
+                              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
+                                                        .ret_sub_type = JITTypeTag::INT8,
+                                                        .params_vector = {value.get()}}));
   } else {
     UNREACHABLE();
   }

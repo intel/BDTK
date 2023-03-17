@@ -27,11 +27,13 @@
 namespace cider::exec::nextgen::operators {
 class ColumnToRowNode : public OpNode {
  public:
-  explicit ColumnToRowNode(ExprPtrVector&& output_exprs)
-      : OpNode("ColumnToRowNode", std::move(output_exprs), JITExprValueType::ROW) {}
+  explicit ColumnToRowNode(ExprPtrVector&& output_exprs, bool vectorizable = false)
+      : OpNode("ColumnToRowNode", std::move(output_exprs), JITExprValueType::ROW)
+      , vectorizable_(vectorizable) {}
 
-  explicit ColumnToRowNode(const ExprPtrVector& output_exprs)
-      : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW) {}
+  explicit ColumnToRowNode(const ExprPtrVector& output_exprs, bool vectorizable = false)
+      : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW)
+      , vectorizable_(vectorizable) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
@@ -51,9 +53,12 @@ class ColumnToRowNode : public OpNode {
 
   std::vector<std::function<void()>>& getDeferFunctions() { return defer_func_list_; }
 
+  bool isVectorizable() const { return vectorizable_; }
+
  private:
   jitlib::JITValuePointer column_row_num_;
   std::vector<std::function<void()>> defer_func_list_;
+  bool vectorizable_;
 };
 
 class ColumnToRowTranslator : public Translator {

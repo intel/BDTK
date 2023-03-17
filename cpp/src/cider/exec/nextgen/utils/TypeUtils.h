@@ -156,6 +156,7 @@ inline bool isVectorizableType(SQLTypes type) {
     case kBIGINT:
     case kFLOAT:
     case kDOUBLE:
+    case kBOOLEAN:
       return true;
     default:
       return false;
