@@ -480,10 +480,11 @@ void generateBoolInputExprsGroupCode(context::CodegenContext& context,
   auto input_len = context.getInputLength();
 
   auto bool_loop_length = (input_len + 7) / 8;
+  auto buffer_bytes_length = (bool_loop_length + 31) / 32 * 32;
 
   for (auto& target : group.exprs) {
     // TODO (bigPYJ1151): Register Batch for intermediate targets.
-    allocateBitwiseBuffer(context, target, bool_loop_length);
+    allocateBitwiseBuffer(context, target, buffer_bytes_length);
   }
 
   func->createLoopBuilder()
@@ -538,7 +539,7 @@ void generateBoolInputExprsGroupCode(context::CodegenContext& context,
       ->update([&index]() { index = index + 1; })
       ->build();
 
-  // Set length
+  // Set length.
   for (auto& target : group.exprs) {
     size_t arrow_array_local_index = target->getLocalIndex();
     CHECK(arrow_array_local_index);

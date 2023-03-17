@@ -472,8 +472,7 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   successor_wrapper(successor, context);
 
   // Execute length field updating build function after C2R loop finished.
-  auto prev_c2r_node = static_cast<RowToColumnNode*>(node_.get())->getColumnToRowNode();
-  prev_c2r_node->registerDeferFunc([output_index, &output_exprs, &context]() mutable {
+  context.appendDeferFunc([output_index, &output_exprs, &context]() mutable {
     for (auto& expr : output_exprs) {
       size_t local_offset = expr->getLocalIndex();
       CHECK_NE(local_offset, 0);
