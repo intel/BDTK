@@ -94,7 +94,6 @@ StringView BatchDataGenerator::gen_value<StringView>(std::mt19937& gen) {
   return StringView{buff, len};  // StringView max support 12 byte inline value
 }
 
-
 } // namespace util
 } // namespace test
 } // namespace transformer

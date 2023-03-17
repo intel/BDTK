@@ -46,7 +46,7 @@ using ::facebook::velox::memory::MemoryPool;
 
 class BatchDataGenerator {
  public:
-  BatchDataGenerator(MemoryPool* pool) : pool_(pool) {}
+  explicit BatchDataGenerator(MemoryPool* pool) : pool_(pool) {}
 
   auto generate(RowTypePtr& rowType,
                 int rowVectorSize,
