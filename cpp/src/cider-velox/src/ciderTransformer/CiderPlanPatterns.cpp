@@ -281,11 +281,54 @@ StatePtr ProjectStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr)
   if (auto projectNode = std::dynamic_pointer_cast<const ProjectNode>(nodeAddr.nodePtr)) {
     const auto& inputType = projectNode->sources()[0]->outputType();
     const auto& outputType = projectNode->outputType();
-    if ((inputType->equivalent(*(outputType))) &&
-        (inputType->names() == outputType->names())) {
+    if (inputType == outputType) {
       return std::make_shared<ProjectStateMachine::NotAccept>();
     }
-    return std::make_shared<ProjectStateMachine::Project>();
+    // we shoud bypass reorder subexpression project: {a, b, c} -> {c, a}
+    auto i_names = inputType->names();
+    auto o_names = outputType->names();
+    if (i_names.size() < o_names.size()) {
+      return std::make_shared<ProjectStateMachine::Project>();
+    }
+
+    std::vector<std::pair<std::string, int>> i_names_with_idx;
+    i_names_with_idx.reserve(i_names.size());
+    for (int idx = 0; auto& n : i_names) {
+      i_names_with_idx.emplace_back(n, idx++);
+    }
+    std::vector<std::pair<std::string, int>> o_names_with_idx;
+    o_names_with_idx.reserve(o_names.size());
+    for (int idx = 0; auto& n : o_names) {
+      o_names_with_idx.emplace_back(n, idx++);
+    }
+
+    std::sort(i_names_with_idx.begin(),
+              i_names_with_idx.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+    std::sort(o_names_with_idx.begin(),
+              o_names_with_idx.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    int i = 0;
+    for (int o = 0; o < o_names_with_idx.size(); ++o) {
+      bool found = false;
+      while (i < i_names_with_idx.size()) {
+        if (o_names_with_idx[o].first == i_names_with_idx[i].first) {
+          if (outputType->childAt(o_names_with_idx[o].second) !=
+              inputType->childAt(i_names_with_idx[i].second)) {
+            return std::make_shared<ProjectStateMachine::Project>();
+          } else {
+            found = true;
+            break;
+          }
+        }
+        ++i;
+      }
+      if (!found) {
+        return std::make_shared<ProjectStateMachine::Project>();
+      }
+    }
+    return std::make_shared<ProjectStateMachine::NotAccept>();
   } else {
     return std::make_shared<ProjectStateMachine::NotAccept>();
   }
