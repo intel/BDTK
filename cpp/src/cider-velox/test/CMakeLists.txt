@@ -55,7 +55,8 @@ set(FOLLY_BENCHMARK Folly::follybenchmark)
 
 find_library(LLVM_LIB LLVM)
 
-add_library(velox_plugin_test_util CiderPlanBuilder.cpp)
+add_library(velox_plugin_test_util CiderOperatorTestBase.cpp
+                                   CiderPlanBuilder.cpp)
 
 add_library(
   plan_transformer_test_util
@@ -66,8 +67,8 @@ set(VELOX_PLUGIN_TEST_LIBS
     velox_plugin
     velox_substrait_convertor
     velox_substrait_plan_converter
-    velox_plugin_test_util
     plan_transformer_test_util
+    velox_plugin_test_util
     velox_functions_test_lib
     velox_exec
     velox_dwio_common
@@ -144,9 +145,9 @@ add_executable(CiderFilterProjectTest CiderFilterProjectTest.cpp)
 target_link_libraries(CiderFilterProjectTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderFilterProjectTest CiderFilterProjectTest ${TEST_ARGS})
 
-# add_executable(CiderScalarFunctionTest CiderScalarFunctionTest.cpp)
-# target_link_libraries(CiderScalarFunctionTest ${VELOX_PLUGIN_TEST_LIBS})
-# add_test(CiderScalarFunctionTest CiderScalarFunctionTest ${TEST_ARGS})
+add_executable(CiderScalarFunctionTest CiderScalarFunctionTest.cpp)
+target_link_libraries(CiderScalarFunctionTest ${VELOX_PLUGIN_TEST_LIBS})
+add_test(CiderScalarFunctionTest CiderScalarFunctionTest ${TEST_ARGS})
 
 # add_executable(CiderOperatorAggOpTest CiderOperatorAggOpTest.cpp)
 # target_link_libraries(CiderOperatorAggOpTest ${VELOX_PLUGIN_TEST_LIBS})

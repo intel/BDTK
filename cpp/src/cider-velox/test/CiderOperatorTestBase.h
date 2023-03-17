@@ -26,6 +26,16 @@
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/type/Type.h"
 
+using facebook::velox::BaseVector;
+using facebook::velox::BufferPtr;
+using facebook::velox::FlatVector;
+using facebook::velox::RowTypePtr;
+using facebook::velox::RowVector;
+using facebook::velox::RowVectorPtr;
+using facebook::velox::TypeKind;
+using facebook::velox::TypePtr;
+using facebook::velox::vector_size_t;
+using facebook::velox::VectorPtr;
 using facebook::velox::test::BatchMaker;
 
 class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBase {
@@ -42,14 +52,11 @@ class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBa
   }
 
  protected:
-  const std::vector<facebook::velox::RowVectorPtr> generateTestBatch(
-      facebook::velox::RowTypePtr& rowType,
-      bool withNull = false) {
-    std::vector<facebook::velox::RowVectorPtr> batches;
+  const std::vector<RowVectorPtr> generateTestBatch(RowTypePtr& rowType,
+                                                    bool withNull = false) {
+    std::vector<RowVectorPtr> batches;
     for (int32_t i = 0; i < 10; ++i) {
-      auto batch =
-          std::dynamic_pointer_cast<facebook::velox::RowVector>(BatchMaker::createBatch(
-              rowType, 100, *pool_, withNull ? randomNulls(7) : nullptr));
+      auto batch = createRowVector(rowType, 100, withNull ? randomNulls(7) : nullptr);
       batches.push_back(batch);
     }
     createDuckDbTable(batches);
@@ -66,10 +73,48 @@ class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBa
     assertQuery(params, referenceQuery);
   }
 
+  RowVectorPtr createRowVector(RowTypePtr& rowType,
+                               vector_size_t vectorSize,
+                               std::function<bool(vector_size_t)> isNullAt = nullptr) {
+    std::mt19937 gen{std::mt19937::default_seed};
+    std::vector<VectorPtr> children;
+    for (uint32_t i = 0; i < rowType->size(); ++i) {
+      auto vectorPtr = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(createScalar,
+                                                          rowType->childAt(i)->kind(),
+                                                          rowType->childAt(i),
+                                                          vectorSize,
+                                                          gen,
+                                                          isNullAt);
+      children.emplace_back(vectorPtr);
+    }
+
+    return std::make_shared<RowVector>(
+        pool_.get(), rowType, BufferPtr(nullptr), vectorSize, children);
+  }
+
  private:
-  std::function<bool(facebook::velox::vector_size_t /*index*/)> randomNulls(int32_t n) {
-    return [n](facebook::velox::vector_size_t /*index*/) {
-      return folly::Random::rand32() % n == 0;
-    };
+  std::function<bool(vector_size_t /*index*/)> randomNulls(int32_t n) {
+    return [n](vector_size_t /*index*/) { return folly::Random::rand32() % n == 0; };
+  }
+
+  template <typename T>
+  T gen_value(std::mt19937& gen);
+
+  template <TypeKind KIND>
+  VectorPtr createScalar(TypePtr type,
+                         vector_size_t size,
+                         std::mt19937& gen,
+                         std::function<bool(vector_size_t)> isNullAt = nullptr) {
+    using T = facebook::velox::TypeTraits<KIND>::NativeType;
+    auto flatVector = std::dynamic_pointer_cast<FlatVector<T>>(
+        BaseVector::create(type, size, pool_.get()));
+    for (vector_size_t i = 0; i < size; ++i) {
+      if (isNullAt && isNullAt(i)) {
+        flatVector->setNull(i, true);
+      } else {
+        flatVector->set(i, gen_value<T>(gen));
+      }
+    }
+    return flatVector;
   }
 };

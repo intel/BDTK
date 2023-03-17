@@ -31,9 +31,10 @@
 #include "ciderTransformer/CiderPlanTransformerFactory.h"
 #include "planTransformerTest/utils/PlanTansformerTestUtil.h"
 #include "substrait/VeloxPlanFragmentToSubstraitPlan.h"
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
+#include "velox/buffer/Buffer.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
+#include "velox/vector/tests/utils/VectorMaker.h"
 
 using namespace facebook::velox;
 using namespace facebook::velox::exec;
@@ -43,18 +44,78 @@ using namespace facebook::velox::substrait;
 using namespace facebook::velox::plugin::plantransformer;
 using namespace facebook::velox::plugin::plantransformer::test;
 
-using facebook::velox::test::BatchMaker;
+// using facebook::velox::test::BatchMaker;
+using facebook::velox::test::VectorMaker;
 
 class CiderOperatorTest : public OperatorTestBase {
   void SetUp() override {
     FLAGS_partial_agg_pattern = true;
+    printf("before vectors.size() = %lu\n", vectors.size());
     for (int32_t i = 0; i < 10; ++i) {
-      auto vector = std::dynamic_pointer_cast<RowVector>(
-          BatchMaker::createBatch(rowType_, 100, *pool_));
-      vectors.push_back(vector);
+      // auto vector = std::dynamic_pointer_cast<RowVector>(
+      //     BatchMaker::createBatch(rowType_, 100, *pool_));
+      // vectors.push_back(vector);
+      // auto vector_ptr = vector_maker.rowVector(rowType_, 100);
+      auto vector_ptr = createRowVector(100);
+      // auto vector_ptr = std::make_shared<RowVector>(pool_.get(), rowType_,
+      // BufferPtr(nullptr), 100, children);
+#if 0
+      printf("vector_ptr->children size = %lu\n", vector_ptr->children().size());
+      if (vector_ptr->children().size() > 0) {
+        printf("%d, 0, vector = %s\n", i, vector_ptr->childAt(0)->toString(0, 100).c_str());
+        printf("%d, 1, vector = %s\n", i, vector_ptr->childAt(1)->toString(0, 100).c_str());
+        printf("%d, 2, vector = %s\n", i, vector_ptr->childAt(2)->toString(0, 100).c_str());
+        printf("%d, 3, vector = %s\n", i, vector_ptr->childAt(3)->toString(0, 100).c_str());
+        printf("%d, 4, vector = %s\n", i, vector_ptr->childAt(4)->toString(0, 100).c_str());
+        printf("%d, 5, vector = %s\n", i, vector_ptr->childAt(5)->toString(0, 100).c_str());
+      }
+#endif
+      vectors.push_back(vector_ptr);
     }
+    printf("after  vectors.size() = %lu\n", vectors.size());
     createDuckDbTable(vectors);
     CiderVeloxPluginCtx::init();
+  }
+
+  template <typename T>
+  T testValue(int32_t i, facebook::velox::BufferPtr& space) {
+    return i;
+  }
+
+  template <TypeKind KIND>
+  VectorPtr createScalar(TypePtr type, vector_size_t size) {
+    using T = typename facebook::velox::TypeTraits<KIND>::NativeType;
+    facebook::velox::BufferPtr buffer;
+    VectorPtr base = BaseVector::create(type, size, pool_.get());
+    auto flat = std::dynamic_pointer_cast<FlatVector<T>>(base);
+    for (int32_t i = 0; i < flat->size(); ++i) {
+      flat->set(i, testValue<T>(i, buffer));
+    }
+    return base;
+  }
+
+  RowVectorPtr createRowVector(int32_t numRows) {
+    auto childType = ROW({"l_orderkey",
+                          "l_linenumber",
+                          "l_discount",
+                          "l_extendedprice",
+                          "l_quantity",
+                          "l_shipdate"},
+                         {BIGINT(), INTEGER(), DOUBLE(), DOUBLE(), DOUBLE(), DOUBLE()});
+
+    std::vector<VectorPtr> nested = {createScalar<TypeKind::BIGINT>(BIGINT(), numRows),
+                                     createScalar<TypeKind::INTEGER>(INTEGER(), numRows),
+                                     createScalar<TypeKind::DOUBLE>(DOUBLE(), numRows),
+                                     createScalar<TypeKind::DOUBLE>(DOUBLE(), numRows),
+                                     createScalar<TypeKind::DOUBLE>(DOUBLE(), numRows),
+                                     createScalar<TypeKind::DOUBLE>(DOUBLE(), numRows)};
+    auto childRow = std::make_shared<RowVector>(pool_.get(),
+                                                childType,
+                                                facebook::velox::BufferPtr(nullptr),
+                                                numRows,
+                                                std::move(nested),
+                                                0);
+    return childRow;
   }
 
   void TearDown() override { OperatorTestBase::TearDown(); }
@@ -70,6 +131,7 @@ class CiderOperatorTest : public OperatorTestBase {
           {BIGINT(), INTEGER(), DOUBLE(), DOUBLE(), DOUBLE(), DOUBLE()})};
 
   std::vector<RowVectorPtr> vectors;
+  VectorMaker vector_maker{pool_.get()};
 };
 
 TEST_F(CiderOperatorTest, cider_plan) {
