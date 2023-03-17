@@ -35,10 +35,6 @@ class CiderOperatorCompareOpTest : public CiderOperatorTestBase {
   void verifyCompareOp(const std::vector<RowVectorPtr>& batches,
                        std::vector<std::string> filters,
                        int numThreads = 1) {
-    printf("batches.size() = %lu\n", batches.size());
-    for (size_t i = 0; i < batches.size(); ++i) {
-      printf("batches[%lu] = %s\n", i, batches[i]->toString(0, 100).c_str());
-    }
     if (filters.size() > 0) {
       for (auto filter : filters) {
         std::string duckDbSql = "SELECT c0 FROM tmp WHERE " + filter;
