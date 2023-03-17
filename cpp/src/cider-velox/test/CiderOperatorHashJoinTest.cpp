@@ -20,7 +20,6 @@
  */
 
 #include <folly/init/Init.h>
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/PlanNodeStats.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 
@@ -74,10 +73,8 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
     auto leftType = makeRowType(keyTypes, "t_");
     auto rightType = makeRowType(keyTypes, "u_");
 
-    auto leftBatch = std::dynamic_pointer_cast<RowVector>(
-        BatchMaker::createBatch(leftType, leftSize, *pool_));
-    auto rightBatch = std::dynamic_pointer_cast<RowVector>(
-        BatchMaker::createBatch(rightType, rightSize, *pool_));
+    auto leftBatch = generator_.createRowVector(leftType, leftSize);
+    auto rightBatch = generator_.createRowVector(rightType, rightSize);
 
     auto planNodeIdGenerator = std::make_shared<core::PlanNodeIdGenerator>();
 

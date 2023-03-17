@@ -21,11 +21,10 @@
 
 #include <memory>
 
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
+#include "BatchDataGenerator.h"
+#include "CiderPlanNode.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
-
-#include "CiderPlanNode.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
 
 using namespace facebook::velox;
@@ -34,22 +33,17 @@ using namespace facebook::velox::exec::test;
 using namespace facebook::velox::plugin;
 using namespace facebook::velox::substrait;
 
-using facebook::velox::test::BatchMaker;
-
 class CiderPlanNodeTest : public OperatorTestBase {
  protected:
   std::shared_ptr<const RowType> rowType_{
       ROW({"l_quantity", "l_extendedprice", "l_discount", "l_shipdate"},
           {DOUBLE(), DOUBLE(), DOUBLE(), DOUBLE()})};
+
+  cider::transformer::test::util::BatchDataGenerator generator_{pool_.get()};
 };
 
 TEST_F(CiderPlanNodeTest, filter) {
-  std::vector<RowVectorPtr> vectors;
-  for (int32_t i = 0; i < 10; ++i) {
-    auto vector = std::dynamic_pointer_cast<RowVector>(
-        BatchMaker::createBatch(rowType_, 100, *pool_));
-    vectors.push_back(vector);
-  }
+  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, false);
   createDuckDbTable(vectors);
 
   const std::string filter =
@@ -68,12 +62,7 @@ TEST_F(CiderPlanNodeTest, filter) {
 }
 
 TEST_F(CiderPlanNodeTest, project) {
-  std::vector<RowVectorPtr> vectors;
-  for (int32_t i = 0; i < 10; ++i) {
-    auto vector = std::dynamic_pointer_cast<RowVector>(
-        BatchMaker::createBatch(rowType_, 100, *pool_));
-    vectors.push_back(vector);
-  }
+  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, false);
   createDuckDbTable(vectors);
 
   auto veloxPlan = PlanBuilder()
@@ -97,12 +86,7 @@ TEST_F(CiderPlanNodeTest, project) {
 
 #if 0
 TEST_F(CiderPlanNodeTest, Q6) {
-  std::vector<RowVectorPtr> vectors;
-  for (int32_t i = 0; i < 10; ++i) {
-    auto vector = std::dynamic_pointer_cast<RowVector>(
-        BatchMaker::createBatch(rowType_, 100, *pool_));
-    vectors.push_back(vector);
-  }
+  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, false);
   createDuckDbTable(vectors);
 
   auto veloxPlan = PlanBuilder()

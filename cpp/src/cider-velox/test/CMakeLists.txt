@@ -55,8 +55,7 @@ set(FOLLY_BENCHMARK Folly::follybenchmark)
 
 find_library(LLVM_LIB LLVM)
 
-add_library(velox_plugin_test_util CiderOperatorTestBase.cpp
-                                   CiderPlanBuilder.cpp)
+add_library(velox_plugin_test_util BatchDataGenerator.cpp CiderPlanBuilder.cpp)
 
 add_library(
   plan_transformer_test_util
