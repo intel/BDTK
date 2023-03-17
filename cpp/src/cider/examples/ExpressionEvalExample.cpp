@@ -21,7 +21,6 @@
 #include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/LiteralUtils.h"
 #include "exec/plan/parser/TypeUtils.h"
-// #include "exec/plan/validator/CiderPlanValidator.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/function.pb.h"
 #include "substrait/type.pb.h"
