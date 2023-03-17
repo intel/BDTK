@@ -29,9 +29,14 @@ StatefulProcessor::StatefulProcessor(
     const plan::SubstraitPlanPtr& plan,
     const BatchProcessorContextPtr& context,
     const cider::exec::nextgen::context::CodegenOptions& codegen_options)
-    : DefaultBatchProcessor(plan, context, codegen_options) {
-  has_groupby_ = plan->hasGroupingAggregateRel();
-}
+    : DefaultBatchProcessor(plan, context, codegen_options)
+    , has_groupby_(plan->hasGroupingAggregateRel()) {}
+
+StatefulProcessor::StatefulProcessor(const plan::SubstraitPlanPtr& plan,
+                                     const BatchProcessorContextPtr& context,
+                                     const CodegenCtxPtr& codegen_ctx)
+    : DefaultBatchProcessor(plan, context, codegen_ctx)
+    , has_groupby_(plan->hasGroupingAggregateRel()) {}
 
 void StatefulProcessor::getResult(struct ArrowArray& array, struct ArrowSchema& schema) {
   if (!no_more_batch_ || !has_result_) {

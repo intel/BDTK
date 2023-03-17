@@ -96,6 +96,9 @@ class CodegenContext {
  public:
   CodegenContext() : jit_func_(nullptr) {}
 
+  // we can reuse the compiled func, but create RuntimeCtx for every driver.
+  RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
+
   void setJITFunction(jitlib::JITFunctionPointer& jit_func) {
     CHECK(nullptr == jit_func_);
     jit_func_ = jit_func;
@@ -179,9 +182,6 @@ class CodegenContext {
   jitlib::JITValuePointer registerCiderSet(const std::string& name,
                                            const SQLTypeInfo& type,
                                            CiderSetPtr c_set);
-
-  RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
-
   struct BatchDescriptor {
     int64_t ctx_id;
     std::string name;

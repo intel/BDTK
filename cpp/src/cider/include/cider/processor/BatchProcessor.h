@@ -27,6 +27,7 @@
 #include "cider/processor/BatchProcessorContext.h"
 #include "cider/processor/JoinHashTableBuilder.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/plan/substrait/SubstraitPlan.h"
 #include "substrait/plan.pb.h"
 
 struct ArrowArray;
@@ -74,6 +75,10 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
       const substrait::Plan& plan,
       const BatchProcessorContextPtr& context,
       const nextgen::context::CodegenOptions& codegen_options = {});
+
+  static std::unique_ptr<BatchProcessor> Make(const plan::SubstraitPlanPtr& plan,
+                                              const BatchProcessorContextPtr& context,
+                                              const CodegenCtxPtr& codegen_ctx);
 };
 
 using BatchProcessorPtr = std::shared_ptr<BatchProcessor>;
