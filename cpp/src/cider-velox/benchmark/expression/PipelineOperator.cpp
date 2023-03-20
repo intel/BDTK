@@ -31,6 +31,7 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "util/CiderBitUtils.h"
+#include "utils.h"
 #include "velox/core/PlanNode.h"
 #include "velox/exec/FilterProject.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
@@ -53,8 +54,9 @@
 // This file refers velox/velox/benchmarks/basic/SimpleArithmetic.cpp
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
 DEFINE_double(ratio, 0.5, "NULL ratio in batch");
-DEFINE_int64(batch_size, 1'0240, "batch size for one loop");
-DEFINE_int64(loop_count, 1'000'000, "loop count for benchmark");
+DEFINE_int64(batch_size, 10'240, "batch size for one loop");
+DEFINE_int64(loop_count, 10'000, "loop count for benchmark");
+DEFINE_bool(profile_mode, false, "profile mode which just run once");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
 DEFINE_bool(dump_plan, false, "dump substrait plan");
 
@@ -85,6 +87,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
  public:
   PipelineOperator() : FunctionBenchmarkBase() {
     // registerAllScalarFunctions() just register checked version for integer
+    // prestosql::registerAllScalarFunctions();
     // we register uncheck version for compare
     registerFunction<MultiplyFunction, int8_t, int8_t, int8_t>({"multiply"});
     registerFunction<MultiplyFunction, int16_t, int16_t, int16_t>({"multiply"});
@@ -116,39 +119,51 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     registerBinaryScalar<GteFunction, bool>({"gte"});
   }
 
-  void generateData(std::vector<std::string> names) {
+  void initialize(std::vector<std::string> colNames,
+                  const std::initializer_list<std::string>& exprs) {
     VectorFuzzer::Options opts;
     opts.vectorSize = FLAGS_batch_size;
     opts.nullRatio = FLAGS_ratio;
     VectorFuzzer fuzzer(opts, pool(), FLAGS_fuzzer_seed);
 
     // overhead of import to arrow array is very high
+    // just add column which will be used in current test
     std::vector<std::shared_ptr<const Type>> types;
     std::vector<VectorPtr> children;
-    for (auto& name : names) {
-      auto& type = typeDict_[name];
-      types.emplace_back(typeDict_[name]);
-      children.emplace_back(fuzzer.fuzzFlat(type));
+    for (auto& name : colNames) {
+      // if name start with 'i8' (eg. i8, i8_1), then treat it as TINYINT
+      for (auto& [prefix, type] : typeDict_) {
+        if (name.starts_with(prefix)) {
+          types.emplace_back(type);
+          children.emplace_back(fuzzer.fuzzFlat(type));
+          break;
+        }
+      }
     }
 
-    inputType_ = ROW(std::move(names), std::move(types));
+    inputType_ = ROW(std::move(colNames), std::move(types));
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, FLAGS_batch_size, std::move(children));
-  }
 
-  __attribute__((noinline)) size_t veloxCompute(
-      const std::initializer_list<std::string>& exprs) {
+    // prepare velox expression set
     std::vector<core::TypedExprPtr> expressions;
     for (auto& expr : exprs) {
       auto untypedExpr = parse::parseExpr(expr, options_);
       expressions.push_back(
           core::Expressions::inferTypes(untypedExpr, inputType_, execCtx_.pool()));
     }
-    auto exprSet = exec::ExprSet(expressions, &execCtx_);
+    exprSet_ = std::make_unique<exec::ExprSet>(expressions, &execCtx_);
 
+    // prepare velox plan for cider
+    veloxPlan_ = PlanBuilder().values({rowVector_}).project(exprs).planNode();
+    VirtualTableTrimer::trim(veloxPlan_);
+  }
+
+  __attribute__((noinline)) size_t veloxCompute(
+      const std::initializer_list<std::string>& exprs) {
     size_t count = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
-      count += evaluate(exprSet, rowVector_)->size();
+      count += evaluate(*exprSet_, rowVector_)->size();
     }
     return count;
   }
@@ -156,12 +171,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
   __attribute__((noinline)) size_t nextgenCompute(
       CodegenOptions cgo,
       const std::initializer_list<std::string>& exprs) {
-    folly::BenchmarkSuspender suspender;
-    auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
-    cgo.co.dump_ir = FLAGS_dump_ir;
-    suspender.dismiss();
-
-    compile(veloxPlan, cgo);
+    compile(veloxPlan_, cgo);
 
     size_t count = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
@@ -176,12 +186,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
   __attribute__((noinline)) size_t nextgenComputeOpt(
       CodegenOptions cgo,
       const std::initializer_list<std::string>& exprs) {
-    folly::BenchmarkSuspender suspender;
-    auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
-    cgo.co.dump_ir = FLAGS_dump_ir;
-    suspender.dismiss();
-
-    compile(veloxPlan, cgo);
+    compile(veloxPlan_, cgo);
 
     size_t count = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
@@ -212,6 +217,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
 
+    cgo.co.dump_ir = FLAGS_dump_ir;
     batchProcessor_ = cider::exec::processor::BatchProcessor::Make(plan, context, cgo);
   }
 
@@ -264,14 +270,16 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
       {"i64", BIGINT()},
       {"b", BOOLEAN()},
       {"d", DOUBLE()},
+      {"c", VARCHAR()},
   };
+  std::unique_ptr<exec::ExprSet> exprSet_;
+  core::PlanNodePtr veloxPlan_;
 };
 
 std::unique_ptr<PipelineOperator> benchmark;
+std::initializer_list<std::string> profile_expr;
 
-std::initializer_list<std::string> profile_expr = {"i16*i32 + 2", "i16*i32 > 2"};
 BENCHMARK(velox) {
-  benchmark->generateData({"i16", "i32"});
   benchmark->veloxCompute(profile_expr);
 }
 BENCHMARK_RELATIVE(nextgen) {
@@ -288,7 +296,36 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   benchmark = std::make_unique<PipelineOperator>();
-  folly::runBenchmarks();
+  // mimic tpch q1 project expression
+  benchmark->initialize(
+      {"c", "c_1", "d", "d_1", "d_2", "d_3"},
+      {"c", "c_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
+
+  if (FLAGS_profile_mode) {
+    CpuWallTiming t;
+    {
+      CpuWallTimer timer(t);
+      benchmark->veloxCompute(profile_expr);
+    }
+    std::cout << t.toString() << std::endl;
+    t.clear();
+
+    auto cgo = getBaseOption();
+    {
+      CpuWallTimer timer(t);
+      benchmark->nextgenCompute(cgo, profile_expr);
+    }
+    std::cout << t.toString() << std::endl;
+    t.clear();
+
+    {
+      CpuWallTimer timer(t);
+      benchmark->nextgenComputeOpt(cgo, profile_expr);
+    }
+    std::cout << t.toString() << std::endl;
+  } else {
+    folly::runBenchmarks();
+  }
   benchmark.reset();
   return 0;
 }

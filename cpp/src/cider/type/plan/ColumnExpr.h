@@ -127,13 +127,18 @@ class ColumnVar : public Expr {
 class OutputColumnVar : public Expr {
  public:
   explicit OutputColumnVar(const std::shared_ptr<ColumnVar>& col)
-      : Expr(col->get_type_info()), col_(col) {}
+      : Expr(col->get_type_info()), col_(col) {
+    initAutoVectorizeFlag();
+  }
 
   JITExprValue& codegen(CodegenContext& context) override;
 
   ExprPtrRefVector get_children_reference() override { return {&col_}; }
 
  private:
+  void initAutoVectorizeFlag() {
+    auto_vectorizable_ = isVectorizableType(type_info.get_type());
+  }
   ExprPtr col_;
 };
 

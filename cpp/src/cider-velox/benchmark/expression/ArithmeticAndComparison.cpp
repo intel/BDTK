@@ -29,6 +29,7 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "util/CiderBitUtils.h"
+#include "utils.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/expression/Expr.h"
 #include "velox/functions/Registerer.h"
@@ -49,7 +50,7 @@
 DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
 DEFINE_double(ratio, 0.5, "NULL ratio in batch");
 DEFINE_int64(batch_size, 10'240, "batch size for one loop");
-DEFINE_int64(loop_count, 1'000, "loop count for benchmark");
+DEFINE_int64(loop_count, 10'000, "loop count for benchmark");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
 
 using namespace cider::exec::processor;
@@ -206,6 +207,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
+    VirtualTableTrimer::trim(veloxPlan);
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
@@ -225,6 +227,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project(exprs).planNode();
+    VirtualTableTrimer::trim(veloxPlan);
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);

@@ -41,10 +41,10 @@ void CiderPipelineOperator::addInput(RowVectorPtr input) {
     input->childAt(i)->mutableRawNulls();
   }
   this->input_ = std::move(input);
-  ArrowArray* inputArrowArray = CiderBatchUtils::allocateArrowArray();
-  exportToArrow(input_, *inputArrowArray);
+  ArrowArray inputArrowArray;
+  exportToArrow(input_, inputArrowArray);
 
-  batchProcessor_->processNextBatch(inputArrowArray);
+  batchProcessor_->processNextBatch(&inputArrowArray);
 }
 
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(

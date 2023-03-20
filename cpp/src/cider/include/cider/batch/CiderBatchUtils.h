@@ -61,7 +61,7 @@ SQLTypes convertArrowTypeToCiderType(const char* format);
 const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
                                         std::string& format_buffer);
 
-ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
+ArrowSchema convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
 
 const char* convertSubstraitTypeToArrowType(const substrait::Type& type,
                                             std::string& format_buffer);

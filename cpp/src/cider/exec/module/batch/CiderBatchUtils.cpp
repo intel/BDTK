@@ -259,8 +259,8 @@ const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
   }
 }
 
-ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
-  ArrowSchema* root_schema = allocateArrowSchema();
+ArrowSchema convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
+  ArrowSchema root_schema;
 
   std::function<void(ArrowSchema*, const SQLTypeInfo&)> build_function =
       [&build_function](ArrowSchema* schema, const SQLTypeInfo& info) {
@@ -280,7 +280,7 @@ ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
         }
       };
 
-  build_function(root_schema, sql_info);
+  build_function(&root_schema, sql_info);
 
   return root_schema;
 }
