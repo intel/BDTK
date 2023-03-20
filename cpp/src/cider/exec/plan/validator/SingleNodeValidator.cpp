@@ -160,6 +160,11 @@ substrait::Type SingleNodeValidator::getExprOutputType(
       return s_expr.scalar_function().output_type();
     case substrait::Expression::RexTypeCase::kCast:
       return s_expr.cast().type();
+    case substrait::Expression::RexTypeCase::kSelection:
+      return input_types[s_expr.selection().direct_reference().struct_field().field()];
+    case substrait::Expression::RexTypeCase::kLiteral: {
+      return generator::getSubstraitType(generator::getSQLTypeInfo(s_expr.literal()));
+    }
     default:
       CIDER_THROW(CiderPlanValidateException,
                   fmt::format("Unsupported expression type {} for getExprOutputType()",
@@ -224,19 +229,27 @@ void SingleNodeValidator::functionLookup(
     const std::vector<substrait::Type>& input_types,
     const std::unordered_map<int, std::string>& func_map,
     std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr) {
-  std::string func_sig =
+  std::string func_sig_ori =
       generator::getFunctionSignature(func_map, agg_expr.function_reference());
-  std::string function_name;
-  auto pos = func_sig.find_first_of(':');
+  std::string func_sig;
+  auto pos = func_sig_ori.find_first_of(':');
   if (pos == std::string::npos) {
     // count(*)/count(1), front end maybe just give count as function_signature_str
-    if (func_sig == "count") {
-      function_name = func_sig;
+    if (func_sig_ori == "count") {
+      func_sig = func_sig_ori;
     } else {
       CIDER_THROW(CiderPlanValidateException, "Invalid function_sig: " + func_sig);
     }
   } else {
-    function_name = func_sig.substr(0, pos);
+    func_sig = func_sig_ori.substr(0, pos);
+  }
+  func_sig += ":";
+  for (int i = 0; i < agg_expr.arguments_size(); i++) {
+    func_sig += TypeUtils::getStringType(
+        getExprOutputType(agg_expr.arguments(i).value(), input_types));
+    if (i != agg_expr.arguments_size() - 1) {
+      func_sig += "_";
+    }
   }
   std::string func_return_type = TypeUtils::getStringType(agg_expr.output_type());
   auto function_descriptor = func_lookup_ptr->lookupFunction(func_sig, func_return_type);
@@ -248,6 +261,10 @@ void SingleNodeValidator::functionLookup(
             func_sig,
             func_return_type));
   }
+  // do look up on agg input expr
+  for (int i = 0; i < agg_expr.arguments_size(); i++) {
+    functionLookup(agg_expr.arguments(i).value(), input_types, func_map, func_lookup_ptr);
+  }
 }
 
 void SingleNodeValidator::functionLookup(
@@ -257,8 +274,20 @@ void SingleNodeValidator::functionLookup(
     std::shared_ptr<const FunctionLookupEngine> func_lookup_ptr) {
   switch (s_expr.rex_type_case()) {
     case substrait::Expression::RexTypeCase::kScalarFunction: {
-      std::string func_sig = generator::getFunctionSignature(
+      std::string func_sig_ori = generator::getFunctionSignature(
           func_map, s_expr.scalar_function().function_reference());
+      auto pos = func_sig_ori.find_first_of(':');
+      std::string func_sig;
+      if (pos != std::string::npos) {
+        func_sig = func_sig_ori.substr(0, pos) + ":";
+      }
+      for (int i = 0; i < s_expr.scalar_function().arguments_size(); i++) {
+        func_sig += TypeUtils::getStringType(getExprOutputType(
+            s_expr.scalar_function().arguments(i).value(), input_types));
+        if (i != s_expr.scalar_function().arguments_size() - 1) {
+          func_sig += "_";
+        }
+      }
       std::string func_return_type =
           TypeUtils::getStringType(s_expr.scalar_function().output_type());
       auto function_descriptor =
@@ -277,22 +306,8 @@ void SingleNodeValidator::functionLookup(
       return;
     }
     case substrait::Expression::RexTypeCase::kCast: {
-      std::string func_sig;
-      if (s_expr.cast().input().has_literal()) {
-        func_sig =
-            "cast:" + TypeUtils::getStringType(generator::getSubstraitType(
-                          generator::getSQLTypeInfo(s_expr.cast().input().literal())));
-      } else if (s_expr.cast().input().has_selection()) {
-        func_sig = "cast:" + TypeUtils::getStringType(input_types[s_expr.cast()
-                                                                      .input()
-                                                                      .selection()
-                                                                      .direct_reference()
-                                                                      .struct_field()
-                                                                      .field()]);
-      } else if (s_expr.cast().input().has_scalar_function()) {
-        func_sig = "cast:" + TypeUtils::getStringType(
-                                 s_expr.cast().input().scalar_function().output_type());
-      }
+      std::string func_sig = "cast:" + TypeUtils::getStringType(getExprOutputType(
+                                           s_expr.cast().input(), input_types));
       std::string func_return_type = TypeUtils::getStringType(s_expr.cast().type());
       auto function_descriptor =
           func_lookup_ptr->lookupFunction(func_sig, func_return_type);
@@ -304,11 +319,7 @@ void SingleNodeValidator::functionLookup(
                 func_sig,
                 func_return_type));
       }
-      if (s_expr.cast().input().has_scalar_function()) {
-        for (auto argument : s_expr.cast().input().scalar_function().arguments()) {
-          functionLookup(argument.value(), input_types, func_map, func_lookup_ptr);
-        }
-      }
+      functionLookup(s_expr.cast().input(), input_types, func_map, func_lookup_ptr);
       return;
     }
     case substrait::Expression::RexTypeCase::kLiteral:

@@ -142,14 +142,20 @@ if(BDTK_ENABLE_CIDER)
   #
   # Subdirectories
   #
-  include_directories(src/cider)
-  include_directories(src/cider/include)
-  add_subdirectory(src/cider)
+  # include_directories(src/cider) include_directories(src/cider/include)
+  # add_subdirectory(src/cider)
 
   if(CIDER_ENABLE_VELOX)
     add_subdirectory(thirdparty/velox)
+  endif()
+
+  include_directories(src/cider)
+  include_directories(src/cider/include)
+  add_subdirectory(src/cider)
+  if(CIDER_ENABLE_VELOX)
     add_subdirectory(src/cider-velox)
   endif()
+
 endif()
 
 if(BDTK_ENABLE_ICL)

@@ -45,6 +45,47 @@ bool CiderPlanValidator::validate(const substrait::Plan& plan,
   }
   return i == rel_vec.size();
 }
+bool CiderPlanValidator::validate(const ::substrait::ExtendedExpression& ext_expr,
+                                  const PlatformType& from_platform) {
+  // get input types from schema
+  std::vector<substrait::Type> input_types;
+  for (auto type : ext_expr.base_schema().struct_().types()) {
+    input_types.emplace_back(type);
+  }
+  // get funtion map from extension uri
+  std::unordered_map<int, std::string> function_map;
+  for (int i = 0; i < ext_expr.extensions_size(); i++) {
+    const auto& extension = ext_expr.extensions(i);
+    if (extension.has_extension_function()) {
+      const auto& function = extension.extension_function().name();
+      function_map.emplace(extension.extension_function().function_anchor(), function);
+    }
+  }
+  // do function look up for each expr
+  auto function_lookup_ptr = FunctionLookupEngine::getInstance(from_platform);
+  try {
+    for (int i = 0; i < ext_expr.referred_expr_size(); i++) {
+      // TODO: (yma11) support more expression types besides scalar function and aggregate
+      // function
+      if (ext_expr.referred_expr(i).has_expression()) {
+        SingleNodeValidator::functionLookup(ext_expr.referred_expr(i).expression(),
+                                            input_types,
+                                            function_map,
+                                            function_lookup_ptr);
+      }
+      if (ext_expr.referred_expr(i).has_measure()) {
+        SingleNodeValidator::functionLookup(ext_expr.referred_expr(i).measure(),
+                                            input_types,
+                                            function_map,
+                                            function_lookup_ptr);
+      }
+    }
+  } catch (CiderPlanValidateException& e) {
+    LOG(INFO) << e.what();
+    return false;
+  }
+  return true;
+}
 
 PlanSlice CiderPlanValidator::constructPlanSlice(const substrait::Plan& plan,
                                                  const PlatformType& from_platform) {
