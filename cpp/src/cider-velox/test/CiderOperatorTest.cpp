@@ -19,21 +19,20 @@
  * under the License.
  */
 
-#include "substrait/plan.pb.h"
-#include "velox/core/PlanNode.h"
-#include "velox/type/Type.h"
-
 #include <folly/init/Init.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include "BatchDataGenerator.h"
 #include "CiderPlanNodeTranslator.h"
 #include "CiderVeloxPluginCtx.h"
 #include "ciderTransformer/CiderPlanTransformerFactory.h"
 #include "planTransformerTest/utils/PlanTansformerTestUtil.h"
 #include "substrait/VeloxPlanFragmentToSubstraitPlan.h"
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
+#include "substrait/plan.pb.h"
+#include "velox/core/PlanNode.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
+#include "velox/type/Type.h"
 
 using namespace facebook::velox;
 using namespace facebook::velox::exec;
@@ -43,16 +42,10 @@ using namespace facebook::velox::substrait;
 using namespace facebook::velox::plugin::plantransformer;
 using namespace facebook::velox::plugin::plantransformer::test;
 
-using facebook::velox::test::BatchMaker;
-
 class CiderOperatorTest : public OperatorTestBase {
   void SetUp() override {
     FLAGS_partial_agg_pattern = true;
-    for (int32_t i = 0; i < 10; ++i) {
-      auto vector = std::dynamic_pointer_cast<RowVector>(
-          BatchMaker::createBatch(rowType_, 100, *pool_));
-      vectors.push_back(vector);
-    }
+    vectors = generator_.generate(rowType_, 10, 100, false);
     createDuckDbTable(vectors);
     CiderVeloxPluginCtx::init();
   }
@@ -70,6 +63,7 @@ class CiderOperatorTest : public OperatorTestBase {
           {BIGINT(), INTEGER(), DOUBLE(), DOUBLE(), DOUBLE(), DOUBLE()})};
 
   std::vector<RowVectorPtr> vectors;
+  cider::transformer::test::util::BatchDataGenerator generator_{pool_.get()};
 };
 
 TEST_F(CiderOperatorTest, cider_plan) {

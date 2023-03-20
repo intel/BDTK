@@ -20,7 +20,6 @@
  */
 
 #include <folly/init/Init.h>
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/substrait/VeloxToSubstraitPlan.h"
@@ -29,8 +28,6 @@ using namespace facebook::velox;
 using namespace facebook::velox::exec;
 using namespace facebook::velox::exec::test;
 using namespace facebook::velox::substrait;
-
-using facebook::velox::test::BatchMaker;
 
 class SubstraitVeloxPlanConverterTest : public OperatorTestBase {
  protected:

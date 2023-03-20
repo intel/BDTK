@@ -23,7 +23,6 @@
 #include <folly/init/Init.h>
 #include <google/protobuf/util/json_util.h>
 #include <fstream>
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/Aggregate.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
@@ -32,8 +31,6 @@
 using facebook::velox::core::PlanNode;
 using facebook::velox::exec::Aggregate;
 using namespace facebook::velox::substrait;
-
-using facebook::velox::test::BatchMaker;
 
 namespace facebook::velox::exec::test {
 namespace {

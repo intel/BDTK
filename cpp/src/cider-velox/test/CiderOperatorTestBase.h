@@ -21,12 +21,10 @@
 
 #pragma once
 
+#include "BatchDataGenerator.h"
 #include "CiderVeloxPluginCtx.h"
-#include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/exec/tests/utils/OperatorTestBase.h"
 #include "velox/type/Type.h"
-
-using facebook::velox::test::BatchMaker;
 
 class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBase {
  protected:
@@ -42,16 +40,8 @@ class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBa
   }
 
  protected:
-  const std::vector<facebook::velox::RowVectorPtr> generateTestBatch(
-      facebook::velox::RowTypePtr& rowType,
-      bool withNull = false) {
-    std::vector<facebook::velox::RowVectorPtr> batches;
-    for (int32_t i = 0; i < 10; ++i) {
-      auto batch =
-          std::dynamic_pointer_cast<facebook::velox::RowVector>(BatchMaker::createBatch(
-              rowType, 100, *pool_, withNull ? randomNulls(7) : nullptr));
-      batches.push_back(batch);
-    }
+  auto generateTestBatch(facebook::velox::RowTypePtr& rowType, bool withNull) {
+    auto batches = generator_.generate(rowType, 10, 100, withNull);
     createDuckDbTable(batches);
     return batches;
   }
@@ -66,10 +56,5 @@ class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBa
     assertQuery(params, referenceQuery);
   }
 
- private:
-  std::function<bool(facebook::velox::vector_size_t /*index*/)> randomNulls(int32_t n) {
-    return [n](facebook::velox::vector_size_t /*index*/) {
-      return folly::Random::rand32() % n == 0;
-    };
-  }
+  cider::transformer::test::util::BatchDataGenerator generator_{pool_.get()};
 };
