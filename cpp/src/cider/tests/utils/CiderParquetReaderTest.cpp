@@ -36,9 +36,9 @@ std::string getParquetFilesPath() {
 // │ col_bool │
 // ├──────────┤
 // │ true     │
-// │          │
+// │ null     │
 // │ false    │
-// │          │
+// │ null     │
 // │ true     │
 // └──────────┘
 TEST(CiderParquetReaderTest, bool_single_col) {
@@ -46,7 +46,10 @@ TEST(CiderParquetReaderTest, bool_single_col) {
   reader->init(getParquetFilesPath() + "bool_single_col.parquet", {"col_bool"}, 0, 1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
-  reader->readBatch(5, actual_schema, actual_array);
+  while (reader->hasNext()) {
+    int rowsRead = reader->readBatch(5, actual_schema, actual_array);
+    CHECK_EQ(rowsRead, 5);
+  }
   auto schema_and_array =
       ArrowArrayBuilder()
           .setRowNum(5)
@@ -63,9 +66,9 @@ TEST(CiderParquetReaderTest, bool_single_col) {
 // │ col_type │
 // ├──────────┤
 // │ 0        │
-// │          │
+// │ null     │
 // │ 2        │
-// │          │
+// │ null     │
 // │ 4        │
 // └──────────┘
 #define GENERATE_READER_TEST(type_name, substrait_type, c_type)               \
@@ -77,7 +80,10 @@ TEST(CiderParquetReaderTest, bool_single_col) {
                  1);                                                          \
     ArrowSchema* actual_schema;                                               \
     ArrowArray* actual_array;                                                 \
-    reader->readBatch(5, actual_schema, actual_array);                        \
+    while (reader->hasNext()) {                                               \
+      int rowsRead = reader->readBatch(5, actual_schema, actual_array);       \
+      CHECK_EQ(rowsRead, 5);                                                  \
+    }                                                                         \
     auto schema_and_array =                                                   \
         ArrowArrayBuilder()                                                   \
             .setRowNum(5)                                                     \
@@ -104,9 +110,9 @@ GENERATE_READER_TEST(double, Fp64, double)
 // │  int8  │  int16  │  int32  │  int64  │   float   │   double   │
 // ├────────┼─────────┼─────────┼─────────┼───────────┼────────────┤
 // │      0 │       0 │       0 │       0 │       0.0 │        0.0 │
-// │        │         │         │         │           │            │
+// │   null │    null │    null │    null │      null │       null │
 // │      2 │       2 │       2 │       2 │       2.0 │        2.0 │
-// │        │         │         │         │           │            │
+// │   null │    null │    null │    null │      null │       null │
 // │      4 │       4 │       4 │       4 │       4.0 │        4.0 │
 // └────────┴─────────┴─────────┴─────────┴───────────┴────────────┘
 TEST(CiderParquetReaderTest, mixed_cols) {
@@ -117,7 +123,10 @@ TEST(CiderParquetReaderTest, mixed_cols) {
                1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
-  reader->readBatch(5, actual_schema, actual_array);
+  while (reader->hasNext()) {
+    int rowsRead = reader->readBatch(5, actual_schema, actual_array);
+    CHECK_EQ(rowsRead, 5);
+  }
   auto schema_and_array = ArrowArrayBuilder()
                               .setRowNum(5)
                               .addColumn<int8_t>("",
@@ -157,7 +166,7 @@ TEST(CiderParquetReaderTest, mixed_cols) {
 // ├──────────┤
 // │ hello    │
 // │ world    │
-// │          │
+// │ null     │
 // │ bdtk     │
 // │ cider    │
 // └──────────┘
@@ -166,7 +175,10 @@ TEST(CiderParquetReaderTest, char_single_col) {
   reader->init(getParquetFilesPath() + "char_single_col.parquet", {"col_char"}, 0, 1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
-  reader->readBatch(5, actual_schema, actual_array);
+  while (reader->hasNext()) {
+    int rowsRead = reader->readBatch(5, actual_schema, actual_array);
+    CHECK_EQ(rowsRead, 5);
+  }
   auto schema_and_array = ArrowArrayBuilder()
                               .setRowNum(5)
                               .addUTF8Column("",
@@ -185,7 +197,10 @@ TEST(CiderParquetReaderTest, varchar_single_col) {
       getParquetFilesPath() + "varchar_single_col.parquet", {"col_varchar"}, 0, 1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
-  reader->readBatch(5, actual_schema, actual_array);
+  while (reader->hasNext()) {
+    int rowsRead = reader->readBatch(5, actual_schema, actual_array);
+    CHECK_EQ(rowsRead, 5);
+  }
   auto schema_and_array = ArrowArrayBuilder()
                               .setRowNum(5)
                               .addUTF8Column("",

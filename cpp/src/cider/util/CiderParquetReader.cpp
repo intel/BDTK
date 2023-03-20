@@ -117,8 +117,8 @@ void Reader::allocateBuffers(int rowsToRead,
         buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 12);
         break;
       case parquet::Type::BYTE_ARRAY:
-        // need to optimizer
-        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 255);
+        buffersPtr[i] =
+            (int64_t*)allocator_->allocate(rowsToRead * sizeof(parquet::ByteArray));
         break;
       default:
         CIDER_THROW(CiderCompileException, "unsupport type");
