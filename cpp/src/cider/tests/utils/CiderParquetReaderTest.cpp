@@ -71,31 +71,29 @@ TEST(CiderParquetReaderTest, bool_single_col) {
 // │ null     │
 // │ 4        │
 // └──────────┘
-#define GENERATE_READER_TEST(type_name, substrait_type, c_type)               \
-  TEST(CiderParquetReaderTest, type_name##_single_col) {                      \
-    Reader* reader = new Reader();                                            \
-    reader->init(getParquetFilesPath() + "" #type_name "_single_col.parquet", \
-                 {"col_" #type_name ""},                                      \
-                 0,                                                           \
-                 1);                                                          \
-    ArrowSchema* actual_schema;                                               \
-    ArrowArray* actual_array;                                                 \
-    while (reader->hasNext()) {                                               \
-      int rowsRead = reader->readBatch(5, actual_schema, actual_array);       \
-      CHECK_EQ(rowsRead, 5);                                                  \
-    }                                                                         \
-    auto schema_and_array =                                                   \
-        ArrowArrayBuilder()                                                   \
-            .setRowNum(5)                                                     \
-            .addColumn<c_type>("",                                            \
-                               CREATE_SUBSTRAIT_TYPE(substrait_type),         \
-                               {0, 1, 2, 3, 4},                               \
-                               {false, true, false, true, false})             \
-            .build();                                                         \
-    CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),      \
-                                          actual_array,                       \
-                                          std::get<0>(schema_and_array),      \
-                                          actual_schema));                    \
+#define GENERATE_READER_TEST(type_name, substrait_type, c_type)                      \
+  TEST(CiderParquetReaderTest, type_name##_single_col) {                             \
+    Reader* reader = new Reader();                                                   \
+    reader->init(                                                                    \
+        getParquetFilesPath() + "mixed_cols.parquet", {"col_" #type_name ""}, 0, 1); \
+    ArrowSchema* actual_schema;                                                      \
+    ArrowArray* actual_array;                                                        \
+    while (reader->hasNext()) {                                                      \
+      int rowsRead = reader->readBatch(5, actual_schema, actual_array);              \
+      CHECK_EQ(rowsRead, 5);                                                         \
+    }                                                                                \
+    auto schema_and_array =                                                          \
+        ArrowArrayBuilder()                                                          \
+            .setRowNum(5)                                                            \
+            .addColumn<c_type>("",                                                   \
+                               CREATE_SUBSTRAIT_TYPE(substrait_type),                \
+                               {0, 1, 2, 3, 4},                                      \
+                               {false, true, false, true, false})                    \
+            .build();                                                                \
+    CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),             \
+                                          actual_array,                              \
+                                          std::get<0>(schema_and_array),             \
+                                          actual_schema));                           \
   }
 
 GENERATE_READER_TEST(i8, I8, int8_t)

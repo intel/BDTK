@@ -114,7 +114,8 @@ void Reader::allocateBuffers(int rowsToRead,
         buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 8);
         break;
       case parquet::Type::INT96:
-        buffersPtr[i] = (int64_t*)allocator_->allocate(rowsToRead * 12);
+        buffersPtr[i] =
+            (int64_t*)allocator_->allocate(rowsToRead * sizeof(parquet::Int96));
         break;
       case parquet::Type::BYTE_ARRAY:
         buffersPtr[i] =
