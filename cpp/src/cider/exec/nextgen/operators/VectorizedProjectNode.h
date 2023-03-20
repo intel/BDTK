@@ -39,7 +39,7 @@ class VectorizedProjectNode : public OpNode {
 
 class VectorizedProjectTranslator : public Translator {
  public:
-  enum class ExprsGroupType { BoolIOTree, BoolOutputTree, NormalTree, InvalidTree };
+  enum class ExprsGroupType { InvalidTree, BoolIOTree, BoolOutputTree, NormalTree };
 
   struct ExprsGroup {
     ExprPtrVector exprs;

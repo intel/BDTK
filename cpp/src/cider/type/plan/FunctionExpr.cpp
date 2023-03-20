@@ -20,7 +20,6 @@
  */
 
 #include "type/plan/FunctionExpr.h"
-#include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "function/ExtensionFunctionsBinding.h"
 #include "function/ExtensionFunctionsWhitelist.h"
 #include "type/data/sqltypes.h"
