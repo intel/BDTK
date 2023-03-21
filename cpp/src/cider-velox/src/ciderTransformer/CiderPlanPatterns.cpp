@@ -281,14 +281,19 @@ StatePtr ProjectStateMachine::Initial::accept(const VeloxPlanNodeAddr& nodeAddr)
   if (auto projectNode = std::dynamic_pointer_cast<const ProjectNode>(nodeAddr.nodePtr)) {
     const auto& inputType = projectNode->sources()[0]->outputType();
     const auto& outputType = projectNode->outputType();
-    if ((inputType->equivalent(*(outputType))) &&
-        (inputType->names() == outputType->names())) {
+    if (inputType == outputType) {
       return std::make_shared<ProjectStateMachine::NotAccept>();
     }
-    return std::make_shared<ProjectStateMachine::Project>();
-  } else {
-    return std::make_shared<ProjectStateMachine::NotAccept>();
+
+    for (const auto& proj : projectNode->projections()) {
+      if (!dynamic_cast<const FieldAccessTypedExpr*>(proj.get())) {
+        return std::make_shared<ProjectStateMachine::Project>();
+      }
+    }
+    // all expression are bare field references.
+    // we shoud bypass reorder subexpression project: {a, b, c} -> {c, a}
   }
+  return std::make_shared<ProjectStateMachine::NotAccept>();
 }
 
 bool ProjectStateMachine::accept(const VeloxPlanNodeAddr& nodeAddr) {
