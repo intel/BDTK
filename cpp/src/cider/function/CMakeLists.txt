@@ -19,7 +19,6 @@
 
 set(function_source_files
     ../../cider/exec/template/DynamicWatchdog.cpp
-    scalar/RuntimeFunctions.cpp
     ExtensionFunctionsBinding.cpp
     ExtensionFunctionsWhitelist.cpp
     string/StringLike.cpp
@@ -27,8 +26,9 @@ set(function_source_files
     string/StringOpInfo.cpp
     string/StringOps.cpp
     datetime/DateTruncate.cpp
-    datetime/ExtractFromTime.cpp
-    hash/MurmurHash.cpp)
+    datetime/ExtractFromTime.cpp)
+
+set(runtime_function_source_files scalar/RuntimeFunctions.cpp)
 
 find_program(llvm_clangpp_cmd NAME clang++ HINTS ${LLVM_TOOLS_BINARY_DIR})
 
@@ -99,6 +99,10 @@ add_custom_target(
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
           ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast)
 
+          add_library(cider_runtime_function SHARED ${runtime_function_source_files})
+          add_dependencies(cider_runtime_function QueryEngineFunctionsTargets)
+          target_link_libraries(cider_runtime_function re2 substrait)
+
 add_library(cider_function SHARED ${function_source_files})
 add_dependencies(cider_function QueryEngineFunctionsTargets)
-target_link_libraries(cider_function nextgen re2 cider_type_plan substrait)
+target_link_libraries(cider_function substrait nextgen) 

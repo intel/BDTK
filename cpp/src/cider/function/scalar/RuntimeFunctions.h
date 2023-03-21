@@ -23,13 +23,15 @@
 #ifndef CIDER_FUNCTION_RUNTIMEFUNCTIONS_H
 #define CIDER_FUNCTION_RUNTIMEFUNCTIONS_H
 
-#include "type/data/funcannotations.h"
 
 #include <cassert>
 #include <cstdint>
 #include <ctime>
 #include <limits>
 #include <type_traits>
+
+#include "type/data/funcannotations.h"
+#include "exec/nextgen/function/CiderStringFunction.h"
 
 extern "C" void* extract_arrow_array_null(int8_t* arrow_pointer, int64_t index);
 
