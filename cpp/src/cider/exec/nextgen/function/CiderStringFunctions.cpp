@@ -105,22 +105,20 @@ std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
 };  // namespace
 
 // pos parameter starts from 1 rather than 0
-extern "C" RUNTIME_FUNC  uint64_t cider_substring_extra(char* string_heap_ptr,
-                                                                    const char* str,
-                                                                    int pos,
-                                                                    int len) {
+extern "C" RUNTIME_FUNC uint64_t cider_substring_extra(char* string_heap_ptr,
+                                                       const char* str,
+                                                       int pos,
+                                                       int len) {
   return pack_string((const int8_t*)(str + pos - 1), len);
 }
 
-extern "C" RUNTIME_FUNC  const char* cider_substring_extra_ptr(
-    const char* str,
-    int pos) {
+extern "C" RUNTIME_FUNC const char* cider_substring_extra_ptr(const char* str, int pos) {
   return str + pos - 1;
 }
 
 // pos starts with 1. A negative starting position is interpreted as being relative
 // to the end of the string
-extern "C" RUNTIME_FUNC  int32_t format_substring_pos(int pos, int str_len) {
+extern "C" RUNTIME_FUNC int32_t format_substring_pos(int pos, int str_len) {
   int32_t ret = 1;
   if (pos > 0) {
     if (pos > str_len) {
@@ -137,9 +135,9 @@ extern "C" RUNTIME_FUNC  int32_t format_substring_pos(int pos, int str_len) {
 }
 
 // pos should be [1, str_len+1]
-extern "C" RUNTIME_FUNC  int32_t format_substring_len(int pos,
-                                                                  int str_len,
-                                                                  int target_len) {
+extern "C" RUNTIME_FUNC int32_t format_substring_len(int pos,
+                                                     int str_len,
+                                                     int target_len) {
   // already out of range, return empty string.
   if (pos == str_len + 1) {
     return 0;
@@ -154,13 +152,11 @@ extern "C" RUNTIME_FUNC  int32_t format_substring_len(int pos,
 }
 
 // a copy of extract_str_ptr (originally implemented in RuntimeFunctions.cpp)
-extern "C" RUNTIME_FUNC  int8_t* extract_string_ptr(
-    const uint64_t str_and_len) {
+extern "C" RUNTIME_FUNC int8_t* extract_string_ptr(const uint64_t str_and_len) {
   return reinterpret_cast<int8_t*>(str_and_len & 0xffffffffffff);
 }
 
-extern "C" RUNTIME_FUNC  int32_t
-extract_string_len(const uint64_t str_and_len) {
+extern "C" RUNTIME_FUNC int32_t extract_string_len(const uint64_t str_and_len) {
   return static_cast<int64_t>(str_and_len) >> 48;
 }
 
@@ -181,7 +177,7 @@ extern "C" RUNTIME_FUNC NEVER_INLINE void cider_ascii_lower_ptr(
   do_lower(buffer_ptr, str, str_len);
 }
 
-extern "C" RUNTIME_FUNC  int32_t cider_ascii_lower_len(int str_len) {
+extern "C" RUNTIME_FUNC int32_t cider_ascii_lower_len(int str_len) {
   return str_len;
 }
 
@@ -203,7 +199,7 @@ extern "C" RUNTIME_FUNC NEVER_INLINE void cider_ascii_upper_ptr(
   do_upper(buffer_ptr, str, str_len);
 }
 
-extern "C" RUNTIME_FUNC  int32_t cider_ascii_upper_len(int str_len) {
+extern "C" RUNTIME_FUNC int32_t cider_ascii_upper_len(int str_len) {
   return str_len;
 }
 
@@ -226,22 +222,21 @@ extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_concat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" RUNTIME_FUNC  int32_t cider_concat_len(int lhs_len, int rhs_len) {
+extern "C" RUNTIME_FUNC int32_t cider_concat_len(int lhs_len, int rhs_len) {
   return lhs_len + rhs_len;
 }
 
-extern "C" RUNTIME_FUNC  void cider_concat_ptr(char* buffer_ptr,
-                                                           const char* __restrict lhs,
-                                                           int lhs_len,
-                                                           const char* __restrict rhs,
-                                                           int rhs_len) {
+extern "C" RUNTIME_FUNC void cider_concat_ptr(char* buffer_ptr,
+                                              const char* __restrict lhs,
+                                              int lhs_len,
+                                              const char* __restrict rhs,
+                                              int rhs_len) {
   memcpy(buffer_ptr, lhs, lhs_len);
   memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
 }
 
-extern "C" RUNTIME_FUNC  int8_t* allocate_from_string_heap(
-    char* string_heap_ptr,
-    int len) {
+extern "C" RUNTIME_FUNC int8_t* allocate_from_string_heap(char* string_heap_ptr,
+                                                          int len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(len);
   return (int8_t*)s.getDataWriteable();
@@ -253,11 +248,11 @@ extern "C" RUNTIME_FUNC  int8_t* allocate_from_string_heap(
 // then concatenated in the REVERSED order (RCONCAT).
 // However, nextgen allows both arguments to be variables, so this function can be
 // removed after full migration to nextgen
-extern "C" RUNTIME_FUNC  int64_t cider_rconcat(char* string_heap_ptr,
-                                                           const char* __restrict lhs,
-                                                           int lhs_len,
-                                                           const char* __restrict rhs,
-                                                           int rhs_len) {
+extern "C" RUNTIME_FUNC int64_t cider_rconcat(char* string_heap_ptr,
+                                              const char* __restrict lhs,
+                                              int lhs_len,
+                                              const char* __restrict rhs,
+                                              int rhs_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(lhs_len + rhs_len);
 
@@ -268,22 +263,21 @@ extern "C" RUNTIME_FUNC  int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" RUNTIME_FUNC  int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
+extern "C" RUNTIME_FUNC int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
   return lhs_len + rhs_len;
 }
 
-extern "C" RUNTIME_FUNC  void cider_rconcat_ptr(char* buffer_ptr,
-                                                            const char* __restrict lhs,
-                                                            int lhs_len,
-                                                            const char* __restrict rhs,
-                                                            int rhs_len) {
+extern "C" RUNTIME_FUNC void cider_rconcat_ptr(char* buffer_ptr,
+                                               const char* __restrict lhs,
+                                               int lhs_len,
+                                               const char* __restrict rhs,
+                                               int rhs_len) {
   memcpy(buffer_ptr, rhs, rhs_len);
   memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
 }
 
-extern "C" RUNTIME_FUNC  int8_t* get_buffer_without_realloc(
-    const int8_t* input_desc_ptr,
-    const int32_t index) {
+extern "C" RUNTIME_FUNC int8_t* get_buffer_without_realloc(const int8_t* input_desc_ptr,
+                                                           const int32_t index) {
   const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
   CiderArrowArrayBufferHolder* holder =
       reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
@@ -438,10 +432,10 @@ cider_trim_len(const char* __restrict str_ptr,
   return len;
 }
 
-extern "C" RUNTIME_FUNC  void cider_trim_ptr(char* __restrict buffer_ptr,
-                                                         const char* __restrict str_ptr,
-                                                         int start_idx,
-                                                         int len) {
+extern "C" RUNTIME_FUNC void cider_trim_ptr(char* __restrict buffer_ptr,
+                                            const char* __restrict str_ptr,
+                                            int start_idx,
+                                            int len) {
   memcpy(buffer_ptr, str_ptr + start_idx, len);
 }
 
@@ -475,8 +469,8 @@ gen_string_from_double(const double operand, char* string_heap_ptr) {
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
 
-extern "C" RUNTIME_FUNC  int64_t gen_string_from_bool(const int8_t operand,
-                                                                  char* string_heap_ptr) {
+extern "C" RUNTIME_FUNC int64_t gen_string_from_bool(const int8_t operand,
+                                                     char* string_heap_ptr) {
   std::string str = (operand == 1) ? "true" : "false";
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(str.data(), str.length());
@@ -726,15 +720,16 @@ extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_split(char* string_heap_ptr,
 // regex_pattern_ptr & regex_pattern_len: the regular expression to search for within
 // the input string. replace_ptr & replace_len: the replacement string. start_pos: the
 // position to start the search. occurrence: which occurrence of the match to replace.
-extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_regexp_replace(char* string_heap_ptr,
-                                                      const char* str_ptr,
-                                                      int str_len,
-                                                      const char* regex_pattern_ptr,
-                                                      int regex_pattern_len,
-                                                      const char* replace_ptr,
-                                                      const int replace_len,
-                                                      int start_pos,
-                                                      int occurrence) {
+extern "C" RUNTIME_FUNC NEVER_INLINE int64_t
+cider_regexp_replace(char* string_heap_ptr,
+                     const char* str_ptr,
+                     int str_len,
+                     const char* regex_pattern_ptr,
+                     int regex_pattern_len,
+                     const char* replace_ptr,
+                     const int replace_len,
+                     int start_pos,
+                     int occurrence) {
   start_pos = start_pos > 0 ? start_pos - 1 : start_pos;
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   const size_t wrapped_start = static_cast<size_t>(
@@ -777,12 +772,13 @@ extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_regexp_replace(char* string_h
   return 0;
 }
 
-extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_regexp_extract(char* string_heap_ptr,
-                                                      const char* str_ptr,
-                                                      int str_len,
-                                                      const char* regex_pattern_ptr,
-                                                      int regex_pattern_len,
-                                                      int group) {
+extern "C" RUNTIME_FUNC NEVER_INLINE int64_t
+cider_regexp_extract(char* string_heap_ptr,
+                     const char* str_ptr,
+                     int str_len,
+                     const char* regex_pattern_ptr,
+                     int regex_pattern_len,
+                     int group) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
 
   std::string group_string = "\\" + std::to_string(group);
@@ -796,13 +792,14 @@ extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_regexp_extract(char* string_h
   return pack_string_t(res);
 }
 
-extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_regexp_substring(char* string_heap_ptr,
-                                                        const char* str_ptr,
-                                                        int str_len,
-                                                        const char* regex_pattern_ptr,
-                                                        int regex_pattern_len,
-                                                        int occurrence,
-                                                        int start_pos) {
+extern "C" RUNTIME_FUNC NEVER_INLINE int64_t
+cider_regexp_substring(char* string_heap_ptr,
+                       const char* str_ptr,
+                       int str_len,
+                       const char* regex_pattern_ptr,
+                       int regex_pattern_len,
+                       int occurrence,
+                       int start_pos) {
   start_pos = start_pos > 0 ? start_pos - 1 : str_len + start_pos;
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   const size_t wrapped_start = static_cast<size_t>(

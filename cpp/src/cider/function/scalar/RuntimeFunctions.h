@@ -30,8 +30,8 @@
 #include <limits>
 #include <type_traits>
 
-#include "type/data/funcannotations.h"
 #include "exec/nextgen/function/CiderStringFunction.h"
+#include "type/data/funcannotations.h"
 
 extern "C" void* extract_arrow_array_null(int8_t* arrow_pointer, int64_t index);
 

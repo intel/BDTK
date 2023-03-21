@@ -99,10 +99,10 @@ add_custom_target(
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/RuntimeFunctions.bc
           ${CMAKE_CURRENT_BINARY_DIR}/ExtensionFunctions.ast)
 
-          add_library(cider_runtime_function SHARED ${runtime_function_source_files})
-          add_dependencies(cider_runtime_function QueryEngineFunctionsTargets)
-          target_link_libraries(cider_runtime_function re2 substrait)
+add_library(cider_runtime_function SHARED ${runtime_function_source_files})
+add_dependencies(cider_runtime_function QueryEngineFunctionsTargets)
+target_link_libraries(cider_runtime_function re2 substrait)
 
 add_library(cider_function SHARED ${function_source_files})
 add_dependencies(cider_function QueryEngineFunctionsTargets)
-target_link_libraries(cider_function substrait nextgen) 
+target_link_libraries(cider_function substrait nextgen)
