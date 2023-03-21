@@ -46,12 +46,9 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   template <typename OutputVecT>
   OpNode(const char* name = "None",
          OutputVecT&& output_exprs = {},
-         //  ExprPtrVector&& output_exprs = {},
          JITExprValueType output_type = JITExprValueType::ROW)
-      : input_(nullptr)
-      , name_(name)
+      : name_(name)
       , output_exprs_(std::forward<OutputVecT>(output_exprs))
-      // , output_exprs_(std::forward(output_exprs))
       , output_type_(output_type) {}
 
   virtual ~OpNode() = default;
@@ -69,7 +66,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   virtual TranslatorPtr toTranslator(const TranslatorPtr& successor) = 0;
 
  protected:
-  OpNodePtr input_;
+  // OpNodePtr input_;
   const char* name_;
   ExprPtrVector output_exprs_;
   JITExprValueType output_type_;

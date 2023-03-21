@@ -63,7 +63,9 @@ class RuntimeContext {
 
   Batch* getNonGroupByAggOutputBatch();
 
-  void resetBatch(const CiderAllocatorPtr& allocator);
+  void resetBatch(const CiderAllocatorPtr& allocator,
+                  const ArrowArray& array,
+                  const ArrowSchema& schema);
 
   void destroyStringHeap();
 
@@ -76,6 +78,11 @@ class RuntimeContext {
   HashTableDescriptorPtr hashtable_holder_;
   BuildTableDescriptorPtr buildtable_holder_;
   TrimCharMapsPtr trim_char_maps_;
+
+ public:
+  // bare column map
+  // output column id to input column id;
+  std::unordered_map<int, int> bare_output_input_map_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;

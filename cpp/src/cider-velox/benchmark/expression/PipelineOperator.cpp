@@ -30,6 +30,7 @@
 #include "cider/processor/BatchProcessor.h"
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "util/CiderBitUtils.h"
 #include "utils.h"
 #include "velox/core/PlanNode.h"
@@ -237,9 +238,11 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
       input->childAt(i)->mutableRawNulls();
     }
     ArrowArray inputArrowArray;
+    ArrowSchema inputArrowSchema;
     exportToArrow(input, inputArrowArray);
+    exportToArrow(input, inputArrowSchema);
 
-    batchProcessor_->processNextBatch(&inputArrowArray);
+    batchProcessor_->processNextBatch(&inputArrowArray, &inputArrowSchema);
   }
 
   // mimic `void CiderPipelineOperator::getOutput()`
@@ -293,13 +296,16 @@ BENCHMARK_RELATIVE(nextgenOpt) {
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+  // warmup: preload YAML
+  FunctionLookupEngine::getInstance(PlatformType::PrestoPlatform);
+
   benchmark = std::make_unique<PipelineOperator>();
   // mimic tpch q1 project expression
   benchmark->initialize(
-      // {"c", "c_1", "d", "d_1", "d_2", "d_3"},
-      // {"c", "c_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
-      {"i64", "i64_1", "d", "d_1", "d_2", "d_3"},
-      {"i64", "i64_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
+      {"c", "c_1", "d", "d_1", "d_2", "d_3"},
+      {"c", "c_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
+  // {"i64", "i64_1", "d", "d_1", "d_2", "d_3"},
+  // {"i64", "i64_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
 
   if (FLAGS_profile_mode) {
     CpuWallTiming t;

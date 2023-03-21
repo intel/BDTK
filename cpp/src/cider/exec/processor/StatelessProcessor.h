@@ -30,7 +30,7 @@ class StatelessProcessor : public DefaultBatchProcessor {
  public:
   using DefaultBatchProcessor::DefaultBatchProcessor;
 
-  void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
+  void getResult(ArrowArray& array, ArrowSchema& schema) override;
 
   Type getProcessorType() const override { return Type::kStateless; };
 };

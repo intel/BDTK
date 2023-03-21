@@ -54,6 +54,10 @@ class CodegenContext {
   // we can reuse the compiled func, but create RuntimeCtx for every driver.
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
+  // bare column map
+  // output column id to input column id;
+  std::unordered_map<int, int> bare_output_input_map_;
+
   void setJITFunction(jitlib::JITFunctionPointer& jit_func) {
     CHECK(nullptr == jit_func_);
     jit_func_ = jit_func;
@@ -200,8 +204,12 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
                                            int64_t index);
 
 void setArrowArrayChild(jitlib::JITValuePointer& arrow_array,
-                        jitlib::JITValuePointer& child_array,
-                        int64_t index);
+                        int64_t index,
+                        jitlib::JITValuePointer& child_array);
+void clearArrowArrayChild(jitlib::JITValuePointer& arrow_array, int64_t index);
+void copyArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                         int64_t index,
+                         jitlib::JITValuePointer& child_array);
 
 jitlib::JITValuePointer getArrowArrayDictionary(jitlib::JITValuePointer& arrow_array);
 

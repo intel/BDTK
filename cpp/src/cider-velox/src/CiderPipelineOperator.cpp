@@ -75,10 +75,12 @@ void CiderPipelineOperator::addInput(RowVectorPtr input) {
     input->childAt(i)->mutableRawNulls();
   }
   this->input_ = std::move(input);
-  ArrowArray inputArrowArray;
-  exportToArrow(input_, inputArrowArray);
 
-  batchProcessor_->processNextBatch(&inputArrowArray);
+  ArrowArray inputArrowArray;
+  ArrowSchema inputArrowSchema;
+  exportToArrow(input_, inputArrowArray);
+  exportToArrow(input_, inputArrowSchema);
+  batchProcessor_->processNextBatch(&inputArrowArray, &inputArrowSchema);
 }
 
 facebook::velox::exec::BlockingReason CiderPipelineOperator::isBlocked(
@@ -106,8 +108,8 @@ bool CiderPipelineOperator::isFinished() {
 facebook::velox::RowVectorPtr CiderPipelineOperator::getOutput() {
   struct ArrowArray array;
   struct ArrowSchema schema;
-
   batchProcessor_->getResult(array, schema);
+
   if (array.length) {
     VectorPtr baseVec = importFromArrowAsOwner(schema, array, operatorCtx_->pool());
     return std::reinterpret_pointer_cast<RowVector>(baseVec);

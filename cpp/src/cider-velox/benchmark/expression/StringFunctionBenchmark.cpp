@@ -27,6 +27,7 @@
 #include "cider/processor/BatchProcessor.h"
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "util/CiderBitUtils.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/expression/Expr.h"
@@ -77,6 +78,7 @@ std::pair<ArrowArray*, ArrowSchema*> veloxVectorToArrow(RowVectorPtr vec,
 class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   using ArrowArrayReleaser = void (*)(struct ArrowArray*);
+  using ArrowSchemaReleaser = void (*)(struct ArrowSchema*);
   explicit StringFunctionBenchmark(size_t vectorSize) : FunctionBenchmarkBase() {
     functions::prestosql::registerStringFunctions();
 
@@ -109,16 +111,19 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, vectorSize, std::move(children));
 
-    ArrowSchema* _schema;
-    std::tie(inputArray_, _schema) = veloxVectorToArrow(rowVector_, execCtx_.pool());
+    std::tie(inputArray_, inputSchema_) = veloxVectorToArrow(rowVector_, execCtx_.pool());
     // hack: make processor don't release inputArray_, otherwise we can't use inputArray_
     // multi times.
-    inputReleaser_ = inputArray_->release;
+    inputArrayReleaser_ = inputArray_->release;
     inputArray_->release = nullptr;
-    _schema->release(_schema);
+    inputSchemaReleaser_ = inputSchema_->release;
+    inputSchema_->release = nullptr;
   }
 
-  ~StringFunctionBenchmark() { inputReleaser_(inputArray_); }
+  ~StringFunctionBenchmark() {
+    inputArrayReleaser_(inputArray_);
+    inputSchemaReleaser_(inputSchema_);
+  }
 
   size_t veloxCompute(const std::string& expression) {
     folly::BenchmarkSuspender suspender;
@@ -168,7 +173,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
 
     size_t rows_size = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
-      processor->processNextBatch(inputArray_);
+      processor->processNextBatch(inputArray_, inputSchema_);
 
       struct ArrowArray output_array;
       struct ArrowSchema output_schema;
@@ -187,7 +192,9 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
   TypePtr inputType_;
   RowVectorPtr rowVector_;
   ArrowArray* inputArray_;
-  ArrowArrayReleaser inputReleaser_;
+  ArrowSchema* inputSchema_;
+  ArrowArrayReleaser inputArrayReleaser_;
+  ArrowSchemaReleaser inputSchemaReleaser_;
   size_t vectorSize_;
 };
 
@@ -255,6 +262,9 @@ GEN_BENCHMARK(nested_5, "upper(substr(concat(col_str_10, col_str_100), 5, 30))")
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  // warmup: preload YAML
+  FunctionLookupEngine::getInstance(PlatformType::PrestoPlatform);
 
   benchmark = std::make_unique<StringFunctionBenchmark>(FLAGS_batch_size);
   folly::runBenchmarks();

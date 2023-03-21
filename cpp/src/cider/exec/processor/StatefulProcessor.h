@@ -35,7 +35,7 @@ class StatefulProcessor : public DefaultBatchProcessor {
                     const BatchProcessorContextPtr& context,
                     const CodegenCtxPtr& codegen_ctx);
 
-  void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
+  void getResult(ArrowArray& array, ArrowSchema& schema) override;
 
   Type getProcessorType() const override { return Type::kStateful; };
 

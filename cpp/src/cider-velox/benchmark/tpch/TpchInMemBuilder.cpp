@@ -153,6 +153,7 @@ TpchPlan TpchInMemBuilder::getQ1Plan(double scaleFactor) const {
           //   .tableScan(kLineitem, selectedRowType, fileColumnNames, {filter})
           .tableScan(Table::TBL_LINEITEM, std::move(selectedColumns), scaleFactor)
           .capturePlanNodeId(lineitemPlanNodeId)
+          // velox filter will wrap result childrens in dictionary
           //   .filter(filter)
           .project(
               {"l_returnflag",
@@ -402,9 +403,9 @@ TpchPlan TpchInMemBuilder::getQ6Plan(double scaleFactor) const {
                   //       "l_quantity < 24.0"})
                   .tableScan(Table::TBL_LINEITEM, std::move(selectedColumns), scaleFactor)
                   .capturePlanNodeId(lineitemPlanNodeId)
-                  //   .filter(shipDateFilter)
-                  //   .filter("l_discount between 0.05 and 0.07")
-                  //   .filter("l_quantity < 24.0")
+                  //   .filter(fmt::format("{},  l_discount between 0.05 and 0.07,
+                  //   l_quantity < 24.0",
+                  //                       shipDateFilter))
                   .project({"l_extendedprice * l_discount"})
                   .partialAggregation({}, {"sum(p0)"})
                   .localPartition({})
@@ -982,12 +983,12 @@ TpchPlan TpchInMemBuilder::getQ12Plan(double scaleFactor) const {
           //              "l_commitdate < l_receiptdate")
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          //   .filter(receiptDateFilter)
-          //   .filter("l_shipmode IN ('MAIL', 'SHIP')")
-          //   .filter(shipDateFilter)
-          //   .filter(commitDateFilter)
-          //   .filter("l_commitdate < l_receiptdate")
-          //   .filter("l_shipdate < l_commitdate")
+          //   .filter(fmt::format("{}, l_shipmode IN ('MAIL', 'SHIP'), {}, {},
+          //   l_commitdate "
+          //                       "< l_receiptdate, l_shipdate < l_commitdate",
+          //                       receiptDateFilter,
+          //                       shipDateFilter,
+          //                       commitDateFilter))
           .planNode();
 
   auto plan =
@@ -1229,9 +1230,9 @@ TpchPlan TpchInMemBuilder::getQ16Plan(double scaleFactor) const {
                   .capturePlanNodeId(partScanNodeId)
                   // Neq is unsupported as a tableScan subfield filter for
                   // Parquet source.
-                  //   .filter("p_size in (49, 14, 23, 45, 19, 3, 36, 9)")
-                  //   .filter("p_type NOT LIKE 'MEDIUM POLISHED%'")
-                  //   .filter("p_brand <> 'Brand#45'")
+                  //   .filter(
+                  //       "p_size in (49, 14, 23, 45, 19, 3, 36, 9), p_type NOT LIKE
+                  //       'MEDIUM " "POLISHED%', p_brand <> 'Brand#45'")
                   .planNode();
 
   auto supplier =
@@ -1407,8 +1408,9 @@ TpchPlan TpchInMemBuilder::getQ19Plan(double scaleFactor) const {
           //              {shipModeFilter, shipInstructFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          //   .filter(shipModeFilter)
-          //   .filter(shipInstructFilter)
+          //   .filter(
+          //       "l_shipmode IN ('AIR', 'AIR REG'), l_shipinstruct = 'DELIVER IN
+          //       PERSON'")
           .project({"l_extendedprice * (1.0 - l_discount) as part_revenue",
                     "l_shipmode",
                     "l_shipinstruct",
@@ -1463,8 +1465,7 @@ TpchPlan TpchInMemBuilder::getQ22Plan(double scaleFactor) const {
           //              phoneFilter)
           .tableScan(Table::TBL_CUSTOMER, std::move(customerColumns), scaleFactor)
           .capturePlanNodeId(customerScanNodeId)
-          //   .filter("c_acctbal > 0.0")
-          //   .filter(phoneFilter)
+          //   .filter(fmt::format("c_acctbal > 0.0, {}", phoneFilter))
           .partialAggregation({}, {"avg(c_acctbal) as avg_acctbal"})
           .localPartition({})
           .finalAggregation()

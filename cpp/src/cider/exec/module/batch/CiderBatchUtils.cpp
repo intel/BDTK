@@ -80,29 +80,24 @@ void ciderArrowSchemaReleaser(ArrowSchema* schema) {
   if (!schema || !schema->release) {
     return;
   }
-  if (schema->dictionary) {
-    return;
-  }
 
   for (size_t i = 0; i < schema->n_children; ++i) {
     ArrowSchema* child = schema->children[i];
     if (child && child->release) {
       child->release(child);
-      // CHECK_EQ(child->release, nullptr);
+      CHECK_EQ(child->release, nullptr);
     }
   }
 
   ArrowSchema* dict = schema->dictionary;
   if (dict && dict->release) {
     dict->release(dict);
-    // CHECK_EQ(dict->release, nullptr);
-  } else {
-    if (!dict) {
-      CHECK_NE(schema->private_data, nullptr);
-      auto holder = reinterpret_cast<CiderArrowSchemaBufferHolder*>(schema->private_data);
-      delete holder;
-    }
+    CHECK_EQ(dict->release, nullptr);
   }
+
+  CHECK_NE(schema->private_data, nullptr);
+  auto holder = reinterpret_cast<CiderArrowSchemaBufferHolder*>(schema->private_data);
+  delete holder;
 
   schema->release = nullptr;
   schema->private_data = nullptr;
@@ -112,22 +107,19 @@ void ciderArrowArrayReleaser(ArrowArray* array) {
   if (!array || !array->release) {
     return;
   }
-  if (array->dictionary) {
-    return;
-  }
 
   for (size_t i = 0; i < array->n_children; ++i) {
     ArrowArray* child = array->children[i];
     if (child && child->release) {
       child->release(child);
-      // CHECK_EQ(child->release, nullptr);
+      CHECK_EQ(child->release, nullptr);
     }
   }
 
   ArrowArray* dict = array->dictionary;
   if (dict && dict->release) {
     dict->release(dict);
-    // CHECK_EQ(dict->release, nullptr);
+    CHECK_EQ(dict->release, nullptr);
   }
 
   CHECK_NE(array->private_data, nullptr);
@@ -274,14 +266,10 @@ ArrowSchema convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
   std::function<void(ArrowSchema*, const SQLTypeInfo&)> build_function =
       [&build_function](ArrowSchema* schema, const SQLTypeInfo& info) {
         CHECK(schema);
-        bool dict = IS_STRING(info.get_type()) ? true : false;
         CiderArrowSchemaBufferHolder* holder =
             new CiderArrowSchemaBufferHolder(info.getChildrenNum(),
-                                             dict);  // TODO: Dictionary support is TBD;
+                                             false);  // TODO: Dictionary support is TBD;
         schema->format = convertCiderTypeToArrowType(info, holder->getFormatBuffer());
-        if (dict) {
-          schema->format = "i";
-        }
         schema->n_children = info.getChildrenNum();
         schema->children = holder->getChildrenPtrs();
         schema->dictionary = holder->getDictPtr();
@@ -290,17 +278,6 @@ ArrowSchema convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info) {
 
         for (size_t i = 0; i < schema->n_children; ++i) {
           build_function(schema->children[i], info.getChildAt(i));
-        }
-        if (dict) {
-          schema->dictionary->format = "u";
-          schema->dictionary->n_children = 0;
-          schema->dictionary->children = nullptr;
-          schema->dictionary->dictionary = nullptr;
-          schema->dictionary->release = ciderArrowSchemaReleaser;
-          CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(
-              info.getChildrenNum(),
-              false);  // TODO: Dictionary support is TBD;
-          schema->dictionary->private_data = holder;
         }
       };
 

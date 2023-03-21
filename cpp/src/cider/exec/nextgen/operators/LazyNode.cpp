@@ -32,7 +32,7 @@ void LazyTranslator::consume(context::CodegenContext& context) {
 
 void LazyTranslator::codegen(context::CodegenContext& context) {
   auto func = context.getJITFunction();
-  auto arrow_pointer = func->getArgument(1);
+  auto input_array = func->getArgument(1);
 
   auto&& [output_type, exprs] = node_->getOutputExprs();
   for (size_t i = 0; i < exprs.size(); ++i) {
@@ -44,13 +44,20 @@ void LazyTranslator::codegen(context::CodegenContext& context) {
         output_expr->get_children_reference()[0]->get());
 
     // input child array
-    auto input_array = func->createLocalJITValue([&arrow_pointer, input_expr]() {
-      return context::codegen_utils::getArrowArrayChild(arrow_pointer,
-                                                        input_expr->get_column_id());
-    });
+    auto input_col_id = input_expr->get_column_id();
+    // auto input_child_array = func->createLocalJITValue([&input_array, input_col_id]() {
+    //   return context::codegen_utils::getArrowArrayChild(input_array, input_col_id);
+    // });
 
-    auto output_array = context.getOutputBatch();
-    context::codegen_utils::setArrowArrayChild(output_array, input_array, i);
+    // // input child array move to output
+    // auto output_array = context.getOutputBatch();
+    // // context::codegen_utils::setArrowArrayChild(output_array, i, input_child_array);
+    // context::codegen_utils::copyArrowArrayChild(output_array, i, input_child_array);
+
+    // input set to nullptr to make sure not release this child
+    context::codegen_utils::clearArrowArrayChild(input_array, input_col_id);
+
+    context.bare_output_input_map_.emplace(i, input_col_id);
   }
   if (successor_) {
     successor_->consume(context);

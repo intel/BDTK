@@ -84,6 +84,20 @@ extern "C" RUNTIME_FUNC ALLOW_INLINE void set_arrow_array_child(int8_t* arrow_po
   array->children[index] = child;
 }
 
+extern "C" RUNTIME_FUNC ALLOW_INLINE void clear_arrow_array_child(int8_t* arrow_pointer,
+                                                                  int64_t index) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  array->children[index] = nullptr;
+}
+
+extern "C" RUNTIME_FUNC ALLOW_INLINE void copy_arrow_array_child(int8_t* arrow_pointer,
+                                                                 int64_t index,
+                                                                 int8_t* child_pointer) {
+  ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);
+  ArrowArray* child = reinterpret_cast<ArrowArray*>(child_pointer);
+  *array->children[index] = *child;
+}
+
 extern "C" RUNTIME_FUNC ALLOW_INLINE int8_t* extract_arrow_array_dictionary(
     int8_t* arrow_pointer) {
   ArrowArray* array = reinterpret_cast<ArrowArray*>(arrow_pointer);

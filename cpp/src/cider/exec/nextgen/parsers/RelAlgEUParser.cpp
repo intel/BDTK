@@ -229,9 +229,11 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   }
 
   if (!groupbys.empty() || !aggs.empty()) {
+    can_enable_lazy_node = false;
     ops.emplace_back(createOpNode<operators::AggNode>(groupbys, aggs));
   }
 
+  // can't remove this limit after filter generates dictionary wrapperd results
   if (can_enable_lazy_node && lazys.size() > 0) {
     ops.emplace_back(createOpNode<operators::LazyNode>(lazys));
   }

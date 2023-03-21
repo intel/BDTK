@@ -40,6 +40,7 @@
 #include "velox/exec/tests/utils/TpchQueryBuilder.h"
 #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
 #include "velox/parse/TypeResolver.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 
 namespace fs = std::filesystem;
 using namespace facebook::velox;
@@ -49,14 +50,13 @@ using namespace facebook::velox::dwio::common;
 using namespace facebook::velox::connector::tpch;
 using namespace facebook::velox::plugin;
 
-DEFINE_string(data_path_prefix, "./tpch_data", "path prefix of TPC-H data");
-DEFINE_double(scale_factor, 1, "tpch scale factor");
+DEFINE_double(scale_factor, 10, "tpch scale factor");
+DEFINE_int32(num_drivers, 100, "Number of drivers");
 
+DEFINE_string(data_path_prefix, "./tpch_data", "path prefix of TPC-H data");
 DEFINE_bool(use_native_parquet_reader,
             true,
             "Use Native Parquet Reader, only support GZIP parquet files");
-DEFINE_int32(num_drivers, 1, "Number of drivers");
-DEFINE_int32(num_splits_per_file, 1, "Number of splits per file");
 
 DEFINE_int32(run_query_verbose, -1, "Run a given query and print execution statistics");
 DEFINE_bool(include_results, false, "Include results in the output");
@@ -95,7 +95,7 @@ class TpchFromFileBenchmark {
         for (const auto& entry : tpchPlan.dataFiles) {
           for (const auto& path : entry.second) {
             auto const splits = HiveConnectorTestBase::makeHiveConnectorSplits(
-                path, FLAGS_num_splits_per_file, tpchPlan.dataFileFormat);
+                path, FLAGS_num_drivers, tpchPlan.dataFileFormat);
             for (const auto& split : splits) {
               task->addSplit(entry.first, exec::Split(split));
             }
@@ -246,23 +246,26 @@ std::shared_ptr<TpchQueryBuilder> queryBuilder;
 
 BENCHMARK_GROUP(1);
 BENCHMARK_GROUP(3);
-// BENCHMARK_GROUP(5);
+BENCHMARK_GROUP(5);
 // BENCHMARK_GROUP(6);
 // BENCHMARK_GROUP(7);
 // BENCHMARK_GROUP(8);
 // BENCHMARK_GROUP(9);
-// BENCHMARK_GROUP(10);
-// BENCHMARK_GROUP(12);
-// BENCHMARK_GROUP(13);
+BENCHMARK_GROUP(10);
+// BENCHMARK_GROUP(12); // filter-only will wrap in dictionary
+// BENCHMARK_GROUP(13); // no project
 // BENCHMARK_GROUP(14);
-// BENCHMARK_GROUP(15);
-// BENCHMARK_GROUP(16);
-// BENCHMARK_GROUP(18);
-// BENCHMARK_GROUP(19);
-// BENCHMARK_GROUP(22);
+BENCHMARK_GROUP(15);
+// BENCHMARK_GROUP(16); // filter-only will wrap in dictionary
+// BENCHMARK_GROUP(18); // filter-only will wrap in dictionary
+BENCHMARK_GROUP(19);
+// BENCHMARK_GROUP(22); // filter-only will wrap in dictionary
 
 int main(int argc, char** argv) {
   folly::init(&argc, &argv, false);
+
+  // warmup: preload YAML
+  FunctionLookupEngine::getInstance(PlatformType::PrestoPlatform);
 
   std::string tpchDir =
       fmt::format("{}_sf{}", FLAGS_data_path_prefix, FLAGS_scale_factor);

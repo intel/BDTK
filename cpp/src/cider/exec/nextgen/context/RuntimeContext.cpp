@@ -54,7 +54,8 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   // Instantiation of batches.
   for (auto& batch_desc : batch_holder_) {
     if (nullptr == batch_desc.second) {
-      batch_desc.second = std::make_unique<Batch>(batch_desc.first->type, allocator);
+      batch_desc.second = std::make_unique<Batch>(
+          batch_desc.first->type, allocator, bare_output_input_map_);
       runtime_ctx_pointers_[batch_desc.first->ctx_id] = batch_desc.second.get();
     }
   }
@@ -91,10 +92,12 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
 }
 
 // TODO: batch and buffer should be self-managed
-void RuntimeContext::resetBatch(const CiderAllocatorPtr& allocator) {
+void RuntimeContext::resetBatch(const CiderAllocatorPtr& allocator,
+                                const ArrowArray& array,
+                                const ArrowSchema& schema) {
   if (!batch_holder_.empty()) {
     auto& [descriptor, batch] = batch_holder_.front();
-    batch->reset(descriptor->type, allocator);
+    batch->reset(descriptor->type, allocator, array, schema);
   }
 }
 
