@@ -23,15 +23,12 @@
 #define STATIC_QUAL static
 #define FORCE_INLINE inline __attribute__((always_inline))
 
-#if (defined(__GNUC__) && defined(__SANITIZE_THREAD__)) || defined(WITH_JIT_DEBUG)
-#define ALWAYS_INLINE
-#elif defined(ENABLE_CIDER)
-#define ALWAYS_INLINE __attribute__((inline)) __attribute__((__visibility__("protected")))
-#else
-#define ALWAYS_INLINE __attribute__((always_inline))
-#endif
+#define RUNTIME_FUNC __attribute__((__visibility__("protected")))
+
+#define ALWAYS_INLINE __attribute__((__visibility__("protected")))
 
 #define NEVER_INLINE __attribute__((noinline))
+
 #define SUFFIX(name) name
 
 #ifdef _WIN32
