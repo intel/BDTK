@@ -22,8 +22,7 @@
 #ifndef CIDER_UTIL_CIDERBITUTILS_H
 #define CIDER_UTIL_CIDERBITUTILS_H
 
-#include <cstdint>
-#include <cstdlib>
+#include <immintrin.h>
 #include <memory>
 
 #include "cider/CiderAllocator.h"
@@ -238,6 +237,20 @@ inline void ENABLE_AVX256 bitwiseAnd(uint8_t* __restrict output,
   size_t len = (bit_num + 7) >> 3;
   for (size_t i = 0; i < len; ++i) {
     output[i] = a[i] & b[i];
+  }
+}
+
+inline void ENABLE_AVX256 byteToBit(uint8_t* __restrict byte,
+                                    uint8_t* __restrict bit,
+                                    size_t bit_num) {
+  __m256i* byte_256 = (__m256i*)byte;
+  int* bit_32 = (int*)bit;
+  bit_num += 31;
+  bit_num >>= 5;
+  for (size_t i = 0; i < bit_num; ++i) {
+    __m256i byte_reg = _mm256_loadu_si256(byte_256 + i);
+    byte_reg = _mm256_slli_epi64(byte_reg, 7);
+    bit_32[i] = _mm256_movemask_epi8(byte_reg);
   }
 }
 };  // namespace CiderBitUtils

@@ -44,12 +44,14 @@ class ColumnVar : public Expr {
  public:
   ColumnVar(ColumnInfoPtr col_info, int nest_level)
       : Expr(col_info->type), rte_idx(nest_level), col_info_(std::move(col_info)) {
+    is_column_var_ = true;
     initAutoVectorizeFlag();
   }
   explicit ColumnVar(const SQLTypeInfo& ti)
       : Expr(ti)
       , rte_idx(-1)
       , col_info_(std::make_shared<ColumnInfo>(-1, 0, 0, "", ti, false)) {
+    is_column_var_ = true;
     initAutoVectorizeFlag();
   }
   ColumnVar(const SQLTypeInfo& ti,
@@ -61,6 +63,7 @@ class ColumnVar : public Expr {
       , rte_idx(nest_level)
       , col_info_(
             std::make_shared<ColumnInfo>(-1, table_id, col_id, "", ti, is_virtual)) {
+    is_column_var_ = true;
     initAutoVectorizeFlag();
   }
   int get_db_id() const { return col_info_->db_id; }

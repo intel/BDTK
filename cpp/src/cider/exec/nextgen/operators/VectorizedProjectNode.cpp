@@ -105,10 +105,11 @@ class NullableGuard {
 };
 
 // Spilt expression tree into sub-trees as three types like BoolIOTree, BoolOutputTree,
-// NoBoolTree. All of the sub-trees are sorted in topological order and all of input exprs
+// NormalTree. All of the sub-trees are sorted in topological order and all of input exprs
 // are ordered.
 class ExpressionTreeSpilter {
   using ExprGroup = VectorizedProjectTranslator::ExprsGroup;
+  using ExprGroupType = VectorizedProjectTranslator::ExprsGroupType;
   using TreeInputs = std::pair<bool, ExprPtrVector>;
 
  public:
@@ -120,34 +121,54 @@ class ExpressionTreeSpilter {
 
   void addExprTrees(const ExprPtr& expr) {
     utils::RecursiveFunctor traverser{
-        [this](auto&& traverser, const ExprPtr& expr) -> TreeInputs {
+        [this](auto&& traverser, const ExprPtr& expr, bool is_root) -> TreeInputs {
           CHECK(expr);
 
           auto&& children = expr->get_children_reference();
 
           if (children.empty()) {
-            return spilt(expr, {});
+            return spilt(expr, {}, is_root);
           }
 
           std::vector<TreeInputs> children_inputs;
           children_inputs.reserve(children.size());
           for (auto&& child : children) {
-            children_inputs.emplace_back(traverser(*child));
+            children_inputs.emplace_back(traverser(*child, false));
           }
 
-          return spilt(expr, children_inputs);
+          return spilt(expr, children_inputs, is_root);
         }};
 
-    auto inputs = traverser(expr);
+    auto inputs = traverser(expr, true);
     sub_expr_trees_.emplace_back(ExprGroup{.exprs = {expr},
                                            .input_exprs = std::move(inputs.second),
-                                           .bool_input = inputs.first});
+                                           .type = getExprTreeType(expr, inputs.first)});
   }
 
-  const std::vector<ExprGroup>& getSubExprTrees() const { return sub_expr_trees_; }
+  std::vector<ExprGroup>& getSubExprTrees() { return sub_expr_trees_; }
 
  private:
-  TreeInputs spilt(const ExprPtr& curr, const std::vector<TreeInputs>& child_inputs) {
+  static ExprGroupType getExprTreeType(const ExprPtr& expr, bool bool_input) {
+    if (bool_input) {
+      if (expr->get_type_info().get_type() == kBOOLEAN) {
+        return ExprGroupType::BoolIOTree;
+      } else {
+        LOG(ERROR) << "Invalid expression tree in ExpressionTreeSpilter, expr="
+                   << expr->toString();
+        return ExprGroupType::InvalidTree;
+      }
+    } else {
+      if (expr->get_type_info().get_type() == kBOOLEAN) {
+        return ExprGroupType::BoolOutputTree;
+      } else {
+        return ExprGroupType::NormalTree;
+      }
+    }
+  }
+
+  TreeInputs spilt(const ExprPtr& curr,
+                   const std::vector<TreeInputs>& child_inputs,
+                   bool is_root) {
     // Just pass leaf value.
     if (child_inputs.empty()) {
       if (dynamic_cast<Analyzer::Constant*>(curr.get())) {
@@ -165,12 +186,12 @@ class ExpressionTreeSpilter {
                         [](const TreeInputs& child) { return child.first; })) {
           // All of chidren output Bool values, just pass them.
           return {true, std::move(combined_sorted_inputs)};
-        } else {
+        } else if (!is_root) {
           // There are non-Bool outputs of children, split current expression tree.
           sub_expr_trees_.emplace_back(
               ExprGroup{.exprs = {curr},
                         .input_exprs = std::move(combined_sorted_inputs),
-                        .bool_input = false});
+                        .type = ExprGroupType::BoolOutputTree});
 
           return {true, {curr}};
         }
@@ -225,11 +246,16 @@ VectorizedProjectTranslator::groupOutputExprs() {
 
   // Group output exprs and generate their code in same loops. If a input expression set
   // of a output expr is a subset of another one, the output exprs should be in a group.
-  UnionFindSet expr_groups(exprs.size());
-  for (size_t i = 0; i < exprs.size(); ++i) {
-    for (size_t j = i + 1; j < exprs.size(); ++j) {
+  UnionFindSet expr_groups(expr_trees.size());
+  for (size_t i = 0; i < expr_trees.size(); ++i) {
+    for (size_t j = i + 1; j < expr_trees.size(); ++j) {
       const ExprsGroup& expr_i = expr_trees[i];
       const ExprsGroup& expr_j = expr_trees[j];
+
+      if (expr_i.type != expr_j.type) {
+        continue;
+      }
+
       if (utils::isSubsetExprVector(expr_i.input_exprs, expr_j.input_exprs) ||
           utils::isSubsetExprVector(expr_j.input_exprs, expr_i.input_exprs)) {
         // TBD: Whether need to check rings.
@@ -241,22 +267,75 @@ VectorizedProjectTranslator::groupOutputExprs() {
   }
 
   // Generate ExprsGroup
-  std::unordered_map<size_t, ExprsGroup> groups_map;
-  for (size_t i = 0; i < exprs.size(); ++i) {
+  std::vector<size_t> group_root_index(expr_trees.size());
+  for (size_t i = 0; i < expr_trees.size(); ++i) {
     size_t group_root = expr_groups.find(i);
-    auto&& val = groups_map[group_root];
-    val.exprs.emplace_back(exprs[i]);
-    if (group_root == i) {
-      val.input_exprs = expr_trees[i].input_exprs;
-      val.bool_input = expr_trees[i].bool_input;
+    group_root_index[i] = group_root;
+    if (i != group_root) {
+      expr_trees[group_root].exprs.emplace_back(expr_trees[i].exprs.front());
+    }
+  }
+  std::sort(group_root_index.begin(), group_root_index.end());
+  group_root_index.erase(std::unique(group_root_index.begin(), group_root_index.end()),
+                         group_root_index.end());
+  CHECK_EQ(group_root_index.size(), expr_groups.getUnionNum());
+
+  // Gather non-ColumnVar input expressions users.
+  std::unordered_map<ExprPtr::element_type*, std::vector<size_t>> indermediate_expr_users;
+  for (size_t index : group_root_index) {
+    for (auto& input : expr_trees[index].input_exprs) {
+      if (!input->isColumnVar()) {
+        indermediate_expr_users[input.get()].emplace_back(index);
+      }
     }
   }
 
-  // TODO: Values generation sequence refactor.
+  // Sort ExprsGroup as proper generation sequence
+  if (!indermediate_expr_users.empty()) {
+    std::vector<std::vector<size_t>> adjcent_map(group_root_index.size());
+    std::vector<size_t> degree(group_root_index.size(), 0);
+    for (size_t index : group_root_index) {
+      for (auto& output : expr_trees[index].exprs) {
+        if (auto iter = indermediate_expr_users.find(output.get());
+            iter != indermediate_expr_users.end()) {
+          for (size_t user_index : iter->second) {
+            ++degree[user_index];
+            adjcent_map[index].push_back(user_index);
+          }
+        }
+      }
+    }
+
+    std::vector<size_t> avaliable_index;
+    avaliable_index.reserve(group_root_index.size());
+    while (avaliable_index.size() != group_root_index.size()) {
+      size_t prev_size = avaliable_index.size();
+      for (size_t index = 0; index < degree.size(); ++index) {
+        if (degree[index] == 0) {
+          avaliable_index.push_back(index);
+          for (size_t user : adjcent_map[index]) {
+            --degree[user];
+          }
+          degree[index] = 1;
+        }
+      }
+      if (prev_size == avaliable_index.size()) {
+        LOG(FATAL) << "ExprsGroups contain circular dependencies in "
+                      "VectorizedProjectTranslator.";
+      }
+    }
+
+    std::vector<size_t> new_group_root_index(group_root_index.size());
+    for (size_t i = 0; i < avaliable_index.size(); ++i) {
+      new_group_root_index[i] = group_root_index[avaliable_index[i]];
+    }
+    group_root_index = std::move(new_group_root_index);
+  }
+
   std::vector<ExprsGroup> res;
   res.reserve(expr_groups.getUnionNum());
-  for (auto& item : groups_map) {
-    res.emplace_back(std::move(item.second));
+  for (size_t index : group_root_index) {
+    res.emplace_back(std::move(expr_trees[index]));
   }
 
   return res;
@@ -289,8 +368,21 @@ void generateNonBoolInputExprsGroupCode(context::CodegenContext& context,
   // Utilize C2R and R2C to generate column load and store.
   auto c2r_node = createOpNode<ColumnToRowNode>(group.input_exprs, true);
   auto c2r_translator = c2r_node->toTranslator();
-  auto r2c_node = createOpNode<RowToColumnNode>(group.exprs, c2r_node.get());
+  auto r2c_node = createOpNode<RowToColumnNode>(group.exprs, c2r_node.get(), false);
   auto r2c_translator = r2c_node->toTranslator();
+
+  for (auto& target : group.exprs) {
+    // Register Batch for intermediate results
+    if (target->getLocalIndex() == 0) {
+      auto output_arrow_array =
+          context.registerBatch(SQLTypeInfo(target->get_type_info().get_type(), false),
+                                "intermediate_output",
+                                true);
+      // Binding target exprs with JITValues.
+      target->setLocalIndex(context.appendArrowArrayValues(
+          output_arrow_array, utils::JITExprValue(0, JITExprValueType::BATCH)));
+    }
+  }
 
   {
     // Temporarily set nullable of all exprs in output expr tree as false.
@@ -341,6 +433,20 @@ void generateNonBoolInputExprsGroupCode(context::CodegenContext& context,
                                            output_null,
                                            getNullBuffer(context, input_col[input_index]),
                                            c2r_node->getColumnRowNum());
+    }
+  }
+
+  // Convert byte to bit for Boolen outputs.
+  for (auto& output : group.exprs) {
+    if (output->get_type_info().get_type() == kBOOLEAN) {
+      size_t local_index = output->getLocalIndex();
+      CHECK(local_index);
+
+      auto& batch_values = context.getArrowArrayValues(local_index);
+      utils::FixSizeJITExprValue values(batch_values.second);
+
+      context::codegen_utils::convertByteBoolToBit(
+          values.getValue(), values.getValue(), context.getInputLength());
     }
   }
 }
@@ -445,10 +551,16 @@ void VectorizedProjectTranslator::generateExprsGroupCode(
     context::CodegenContext& context,
     std::vector<ExprsGroup>& exprs_groups) {
   for (auto& group : exprs_groups) {
-    if (group.bool_input) {
-      generateBoolInputExprsGroupCode(context, group);
-    } else {
-      generateNonBoolInputExprsGroupCode(context, group);
+    switch (group.type) {
+      case ExprsGroupType::BoolIOTree:
+        generateBoolInputExprsGroupCode(context, group);
+        continue;
+      case ExprsGroupType::NormalTree:
+      case ExprsGroupType::BoolOutputTree:
+        generateNonBoolInputExprsGroupCode(context, group);
+        continue;
+      default:
+        LOG(FATAL) << "Invalid expression group in VectorizedProjectTranslator.";
     }
   }
 }

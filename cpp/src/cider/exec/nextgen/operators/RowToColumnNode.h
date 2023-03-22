@@ -27,20 +27,29 @@
 namespace cider::exec::nextgen::operators {
 class RowToColumnNode : public OpNode {
  public:
-  RowToColumnNode(ExprPtrVector&& output_exprs, ColumnToRowNode* prev_c2r)
+  RowToColumnNode(ExprPtrVector&& output_exprs,
+                  ColumnToRowNode* prev_c2r,
+                  bool bitwise_bool = true)
       : OpNode("RowToColumnNode", std::move(output_exprs), JITExprValueType::BATCH)
-      , prev_c2r_node_(prev_c2r) {}
+      , prev_c2r_node_(prev_c2r)
+      , bitwise_bool_(bitwise_bool) {}
 
-  RowToColumnNode(const ExprPtrVector& output_exprs, ColumnToRowNode* prev_c2r)
+  RowToColumnNode(const ExprPtrVector& output_exprs,
+                  ColumnToRowNode* prev_c2r,
+                  bool bitwise_bool = true)
       : OpNode("RowToColumnNode", output_exprs, JITExprValueType::BATCH)
-      , prev_c2r_node_(prev_c2r) {}
+      , prev_c2r_node_(prev_c2r)
+      , bitwise_bool_(bitwise_bool) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
 
   ColumnToRowNode* getColumnToRowNode() { return prev_c2r_node_; }
 
+  bool writeBitwiseBool() const { return bitwise_bool_; }
+
  private:
   ColumnToRowNode* prev_c2r_node_;
+  bool bitwise_bool_;
 };
 
 class RowToColumnTranslator : public Translator {

@@ -312,6 +312,10 @@ void bitBufferAnd(jitlib::JITValuePointer& output,
                   jitlib::JITValuePointer& a,
                   jitlib::JITValuePointer& b,
                   jitlib::JITValuePointer& bit_num);
+
+void convertByteBoolToBit(jitlib::JITValuePointer& byte,
+                          jitlib::JITValuePointer& bit,
+                          jitlib::JITValuePointer& len);
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context
 

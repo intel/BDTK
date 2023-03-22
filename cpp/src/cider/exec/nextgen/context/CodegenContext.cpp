@@ -258,6 +258,13 @@ std::string AggExprsInfo::getAggName(SQLAgg agg_type,
 }
 
 namespace codegen_utils {
+
+template <jitlib::JITTypeTag Primary,
+          jitlib::JITTypeTag Sub = jitlib::JITTypeTag::INVALID>
+inline bool isaTypedJITValue(const jitlib::JITValue& value) {
+  return value.getValueTypeTag() == Primary && value.getValueSubTypeTag() == Sub;
+}
+
 jitlib::JITValuePointer getArrowArrayLength(jitlib::JITValuePointer& arrow_array) {
   CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
   CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
@@ -397,5 +404,17 @@ void bitBufferAnd(jitlib::JITValuePointer& output,
           .params_vector = {output.get(), a.get(), b.get(), bit_num.get()}});
 }
 
+void convertByteBoolToBit(jitlib::JITValuePointer& byte,
+                          jitlib::JITValuePointer& bit,
+                          jitlib::JITValuePointer& len) {
+  CHECK((isaTypedJITValue<JITTypeTag::POINTER, JITTypeTag::INT8>(byte)));
+  CHECK((isaTypedJITValue<JITTypeTag::POINTER, JITTypeTag::INT8>(bit)));
+  CHECK((isaTypedJITValue<JITTypeTag::INT64>(len)));
+
+  auto& func = byte->getParentJITFunction();
+  func.emitRuntimeFunctionCall(
+      "convert_bool_to_bit",
+      JITFunctionEmitDescriptor{.params_vector = {byte.get(), bit.get(), len.get()}});
+}
 }  // namespace codegen_utils
 }  // namespace cider::exec::nextgen::context

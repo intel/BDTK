@@ -31,6 +31,7 @@ add_executable(CiderAllocatorTest CiderAllocatorTest.cpp)
 add_executable(CiderExceptionTest CiderExceptionTest.cpp)
 add_executable(CiderLogTest CiderLogTest.cpp)
 add_executable(StringHeapTest StringHeapTest.cpp)
+add_executable(CiderBitUtilsTest CiderBitUtilsTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     gtest
@@ -60,6 +61,7 @@ target_link_libraries(CiderAllocatorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(StringHeapTest ${EXECUTE_TEST_LIBS})
+target_link_libraries(CiderBitUtilsTest ${EXECUTE_TEST_LIBS})
 
 set(TEST_ARGS "--gtest_output=xml:../")
 add_test(CiderNewHashTableTest CiderNewHashTableTest ${TEST_ARGS})
@@ -70,6 +72,7 @@ add_test(CiderAllocatorTest CiderAllocatorTest ${TEST_ARGS})
 add_test(CiderExceptionTest CiderExceptionTest ${TEST_ARGS})
 add_test(CiderLogTest CiderLogTest ${TEST_ARGS})
 add_test(StringHeapTest StringHeapTest ${TEST_ARGS})
+add_test(CiderBitUtilsTest CiderBitUtilsTest ${TEST_ARGS})
 
 find_package(fmt REQUIRED)
 

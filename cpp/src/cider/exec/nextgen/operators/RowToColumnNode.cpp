@@ -35,13 +35,15 @@ class ColumnWriter {
   ColumnWriter(context::CodegenContext& ctx,
                ExprPtr& expr,
                JITValuePointer& index,
-               JITValuePointer& arrow_array_len)
+               JITValuePointer& arrow_array_len,
+               bool bitwise_bool)
       : context_(ctx)
       , expr_(expr)
       , arrow_array_(getArrowArrayFromCTX())
       , buffers_(getArrowArrayBuffersFromCTX())
       , index_(index)
-      , arrow_array_len_(arrow_array_len) {}
+      , arrow_array_len_(arrow_array_len)
+      , bitwise_bool_(bitwise_bool) {}
 
   void write() {
     switch (expr_->get_type_info().get_type()) {
@@ -329,21 +331,38 @@ class ColumnWriter {
 
   JITValuePointer setFixSizeRawData(utils::FixSizeJITExprValue& fixsize_val) {
     if (expr_->get_type_info().get_type() == kBOOLEAN) {
-      auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue(
-          [this]() { return allocateBitwiseBuffer(1); });
+      auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
+        if (!bitwise_bool_) {
+          // Memory padding for AVX2
+          JITValuePointer prev_len(arrow_array_len_);
+          auto padded_len = (prev_len + 31) / 32 * 32;
+          arrow_array_len_.replace(padded_len);
+          auto mem = allocateBitwiseBuffer(1);
+          arrow_array_len_.replace(prev_len);
+          return mem;
+        } else {
+          return allocateBitwiseBuffer(1);
+        }
+      });
       // leverage existing set_null_vector but need opposite value as input
       // TODO: (yma11) need check in UT
-      std::string fname = "set_null_vector_bit";
-      if (context_.getCodegenOptions().set_null_bit_vector_opt) {
-        fname = "set_null_vector_bit_opt";
+      if (bitwise_bool_) {
+        std::string fname = "set_null_vector_bit";
+        if (context_.getCodegenOptions().set_null_bit_vector_opt) {
+          fname = "set_null_vector_bit_opt";
+        }
+        context_.getJITFunction()->emitRuntimeFunctionCall(
+            fname,
+            JITFunctionEmitDescriptor{
+                .ret_type = JITTypeTag::VOID,
+                .params_vector = {{raw_data_buffer.get(),
+                                   index_.get(),
+                                   (!fixsize_val.getValue()).get()}}});
+      } else {
+        auto bool_buffer = raw_data_buffer->castPointerSubType(JITTypeTag::BOOL);
+        bool_buffer[index_] = *fixsize_val.getValue();
       }
-      context_.getJITFunction()->emitRuntimeFunctionCall(
-          fname,
-          JITFunctionEmitDescriptor{
-              .ret_type = JITTypeTag::VOID,
-              .params_vector = {{raw_data_buffer.get(),
-                                 index_.get(),
-                                 (!fixsize_val.getValue()).get()}}});
+
       return raw_data_buffer;
     } else {
       auto raw_data_buffer = context_.getJITFunction()->createLocalJITValue([this]() {
@@ -415,6 +434,7 @@ class ColumnWriter {
   utils::JITExprValue& buffers_;
   JITValuePointer& index_;
   JITValuePointer& arrow_array_len_;
+  bool bitwise_bool_;
 };
 
 TranslatorPtr RowToColumnNode::toTranslator(const TranslatorPtr& succ) {
@@ -441,10 +461,11 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   // Get input ArrowArray length from previous C2RNode
   auto prev_c2r_node = static_cast<RowToColumnNode*>(node_.get())->getColumnToRowNode();
   auto input_array_len = prev_c2r_node->getColumnRowNum();
+  bool bitwise_bool = static_cast<RowToColumnNode*>(node_.get())->writeBitwiseBool();
 
   for (int64_t i = 0; i < exprs.size(); ++i) {
     ExprPtr& expr = exprs[i];
-    ColumnWriter writer(context, expr, output_index, input_array_len);
+    ColumnWriter writer(context, expr, output_index, input_array_len, bitwise_bool);
     writer.write();
   }
   // Update index

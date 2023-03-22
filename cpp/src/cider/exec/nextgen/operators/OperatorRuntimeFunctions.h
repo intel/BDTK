@@ -205,4 +205,10 @@ extern "C" ALWAYS_INLINE int64_t extract_join_row_id(int8_t* buffer, int64_t ind
   return join_base_value[index].batch_offset;
 }
 
+extern "C" NEVER_INLINE void convert_bool_to_bit(uint8_t* byte,
+                                                 uint8_t* bit,
+                                                 size_t len) {
+  CiderBitUtils::byteToBit(byte, bit, len);
+}
+
 #endif  // NEXTGEN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H

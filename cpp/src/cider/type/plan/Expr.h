@@ -200,6 +200,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   bool isAutoVectorizable() const { return auto_vectorizable_; }
 
+  bool isColumnVar() const { return is_column_var_; }
+
   bool getNullable() const { return !type_info.get_notnull(); }
 
   void setNullable(bool nullable) { type_info.set_notnull(!nullable); }
@@ -215,7 +217,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   JITExprValue expr_var_;
   size_t local_index_{0};  // 1-based index of input column in CodegenContext.
-  bool auto_vectorizable_ = false;
+  bool auto_vectorizable_{false};
+  bool is_column_var_{false};
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;
