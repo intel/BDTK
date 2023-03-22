@@ -77,6 +77,7 @@ option(CIDER_ENABLE_BENCHMARK "Build benchmark for Cider." OFF)
 option(CIDER_ENABLE_AVX512 "Enable avx512 instructions." OFF)
 
 if(BDTK_ENABLE_CIDER)
+  include_directories(${PROJECT_BINARY_DIR})
   if(CIDER_ENABLE_VELOX)
     # Disable components when enable velox build
     set(CIDER_ENABLE_GOOGLETEST OFF)

@@ -152,6 +152,7 @@ void VeloxPlanFragmentToSubstraitPlan::reconstructVeloxPlan(
         planBuilder_->addNode([&](std::string id, core::PlanNodePtr input) {
           return std::make_shared<core::HashJoinNode>(joinNode->id(),
                                                       joinNode->joinType(),
+                                                      false, // FIXME
                                                       joinNode->leftKeys(),
                                                       joinNode->rightKeys(),
                                                       joinNode->filter(),
