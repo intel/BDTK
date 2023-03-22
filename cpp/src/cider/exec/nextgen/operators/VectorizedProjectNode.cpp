@@ -412,27 +412,29 @@ void generateNonBoolInputExprsGroupCode(context::CodegenContext& context,
                                    input_col.end(),
                                    [](ExprPtr& expr) { return !expr->getNullable(); }),
                     input_col.end());
-    CHECK(!input_col.empty());
+    if (!input_col.empty()) {
+      auto output_null = allocateNullBuffer(context, c2r_node->getColumnRowNum(), expr);
+      size_t input_index = 0;
+      if (input_col.size() < 2) {
+        context::codegen_utils::bitBufferMemcpy(output_null,
+                                                getNullBuffer(context, input_col[0]),
+                                                c2r_node->getColumnRowNum());
+        input_index += 1;
+      } else {
+        context::codegen_utils::bitBufferAnd(output_null,
+                                             getNullBuffer(context, input_col[0]),
+                                             getNullBuffer(context, input_col[1]),
+                                             c2r_node->getColumnRowNum());
+        input_index += 2;
+      }
 
-    auto output_null = allocateNullBuffer(context, c2r_node->getColumnRowNum(), expr);
-    size_t input_index = 0;
-    if (input_col.size() < 2) {
-      context::codegen_utils::bitBufferMemcpy(
-          output_null, getNullBuffer(context, input_col[0]), c2r_node->getColumnRowNum());
-      input_index += 1;
-    } else {
-      context::codegen_utils::bitBufferAnd(output_null,
-                                           getNullBuffer(context, input_col[0]),
-                                           getNullBuffer(context, input_col[1]),
-                                           c2r_node->getColumnRowNum());
-      input_index += 2;
-    }
-
-    for (; input_index < input_col.size(); ++input_index) {
-      context::codegen_utils::bitBufferAnd(output_null,
-                                           output_null,
-                                           getNullBuffer(context, input_col[input_index]),
-                                           c2r_node->getColumnRowNum());
+      for (; input_index < input_col.size(); ++input_index) {
+        context::codegen_utils::bitBufferAnd(
+            output_null,
+            output_null,
+            getNullBuffer(context, input_col[input_index]),
+            c2r_node->getColumnRowNum());
+      }
     }
   }
 
