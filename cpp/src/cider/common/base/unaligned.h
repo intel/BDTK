@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <bit>
 #include <cstring>
 #include <type_traits>
@@ -44,9 +45,9 @@ inline T unalignedLoadLE(const void* address) {
   T res{};
   // TODO(Deegue): Implement and enable later
   // if constexpr (std::endian::native == std::endian::little)
-  //     memcpy(&res, address, sizeof(res));
+  memcpy(&res, address, sizeof(res));
   // else
-  reverseMemcpy(&res, address, sizeof(res));
+  // reverseMemcpy(&res, address, sizeof(res));
   return res;
 }
 
@@ -56,9 +57,9 @@ inline void unalignedStoreLE(void* address,
   static_assert(std::is_trivially_copyable_v<T>);
   // TODO(Deegue): Implement and enable later
   // if constexpr (std::endian::native == std::endian::little)
-  //     memcpy(address, &src, sizeof(src));
+  memcpy(address, &src, sizeof(src));
   // else
-  reverseMemcpy(address, &src, sizeof(src));
+  // reverseMemcpy(address, &src, sizeof(src));
 }
 
 template <typename T>
