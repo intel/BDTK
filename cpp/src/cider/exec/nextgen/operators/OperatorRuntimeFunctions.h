@@ -227,4 +227,4 @@ extern "C" ALWAYS_INLINE void reset_tail_bits_64_align(uint8_t* data, size_t len
   *data_i64 &= mask;
 }
 
-#endif // NEXTGEN_OPERATORS_OPERATORRUNTIMEFUNCTIONS_H
+#endif  // NEXTGEN_OPERATORS_OPERATORRUNTIMEFUNCTIONS_H

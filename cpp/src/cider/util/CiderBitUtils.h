@@ -261,5 +261,5 @@ inline size_t ENABLE_AVX256 countTailZero(size_t num) {
 inline size_t setTailOneToZero(size_t num) {
   return num & (num - 1);
 }
-};  // namespace CiderBitUtils
-#endif // CIDER_UTIL_CIDERBITUTILS_H
+};      // namespace CiderBitUtils
+#endif  // CIDER_UTIL_CIDERBITUTILS_H

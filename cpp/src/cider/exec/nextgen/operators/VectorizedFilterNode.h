@@ -27,8 +27,7 @@ namespace cider::exec::nextgen::operators {
 class VectorizedFilterNode : public OpNode {
  public:
   explicit VectorizedFilterNode(ExprPtrVector&& conditions)
-      : OpNode("VectorizedFilterNode", std::move(conditions), JITExprValueType::BATCH) {
-  }
+      : OpNode("VectorizedFilterNode", std::move(conditions), JITExprValueType::BATCH) {}
 
   explicit VectorizedFilterNode(const ExprPtrVector& output_exprs)
       : OpNode("VectorizedFilterNode", output_exprs, JITExprValueType::BATCH) {}
@@ -51,4 +50,4 @@ class VectorizedFilterTranslator : public Translator {
 };
 }  // namespace cider::exec::nextgen::operators
 
-#endif // NEXTGEN_OPERATORS_VECTORIZEDFILTERNODE_H
+#endif  // NEXTGEN_OPERATORS_VECTORIZEDFILTERNODE_H
