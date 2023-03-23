@@ -35,6 +35,7 @@ add_executable(CiderBitUtilsTest CiderBitUtilsTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     gtest
+    gflags
     cider_util
     test_utils
     duckdb

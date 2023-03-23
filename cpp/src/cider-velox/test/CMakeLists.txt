@@ -102,6 +102,7 @@ set(VELOX_PLUGIN_TEST_LIBS
     ${FILESYSTEM}
     ${LLVM_LIB}
     cider
+    cider_processor
     cider_plan_parser
     velox_plan_transformer
     cider_plan_transformer
