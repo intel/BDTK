@@ -1,6 +1,5 @@
 /*
  * Copyright(c) 2022-2023 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file

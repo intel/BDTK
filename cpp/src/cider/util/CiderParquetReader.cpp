@@ -1,6 +1,5 @@
 /*
  * Copyright(c) 2022-2023 Intel Corporation.
- * Copyright (c) OmniSci, Inc. and its affiliates.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -31,9 +30,12 @@ void Reader::init(std::string fileName,
                   std::vector<std::string> requiredColumnNames,
                   int firstRowGroup,
                   int rowGroupToRead) {
-  file_ = arrow::io::ReadableFile::Open(fileName).ValueOrDie();
-  parquet::ReaderProperties properties;
-  parquetReader_ = parquet::ParquetFileReader::Open(file_, properties, NULLPTR);
+  auto result = arrow::io::ReadableFile::Open(fileName);
+  if (!result.ok()) {
+    CIDER_THROW(CiderCompileException, "open parquet file failed");
+  }
+  file_ = result.ValueOrDie();
+  parquetReader_ = parquet::ParquetFileReader::Open(file_);
 
   fileMetaData_ = parquetReader_->metadata();
 
@@ -344,27 +346,21 @@ void Reader::compressDataBuffer(int64_t* dataBuffer, int rowsToRead, int colIdx)
   if (convertedTypeVector_[colIdx] == parquet::ConvertedType::INT_8) {
     std::vector<int8_t> values{};
     for (int i = 0; i < rowsToRead; i++) {
-      values.push_back(*((int32_t*)(dataBuffer) + i));
+      *((int8_t*)(dataBuffer) + i) = *((int32_t*)(dataBuffer) + i);
     }
-    memcpy(dataBuffer, values.data(), sizeof(int8_t) * values.size());
-  }
-  if (convertedTypeVector_[colIdx] == parquet::ConvertedType::INT_16) {
+  } else if (convertedTypeVector_[colIdx] == parquet::ConvertedType::INT_16) {
     std::vector<int16_t> values{};
     for (int i = 0; i < rowsToRead; i++) {
-      values.push_back(*((int32_t*)(dataBuffer) + i));
+      *((int16_t*)(dataBuffer) + i) = *((int32_t*)(dataBuffer) + i);
     }
-    memcpy(dataBuffer, values.data(), sizeof(int16_t) * values.size());
-  }
-  if (parquetTypeVector_[colIdx] == parquet::Type::BOOLEAN) {
-    int bitmapSize = (rowsToRead + 7) >> 3;
-    uint8_t* bitmap = (uint8_t*)allocator_->allocate(bitmapSize);
-    memset(bitmap, 0x00, bitmapSize);
+  } else if (parquetTypeVector_[colIdx] == parquet::Type::BOOLEAN) {
     for (int i = 0; i < rowsToRead; i++) {
       if (*((bool*)(dataBuffer) + i)) {
-        CiderBitUtils::setBitAt(bitmap, i);
+        CiderBitUtils::setBitAt((uint8_t*)dataBuffer, i);
+      } else {
+        CiderBitUtils::clearBitAt((uint8_t*)dataBuffer, i);
       }
     }
-    memcpy(dataBuffer, bitmap, bitmapSize);
   }
 }
 
