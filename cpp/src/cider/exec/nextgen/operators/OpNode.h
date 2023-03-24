@@ -56,8 +56,6 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   /// \brief The name of the operator node
   const char* name() const { return name_; }
 
-  // void setInputOpNode(const OpNodePtr& input) { input_ = input; }
-
   std::pair<JITExprValueType, ExprPtrVector&> getOutputExprs() {
     return {output_type_, output_exprs_};
   }

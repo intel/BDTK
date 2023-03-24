@@ -43,18 +43,8 @@ void LazyTranslator::codegen(context::CodegenContext& context) {
     auto input_expr = dynamic_cast<Analyzer::ColumnVar*>(
         output_expr->get_children_reference()[0]->get());
 
-    // input child array
-    auto input_col_id = input_expr->get_column_id();
-    // auto input_child_array = func->createLocalJITValue([&input_array, input_col_id]() {
-    //   return context::codegen_utils::getArrowArrayChild(input_array, input_col_id);
-    // });
-
-    // // input child array move to output
-    // auto output_array = context.getOutputBatch();
-    // // context::codegen_utils::setArrowArrayChild(output_array, i, input_child_array);
-    // context::codegen_utils::copyArrowArrayChild(output_array, i, input_child_array);
-
     // input set to nullptr to make sure not release this child
+    auto input_col_id = input_expr->get_column_id();
     context::codegen_utils::clearArrowArrayChild(input_array, input_col_id);
 
     context.bare_output_input_map_.emplace(i, input_col_id);

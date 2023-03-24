@@ -147,8 +147,10 @@ class CodegenContext {
   }
 
   void setHasOuterJoin(bool has_outer_join) { has_outer_join_ = has_outer_join; }
-
   bool getHasOuterJoin() { return has_outer_join_; }
+
+  void setHasLazyNode(bool has_lazy_node) { has_lazy_node_ = has_lazy_node; }
+  bool hasLazyNode() { return has_lazy_node_; }
 
   // registers a set of trim characters for TrimStringOper, to be used at runtime
   // returns an index used for retrieving the charset at runtime
@@ -184,6 +186,7 @@ class CodegenContext {
   int64_t id_counter_{0};
   CodegenOptions codegen_options_;
   bool has_outer_join_ = false;
+  bool has_lazy_node_ = false;
 
   // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
   TrimCharMapsPtr trim_char_maps_;

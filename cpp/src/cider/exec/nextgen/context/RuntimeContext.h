@@ -64,8 +64,8 @@ class RuntimeContext {
   Batch* getNonGroupByAggOutputBatch();
 
   void resetBatch(const CiderAllocatorPtr& allocator,
-                  const ArrowArray& array,
-                  const ArrowSchema& schema);
+                  const ArrowArray* array = nullptr,
+                  const ArrowSchema* schema = nullptr);
 
   void destroyStringHeap();
 

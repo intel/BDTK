@@ -142,7 +142,7 @@ class InputAnalyzer {
   std::unordered_map<InputColDescriptor, size_t> input_desc_to_index_;
 };
 
-OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
+OpPipeline toOpPipeline(RelAlgExecutionUnit& eu, context::CodegenContext& context) {
   // TODO (bigPYJ1151): Only support filter and project now.
   // TODO (bigPYJ1151): Only naive expression dispatch now, need to analyze expression
   // trees and dispatch more fine-grained.
@@ -159,9 +159,11 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   // output cols.
   // QueryFuncInitializer call setLocalIndex(...) twice, for input and output
   // If we don't create OutputColumnVar, then output index will overwrite input index.
+  bool can_enable_lazy_node = false;
   for (auto& expr : eu.shared_target_exprs) {
     if (auto column_var_ptr = std::dynamic_pointer_cast<Analyzer::ColumnVar>(expr)) {
       expr = std::make_shared<Analyzer::OutputColumnVar>(column_var_ptr);
+      can_enable_lazy_node = true;
     }
   }
 
@@ -178,6 +180,7 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   }
 
   if (!join_quals.empty()) {
+    can_enable_lazy_node = false;
     switch (join_type) {
       case JoinType::INNER:
       case JoinType::LEFT:
@@ -192,7 +195,6 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
     }
   }
 
-  bool can_enable_lazy_node = true;
   ExprPtrVector filters;
   for (auto& filter_expr : eu.simple_quals) {
     filters.push_back(filter_expr);
@@ -233,8 +235,9 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
     ops.emplace_back(createOpNode<operators::AggNode>(groupbys, aggs));
   }
 
-  // can't remove this limit after filter generates dictionary wrapperd results
-  if (can_enable_lazy_node && lazys.size() > 0) {
+  if (can_enable_lazy_node && context.getCodegenOptions().enable_copy_elimination &&
+      lazys.size() > 0) {
+    context.setHasLazyNode(true);
     ops.emplace_back(createOpNode<operators::LazyNode>(lazys));
   }
 

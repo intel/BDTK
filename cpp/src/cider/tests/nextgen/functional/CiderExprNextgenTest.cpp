@@ -64,12 +64,12 @@ class CiderExprNextgenTest : public ::testing::Test {
     auto eu = substrait2eu.createRelAlgExecutionUnit();
 
     // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
+    context::CodegenContext codegen_ctx;
+    auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
     transformer::Transformer transformer;
     auto translators = transformer.toTranslator(pipeline);
 
     // Codegen
-    context::CodegenContext codegen_ctx;
     auto module = cider::jitlib::LLVMJITModule("test", true);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
@@ -92,9 +92,13 @@ class CiderExprNextgenTest : public ::testing::Test {
     module.finish();
     auto query_func = function->getFunctionPointer<void, int8_t*, int8_t*>();
 
+    ArrowArray array;
+    ArrowSchema schema;
+    cloneChildren(*schema_, schema, *array_, array);
     // Execution
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
-    query_func((int8_t*)runtime_ctx.get(), (int8_t*)array_);
+    runtime_ctx->resetBatch(allocator, &array, &schema);
+    query_func((int8_t*)runtime_ctx.get(), (int8_t*)&array);
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();
 
     EXPECT_EQ(output_batch_array->length, expected_length);
@@ -111,7 +115,28 @@ class CiderExprNextgenTest : public ::testing::Test {
   }
 
  public:
+  void cloneChildren(ArrowSchema& schema_src,
+                     ArrowSchema& schema_dst,
+                     ArrowArray& array_src,
+                     ArrowArray& array_dst,
+                     std::shared_ptr<CiderAllocator> allocator =
+                         std::make_shared<CiderDefaultAllocator>()) {
+    schema_dst = schema_src;
+    array_dst = array_src;
+
+    auto column_num = schema_dst.n_children;
+    // copy children
+    array_dst.children =
+        (ArrowArray**)allocator->allocate(sizeof(ArrowArray*) * column_num);
+    memcpy(array_dst.children, array_src.children, sizeof(ArrowArray*) * column_num);
+
+    schema_dst.children =
+        (ArrowSchema**)allocator->allocate(sizeof(ArrowSchema*) * column_num);
+    memcpy(schema_dst.children, schema_src.children, sizeof(ArrowSchema*) * column_num);
+  }
+
   ArrowArray* array_ = nullptr;
+  ArrowSchema* schema_ = nullptr;
 };
 
 TEST_F(CiderExprNextgenTest, logicalOpTest) {
@@ -124,8 +149,7 @@ TEST_F(CiderExprNextgenTest, logicalOpTest) {
 
   // AND:                     true,  NULL, NULL, false, false, false, false, false
   // OR:                      true,  NULL, true, NULL,  NULL, true, NULL, true
-  ArrowSchema* schema = nullptr;
-  std::tie(schema, array_) =
+  std::tie(schema_, array_) =
       ArrowArrayBuilder()
           .setRowNum(8)
           .addBoolColumn<bool>("col_bool_a", vec0, vec_null0)
@@ -154,8 +178,7 @@ TEST_F(CiderExprNextgenTest, isNullAndDistinctFromTest) {
   std::vector<int> vec0{1, 3, 2, 1, 6};
   std::vector<int> vec1{1, 2, 3, 4, 5};
   std::vector<bool> vec_null{false, false, true, false, true};
-  ArrowSchema* schema = nullptr;
-  std::tie(schema, array_) =
+  std::tie(schema_, array_) =
       ArrowArrayBuilder()
           .setRowNum(5)
           .addColumn<int>("col_int_a", CREATE_SUBSTRAIT_TYPE(I32), vec0, vec_null)

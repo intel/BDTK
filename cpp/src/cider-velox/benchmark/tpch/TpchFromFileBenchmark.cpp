@@ -25,6 +25,7 @@
 #include <filesystem>
 
 #include "CiderVeloxPluginCtx.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "velox/common/base/SuccinctPrinter.h"
 #include "velox/common/file/FileSystems.h"
 #include "velox/connectors/hive/HiveConnector.h"
@@ -40,7 +41,6 @@
 #include "velox/exec/tests/utils/TpchQueryBuilder.h"
 #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
 #include "velox/parse/TypeResolver.h"
-#include "exec/plan/lookup/FunctionLookupEngine.h"
 
 namespace fs = std::filesystem;
 using namespace facebook::velox;

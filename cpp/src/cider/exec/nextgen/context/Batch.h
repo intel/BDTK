@@ -22,6 +22,7 @@
 #define NEXTGEN_CONTEXT_BATCH_H
 
 #include <memory>
+#include <unordered_map>
 
 #include "exec/module/batch/ArrowABI.h"
 #include "include/cider/batch/CiderBatchUtils.h"
@@ -46,10 +47,12 @@ class Batch {
 
   ~Batch() { release(); }
 
+  // output batch can reuse input_array's children
+  // temporary batch(used for materialization) no need to reuse other array's children
   void reset(const SQLTypeInfo& type,
              const CiderAllocatorPtr& allocator,
-             const ArrowArray& input_array,
-             const ArrowSchema& input_schema);
+             const ArrowArray* input_array = nullptr,
+             const ArrowSchema* input_schema = nullptr);
 
   void move(ArrowSchema& schema, ArrowArray& array) {
     schema = schema_;

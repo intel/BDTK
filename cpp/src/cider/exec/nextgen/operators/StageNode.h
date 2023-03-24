@@ -26,15 +26,9 @@
 namespace cider::exec::nextgen::operators {
 class StageNode : public OpNode {
  public:
-  // explicit StageNode(OpPipeline pipeline, OpNodePtr prev, OpNodePtr next)
   explicit StageNode(OpPipeline pipeline)
       : OpNode("StageNode", ExprPtrVector{}, JITExprValueType::BATCH)
       , stage_pipeline_(pipeline) {}
-  // , prev_(prev)
-  // , next_(next) {}
-
-  // explicit StageNode(const ExprPtrVector& output_exprs)
-  //     : OpNode("StageNode", ExprPtrVector{}, JITExprValueType::BATCH) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
   OpPipeline::iterator begin() { return stage_pipeline_.begin(); }
@@ -44,8 +38,6 @@ class StageNode : public OpNode {
  private:
   OpPipeline stage_pipeline_;
   TranslatorPtr stage_translator_ = nullptr;
-  // OpNodePtr prev_;
-  // OpNodePtr next_;
 };
 
 class StageTranslator : public Translator {

@@ -28,6 +28,7 @@
 
 DECLARE_bool(needs_error_check);
 DECLARE_bool(dump_ir);
+DECLARE_bool(copy_elimination);
 
 namespace cider {
 using CompilationOptions = jitlib::CompilationOptions;
@@ -38,6 +39,7 @@ struct CodegenOptions {
   bool set_null_bit_vector_opt = false;
   bool branchless_logic = true;
   bool enable_vectorize = true;
+  bool enable_copy_elimination = FLAGS_copy_elimination;
 
   CompilationOptions co = CompilationOptions{.optimize_ir = true,
                                              .aggressive_jit_compile = true,

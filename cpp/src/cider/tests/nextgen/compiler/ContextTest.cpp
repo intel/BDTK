@@ -106,6 +106,7 @@ TEST_F(ContextTests, ContextBufferTest) {
   module.finish();
 
   auto runtime_ctx = context.generateRuntimeCTX(allocator);
+  runtime_ctx->resetBatch(allocator);
 
   auto query_func = function->getFunctionPointer<void, int8_t*>();
   query_func((int8_t*)runtime_ctx.get());
@@ -171,6 +172,7 @@ TEST_F(ContextTests, RegisterHashTableTest) {
 
   codegen_ctx.setHashTable(std::make_shared<cider::exec::processor::JoinHashTable>(hm));
   auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
+  runtime_ctx->resetBatch(allocator);
 
   query_func((int8_t*)runtime_ctx.get());
 

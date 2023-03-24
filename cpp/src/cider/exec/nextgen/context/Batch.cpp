@@ -25,13 +25,14 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
 #include "exec/nextgen/utils/FunctorUtils.h"
+#include "type/data/sqltypes.h"
 
 namespace cider::exec::nextgen::context {
 
 void Batch::reset(const SQLTypeInfo& type,
                   const CiderAllocatorPtr& allocator,
-                  const ArrowArray& input_array,
-                  const ArrowSchema& input_schema) {
+                  const ArrowArray* input_array,
+                  const ArrowSchema* input_schema) {
   release();
 
   auto builder = utils::RecursiveFunctor{[&allocator, &input_schema, &input_array, this](
@@ -67,16 +68,17 @@ void Batch::reset(const SQLTypeInfo& type,
     array->release = CiderBatchUtils::ciderArrowArrayReleaser;
 
     for (size_t i = 0; i < schema->n_children; ++i) {
-      if (child_level == 0 && bare_output_input_map_.count(i)) {
+      if (input_schema && input_array && child_level == 0 &&
+          bare_output_input_map_.count(i)) {
         // Caution:
         // for some input columns, we copy child array/schema content and manage it's
         // buffers, dictionary.
         auto input_col_id = bare_output_input_map_[i];
-        *schema->children[i] = *input_schema.children[input_col_id];
-        *array->children[i] = *input_array.children[input_col_id];
+        *schema->children[i] = *input_schema->children[input_col_id];
+        *array->children[i] = *input_array->children[input_col_id];
 
         // make input release not release this child
-        input_schema.children[input_col_id] = nullptr;
+        input_schema->children[input_col_id] = nullptr;
         // we set input_array children to nullptr in LazyNode (we
         // can't do it here cause query_func may read these field)
         continue;

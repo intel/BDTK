@@ -463,7 +463,7 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
 
   for (int64_t i = 0; i < exprs.size(); ++i) {
     ExprPtr& expr = exprs[i];
-    if (dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
+    if (context.hasLazyNode() && dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
       // ignore bare columns
       continue;
     }
@@ -478,6 +478,10 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
   // Execute length field updating build function after C2R loop finished.
   context.appendDeferFunc([output_index, &output_exprs, &context]() mutable {
     for (auto& expr : output_exprs) {
+      if (context.hasLazyNode() && dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
+        // ignore bare columns
+        continue;
+      }
       size_t local_offset = expr->getLocalIndex();
       CHECK_NE(local_offset, 0);
 
@@ -486,6 +490,10 @@ void RowToColumnTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
     }
     // for string expressions, we dump the final buffer here.
     for (auto& expr : output_exprs) {
+      if (context.hasLazyNode() && dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
+        // ignore bare columns
+        continue;
+      }
       if (auto strExpr = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
         if (!strExpr->isOutput()) {
           continue;

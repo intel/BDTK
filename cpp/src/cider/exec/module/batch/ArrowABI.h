@@ -41,11 +41,11 @@ struct ArrowSchema {
   const char* metadata{nullptr};
   int64_t flags{0};
   int64_t n_children{0};
-  struct ArrowSchema** children{nullptr};
-  struct ArrowSchema* dictionary{nullptr};
+  ArrowSchema** children{nullptr};
+  ArrowSchema* dictionary{nullptr};
 
   // Release callback
-  void (*release)(struct ArrowSchema*) = nullptr;
+  void (*release)(ArrowSchema*) = nullptr;
   // Opaque producer-specific data
   void* private_data{nullptr};
 };
@@ -58,11 +58,11 @@ struct ArrowArray {
   int64_t n_buffers{0};
   int64_t n_children{0};
   const void** buffers{nullptr};
-  struct ArrowArray** children{nullptr};
-  struct ArrowArray* dictionary{nullptr};
+  ArrowArray** children{nullptr};
+  ArrowArray* dictionary{nullptr};
 
   // Release callback
-  void (*release)(struct ArrowArray*) = nullptr;
+  void (*release)(ArrowArray*) = nullptr;
   // Opaque producer-specific data
   void* private_data{nullptr};
 };

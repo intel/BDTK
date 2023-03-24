@@ -29,7 +29,8 @@ namespace cider::exec::nextgen::parsers {
 
 /// \brief A parser convert from the plan fragment to an OpPipeline
 // source--> filter -->sink
-operators::OpPipeline toOpPipeline(RelAlgExecutionUnit& eu);
+operators::OpPipeline toOpPipeline(RelAlgExecutionUnit& eu,
+                                   context::CodegenContext& context);
 
 }  // namespace cider::exec::nextgen::parsers
 

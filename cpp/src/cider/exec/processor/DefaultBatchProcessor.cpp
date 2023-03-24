@@ -106,8 +106,7 @@ void DefaultBatchProcessor::processNextBatch(const ArrowArray* array,
     input_arrow_schema_ = schema;
   }
 
-  runtime_context_->resetBatch(context_->getAllocator(), *array, *schema);
-
+  runtime_context_->resetBatch(context_->getAllocator(), array, schema);
   int ret = query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);
   if (ret != 0) {
     CIDER_THROW(CiderRuntimeException,

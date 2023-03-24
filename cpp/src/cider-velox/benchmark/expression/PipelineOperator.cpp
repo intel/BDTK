@@ -304,8 +304,6 @@ int main(int argc, char* argv[]) {
   benchmark->initialize(
       {"c", "c_1", "d", "d_1", "d_2", "d_3"},
       {"c", "c_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
-  // {"i64", "i64_1", "d", "d_1", "d_2", "d_3"},
-  // {"i64", "i64_1", "d", "d_1", "d_1*(1.0-d_2)", "d_1*(1.0-d_2)*(1.0+d_3)", "d_2"});
 
   if (FLAGS_profile_mode) {
     CpuWallTiming t;

@@ -33,7 +33,7 @@ void ProjectTranslator::consume(context::CodegenContext& context) {
 void ProjectTranslator::codegen(context::CodegenContext& context) {
   auto&& [output_type, exprs] = node_->getOutputExprs();
   for (auto& expr : exprs) {
-    if (dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
+    if (context.hasLazyNode() && dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
       // ignore bare columns
       continue;
     }

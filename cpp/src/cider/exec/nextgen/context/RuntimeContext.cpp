@@ -93,11 +93,17 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
 
 // TODO: batch and buffer should be self-managed
 void RuntimeContext::resetBatch(const CiderAllocatorPtr& allocator,
-                                const ArrowArray& array,
-                                const ArrowSchema& schema) {
-  if (!batch_holder_.empty()) {
-    auto& [descriptor, batch] = batch_holder_.front();
-    batch->reset(descriptor->type, allocator, array, schema);
+                                const ArrowArray* array,
+                                const ArrowSchema* schema) {
+  bool may_reuse_input = true;
+  for (auto& [descriptor, batch] : batch_holder_) {
+    // only output batch(the first) can reuse input array children
+    if (may_reuse_input) {
+      batch->reset(descriptor->type, allocator, array, schema);
+      may_reuse_input = false;
+    } else {
+      batch->reset(descriptor->type, allocator);
+    }
   }
 }
 

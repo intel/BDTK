@@ -49,12 +49,12 @@ class CiderCastNextgenTest : public ::testing::Test {
     auto eu = substrait2eu.createRelAlgExecutionUnit();
 
     // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
+    context::CodegenContext codegen_ctx;
+    auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
     transformer::Transformer transformer;
     auto translators = transformer.toTranslator(pipeline);
 
     // Codegen
-    context::CodegenContext codegen_ctx;
     auto module = cider::jitlib::LLVMJITModule("test", true);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
@@ -79,6 +79,7 @@ class CiderCastNextgenTest : public ::testing::Test {
 
     // Execution
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
+    runtime_ctx->resetBatch(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 

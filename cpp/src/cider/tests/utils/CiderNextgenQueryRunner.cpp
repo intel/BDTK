@@ -73,10 +73,10 @@ std::string getFileContent(const std::string& file_name) {
 }
 
 void CiderNextgenQueryRunner::runQueryOneBatch(const std::string& file_or_sql,
-                                               const struct ArrowArray& input_array,
-                                               const struct ArrowSchema& input_schema,
-                                               struct ArrowArray& output_array,
-                                               struct ArrowSchema& output_schema,
+                                               const ArrowArray& input_array,
+                                               const ArrowSchema& input_schema,
+                                               ArrowArray& output_array,
+                                               ArrowSchema& output_schema,
                                                const CodegenOptions& codegen_options) {
   // Step 1: construct substrait plan
   auto plan = genSubstraitPlan(file_or_sql);
