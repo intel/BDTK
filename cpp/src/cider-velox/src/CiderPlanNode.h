@@ -38,19 +38,29 @@ class CiderPlanNode : public core::PlanNode {
   explicit CiderPlanNode(const core::PlanNodeId& id,
                          const core::PlanNodePtr& source,
                          const RowTypePtr& outputType,
-                         const ::substrait::Plan& plan)
+                         const ::substrait::Plan& plan,
+                         bool precompile = false)
       : core::PlanNode(id), sources_({source}), plan_(plan), outputType_(outputType) {
-    auto translator = generator::SubstraitToRelAlgExecutionUnit(plan);
-    RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
-    codegen_context_ = cider::exec::nextgen::compile(ra_exe_unit);
+    if (precompile) {
+      auto translator = generator::SubstraitToRelAlgExecutionUnit(plan);
+      RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
+      codegen_context_ = cider::exec::nextgen::compile(ra_exe_unit);
+    }
   }
 
   explicit CiderPlanNode(const core::PlanNodeId& id,
                          const core::PlanNodePtr& left,
                          const core::PlanNodePtr& right,
                          const RowTypePtr& outputType,
-                         const ::substrait::Plan& plan)
-      : PlanNode(id), sources_({left, right}), plan_(plan), outputType_(outputType) {}
+                         const ::substrait::Plan& plan,
+                         bool precompile = false)
+      : PlanNode(id), sources_({left, right}), plan_(plan), outputType_(outputType) {
+    if (precompile) {
+      auto translator = generator::SubstraitToRelAlgExecutionUnit(plan);
+      RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
+      codegen_context_ = cider::exec::nextgen::compile(ra_exe_unit);
+    }
+  }
 
   const cider::exec::nextgen::context::CodegenCtxPtr& codegenCtx() const {
     return codegen_context_;

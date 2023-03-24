@@ -50,6 +50,7 @@ std::string getErrorMessageFromErrCode(const cider::jitlib::ERROR_CODE error_cod
   }
 }
 
+// This API compile from substrait plan everytime.
 DefaultBatchProcessor::DefaultBatchProcessor(
     const plan::SubstraitPlanPtr& plan,
     const BatchProcessorContextPtr& context,
@@ -65,6 +66,7 @@ DefaultBatchProcessor::DefaultBatchProcessor(
           ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
 }
 
+// This API use the precompiled codegen_ctx.
 DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
                                              const BatchProcessorContextPtr& context,
                                              const CodegenCtxPtr& codegen_ctx)
@@ -78,6 +80,7 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
           ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
 }
 
+// This API compile from substrait plan everytime.
 DefaultBatchProcessor::DefaultBatchProcessor(
     const substrait::ExtendedExpression& extendedExpression,
     const BatchProcessorContextPtr& context,
