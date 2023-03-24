@@ -112,7 +112,7 @@
                         "outputType": {
                           "bool": {
                             "typeVariationReference": 0,
-                            "nullability": "NULLABILITY_REQUIRED"
+                            "nullability": "NULLABILITY_NULLABLE"
                           }
                         }
                       }
