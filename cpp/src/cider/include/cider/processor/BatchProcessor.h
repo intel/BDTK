@@ -71,10 +71,9 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
 
   virtual void feedCrossBuildData(const std::shared_ptr<Batch>& crossData) = 0;
 
-  static std::unique_ptr<BatchProcessor> Make(
-      const substrait::Plan& plan,
-      const BatchProcessorContextPtr& context,
-      const nextgen::context::CodegenOptions& codegen_options = {});
+  static std::unique_ptr<BatchProcessor> Make(const substrait::Plan& plan,
+                                              const BatchProcessorContextPtr& context,
+                                              const CodegenOptions& codegen_options = {});
 
   static std::unique_ptr<BatchProcessor> Make(const plan::SubstraitPlanPtr& plan,
                                               const BatchProcessorContextPtr& context,

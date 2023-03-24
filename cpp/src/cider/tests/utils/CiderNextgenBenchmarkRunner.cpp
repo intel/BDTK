@@ -32,7 +32,7 @@ void CiderNextgenBenchmarkRunner::runQueryOneBatch(
     const struct ArrowSchema& input_schema,
     struct ArrowArray& output_array,
     struct ArrowSchema& output_schema,
-    const cider::exec::nextgen::context::CodegenOptions& codegen_options) {
+    const CodegenOptions& codegen_options) {
   g_enable_debug_timer = true;
 
   // Step 1: construct substrait plan

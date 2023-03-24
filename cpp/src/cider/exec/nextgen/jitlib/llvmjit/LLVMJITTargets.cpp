@@ -102,7 +102,7 @@ static llvm::TargetOptions buildTargetOptions() {
   return to;
 }
 
-llvm::TargetMachine* buildTargetMachine(const jitlib::CompilationOptions& co) {
+llvm::TargetMachine* buildTargetMachine(const CompilationOptions& co) {
   return host_target->createTargetMachine(process_triple,
                                           process_name,
                                           buildTargetFeatures(co).getString(),

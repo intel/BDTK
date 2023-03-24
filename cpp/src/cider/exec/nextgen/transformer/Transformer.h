@@ -31,7 +31,7 @@ class Transformer {
  public:
   static operators::TranslatorPtr toTranslator(
       operators::OpPipeline& pipeline,
-      const context::CodegenOptions& co = context::CodegenOptions());
+      const CodegenOptions& co = CodegenOptions());
 };
 }  // namespace cider::exec::nextgen::transformer
 

@@ -149,7 +149,7 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
   }
 
   size_t nextgenCompute(const std::string& expression,
-                        CodegenOptions cgo = CodegenOptions{}) {
+                        cider::CodegenOptions cgo = cider::CodegenOptions{}) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
     auto veloxPlan = PlanBuilder().values({rowVector_}).project({expression}).planNode();
@@ -157,7 +157,6 @@ class StringFunctionBenchmark : public functions::test::FunctionBenchmarkBase {
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
 
-    cgo.co.dump_ir = FLAGS_dump_ir;
     cgo.co.enable_vectorize = true;
     cgo.co.enable_avx2 = true;
     cgo.co.enable_avx512 = true;

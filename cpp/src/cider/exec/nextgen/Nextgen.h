@@ -31,7 +31,7 @@ using QueryFunc = int32_t (*)(int8_t*, int8_t*);
 
 std::unique_ptr<context::CodegenContext> compile(
     RelAlgExecutionUnit& eu,
-    const context::CodegenOptions& codegen_options = context::CodegenOptions{});
+    const CodegenOptions& codegen_options = CodegenOptions{});
 
 }  // namespace cider::exec::nextgen
 

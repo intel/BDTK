@@ -16,7 +16,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(DEP_LIBS jitlib gtest)
+set(DEP_LIBS jitlib cider gtest)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 

@@ -109,8 +109,7 @@ static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
   return ptr;
 }
 
-TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline,
-                                        const context::CodegenOptions& co) {
+TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline, const CodegenOptions& co) {
   CHECK_GT(pipeline.size(), 1);
   CHECK(isa<QueryFuncInitializer>(pipeline.front()));
 
