@@ -174,6 +174,9 @@ BENCHMARK_GROUP(18);
 BENCHMARK_GROUP(19);
 // BENCHMARK_GROUP(22);
 
+// Simple Join benchmark
+// BENCHMARK_GROUP(23);
+
 int main(int argc, char** argv) {
   folly::init(&argc, &argv, false);
 

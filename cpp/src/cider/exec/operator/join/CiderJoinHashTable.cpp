@@ -29,13 +29,19 @@ JoinHashTable::JoinHashTable(cider_hashtable::HashTableType hashTableType) {
     case cider_hashtable::HashTableType::LINEAR_PROBING:
       LPHashTableInstance_ =
           std::make_shared<cider_hashtable::LinearProbeHashTable<LP_TEMPLATE>>();
+      break;
     case cider_hashtable::HashTableType::CHAINED:
       chainedHashTableInstance_ =
           std::make_shared<cider_hashtable::ChainedHashTable<CHAINED_TEMPLATE>>();
+      break;
     case cider_hashtable::HashTableType::FIXED_INT8:
       uInt8HashTableInstance_ = std::make_shared<JoinUInt8HashTable>();
+      break;
     case cider_hashtable::HashTableType::FIXED_INT16:
       uInt16HashTableInstance_ = std::make_shared<JoinUInt16HashTable>();
+      break;
+    default:
+      break;
   }
 }
 
