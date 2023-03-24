@@ -404,10 +404,6 @@ TEST_F(JITLibTests, ExternalModuleTest) {
                 "external_call_test_sum",
                 JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                           .params_vector = {a.get(), b.get()}});
-            function->emitRuntimeFunctionCall(
-                "test_to_string",
-                JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
-                                          .params_vector = {x.get()}});
             function->createReturn(*x);
           })
           .build();

@@ -25,7 +25,8 @@
 
 #define RUNTIME_FUNC __attribute__((__visibility__("protected")))
 
-#define ALWAYS_INLINE __attribute__((__visibility__("protected")))
+#define ALWAYS_INLINE \
+  __attribute__((always_inline)) __attribute__((__visibility__("protected")))
 
 #define NEVER_INLINE __attribute__((noinline))
 

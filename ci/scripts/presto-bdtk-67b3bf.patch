@@ -72,18 +72,18 @@ index 1ade5b2..04fe82a 100644
 +  cider_function
 +  cider_processor
 +  cider_plan_substrait
++  cider_plan_parser
 +  nextgen
 +  jitlib
-+  cider_plan_parser
-+  cider_type_plan
++  cider_runtime_function
 +  cider_func_lkup
++  LLVM
 +  substrait_common
 +  substrait_function
 +  substrait_type
 +  yaml-cpp
 +  cider_util
 +  QueryEngine
-+  LLVM
 +  yaml-cpp
 +  tbb
 +)

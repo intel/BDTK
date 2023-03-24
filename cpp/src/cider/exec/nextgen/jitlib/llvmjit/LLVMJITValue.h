@@ -24,7 +24,6 @@
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"
-#include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 
 namespace cider::jitlib {
 class LLVMIfBuilder;

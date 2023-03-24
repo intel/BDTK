@@ -34,6 +34,7 @@
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITControlFlow.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITValue.h"
 #include "util/Logger.h"
 

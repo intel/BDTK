@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_DEPS cider_util)
+set(NEXTGEN_DEPS cider_util gflags)
 
 # AddressSanitizer needs to set overcommit_memory as allowed.
 option(ENABLE_ASN "Enable AddressSanitizer for Nextgen Project." OFF)
@@ -38,4 +38,4 @@ add_library(
   $<TARGET_OBJECTS:cider_parsers> $<TARGET_OBJECTS:cider_transformer>
   $<TARGET_OBJECTS:cider_type_plan>)
 target_link_libraries(nextgen ${NEXTGEN_DEPS} cider_hashtable_join jitlib
-                      cider_runtime_function gflags)
+                      cider_runtime_function)
