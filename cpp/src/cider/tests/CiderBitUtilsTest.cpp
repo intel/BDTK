@@ -170,6 +170,14 @@ TEST_F(CiderBitUtilsTest, ByteToBitTest) {
   check_byte_bit(byte_vec_backup.data(), bit_vec.data(), byte_vec_backup.size());
 }
 
+TEST_F(CiderBitUtilsTest, CTZTest) {
+  size_t data = 0xFFFFFFFFFFFFFFFF;
+  for (size_t i = 0; i < 63; ++i) {
+    EXPECT_EQ(countTailZero(data), i);
+    data <<= 1;
+  }
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

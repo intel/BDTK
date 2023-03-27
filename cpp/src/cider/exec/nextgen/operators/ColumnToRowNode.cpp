@@ -229,25 +229,49 @@ void ColumnToRowTranslator::codegenImpl(SuccessorEmitter successor_wrapper,
 
   // for row loop
   auto index = func->createVariable(JITTypeTag::INT64, "index", 0);
-  auto len = context.getInputLength();
-  static_cast<ColumnToRowNode*>(node_.get())->setColumnRowNum(len);
-
   auto builder = func->createLoopBuilder();
-  builder->condition([&index, &len]() { return index < len; })
-      ->loop([&](LoopBuilder*) {
-        for (auto& input : inputs) {
-          ColumnReader(context, input, index).read();
-        }
-        successor_wrapper(successor, context);
-      })
-      ->update([&index]() { index = index + 1l; });
+
+  if (!context.isAppliedFilterMask()) {
+    auto len = context.getInputLength();
+    builder->condition([&index, &len]() { return index < len; })
+        ->loop([&](LoopBuilder*) {
+          for (auto& input : inputs) {
+            ColumnReader(context, input, index).read();
+          }
+          successor_wrapper(successor, context);
+        })
+        ->update([&index]() { index = index + 1l; });
+  } else {
+    auto&& filter_mask = context.getFilterMask();
+    builder->condition([&filter_mask]() { return filter_mask.first != 0; })
+        ->loop([&](LoopBuilder*) {
+          auto offset = func->emitRuntimeFunctionCall(
+              "get_lowest_set_bit",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {filter_mask.first.get()}});
+          index = *filter_mask.second + offset;
+          for (auto& input : inputs) {
+            ColumnReader(context, input, index).read();
+          }
+          successor_wrapper(successor, context);
+        })
+        ->update([&filter_mask, &func]() {
+          filter_mask.first = func->emitRuntimeFunctionCall(
+              "reset_tail_set_bit",
+              JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT64,
+                                        .params_vector = {filter_mask.first.get()}});
+        });
+  }
 
   auto c2r_node = static_cast<ColumnToRowNode*>(node_.get());
   builder->setNoAlias(c2r_node->isVectorizable())->build();
 
   // Execute defer build functions.
-  for (auto& defer_func : c2r_node->getDeferFunctions()) {
-    defer_func();
+  if (!context.isAppliedFilterMask()) {
+    for (auto& defer_func : context.getDeferFunc()) {
+      defer_func();
+    }
+    context.clearDeferFunc();
   }
 }
 }  // namespace cider::exec::nextgen::operators
