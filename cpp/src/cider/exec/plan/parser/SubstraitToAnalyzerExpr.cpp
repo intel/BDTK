@@ -632,9 +632,8 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
         s_scalar_function.arguments(i).value(), function_map, expr_map_ptr));
   }
   // For "between_and_" function, cider defined type will go through this rewrite_expr
-  // branch while primitive type will go through ExtensionFunction branch below.
-  if (function == "between" && s_scalar_function.arguments_size() == 3 &&
-      isNotPrimitiveType(args[0]->get_type_info())) {
+  // branch.
+  if (function == "between" && s_scalar_function.arguments_size() == 3) {
     auto ge_oper = std::make_shared<Analyzer::BinOper>(
         getSQLTypeInfo(s_scalar_function.output_type()),
         false,
