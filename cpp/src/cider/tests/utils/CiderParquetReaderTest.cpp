@@ -43,7 +43,11 @@ std::string getParquetFilesPath() {
 // └──────────┘
 TEST(CiderParquetReaderTest, bool_single_col) {
   Reader* reader = new Reader();
-  reader->init(getParquetFilesPath() + "bool_single_col.parquet", {"col_bool"}, 0, 1);
+  reader->init(FileSystemType::kLocal,
+               getParquetFilesPath() + "bool_single_col.parquet",
+               {"col_bool"},
+               0,
+               1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
   while (reader->hasNext()) {
@@ -71,29 +75,32 @@ TEST(CiderParquetReaderTest, bool_single_col) {
 // │ null     │
 // │ 4        │
 // └──────────┘
-#define GENERATE_READER_TEST(type_name, substrait_type, c_type)                      \
-  TEST(CiderParquetReaderTest, type_name##_single_col) {                             \
-    Reader* reader = new Reader();                                                   \
-    reader->init(                                                                    \
-        getParquetFilesPath() + "mixed_cols.parquet", {"col_" #type_name ""}, 0, 1); \
-    ArrowSchema* actual_schema;                                                      \
-    ArrowArray* actual_array;                                                        \
-    while (reader->hasNext()) {                                                      \
-      int rowsRead = reader->readBatch(5, actual_schema, actual_array);              \
-      CHECK_EQ(rowsRead, 5);                                                         \
-    }                                                                                \
-    auto schema_and_array =                                                          \
-        ArrowArrayBuilder()                                                          \
-            .setRowNum(5)                                                            \
-            .addColumn<c_type>("",                                                   \
-                               CREATE_SUBSTRAIT_TYPE(substrait_type),                \
-                               {0, 1, 2, 3, 4},                                      \
-                               {false, true, false, true, false})                    \
-            .build();                                                                \
-    CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),             \
-                                          actual_array,                              \
-                                          std::get<0>(schema_and_array),             \
-                                          actual_schema));                           \
+#define GENERATE_READER_TEST(type_name, substrait_type, c_type)          \
+  TEST(CiderParquetReaderTest, type_name##_single_col) {                 \
+    Reader* reader = new Reader();                                       \
+    reader->init(FileSystemType::kLocal,                                 \
+                 getParquetFilesPath() + "mixed_cols.parquet",           \
+                 {"col_" #type_name ""},                                 \
+                 0,                                                      \
+                 1);                                                     \
+    ArrowSchema* actual_schema;                                          \
+    ArrowArray* actual_array;                                            \
+    while (reader->hasNext()) {                                          \
+      int rowsRead = reader->readBatch(5, actual_schema, actual_array);  \
+      CHECK_EQ(rowsRead, 5);                                             \
+    }                                                                    \
+    auto schema_and_array =                                              \
+        ArrowArrayBuilder()                                              \
+            .setRowNum(5)                                                \
+            .addColumn<c_type>("",                                       \
+                               CREATE_SUBSTRAIT_TYPE(substrait_type),    \
+                               {0, 1, 2, 3, 4},                          \
+                               {false, true, false, true, false})        \
+            .build();                                                    \
+    CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array), \
+                                          actual_array,                  \
+                                          std::get<0>(schema_and_array), \
+                                          actual_schema));               \
   }
 
 GENERATE_READER_TEST(i8, I8, int8_t)
@@ -115,7 +122,8 @@ GENERATE_READER_TEST(double, Fp64, double)
 // └────────┴─────────┴─────────┴─────────┴───────────┴────────────┘
 TEST(CiderParquetReaderTest, mixed_cols) {
   Reader* reader = new Reader();
-  reader->init(getParquetFilesPath() + "mixed_cols.parquet",
+  reader->init(FileSystemType::kLocal,
+               getParquetFilesPath() + "mixed_cols.parquet",
                {"col_i8", "col_i16", "col_i32", "col_i64", "col_float", "col_double"},
                0,
                1);
@@ -170,7 +178,11 @@ TEST(CiderParquetReaderTest, mixed_cols) {
 // └──────────┘
 TEST(CiderParquetReaderTest, char_single_col) {
   Reader* reader = new Reader();
-  reader->init(getParquetFilesPath() + "char_single_col.parquet", {"col_char"}, 0, 1);
+  reader->init(FileSystemType::kLocal,
+               getParquetFilesPath() + "char_single_col.parquet",
+               {"col_char"},
+               0,
+               1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
   while (reader->hasNext()) {
@@ -191,8 +203,11 @@ TEST(CiderParquetReaderTest, char_single_col) {
 }
 TEST(CiderParquetReaderTest, varchar_single_col) {
   Reader* reader = new Reader();
-  reader->init(
-      getParquetFilesPath() + "varchar_single_col.parquet", {"col_varchar"}, 0, 1);
+  reader->init(FileSystemType::kLocal,
+               getParquetFilesPath() + "varchar_single_col.parquet",
+               {"col_varchar"},
+               0,
+               1);
   ArrowSchema* actual_schema;
   ArrowArray* actual_array;
   while (reader->hasNext()) {
@@ -205,6 +220,30 @@ TEST(CiderParquetReaderTest, varchar_single_col) {
                                              "helloworldbdtkcider",
                                              {0, 5, 10, 10, 14, 19},
                                              {false, false, true, false, false})
+                              .build();
+  CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),
+                                        actual_array,
+                                        std::get<0>(schema_and_array),
+                                        actual_schema));
+}
+
+TEST(CiderParquetReaderTest, readFromHDFS) {
+  GTEST_SKIP();
+  Reader* reader = new Reader();
+  reader->init(
+      FileSystemType::kHdfs, "/mixed_cols.parquet", {"col_i8"}, 0, 1, "10.0.0.32", 9000);
+  ArrowSchema* actual_schema;
+  ArrowArray* actual_array;
+  while (reader->hasNext()) {
+    int rowsRead = reader->readBatch(5, actual_schema, actual_array);
+    CHECK_EQ(rowsRead, 5);
+  }
+  auto schema_and_array = ArrowArrayBuilder()
+                              .setRowNum(5)
+                              .addColumn<int8_t>("",
+                                                 CREATE_SUBSTRAIT_TYPE(I8),
+                                                 {0, 1, 2, 3, 4},
+                                                 {false, true, false, true, false})
                               .build();
   CHECK(CiderArrowChecker::checkArrowEq(std::get<1>(schema_and_array),
                                         actual_array,

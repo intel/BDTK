@@ -35,15 +35,20 @@
 #include "util/Logger.h"
 
 namespace CiderParquetReader {
+
+enum class FileSystemType { kLocal, kHdfs, kS3 };
+
 class Reader {
  public:
   Reader();
   ~Reader();
-  void init(std::string fileName,
+  void init(FileSystemType fsType,
+            std::string fileName,
             std::vector<std::string> requiredColumnNames,
             int firstRowGroup,
-            int rowGroupToRead);
-
+            int rowGroupToRead,
+            std::string hdfsHost = "",
+            int hdfsPort = 0);
   void close();
   int readBatch(int32_t batchSize, ArrowSchema*& outputSchema, ArrowArray*& outputArray);
   bool hasNext();
@@ -65,11 +70,15 @@ class Reader {
   int32_t* compressVarSizeDataBuffer(int64_t* dataBuffer,
                                      uint8_t* nullsPtr,
                                      int rowsToRead);
+  void initLocal(std::string fileName);
+  void initHDFS(std::string fileName, std::string hdfsHost = "", int hdfsPort = 0);
 
   std::shared_ptr<arrow::io::RandomAccessFile> file_;
   std::unique_ptr<parquet::ParquetFileReader> parquetReader_;
   std::vector<std::shared_ptr<parquet::ColumnReader>> columnReaders_;
   std::shared_ptr<parquet::FileMetaData> fileMetaData_;
+  arrow::Result<std::shared_ptr<arrow::fs::HadoopFileSystem>> fsResult_;
+  std::shared_ptr<arrow::fs::FileSystem> fs_;
 
   int firstRowGroupIndex_ = 0;
   int totalRowGroupsRead_ = 0;

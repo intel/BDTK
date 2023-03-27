@@ -26,15 +26,57 @@ namespace CiderParquetReader {
 Reader::Reader() {}
 Reader::~Reader() {}
 
-void Reader::init(std::string fileName,
-                  std::vector<std::string> requiredColumnNames,
-                  int firstRowGroup,
-                  int rowGroupToRead) {
+void Reader::initLocal(std::string fileName) {
   auto result = arrow::io::ReadableFile::Open(fileName);
   if (!result.ok()) {
     CIDER_THROW(CiderCompileException, "open parquet file failed");
   }
   file_ = result.ValueOrDie();
+}
+
+void Reader::initHDFS(std::string fileName, std::string hdfsHost, int hdfsPort) {
+  auto options = new arrow::fs::HdfsOptions();
+  LOG(INFO) << "hdfsHost " << hdfsHost << " port " << hdfsPort;
+
+  options->ConfigureEndPoint(hdfsHost, hdfsPort);
+  auto result = arrow::fs::HadoopFileSystem::Make(*options);
+  if (!result.ok()) {
+    CIDER_THROW(CiderCompileException,
+                "HadoopFileSystem Make failed! err msg:" + result.status().ToString());
+  }
+  LOG(INFO) << "HadoopFileSystem Make succeed. ";
+
+  // move and keep the result to prevent the FileSystem from destruction
+  fsResult_ = result;
+  fs_ = std::make_shared<arrow::fs::SubTreeFileSystem>("", fsResult_.ValueOrDie());
+  auto fileResult = fs_->OpenInputFile(fileName);
+  if (!fileResult.ok()) {
+    CIDER_THROW(CiderCompileException,
+                "Open hdfs file failed! err msg: " + fileResult.status().ToString());
+  }
+  LOG(INFO) << "Open hdfs file succeed. ";
+
+  file_ = fileResult.ValueOrDie();
+}
+
+void Reader::init(FileSystemType fsType,
+                  std::string fileName,
+                  std::vector<std::string> requiredColumnNames,
+                  int firstRowGroup,
+                  int rowGroupToRead,
+                  std::string hdfsHost,
+                  int hdfsPort) {
+  switch (fsType) {
+    case FileSystemType::kLocal:
+      initLocal(fileName);
+      break;
+    case FileSystemType::kHdfs:
+      initHDFS(fileName, hdfsHost, hdfsPort);
+    case FileSystemType::kS3:
+    default:
+      CIDER_THROW(CiderCompileException, "unsupport file system type");
+      break;
+  }
   parquetReader_ = parquet::ParquetFileReader::Open(file_);
 
   fileMetaData_ = parquetReader_->metadata();
