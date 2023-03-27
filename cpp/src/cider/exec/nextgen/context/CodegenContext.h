@@ -86,6 +86,12 @@ struct CodegenOptions {
   jitlib::CompilationOptions co = jitlib::CompilationOptions{};
 };
 
+struct FilterDescriptor {
+  bool applied_filter_mask{false};
+  jitlib::JITValuePointer filter_i64_mask{nullptr};
+  jitlib::JITValuePointer start_index{nullptr};
+};
+
 class CodegenContext {
  public:
   CodegenContext() : jit_func_(nullptr) {}
@@ -100,6 +106,33 @@ class CodegenContext {
   // FIXME (bigPYJ1151)
   [[deprecated]] void setJITModule(jitlib::JITModulePointer jit_module) {
     jit_module_ = std::move(jit_module);
+  }
+
+  void setFilterMask(jitlib::JITValuePointer& mask,
+                     jitlib::JITValuePointer& start_index) {
+    CHECK(mask->getValueTypeTag() == jitlib::JITTypeTag::INT64);
+    CHECK(start_index->getValueTypeTag() == jitlib::JITTypeTag::INT64);
+
+    filter_desc_.applied_filter_mask = true;
+    filter_desc_.filter_i64_mask.replace(mask);
+    filter_desc_.start_index.replace(start_index);
+  }
+
+  bool isAppliedFilterMask() { return filter_desc_.applied_filter_mask; }
+
+  std::pair<jitlib::JITValuePointer&, jitlib::JITValuePointer&> getFilterMask() {
+    return {filter_desc_.filter_i64_mask, filter_desc_.start_index};
+  }
+
+  template <typename FuncT>
+  void appendDeferFunc(FuncT&& func) {
+    defer_func_list_.emplace_back(func);
+  }
+
+  void clearDeferFunc() { defer_func_list_.clear(); }
+
+  const std::vector<std::function<void()>>& getDeferFunc() const {
+    return defer_func_list_;
   }
 
   void setInputLength(jitlib::JITValuePointer& len) { input_len_.replace(len); }
@@ -269,7 +302,9 @@ class CodegenContext {
 
   jitlib::JITFunctionPointer jit_func_;
   jitlib::JITModulePointer jit_module_;
-  jitlib::JITValuePointer input_len_;
+  jitlib::JITValuePointer input_len_{nullptr};
+  FilterDescriptor filter_desc_;
+  std::vector<std::function<void()>> defer_func_list_{};
 
   int64_t id_counter_{0};
   CodegenOptions codegen_options_;

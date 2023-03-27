@@ -19,8 +19,8 @@
  * under the License.
  */
 
-#ifndef NEXTGEN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H
-#define NEXTGEN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H
+#ifndef NEXTGEN_OPERATORS_OPERATORRUNTIMEFUNCTIONS_H
+#define NEXTGEN_OPERATORS_OPERATORRUNTIMEFUNCTIONS_H
 
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "type/data/funcannotations.h"
@@ -211,4 +211,20 @@ extern "C" NEVER_INLINE void convert_bool_to_bit(uint8_t* byte,
   CiderBitUtils::byteToBit(byte, bit, len);
 }
 
-#endif  // NEXTGEN_CIDER_FUNCTION_RUNTIME_FUNCTIONS_H
+extern "C" ALWAYS_INLINE size_t get_lowest_set_bit(size_t data) {
+  return CiderBitUtils::countTailZero(data);
+}
+
+extern "C" ALWAYS_INLINE size_t reset_tail_set_bit(size_t data) {
+  return CiderBitUtils::setTailOneToZero(data);
+}
+
+extern "C" ALWAYS_INLINE void reset_tail_bits_64_align(uint8_t* data, size_t len) {
+  uint64_t* data_i64 = (uint64_t*)data;
+  data_i64 += (len >> 6);
+  size_t invalid_bits = 64 - (len & 63);
+  uint64_t mask = ((0xFFFFFFFFFFFFFFFF << invalid_bits) >> invalid_bits);
+  *data_i64 &= mask;
+}
+
+#endif  // NEXTGEN_OPERATORS_OPERATORRUNTIMEFUNCTIONS_H

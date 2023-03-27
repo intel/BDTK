@@ -18,34 +18,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-#ifndef NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
-#define NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
+#ifndef NEXTGEN_OPERATORS_VECTORIZEDFILTERNODE_H
+#define NEXTGEN_OPERATORS_VECTORIZEDFILTERNODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
 
 namespace cider::exec::nextgen::operators {
-class ColumnToRowNode : public OpNode {
+class VectorizedFilterNode : public OpNode {
  public:
-  explicit ColumnToRowNode(ExprPtrVector&& output_exprs, bool vectorizable = false)
-      : OpNode("ColumnToRowNode", std::move(output_exprs), JITExprValueType::ROW)
-      , vectorizable_(vectorizable) {}
+  explicit VectorizedFilterNode(ExprPtrVector&& conditions)
+      : OpNode("VectorizedFilterNode", std::move(conditions), JITExprValueType::BATCH) {}
 
-  explicit ColumnToRowNode(const ExprPtrVector& output_exprs, bool vectorizable = false)
-      : OpNode("ColumnToRowNode", output_exprs, JITExprValueType::ROW)
-      , vectorizable_(vectorizable) {}
+  explicit VectorizedFilterNode(const ExprPtrVector& output_exprs)
+      : OpNode("VectorizedFilterNode", output_exprs, JITExprValueType::BATCH) {}
 
   TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
-
-  bool isVectorizable() const { return vectorizable_; }
-
- private:
-  jitlib::JITValuePointer column_row_num_;
-  std::vector<std::function<void()>> defer_func_list_;
-  bool vectorizable_;
 };
 
-class ColumnToRowTranslator : public Translator {
+class VectorizedFilterTranslator : public Translator {
  public:
   using Translator::Translator;
 
@@ -55,6 +45,9 @@ class ColumnToRowTranslator : public Translator {
   void codegenImpl(SuccessorEmitter successor_wrapper,
                    context::CodegenContext& context,
                    void* successor) override;
+
+  jitlib::JITValuePointer generateFilterCondition(context::CodegenContext& context);
 };
 }  // namespace cider::exec::nextgen::operators
-#endif  // NEXTGEN_OPERATORS_COLUMNTOROWNODE_H
+
+#endif  // NEXTGEN_OPERATORS_VECTORIZEDFILTERNODE_H

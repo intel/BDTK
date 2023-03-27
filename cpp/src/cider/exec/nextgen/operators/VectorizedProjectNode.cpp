@@ -413,18 +413,17 @@ void generateNonBoolInputExprsGroupCode(context::CodegenContext& context,
                                    [](ExprPtr& expr) { return !expr->getNullable(); }),
                     input_col.end());
     if (!input_col.empty()) {
-      auto output_null = allocateNullBuffer(context, c2r_node->getColumnRowNum(), expr);
+      auto output_null = allocateNullBuffer(context, context.getInputLength(), expr);
       size_t input_index = 0;
       if (input_col.size() < 2) {
-        context::codegen_utils::bitBufferMemcpy(output_null,
-                                                getNullBuffer(context, input_col[0]),
-                                                c2r_node->getColumnRowNum());
+        context::codegen_utils::bitBufferMemcpy(
+            output_null, getNullBuffer(context, input_col[0]), context.getInputLength());
         input_index += 1;
       } else {
         context::codegen_utils::bitBufferAnd(output_null,
                                              getNullBuffer(context, input_col[0]),
                                              getNullBuffer(context, input_col[1]),
-                                             c2r_node->getColumnRowNum());
+                                             context.getInputLength());
         input_index += 2;
       }
 
@@ -433,7 +432,7 @@ void generateNonBoolInputExprsGroupCode(context::CodegenContext& context,
             output_null,
             output_null,
             getNullBuffer(context, input_col[input_index]),
-            c2r_node->getColumnRowNum());
+            context.getInputLength());
       }
     }
   }
@@ -482,10 +481,11 @@ void generateBoolInputExprsGroupCode(context::CodegenContext& context,
   auto input_len = context.getInputLength();
 
   auto bool_loop_length = (input_len + 7) / 8;
+  auto buffer_bytes_length = (bool_loop_length + 31) / 32 * 32;
 
   for (auto& target : group.exprs) {
     // TODO (bigPYJ1151): Register Batch for intermediate targets.
-    allocateBitwiseBuffer(context, target, bool_loop_length);
+    allocateBitwiseBuffer(context, target, buffer_bytes_length);
   }
 
   func->createLoopBuilder()
@@ -540,7 +540,7 @@ void generateBoolInputExprsGroupCode(context::CodegenContext& context,
       ->update([&index]() { index = index + 1; })
       ->build();
 
-  // Set length
+  // Set length.
   for (auto& target : group.exprs) {
     size_t arrow_array_local_index = target->getLocalIndex();
     CHECK(arrow_array_local_index);

@@ -21,10 +21,12 @@
 #include "exec/nextgen/transformer/Transformer.h"
 
 #include "exec/nextgen/operators/ColumnToRowNode.h"
+#include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/nextgen/operators/QueryFuncInitializer.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
+#include "exec/nextgen/operators/VectorizedFilterNode.h"
 #include "exec/nextgen/operators/VectorizedProjectNode.h"
 #include "exec/nextgen/utils/ExprUtils.h"
 
@@ -115,10 +117,13 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline,
   std::vector<PipelineStage> stages;
   stages.reserve(pipeline.size());
 
-  // Vectorize Project Transformation
+  // Vectorize Project and Filter Transformation
+  // Currently, auto-vectorize will be applied to pure project pipelines or filter
+  // pipelines.
   auto traverse_pivot = ++pipeline.begin();
-  if (co.enable_vectorize && isa<ProjectNode>(*traverse_pivot)) {
-    // Currently, auto-vectorize will be applied to pure project pipeline only.
+  if (co.enable_vectorize &&
+      (isa<ProjectNode>(*traverse_pivot) || isa<FilterNode>(*traverse_pivot))) {
+    bool has_filter = isa<FilterNode>(*traverse_pivot);
     OpNodePtr& curr_op = *traverse_pivot;
     auto&& [_, exprs] = curr_op->getOutputExprs();
     ExprPtrVector vectorizable_exprs;
@@ -140,9 +145,15 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline,
     }
 
     if (!vectorizable_exprs.empty()) {
-      auto vec_proj_iter = pipeline.insert(
-          traverse_pivot, createOpNode<VectorizedProjectNode>(vectorizable_exprs));
-      stages.emplace_back(vec_proj_iter, vec_proj_iter);
+      OpNodePtr vec_node;
+      if (has_filter) {
+        vec_node = createOpNode<VectorizedFilterNode>(vectorizable_exprs);
+      } else {
+        vec_node = createOpNode<VectorizedProjectNode>(vectorizable_exprs);
+      }
+
+      auto vec_node_iter = pipeline.insert(traverse_pivot, vec_node);
+      stages.emplace_back(vec_node_iter, vec_node_iter);
     }
   }
 
