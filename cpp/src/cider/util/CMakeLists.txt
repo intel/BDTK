@@ -18,6 +18,8 @@
 # under the License.
 
 find_package(FMT REQUIRED)
+find_package(Parquet REQUIRED)
+find_package(Arrow REQUIRED)
 
 set(cider_util_source_files
     filesystem/cider_fs.cpp
@@ -26,7 +28,8 @@ set(cider_util_source_files
     Datum.cpp
     StringTransform.cpp
     DateTimeParser.cpp
-    misc.cpp)
+    misc.cpp
+    CiderParquetReader.cpp)
 
 add_library(cider_util ${cider_util_source_files})
 
@@ -37,4 +40,6 @@ target_link_libraries(
   folly
   dl
   fmt
-  glog)
+  glog
+  arrow_shared
+  parquet_shared)

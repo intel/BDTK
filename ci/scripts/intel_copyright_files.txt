@@ -12,6 +12,8 @@ scripts/*
 *CiderAgg*
 *CiderRuntimeFunctions.h
 *CiderBitUtils.h
+*ArrowArrayBuilder.h
+*CiderParquetReader.*
 cpp/src/cider/exec/plan/builder/*
 cpp/src/cider/exec/plan/parser/*Utils*
 cpp/src/cider/exec/plan/parser/*Context*

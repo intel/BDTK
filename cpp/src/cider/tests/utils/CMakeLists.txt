@@ -68,3 +68,8 @@ add_executable(CiderArrowCheckerTest CiderArrowCheckerTest.cpp)
 target_link_libraries(CiderArrowCheckerTest ${EXECUTE_TEST_UTILS_LIBS})
 add_test(CiderArrowCheckerTest ${EXECUTABLE_OUTPUT_PATH}/CiderArrowCheckerTest
          ${TEST_ARGS})
+
+add_executable(CiderParquetReaderTest CiderParquetReaderTest.cpp)
+target_link_libraries(CiderParquetReaderTest ${EXECUTE_TEST_UTILS_LIBS})
+add_test(CiderParquetReaderTest
+         ${EXECUTABLE_OUTPUT_PATH}/CiderParquetReaderTest ${TEST_ARGS})

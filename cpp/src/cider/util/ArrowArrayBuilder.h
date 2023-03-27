@@ -87,7 +87,9 @@ class ArrowArrayBuilder {
   ArrowArrayBuilder& addColumn(const std::string& col_name,
                                const ::substrait::Type& col_type,
                                const uint8_t* arrow_null_buffer,
-                               const uint8_t* arrow_data_buffer) {
+                               const uint8_t* arrow_data_buffer,
+                               const int64_t null_count,
+                               const int32_t* arrow_offset_buffer = nullptr) {
     CiderArrowSchemaBufferHolder* holder = new CiderArrowSchemaBufferHolder(0, false);
     ArrowArray* current_array = CiderBatchUtils::allocateArrowArray();
     ArrowSchema* current_schema = CiderBatchUtils::allocateArrowSchema();
@@ -106,10 +108,19 @@ class ArrowArrayBuilder {
       current_array->length = row_num_;
       current_array->n_children = 0;
       current_array->offset = 0;
-      current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
-      current_array->buffers[0] = arrow_null_buffer;
-      current_array->buffers[1] = arrow_data_buffer;
-      current_array->n_buffers = 2;
+      if (arrow_offset_buffer) {
+        current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 3);
+        current_array->buffers[0] = arrow_null_buffer;
+        current_array->buffers[1] = arrow_offset_buffer;
+        current_array->buffers[2] = arrow_data_buffer;
+        current_array->n_buffers = 3;
+      } else {
+        current_array->buffers = (const void**)allocator_->allocate(sizeof(void*) * 2);
+        current_array->buffers[0] = arrow_null_buffer;
+        current_array->buffers[1] = arrow_data_buffer;
+        current_array->n_buffers = 2;
+      }
+      current_array->null_count = null_count;
       current_array->private_data = nullptr;
       current_array->dictionary = nullptr;
       current_array->release = CiderBatchUtils::ciderEmptyArrowArrayReleaser;
