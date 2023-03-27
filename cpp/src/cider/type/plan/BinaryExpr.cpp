@@ -216,32 +216,39 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(CodegenContext& context,
                                                    JITValuePointer rhs) {
   bool needs_error_check = context.getCodegenOptions().needs_error_check;
   JITFunction& func = *context.getJITFunction();
-  if (needs_error_check) {
-    JITValuePointer res_val = func.createVariable(lhs->getValueTypeTag(), "res_val");
-    // pass null value error check
-    func.createIfBuilder()
-        ->condition([&]() { return null; })
-        ->ifTrue([&]() { *res_val = *lhs; })
-        ->ifFalse([&]() { res_val = codegenArithWithErrorCheck(lhs, rhs); })
-        ->build();
-    return set_expr_value(null, res_val);
-  } else {
-    switch (get_optype()) {
-      case kMINUS:
-        return set_expr_value(null, lhs - rhs);
-      case kPLUS:
-        return set_expr_value(null, lhs + rhs);
-      case kMULTIPLY:
-        return set_expr_value(null, lhs * rhs);
-      case kDIVIDE:
-        return set_expr_value(null, lhs / rhs);
-      case kMODULO:
-        return set_expr_value(null, lhs % rhs);
-      default:
-        UNREACHABLE();
-    }
-  }
-  return expr_var_;
+
+  // No need to compute if any operand is null, return a null result directly
+  JITValuePointer res_val = func.createVariable(lhs->getValueTypeTag(), "res_val");
+  func.createIfBuilder()
+      ->condition([&]() { return null; })
+      ->ifTrue([&]() { *res_val = *lhs; })
+      ->ifFalse([&]() {
+        if (needs_error_check) {
+          res_val = codegenArithWithErrorCheck(lhs, rhs);
+        } else {
+          switch (get_optype()) {
+            case kMINUS:
+              res_val = lhs - rhs;
+              break;
+            case kPLUS:
+              res_val = lhs + rhs;
+              break;
+            case kMULTIPLY:
+              res_val = lhs * rhs;
+              break;
+            case kDIVIDE:
+              res_val = lhs / rhs;
+              break;
+            case kMODULO:
+              res_val = lhs % rhs;
+              break;
+            default:
+              UNREACHABLE();
+          }
+        }
+      })
+      ->build();
+  return set_expr_value(null, res_val);
 }
 
 JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
