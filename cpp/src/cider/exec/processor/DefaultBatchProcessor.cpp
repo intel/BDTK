@@ -88,7 +88,7 @@ DefaultBatchProcessor::DefaultBatchProcessor(
     : context_(context) {
   auto translator = std::make_shared<generator::SubstraitToRelAlgExecutionUnit>();
   auto executionUnit = translator->createRelAlgExecutionUnit(&extendedExpression);
-  codegen_context_ = cider::exec::nextgen::compile(executionUnit,codegen_options);
+  codegen_context_ = cider::exec::nextgen::compile(executionUnit, codegen_options);
   runtime_context_ = codegen_context_->generateRuntimeCTX(context_->getAllocator());
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(
       codegen_context_->getJITFunction()
