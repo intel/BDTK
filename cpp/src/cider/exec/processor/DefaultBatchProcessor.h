@@ -32,12 +32,16 @@ namespace cider::exec::processor {
 
 class DefaultBatchProcessor : public BatchProcessor {
  public:
-  explicit DefaultBatchProcessor(
+  DefaultBatchProcessor(
       const plan::SubstraitPlanPtr& plan,
       const BatchProcessorContextPtr& context,
       const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
 
-  explicit DefaultBatchProcessor(
+  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
+                        const BatchProcessorContextPtr& context,
+                        const CodegenCtxPtr& codegen_ctx);
+
+  DefaultBatchProcessor(
       const substrait::ExtendedExpression& extendedExpression,
       const BatchProcessorContextPtr& context,
       const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
@@ -76,6 +80,9 @@ class DefaultBatchProcessor : public BatchProcessor {
   nextgen::context::CodegenCtxPtr codegen_context_;
   nextgen::context::RuntimeCtxPtr runtime_context_;
   nextgen::QueryFunc query_func_;
+
+ private:
+  void initJoinHandler(const plan::SubstraitPlanPtr& plan);
 };
 
 }  // namespace cider::exec::processor

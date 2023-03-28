@@ -37,7 +37,8 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
   return std::make_shared<CiderPlanNode>(planSection.target.nodePtr->id(),
                                          source.nodePtr,
                                          planSection.target.nodePtr->outputType(),
-                                         *sPlan);
+                                         *sPlan,
+                                         true);
 }
 
 std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
@@ -63,7 +64,8 @@ std::shared_ptr<CiderPlanNode> CiderPlanUtil::toCiderPlanNode(
                                         leftSource,
                                         rightSource,
                                         planSection.target.nodePtr->outputType(),
-                                        *sPlan);
+                                        *sPlan,
+                                        true);
     return ciderPlanNode;
   } else {
     VELOX_FAIL(

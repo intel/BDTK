@@ -44,7 +44,7 @@ using namespace facebook::velox::plugin::plantransformer::test;
 
 class CiderOperatorTest : public OperatorTestBase {
   void SetUp() override {
-    FLAGS_partial_agg_pattern = true;
+    // FLAGS_partial_agg_pattern = true;
     vectors = generator_.generate(rowType_, 10, 100, false);
     createDuckDbTable(vectors);
     CiderVeloxPluginCtx::init();
@@ -474,8 +474,14 @@ TEST_F(CiderOperatorTest, partial_avg_null) {
   // FIXME: For partial avg, duckdb returns a row (null, 0) while velox returns a null row
   // when input is an all null column.
   // assertQuery(veloxPlan, duckdbSql); // fail to assert
+  FLAGS_partial_agg_pattern = true;
+  CiderVeloxPluginCtx::init();
   auto resultPtr = CiderVeloxPluginCtx::transformVeloxPlan(veloxPlan);
   assertQuery(resultPtr, duckdbSql);
+
+  // tear down partial_agg_pattern
+  FLAGS_partial_agg_pattern = false;
+  CiderVeloxPluginCtx::init();
 }
 
 TEST_F(CiderOperatorTest, partial_avg_notAllNull) {

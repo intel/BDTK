@@ -50,32 +50,37 @@ std::string getErrorMessageFromErrCode(const cider::jitlib::ERROR_CODE error_cod
   }
 }
 
+// This API compile from substrait plan everytime.
 DefaultBatchProcessor::DefaultBatchProcessor(
     const plan::SubstraitPlanPtr& plan,
     const BatchProcessorContextPtr& context,
     const cider::exec::nextgen::context::CodegenOptions& codegen_options)
     : context_(context) {
-  auto allocator = context->getAllocator();
-  if (plan->hasJoinRel()) {
-    // TODO: currently we can't distinguish the joinRel is either a hashJoin rel
-    // or a mergeJoin rel, just hard-code as HashJoinHandler for now and will refactor to
-    // initialize joinHandler accordingly once the
-    joinHandler_ = std::make_shared<HashProbeHandler>(shared_from_this());
-    this->state_ = BatchProcessorState::kWaiting;
-  } else if (plan->hasCrossRel()) {
-    joinHandler_ = std::make_shared<CrossProbeHandler>(shared_from_this());
-    this->state_ = BatchProcessorState::kWaiting;
-  }
-
-  auto translator =
-      std::make_shared<generator::SubstraitToRelAlgExecutionUnit>(plan->getPlan());
-  RelAlgExecutionUnit ra_exe_unit = translator->createRelAlgExecutionUnit();
+  initJoinHandler(plan);
+  auto translator = generator::SubstraitToRelAlgExecutionUnit(plan->getPlan());
+  RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
   codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
-  runtime_context_ = codegen_context_->generateRuntimeCTX(allocator);
+  runtime_context_ = codegen_context_->generateRuntimeCTX(context_->getAllocator());
   query_func_ = reinterpret_cast<nextgen::QueryFunc>(
-      codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*, int8_t*>());
+      codegen_context_->getJITFunction()
+          ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
 }
 
+// This API use the precompiled codegen_ctx.
+DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
+                                             const BatchProcessorContextPtr& context,
+                                             const CodegenCtxPtr& codegen_ctx)
+    : context_(context) {
+  initJoinHandler(plan);
+  // Copy CodegenContext cause JoinHandler will modify it.
+  codegen_context_ = std::make_unique<CodegenContext>(*codegen_ctx);
+  runtime_context_ = codegen_context_->generateRuntimeCTX(context_->getAllocator());
+  query_func_ = reinterpret_cast<nextgen::QueryFunc>(
+      codegen_context_->getJITFunction()
+          ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
+}
+
+// This API compile from substrait plan everytime.
 DefaultBatchProcessor::DefaultBatchProcessor(
     const substrait::ExtendedExpression& extendedExpression,
     const BatchProcessorContextPtr& context,
@@ -153,6 +158,19 @@ void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& cro
   codegen_context_->setBuildTable(crossData);
 }
 
+void DefaultBatchProcessor::initJoinHandler(const plan::SubstraitPlanPtr& plan) {
+  if (plan->hasJoinRel()) {
+    // TODO: currently we can't distinguish the joinRel is either a hashJoin rel
+    // or a mergeJoin rel, just hard-code as HashJoinHandler for now and will refactor to
+    // initialize joinHandler accordingly once the
+    joinHandler_ = std::make_shared<HashProbeHandler>(shared_from_this());
+    state_ = BatchProcessorState::kWaiting;
+  } else if (plan->hasCrossRel()) {
+    joinHandler_ = std::make_shared<CrossProbeHandler>(shared_from_this());
+    state_ = BatchProcessorState::kWaiting;
+  }
+}
+
 std::unique_ptr<BatchProcessor> BatchProcessor::Make(
     const substrait::Plan& plan,
     const BatchProcessorContextPtr& context,
@@ -162,6 +180,17 @@ std::unique_ptr<BatchProcessor> BatchProcessor::Make(
     return std::make_unique<StatefulProcessor>(substraitPlan, context, codegen_options);
   } else {
     return std::make_unique<StatelessProcessor>(substraitPlan, context, codegen_options);
+  }
+}
+
+std::unique_ptr<BatchProcessor> BatchProcessor::Make(
+    const plan::SubstraitPlanPtr& plan,
+    const BatchProcessorContextPtr& context,
+    const CodegenCtxPtr& codegen_ctx) {
+  if (plan->hasAggregateRel()) {
+    return std::make_unique<StatefulProcessor>(plan, context, codegen_ctx);
+  } else {
+    return std::make_unique<StatelessProcessor>(plan, context, codegen_ctx);
   }
 }
 }  // namespace cider::exec::processor

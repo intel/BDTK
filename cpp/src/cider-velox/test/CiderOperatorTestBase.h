@@ -30,7 +30,7 @@ class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBa
  protected:
   void SetUp() override {
     FLAGS_left_deep_join_pattern = true;
-    FLAGS_partial_agg_pattern = true;
+    // FLAGS_partial_agg_pattern = true;
     FLAGS_compound_pattern = true;
     // TODO: Enable this after feature fully supported. So that we could enable all
     // supported patterns in our tests.

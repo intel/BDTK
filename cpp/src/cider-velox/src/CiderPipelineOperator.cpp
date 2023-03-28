@@ -97,11 +97,11 @@ CiderPipelineOperator::CiderPipelineOperator(
     , ciderPlanNode_(ciderPlanNode)
     , allocator_(std::make_shared<PoolAllocator>(operatorCtx_->pool())) {
   auto substraitPlan = ciderPlanNode->getSubstraitPlan();
-  auto planUtil = std::make_shared<cider::exec::plan::SubstraitPlan>(substraitPlan);
+  auto plan = std::make_shared<cider::exec::plan::SubstraitPlan>(substraitPlan);
   auto context =
       std::make_shared<cider::exec::processor::BatchProcessorContext>(allocator_);
 
-  if (planUtil->hasCrossRel()) {
+  if (plan->hasCrossRel()) {
     cider::exec::processor::CrossBuildTableSupplier crossBuildTableSupplier = [&]() {
       auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
           operatorCtx_->driverCtx()->splitGroupId, planNodeId());
@@ -109,7 +109,7 @@ CiderPipelineOperator::CiderPipelineOperator(
       return *ciderJoinBridge->hasDataOrFuture(&future_);
     };
     context->setCrossJoinBuildTableSupplier(crossBuildTableSupplier);
-  } else if (planUtil->hasJoinRel()) {
+  } else if (plan->hasJoinRel()) {
     cider::exec::processor::HashBuildTableSupplier buildTableSupplier = [&]() {
       auto joinBridge = operatorCtx_->task()->getCustomJoinBridge(
           operatorCtx_->driverCtx()->splitGroupId, planNodeId());
@@ -119,7 +119,8 @@ CiderPipelineOperator::CiderPipelineOperator(
     context->setHashBuildTableSupplier(buildTableSupplier);
   }
 
-  batchProcessor_ = cider::exec::processor::BatchProcessor::Make(substraitPlan, context);
+  batchProcessor_ = cider::exec::processor::BatchProcessor::Make(
+      plan, context, ciderPlanNode_->codegenCtx());
 }
 
 }  // namespace facebook::velox::plugin

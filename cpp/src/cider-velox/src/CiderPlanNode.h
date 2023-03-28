@@ -25,6 +25,10 @@
 #include "velox/core/PlanNode.h"
 #include "velox/type/Type.h"
 
+#include "exec/nextgen/Nextgen.h"
+#include "exec/nextgen/context/CodegenContext.h"
+#include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
+
 namespace facebook::velox::plugin {
 
 enum class CiderPlanNodeKind { kJoin, kAggregation };
@@ -34,15 +38,33 @@ class CiderPlanNode : public core::PlanNode {
   explicit CiderPlanNode(const core::PlanNodeId& id,
                          const core::PlanNodePtr& source,
                          const RowTypePtr& outputType,
-                         const ::substrait::Plan& plan)
-      : core::PlanNode(id), sources_({source}), plan_(plan), outputType_(outputType) {}
+                         const ::substrait::Plan& plan,
+                         bool precompile = false)
+      : core::PlanNode(id), sources_({source}), plan_(plan), outputType_(outputType) {
+    if (precompile) {
+      auto translator = generator::SubstraitToRelAlgExecutionUnit(plan);
+      RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
+      codegen_context_ = cider::exec::nextgen::compile(ra_exe_unit);
+    }
+  }
 
   explicit CiderPlanNode(const core::PlanNodeId& id,
                          const core::PlanNodePtr& left,
                          const core::PlanNodePtr& right,
                          const RowTypePtr& outputType,
-                         const ::substrait::Plan& plan)
-      : PlanNode(id), sources_({left, right}), plan_(plan), outputType_(outputType) {}
+                         const ::substrait::Plan& plan,
+                         bool precompile = false)
+      : PlanNode(id), sources_({left, right}), plan_(plan), outputType_(outputType) {
+    if (precompile) {
+      auto translator = generator::SubstraitToRelAlgExecutionUnit(plan);
+      RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
+      codegen_context_ = cider::exec::nextgen::compile(ra_exe_unit);
+    }
+  }
+
+  const cider::exec::nextgen::context::CodegenCtxPtr& codegenCtx() const {
+    return codegen_context_;
+  }
 
   const RowTypePtr& outputType() const override;
 
@@ -58,13 +80,16 @@ class CiderPlanNode : public core::PlanNode {
 
  private:
   void addDetails(std::stringstream& stream) const override {
-    stream << "CiderPlanNode: " << plan_.DebugString();
+    stream << "CiderPlanNode: " << plan_.ShortDebugString();
   }
 
   // TODO: will support multiple source?
   const std::vector<core::PlanNodePtr> sources_;
   const ::substrait::Plan plan_;
   const RowTypePtr outputType_;
+
+  // just compile once, and save the compiled result here
+  cider::exec::nextgen::context::CodegenCtxPtr codegen_context_;
 };
 
 }  // namespace facebook::velox::plugin

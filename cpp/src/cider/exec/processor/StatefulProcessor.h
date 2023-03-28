@@ -31,6 +31,9 @@ class StatefulProcessor : public DefaultBatchProcessor {
   StatefulProcessor(const plan::SubstraitPlanPtr& plan,
                     const BatchProcessorContextPtr& context,
                     const cider::exec::nextgen::context::CodegenOptions& codegen_options);
+  StatefulProcessor(const plan::SubstraitPlanPtr& plan,
+                    const BatchProcessorContextPtr& context,
+                    const CodegenCtxPtr& codegen_ctx);
 
   void getResult(struct ArrowArray& array, struct ArrowSchema& schema) override;
 

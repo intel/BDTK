@@ -25,6 +25,6 @@ DEFINE_bool(left_deep_join_pattern, false, "Enable LeftDeepJoinPattern ");
 DEFINE_bool(compound_pattern, false, "Enable CompoundPattern ");
 DEFINE_bool(filter_pattern, true, "Enable FilterPattern ");
 DEFINE_bool(project_pattern, true, "Enable ProjectPattern ");
-DEFINE_bool(partial_agg_pattern, true, "Enable PartialAggPattern ");
+DEFINE_bool(partial_agg_pattern, false, "Enable PartialAggPattern ");
 DEFINE_bool(top_n_pattern, false, "Enable TopNPattern ");
 DEFINE_bool(order_by_pattern, false, "Enable OrderByPattern ");
