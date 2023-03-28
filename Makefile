@@ -80,10 +80,10 @@ build:
 	VERBOSE=1 cmake --build ${CPP_BUILD_DIR} -j $${CPU_COUNT:-`nproc`} \
 		|| cmake --build ${CPP_BUILD_DIR}
 	@mkdir -p ${CPP_BUILD_DIR}/src/cider-velox/function/ \
-		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/function/
+		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/function/ \
 		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.so ${CPP_BUILD_DIR}/src/cider-velox/function/
 	@mkdir -p ${CPP_BUILD_DIR}/src/cider-velox/benchmark/function/ \
-		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/benchmark/function/
+		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.bc ${CPP_BUILD_DIR}/src/cider-velox/benchmark/function/ \
 		&& cp -r ${CPP_BUILD_DIR}/src/cider/function/*.so ${CPP_BUILD_DIR}/src/cider-velox/benchmark/function/
 
 icl:
