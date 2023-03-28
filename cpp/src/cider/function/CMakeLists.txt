@@ -101,8 +101,8 @@ add_custom_target(
 
 add_library(cider_runtime_function SHARED ${runtime_function_source_files})
 add_dependencies(cider_runtime_function QueryEngineFunctionsTargets)
-target_link_libraries(cider_runtime_function re2 substrait)
+target_link_libraries(cider_runtime_function re2)
 
 add_library(cider_function SHARED ${function_source_files})
 add_dependencies(cider_function QueryEngineFunctionsTargets)
-target_link_libraries(cider_function substrait nextgen)
+target_link_libraries(cider_function nextgen)

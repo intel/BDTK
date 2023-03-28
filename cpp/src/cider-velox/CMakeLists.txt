@@ -22,6 +22,8 @@ project(VeloxPlugin)
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -mavx2 -mfma -mavx -mf16c -masm=intel -mlzcnt")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 find_library(GLOG glog)
 
 set(VELOX_ROOT ${CMAKE_BINARY_DIR}/thirdparty/velox)
