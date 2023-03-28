@@ -29,6 +29,24 @@
 namespace Analyzer {
 using namespace cider::jitlib;
 
+void UOper::initAutoVectorizeFlag() {
+  switch (optype) {
+    case kNOT:
+    case kUMINUS: {
+      auto_vectorizable_ = operand->isAutoVectorizable();
+      break;
+    }
+    case kCAST: {
+      bool constant_oprand = dynamic_cast<Constant*>(operand.get());
+      bool vectorized_target = isVectorizableType(type_info.get_type());
+      auto_vectorizable_ = constant_oprand && vectorized_target;
+      break;
+    }
+    default:
+      auto_vectorizable_ = false;
+  }
+}
+
 void codegenCastOverflowCheck(CodegenContext& context,
                               JITValuePointer operand_val,
                               JITValuePointer null_val,

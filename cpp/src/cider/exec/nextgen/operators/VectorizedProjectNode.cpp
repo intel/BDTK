@@ -282,10 +282,10 @@ VectorizedProjectTranslator::groupOutputExprs() {
 
   // Gather non-ColumnVar input expressions users.
   std::unordered_map<ExprPtr::element_type*, std::vector<size_t>> indermediate_expr_users;
-  for (size_t index : group_root_index) {
-    for (auto& input : expr_trees[index].input_exprs) {
+  for (size_t root_index = 0; root_index < group_root_index.size(); ++root_index) {
+    for (auto& input : expr_trees[group_root_index[root_index]].input_exprs) {
       if (!input->isColumnVar()) {
-        indermediate_expr_users[input.get()].emplace_back(index);
+        indermediate_expr_users[input.get()].emplace_back(root_index);
       }
     }
   }
@@ -294,13 +294,13 @@ VectorizedProjectTranslator::groupOutputExprs() {
   if (!indermediate_expr_users.empty()) {
     std::vector<std::vector<size_t>> adjcent_map(group_root_index.size());
     std::vector<size_t> degree(group_root_index.size(), 0);
-    for (size_t index : group_root_index) {
-      for (auto& output : expr_trees[index].exprs) {
+    for (size_t root_index = 0; root_index < group_root_index.size(); ++root_index) {
+      for (auto& output : expr_trees[group_root_index[root_index]].exprs) {
         if (auto iter = indermediate_expr_users.find(output.get());
             iter != indermediate_expr_users.end()) {
-          for (size_t user_index : iter->second) {
-            ++degree[user_index];
-            adjcent_map[index].push_back(user_index);
+          for (size_t user_root_index : iter->second) {
+            ++degree[user_root_index];
+            adjcent_map[root_index].push_back(user_root_index);
           }
         }
       }
