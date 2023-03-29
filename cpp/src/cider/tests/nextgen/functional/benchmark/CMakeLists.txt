@@ -27,6 +27,7 @@ foreach(nextgen_benchmark_file ${nextgen_benchmark_files})
   string(REGEX REPLACE "benchmark/" "" target_name ${test_relative_path})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${nextgen_benchmark_file})
-  target_link_libraries(${target_name} ${EXECUTE_TEST_UTILS_LIBS}
-                        cider_processor)
+  target_link_libraries(
+    ${target_name} ${EXECUTE_TEST_UTILS_LIBS} cider_processor
+    cider_plan_substrait ${SUBSTRAITCPP_FUNCTION_LIB})
 endforeach()

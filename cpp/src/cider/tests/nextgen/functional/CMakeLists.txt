@@ -22,11 +22,10 @@ set(NEXTGEN_FUNCTIONAL_TEST_LIBS
     cider_util
     test_utils
     duckdb
-    substrait
-    cider
-    cider_function
-    cider_func_lkup
     QueryEngine
+    cider_processor
+    cider_plan_substrait
+    ${SUBSTRAITCPP_FUNCTION_LIB}
     dl)
 
 file(GLOB next_gen_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
@@ -36,8 +35,7 @@ foreach(next_gen_test_file ${next_gen_test_files})
   string(REGEX REPLACE ".cpp" "" target_name ${target_name})
   add_executable(${target_name} ${next_gen_test_file})
   target_link_libraries(${target_name} ${NEXTGEN_FUNCTIONAL_TEST_LIBS})
-  add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name}
-           --use_nextgen_compiler)
+  add_test(${target_name} ${EXECUTABLE_OUTPUT_PATH}/${target_name})
 endforeach()
 
 add_subdirectory(benchmark)

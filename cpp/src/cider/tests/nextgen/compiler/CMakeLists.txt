@@ -22,19 +22,18 @@ set(NEXTGEN_COMPILER_TEST_LIBS
     cider_util
     test_utils
     duckdb
-    substrait
-    cider
-    cider_hashtable_join
+    # cider cider_hashtable_join substrait
+    cider_processor
+    cider_plan_substrait
+    ${SUBSTRAITCPP_FUNCTION_LIB}
     dl)
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
 target_link_libraries(NextgenCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})
-add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest
-         --use_nextgen_compiler)
+add_test(NextgenCompilerTest ${EXECUTABLE_OUTPUT_PATH}/NextgenCompilerTest)
 
 add_executable(FilterProjectTest FilterProjectTest.cpp)
-target_link_libraries(FilterProjectTest ${EXECUTE_TEST_LIBS}
-                      ${NEXTGEN_TEST_DEPS})
+target_link_libraries(FilterProjectTest ${EXECUTE_TEST_LIBS})
 add_test(FilterProjectTest ${EXECUTABLE_OUTPUT_PATH}/FilterProjectTest
          ${TEST_ARGS})
 
@@ -44,7 +43,8 @@ target_link_libraries(AggTest ${EXECUTE_TEST_LIBS}
 add_test(AggTest ${EXECUTABLE_OUTPUT_PATH}/AggTest ${TEST_ARGS})
 
 add_executable(ArrayTest ArrayTest.cpp)
-target_link_libraries(ArrayTest ${EXECUTE_TEST_LIBS} ${NEXTGEN_TEST_DEPS})
+target_link_libraries(ArrayTest ${EXECUTE_TEST_LIBS}
+                      ${NEXTGEN_COMPILER_TEST_LIBS})
 add_test(ArrayTest ${EXECUTABLE_OUTPUT_PATH}/ArrayTest ${TEST_ARGS})
 
 add_executable(ContextTest ContextTest.cpp)
