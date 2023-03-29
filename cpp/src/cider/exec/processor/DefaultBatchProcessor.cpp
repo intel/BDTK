@@ -86,12 +86,13 @@ DefaultBatchProcessor::DefaultBatchProcessor(
     const BatchProcessorContextPtr& context,
     const cider::exec::nextgen::context::CodegenOptions& codegen_options)
     : context_(context) {
-  //  RelAlgExecutionUnit ra_exe_unit;
-  //  codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
-  //  runtime_context_ = codegen_context_->generateRuntimeCTX( context->getAllocator());
-  //  query_func_ = reinterpret_cast<nextgen::QueryFunc>(
-  //      codegen_context_->getJITFunction()->getFunctionPointer<void, int8_t*,
-  //      int8_t*>());
+  auto translator = std::make_shared<generator::SubstraitToRelAlgExecutionUnit>();
+  auto executionUnit = translator->createRelAlgExecutionUnit(&extendedExpression);
+  codegen_context_ = cider::exec::nextgen::compile(executionUnit, codegen_options);
+  runtime_context_ = codegen_context_->generateRuntimeCTX(context_->getAllocator());
+  query_func_ = reinterpret_cast<nextgen::QueryFunc>(
+      codegen_context_->getJITFunction()
+          ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
 }
 
 void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,

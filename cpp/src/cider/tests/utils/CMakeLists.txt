@@ -34,7 +34,8 @@ target_link_libraries(test_utils duckdb cider_plan_parser cider_processor)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
-set(EXECUTE_TEST_UTILS_LIBS gtest cider_util test_utils duckdb substrait cider)
+set(EXECUTE_TEST_UTILS_LIBS gtest cider_util test_utils duckdb substrait
+                            cider_processor)
 
 set(EXECUTE_TEST_UTILS_LIBS
     ${EXECUTE_TEST_UTILS_LIBS}
