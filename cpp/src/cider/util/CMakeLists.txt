@@ -28,8 +28,7 @@ set(cider_util_source_files
     Datum.cpp
     StringTransform.cpp
     DateTimeParser.cpp
-    misc.cpp
-    CiderParquetReader.cpp)
+    misc.cpp)
 
 add_library(cider_util ${cider_util_source_files})
 
@@ -40,6 +39,8 @@ target_link_libraries(
   folly
   dl
   fmt
-  glog
-  arrow_shared
-  parquet_shared)
+  glog)
+
+add_library(cider_parquet_reader CiderParquetReader.cpp)
+target_link_libraries(cider_parquet_reader cider_util arrow_shared
+                      parquet_shared dl)
