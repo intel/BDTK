@@ -57,6 +57,7 @@ jitlib::JITValuePointer VectorizedFilterTranslator::generateFilterCondition(
         kONE,
         conditon,
         exprs[i]);
+    conditon->setTrivialNullProcess(true);
   }
 
   // Register batch for the condition.

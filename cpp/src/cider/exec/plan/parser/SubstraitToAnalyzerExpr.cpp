@@ -651,6 +651,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
 
     auto bwt_oper = std::dynamic_pointer_cast<Analyzer::BinOper>(
         Parser::OperExpr::normalize(kAND, kONE, ge_oper, le_oper));
+    bwt_oper->setTrivialNullProcess(true);
 
     return bwt_oper;
   }
