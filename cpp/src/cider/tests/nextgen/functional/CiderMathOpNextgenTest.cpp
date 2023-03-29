@@ -376,19 +376,23 @@ class CiderMathOpNullTest : public CiderNextgenTestBase {
     table_name_ = "test";
     create_ddl_ =
         R"(CREATE TABLE test(integer_col INTEGER, bigint_col BIGINT,
-        float_col FLOAT);)";
+        float_col FLOAT, tinyint_col TINYINT, smallint_col SMALLINT, double_col DOUBLE);)";
     QueryArrowDataGenerator::generateBatchByTypes(input_schema_,
                                                   input_array_,
                                                   100,
-                                                  {
-                                                      "integer_col",
-                                                      "bigint_col",
-                                                      "float_col",
-                                                  },
+                                                  {"integer_col",
+                                                   "bigint_col",
+                                                   "float_col",
+                                                   "tinyint_col",
+                                                   "smallint_col",
+                                                   "double_col"},
                                                   {CREATE_SUBSTRAIT_TYPE(I32),
                                                    CREATE_SUBSTRAIT_TYPE(I64),
-                                                   CREATE_SUBSTRAIT_TYPE(Fp32)},
-                                                  {1, 1, 1});
+                                                   CREATE_SUBSTRAIT_TYPE(Fp32),
+                                                   CREATE_SUBSTRAIT_TYPE(I8),
+                                                   CREATE_SUBSTRAIT_TYPE(I16),
+                                                   CREATE_SUBSTRAIT_TYPE(Fp64)},
+                                                  {1, 1, 1, 0, 0, 0});
   }
 };
 
@@ -397,6 +401,13 @@ TEST_F(CiderMathOpNullTest, NullValueErrorCheckTest) {
   assertQuery("SELECT bigint_col - 9223372036854775807 FROM test");
   assertQuery("SELECT CAST(float_col + 500 as TINYINT) FROM test");
   assertQuery("SELECT CAST(bigint_col - 5000000000 as INTEGER) FROM test");
+  assertQuery("SELECT integer_col + tinyint_col FROM test");
+  assertQuery("SELECT bigint_col - smallint_col FROM test");
+  assertQuery("SELECT float_col * double_col FROM test");
+  assertQuery("SELECT tinyint_col / bigint_col FROM test");
+  assertQuery("SELECT double_col - smallint_col FROM test");
+  assertQuery("SELECT bigint_col / double_col FROM test");
+  assertQuery("SELECT double_col / float_col FROM test");
 }
 
 int main(int argc, char** argv) {
