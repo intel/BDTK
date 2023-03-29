@@ -291,7 +291,10 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
         auto lhs_data = lhs_val.getValue();
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
-        auto null = (lhs_null & rhs_null) | (lhs_null & rhs_data) | (rhs_null & lhs_data);
+        auto null =
+            is_trivial_null_process_
+                ? (lhs_null & rhs_null)
+                : (lhs_null & rhs_null) | (lhs_null & rhs_data) | (rhs_null & lhs_data);
         return set_expr_value(null, lhs_data & rhs_data);
       }
       case kOR: {
@@ -302,7 +305,9 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
         auto null =
-            (lhs_null & rhs_null) | (lhs_null & ~rhs_data) | (rhs_null & ~lhs_data);
+            is_trivial_null_process_
+                ? (lhs_null & rhs_null)
+                : (lhs_null & rhs_null) | (lhs_null & ~rhs_data) | (rhs_null & ~lhs_data);
         return set_expr_value(null, lhs_data | rhs_data);
       }
       default:
