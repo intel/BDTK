@@ -16,10 +16,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set(DEP_LIBS ${EXECUTE_TEST_LIBS} jitlib)
+set(DEP_LIBS jitlib gtest)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
 add_executable(JITLibTest JITLibTest.cpp)
-target_link_libraries(JITLibTest ${DEP_LIBS} dl)
+target_link_libraries(JITLibTest ${DEP_LIBS})
 add_test(JITLibTest ${EXECUTABLE_OUTPUT_PATH}/JITLibTest ${TEST_ARGS})

@@ -52,7 +52,7 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/type/libsubstrait_type.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/third_party/yaml-cpp/libyaml-cpp.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/util/libcider_util.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/type/plan/libcider_type_plan.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_runtime_function.so ./presto_cpp/main/lib
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
 rm -rf ./_build/${PRESTO_CPP_MODE}/presto_cpp/function

@@ -156,14 +156,13 @@ add_subdirectory(examples)
 add_subdirectory(exec)
 add_subdirectory(function)
 add_subdirectory(tests)
-add_subdirectory(type)
 add_subdirectory(util)
 
 if(CIDER_ENABLE_BENCHMARK)
   add_subdirectory(benchmarks)
 endif()
 
-set(CIDER_LIBRARIES cider_util cider_type_plan QueryEngine)
+set(CIDER_LIBRARIES cider_util QueryEngine)
 
 if(ENABLE_FOLLY)
   list(APPEND CIDER_LIBRARIES ${Folly_LIBRARIES})

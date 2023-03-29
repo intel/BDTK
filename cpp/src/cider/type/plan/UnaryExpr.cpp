@@ -19,10 +19,12 @@
  * under the License.
  */
 #include "UnaryExpr.h"
-#include "cider/CiderTypes.h"
-#include "type/plan/Utils.h"
 
+#include "cider/CiderTypes.h"
+#include "exec/nextgen/function/CiderStringFunction.h"
 #include "exec/template/DateTimeUtils.h"
+#include "type/plan/ConstantExpr.h"
+#include "type/plan/Utils.h"
 
 namespace Analyzer {
 using namespace cider::jitlib;
@@ -309,6 +311,60 @@ JITValuePointer codegenCastStringToNumeric(CodegenContext& context,
   return func.emitRuntimeFunctionCall(func_call, args_desc);
 }
 
+JITValuePointer codegenCastStringToNumeric(CodegenContext& context,
+                                           std::string* string_val,
+                                           const SQLTypeInfo& target_ti) {
+  JITFunction& func = *context.getJITFunction();
+  const auto target_type = target_ti.get_type();
+  switch (target_type) {
+    case kBOOLEAN:
+      return func.createLiteral(
+          JITTypeTag::INT8,
+          convert_string_to_bool(string_val->c_str(), (int32_t)string_val->length()));
+    case kBIGINT:
+      return func.createLiteral(
+          JITTypeTag::INT64,
+          convert_string_to_bigint(string_val->c_str(), (int32_t)string_val->length()));
+    case kINT:
+      return func.createLiteral(
+          JITTypeTag::INT32,
+          convert_string_to_int(string_val->c_str(), (int32_t)string_val->length()));
+    case kSMALLINT:
+      return func.createLiteral(
+          JITTypeTag::INT16,
+          convert_string_to_smallint(string_val->c_str(), (int32_t)string_val->length()));
+    case kTINYINT:
+      return func.createLiteral(
+          JITTypeTag::INT8,
+          convert_string_to_tinyint(string_val->c_str(), (int32_t)string_val->length()));
+    case kFLOAT:
+      return func.createLiteral(
+          JITTypeTag::FLOAT,
+          convert_string_to_float(string_val->c_str(), (int32_t)string_val->length()));
+    case kDOUBLE:
+      return func.createLiteral(
+          JITTypeTag::DOUBLE,
+          convert_string_to_double(string_val->c_str(), (int32_t)string_val->length()));
+    case kTIME:
+      return func.createLiteral(JITTypeTag::INT64,
+                                convert_string_to_time(string_val->c_str(),
+                                                       (int32_t)string_val->length(),
+                                                       target_ti.get_dimension()));
+    case kTIMESTAMP:
+      return func.createLiteral(JITTypeTag::INT64,
+                                convert_string_to_timestamp(string_val->c_str(),
+                                                            (int32_t)string_val->length(),
+                                                            target_ti.get_dimension()));
+    case kDATE:
+      return func.createLiteral(
+          JITTypeTag::INT32,
+          convert_string_to_date(string_val->c_str(), (int32_t)string_val->length()));
+    default:
+      CIDER_THROW(CiderCompileException,
+                  "Unimplemented type for string cast to " + toString(target_type));
+  }
+}
+
 JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operand) {
   JITFunction& func = *context.getJITFunction();
   const auto& target_ti = get_type_info();
@@ -337,11 +393,19 @@ JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operan
                                   .params_vector = {ptr_and_len.get()}});
     return set_expr_value(operand_val.getNull(), ret_len, ret_ptr);
   } else if (operand_ti.is_string()) {
-    auto str_val = VarSizeJITExprValue(operand->codegen(context));
-    return set_expr_value(
-        str_val.getNull(),
-        codegenCastStringToNumeric(
-            context, str_val.getValue(), str_val.getLength(), target_ti));
+    if (Constant* consant_expr = dynamic_cast<Constant*>(operand); consant_expr) {
+      return set_expr_value(
+          func.createLiteral(JITTypeTag::BOOL,
+                             consant_expr->get_is_null() ? true : false),
+          codegenCastStringToNumeric(
+              context, consant_expr->get_constval().stringval, target_ti));
+    } else {
+      auto str_val = VarSizeJITExprValue(operand->codegen(context));
+      return set_expr_value(
+          str_val.getNull(),
+          codegenCastStringToNumeric(
+              context, str_val.getValue(), str_val.getLength(), target_ti));
+    }
   } else {
     // cast between numeric type
     FixSizeJITExprValue operand_val(operand->codegen(context));

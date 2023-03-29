@@ -49,8 +49,7 @@ install(
 
 find_package(FMT REQUIRED)
 
-set(QUERY_ENGINE_LIBS cider_function cider_type_plan cider_util cider_type_plan
-                      fmt::fmt)
+set(QUERY_ENGINE_LIBS cider_function cider_util fmt::fmt)
 
 list(APPEND QUERY_ENGINE_LIBS ${llvm_libs} ${ZLIB_LIBRARIES})
 

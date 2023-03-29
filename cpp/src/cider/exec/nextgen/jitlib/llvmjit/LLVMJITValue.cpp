@@ -26,6 +26,7 @@
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/JITValueOperations.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
+#include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"
 #include "util/Logger.h"
 
 namespace cider::jitlib {
