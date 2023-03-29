@@ -820,3 +820,18 @@ cider_regexp_substring(char* string_heap_ptr,
     return pack_string_t(res);
   }
 }
+
+extern "C" RUNTIME_FUNC int32_t cast_date_string_to_int(const char* str_ptr,
+                                                        int str_len) {
+  // extract year, month, day, only support format like 'yyyy-mm-dd' or 'yyyy/mm/dd'
+  int y = std::stoi(std::string(str_ptr, 4));
+  int m = std::stoi(std::string(str_ptr + 5, 2));
+  int d = std::stoi(std::string(str_ptr + 8, 2));
+
+  y -= m <= 2;
+  const int era = (y >= 0 ? y : y - 399) / 400;
+  const unsigned yoe = static_cast<unsigned>(y - era * 400);            // [0, 399]
+  const unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;  // [0, 365]
+  const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;           // [0, 146096]
+  return era * 146097 + static_cast<int>(doe) - 719468;
+}
