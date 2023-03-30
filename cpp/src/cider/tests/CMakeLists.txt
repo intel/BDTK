@@ -64,6 +64,9 @@ target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(StringHeapTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderBitUtilsTest ${EXECUTE_TEST_LIBS})
 
+target_compile_options(CiderNewHashTableTest PRIVATE -msse4.2 -msse2)
+target_compile_options(CiderNewAggHashTableTest PRIVATE -msse4.2 -msse2)
+
 set(TEST_ARGS "--gtest_output=xml:../")
 add_test(CiderNewHashTableTest CiderNewHashTableTest ${TEST_ARGS})
 add_test(CiderNewAggHashTableTest CiderNewAggHashTableTest ${TEST_ARGS})

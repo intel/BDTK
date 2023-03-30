@@ -22,9 +22,10 @@
 
 #pragma once
 
-#include <common/Arena.h>
+#include <common/base/StringRef.h>
 #include <common/hashtable/FixedHashMap.h>
 #include <common/hashtable/HashMap.h>
+#include <common/hashtable/StringHashMap.h>
 #include <type/data/sqltypes.h>
 
 #include <functional>
@@ -84,6 +85,10 @@ using AggregatedHashTableForKeys128 =
 
 using AggregatedHashTableForKeys256 =
     HashMap<UInt256, AggregateDataPtr, UInt256HashCRC32>;
+
+using AggregatedHashTableForShortStringKey = StringHashMap<AggregateDataPtr>;
+
+using AggregatedHashTableForStringKey = HashMapWithSavedHash<StringRef, AggregateDataPtr>;
 
 template <typename... Types>
 using HashTableWithNullKey = AggregatedHashTableForNullKey<HashMapTable<Types...>>;
@@ -149,7 +154,7 @@ class AggregationHashTable final {
   // init_len: initial value length
   // `init_addr` and `init_len` describe the init value of a value in HashTable.
   // The memory layout can of any kind and should be designed by users.
-  AggregationHashTable(std::vector<SQLTypes> key_types, int8_t* addr, uint32_t len);
+  AggregationHashTable(std::vector<SQLTypeInfo> key_types, int8_t* addr, uint32_t len);
 
   // raw_key: Layout of keys should be aligned to 16 like below:
   // |<-- key1_isNUll -->|<-- pad_1 -->|<-- key1_values -->|<-- key2_isNull -->| .....
@@ -174,11 +179,11 @@ class AggregationHashTable final {
   // std::vector<AggregateDataPtr> dump() {
   //   std::vector<AggregateDataPtr> res(key_set_.size());
   //   for (auto key : key_set_) {
-  //     if (SQLTypes::kTINYINT == key_types_[0]) {
+  //     if (SQLTypes::kTINYINT == key_types_[0].get_type()) {
   //       int8_t key_v = (reinterpret_cast<int8_t*>(key.addr))[0];
   //       ;
   //       res.emplace(agg_ht_uint8_[key_v]);
-  //     } else if (SQLTypes::kSMALLINT == key_types_[0]) {
+  //     } else if (SQLTypes::kSMALLINT == key_types_[0].get_type()) {
   //       int16_t key_v = (reinterpret_cast<int16_t*>(key.addr))[0];
   //       ;
   //       res.emplace(agg_ht_uint16_[key_v]);
@@ -188,7 +193,7 @@ class AggregationHashTable final {
   // }
 
  private:
-  std::vector<SQLTypes> key_types_;
+  std::vector<SQLTypeInfo> key_types_;
   int8_t* init_val_;
   uint32_t init_len_;
   // std::unordered_set<AggKey> key_set_;
@@ -201,6 +206,8 @@ class AggregationHashTable final {
   AggregatedHashTableForKeys256 agg_ht_uint256_;
   AggregatedHashTableForFloatKey agg_ht_float_;
   AggregatedHashTableForDoubleKey agg_ht_double_;
+  AggregatedHashTableForShortStringKey agg_ht_short_str_;
+  AggregatedHashTableForStringKey agg_ht_str_;
 
   // Select the aggregation method based on the number and types of keys.
   AggregationMethod::Type chooseAggregationMethod();

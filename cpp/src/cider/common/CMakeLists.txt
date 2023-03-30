@@ -20,6 +20,11 @@
 
 add_subdirectory(contrib)
 
-add_library(cider_hashtable interpreters/AggregationHashTable.cpp)
+set(cider_hashtable_source_files interpreters/AggregationHashTable.cpp
+                                 base/StringRef.cpp)
+
+add_library(cider_hashtable ${cider_hashtable_source_files})
 
 target_link_libraries(cider_hashtable ch_contrib::cityhash)
+
+target_compile_options(cider_hashtable PRIVATE -msse4.2 -msse2)

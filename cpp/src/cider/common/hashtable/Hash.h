@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <common/base/StringRef.h>
 #include <common/base/extended_types.h>
 #include <common/base/unaligned.h>
 #include <common/contrib/cityhash102/include/city.h>
@@ -338,7 +339,6 @@ struct IntHash32 {
   }
 };
 
-// TODO(Deegue): Implement and enable later
-// template <>
-// struct DefaultHash<StringRef> : public StringRefHash {};
+template <>
+struct DefaultHash<StringRef> : public StringRefHash {};
 }  // namespace cider::hashtable
