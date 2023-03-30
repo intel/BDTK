@@ -38,7 +38,6 @@ void StatelessProcessor::getResult(struct ArrowArray& array, struct ArrowSchema&
   auto output_batch = runtime_context_->getOutputBatch();
   output_batch->move(schema, array);
   runtime_context_->resetBatch(context_->getAllocator());
-  return;
 }
 
 }  // namespace cider::exec::processor

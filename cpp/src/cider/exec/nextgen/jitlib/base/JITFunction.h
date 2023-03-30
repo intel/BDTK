@@ -73,15 +73,9 @@ class JITFunction {
 
   const JITFunctionDescriptor* getFunctionDescriptor() const { return &descriptor_; }
 
-  template <typename R, typename... Args>
-  auto getFunctionPointer() {
-    if constexpr (sizeof...(Args) > 0) {
-      using func_type = R (*)(Args...);
-      return reinterpret_cast<func_type>(getFunctionPointer());
-    } else {
-      using func_type = R (*)();
-      return reinterpret_cast<func_type>(getFunctionPointer());
-    }
+  template <typename R, typename... Args, typename F = R(*)(Args...)>
+  F getFunctionPointer() {
+    return reinterpret_cast<F>(getFunctionPointer());
   }
 
   // The unit of alignment is bytes

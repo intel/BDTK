@@ -22,6 +22,7 @@
 #ifndef ARROW_FLAG_DICTIONARY_ORDERED
 
 #include <cstdint>
+#include <sstream>
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +66,37 @@ struct ArrowArray {
   void (*release)(struct ArrowArray*) = nullptr;
   // Opaque producer-specific data
   void* private_data{nullptr};
+
+  std::string toString(std::string indent = "") const {
+    std::stringstream ss;
+    ss << indent << "{" << '\n';
+    indent.push_back(' ');
+    indent.push_back(' ');
+    ss << indent << "length = " << length << '\n';
+    ss << indent << "null_count = " << null_count << '\n';
+    ss << indent << "offset = " << offset << '\n';
+    ss << indent << "n_buffers = " << n_buffers << '\n';
+    for (int64_t i = 0; i < n_buffers; ++i) {
+      double* p = (double*)buffers[i];
+      if (p == nullptr) {
+        ss << indent << "buffers[" << i << "] is nullptr\n";
+      } else {
+        ss << indent << "buffers[" << i << "] = " << *p << '\n';
+      }
+    }
+    ss << indent << "n_children = " << n_children << '\n';
+    for (int64_t i = 0; i < n_children; ++i) {
+      struct ArrowArray* paa = children[i];
+      ss << paa->toString(indent);
+    }
+    if (dictionary != nullptr) {
+      ss << indent << "dictionary field is not null\n";
+      ss << dictionary->toString(indent);
+    }
+    indent.pop_back();
+    indent.pop_back();
+    ss << indent << "}\n";
+  }
 };
 
 struct ArrowArrayStream {

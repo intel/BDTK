@@ -46,6 +46,12 @@ class CiderPipelineOperator : public exec::Operator {
   void noMoreInput() override;
 
  private:
+  template <TypeKind Kind>
+  VectorPtr copyVector(TypePtr type, VectorPtr& vectorPtr);
+
+  RowVectorPtr convertDictionaryToFlat(RowVectorPtr& input);
+
+ private:
   cider::exec::processor::BatchProcessorPtr batchProcessor_;
 
   bool finished_{false};

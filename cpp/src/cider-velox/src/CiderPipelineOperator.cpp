@@ -29,6 +29,7 @@
 #include "velox/vector/arrow/Abi.h"
 #endif
 #include "velox/vector/arrow/Bridge.h"
+#include "velox/vector/DictionaryVector.h"
 
 namespace facebook::velox::plugin {
 
@@ -36,7 +37,47 @@ bool CiderPipelineOperator::needsInput() const {
   return !finished_;
 }
 
+template <TypeKind Kind>
+VectorPtr CiderPipelineOperator::copyVector(TypePtr type, VectorPtr& vectorPtr) {
+  using T = facebook::velox::TypeTraits<Kind>::NativeType;
+  auto dictVectorPtr = std::dynamic_pointer_cast<DictionaryVector<T>>(vectorPtr);
+  auto flatVector =
+    std::dynamic_pointer_cast<FlatVector<T>>(BaseVector::create(type, vectorPtr->size(), operatorCtx_->pool()));
+  for (vector_size_t i = 0; i < vectorPtr->size(); ++i) {
+    if (dictVectorPtr->isNullAt(i)) {
+      flatVector->setNull(i, true);
+    } else {
+      flatVector->set(i, dictVectorPtr->valueAt(i));
+    }
+  }
+  return flatVector;
+}
+
+RowVectorPtr CiderPipelineOperator::convertDictionaryToFlat(RowVectorPtr& input) {
+  std::vector<std::shared_ptr<const Type>> types;
+  for (auto& ptr : input->children()) {
+    types.emplace_back(ptr->type());
+  }
+  auto rowTypePtr = ROW(std::move(types));
+  std::vector<VectorPtr> children;
+  for (column_index_t i = 0; i < rowTypePtr->size(); ++i) {
+    VectorPtr& vectorPtr = input->childAt(i);
+    if (vectorPtr->encoding() == VectorEncoding::Simple::DICTIONARY) {
+      VectorPtr newVectorPtr = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(copyVector,
+                                                                  rowTypePtr->childAt(i)->kind(),
+                                                                  rowTypePtr->childAt(i),
+                                                                  vectorPtr);
+      children.emplace_back(std::move(newVectorPtr));
+    } else {
+      children.emplace_back(std::move(vectorPtr));
+    }
+  }
+  return std::make_shared<RowVector>(
+      operatorCtx_->pool(), rowTypePtr, BufferPtr(nullptr), input->size(), children);
+}
+
 void CiderPipelineOperator::addInput(RowVectorPtr input) {
+  input = convertDictionaryToFlat(input);
   for (size_t i = 0; i < input->childrenSize(); i++) {
     input->childAt(i)->mutableRawNulls();
   }

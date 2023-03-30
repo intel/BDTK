@@ -52,10 +52,11 @@ class BatchDataGenerator {
                 int rowVectorSize,
                 vector_size_t vectorSize,
                 bool withNull) {
+    std::mt19937 gen{std::mt19937::default_seed};
     std::vector<RowVectorPtr> batches;
     for (int i = 0; i < rowVectorSize; ++i) {
       auto batch =
-          createRowVector(rowType, vectorSize, withNull ? randomNulls(7) : nullptr);
+        createRowVector(rowType, vectorSize, gen, withNull ? randomNulls(7) : nullptr);
       batches.push_back(batch);
     }
     return batches;
@@ -63,8 +64,8 @@ class BatchDataGenerator {
 
   RowVectorPtr createRowVector(RowTypePtr& rowType,
                                vector_size_t vectorSize,
+                               std::mt19937& gen,
                                std::function<bool(vector_size_t)> isNullAt = nullptr) {
-    std::mt19937 gen{std::mt19937::default_seed};
     std::vector<VectorPtr> children;
     for (uint32_t i = 0; i < rowType->size(); ++i) {
       auto vectorPtr = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(createScalar,

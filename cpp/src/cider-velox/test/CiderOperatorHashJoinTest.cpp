@@ -70,11 +70,12 @@ class CiderOperatorHashJoinTest : public CiderOperatorTestBase {
                 int32_t rightSize,
                 const std::string& referenceQuery,
                 const std::string& filter = "") {
+    std::mt19937 gen{std::mt19937::default_seed};
     auto leftType = makeRowType(keyTypes, "t_");
     auto rightType = makeRowType(keyTypes, "u_");
 
-    auto leftBatch = generator_.createRowVector(leftType, leftSize);
-    auto rightBatch = generator_.createRowVector(rightType, rightSize);
+    auto leftBatch = generator_.createRowVector(leftType, leftSize, gen);
+    auto rightBatch = generator_.createRowVector(rightType, rightSize, gen);
 
     auto planNodeIdGenerator = std::make_shared<core::PlanNodeIdGenerator>();
 
