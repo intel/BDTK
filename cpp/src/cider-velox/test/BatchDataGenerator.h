@@ -56,7 +56,7 @@ class BatchDataGenerator {
     std::vector<RowVectorPtr> batches;
     for (int i = 0; i < rowVectorSize; ++i) {
       auto batch =
-        createRowVector(rowType, vectorSize, gen, withNull ? randomNulls(7) : nullptr);
+          createRowVector(rowType, vectorSize, gen, withNull ? randomNulls(7) : nullptr);
       batches.push_back(batch);
     }
     return batches;

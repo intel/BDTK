@@ -28,8 +28,8 @@
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #include "velox/vector/arrow/Abi.h"
 #endif
-#include "velox/vector/arrow/Bridge.h"
 #include "velox/vector/DictionaryVector.h"
+#include "velox/vector/arrow/Bridge.h"
 
 namespace facebook::velox::plugin {
 
@@ -41,8 +41,8 @@ template <TypeKind Kind>
 VectorPtr CiderPipelineOperator::copyVector(TypePtr type, VectorPtr& vectorPtr) {
   using T = facebook::velox::TypeTraits<Kind>::NativeType;
   auto dictVectorPtr = std::dynamic_pointer_cast<DictionaryVector<T>>(vectorPtr);
-  auto flatVector =
-    std::dynamic_pointer_cast<FlatVector<T>>(BaseVector::create(type, vectorPtr->size(), operatorCtx_->pool()));
+  auto flatVector = std::dynamic_pointer_cast<FlatVector<T>>(
+      BaseVector::create(type, vectorPtr->size(), operatorCtx_->pool()));
   for (vector_size_t i = 0; i < vectorPtr->size(); ++i) {
     if (dictVectorPtr->isNullAt(i)) {
       flatVector->setNull(i, true);
@@ -63,10 +63,8 @@ RowVectorPtr CiderPipelineOperator::convertDictionaryToFlat(RowVectorPtr& input)
   for (column_index_t i = 0; i < rowTypePtr->size(); ++i) {
     VectorPtr& vectorPtr = input->childAt(i);
     if (vectorPtr->encoding() == VectorEncoding::Simple::DICTIONARY) {
-      VectorPtr newVectorPtr = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(copyVector,
-                                                                  rowTypePtr->childAt(i)->kind(),
-                                                                  rowTypePtr->childAt(i),
-                                                                  vectorPtr);
+      VectorPtr newVectorPtr = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
+          copyVector, rowTypePtr->childAt(i)->kind(), rowTypePtr->childAt(i), vectorPtr);
       children.emplace_back(std::move(newVectorPtr));
     } else {
       children.emplace_back(std::move(vectorPtr));

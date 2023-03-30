@@ -73,7 +73,7 @@ class JITFunction {
 
   const JITFunctionDescriptor* getFunctionDescriptor() const { return &descriptor_; }
 
-  template <typename R, typename... Args, typename F = R(*)(Args...)>
+  template <typename R, typename... Args, typename F = R (*)(Args...)>
   F getFunctionPointer() {
     return reinterpret_cast<F>(getFunctionPointer());
   }
