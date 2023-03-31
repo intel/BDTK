@@ -23,8 +23,8 @@
 #include "Allocator.h"
 #include "CiderCrossJoinBuild.h"
 #include "CiderHashJoinBuild.h"
+#include "ciderTransformer/CiderPlanTransformerOptions.h"
 #include "exec/plan/substrait/SubstraitPlan.h"
-#include "CiderPlanTransformerOptions.h"
 #include "velox/exec/Task.h"
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #include "velox/vector/arrow/Abi.h"
