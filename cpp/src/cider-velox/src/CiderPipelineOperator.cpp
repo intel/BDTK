@@ -41,7 +41,7 @@ bool CiderPipelineOperator::needsInput() const {
 VectorPtr CiderPipelineOperator::copyVector(const VectorPtr& vectorPtr) {
   SelectivityVector allRows(vectorPtr->size());
   auto flatVector =
-    BaseVector::create(vectorPtr->type(), vectorPtr->size(), operatorCtx_->pool());
+      BaseVector::create(vectorPtr->type(), vectorPtr->size(), operatorCtx_->pool());
   flatVector->copy(vectorPtr.get(), allRows, nullptr);
   return flatVector;
 }
@@ -56,7 +56,7 @@ RowVectorPtr CiderPipelineOperator::convertDictionaryToFlat(RowVectorPtr& input)
   std::vector<VectorPtr> children;
   for (column_index_t i = 0; i < rowTypePtr->size(); ++i) {
     VectorPtr& vectorPtr = input->childAt(i);
-    if (vectorPtr->encoding() == VectorEncoding::Simple::DICTIONARY) {                                                                                                                                                                                                                     
+    if (vectorPtr->encoding() == VectorEncoding::Simple::DICTIONARY) {
       children.emplace_back(copyVector(vectorPtr));
     } else {
       children.emplace_back(vectorPtr);
