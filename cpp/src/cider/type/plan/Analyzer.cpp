@@ -125,6 +125,22 @@ std::shared_ptr<Analyzer::Expr> TryStringCastOper::deep_copy() const {
       std::dynamic_pointer_cast<Analyzer::StringOper>(StringOper::deep_copy()));
 }
 
+JITExprValue& TryStringCastOper::codegen(CodegenContext& context) {
+  // cast from string to int32
+  JITFunction& func = *context.getJITFunction();
+  // decode input args
+  auto input = const_cast<Analyzer::Expr*>(getArg(0));
+  CHECK(input->get_type_info().is_string());
+  auto input_val = VarSizeJITExprValue(input->codegen(context));
+  auto ret_val = func.emitRuntimeFunctionCall(
+      "cast_date_string_to_int",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::INT32,
+          .params_vector = {input_val.getValue().get(), input_val.getLength().get()}});
+
+  return set_expr_value(input_val.getNull(), ret_val);
+}
+
 std::vector<std::shared_ptr<Analyzer::Expr>> StringOper::foldLiteralStrCasts(
     const std::vector<std::shared_ptr<Analyzer::Expr>>& operands,
     int start_idx) {

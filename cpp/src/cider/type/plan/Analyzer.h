@@ -856,6 +856,8 @@ class TryStringCastOper : public StringOper {
                    getArgNames()) {}
   TryStringCastOper(const std::shared_ptr<Analyzer::StringOper>& string_oper)
       : StringOper(string_oper) {}
+
+  JITExprValue& codegen(CodegenContext& context) override;
   std::shared_ptr<Analyzer::Expr> deep_copy() const override;
   size_t getMinArgs() const override { return 1UL; }
   std::vector<OperandTypeFamily> getExpectedTypeFamilies() const override {

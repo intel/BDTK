@@ -25,5 +25,10 @@ if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
   add_dependencies(cider_func_lkup SUBSTRAITCPP)
 endif()
 target_link_libraries(
-  cider_func_lkup ${SUBSTRAITCPP_FUNCTION_LIB} ${SUBSTRAITCPP_TYPE_LIB}
-  ${SUBSTRAITCPP_COMMON_LIB} substrait yaml-cpp)
+  cider_func_lkup
+  ${SUBSTRAITCPP_FUNCTION_LIB}
+  ${SUBSTRAITCPP_TYPE_LIB}
+  ${SUBSTRAITCPP_COMMON_LIB}
+  substrait
+  yaml-cpp
+  LLVM)
