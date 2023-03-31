@@ -16,8 +16,35 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+# add_custom_target(cider-plan-all)
+
+set(CIDER_LIB_PLAN_DEPS)
+
 add_subdirectory(parser)
 add_subdirectory(lookup)
 add_subdirectory(builder)
 add_subdirectory(validator)
 add_subdirectory(substrait)
+
+# add_dependencies(cider-plan-all cider-plan-parser cider-plan-lookup
+# cider-plan-builder cider-plan-validator cider-plan-substrait)
+
+add_library(
+  cider_plan STATIC
+  $<TARGET_OBJECTS:cider_plan_parser_objlib>
+  $<TARGET_OBJECTS:cider_plan_func_lookup_objlib>
+  $<TARGET_OBJECTS:cider_plan_expr_builder_objlib>
+  $<TARGET_OBJECTS:cider_plan_substrait_objlib>
+  $<TARGET_OBJECTS:cider_plan_validator_objlib>)
+add_dependencies(substrait SubstraitCpp::function)
+
+target_link_libraries(
+  cider_plan
+  QueryEngine
+  cider_util
+  substrait
+  SubstraitCpp::function
+  SubstraitCpp::type
+  SubstraitCpp::common
+  yaml-cpp)

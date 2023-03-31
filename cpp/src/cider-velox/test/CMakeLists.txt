@@ -101,10 +101,12 @@ set(VELOX_PLUGIN_TEST_LIBS
     ${FMT}
     ${FILESYSTEM}
     ${LLVM_LIB}
-    cider
-    cider_processor
-    cider_plan_substrait
-    cider_plan_parser
+    cider_static
+    nextgen
+    QueryEngine
+    cider_function
+    cider_hashtable_join
+    cider_module
     velox_plan_transformer
     cider_plan_transformer
     gtest

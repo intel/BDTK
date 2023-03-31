@@ -19,13 +19,11 @@
 
 set(NEXTGEN_FUNCTIONAL_TEST_LIBS
     gtest
-    cider_util
     test_utils
+    cider_static
     duckdb
+    cider_function
     QueryEngine
-    cider_processor
-    cider_plan_substrait
-    ${SUBSTRAITCPP_FUNCTION_LIB}
     dl)
 
 file(GLOB next_gen_test_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

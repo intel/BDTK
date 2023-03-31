@@ -35,14 +35,12 @@ add_executable(CiderBitUtilsTest CiderBitUtilsTest.cpp)
 
 set(EXECUTE_TEST_LIBS
     test_utils
-    cider_processor
-    cider_plan_substrait
-    cider_func_lkup
-    ${SUBSTRAITCPP_FUNCTION_LIB}
-    cider_util
-    gtest
-    gflags
     duckdb
+    cider_static
+    cider_function
+    QueryEngine
+    gtest
+    ${GFLAGS_LIBRARIES}
     dl
     fmt::fmt)
 
@@ -50,15 +48,8 @@ target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
                       cider_hashtable)
 target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS}
                       cider_hashtable)
-target_link_libraries(Substrait2IRTest cider_plan_parser ${EXECUTE_TEST_LIBS})
-target_link_libraries(
-  ExpressionEvalTest
-  gtest
-  cider_util
-  test_utils
-  cider_expr_builder
-  substrait
-  cider_plan_validator)
+target_link_libraries(Substrait2IRTest cider_plan ${EXECUTE_TEST_LIBS})
+target_link_libraries(ExpressionEvalTest gtest test_utils cider_static)
 target_link_libraries(CiderAllocatorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
@@ -78,8 +69,6 @@ add_test(CiderExceptionTest CiderExceptionTest ${TEST_ARGS})
 add_test(CiderLogTest CiderLogTest ${TEST_ARGS})
 add_test(StringHeapTest StringHeapTest ${TEST_ARGS})
 add_test(CiderBitUtilsTest CiderBitUtilsTest ${TEST_ARGS})
-
-find_package(fmt REQUIRED)
 
 if(DEFINED ENV{ISTHMUS_EXEC})
   message("defined env var ISTHMUS_EXEC: $ENV{ISTHMUS_EXEC}")

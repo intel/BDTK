@@ -64,20 +64,11 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/ciderTransformer/libc
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/planTransformer/libvelox_plan_transformer.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/substrait/libvelox_substrait_convertor.a ./presto_cpp/main/lib
 cp -a ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/module/libcider.so* ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/processor/libcider_processor.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/substrait/libcider_plan_substrait.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.so ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/jitlib/libjitlib.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/libnextgen.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/parser/libcider_plan_parser.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/plan/lookup/libcider_func_lkup.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/common/libsubstrait_common.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/function/libsubstrait_function.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/substrait/type/libsubstrait_type.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/SUBSTRAITCPP/src/SUBSTRAITCPP/third_party/yaml-cpp/libyaml-cpp.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/util/libcider_util.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/type/plan/libcider_type_plan.a ./presto_cpp/main/lib
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}

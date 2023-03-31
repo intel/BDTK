@@ -22,6 +22,4 @@ set(PROCESSOR_SOURCE
     JoinHandler.cpp DefaultJoinHashTableBuilder.cpp ExpressionEvaluator.cpp)
 
 add_library(cider_processor STATIC ${PROCESSOR_SOURCE})
-target_link_libraries(cider_processor cider)
-# target_link_libraries(cider_processor cider cider_plan_substrait
-# cider_plan_parser nextgen cider_hashtable_join)
+target_link_libraries(cider_processor cider_plan nextgen cider_hashtable_join)

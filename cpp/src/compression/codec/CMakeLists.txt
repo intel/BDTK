@@ -56,7 +56,7 @@ list(APPEND ICL_BUNDLED_STATIC_LIBS icl_codec_static)
 icl_car(_FIRST_LIB ${ICL_BUNDLED_STATIC_LIBS})
 icl_cdr(_OTHER_LIBS ${ICL_BUNDLED_STATIC_LIBS})
 create_merged_static_lib(
-  icl_bundled_dependencies
+  cider_bundled_dependencies
   NAME
   icl_codec
   ROOT

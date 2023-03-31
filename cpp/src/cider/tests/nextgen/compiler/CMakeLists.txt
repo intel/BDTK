@@ -17,16 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(NEXTGEN_COMPILER_TEST_LIBS
-    gtest
-    cider_util
-    test_utils
-    duckdb
-    # cider cider_hashtable_join substrait
-    cider_processor
-    cider_plan_substrait
-    ${SUBSTRAITCPP_FUNCTION_LIB}
-    dl)
+set(NEXTGEN_COMPILER_TEST_LIBS gtest test_utils duckdb cider_static
+                               cider_hashtable_join dl)
 
 add_executable(NextgenCompilerTest NextgenCompilerTest.cpp)
 target_link_libraries(NextgenCompilerTest ${NEXTGEN_COMPILER_TEST_LIBS})

@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-find_package(FMT REQUIRED)
 find_package(Parquet REQUIRED)
 find_package(Arrow REQUIRED)
 
@@ -32,14 +31,7 @@ set(cider_util_source_files
 
 add_library(cider_util ${cider_util_source_files})
 
-target_link_libraries(
-  cider_util
-  ${BLOSC_LIBRARIES}
-  ${Boost_LIBRARIES}
-  folly
-  dl
-  fmt
-  glog)
+target_link_libraries(cider_util fmt glog)
 
 add_library(cider_parquet_reader CiderParquetReader.cpp)
 target_link_libraries(cider_parquet_reader cider_util arrow_shared

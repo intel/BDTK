@@ -50,11 +50,9 @@ set(FOLLY_WITH_DEPENDENCIES ${FOLLY_LIBRARIES} ${Boost_LIBRARIES}
 set(FOLLY_BENCHMARK Folly::follybenchmark)
 set(FOLLY ${FOLLY_LIBRARIES})
 set(VELOX_BENCHMARKS_DEPENDENCIES
-    cider_processor
-    cider_plan_substrait
+    cider_static
     velox_plan_transformer
     cider_plan_transformer
-    cider_plan_parser
     velox_aggregates
     velox_exec
     velox_exec_test_lib

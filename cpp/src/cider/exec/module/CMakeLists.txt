@@ -17,31 +17,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-find_package(gflags COMPONENTS shared)
 set(SRC_FILE CiderTypes.cpp CiderOptions.cpp batch/CiderBatchUtils.cpp
              batch/CiderArrowBufferHolder.cpp)
-add_library(cider SHARED ${SRC_FILE})
-target_link_libraries(
-  cider
-  QueryEngine
-  nextgen
-  cider_plan_parser
-  cider_function
-  ${Boost_LIBRARIES}
-  ${GFLAGS_LIBRARIES}
-  ${TBB_LIBS}
-  substrait
-  yaml-cpp
-  cider_hashtable_join)
+add_library(cider_module STATIC ${SRC_FILE})
+add_dependencies(cider_module substrait)
+target_link_libraries(cider_module ${GFLAGS_LIBRARIES})
 
-set_target_properties(cider PROPERTIES VERSION "${BDTK_FULL_SO_VERSION}"
-                                       SOVERSION "${BDTK_SO_VERSION}")
+# set_target_properties(cider PROPERTIES VERSION "${BDTK_FULL_SO_VERSION}"
+# SOVERSION "${BDTK_SO_VERSION}")
 
-install(
-  TARGETS cider
-  DESTINATION "lib"
-  COMPONENT "CIDER")
-install(
-  FILES CiderInterface.h CiderOptions.h CiderTableSchema.h CiderException.h
-  DESTINATION "Cider"
-  COMPONENT "include")
+# install( TARGETS cider DESTINATION "lib" COMPONENT "CIDER") install( FILES
+# CiderInterface.h CiderOptions.h CiderTableSchema.h CiderException.h
+# DESTINATION "Cider" COMPONENT "include")

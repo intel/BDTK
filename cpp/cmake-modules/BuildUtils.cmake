@@ -308,8 +308,7 @@ function(create_merged_static_lib output_target)
                     COMMENT "Bundling ${output_lib_path}"
                     VERBATIM)
 
-  message(STATUS "Creating bundled static library target ${output_target} at ${output_lib_path}"
-  )
+  message(STATUS "Creating bundled static library target ${output_target} at ${output_lib_path}")
 
   add_library(${output_target} STATIC IMPORTED)
   set_target_properties(${output_target} PROPERTIES IMPORTED_LOCATION ${output_lib_path})
