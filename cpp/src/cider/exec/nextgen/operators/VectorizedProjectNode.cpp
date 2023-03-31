@@ -189,6 +189,7 @@ class ExpressionTreeSpilter {
                         child_inputs.end(),
                         [](const TreeInputs& child) { return child.bool_input; })) {
           // All of chidren output Bool values, just pass them.
+          curr->setGenerateVectorizedBoolCode(true);
           return {true, curr, ExpressionTreeSpilter::combineInputExprs(child_inputs)};
         } else if (curr->isTrivialNullProcess() &&
                    std::all_of(

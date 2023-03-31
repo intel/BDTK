@@ -161,7 +161,8 @@ class BinOper : public Expr {
 
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
-                                          JITValue& rhs);
+                                          JITValue& rhs,
+                                          bool bit_bool_op = false);
   JITExprValue& codegenFixedSizeLogicalFun(CodegenContext& context,
                                            JITFunction& func,
                                            FixSizeJITExprValue& lhs_val,
