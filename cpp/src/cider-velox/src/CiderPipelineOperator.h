@@ -46,8 +46,7 @@ class CiderPipelineOperator : public exec::Operator {
   void noMoreInput() override;
 
  private:
-  template <TypeKind Kind>
-  VectorPtr copyVector(TypePtr type, VectorPtr& vectorPtr);
+  VectorPtr copyVector(const VectorPtr& vectorPtr);
 
   RowVectorPtr convertDictionaryToFlat(RowVectorPtr& input);
 
