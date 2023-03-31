@@ -277,6 +277,24 @@ TEST_F(JITLibTests, LogicalOpTest) {
       -100, 56, -100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
   executeBinaryOp<JITTypeTag::INT64>(
       -100, 56, -100 | 56, [](JITValue& a, JITValue& b) { return a | b; });
+
+  // Bitwise Xor
+  executeBinaryOp<JITTypeTag::INT8>(
+      100, 56, 100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      100, 56, 100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      100, 56, 100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      100, 56, 100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT8>(
+      -100, 56, -100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT16>(
+      -100, 56, -100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT32>(
+      -100, 56, -100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
+  executeBinaryOp<JITTypeTag::INT64>(
+      -100, 56, -100 ^ 56, [](JITValue& a, JITValue& b) { return a ^ b; });
 }
 
 TEST_F(JITLibTests, CompareOpTest) {

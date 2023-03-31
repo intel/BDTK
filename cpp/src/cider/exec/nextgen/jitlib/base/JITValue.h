@@ -73,6 +73,7 @@ class JITValue : protected exec::nextgen::utils::ReferenceCounter {
   // // Logical Operators
   virtual JITValuePointer andOp(JITValue& rh) = 0;
   virtual JITValuePointer orOp(JITValue& rh) = 0;
+  virtual JITValuePointer xorOp(JITValue& rh) = 0;
   virtual JITValuePointer notOp() = 0;
 
   // // Arithmetic Operations
