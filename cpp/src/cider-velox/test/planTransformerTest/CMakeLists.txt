@@ -19,9 +19,8 @@
 
 add_subdirectory(utils)
 
-set(VELOX_PLAN_TRANSFORMER_TEST_LIBS
-    cider_plan_transformer velox_plan_transformer_test_utils
-    velox_plugin_test_util velox_core ${VELOX_PLUGIN_TEST_LIBS})
+set(VELOX_PLAN_TRANSFORMER_TEST_LIBS velox_plan_transformer_test_utils
+                                     ${VELOX_PLUGIN_TEST_LIBS})
 
 set(TEST_ARGS "")
 

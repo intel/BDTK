@@ -21,6 +21,7 @@
 
 #include <fmt/format.h>
 #include <chrono>
+#include <filesystem>
 
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
@@ -42,7 +43,6 @@
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Vectorize/LoopVectorize.h>
 
-#include <filesystem>
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITTargets.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITUtils.h"

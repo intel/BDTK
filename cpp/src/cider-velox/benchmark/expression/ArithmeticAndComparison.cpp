@@ -51,7 +51,6 @@ DEFINE_int64(fuzzer_seed, 99887766, "Seed for random input dataset generator");
 DEFINE_double(ratio, 0.5, "NULL ratio in batch");
 DEFINE_int64(batch_size, 10'240, "batch size for one loop");
 DEFINE_int64(loop_count, 10'000, "loop count for benchmark");
-DEFINE_bool(dump_ir, false, "dump llvm ir");
 
 using namespace cider::exec::processor;
 using namespace cider::exec::nextgen::context;
@@ -103,8 +102,8 @@ void releaseArrowArray(ArrowArray* array) {
   delete array;
 }
 
-inline CodegenOptions getBaseOption() {
-  CodegenOptions cgo;
+inline cider::CodegenOptions getBaseOption() {
+  cider::CodegenOptions cgo;
   cgo.branchless_logic = false;
   cgo.enable_vectorize = false;
   cgo.co.enable_vectorize = false;
@@ -202,7 +201,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
   ~ArithmeticAndComparisonBenchmark() { inputReleaser_(inputArray_); }
 
   __attribute__((noinline)) size_t nextgenCompile(
-      CodegenOptions cgo,
+      cider::CodegenOptions cgo,
       const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
@@ -211,7 +210,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
-    cgo.co.dump_ir = FLAGS_dump_ir;
     suspender.dismiss();
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
@@ -222,7 +220,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
   }
 
   __attribute__((noinline)) size_t nextgenCompute(
-      CodegenOptions cgo,
+      cider::CodegenOptions cgo,
       const std::initializer_list<std::string>& exprs) {
     folly::BenchmarkSuspender suspender;
     google::protobuf::Arena arena;
@@ -231,8 +229,6 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     auto plan = v2SPlanConvertor->toSubstrait(arena, veloxPlan);
-
-    cgo.co.dump_ir = FLAGS_dump_ir;
 
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
@@ -344,7 +340,7 @@ BENCHMARK_DRAW_LINE();
     benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK_RELATIVE(name##NextgenAVX2) {                                \
-    CodegenOptions cgo;                                                  \
+    cider::CodegenOptions cgo;                                           \
     cgo.enable_vectorize = true;                                         \
     cgo.co.enable_vectorize = true;                                      \
     cgo.co.enable_avx2 = true;                                           \
@@ -352,7 +348,7 @@ BENCHMARK_DRAW_LINE();
     benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK_RELATIVE(name##NextgenAVX512) {                              \
-    CodegenOptions cgo;                                                  \
+    cider::CodegenOptions cgo;                                           \
     cgo.enable_vectorize = true;                                         \
     cgo.co.enable_vectorize = true;                                      \
     cgo.co.enable_avx2 = true;                                           \
@@ -360,7 +356,7 @@ BENCHMARK_DRAW_LINE();
     benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK_RELATIVE(name##NextgenAllOpt) {                              \
-    CodegenOptions cgo;                                                  \
+    cider::CodegenOptions cgo;                                           \
     cgo.check_bit_vector_clear_opt = true;                               \
     cgo.set_null_bit_vector_opt = true;                                  \
     cgo.branchless_logic = true;                                         \
@@ -371,7 +367,7 @@ BENCHMARK_DRAW_LINE();
     benchmark->nextgenCompute(cgo, expr);                                \
   }                                                                      \
   BENCHMARK(name##Compile) {                                             \
-    CodegenOptions cgo;                                                  \
+    cider::CodegenOptions cgo;                                           \
     cgo.check_bit_vector_clear_opt = true;                               \
     cgo.set_null_bit_vector_opt = true;                                  \
     cgo.branchless_logic = true;                                         \

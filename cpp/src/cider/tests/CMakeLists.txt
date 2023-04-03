@@ -34,15 +34,16 @@ add_executable(StringHeapTest StringHeapTest.cpp)
 add_executable(CiderBitUtilsTest CiderBitUtilsTest.cpp)
 
 set(EXECUTE_TEST_LIBS
+    test_utils
+    cider_processor
+    cider_plan_substrait
+    cider_func_lkup
+    ${SUBSTRAITCPP_FUNCTION_LIB}
+    cider_util
     gtest
     gflags
-    cider_util
-    test_utils
     duckdb
-    substrait
-    cider
     dl
-    cider_hashtable_join
     fmt::fmt)
 
 target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}

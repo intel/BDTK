@@ -21,10 +21,11 @@ set(PROCESSOR_TEST_LIBS
     gtest
     cider_util
     test_utils
-    duckdb
-    substrait
-    cider
     cider_processor
+    substrait
+    cider_plan_substrait
+    ${SUBSTRAITCPP_FUNCTION_LIB}
+    duckdb
     dl)
 
 add_executable(CiderBatchProcessorTest CiderBatchProcessorTest.cpp)

@@ -57,7 +57,6 @@ DEFINE_double(ratio, 0.5, "NULL ratio in batch");
 DEFINE_int64(batch_size, 10'240, "batch size for one loop");
 DEFINE_int64(loop_count, 10'000, "loop count for benchmark");
 DEFINE_bool(profile_mode, false, "profile mode which just run once");
-DEFINE_bool(dump_ir, false, "dump llvm ir");
 DEFINE_bool(dump_plan, false, "dump substrait plan");
 
 using namespace cider::exec::processor;
@@ -73,8 +72,8 @@ using namespace facebook::velox::substrait;
 
 namespace {
 
-inline CodegenOptions getBaseOption() {
-  CodegenOptions cgo;
+inline cider::CodegenOptions getBaseOption() {
+  cider::CodegenOptions cgo;
   cgo.branchless_logic = true;
   cgo.enable_vectorize = true;
   cgo.co.enable_vectorize = true;
@@ -169,7 +168,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
   }
 
   __attribute__((noinline)) size_t nextgenCompute(
-      CodegenOptions cgo,
+      cider::CodegenOptions cgo,
       const std::initializer_list<std::string>& exprs) {
     compile(veloxPlan_, cgo);
 
@@ -184,7 +183,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
   }
 
   __attribute__((noinline)) size_t nextgenComputeOpt(
-      CodegenOptions cgo,
+      cider::CodegenOptions cgo,
       const std::initializer_list<std::string>& exprs) {
     compile(veloxPlan_, cgo);
 
@@ -199,7 +198,7 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
 
  private:
   // mimic CiderPipelineOperator::CiderPipelineOperator(...)
-  void compile(core::PlanNodePtr veloxPlan, CodegenOptions cgo) {
+  void compile(core::PlanNodePtr veloxPlan, cider::CodegenOptions cgo) {
     std::shared_ptr<VeloxToSubstraitPlanConvertor> v2SPlanConvertor =
         std::make_shared<VeloxToSubstraitPlanConvertor>();
     google::protobuf::Arena arena;
@@ -217,7 +216,6 @@ class PipelineOperator : public functions::test::FunctionBenchmarkBase {
     auto allocator = std::make_shared<PoolAllocator>(pool());
     auto context = std::make_shared<BatchProcessorContext>(allocator);
 
-    cgo.co.dump_ir = FLAGS_dump_ir;
     batchProcessor_ = cider::exec::processor::BatchProcessor::Make(plan, context, cgo);
   }
 

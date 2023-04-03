@@ -34,8 +34,7 @@ target_link_libraries(test_utils duckdb cider_plan_parser cider_processor)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
-set(EXECUTE_TEST_UTILS_LIBS gtest cider_util test_utils duckdb substrait
-                            cider_processor)
+set(EXECUTE_TEST_UTILS_LIBS gtest cider_util test_utils duckdb substrait)
 
 set(EXECUTE_TEST_UTILS_LIBS
     ${EXECUTE_TEST_UTILS_LIBS}
@@ -61,7 +60,9 @@ add_test(QueryArrowDataGeneratorTest
 set(TEST_PROGRAMS IsthmusTest)
 
 add_executable(CiderNextgenQueryRunnerTest CiderNextgenQueryRunnerTest.cpp)
-target_link_libraries(CiderNextgenQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS})
+target_link_libraries(
+  CiderNextgenQueryRunnerTest ${EXECUTE_TEST_UTILS_LIBS} cider_processor
+  cider_plan_substrait ${SUBSTRAITCPP_FUNCTION_LIB})
 add_test(CiderNextgenQueryRunnerTest
          ${EXECUTABLE_OUTPUT_PATH}/CiderNextgenQueryRunnerTest ${TEST_ARGS})
 

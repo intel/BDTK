@@ -76,16 +76,6 @@ struct AggExprsInfo {
 
 using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
-struct CodegenOptions {
-  bool needs_error_check = false;
-  bool check_bit_vector_clear_opt = false;
-  bool set_null_bit_vector_opt = false;
-  bool branchless_logic = true;
-  bool enable_vectorize = true;
-
-  jitlib::CompilationOptions co = jitlib::CompilationOptions{};
-};
-
 struct FilterDescriptor {
   bool applied_filter_mask{false};
   jitlib::JITValuePointer filter_i64_mask{nullptr};

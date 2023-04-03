@@ -26,16 +26,6 @@
 namespace cider::jitlib {
 class LLVMJITModule;
 
-// compilation config info
-struct CompilationOptions {
-  bool optimize_ir = true;
-  bool aggressive_jit_compile = true;
-  bool dump_ir = false;
-  bool enable_vectorize = true;
-  bool enable_avx2 = true;
-  bool enable_avx512 = false;
-};
-
 struct LLVMJITEngine {
   llvm::ExecutionEngine* engine{nullptr};
   llvm::JITEventListener* perf_listener{nullptr};

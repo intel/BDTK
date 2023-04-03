@@ -27,6 +27,7 @@
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Transforms/Utils/ValueMapper.h>
 
+#include "cider/CiderOptions.h"
 #include "exec/nextgen/jitlib/base/JITModule.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITFunction.h"

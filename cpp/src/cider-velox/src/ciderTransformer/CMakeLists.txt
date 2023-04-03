@@ -24,4 +24,4 @@ set(CIDER_PLAN_TRANSFORMER_SOURCES
 add_library(cider_plan_transformer ${CIDER_PLAN_TRANSFORMER_SOURCES})
 
 target_link_libraries(cider_plan_transformer velox_plan_transformer
-                      velox_substrait_convertor)
+                      velox_substrait_convertor cider)
