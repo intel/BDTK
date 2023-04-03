@@ -219,13 +219,21 @@ static void BM_cider_optimzied_hashmap(benchmark::State& state) {
   BM_Lookup<KeyType, OptimizedLookup>(state);
 }
 
-BENCHMARK(BM_std_treemap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
-BENCHMARK(BM_std_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
-BENCHMARK(BM_folly_f14_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
-BENCHMARK(BM_cider_basic_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 10000000);
+BENCHMARK(BM_std_treemap<uint8_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_std_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_folly_f14_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_cider_basic_hashmap<uint8_t>)->RangeMultiplier(10)->Range(10000, 1000000);
 BENCHMARK(BM_cider_optimzied_hashmap<uint8_t>)
     ->RangeMultiplier(10)
-    ->Range(10000, 10000000);
+    ->Range(10000, 1000000);
+
+BENCHMARK(BM_std_treemap<uint16_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_std_hashmap<uint16_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_folly_f14_hashmap<uint16_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_cider_basic_hashmap<uint16_t>)->RangeMultiplier(10)->Range(10000, 1000000);
+BENCHMARK(BM_cider_optimzied_hashmap<uint16_t>)
+    ->RangeMultiplier(10)
+    ->Range(10000, 1000000);
 
 // Remove uint16_t benchmark to make the report clear.
 // Besides, the result of uint16_t is same to uint8_t.
