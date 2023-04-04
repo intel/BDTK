@@ -17,10 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(SRC_FILE CiderTypes.cpp CiderOptions.cpp batch/CiderBatchUtils.cpp
-             batch/CiderArrowBufferHolder.cpp)
+set(SRC_FILE CiderTypes.cpp CiderOptions.cpp)
 add_library(cider_module STATIC ${SRC_FILE})
-add_dependencies(cider_module substrait)
 target_link_libraries(cider_module ${GFLAGS_LIBRARIES})
 
 # set_target_properties(cider PROPERTIES VERSION "${BDTK_FULL_SO_VERSION}"

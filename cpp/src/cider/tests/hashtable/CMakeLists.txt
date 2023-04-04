@@ -17,10 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(DEP_LIBS ${EXECUTE_TEST_LIBS})
-
-set(TEST_ARGS "--gtest_output=xml:../")
-
 find_package(folly REQUIRED)
 
 set(CMAKE_CXX_FLAGS
@@ -35,6 +31,7 @@ endif()
 include_directories(${folly_INCLUDE_DIRS})
 
 add_executable(CiderHashTableTest CiderHashTableTest.cpp)
-target_link_libraries(CiderHashTableTest ${DEP_LIBS} ${FOLLY_LIBRARIES})
+target_link_libraries(CiderHashTableTest ${EXECUTE_TEST_LIBS}
+                      ${FOLLY_LIBRARIES})
 add_test(CiderHashTableTest ${EXECUTABLE_OUTPUT_PATH}/CiderHashTableTest
          ${TEST_ARGS})

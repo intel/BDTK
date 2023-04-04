@@ -17,21 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(PROCESSOR_TEST_LIBS
-    gtest
-    test_utils
-    cider_static
-    duckdb
-    cider_function
-    QueryEngine
-    dl)
-
 add_executable(CiderBatchProcessorTest CiderBatchProcessorTest.cpp)
-target_link_libraries(CiderBatchProcessorTest ${PROCESSOR_TEST_LIBS})
+target_link_libraries(CiderBatchProcessorTest ${EXECUTE_TEST_LIBS})
 add_test(CiderStatelessProcessorTest
          ${EXECUTABLE_OUTPUT_PATH}/CiderBatchProcessorTest)
 
 add_executable(HashJoinBatchProcessorTest HashJoinBatchProcessorTest.cpp)
-target_link_libraries(HashJoinBatchProcessorTest ${PROCESSOR_TEST_LIBS})
+target_link_libraries(HashJoinBatchProcessorTest ${EXECUTE_TEST_LIBS})
 add_test(CiderStatelessProcessorTest
          ${EXECUTABLE_OUTPUT_PATH}/HashJoinBatchProcessorTest)

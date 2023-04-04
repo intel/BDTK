@@ -16,7 +16,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-cmake_minimum_required(VERSION 3.16)
 
 # Required for LLVM / JIT, alternative to setting CMP0065 to OLD
 set(CMAKE_ENABLE_EXPORTS True)
@@ -26,8 +25,6 @@ if("${CMAKE_VERSION}" VERSION_GREATER 3.11.999)
 endif()
 
 project(cider)
-
-set(CIDER_DEPENDENCIES_LIBS)
 
 add_definitions("-DBOOST_LOG_DYN_LINK")
 
@@ -54,20 +51,6 @@ if(ENABLE_PERF_JIT_LISTENER)
   add_definitions("-DENABLE_PERF_JIT_LISTENER")
 endif()
 
-option(ENABLE_FOLLY "Use Folly" ON)
-if(ENABLE_FOLLY)
-  find_package(Folly)
-  if(NOT Folly_FOUND)
-    set(ENABLE_FOLLY
-        OFF
-        CACHE BOOL "Use Folly" FORCE)
-  else()
-    include_directories(${Folly_INCLUDE_DIRS})
-    add_definitions("-DHAVE_FOLLY")
-    list(APPEND Folly_LIBRARIES ${Glog_LIBRARIES})
-  endif()
-endif()
-
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs -fdiagnostics-color=auto -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -fPIC"
 )
@@ -88,9 +71,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-include_directories(include)
-
 # RapidJSON
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/rapidjson/include)
 add_definitions(-DRAPIDJSON_HAS_STDSTRING)
@@ -109,6 +89,7 @@ find_package(FMT REQUIRED)
 if(NOT ${FMT_FOUND})
   message(FATAL_ERROR "fmt not found, please install fmt")
 endif()
+add_definitions(-DFMT_HEADER_ONLY)
 
 find_package(LLVM CONFIG REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -134,49 +115,20 @@ find_package(
   REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
-option(ENABLE_CIDER "Enable CIDER" ON)
-if(ENABLE_CIDER)
-  add_definitions("-DENABLE_CIDER")
-endif()
-
 option(ENABLE_VELOX_FUNCTION "Enable Velox Functions" OFF)
 if(ENABLE_VELOX_FUNCTION)
   add_definitions(-DENABLE_VELOX_FUNCTION)
 endif()
-
-# TBB
-option(ENABLE_TBB "Enable OneTBB for threading (if found)" ON)
-set(TBB_LIBS "")
-find_package(TBB)
-if(TBB_FOUND)
-  message(STATUS "TBB library is found with ${TBB_DIR}")
-  add_definitions("-DHAVE_TBB")
-  add_definitions("-DTBB_PREVIEW_TASK_GROUP_EXTENSIONS=1")
-  list(APPEND TBB_LIBS ${TBB_LIBRARIES})
-  if(ENABLE_TBB)
-    add_definitions("-DENABLE_TBB")
-  else()
-    message(STATUS "Using TBB for threading is DISABLED")
-  endif()
-else()
-  set(ENABLE_TBB OFF)
-endif()
-
-if(CIDER_ENABLE_BENCHMARK)
-  add_subdirectory(benchmarks)
-endif()
-
-set(CIDER_LIBRARIES QueryEngine)
-
-if(ENABLE_FOLLY)
-  list(APPEND CIDER_LIBRARIES ${Folly_LIBRARIES})
-endif()
-
-list(APPEND CIDER_LIBRARIES ${TBB_LIBS})
 
 add_subdirectory(common)
 add_subdirectory(exec)
 add_subdirectory(function)
 add_subdirectory(util)
 add_subdirectory(examples)
-add_subdirectory(tests)
+if(CIDER_ENABLE_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
+if(CIDER_ENABLE_BENCHMARK)
+  add_subdirectory(benchmarks)
+endif()

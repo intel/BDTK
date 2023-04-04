@@ -18,10 +18,22 @@
 # under the License.
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/tests ${CMAKE_CURRENT_BINARY_DIR})
 
-set(TEST_BASE_PATH "./tmp")
-add_definitions("-DBASE_PATH=\"${TEST_BASE_PATH}\"")
+set(EXECUTE_TEST_LIBS
+    gtest
+    duckdb
+    cider_static
+    cider_function
+    cider_runtime_function
+    cider_test_utils
+    ${LLVM_LIB}
+    glog
+    ${GFLAGS_LIBRARIES}
+    re2
+    dl
+    fmt::fmt)
+
+set(TEST_ARGS "--gtest_output=xml:../")
 
 add_executable(CiderNewHashTableTest CiderNewHashTableTest.cpp)
 add_executable(CiderNewAggHashTableTest CiderNewAggHashTableTest.cpp)
@@ -33,23 +45,12 @@ add_executable(CiderLogTest CiderLogTest.cpp)
 add_executable(StringHeapTest StringHeapTest.cpp)
 add_executable(CiderBitUtilsTest CiderBitUtilsTest.cpp)
 
-set(EXECUTE_TEST_LIBS
-    test_utils
-    duckdb
-    cider_static
-    cider_function
-    QueryEngine
-    gtest
-    ${GFLAGS_LIBRARIES}
-    dl
-    fmt::fmt)
-
 target_link_libraries(CiderNewHashTableTest ${EXECUTE_TEST_LIBS}
                       cider_hashtable)
 target_link_libraries(CiderNewAggHashTableTest ${EXECUTE_TEST_LIBS}
                       cider_hashtable)
-target_link_libraries(Substrait2IRTest cider_plan ${EXECUTE_TEST_LIBS})
-target_link_libraries(ExpressionEvalTest gtest test_utils cider_static)
+target_link_libraries(Substrait2IRTest ${EXECUTE_TEST_LIBS})
+target_link_libraries(ExpressionEvalTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderAllocatorTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderExceptionTest ${EXECUTE_TEST_LIBS})
 target_link_libraries(CiderLogTest ${EXECUTE_TEST_LIBS})
@@ -59,7 +60,6 @@ target_link_libraries(CiderBitUtilsTest ${EXECUTE_TEST_LIBS})
 target_compile_options(CiderNewHashTableTest PRIVATE -msse4.2 -msse2)
 target_compile_options(CiderNewAggHashTableTest PRIVATE -msse4.2 -msse2)
 
-set(TEST_ARGS "--gtest_output=xml:../")
 add_test(CiderNewHashTableTest CiderNewHashTableTest ${TEST_ARGS})
 add_test(CiderNewAggHashTableTest CiderNewAggHashTableTest ${TEST_ARGS})
 add_test(Substrait2IRTest Substrait2IRTest ${TEST_ARGS})
