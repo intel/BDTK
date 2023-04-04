@@ -85,6 +85,29 @@ JITValuePointer LLVMJITValue::orOp(JITValue& rh) {
       getValueTypeTag(), parent_function_, ans, "or", false);
 }
 
+JITValuePointer LLVMJITValue::xorOp(JITValue& rh) {
+  CHECK(rh.getValueTypeTag() == getValueTypeTag());
+
+  LLVMJITValue& llvm_rh = static_cast<LLVMJITValue&>(rh);
+  llvm::Value* ans = nullptr;
+  switch (getValueTypeTag()) {
+    case JITTypeTag::BOOL:
+    case JITTypeTag::INT8:
+    case JITTypeTag::INT16:
+    case JITTypeTag::INT32:
+    case JITTypeTag::INT64:
+    case JITTypeTag::INT128:
+      ans = getFunctionBuilder(parent_function_).CreateXor(load(), llvm_rh.load());
+      break;
+    default:
+      LOG(ERROR) << "Invalid JITValue type for xor operation. Name=" << getValueName()
+                 << ", Type=" << getJITTypeName(getValueTypeTag()) << ".";
+  }
+
+  return makeJITValuePointer<LLVMJITValue>(
+      getValueTypeTag(), parent_function_, ans, "xor", false);
+}
+
 JITValuePointer LLVMJITValue::notOp() {
   llvm::Value* ans = nullptr;
   switch (getValueTypeTag()) {

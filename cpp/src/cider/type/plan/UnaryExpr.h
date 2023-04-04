@@ -105,18 +105,7 @@ class UOper : public Expr {
  protected:
   SQLOps optype;  // operator type, e.g., kUMINUS, kISNULL, kEXISTS
   std::shared_ptr<Analyzer::Expr> operand;  // operand expression
-  void initAutoVectorizeFlag() {
-    switch (optype) {
-      case kCAST:
-      case kNOT:
-      case kUMINUS: {
-        auto_vectorizable_ = operand->isAutoVectorizable();
-        break;
-      }
-      default:
-        auto_vectorizable_ = false;
-    }
-  }
+  void initAutoVectorizeFlag();
 };
 }  // namespace Analyzer
 

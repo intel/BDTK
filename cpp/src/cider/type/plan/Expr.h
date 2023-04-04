@@ -206,6 +206,12 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   void setNullable(bool nullable) { type_info.set_notnull(!nullable); }
 
+  bool isTrivialNullProcess() const { return is_trivial_null_process_; }
+
+  void setTrivialNullProcess(bool flag) { is_trivial_null_process_ = flag; }
+
+  void setGenerateVectorizedBoolCode(bool flag) { generate_vectorized_bool_code_ = flag; }
+
  protected:
   JITTypeTag getJITTag(const SQLTypes& st) {
     return cider::exec::nextgen::utils::getJITTypeTag(st);
@@ -219,6 +225,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
   size_t local_index_{0};  // 1-based index of input column in CodegenContext.
   bool auto_vectorizable_{false};
   bool is_column_var_{false};
+  bool is_trivial_null_process_{true};
+  bool generate_vectorized_bool_code_{false};
 };
 
 using ExpressionPtr = std::shared_ptr<Analyzer::Expr>;

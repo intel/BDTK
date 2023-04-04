@@ -54,6 +54,7 @@ class BinOper : public Expr {
           std::shared_ptr<Analyzer::Expr> r)
       : Expr(ti, has_agg), optype(o), qualifier(q), left_operand(l), right_operand(r) {
     initAutoVectorizeFlag();
+    setTrivialNullProcess(!(o == kAND || o == kOR));
   }
   BinOper(SQLTypes t,
           SQLOps o,
@@ -66,6 +67,7 @@ class BinOper : public Expr {
       , left_operand(l)
       , right_operand(r) {
     initAutoVectorizeFlag();
+    setTrivialNullProcess(!(o == kAND || o == kOR));
   }
   SQLOps get_optype() const { return optype; }
   SQLQualifier get_qualifier() const { return qualifier; }
@@ -159,7 +161,8 @@ class BinOper : public Expr {
 
   JITExprValue& codegenFixedSizeColCmpFun(JITValuePointer& null,
                                           JITValue& lhs,
-                                          JITValue& rhs);
+                                          JITValue& rhs,
+                                          bool bit_bool_op = false);
   JITExprValue& codegenFixedSizeLogicalFun(CodegenContext& context,
                                            JITFunction& func,
                                            FixSizeJITExprValue& lhs_val,

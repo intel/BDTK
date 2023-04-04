@@ -110,7 +110,11 @@ class NullableGuard {
 class ExpressionTreeSpilter {
   using ExprGroup = VectorizedProjectTranslator::ExprsGroup;
   using ExprGroupType = VectorizedProjectTranslator::ExprsGroupType;
-  using TreeInputs = std::pair<bool, ExprPtrVector>;
+  struct TreeInputs {
+    bool bool_input;
+    ExprPtr root;
+    ExprPtrVector inputs;
+  };
 
  public:
   explicit ExpressionTreeSpilter(const ExprPtrVector& exprs) {
@@ -140,9 +144,10 @@ class ExpressionTreeSpilter {
         }};
 
     auto inputs = traverser(expr, true);
-    sub_expr_trees_.emplace_back(ExprGroup{.exprs = {expr},
-                                           .input_exprs = std::move(inputs.second),
-                                           .type = getExprTreeType(expr, inputs.first)});
+    sub_expr_trees_.emplace_back(
+        ExprGroup{.exprs = {expr},
+                  .input_exprs = std::move(inputs.inputs),
+                  .type = getExprTreeType(expr, inputs.bool_input)});
   }
 
   std::vector<ExprGroup>& getSubExprTrees() { return sub_expr_trees_; }
@@ -172,32 +177,55 @@ class ExpressionTreeSpilter {
     // Just pass leaf value.
     if (child_inputs.empty()) {
       if (dynamic_cast<Analyzer::Constant*>(curr.get())) {
-        return {false, {}};
+        return {false, curr, {}};
       } else {
-        return {curr->get_type_info().get_type() == kBOOLEAN, {curr}};
+        return {curr->get_type_info().get_type() == kBOOLEAN, curr, {curr}};
       }
     }
 
-    auto combined_sorted_inputs = ExpressionTreeSpilter::combineInputExprs(child_inputs);
     switch (curr->get_type_info().get_type()) {
       case kBOOLEAN: {
         if (std::all_of(child_inputs.begin(),
                         child_inputs.end(),
-                        [](const TreeInputs& child) { return child.first; })) {
+                        [](const TreeInputs& child) { return child.bool_input; })) {
           // All of chidren output Bool values, just pass them.
-          return {true, std::move(combined_sorted_inputs)};
-        } else if (!is_root) {
-          // There are non-Bool outputs of children, split current expression tree.
-          sub_expr_trees_.emplace_back(
-              ExprGroup{.exprs = {curr},
-                        .input_exprs = std::move(combined_sorted_inputs),
-                        .type = ExprGroupType::BoolOutputTree});
+          curr->setGenerateVectorizedBoolCode(true);
+          return {true, curr, ExpressionTreeSpilter::combineInputExprs(child_inputs)};
+        } else if (curr->isTrivialNullProcess() &&
+                   std::all_of(
+                       child_inputs.begin(),
+                       child_inputs.end(),
+                       [](const TreeInputs& child) { return !child.bool_input; })) {
+          // All of input are not Bool values, try to pass them.
+          return {false, curr, ExpressionTreeSpilter::combineInputExprs(child_inputs)};
+        } else {
+          // Both of BoolIO and BoolOutput subtrees exist in the children or curr expr has
+          // non-trivial null process procedure, just split the BoolOutput subtrees.
+          std::vector<TreeInputs> new_child_inputs;
+          new_child_inputs.reserve(child_inputs.size());
+          for (auto& child : child_inputs) {
+            if (!child.bool_input) {
+              sub_expr_trees_.emplace_back(
+                  ExprGroup{.exprs = {child.root},
+                            .input_exprs = child.inputs,
+                            .type = ExprGroupType::BoolOutputTree});
 
-          return {true, {curr}};
+              new_child_inputs.emplace_back(TreeInputs{
+                  .bool_input = true, .root = child.root, .inputs = {child.root}});
+            } else {
+              new_child_inputs.emplace_back(child);
+            }
+          }
+
+          CHECK(std::all_of(new_child_inputs.begin(),
+                            new_child_inputs.end(),
+                            [](const TreeInputs& child) { return child.bool_input; }));
+
+          return {true, curr, ExpressionTreeSpilter::combineInputExprs(new_child_inputs)};
         }
       }
       default: {
-        return {false, std::move(combined_sorted_inputs)};
+        return {false, curr, ExpressionTreeSpilter::combineInputExprs(child_inputs)};
       }
     }
   }
@@ -206,13 +234,13 @@ class ExpressionTreeSpilter {
   static std::vector<ExprPtr> combineInputExprs(const std::vector<TreeInputs>& exprs) {
     size_t num = 0;
     for (auto&& expr : exprs) {
-      num += expr.second.size();
+      num += expr.inputs.size();
     }
     std::vector<ExprPtr> ans;
     ans.reserve(num);
 
     for (auto&& expr : exprs) {
-      ans.insert(ans.end(), expr.second.begin(), expr.second.end());
+      ans.insert(ans.end(), expr.inputs.begin(), expr.inputs.end());
     }
     std::sort(ans.begin(), ans.end());
     ans.erase(std::unique(ans.begin(), ans.end()), ans.end());
@@ -282,10 +310,10 @@ VectorizedProjectTranslator::groupOutputExprs() {
 
   // Gather non-ColumnVar input expressions users.
   std::unordered_map<ExprPtr::element_type*, std::vector<size_t>> indermediate_expr_users;
-  for (size_t index : group_root_index) {
-    for (auto& input : expr_trees[index].input_exprs) {
+  for (size_t root_index = 0; root_index < group_root_index.size(); ++root_index) {
+    for (auto& input : expr_trees[group_root_index[root_index]].input_exprs) {
       if (!input->isColumnVar()) {
-        indermediate_expr_users[input.get()].emplace_back(index);
+        indermediate_expr_users[input.get()].emplace_back(root_index);
       }
     }
   }
@@ -294,13 +322,13 @@ VectorizedProjectTranslator::groupOutputExprs() {
   if (!indermediate_expr_users.empty()) {
     std::vector<std::vector<size_t>> adjcent_map(group_root_index.size());
     std::vector<size_t> degree(group_root_index.size(), 0);
-    for (size_t index : group_root_index) {
-      for (auto& output : expr_trees[index].exprs) {
+    for (size_t root_index = 0; root_index < group_root_index.size(); ++root_index) {
+      for (auto& output : expr_trees[group_root_index[root_index]].exprs) {
         if (auto iter = indermediate_expr_users.find(output.get());
             iter != indermediate_expr_users.end()) {
-          for (size_t user_index : iter->second) {
-            ++degree[user_index];
-            adjcent_map[index].push_back(user_index);
+          for (size_t user_root_index : iter->second) {
+            ++degree[user_root_index];
+            adjcent_map[root_index].push_back(user_root_index);
           }
         }
       }

@@ -22,6 +22,7 @@
 #include <cstddef>
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
+#include "type/data/sqltypes.h"
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/Utils.h"  // for is_unnest
 #include "util/Logger.h"
@@ -181,8 +182,12 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
       auto null = lhs_expr_val.getNull() || rhs_expr_val.getNull();
       return codegenFixedSizeColArithFun(context, null, lhs_jit_val, rhs_jit_val);
     } else if (IS_COMPARISON(optype)) {
-      auto null = lhs_expr_val.getNull() || rhs_expr_val.getNull();
-      return codegenFixedSizeColCmpFun(null, lhs_jit_val, rhs_jit_val);
+      auto null = lhs_expr_val.getNull() | rhs_expr_val.getNull();
+      return codegenFixedSizeColCmpFun(
+          null,
+          lhs_jit_val,
+          rhs_jit_val,
+          generate_vectorized_bool_code_ && lhs_ti.get_type() == kBOOLEAN);
     } else if (IS_LOGIC(optype)) {
       return codegenFixedSizeLogicalFun(context, func, lhs_expr_val, rhs_expr_val);
     }
@@ -253,13 +258,14 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(CodegenContext& context,
 
 JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,
                                                  JITValue& lhs,
-                                                 JITValue& rhs) {
+                                                 JITValue& rhs,
+                                                 bool bit_bool_op) {
   // TODO: Null Process
   switch (get_optype()) {
     case kEQ:
-      return set_expr_value(null, lhs == rhs);
+      return set_expr_value(null, bit_bool_op ? ~(lhs ^ rhs) : lhs == rhs);
     case kNE:
-      return set_expr_value(null, lhs != rhs);
+      return set_expr_value(null, bit_bool_op ? lhs ^ rhs : lhs != rhs);
     case kLT:
       return set_expr_value(null, lhs < rhs);
     case kGT:
@@ -291,7 +297,10 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
         auto lhs_data = lhs_val.getValue();
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
-        auto null = (lhs_null & rhs_null) | (lhs_null & rhs_data) | (rhs_null & lhs_data);
+        auto null =
+            is_trivial_null_process_
+                ? (lhs_null | rhs_null)
+                : (lhs_null & rhs_null) | (lhs_null & rhs_data) | (rhs_null & lhs_data);
         return set_expr_value(null, lhs_data & rhs_data);
       }
       case kOR: {
@@ -302,7 +311,9 @@ JITExprValue& BinOper::codegenFixedSizeLogicalFun(CodegenContext& context,
         auto rhs_null = rhs_val.getNull();
         auto rhs_data = rhs_val.getValue();
         auto null =
-            (lhs_null & rhs_null) | (lhs_null & ~rhs_data) | (rhs_null & ~lhs_data);
+            is_trivial_null_process_
+                ? (lhs_null | rhs_null)
+                : (lhs_null & rhs_null) | (lhs_null & ~rhs_data) | (rhs_null & ~lhs_data);
         return set_expr_value(null, lhs_data | rhs_data);
       }
       default:
