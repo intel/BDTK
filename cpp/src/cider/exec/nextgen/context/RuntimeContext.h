@@ -20,15 +20,19 @@
  */
 #ifndef NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
 #define NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
-#include "exec/nextgen/context/Batch.h"
-#include "exec/nextgen/context/Buffer.h"
-#include "exec/nextgen/context/CiderSet.h"
-#include "exec/nextgen/context/CodegenContext.h"
-#include "exec/nextgen/context/StringHeap.h"
-#include "exec/nextgen/utils/FunctorUtils.h"
-#include "util/CiderBitUtils.h"
+
+#include <cstddef>
+#include <cstdint>
+
+#include "exec/nextgen/context/ContextDescriptors-fwd.h"
+
+class CiderAllocator;
+class StringHeap;
+class SQLTypeInfo;
+using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
 
 namespace cider::exec::nextgen::context {
+
 class RuntimeContext {
  public:
   explicit RuntimeContext(int64_t ctx_num) : runtime_ctx_pointers_(ctx_num, nullptr) {}
@@ -39,76 +43,42 @@ class RuntimeContext {
 
   void* getStringHeapPtr() { return string_heap_ptr_.get(); }
 
-  void addBatch(const CodegenContext::BatchDescriptorPtr& descriptor);
+  void addBatch(const BatchDescriptorPtr& descriptor);
 
-  void addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor);
+  void addBuffer(const BufferDescriptorPtr& descriptor);
 
-  void addHashTable(const CodegenContext::HashTableDescriptorPtr& descriptor);
+  void addHashTable(const HashTableDescriptorPtr& descriptor);
 
-  void addBuildTable(const CodegenContext::BuildTableDescriptorPtr& descriptor);
+  void addBuildTable(const BuildTableDescriptorPtr& descriptor);
 
-  void addCiderSet(const CodegenContext::CiderSetDescriptorPtr& descriptor);
+  void addCiderSet(const CiderSetDescriptorPtr& descriptor);
 
   void instantiate(const CiderAllocatorPtr& allocator);
 
   const int8_t* getTrimStringOperCharMapById(int id) const;
 
-  void setTrimStringOperCharMaps(const CodegenContext::TrimCharMapsPtr& maps);
+  void setTrimStringOperCharMaps(const TrimCharMapsPtr& maps);
 
-  Batch* getOutputBatch() {
-    if (batch_holder_.empty()) {
-      return nullptr;
-    }
-    auto batch = batch_holder_.front().second.get();
-    auto arrow_array = batch->getArray();
-    // FIXME (bigPYJ1151): This is a workaround for output struct array length setting.
-    arrow_array->length = arrow_array->children[0]->length;
-    auto arrow_schema = batch->getSchema();
-
-    auto set_null_count_function =
-        utils::RecursiveFunctor{[](auto&& set_null_count_function,
-                                   ArrowArray* arrow_array,
-                                   ArrowSchema* arrow_schema) -> void {
-          if (arrow_array->buffers[0]) {
-            auto length = arrow_array->length;
-            arrow_array->null_count =
-                length -
-                CiderBitUtils::countSetBits(
-                    reinterpret_cast<const uint8_t*>(arrow_array->buffers[0]), length);
-          }
-          for (size_t i = 0; i < arrow_schema->n_children; ++i) {
-            set_null_count_function(arrow_array->children[i], arrow_schema->children[i]);
-          }
-        }};
-    set_null_count_function(arrow_array, arrow_schema);
-    return batch;
-  }
+  Batch* getOutputBatch();
 
   Batch* getNonGroupByAggOutputBatch();
 
-  // TODO: batch and buffer should be self-managed
-  void resetBatch(const CiderAllocatorPtr& allocator) {
-    if (!batch_holder_.empty()) {
-      auto& [descriptor, batch] = batch_holder_.front();
-      batch->reset(descriptor->type, allocator);
-    }
-  }
+  void resetBatch(const CiderAllocatorPtr& allocator);
 
-  void destroyStringHeap() { string_heap_ptr_->destroy(); }
+  void destroyStringHeap();
 
  private:
   std::vector<void*> runtime_ctx_pointers_;
-  std::vector<std::pair<CodegenContext::BatchDescriptorPtr, BatchPtr>> batch_holder_;
-  std::vector<std::pair<CodegenContext::BufferDescriptorPtr, BufferPtr>> buffer_holder_;
-  std::vector<std::pair<CodegenContext::CiderSetDescriptorPtr, CiderSetPtr>>
-      cider_set_holder_;
+  std::vector<std::pair<BatchDescriptorPtr, BatchPtr>> batch_holder_;
+  std::vector<std::pair<BufferDescriptorPtr, BufferPtr>> buffer_holder_;
+  std::vector<std::pair<CiderSetDescriptorPtr, CiderSetPtr>> cider_set_holder_;
   std::shared_ptr<StringHeap> string_heap_ptr_;
-  CodegenContext::HashTableDescriptorPtr hashtable_holder_;
-  CodegenContext::BuildTableDescriptorPtr buildtable_holder_;
-  CodegenContext::TrimCharMapsPtr trim_char_maps_;
+  HashTableDescriptorPtr hashtable_holder_;
+  BuildTableDescriptorPtr buildtable_holder_;
+  TrimCharMapsPtr trim_char_maps_;
 };
 
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
 }  // namespace cider::exec::nextgen::context
 
-#endif  // NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
+#endif // NEXTGEN_CONTEXT_RUNTIMECONTEXT_H

@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 #include "exec/nextgen/Nextgen.h"
 #include "exec/nextgen/context/Batch.h"
+#include "exec/operator/join/CiderJoinHashTable.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "tests/utils/Utils.h"

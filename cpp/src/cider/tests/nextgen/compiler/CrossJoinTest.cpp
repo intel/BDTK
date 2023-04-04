@@ -92,7 +92,8 @@ class CrossJoinTest : public ::testing::Test {
                 "l_c", CREATE_SUBSTRAIT_TYPE(I64), {222, 333, 444})
             .build();
 
-    codegen_ctx.setBuildTable(std::make_shared<context::Batch>(build_array));
+    auto build_table = std::make_shared<context::Batch>(build_array);
+    codegen_ctx.setBuildTable(build_table);
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);

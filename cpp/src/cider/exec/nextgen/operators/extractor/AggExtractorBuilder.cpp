@@ -20,6 +20,8 @@
  */
 #include "exec/nextgen/operators/extractor/AggExtractorBuilder.h"
 
+#include "exec/nextgen/context/ContextDescriptors.h"
+
 namespace cider::exec::nextgen::operators {
 std::unique_ptr<NextgenAggExtractor> NextgenAggExtractorBuilder::buildNextgenAggExtractor(
     const int8_t* buffer,

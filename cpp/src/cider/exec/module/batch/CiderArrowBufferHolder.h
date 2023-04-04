@@ -19,21 +19,21 @@
  * under the License.
  */
 
-#ifndef CIDER_ARROW_BUFFER_HOLDER_H
-#define CIDER_ARROW_BUFFER_HOLDER_H
+#ifndef MODULE_BATCH_CIDERARROWBUFFERHOLDER_H
+#define MODULE_BATCH_CIDERARROWBUFFERHOLDER_H
 
 #include <vector>
-
-#include "cider/CiderAllocator.h"
+#include <memory>
 
 struct ArrowSchema;
 struct ArrowArray;
+class CiderAllocator;
 
 class CiderArrowArrayBufferHolder {
  public:
   CiderArrowArrayBufferHolder(size_t buffer_num,
                               size_t children_num,
-                              std::shared_ptr<CiderAllocator> allocator,
+                              const std::shared_ptr<CiderAllocator>& allocator,
                               bool dict);
   ~CiderArrowArrayBufferHolder();
 
@@ -82,4 +82,4 @@ class CiderArrowSchemaBufferHolder {
   std::string format_buffer_;
 };
 
-#endif
+#endif // MODULE_BATCH_CIDERARROWBUFFERHOLDER_H

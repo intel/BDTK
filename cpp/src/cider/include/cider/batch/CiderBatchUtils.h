@@ -22,10 +22,10 @@
 #ifndef CIDER_BATCH_CIDERBATCHUTILS_H
 #define CIDER_BATCH_CIDERBATCHUTILS_H
 
-#include "cider/CiderAllocator.h"
-#include "type/data/sqltypes.h"
+#include <string>
 
 class CiderTableSchema;
+class SQLTypeInfo;
 
 struct ArrowSchema;
 struct ArrowArray;
@@ -55,8 +55,6 @@ ArrowSchema* allocateArrowSchema();
 ArrowSchema* allocateArrowSchema(const ArrowSchema& schema);
 
 int64_t getBufferNum(const ArrowSchema* schema);
-
-SQLTypes convertArrowTypeToCiderType(const char* format);
 
 const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
                                         std::string& format_buffer);

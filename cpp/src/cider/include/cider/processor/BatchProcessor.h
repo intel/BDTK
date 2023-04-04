@@ -69,7 +69,7 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
 
   virtual void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hashTable) = 0;
 
-  virtual void feedCrossBuildData(const std::shared_ptr<Batch>& crossData) = 0;
+  virtual void feedCrossBuildData(std::shared_ptr<Batch>& crossData) = 0;
 
   static std::unique_ptr<BatchProcessor> Make(const substrait::Plan& plan,
                                               const BatchProcessorContextPtr& context,

@@ -23,7 +23,9 @@
 
 #include "cider/batch/CiderBatchUtils.h"
 #include "exec/module/batch/CiderArrowBufferHolder.h"
+#include "substrait/type.pb.h"
 #include "util/CiderBitUtils.h"
+#include "util/Logger.h"
 
 #ifndef CIDER_DUCKDBQUERYRUNNER_H
 #include "exec/module/batch/ArrowABI.h"

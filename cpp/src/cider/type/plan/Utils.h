@@ -24,8 +24,10 @@
 
 #include "type/plan/Expr.h"
 
-#include <type/data/sqltypes.h>
+#include "type/data/sqltypes.h"
 #include "type/plan/UnaryExpr.h"
+#include "cider/CiderException.h"
+
 inline const Analyzer::Expr* extract_cast_arg(const Analyzer::Expr* expr) {
   const auto cast_expr = dynamic_cast<const Analyzer::UOper*>(expr);
   if (!cast_expr || cast_expr->get_optype() != kCAST) {

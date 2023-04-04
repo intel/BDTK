@@ -20,14 +20,16 @@
  */
 
 #include "CiderArrowBufferHolder.h"
-#include "ArrowABI.h"
 
 #include <cstdlib>
+
+#include "exec/module/batch/ArrowABI.h"
+#include "include/cider/CiderAllocator.h"
 
 CiderArrowArrayBufferHolder::CiderArrowArrayBufferHolder(
     size_t buffer_num,
     size_t children_num,
-    std::shared_ptr<CiderAllocator> allocator,
+    const std::shared_ptr<CiderAllocator>& allocator,
     bool dict)
     : buffers_(buffer_num, nullptr)
     , buffers_bytes_(buffer_num, 0)

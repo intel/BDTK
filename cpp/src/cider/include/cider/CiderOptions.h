@@ -24,19 +24,13 @@
 
 #include <gflags/gflags_declare.h>
 
+#include "exec/nextgen/jitlib/base/Options.h"
+
 DECLARE_bool(needs_error_check);
 DECLARE_bool(dump_ir);
 
 namespace cider {
-// compilation config info
-struct CompilationOptions {
-  bool optimize_ir = true;
-  bool aggressive_jit_compile = true;
-  bool dump_ir = FLAGS_dump_ir;
-  bool enable_vectorize = true;
-  bool enable_avx2 = true;
-  bool enable_avx512 = false;
-};
+using CompilationOptions = jitlib::CompilationOptions;
 
 struct CodegenOptions {
   bool needs_error_check = FLAGS_needs_error_check;
@@ -45,7 +39,12 @@ struct CodegenOptions {
   bool branchless_logic = true;
   bool enable_vectorize = true;
 
-  CompilationOptions co{};
+  CompilationOptions co = CompilationOptions{.optimize_ir = true,
+                                             .aggressive_jit_compile = true,
+                                             .dump_ir = FLAGS_dump_ir,
+                                             .enable_vectorize = true,
+                                             .enable_avx2 = true,
+                                             .enable_avx512 = false};
 };
 
 }  // namespace cider

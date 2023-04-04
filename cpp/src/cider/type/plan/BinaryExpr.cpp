@@ -19,13 +19,17 @@
  * under the License.
  */
 #include "type/plan/BinaryExpr.h"
+
 #include <cstddef>
+
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/Utils.h"  // for is_unnest
 #include "util/Logger.h"
+#include "cider/CiderException.h"
+
 
 namespace Analyzer {
 using namespace cider::jitlib;

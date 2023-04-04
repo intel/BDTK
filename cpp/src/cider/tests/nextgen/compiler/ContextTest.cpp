@@ -22,6 +22,7 @@
 #include <gflags/gflags.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
+#include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/context/RuntimeContext.h"
 #include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/operator/join/CiderJoinHashTable.h"
