@@ -4,6 +4,10 @@
 #include <functional>
 #include <memory>
 
+#include "exec/nextgen/context/Batch.h"
+#include "exec/nextgen/context/Buffer.h"
+#include "exec/nextgen/context/CiderSet.h"
+
 namespace cider::exec::processor {
 class JoinHashTable;
 };
@@ -11,15 +15,7 @@ class JoinHashTable;
 namespace cider::exec::nextgen::context {
 
 struct AggExprsInfo;
-class CiderSet;
-class Buffer;
-class Batch;
 
-using BatchPtr = std::unique_ptr<Batch>;
-using BufferPtr = std::unique_ptr<Buffer>;
-using CiderSetPtr = std::unique_ptr<CiderSet>;
-using BufferInitializer = std::function<void(Buffer*)>;
-using BatchSharedPtr = std::shared_ptr<Batch>;
 using TrimCharMapsPtr = std::shared_ptr<std::vector<std::vector<int8_t>>>;
 
 struct BatchDescriptor;

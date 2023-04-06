@@ -21,8 +21,14 @@
 #ifndef NEXTGEN_CONTEXT_BATCH_H
 #define NEXTGEN_CONTEXT_BATCH_H
 
+#include <memory>
+
 #include "exec/module/batch/ArrowABI.h"
 #include "include/cider/batch/CiderBatchUtils.h"
+
+
+class CiderAllocator;
+using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
 
 namespace cider::exec::nextgen::context {
 class Batch {
@@ -73,9 +79,5 @@ class Batch {
 
 using BatchPtr = std::unique_ptr<Batch>;
 using BatchSharedPtr = std::shared_ptr<Batch>;
-
-namespace batch_runtime_utils {
-// void resizeBatch(Batch* batch, size_t size);
-}
 }  // namespace cider::exec::nextgen::context
-#endif  // NEXTGEN_CONTEXT_BATCH_H
+#endif // NEXTGEN_CONTEXT_BATCH_H

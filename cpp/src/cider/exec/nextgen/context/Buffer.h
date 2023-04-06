@@ -22,31 +22,21 @@
 #define NEXTGEN_CONTEXT_BUFFER_H
 
 #include <functional>
+#include <memory>
 
-#include "cider/CiderAllocator.h"
+class CiderAllocator;
+using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
 
 namespace cider::exec::nextgen::context {
 class Buffer {
  public:
   Buffer(const int32_t capacity,
          const CiderAllocatorPtr& allocator,
-         const std::function<void(Buffer*)>& initializer)
-      : capacity_(capacity)
-      , allocator_(allocator)
-      , buffer_(allocator_->allocate(capacity_)) {
-    initializer(this);
-  }
+         const std::function<void(Buffer*)>& initializer);
 
-  ~Buffer() { allocator_->deallocate(buffer_, capacity_); }
+  ~Buffer();
 
-  void allocateBuffer(int32_t size) {
-    if (buffer_) {
-      buffer_ = allocator_->reallocate(buffer_, capacity_, size);
-    } else {
-      buffer_ = allocator_->allocate(size);
-    }
-    capacity_ = size;
-  }
+  void allocateBuffer(int32_t size);
 
   int8_t* getBuffer() { return buffer_; }
 

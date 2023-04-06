@@ -20,6 +20,8 @@ set(CONTEXT_SOURCE
     ${CMAKE_CURRENT_LIST_DIR}/CodegenContext.cpp
     ${CMAKE_CURRENT_LIST_DIR}/RuntimeContext.cpp
     ${CMAKE_CURRENT_LIST_DIR}/Batch.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/Buffer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/CiderSet.cpp
     ../../../exec/module/batch/CiderBatchUtils.cpp
     ../../../exec/module/batch/CiderArrowBufferHolder.cpp)
 
