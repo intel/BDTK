@@ -21,6 +21,9 @@
 
 #include "CiderPlanTransformerOptions.h"
 
+DEFINE_bool(enable_flatten_dictionary_encoding,
+            false,
+            "Enable flatten dictionary encoding to flat encoding");
 DEFINE_bool(left_deep_join_pattern, false, "Enable LeftDeepJoinPattern ");
 DEFINE_bool(compound_pattern, false, "Enable CompoundPattern ");
 DEFINE_bool(filter_pattern, true, "Enable FilterPattern ");

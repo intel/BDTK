@@ -59,9 +59,8 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
   RelAlgExecutionUnit ra_exe_unit = translator.createRelAlgExecutionUnit();
   codegen_context_ = nextgen::compile(ra_exe_unit, codegen_options);
   runtime_context_ = codegen_context_->generateRuntimeCTX(context_->getAllocator());
-  query_func_ = reinterpret_cast<nextgen::QueryFunc>(
-      codegen_context_->getJITFunction()
-          ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
+  query_func_ =
+      codegen_context_->getJITFunction()->getFunctionPointer<int32_t, int8_t*, int8_t*>();
 }
 
 // This API use the precompiled codegen_ctx.

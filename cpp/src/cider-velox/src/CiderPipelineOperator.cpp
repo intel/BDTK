@@ -23,11 +23,14 @@
 #include "Allocator.h"
 #include "CiderCrossJoinBuild.h"
 #include "CiderHashJoinBuild.h"
+#include "ciderTransformer/CiderPlanTransformerOptions.h"
 #include "exec/plan/substrait/SubstraitPlan.h"
 #include "velox/exec/Task.h"
 #ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
 #include "velox/vector/arrow/Abi.h"
 #endif
+#include "velox/vector/DecodedVector.h"
+#include "velox/vector/DictionaryVector.h"
 #include "velox/vector/arrow/Bridge.h"
 
 namespace facebook::velox::plugin {
@@ -36,7 +39,38 @@ bool CiderPipelineOperator::needsInput() const {
   return !finished_;
 }
 
+VectorPtr CiderPipelineOperator::copyVector(const VectorPtr& vectorPtr) {
+  SelectivityVector allRows(vectorPtr->size());
+  auto flatVector =
+      BaseVector::create(vectorPtr->type(), vectorPtr->size(), operatorCtx_->pool());
+  flatVector->copy(vectorPtr.get(), allRows, nullptr);
+  return flatVector;
+}
+
+RowVectorPtr CiderPipelineOperator::convertDictionaryToFlat(RowVectorPtr& input) {
+  std::vector<std::shared_ptr<const Type>> types;
+  types.reserve(input->childrenSize());
+  for (auto& ptr : input->children()) {
+    types.emplace_back(ptr->type());
+  }
+  auto rowTypePtr = ROW(std::move(types));
+  std::vector<VectorPtr> children;
+  for (column_index_t i = 0; i < rowTypePtr->size(); ++i) {
+    VectorPtr& vectorPtr = input->childAt(i);
+    if (vectorPtr->encoding() == VectorEncoding::Simple::DICTIONARY) {
+      children.emplace_back(copyVector(vectorPtr));
+    } else {
+      children.emplace_back(vectorPtr);
+    }
+  }
+  return std::make_shared<RowVector>(
+      operatorCtx_->pool(), rowTypePtr, BufferPtr(nullptr), input->size(), children);
+}
+
 void CiderPipelineOperator::addInput(RowVectorPtr input) {
+  if (FLAGS_enable_flatten_dictionary_encoding) {
+    input = convertDictionaryToFlat(input);
+  }
   for (size_t i = 0; i < input->childrenSize(); i++) {
     input->childAt(i)->mutableRawNulls();
   }

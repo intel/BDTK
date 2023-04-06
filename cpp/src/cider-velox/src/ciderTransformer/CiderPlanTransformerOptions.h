@@ -22,6 +22,7 @@
 
 #include <gflags/gflags.h>
 
+DECLARE_bool(enable_flatten_dictionary_encoding);
 DECLARE_bool(left_deep_join_pattern);
 DECLARE_bool(compound_pattern);
 DECLARE_bool(filter_pattern);

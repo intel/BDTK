@@ -41,7 +41,15 @@ class CiderOperatorTestBase : public facebook::velox::exec::test::OperatorTestBa
 
  protected:
   auto generateTestBatch(facebook::velox::RowTypePtr& rowType, bool withNull) {
-    auto batches = generator_.generate(rowType, 10, 100, withNull);
+    auto batches = generator_.generate(rowType, 10, 100, true, withNull);
+    createDuckDbTable(batches);
+    return batches;
+  }
+
+  auto generateTestBatch(facebook::velox::RowTypePtr& rowType,
+                         bool withZero,
+                         bool withNull) {
+    auto batches = generator_.generate(rowType, 10, 100, withZero, withNull);
     createDuckDbTable(batches);
     return batches;
   }

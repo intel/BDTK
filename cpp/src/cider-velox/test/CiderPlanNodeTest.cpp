@@ -43,7 +43,7 @@ class CiderPlanNodeTest : public OperatorTestBase {
 };
 
 TEST_F(CiderPlanNodeTest, filter) {
-  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, false);
+  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, true, false);
   createDuckDbTable(vectors);
 
   const std::string filter =
@@ -62,7 +62,7 @@ TEST_F(CiderPlanNodeTest, filter) {
 }
 
 TEST_F(CiderPlanNodeTest, project) {
-  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, false);
+  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, true, false);
   createDuckDbTable(vectors);
 
   auto veloxPlan = PlanBuilder()
@@ -86,7 +86,7 @@ TEST_F(CiderPlanNodeTest, project) {
 
 #if 0
 TEST_F(CiderPlanNodeTest, Q6) {
-  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, false);
+  std::vector<RowVectorPtr> vectors = generator_.generate(rowType_, 10, 100, true, false);
   createDuckDbTable(vectors);
 
   auto veloxPlan = PlanBuilder()
