@@ -402,11 +402,11 @@ JITExprValue& UOper::codegenCast(CodegenContext& context, Analyzer::Expr* operan
     JITValuePointer ptr_and_len = codegenCastNumericToString(
         context, operand_val.getValue(), string_heap_ptr, operand_ti);
     auto ret_ptr = func.emitRuntimeFunctionCall(
-        "extract_str_ptr",
+        "extract_string_ptr",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::POINTER,
                                   .params_vector = {ptr_and_len.get()}});
     auto ret_len = func.emitRuntimeFunctionCall(
-        "extract_str_len",
+        "extract_string_len",
         JITFunctionEmitDescriptor{.ret_type = JITTypeTag::INT32,
                                   .params_vector = {ptr_and_len.get()}});
     return set_expr_value(operand_val.getNull(), ret_len, ret_ptr);

@@ -102,23 +102,274 @@ std::pair<size_t, size_t> cider_find_nth_regex_match(const char* input_ptr,
   }
   return matched_pos[wrapped_match];
 }
+
+int32_t StringCompare(const char* s1,
+                      const int32_t s1_len,
+                      const char* s2,
+                      const int32_t s2_len) {
+  const char* s1_ = s1;
+  const char* s2_ = s2;
+
+  while (s1_ < s1 + s1_len && s2_ < s2 + s2_len && *s1_ == *s2_) {
+    s1_++;
+    s2_++;
+  }
+
+  unsigned char c1 = (s1_ < s1 + s1_len) ? (*(unsigned char*)s1_) : 0;
+  unsigned char c2 = (s2_ < s2 + s2_len) ? (*(unsigned char*)s2_) : 0;
+
+  return c1 - c2;
+}
+
+enum LikeStatus {
+  kLIKE_TRUE,
+  kLIKE_FALSE,
+  kLIKE_ABORT,  // means we run out of string characters to match against pattern, can
+                // abort early
+  kLIKE_ERROR   // error condition
+};
+
+static int inline lowercase(char c) {
+  if ('A' <= c && c <= 'Z') {
+    return 'a' + (c - 'A');
+  }
+  return c;
+}
+
+// internal recursive function for performing LIKE matching.
+// when is_ilike is true, pattern is assumed to be already converted to all lowercase
+static LikeStatus string_like_match(const char* str,
+                                    const int32_t str_len,
+                                    const char* pattern,
+                                    const int32_t pat_len,
+                                    const char escape_char,
+                                    const bool is_ilike) {
+  const char* s = str;
+  int slen = str_len;
+  const char* p = pattern;
+  int plen = pat_len;
+
+  while (slen > 0 && plen > 0) {
+    if (*p == escape_char) {
+      // next pattern char must match literally, whatever it is
+      p++;
+      plen--;
+      if (plen <= 0) {
+        return kLIKE_ERROR;
+      }
+      if ((!is_ilike && *s != *p) || (is_ilike && lowercase(*s) != *p)) {
+        return kLIKE_FALSE;
+      }
+    } else if (*p == '%') {
+      char firstpat;
+      p++;
+      plen--;
+      while (plen > 0) {
+        if (*p == '%') {
+          p++;
+          plen--;
+        } else if (*p == '_') {
+          if (slen <= 0) {
+            return kLIKE_ABORT;
+          }
+          s++;
+          slen--;
+          p++;
+          plen--;
+        } else {
+          break;
+        }
+      }
+      if (plen <= 0) {
+        return kLIKE_TRUE;
+      }
+      if (*p == escape_char) {
+        if (plen < 2) {
+          return kLIKE_ERROR;
+        }
+        firstpat = p[1];
+      } else {
+        firstpat = *p;
+      }
+
+      while (slen > 0) {
+        bool match = false;
+        if (firstpat == '[' && *p != escape_char) {
+          const char* pp = p + 1;
+          int pplen = plen - 1;
+          while (pplen > 0 && *pp != ']') {
+            if ((!is_ilike && *s == *pp) || (is_ilike && lowercase(*s) == *pp)) {
+              match = true;
+              break;
+            }
+            pp++;
+            pplen--;
+          }
+          if (pplen <= 0) {
+            return kLIKE_ERROR;  // malformed
+          }
+        } else if ((!is_ilike && *s == firstpat) ||
+                   (is_ilike && lowercase(*s) == firstpat)) {
+          match = true;
+        }
+        if (match) {
+          LikeStatus status = string_like_match(s, slen, p, plen, escape_char, is_ilike);
+          if (status != kLIKE_FALSE) {
+            return status;
+          }
+        }
+        s++;
+        slen--;
+      }
+      return kLIKE_ABORT;
+    } else if (*p == '_') {
+      s++;
+      slen--;
+      p++;
+      plen--;
+      continue;
+    } else if (*p == '[') {
+      const char* pp = p + 1;
+      int pplen = plen - 1;
+      bool match = false;
+      while (pplen > 0 && *pp != ']') {
+        if ((!is_ilike && *s == *pp) || (is_ilike && lowercase(*s) == *pp)) {
+          match = true;
+          break;
+        }
+        pp++;
+        pplen--;
+      }
+      if (match) {
+        s++;
+        slen--;
+        pplen--;
+        const char* x;
+        for (x = pp + 1; *x != ']' && pplen > 0; x++, pplen--) {
+        }
+        if (pplen <= 0) {
+          return kLIKE_ERROR;  // malformed
+        }
+        plen -= (x - p + 1);
+        p = x + 1;
+        continue;
+      } else {
+        return kLIKE_FALSE;
+      }
+    } else if ((!is_ilike && *s != *p) || (is_ilike && lowercase(*s) != *p)) {
+      return kLIKE_FALSE;
+    }
+    s++;
+    slen--;
+    p++;
+    plen--;
+  }
+  if (slen > 0) {
+    return kLIKE_FALSE;
+  }
+  while (plen > 0 && *p == '%') {
+    p++;
+    plen--;
+  }
+  if (plen <= 0) {
+    return kLIKE_TRUE;
+  }
+  return kLIKE_ABORT;
+}
 };  // namespace
 
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_like(const char* str,
+                                                      const int32_t str_len,
+                                                      const char* pattern,
+                                                      const int32_t pat_len,
+                                                      const char escape_char) {
+  // @TODO(wei/alex) add runtime error handling
+  LikeStatus status =
+      string_like_match(str, str_len, pattern, pat_len, escape_char, false);
+  return status == kLIKE_TRUE;
+}
+
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_lt(const char* lhs,
+                                                    const int32_t lhs_len,
+                                                    const char* rhs,
+                                                    const int32_t rhs_len) {
+  return StringCompare(lhs, lhs_len, rhs, rhs_len) < 0;
+}
+
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_le(const char* lhs,
+                                                    const int32_t lhs_len,
+                                                    const char* rhs,
+                                                    const int32_t rhs_len) {
+  return StringCompare(lhs, lhs_len, rhs, rhs_len) <= 0;
+}
+
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_gt(const char* lhs,
+                                                    const int32_t lhs_len,
+                                                    const char* rhs,
+                                                    const int32_t rhs_len) {
+  return StringCompare(lhs, lhs_len, rhs, rhs_len) > 0;
+}
+
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_ge(const char* lhs,
+                                                    const int32_t lhs_len,
+                                                    const char* rhs,
+                                                    const int32_t rhs_len) {
+  return StringCompare(lhs, lhs_len, rhs, rhs_len) >= 0;
+}
+
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_eq(const char* lhs,
+                                                    const int32_t lhs_len,
+                                                    const char* rhs,
+                                                    const int32_t rhs_len) {
+  return StringCompare(lhs, lhs_len, rhs, rhs_len) == 0;
+}
+
+extern "C" RUNTIME_FUNC NEVER_INLINE bool string_ne(const char* lhs,
+                                                    const int32_t lhs_len,
+                                                    const char* rhs,
+                                                    const int32_t rhs_len) {
+  return StringCompare(lhs, lhs_len, rhs, rhs_len) != 0;
+}
+
+#define STR_CMP_NULLABLE(base_func)                                 \
+  extern "C" RUNTIME_FUNC NEVER_INLINE int8_t base_func##_nullable( \
+      const char* lhs,                                              \
+      const int32_t lhs_len,                                        \
+      const char* rhs,                                              \
+      const int32_t rhs_len,                                        \
+      const int8_t bool_null) {                                     \
+    if (!lhs || !rhs) {                                             \
+      return bool_null;                                             \
+    }                                                               \
+    return base_func(lhs, lhs_len, rhs, rhs_len) ? 1 : 0;           \
+  }
+
+STR_CMP_NULLABLE(string_lt)
+STR_CMP_NULLABLE(string_le)
+STR_CMP_NULLABLE(string_gt)
+STR_CMP_NULLABLE(string_ge)
+STR_CMP_NULLABLE(string_eq)
+STR_CMP_NULLABLE(string_ne)
+
+#undef STR_CMP_NULLABLE
+
 // pos parameter starts from 1 rather than 0
-extern "C" RUNTIME_FUNC uint64_t cider_substring_extra(char* string_heap_ptr,
-                                                       const char* str,
-                                                       int pos,
-                                                       int len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE uint64_t cider_substring_extra(char* string_heap_ptr,
+                                                                    const char* str,
+                                                                    int pos,
+                                                                    int len) {
   return pack_string((const int8_t*)(str + pos - 1), len);
 }
 
-extern "C" RUNTIME_FUNC const char* cider_substring_extra_ptr(const char* str, int pos) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE const char* cider_substring_extra_ptr(
+    const char* str,
+    int pos) {
   return str + pos - 1;
 }
 
 // pos starts with 1. A negative starting position is interpreted as being relative
 // to the end of the string
-extern "C" RUNTIME_FUNC int32_t format_substring_pos(int pos, int str_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t format_substring_pos(int pos, int str_len) {
   int32_t ret = 1;
   if (pos > 0) {
     if (pos > str_len) {
@@ -135,9 +386,9 @@ extern "C" RUNTIME_FUNC int32_t format_substring_pos(int pos, int str_len) {
 }
 
 // pos should be [1, str_len+1]
-extern "C" RUNTIME_FUNC int32_t format_substring_len(int pos,
-                                                     int str_len,
-                                                     int target_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t format_substring_len(int pos,
+                                                                  int str_len,
+                                                                  int target_len) {
   // already out of range, return empty string.
   if (pos == str_len + 1) {
     return 0;
@@ -152,11 +403,13 @@ extern "C" RUNTIME_FUNC int32_t format_substring_len(int pos,
 }
 
 // a copy of extract_str_ptr (originally implemented in RuntimeFunctions.cpp)
-extern "C" RUNTIME_FUNC int8_t* extract_string_ptr(const uint64_t str_and_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int8_t* extract_string_ptr(
+    const uint64_t str_and_len) {
   return reinterpret_cast<int8_t*>(str_and_len & 0xffffffffffff);
 }
 
-extern "C" RUNTIME_FUNC int32_t extract_string_len(const uint64_t str_and_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t
+extract_string_len(const uint64_t str_and_len) {
   return static_cast<int64_t>(str_and_len) >> 48;
 }
 
@@ -177,7 +430,7 @@ extern "C" RUNTIME_FUNC NEVER_INLINE void cider_ascii_lower_ptr(
   do_lower(buffer_ptr, str, str_len);
 }
 
-extern "C" RUNTIME_FUNC int32_t cider_ascii_lower_len(int str_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t cider_ascii_lower_len(int str_len) {
   return str_len;
 }
 
@@ -199,7 +452,7 @@ extern "C" RUNTIME_FUNC NEVER_INLINE void cider_ascii_upper_ptr(
   do_upper(buffer_ptr, str, str_len);
 }
 
-extern "C" RUNTIME_FUNC int32_t cider_ascii_upper_len(int str_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t cider_ascii_upper_len(int str_len) {
   return str_len;
 }
 
@@ -222,21 +475,22 @@ extern "C" RUNTIME_FUNC NEVER_INLINE int64_t cider_concat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" RUNTIME_FUNC int32_t cider_concat_len(int lhs_len, int rhs_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t cider_concat_len(int lhs_len, int rhs_len) {
   return lhs_len + rhs_len;
 }
 
-extern "C" RUNTIME_FUNC void cider_concat_ptr(char* buffer_ptr,
-                                              const char* __restrict lhs,
-                                              int lhs_len,
-                                              const char* __restrict rhs,
-                                              int rhs_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE void cider_concat_ptr(char* buffer_ptr,
+                                                           const char* __restrict lhs,
+                                                           int lhs_len,
+                                                           const char* __restrict rhs,
+                                                           int rhs_len) {
   memcpy(buffer_ptr, lhs, lhs_len);
   memcpy(buffer_ptr + lhs_len, rhs, rhs_len);
 }
 
-extern "C" RUNTIME_FUNC int8_t* allocate_from_string_heap(char* string_heap_ptr,
-                                                          int len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int8_t* allocate_from_string_heap(
+    char* string_heap_ptr,
+    int len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(len);
   return (int8_t*)s.getDataWriteable();
@@ -248,11 +502,11 @@ extern "C" RUNTIME_FUNC int8_t* allocate_from_string_heap(char* string_heap_ptr,
 // then concatenated in the REVERSED order (RCONCAT).
 // However, nextgen allows both arguments to be variables, so this function can be
 // removed after full migration to nextgen
-extern "C" RUNTIME_FUNC int64_t cider_rconcat(char* string_heap_ptr,
-                                              const char* __restrict lhs,
-                                              int lhs_len,
-                                              const char* __restrict rhs,
-                                              int rhs_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t cider_rconcat(char* string_heap_ptr,
+                                                           const char* __restrict lhs,
+                                                           int lhs_len,
+                                                           const char* __restrict rhs,
+                                                           int rhs_len) {
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->emptyString(lhs_len + rhs_len);
 
@@ -263,21 +517,22 @@ extern "C" RUNTIME_FUNC int64_t cider_rconcat(char* string_heap_ptr,
   return pack_string_t(s);
 }
 
-extern "C" RUNTIME_FUNC int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t cider_rconcat_len(int lhs_len, int rhs_len) {
   return lhs_len + rhs_len;
 }
 
-extern "C" RUNTIME_FUNC void cider_rconcat_ptr(char* buffer_ptr,
-                                               const char* __restrict lhs,
-                                               int lhs_len,
-                                               const char* __restrict rhs,
-                                               int rhs_len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE void cider_rconcat_ptr(char* buffer_ptr,
+                                                            const char* __restrict lhs,
+                                                            int lhs_len,
+                                                            const char* __restrict rhs,
+                                                            int rhs_len) {
   memcpy(buffer_ptr, rhs, rhs_len);
   memcpy(buffer_ptr + rhs_len, lhs, lhs_len);
 }
 
-extern "C" RUNTIME_FUNC int8_t* get_buffer_without_realloc(const int8_t* input_desc_ptr,
-                                                           const int32_t index) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int8_t* get_buffer_without_realloc(
+    const int8_t* input_desc_ptr,
+    const int32_t index) {
   const ArrowArray* arrow_array = reinterpret_cast<const ArrowArray*>(input_desc_ptr);
   CiderArrowArrayBufferHolder* holder =
       reinterpret_cast<CiderArrowArrayBufferHolder*>(arrow_array->private_data);
@@ -432,10 +687,10 @@ cider_trim_len(const char* __restrict str_ptr,
   return len;
 }
 
-extern "C" RUNTIME_FUNC void cider_trim_ptr(char* __restrict buffer_ptr,
-                                            const char* __restrict str_ptr,
-                                            int start_idx,
-                                            int len) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE void cider_trim_ptr(char* __restrict buffer_ptr,
+                                                         const char* __restrict str_ptr,
+                                                         int start_idx,
+                                                         int len) {
   memcpy(buffer_ptr, str_ptr + start_idx, len);
 }
 
@@ -469,8 +724,8 @@ gen_string_from_double(const double operand, char* string_heap_ptr) {
   return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
 }
 
-extern "C" RUNTIME_FUNC int64_t gen_string_from_bool(const int8_t operand,
-                                                     char* string_heap_ptr) {
+extern "C" RUNTIME_FUNC NEVER_INLINE int64_t gen_string_from_bool(const int8_t operand,
+                                                                  char* string_heap_ptr) {
   std::string str = (operand == 1) ? "true" : "false";
   StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
   string_t s = ptr->addString(str.data(), str.length());
@@ -821,8 +1076,8 @@ cider_regexp_substring(char* string_heap_ptr,
   }
 }
 
-extern "C" RUNTIME_FUNC int32_t cast_date_string_to_int(const char* str_ptr,
-                                                        int str_len) {
+extern "C" RUNTIME_FUNC NEVER_INLINE int32_t cast_date_string_to_int(const char* str_ptr,
+                                                                     int str_len) {
   // extract year, month, day, only support format like 'yyyy-mm-dd' or 'yyyy/mm/dd'
   int y = std::stoi(std::string(str_ptr, 4));
   int m = std::stoi(std::string(str_ptr + 5, 2));
