@@ -60,7 +60,7 @@
     <scalatest.version>3.0.8</scalatest.version>
     <scalacheck.version>1.14.2</scalacheck.version>
     <slf4j.version>1.7.30</slf4j.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
     <hadoop.deps.scope>provided</hadoop.deps.scope>
     <spark.deps.scope>provided</spark.deps.scope>
     <checkstyle.failOnViolation>true</checkstyle.failOnViolation>
@@ -118,7 +118,7 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>8.19</version>
+              <version>8.29</version>
             </dependency>
             <dependency>
               <groupId>org.slf4j</groupId>
