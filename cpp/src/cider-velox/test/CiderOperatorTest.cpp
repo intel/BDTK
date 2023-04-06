@@ -45,7 +45,7 @@ using namespace facebook::velox::plugin::plantransformer::test;
 class CiderOperatorTest : public OperatorTestBase {
   void SetUp() override {
     // FLAGS_partial_agg_pattern = true;
-    vectors = generator_.generate(rowType_, 10, 100, false);
+    vectors = generator_.generate(rowType_, 10, 100, true, false);
     createDuckDbTable(vectors);
     CiderVeloxPluginCtx::init();
   }

@@ -51,12 +51,13 @@ class BatchDataGenerator {
   auto generate(RowTypePtr& rowType,
                 int rowVectorSize,
                 vector_size_t vectorSize,
+                bool withZero,
                 bool withNull) {
     std::mt19937 gen{std::mt19937::default_seed};
     std::vector<RowVectorPtr> batches;
     for (int i = 0; i < rowVectorSize; ++i) {
-      auto batch =
-          createRowVector(rowType, vectorSize, gen, withNull ? randomNulls(7) : nullptr);
+      auto batch = createRowVector(
+          rowType, vectorSize, gen, withZero, withNull ? randomNulls(7) : nullptr);
       batches.push_back(batch);
     }
     return batches;
@@ -65,6 +66,7 @@ class BatchDataGenerator {
   RowVectorPtr createRowVector(RowTypePtr& rowType,
                                vector_size_t vectorSize,
                                std::mt19937& gen,
+                               bool withZero,
                                std::function<bool(vector_size_t)> isNullAt = nullptr) {
     std::vector<VectorPtr> children;
     for (uint32_t i = 0; i < rowType->size(); ++i) {
@@ -73,6 +75,7 @@ class BatchDataGenerator {
                                                           rowType->childAt(i),
                                                           vectorSize,
                                                           gen,
+                                                          withZero,
                                                           isNullAt);
       children.emplace_back(vectorPtr);
     }
@@ -89,10 +92,30 @@ class BatchDataGenerator {
   template <typename T>
   T gen_value(std::mt19937& gen);
 
+  template <typename T>
+  static constexpr bool is_integral_type =
+      std::is_same_v<int8_t, T> || std::is_same_v<int16_t, T> ||
+      std::is_same_v<int32_t, T> || std::is_same_v<int64_t, T>;
+
+  template <typename T, typename std::enable_if_t<is_integral_type<T>, bool> = true>
+  T gen_value(std::mt19937& gen, bool withZero) {
+    T v = gen_value<T>(gen);
+    while (!withZero && v == 0) {
+      v = gen_value<T>(gen);
+    }
+    return v;
+  }
+
+  template <typename T, typename std::enable_if_t<!is_integral_type<T>, bool> = true>
+  T gen_value(std::mt19937& gen, bool withZero) {
+    return gen_value<T>(gen);
+  }
+
   template <TypeKind KIND>
   VectorPtr createScalar(TypePtr type,
                          vector_size_t size,
                          std::mt19937& gen,
+                         bool withZero,
                          std::function<bool(vector_size_t)> isNullAt = nullptr) {
     using T = facebook::velox::TypeTraits<KIND>::NativeType;
     auto flatVector =
@@ -101,7 +124,7 @@ class BatchDataGenerator {
       if (isNullAt && isNullAt(i)) {
         flatVector->setNull(i, true);
       } else {
-        flatVector->set(i, gen_value<T>(gen));
+        flatVector->set(i, gen_value<T>(gen, withZero));
       }
     }
     return flatVector;

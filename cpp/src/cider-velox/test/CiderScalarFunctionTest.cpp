@@ -100,7 +100,7 @@ TEST_F(CiderScalarFunctionMathOpTest, colAndColMathOpWithBigIntTest) {
   for (auto& type : types_) {
     std::shared_ptr<const RowType> rowType{ROW({"c0", "c1"}, {BIGINT(), type})};
     verify(CiderPlanBuilder()
-               .values(generateTestBatch(rowType, false))
+               .values(generateTestBatch(rowType, false, false))
                .project({"c0 + c1", "c0 - c1", "c0 / c1"})
                .planNode(),
            " select c0 + c1, c0 - c1, c0 / c1 from tmp");
