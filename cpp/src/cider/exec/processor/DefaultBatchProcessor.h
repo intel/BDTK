@@ -32,19 +32,17 @@ namespace cider::exec::processor {
 
 class DefaultBatchProcessor : public BatchProcessor {
  public:
-  DefaultBatchProcessor(
-      const plan::SubstraitPlanPtr& plan,
-      const BatchProcessorContextPtr& context,
-      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
+  DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
+                        const BatchProcessorContextPtr& context,
+                        const CodegenOptions& codegen_options = {});
 
   DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
                         const BatchProcessorContextPtr& context,
                         const CodegenCtxPtr& codegen_ctx);
 
-  DefaultBatchProcessor(
-      const substrait::ExtendedExpression& extendedExpression,
-      const BatchProcessorContextPtr& context,
-      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
+  DefaultBatchProcessor(const substrait::ExtendedExpression& extendedExpression,
+                        const BatchProcessorContextPtr& context,
+                        const CodegenOptions& codegen_options = {});
 
   const BatchProcessorContextPtr& getContext() const override { return context_; }
 

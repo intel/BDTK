@@ -23,6 +23,7 @@ set(DEP_LIBS benchmark::benchmark nextgen)
 
 add_executable(jitlib_benchmark JITlibBenchmark.cpp)
 add_executable(HashMapBenchmark HashMapBenchmark.cpp)
+add_executable(StringHashMapBenchmark StringHashMapBenchmark.cpp)
 
 set(JITlibBenchmarkCompileFlag -g)
 if(CIDER_ENABLE_AVX512)
@@ -31,7 +32,10 @@ endif()
 
 target_compile_options(jitlib_benchmark PRIVATE ${JITlibBenchmarkCompileFlag})
 target_compile_options(HashMapBenchmark PRIVATE -msse4.2 -msse2)
+target_compile_options(StringHashMapBenchmark PRIVATE -msse4.2 -msse2)
 
 target_link_libraries(jitlib_benchmark ${DEP_LIBS} folly fmt::fmt)
 target_link_libraries(HashMapBenchmark benchmark::benchmark ${DEP_LIBS} folly
                       cider_hashtable)
+target_link_libraries(StringHashMapBenchmark benchmark::benchmark ${DEP_LIBS}
+                      folly cider_hashtable)

@@ -52,13 +52,13 @@ class NextgenCompilerTest : public ::testing::Test {
     // Pipeline Building
     auto pipeline = parsers::toOpPipeline(eu);
     transformer::Transformer transformer;
-    context::CodegenOptions codegen_co;
+    cider::CodegenOptions codegen_co;
     codegen_co.enable_vectorize = true;
     auto translators = transformer.toTranslator(pipeline, codegen_co);
 
     // Codegen
     context::CodegenContext codegen_ctx;
-    cider::jitlib::CompilationOptions co;
+    cider::CompilationOptions co;
     co.enable_vectorize = true;
     co.dump_ir = true;
     auto module = cider::jitlib::LLVMJITModule("test", true, co);

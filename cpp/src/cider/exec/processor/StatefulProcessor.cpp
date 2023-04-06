@@ -25,10 +25,9 @@
 
 namespace cider::exec::processor {
 
-StatefulProcessor::StatefulProcessor(
-    const plan::SubstraitPlanPtr& plan,
-    const BatchProcessorContextPtr& context,
-    const cider::exec::nextgen::context::CodegenOptions& codegen_options)
+StatefulProcessor::StatefulProcessor(const plan::SubstraitPlanPtr& plan,
+                                     const BatchProcessorContextPtr& context,
+                                     const CodegenOptions& codegen_options)
     : DefaultBatchProcessor(plan, context, codegen_options)
     , has_groupby_(plan->hasGroupingAggregateRel()) {}
 

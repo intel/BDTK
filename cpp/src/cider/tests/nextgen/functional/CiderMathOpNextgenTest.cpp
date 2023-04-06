@@ -56,7 +56,7 @@ class CiderMathOpNullableArrowTest : public CiderNextgenTestBase {
 };
 
 TEST_F(CiderMathOpNullableArrowTest, ConstantValueMathOpTest) {
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   assertQuery("SELECT 2 + 1 FROM test");
@@ -76,7 +76,7 @@ TEST_F(CiderMathOpNullableArrowTest, ConstantValueMathOpTest) {
 }
 
 TEST_F(CiderMathOpNullableArrowTest, ColumnBasicMathOpTest) {
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   // TINYINT Col Math op
@@ -126,7 +126,7 @@ TEST_F(CiderMathOpNullableArrowTest, ColumnBasicMathOpTest) {
 }
 
 TEST_F(CiderMathOpNullableArrowTest, ColumnMathOpBoundaryTest) {
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   // Test out of boundary exception
@@ -228,7 +228,7 @@ class CiderMathOpArrowTest : public CiderNextgenTestBase {
 };
 
 TEST_F(CiderMathOpArrowTest, ConstantValueMathOpTest) {
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   assertQuery("SELECT 2 + 1 FROM test");
@@ -291,14 +291,14 @@ TEST_F(CiderMathOpArrowTest, ColumnBasicMathOpTest) {
   assertQuery("SELECT double_col / 2 FROM test");
 
   // Test divide zero exception
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   EXPECT_TRUE(executeIncorrectQuery("SELECT integer_col / 0 FROM test"));
 }
 
 TEST_F(CiderMathOpArrowTest, ColumnMathOpBoundaryTest) {
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   // Test out of boundary exception

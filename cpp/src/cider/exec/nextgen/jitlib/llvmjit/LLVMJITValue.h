@@ -53,6 +53,7 @@ class LLVMJITValue final : public JITValue {
 
   JITValuePointer andOp(JITValue& rh) override;
   JITValuePointer orOp(JITValue& rh) override;
+  JITValuePointer xorOp(JITValue& rh) override;
   JITValuePointer notOp() override;
 
   JITValuePointer add(JITValue& rh) override;

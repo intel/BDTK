@@ -327,6 +327,21 @@ inline JITValuePointer operator|(T lh, JITValue& rh) {
   return rh | lh;
 }
 
+inline JITValuePointer operator^(JITValue& lh, JITValue& rh) {
+  return lh.xorOp(rh);
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator^(JITValue& lh, T rh) {
+  auto& func = lh.getParentJITFunction();
+  return lh.xorOp(func.createLiteral(lh.getValueTypeTag(), rh));
+}
+
+template <class T, IsJITValueConvertable<T> = true>
+inline JITValuePointer operator^(T lh, JITValue& rh) {
+  return rh ^ lh;
+}
+
 inline JITValuePointer operator~(JITValue& value) {
   return value.notOp();
 }

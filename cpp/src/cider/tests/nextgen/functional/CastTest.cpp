@@ -135,7 +135,7 @@ TEST_F(CastTypeQueryTest, castFromStringTest) {
 }
 
 TEST_F(CastTypeQueryTest, castOverflowCheckTest) {
-  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  cider::CodegenOptions codegen_options{};
   codegen_options.needs_error_check = true;
   setCodegenOptions(codegen_options);
   EXPECT_TRUE(executeIncorrectQuery("SELECT CAST(col_int + 500  as TINYINT)  FROM test"));

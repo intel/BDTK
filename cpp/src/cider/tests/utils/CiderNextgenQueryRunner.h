@@ -47,23 +47,21 @@ class CiderNextgenQueryRunner {
 
   const std::shared_ptr<CiderAllocator>& getAllocator() const { return allocator_; }
 
-  virtual void runQueryOneBatch(
-      const std::string& file_or_sql,
-      const struct ArrowArray& input_array,
-      const struct ArrowSchema& input_schema,
-      struct ArrowArray& output_array,
-      struct ArrowSchema& output_schema,
-      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
+  virtual void runQueryOneBatch(const std::string& file_or_sql,
+                                const struct ArrowArray& input_array,
+                                const struct ArrowSchema& input_schema,
+                                struct ArrowArray& output_array,
+                                struct ArrowSchema& output_schema,
+                                const CodegenOptions& codegen_options = {});
 
-  virtual void runJoinQueryOneBatch(
-      const std::string& file_or_sql,
-      const struct ArrowArray& input_array,
-      const struct ArrowSchema& input_schema,
-      struct ArrowArray& build_array,
-      struct ArrowSchema& build_schema,
-      struct ArrowArray& output_array,
-      struct ArrowSchema& output_schema,
-      const cider::exec::nextgen::context::CodegenOptions& codegen_options = {});
+  virtual void runJoinQueryOneBatch(const std::string& file_or_sql,
+                                    const struct ArrowArray& input_array,
+                                    const struct ArrowSchema& input_schema,
+                                    struct ArrowArray& build_array,
+                                    struct ArrowSchema& build_schema,
+                                    struct ArrowArray& output_array,
+                                    struct ArrowSchema& output_schema,
+                                    const CodegenOptions& codegen_options = {});
 
  protected:
   std::shared_ptr<CiderAllocator> allocator_;

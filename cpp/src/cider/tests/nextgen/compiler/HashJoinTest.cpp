@@ -55,7 +55,7 @@ class HashJoinTest : public ::testing::Test {
 
     // Codegen
     context::CodegenContext codegen_ctx;
-    cider::jitlib::CompilationOptions co;
+    cider::CompilationOptions co;
     co.dump_ir = true;
     auto module = cider::jitlib::LLVMJITModule("test", true, co);
     cider::jitlib::JITFunctionPointer function =

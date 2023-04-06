@@ -50,11 +50,9 @@ std::string getErrorMessageFromErrCode(const cider::jitlib::ERROR_CODE error_cod
   }
 }
 
-// This API compile from substrait plan everytime.
-DefaultBatchProcessor::DefaultBatchProcessor(
-    const plan::SubstraitPlanPtr& plan,
-    const BatchProcessorContextPtr& context,
-    const cider::exec::nextgen::context::CodegenOptions& codegen_options)
+DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
+                                             const BatchProcessorContextPtr& context,
+                                             const CodegenOptions& codegen_options)
     : context_(context) {
   initJoinHandler(plan);
   auto translator = generator::SubstraitToRelAlgExecutionUnit(plan->getPlan());
@@ -83,7 +81,7 @@ DefaultBatchProcessor::DefaultBatchProcessor(const plan::SubstraitPlanPtr& plan,
 DefaultBatchProcessor::DefaultBatchProcessor(
     const substrait::ExtendedExpression& extendedExpression,
     const BatchProcessorContextPtr& context,
-    const cider::exec::nextgen::context::CodegenOptions& codegen_options)
+    const CodegenOptions& codegen_options)
     : context_(context) {
   auto translator = std::make_shared<generator::SubstraitToRelAlgExecutionUnit>();
   auto executionUnit = translator->createRelAlgExecutionUnit(&extendedExpression);
@@ -174,7 +172,7 @@ void DefaultBatchProcessor::initJoinHandler(const plan::SubstraitPlanPtr& plan) 
 std::unique_ptr<BatchProcessor> BatchProcessor::Make(
     const substrait::Plan& plan,
     const BatchProcessorContextPtr& context,
-    const nextgen::context::CodegenOptions& codegen_options) {
+    const CodegenOptions& codegen_options) {
   auto substraitPlan = std::make_shared<plan::SubstraitPlan>(plan);
   if (substraitPlan->hasAggregateRel()) {
     return std::make_unique<StatefulProcessor>(substraitPlan, context, codegen_options);

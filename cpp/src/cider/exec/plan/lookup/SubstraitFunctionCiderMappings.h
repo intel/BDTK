@@ -26,7 +26,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "type/plan/Analyzer.h"
+#include "type/plan/ExprType.h"
 #include "util/sqldefs.h"
 
 using FunctionSQLScalarOpsMappings = std::unordered_map<std::string, SQLOps>;
