@@ -22,8 +22,8 @@
 #include "exec/nextgen/context/CiderSet.h"
 
 #define DEF_CIDER_INT64_SET_CONTAINS(type)                                        \
-  extern "C" RUNTIME_FUNC ALLOW_INLINE bool cider_set_contains_##type##_val(int8_t* set_ptr,  \
-                                                                const type val) { \
+  extern "C" RUNTIME_FUNC ALLOW_INLINE bool cider_set_contains_##type##_val(      \
+      int8_t* set_ptr, const type val) {                                          \
     auto cider_set =                                                              \
         reinterpret_cast<cider::exec::nextgen::context::CiderInt64Set*>(set_ptr); \
     return cider_set->contains(val);                                              \
@@ -35,8 +35,8 @@ DEF_CIDER_INT64_SET_CONTAINS(int32_t)
 DEF_CIDER_INT64_SET_CONTAINS(int64_t)
 
 #define DEF_CIDER_DOUBLE_SET_CONTAINS(type)                                        \
-  extern "C" RUNTIME_FUNC ALLOW_INLINE bool cider_set_contains_##type##_val(int8_t* set_ptr,   \
-                                                                const type val) {  \
+  extern "C" RUNTIME_FUNC ALLOW_INLINE bool cider_set_contains_##type##_val(       \
+      int8_t* set_ptr, const type val) {                                           \
     auto cider_set =                                                               \
         reinterpret_cast<cider::exec::nextgen::context::CiderDoubleSet*>(set_ptr); \
     return cider_set->contains(val);                                               \
@@ -46,8 +46,8 @@ DEF_CIDER_DOUBLE_SET_CONTAINS(float)
 DEF_CIDER_DOUBLE_SET_CONTAINS(double)
 
 extern "C" RUNTIME_FUNC ALLOW_INLINE bool cider_set_contains_string_val(int8_t* set_ptr,
-                                                            const char* str,
-                                                            int len) {
+                                                                        const char* str,
+                                                                        int len) {
   auto cider_set =
       reinterpret_cast<cider::exec::nextgen::context::CiderStringSet*>(set_ptr);
   std::string val_str(str, len);

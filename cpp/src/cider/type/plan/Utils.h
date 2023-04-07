@@ -24,9 +24,9 @@
 
 #include "type/plan/Expr.h"
 
+#include "cider/CiderException.h"
 #include "type/data/sqltypes.h"
 #include "type/plan/UnaryExpr.h"
-#include "cider/CiderException.h"
 
 inline const Analyzer::Expr* extract_cast_arg(const Analyzer::Expr* expr) {
   const auto cast_expr = dynamic_cast<const Analyzer::UOper*>(expr);

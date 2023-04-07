@@ -81,4 +81,4 @@ class RuntimeContext {
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
 }  // namespace cider::exec::nextgen::context
 
-#endif // NEXTGEN_CONTEXT_RUNTIMECONTEXT_H
+#endif  // NEXTGEN_CONTEXT_RUNTIMECONTEXT_H

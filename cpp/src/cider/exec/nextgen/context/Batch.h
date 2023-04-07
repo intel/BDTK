@@ -26,7 +26,6 @@
 #include "exec/module/batch/ArrowABI.h"
 #include "include/cider/batch/CiderBatchUtils.h"
 
-
 class CiderAllocator;
 using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
 
@@ -80,4 +79,4 @@ class Batch {
 using BatchPtr = std::unique_ptr<Batch>;
 using BatchSharedPtr = std::shared_ptr<Batch>;
 }  // namespace cider::exec::nextgen::context
-#endif // NEXTGEN_CONTEXT_BATCH_H
+#endif  // NEXTGEN_CONTEXT_BATCH_H

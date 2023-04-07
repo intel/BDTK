@@ -21,8 +21,8 @@
 
 #include "exec/nextgen/operators/AggregationNode.h"
 
-#include "exec/template/TypePunning.h"
 #include "exec/nextgen/context/ContextDescriptors.h"
+#include "exec/template/TypePunning.h"
 
 namespace cider::exec::nextgen::operators {
 TranslatorPtr AggNode::toTranslator(const TranslatorPtr& succ) {

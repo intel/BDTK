@@ -22,8 +22,8 @@
 #ifndef MODULE_BATCH_CIDERARROWBUFFERHOLDER_H
 #define MODULE_BATCH_CIDERARROWBUFFERHOLDER_H
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 struct ArrowSchema;
 struct ArrowArray;
@@ -82,4 +82,4 @@ class CiderArrowSchemaBufferHolder {
   std::string format_buffer_;
 };
 
-#endif // MODULE_BATCH_CIDERARROWBUFFERHOLDER_H
+#endif  // MODULE_BATCH_CIDERARROWBUFFERHOLDER_H
