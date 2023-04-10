@@ -47,15 +47,12 @@ install(
   DESTINATION QueryEngine
   COMPONENT "QE")
 
-find_package(FMT REQUIRED)
-
-set(QUERY_ENGINE_LIBS cider_function cider_util fmt::fmt)
+set(QUERY_ENGINE_LIBS cider_function fmt::fmt)
 
 list(APPEND QUERY_ENGINE_LIBS ${llvm_libs} ${ZLIB_LIBRARIES})
 
 if(ENABLE_VELOX_FUNCTION)
   find_library(GLOG glog)
-  find_package(gflags COMPONENTS shared)
   find_library(FMT fmt)
   find_library(EVENT event)
   find_package(folly REQUIRED)

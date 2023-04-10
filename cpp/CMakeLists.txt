@@ -120,12 +120,10 @@ if(BDTK_ENABLE_CIDER)
   endif()
 
   if(CIDER_ENABLE_SUBSTRAIT)
-    set(substrait_directory ${CMAKE_SOURCE_DIR}/thirdparty/substrait/proto)
-    include_directories(thirdparty/substrait/proto)
+    set(SUBSTRAIT_ROOT ${CMAKE_SOURCE_DIR}/thirdparty/substrait/proto)
   else()
-    set(substrait_directory
+    set(SUBSTRAIT_ROOT
         ${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto)
-    include_directories(thirdparty/velox/velox/substrait/proto)
   endif()
 
   # TODO: remove after cleanup public API dependency RapidJSON
@@ -135,19 +133,33 @@ if(BDTK_ENABLE_CIDER)
   # robin-hood-hashing
   include_directories(thirdparty/robin-hood-hashing/src/include)
 
-  # substrait-cpp
+  # substrait
+  include(substrait)
   include(substrait-cpp)
-  include_directories(${SUBSTRAITCPP_INCLUDE_DIR})
-
-  #
-  # Subdirectories
-  #
-  # include_directories(src/cider) include_directories(src/cider/include)
-  # add_subdirectory(src/cider)
 
   if(CIDER_ENABLE_VELOX)
     add_subdirectory(thirdparty/velox)
   endif()
+
+  include(BuildUtils)
+  list(APPEND CIDER_DEPENDENCIES_LIBS substrait)
+  list(APPEND CIDER_DEPENDENCIES_LIBS SubstraitCpp::function SubstraitCpp::type
+       SubstraitCpp::common)
+  list(APPEND CIDER_DEPENDENCIES_LIBS yaml-cpp)
+  list(APPEND CIDER_DEPENDENCIES_LIBS cider_util cider_processor cider_plan
+       cider_module)
+
+  set(BUILD_OUTPUT_ROOT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+  icl_car(_FIRST_LIB ${CIDER_DEPENDENCIES_LIBS})
+  icl_cdr(_OTHER_LIBS ${CIDER_DEPENDENCIES_LIBS})
+  create_merged_static_lib(
+    cider_static
+    NAME
+    cider_static
+    ROOT
+    ${_FIRST_LIB}
+    TO_MERGE
+    ${_OTHER_LIBS})
 
   include_directories(src/cider)
   include_directories(src/cider/include)

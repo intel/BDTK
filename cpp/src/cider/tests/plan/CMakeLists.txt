@@ -17,20 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(DEP_LIBS
-    gtest
-    cider_util
-    test_utils
-    duckdb
-    substrait
-    cider
-    QueryEngine
-    dl)
+set(DEP_LIBS gtest test_utils duckdb cider_static QueryEngine dl)
 
 set(TEST_ARGS "--gtest_output=xml:../")
 
 add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
-target_link_libraries(CiderPlanValidatorTest gtest cider_util test_utils dl
-                      cider_plan_validator)
+target_link_libraries(CiderPlanValidatorTest ${DEP_LIBS})
 add_test(CiderPlanValidatorTest
          ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})

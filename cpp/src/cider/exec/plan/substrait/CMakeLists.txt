@@ -18,5 +18,6 @@
 # under the License.
 
 set(CIDER_PLAN_SUBSTRAIT_SRCS SubstraitPlan.cpp)
-add_library(cider_plan_substrait STATIC ${CIDER_PLAN_SUBSTRAIT_SRCS})
-target_link_libraries(cider_plan_substrait substrait)
+add_library(cider_plan_substrait_objlib OBJECT ${CIDER_PLAN_SUBSTRAIT_SRCS})
+target_link_libraries(cider_plan_substrait_objlib substrait)
+list(APPEND LIB_CIDER_PLAN_DEPS $<TARGET_OBJECTS:cider_plan_substrait_objlib>)

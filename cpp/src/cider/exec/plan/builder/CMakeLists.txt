@@ -17,14 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Set up Proto
-find_package(Protobuf REQUIRED)
-include_directories(${Protobuf_INCLUDE_DIRS})
-
-set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Wno-attributes -Wno-write-strings -Wno-unused-function -Wno-unused-label -Wno-sign-compare"
-)
-
-set(CIDER_PLAN_PARSER_SRCS SubstraitExprBuilder.cpp)
-add_library(cider_expr_builder STATIC ${CIDER_PLAN_PARSER_SRCS})
-target_link_libraries(cider_expr_builder substrait cider_util protobuf)
+set(CIDER_PLAN_EXPR_BUILDER_SRCS SubstraitExprBuilder.cpp)
+add_library(cider_plan_expr_builder_objlib OBJECT
+            ${CIDER_PLAN_EXPR_BUILDER_SRCS})
+target_link_libraries(cider_plan_expr_builder_objlib substrait)
+list(APPEND LIB_CIDER_PLAN_DEPS
+     $<TARGET_OBJECTS:cider_plan_expr_builder_objlib>)

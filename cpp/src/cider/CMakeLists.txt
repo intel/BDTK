@@ -27,6 +27,8 @@ endif()
 
 project(cider)
 
+set(CIDER_DEPENDENCIES_LIBS)
+
 add_definitions("-DBOOST_LOG_DYN_LINK")
 
 # Required for macOS with Boost 1.71.0+ See
@@ -98,6 +100,15 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/thirdparty/robin-hood-hashing/src/include)
 
 # Dependencies
+find_package(gflags REQUIRED)
+if(NOT ${gflags_FOUND})
+  message(FATAL_ERROR "gflags not found, please install gflags")
+endif()
+
+find_package(FMT REQUIRED)
+if(NOT ${FMT_FOUND})
+  message(FATAL_ERROR "fmt not found, please install fmt")
+endif()
 
 find_package(LLVM CONFIG REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -151,21 +162,21 @@ else()
   set(ENABLE_TBB OFF)
 endif()
 
-add_subdirectory(common)
-add_subdirectory(examples)
-add_subdirectory(exec)
-add_subdirectory(function)
-add_subdirectory(tests)
-add_subdirectory(util)
-
 if(CIDER_ENABLE_BENCHMARK)
   add_subdirectory(benchmarks)
 endif()
 
-set(CIDER_LIBRARIES cider_util QueryEngine)
+set(CIDER_LIBRARIES QueryEngine)
 
 if(ENABLE_FOLLY)
   list(APPEND CIDER_LIBRARIES ${Folly_LIBRARIES})
 endif()
 
 list(APPEND CIDER_LIBRARIES ${TBB_LIBS})
+
+add_subdirectory(common)
+add_subdirectory(exec)
+add_subdirectory(function)
+add_subdirectory(util)
+add_subdirectory(examples)
+add_subdirectory(tests)

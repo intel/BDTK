@@ -19,9 +19,8 @@
  * under the License.
  */
 
-#pragma once
+#include "exec/plan/validator/SingleNodeValidator.h"
 
-#include "SingleNodeValidator.h"
 #include "cider/CiderException.h"
 #include "exec/plan/parser/ConverterHelper.h"
 #include "exec/plan/parser/TypeUtils.h"

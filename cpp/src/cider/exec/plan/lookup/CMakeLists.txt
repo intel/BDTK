@@ -17,18 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(FUNC_LOOKUP_SRC_FILE FunctionLookupEngine.cpp)
-add_library(cider_func_lkup STATIC ${FUNC_LOOKUP_SRC_FILE})
-if(NOT LIBSUBSTRAITCPP_INCLUDE_DIR
-   OR NOT LIBSUBSTRAITCPP_FUNCTION_LIB
-   OR NOT LIBSUBSTRAITCPP_TYPE_LIB)
-  add_dependencies(cider_func_lkup SUBSTRAITCPP)
-endif()
-target_link_libraries(
-  cider_func_lkup
-  ${SUBSTRAITCPP_FUNCTION_LIB}
-  ${SUBSTRAITCPP_TYPE_LIB}
-  ${SUBSTRAITCPP_COMMON_LIB}
-  substrait
-  yaml-cpp
-  LLVM)
+set(CIDER_PLAN_FUNC_LOOKUP_SRCS FunctionLookupEngine.cpp)
+add_library(cider_plan_func_lookup_objlib OBJECT ${CIDER_PLAN_FUNC_LOOKUP_SRCS})
+target_link_libraries(cider_plan_func_lookup_objlib SubstraitCpp::function)
+list(APPEND LIB_CIDER_PLAN_DEPS $<TARGET_OBJECTS:cider_plan_func_lookup_objlib>)

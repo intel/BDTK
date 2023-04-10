@@ -22,7 +22,6 @@ set(DEP_LIBS ${EXECUTE_TEST_LIBS})
 set(TEST_ARGS "--gtest_output=xml:../")
 
 find_package(folly REQUIRED)
-find_package(gflags REQUIRED)
 
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -mavx2 -mfma -mavx -mf16c -masm=intel -mlzcnt")

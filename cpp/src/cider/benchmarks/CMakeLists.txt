@@ -17,8 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-find_package(FMT REQUIRED)
-
 set(DEP_LIBS benchmark::benchmark nextgen)
 
 add_executable(jitlib_benchmark JITlibBenchmark.cpp)
