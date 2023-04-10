@@ -63,3 +63,4 @@ make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON ${PRESTO_CPP_MODE}
 rm -rf ${WORKER_DIR}/_build/${PRESTO_CPP_MODE}/presto_cpp/function
 mkdir ${WORKER_DIR}/_build/${PRESTO_CPP_MODE}/presto_cpp/function
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider/function/RuntimeFunctions.bc ${WORKER_DIR}/_build/${PRESTO_CPP_MODE}/presto_cpp/function/
+cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cider/function/libcider_function.so ${WORKER_DIR}/_build/${PRESTO_CPP_MODE}/presto_cpp/function/

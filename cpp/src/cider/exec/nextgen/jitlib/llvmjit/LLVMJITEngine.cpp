@@ -21,11 +21,27 @@
 
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/ExecutionEngine/JITEventListener.h>
+#include <llvm/Support/DynamicLibrary.h>
+#include <filesystem>
 
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITEngine.h"
 #include "exec/nextgen/jitlib/llvmjit/LLVMJITModule.h"
+#include "util/filesystem/cider_path.h"
 
 namespace cider::jitlib {
+
+namespace {
+void loadCiderFunctionLibrary() {
+  static std::once_flag ciderFunctionLoaded;
+  std::call_once(ciderFunctionLoaded, [&]() {
+    auto root_path = cider::get_root_abs_path();
+    auto functionSoPath = root_path + "/function/libcider_function.so";
+    CHECK(std::filesystem::exists(functionSoPath));
+    llvm::sys::DynamicLibrary::LoadLibraryPermanently(functionSoPath.c_str());
+  });
+}
+}  // namespace
+
 LLVMJITEngine::~LLVMJITEngine() {
   engine->UnregisterJITEventListener(perf_listener);
   engine->UnregisterJITEventListener(intel_listener);
@@ -35,7 +51,9 @@ LLVMJITEngine::~LLVMJITEngine() {
 }
 
 LLVMJITEngineBuilder::LLVMJITEngineBuilder(LLVMJITModule& module, llvm::TargetMachine* tm)
-    : module_(module), llvm_module_(module.module_.get()), tm_(tm) {}
+    : module_(module), llvm_module_(module.module_.get()), tm_(tm) {
+  loadCiderFunctionLibrary();
+}
 
 void LLVMJITEngineBuilder::dumpASM(LLVMJITEngine& engine) {
   const std::string fname = llvm_module_->getModuleIdentifier() + ".s";

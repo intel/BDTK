@@ -73,6 +73,7 @@ cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/libcider_static.a ./presto_cpp/main/lib
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
 mkdir -p ./_build/${PRESTO_CPP_MODE}/presto_cpp/function
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/RuntimeFunctions.bc ./_build/${PRESTO_CPP_MODE}/presto_cpp/function/
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.so ./_build/${PRESTO_CPP_MODE}/presto_cpp/function/
 popd
 
 # build package
@@ -85,6 +86,7 @@ mkdir -p ${package_name}/conf
 cp -r ./presto/presto-native-execution/BDTK/cpp/src/cider/function/extensions ./${package_name}/conf
 cp -r ./presto/presto-native-execution/BDTK/cpp/src/cider/function/internals ./${package_name}/conf
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/function/RuntimeFunctions.bc ./${package_name}/function
+cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/function/libcider_function.so ./${package_name}/function
 cp -a ./presto/presto-native-execution/_build/${PRESTO_CPP_MODE}/presto_cpp/main/presto_server ./${package_name}/bin
 cp -r ./presto/presto-native-execution/BDTK/cpp/src/cider-velox/test/e-2-e ./${package_name}/
 

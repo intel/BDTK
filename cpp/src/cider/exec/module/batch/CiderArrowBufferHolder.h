@@ -45,7 +45,18 @@ class CiderArrowArrayBufferHolder {
   }
 
   // (re-) Allocate the buffer.
-  void allocBuffer(size_t index, size_t bytes);
+  void allocBuffer(size_t index, size_t bytes) {
+    if (buffers_[index]) {
+      if (bytes > buffers_bytes_[index]) {
+        buffers_[index] = allocator_->reallocate(
+            reinterpret_cast<int8_t*>(buffers_[index]), buffers_bytes_[index], bytes);
+        buffers_bytes_[index] = bytes;
+      }
+    } else {
+      buffers_[index] = allocator_->allocate(bytes);
+      buffers_bytes_[index] = bytes;
+    }
+  }
 
   ArrowArray** getChildrenPtrs() { return children_ptr_.data(); }
 
