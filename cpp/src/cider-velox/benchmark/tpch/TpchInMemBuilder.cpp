@@ -120,6 +120,8 @@ TpchPlan TpchInMemBuilder::getQueryPlan(int queryId, double scaleFactor) const {
       return getQ19Plan(scaleFactor);
     case 22:
       return getQ22Plan(scaleFactor);
+    case 23:
+      return getQ23Plan(scaleFactor);
     default:
       VELOX_NYI("TPC-H query {} is not supported yet", queryId);
   }
@@ -1500,6 +1502,34 @@ TpchPlan TpchInMemBuilder::getQ22Plan(double scaleFactor) const {
   context.scanNodes.emplace(ordersScanNodeId);
   context.scanNodes.emplace(customerScanNodeId);
   context.scanNodes.emplace(customerScanNodeIdWithKey);
+  return context;
+}
+
+TpchPlan TpchInMemBuilder::getQ23Plan(double scaleFactor) const {
+  std::vector<std::string> customerColumns = {"c_nationkey"};
+  std::vector<std::string> nationColumns = {"n_nationkey"};
+  auto planNodeIdGenerator = std::make_shared<core::PlanNodeIdGenerator>();
+  core::PlanNodeId nationScanNodeId;
+  core::PlanNodeId customerScanNodeId;
+
+  auto customer =
+      PlanBuilder(planNodeIdGenerator)
+          .tableScan(Table::TBL_CUSTOMER, std::move(customerColumns), scaleFactor)
+          .capturePlanNodeId(customerScanNodeId)
+          .planNode();
+
+  auto plan = PlanBuilder(planNodeIdGenerator)
+                  .tableScan(Table::TBL_NATION, std::move(nationColumns), scaleFactor)
+                  .capturePlanNodeId(nationScanNodeId)
+                  //   .project({"n_nationkey"})
+                  .hashJoin({"n_nationkey"}, {"c_nationkey"}, customer, "", {})
+                  .localPartition({})
+                  .planNode();
+
+  TpchPlan context;
+  context.plan = std::move(plan);
+  context.scanNodes.emplace(nationScanNodeId);
+  context.scanNodes.emplace(customerScanNodeId);
   return context;
 }
 

@@ -56,6 +56,7 @@ class TpchInMemBuilder {
   TpchPlan getQ18Plan(double scaleFactor) const;
   TpchPlan getQ19Plan(double scaleFactor) const;
   TpchPlan getQ22Plan(double scaleFactor) const;
+  TpchPlan getQ23Plan(double scaleFactor) const;
 
   std::unique_ptr<memory::ScopedMemoryPool> pool_ = memory::getDefaultScopedMemoryPool();
 };
