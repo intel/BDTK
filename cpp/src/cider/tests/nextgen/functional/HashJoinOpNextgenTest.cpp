@@ -252,7 +252,7 @@ INNER_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToManyRandomNullableJoinTest
 // returned null values are incorrect.
 // LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest,
 // LeftJoinArrowOneToOneSeqNoNullTest, *, int, =)  // NOLINT
-LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullLeftJoinTest2, *, bigint, =)  // NOLINT
+// LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNotNullJoinTest, ArrowOneToOneSeqNoNullLeftJoinTest2, *, bigint, =)  // NOLINT
 // LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest,
 // LeftJoinArrowOneToOneSeqNoNullableTest, *, int, =)  // NOLINT
 // LEFT_HASH_JOIN_TEST_UNIT_ARROW_FORMAT(CiderArrowOneToOneSeqNullableJoinTest,
