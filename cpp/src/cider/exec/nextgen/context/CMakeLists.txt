@@ -24,4 +24,4 @@ set(CONTEXT_SOURCE
     ../../../exec/module/batch/CiderArrowBufferHolder.cpp)
 
 add_library(cider_context OBJECT ${CONTEXT_SOURCE})
-target_link_libraries(cider_context substrait)
+add_dependencies(cider_context substrait)

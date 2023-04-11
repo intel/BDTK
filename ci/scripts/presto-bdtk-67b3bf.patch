@@ -42,7 +42,7 @@ index be98b34c54..e5580ae10b 100644
  
  build:					#: Build the software based in BUILD_DIR and BUILD_TYPE variables
 diff --git a/presto-native-execution/presto_cpp/main/CMakeLists.txt b/presto-native-execution/presto_cpp/main/CMakeLists.txt
-index 1ade5b20e4..bf3acd8352 100644
+index 1ade5b20e4..b387909386 100644
 --- a/presto-native-execution/presto_cpp/main/CMakeLists.txt
 +++ b/presto-native-execution/presto_cpp/main/CMakeLists.txt
 @@ -16,6 +16,8 @@ add_subdirectory(common)
@@ -54,41 +54,33 @@ index 1ade5b20e4..bf3acd8352 100644
  add_library(
    presto_server_lib
    Announcer.cpp
-@@ -29,6 +31,26 @@ add_library(
+@@ -29,6 +31,19 @@ add_library(
    TaskManager.cpp
    TaskResource.cpp)
  
 +set(
 +  CIDER_VELOX_LIB
-+  velox_plugin
-+  cider_plan_transformer
-+  velox_substrait_convertor
++  cider_velox_static
 +  velox_substrait_plan_converter
 +  velox_duckdb_parser
 +  velox_exec_test_lib
-+  velox_plan_transformer
 +  velox_arrow_bridge
 +  cider_static
 +  cider_function
-+  nextgen
-+  jitlib
 +  cider_runtime_function
 +  LLVM
-+  QueryEngine
-+  tbb
 +)
 +
  add_dependencies(presto_server_lib presto_protocol presto_types
                   presto_thrift-cpp2 presto_thrift_extra)
  
-@@ -61,7 +83,14 @@ target_link_libraries(
+@@ -61,7 +76,13 @@ target_link_libraries(
    ${ANTLR4_RUNTIME}
    ${GLOG}
    ${GFLAGS_LIBRARIES}
 -  pthread)
 +  pthread
 +  ${CIDER_VELOX_LIB}
-+  cider_static
 +  )
 +
 +if(VELOX_ENABLE_HDFS)
@@ -97,7 +89,7 @@ index 1ade5b20e4..bf3acd8352 100644
  
  add_executable(presto_server PrestoMain.cpp)
  
-@@ -79,6 +108,6 @@ if(PRESTO_ENABLE_PARQUET)
+@@ -79,6 +100,6 @@ if(PRESTO_ENABLE_PARQUET)
    target_link_libraries(presto_server velox_dwio_parquet_reader)
  endif()
  
@@ -250,10 +242,3 @@ index ac43dd58da..c8c480f32c 100644
  
      for (const auto& entry : hiveLayout->partitionColumns) {
        partitionColumns.emplace(entry.name, toColumnHandle(&entry));
-diff --git a/presto-native-execution/velox b/presto-native-execution/velox
-index 20363e1d9b..77bfd1cf42 160000
---- a/presto-native-execution/velox
-+++ b/presto-native-execution/velox
-@@ -1 +1 @@
--Subproject commit 20363e1d9b275181dca1122de40cee7394c5fca5
-+Subproject commit 77bfd1cf42b10ce56a03fd094b16acaf61f932d2-dirty

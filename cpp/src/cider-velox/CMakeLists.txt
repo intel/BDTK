@@ -41,5 +41,6 @@ if(ENABLE_BENCHMARK)
 endif()
 
 if(CIDER_ENABLE_TESTS)
+  enable_testing()
   add_subdirectory(test)
 endif()

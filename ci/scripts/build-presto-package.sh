@@ -59,16 +59,10 @@ popd
 cp -r ./BDTK/cpp/thirdparty/velox .
 mkdir -p ./presto_cpp/main/lib
 
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/libvelox_plugin.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/ciderTransformer/libcider_plan_transformer.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/planTransformer/libvelox_plan_transformer.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider-velox/src/substrait/libvelox_substrait_convertor.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/thirdparty/velox/velox/substrait/libvelox_substrait_plan_converter.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/template/libQueryEngine.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/function/libcider_function.so ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/jitlib/libjitlib.a ./presto_cpp/main/lib
-cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/src/cider/exec/nextgen/libnextgen.a ./presto_cpp/main/lib
 cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/libcider_static.a ./presto_cpp/main/lib
+cp ./BDTK/build-${BDTK_BUILD_MODE}/cpp/libcider_velox_static.a ./presto_cpp/main/lib
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON VELOX_ENABLE_HDFS=ON ${PRESTO_CPP_MODE}
 mkdir -p ./_build/${PRESTO_CPP_MODE}/presto_cpp/function

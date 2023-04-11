@@ -17,11 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(DEP_LIBS gtest test_utils duckdb cider_static QueryEngine dl)
-
-set(TEST_ARGS "--gtest_output=xml:../")
-
 add_executable(CiderPlanValidatorTest CiderPlanValidatorTest.cpp)
-target_link_libraries(CiderPlanValidatorTest ${DEP_LIBS})
+target_link_libraries(CiderPlanValidatorTest ${EXECUTE_TEST_LIBS})
 add_test(CiderPlanValidatorTest
          ${EXECUTABLE_OUTPUT_PATH}/CiderPlanValidatorTest ${TEST_ARGS})

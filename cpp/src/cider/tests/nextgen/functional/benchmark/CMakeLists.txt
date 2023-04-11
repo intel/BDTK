@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(TEST_ARGS "--gtest_output=xml:../")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
 file(GLOB nextgen_benchmark_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

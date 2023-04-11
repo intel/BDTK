@@ -84,10 +84,6 @@ if(BDTK_ENABLE_CIDER)
     set(CIDER_ENABLE_SUBSTRAIT OFF)
   endif()
 
-  if(CIDER_ENABLE_TESTS)
-    enable_testing()
-  endif()
-
   if(CIDER_ENABLE_GOOGLETEST)
     # googletest
     add_subdirectory(thirdparty/googletest)
@@ -126,10 +122,6 @@ if(BDTK_ENABLE_CIDER)
         ${CMAKE_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto)
   endif()
 
-  # TODO: remove after cleanup public API dependency RapidJSON
-  include_directories(thirdparty/rapidjson/include)
-  add_definitions(-DRAPIDJSON_HAS_STDSTRING)
-
   # robin-hood-hashing
   include_directories(thirdparty/robin-hood-hashing/src/include)
 
@@ -142,12 +134,23 @@ if(BDTK_ENABLE_CIDER)
   endif()
 
   include(BuildUtils)
+
+  set(CIDER_DEPENDENCIES_LIBS)
   list(APPEND CIDER_DEPENDENCIES_LIBS substrait)
   list(APPEND CIDER_DEPENDENCIES_LIBS SubstraitCpp::function SubstraitCpp::type
        SubstraitCpp::common)
   list(APPEND CIDER_DEPENDENCIES_LIBS yaml-cpp)
-  list(APPEND CIDER_DEPENDENCIES_LIBS cider_util cider_processor cider_plan
-       cider_module)
+  list(
+    APPEND
+    CIDER_DEPENDENCIES_LIBS
+    cider_util
+    cider_processor
+    cider_plan
+    jitlib
+    nextgen
+    QueryEngine
+    cider_hashtable_join
+    cider_module)
 
   set(BUILD_OUTPUT_ROOT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
   icl_car(_FIRST_LIB ${CIDER_DEPENDENCIES_LIBS})
@@ -156,6 +159,23 @@ if(BDTK_ENABLE_CIDER)
     cider_static
     NAME
     cider_static
+    ROOT
+    ${_FIRST_LIB}
+    TO_MERGE
+    ${_OTHER_LIBS})
+
+  set(CIDER_VELOX_DEPENDENCIES_LIBS)
+  list(APPEND CIDER_VELOX_DEPENDENCIES_LIBS velox_plugin)
+  list(APPEND CIDER_VELOX_DEPENDENCIES_LIBS velox_substrait_convertor
+       velox_plan_transformer cider_plan_transformer)
+
+  set(BUILD_OUTPUT_ROOT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+  icl_car(_FIRST_LIB ${CIDER_VELOX_DEPENDENCIES_LIBS})
+  icl_cdr(_OTHER_LIBS ${CIDER_VELOX_DEPENDENCIES_LIBS})
+  create_merged_static_lib(
+    cider_velox_static
+    NAME
+    cider_velox_static
     ROOT
     ${_FIRST_LIB}
     TO_MERGE

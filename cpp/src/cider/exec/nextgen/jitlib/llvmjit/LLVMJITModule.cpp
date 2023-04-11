@@ -19,7 +19,6 @@
  * under the License.
  */
 
-#include <fmt/format.h>
 #include <chrono>
 #include <filesystem>
 

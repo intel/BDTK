@@ -17,19 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-include_directories(
-  ${PROJECT_SOURCE_DIR}/velox/third_party/googletest/googletest/include)
-
-set(Boost_USE_MULTITHREADED TRUE)
-find_package(
-  Boost
-  1.66.0
-  REQUIRED
-  context
-  thread
-  system
-  atomic)
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 find_package(gflags COMPONENTS shared)
 find_library(GMock gmock)
 find_library(GLOG glog)
@@ -51,8 +38,7 @@ set(FOLLY_BENCHMARK Folly::follybenchmark)
 set(FOLLY ${FOLLY_LIBRARIES})
 set(VELOX_BENCHMARKS_DEPENDENCIES
     cider_static
-    velox_plan_transformer
-    cider_plan_transformer
+    cider_function
     velox_aggregates
     velox_exec
     velox_exec_test_lib
@@ -80,7 +66,7 @@ set(VELOX_BENCHMARKS_DEPENDENCIES
     ${FOLLY_BENCHMARK}
     ${FMT})
 set(CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES
-    velox_plugin
+    cider_velox_static
     velox_substrait_convertor
     velox_functions_test_lib
     velox_aggregates_test_lib
@@ -89,14 +75,6 @@ set(CIDER_BENCHMARKS_SUPPLEMENT_DEPENDENCIES
     velox_serialization
     velox_functions_json
     velox_arrow_bridge
-    ${Boost_ATOMIC_LIBRARIES}
-    ${Boost_CONTEXT_LIBRARIES}
-    ${Boost_DATE_TIME_LIBRARIES}
-    ${Boost_FILESYSTEM_LIBRARIES}
-    ${Boost_PROGRAM_OPTIONS_LIBRARIES}
-    ${Boost_REGEX_LIBRARIES}
-    ${Boost_THREAD_LIBRARIES}
-    ${Boost_SYSTEM_LIBRARIES}
     ${DOUBLE_CONVERSION}
     ${gflags_LIBRARIES}
     ${GLOG}

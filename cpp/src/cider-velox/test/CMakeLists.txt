@@ -17,44 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set(Boost_USE_MULTITHREADED TRUE)
-find_package(
-  Boost
-  1.66.0
-  REQUIRED
-  context
-  thread
-  system
-  atomic)
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-
-find_package(gflags COMPONENTS shared)
-
-find_library(GMock gmock)
-
-find_library(GLOG glog)
-
-find_library(FMT fmt)
-
-find_library(EVENT event)
-
-find_library(DOUBLE_CONVERSION double-conversion)
-
-find_library(LZ4 lz4)
-find_library(LZO lzo2)
-find_library(RE2 re2 REQUIRED)
-find_library(ZSTD zstd)
-find_package(ZLIB)
-find_library(SNAPPY snappy)
-find_package(folly CONFIG REQUIRED)
-set(FOLLY_WITH_DEPENDENCIES ${FOLLY_LIBRARIES} ${Boost_LIBRARIES}
-                            ${DOUBLE_CONVERSION_LIBRARIES} ${EVENT} ${SNAPPY})
-
-set(FOLLY ${FOLLY_LIBRARIES})
-set(FOLLY_BENCHMARK Folly::follybenchmark)
-
-find_library(LLVM_LIB LLVM)
-
 add_library(velox_plugin_test_util BatchDataGenerator.cpp CiderPlanBuilder.cpp)
 
 add_library(
@@ -63,7 +25,8 @@ add_library(
 )
 
 set(VELOX_PLUGIN_TEST_LIBS
-    velox_plugin
+    cider_velox_static
+    cider_static
     velox_substrait_convertor
     velox_substrait_plan_converter
     plan_transformer_test_util
@@ -85,30 +48,7 @@ set(VELOX_PLUGIN_TEST_LIBS
     velox_arrow_bridge
     velox_memory
     velox_dwio_common_exception
-    ${Boost_ATOMIC_LIBRARIES}
-    ${Boost_CONTEXT_LIBRARIES}
-    ${Boost_DATE_TIME_LIBRARIES}
-    ${Boost_FILESYSTEM_LIBRARIES}
-    ${Boost_PROGRAM_OPTIONS_LIBRARIES}
-    ${Boost_REGEX_LIBRARIES}
-    ${Boost_THREAD_LIBRARIES}
-    ${Boost_SYSTEM_LIBRARIES}
-    ${FOLLY_WITH_DEPENDENCIES}
-    ${FOLLY_BENCHMARK}
-    ${DOUBLE_CONVERSION}
-    ${gflags_LIBRARIES}
-    ${GLOG}
-    ${FMT}
-    ${FILESYSTEM}
-    ${LLVM_LIB}
-    cider_static
-    nextgen
-    QueryEngine
     cider_function
-    cider_hashtable_join
-    cider_module
-    velox_plan_transformer
-    cider_plan_transformer
     gtest
     gtest_main)
 
@@ -123,13 +63,11 @@ target_link_libraries(ArrowUtilsTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(ArrowUtilsTest ArrowUtilsTest ${TEST_ARGS})
 
 add_executable(CiderOperatorTest CiderOperatorTest.cpp)
-target_link_libraries(CiderOperatorTest ${VELOX_PLUGIN_TEST_LIBS}
-                      velox_plan_transformer)
+target_link_libraries(CiderOperatorTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderOperatorTest CiderOperatorTest ${TEST_ARGS})
 
 add_executable(CiderPatternTest CiderPatternTest.cpp)
-target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS}
-                      velox_plan_transformer)
+target_link_libraries(CiderPatternTest ${VELOX_PLUGIN_TEST_LIBS})
 add_test(CiderPatternTest CiderPatternTest ${TEST_ARGS})
 
 # add_executable(AggWithRandomDataTest AggWithRandomDataTest.cpp)

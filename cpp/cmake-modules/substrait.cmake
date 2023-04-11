@@ -27,7 +27,6 @@ macro(build_substrait)
 
   # Set up Proto
   find_package(Protobuf REQUIRED)
-  find_package(FMT REQUIRED)
 
   set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/substrait")
   set(SUBSTRAIT_INCLUDE_DIR ${PROTO_OUTPUT_DIR})
@@ -59,7 +58,7 @@ macro(build_substrait)
   add_library(substrait STATIC ${PROTO_SRCS})
   add_dependencies(substrait substrait_proto_gen)
   set_target_properties(substrait PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  target_link_libraries(substrait ${Protobuf_LIBRARIES} fmt::fmt)
+  target_link_libraries(substrait ${Protobuf_LIBRARIES})
   target_include_directories(substrait PUBLIC "${SUBSTRAIT_INCLUDE_DIR}")
 
   include_directories(${SUBSTRAIT_INCLUDE_DIR})

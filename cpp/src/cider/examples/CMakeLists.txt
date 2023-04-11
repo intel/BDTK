@@ -20,15 +20,8 @@
 find_package(Protobuf REQUIRED)
 
 add_executable(ExpressionEvalExample ExpressionEvalExample.cpp)
-target_link_libraries(
-  ExpressionEvalExample
-  test_utils
-  cider_static
-  QueryEngine
-  cider_function
-  nextgen
-  ${Protobuf_LIBRARIES}
-  fmt::fmt)
+target_link_libraries(ExpressionEvalExample cider_static cider_function
+                      ${Protobuf_LIBRARIES} fmt::fmt)
 
 add_executable(CiderHashTableExample CiderHashTableExample.cpp)
-target_link_libraries(CiderHashTableExample cider_static cider_hashtable_join)
+target_link_libraries(CiderHashTableExample cider_static)
