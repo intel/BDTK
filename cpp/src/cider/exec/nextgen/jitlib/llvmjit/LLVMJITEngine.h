@@ -23,6 +23,8 @@
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 
+#include "exec/nextgen/jitlib/base/Options.h"
+
 namespace cider::jitlib {
 class LLVMJITModule;
 

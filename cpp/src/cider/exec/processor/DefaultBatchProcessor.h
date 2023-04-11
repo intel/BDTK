@@ -44,6 +44,8 @@ class DefaultBatchProcessor : public BatchProcessor {
                         const BatchProcessorContextPtr& context,
                         const CodegenOptions& codegen_options = {});
 
+  ~DefaultBatchProcessor() override = default;
+
   const BatchProcessorContextPtr& getContext() const override { return context_; }
 
   void processNextBatch(const struct ArrowArray* array,
@@ -55,7 +57,7 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   void feedHashBuildTable(const std::shared_ptr<JoinHashTable>& hashTable) override;
 
-  void feedCrossBuildData(const std::shared_ptr<Batch>& crossData) override;
+  void feedCrossBuildData(std::shared_ptr<Batch>& crossData) override;
 
  protected:
   BatchProcessorContextPtr context_;

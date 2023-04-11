@@ -18,38 +18,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_CONTEXT_BUFFER_H
-#define NEXTGEN_CONTEXT_BUFFER_H
+#ifndef JITLIB_BASE_OPTIONS_H
+#define JITLIB_BASE_OPTIONS_H
 
-#include <functional>
-#include <memory>
-
-class CiderAllocator;
-using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
-
-namespace cider::exec::nextgen::context {
-class Buffer {
- public:
-  Buffer(const int32_t capacity,
-         const CiderAllocatorPtr& allocator,
-         const std::function<void(Buffer*)>& initializer);
-
-  ~Buffer();
-
-  void allocateBuffer(int32_t size);
-
-  int8_t* getBuffer() { return buffer_; }
-
-  int32_t getCapacity() { return capacity_; }
-
- private:
-  int32_t capacity_;
-  CiderAllocatorPtr allocator_;
-  int8_t* buffer_;
+namespace cider::jitlib {
+// compilation config info
+struct CompilationOptions {
+  bool optimize_ir = true;
+  bool aggressive_jit_compile = true;
+  bool dump_ir = false;
+  bool enable_vectorize = true;
+  bool enable_avx2 = true;
+  bool enable_avx512 = false;
 };
+};  // namespace cider::jitlib
 
-using BufferPtr = std::unique_ptr<Buffer>;
-using BufferInitializer = std::function<void(Buffer*)>;
-
-}  // namespace cider::exec::nextgen::context
-#endif  // NEXTGEN_CONTEXT_BUFFER_H
+#endif  // JITLIB_BASE_OPTIONS_H

@@ -56,11 +56,7 @@ execute_process(
 
 add_custom_command(
   DEPENDS
-    scalar/RuntimeFunctions.h
     scalar/RuntimeFunctions.cpp
-    scalar/DecodersImpl.h
-    string/StringLike.cpp
-    aggregate/CiderRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/context/ContextRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/operators/OperatorRuntimeFunctions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../exec/nextgen/function/CiderStringFunctions.cpp

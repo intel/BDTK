@@ -23,12 +23,13 @@
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 #include <string>
-#include "util/Logger.h"
 
+#include "cider/CiderAllocator.h"
 #include "exec/plan/builder/SubstraitExprBuilder.h"
 #include "exec/plan/parser/SubstraitToRelAlgExecutionUnit.h"
 #include "exec/plan/parser/TypeUtils.h"
 #include "exec/plan/validator/CiderPlanValidator.h"
+#include "util/Logger.h"
 
 static const auto allocator = std::make_shared<CiderDefaultAllocator>();
 

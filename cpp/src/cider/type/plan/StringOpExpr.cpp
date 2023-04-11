@@ -21,6 +21,7 @@
 
 #include "type/plan/StringOpExpr.h"
 
+#include "cider/CiderException.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 

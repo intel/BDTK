@@ -21,7 +21,9 @@
 
 #include "exec/nextgen/context/CodegenContext.h"
 
+#include "exec/nextgen/context/ContextDescriptors.h"
 #include "exec/nextgen/context/RuntimeContext.h"
+#include "exec/nextgen/jitlib/JITLib.h"
 
 namespace cider::exec::nextgen::context {
 using namespace cider::jitlib;
@@ -52,6 +54,16 @@ JITValuePointer CodegenContext::registerBatch(const SQLTypeInfo& type,
   batch_descriptors_.emplace_back(std::make_shared<BatchDescriptor>(id, name, type), ret);
 
   return ret;
+}
+
+void CodegenContext::setFilterMask(jitlib::JITValuePointer& mask,
+                                   jitlib::JITValuePointer& start_index) {
+  CHECK(mask->getValueTypeTag() == jitlib::JITTypeTag::INT64);
+  CHECK(start_index->getValueTypeTag() == jitlib::JITTypeTag::INT64);
+
+  filter_desc_.applied_filter_mask = true;
+  filter_desc_.filter_i64_mask.replace(mask);
+  filter_desc_.start_index.replace(start_index);
 }
 
 jitlib::JITValuePointer CodegenContext::registerStringHeap() {
@@ -125,7 +137,7 @@ JITValuePointer CodegenContext::registerBuffer(const int32_t capacity,
 
 jitlib::JITValuePointer CodegenContext::registerCiderSet(const std::string& name,
                                                          const SQLTypeInfo& type,
-                                                         CiderSetPtr c_set) {
+                                                         CiderSetPtr& c_set) {
   int64_t id = acquireContextID();
   JITValuePointer ret = jit_func_->createLocalJITValue([this, id]() {
     auto index = this->jit_func_->createLiteral(JITTypeTag::INT64, id);
@@ -184,6 +196,15 @@ JITValuePointer CodegenContext::registerBuildTable(const std::string& name) {
       std::make_shared<CrossJoinBuildTableDescriptor>(id, name);
   buildtable_descriptor_.second.replace(ret);
   return ret;
+}
+
+void CodegenContext::setHashTable(
+    const std::shared_ptr<processor::JoinHashTable>& join_hash_table) {
+  hashtable_descriptor_.first->hash_table = join_hash_table;
+}
+
+void CodegenContext::setBuildTable(BatchSharedPtr& batch) {
+  buildtable_descriptor_.first->build_table = std::move(batch);
 }
 
 RuntimeCtxPtr CodegenContext::generateRuntimeCTX(

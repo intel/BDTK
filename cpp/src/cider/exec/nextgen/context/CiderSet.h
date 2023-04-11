@@ -22,62 +22,51 @@
 #ifndef CIDER_SET_H
 #define CIDER_SET_H
 
-#include "cider/CiderException.h"
 #include "robin_hood.h"
 
 namespace cider::exec::nextgen::context {
 
 class CiderSet {
  public:
-  CiderSet() {}
+  CiderSet() = default;
   virtual ~CiderSet() = default;
 
-#define DEF_CIDER_SET_INSERT(type)                                                 \
-  virtual void insert(type key_val) {                                              \
-    std::string name(typeid(*this).name());                                        \
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support insert " + #type); \
-  }
+#define DEF_CIDER_SET_INSERT(type) virtual void insert(type key_val);
+
   DEF_CIDER_SET_INSERT(int8_t)
   DEF_CIDER_SET_INSERT(int16_t)
   DEF_CIDER_SET_INSERT(int32_t)
   DEF_CIDER_SET_INSERT(int64_t)
   DEF_CIDER_SET_INSERT(float)
   DEF_CIDER_SET_INSERT(double)
-  DEF_CIDER_SET_INSERT(std::string)
+  DEF_CIDER_SET_INSERT(std::string&)
 
-#define DEF_CIDER_SET_CONTAINS(type)                                               \
-  virtual bool contains(type key_val) {                                            \
-    std::string name(typeid(*this).name());                                        \
-    CIDER_THROW(CiderRuntimeException, name + " doesn't support search " + #type); \
-  }
+#define DEF_CIDER_SET_CONTAINS(type) virtual bool contains(type key_val);
+
   DEF_CIDER_SET_CONTAINS(int8_t)
   DEF_CIDER_SET_CONTAINS(int16_t)
   DEF_CIDER_SET_CONTAINS(int32_t)
   DEF_CIDER_SET_CONTAINS(int64_t)
   DEF_CIDER_SET_CONTAINS(float)
   DEF_CIDER_SET_CONTAINS(double)
-  DEF_CIDER_SET_CONTAINS(std::string)
+  DEF_CIDER_SET_CONTAINS(std::string&)
+
+#undef DEF_CIDER_SET_INSERT
+#undef DEF_CIDER_SET_CONTAINS
 };
 
 class CiderInt64Set : public CiderSet {
  public:
-  CiderInt64Set() : CiderSet() {}
+  using CiderSet::CiderSet;
 
-  void insert(int8_t key_val) override { set_.insert((int64_t)key_val); }
-
-  void insert(int16_t key_val) override { set_.insert((int64_t)key_val); }
-
-  void insert(int32_t key_val) override { set_.insert((int64_t)key_val); }
-
-  void insert(int64_t key_val) override { set_.insert((int64_t)key_val); }
-
-  bool contains(int8_t key_val) override { return set_.contains((int64_t)key_val); }
-
-  bool contains(int16_t key_val) override { return set_.contains((int64_t)key_val); }
-
-  bool contains(int32_t key_val) override { return set_.contains((int64_t)key_val); }
-
-  bool contains(int64_t key_val) override { return set_.contains(key_val); }
+  void insert(int8_t key_val) override;
+  void insert(int16_t key_val) override;
+  void insert(int32_t key_val) override;
+  void insert(int64_t key_val) override;
+  bool contains(int8_t key_val) override;
+  bool contains(int16_t key_val) override;
+  bool contains(int32_t key_val) override;
+  bool contains(int64_t key_val) override;
 
  private:
   robin_hood::unordered_set<int64_t> set_;
@@ -85,15 +74,12 @@ class CiderInt64Set : public CiderSet {
 
 class CiderDoubleSet : public CiderSet {
  public:
-  CiderDoubleSet() : CiderSet() {}
+  using CiderSet::CiderSet;
 
-  void insert(float key_val) override { set_.insert((double)key_val); }
-
-  void insert(double key_val) override { set_.insert(key_val); }
-
-  bool contains(float key_val) override { return set_.contains((double)key_val); }
-
-  bool contains(double key_val) override { return set_.contains(key_val); }
+  void insert(float key_val) override;
+  void insert(double key_val) override;
+  bool contains(float key_val) override;
+  bool contains(double key_val) override;
 
  private:
   robin_hood::unordered_set<double> set_;
@@ -101,11 +87,10 @@ class CiderDoubleSet : public CiderSet {
 
 class CiderStringSet : public CiderSet {
  public:
-  CiderStringSet() : CiderSet() {}
+  using CiderSet::CiderSet;
 
-  void insert(std::string key_val) override { set_.insert(key_val); }
-
-  bool contains(std::string key_val) override { return set_.contains(key_val); }
+  void insert(std::string& key_val) override;
+  bool contains(std::string& key_val) override;
 
  private:
   robin_hood::unordered_set<std::string> set_;

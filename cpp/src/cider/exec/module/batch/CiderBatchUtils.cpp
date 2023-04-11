@@ -19,6 +19,8 @@
  * under the License.
  */
 
+#include "include/cider/batch/CiderBatchUtils.h"
+
 #include "ArrowABI.h"
 #include "CiderArrowBufferHolder.h"
 #include "cider/CiderException.h"

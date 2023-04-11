@@ -151,132 +151,140 @@ class MonthDaySecond {
 
 // interval type: kINTERVAL_DAY_TIME(add day/minute/second, second unit)
 // interval type: kINTERVAL_YEAR_MONTH(add month/year, month unit)
-extern "C" ALWAYS_INLINE int32_t date_add_seconds(const int32_t date,
-                                                  const int64_t interval) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t date_add_seconds(const int32_t date,
+                                                              const int64_t interval) {
   // interval must be divisible by kSecsPerDay
   return date + interval / kSecsPerDay;
 }
 
-extern "C" ALWAYS_INLINE int64_t time_add_seconds(const int64_t time,
-                                                  const int64_t interval) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_add_seconds(const int64_t time,
+                                                              const int64_t interval) {
   return time + interval;
 }
 
-extern "C" ALWAYS_INLINE int32_t date_add_months(const int32_t date,
-                                                 const int64_t interval) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int32_t date_add_months(const int32_t date,
+                                                             const int64_t interval) {
   return MonthDaySecond(date).addMonths(interval).getDate();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_add_months(const int64_t time,
-                                                 const int64_t interval) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_add_months(const int64_t time,
+                                                             const int64_t interval) {
   int64_t const date = floor_div(time, kSecsPerDay);
   return MonthDaySecond(date, time - date * kSecsPerDay).addMonths(interval).getTime();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_add_months_high_precision(const int64_t time,
-                                                                const int64_t interval,
-                                                                const int32_t dim) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+time_add_months_high_precision(const int64_t time,
+                               const int64_t interval,
+                               const int32_t dim) {
   int64_t const scale = pow10[dim];
   return time_add_months(floor_div(time, scale), interval) * scale +
          unsigned_mod(time, scale);
 }
 
-extern "C" ALWAYS_INLINE int64_t time_add_seconds_high_precision(const int64_t time,
-                                                                 const int64_t interval,
-                                                                 const int32_t dim) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+time_add_seconds_high_precision(const int64_t time,
+                                const int64_t interval,
+                                const int32_t dim) {
   int64_t const scale = pow10[dim];
   return time_add_seconds(floor_div(time, scale), interval) * scale +
          unsigned_mod(time, scale);
 }
 
 // date extract  (days~year)
-extern "C" ALWAYS_INLINE int64_t date_extract_year(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t date_extract_year(const int32_t date) {
   return MonthDaySecond(date).extractYear();
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_day(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t date_extract_day(const int32_t date) {
   return MonthDaySecond(date).extractDay();
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_dow(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t date_extract_dow(const int32_t date) {
   return unsigned_mod(date + 4, kDaysPerWeek);
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_isodow(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t date_extract_isodow(const int32_t date) {
   return unsigned_mod(date + 3, kDaysPerWeek) + 1;
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_month(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t date_extract_month(const int32_t date) {
   return MonthDaySecond(date).extractMonth();
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_quarter(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t date_extract_quarter(const int32_t date) {
   return MonthDaySecond(date).extractQuarter();
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_day_of_year(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+date_extract_day_of_year(const int32_t date) {
   return MonthDaySecond(date).extractDayOfYear();
 }
 
-extern "C" ALWAYS_INLINE int64_t date_extract_week_monday(const int32_t date) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+date_extract_week_monday(const int32_t date) {
   return MonthDaySecond(date).extract_week<MONDAY>();
 }
 
 // timestamp extract (nanosecond~year)
-extern "C" ALWAYS_INLINE int64_t time_extract_hour(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_hour(const int64_t time) {
   return unsigned_mod(time, kSecsPerDay) / kSecsPerHour;
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_minute(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_minute(const int64_t time) {
   return unsigned_mod(time, kSecsPerHour) / kSecsPerMin;
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_second(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_second(const int64_t time) {
   return unsigned_mod(time, kSecsPerMin);
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_millisecond(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+time_extract_millisecond(const int64_t time) {
   return unsigned_mod(time, kSecsPerMin * kMilliSecsPerSec);
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_microsecond(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+time_extract_microsecond(const int64_t time) {
   return unsigned_mod(time, kSecsPerMin * kMicroSecsPerSec);
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_nanosecond(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_nanosecond(const int64_t time) {
   return unsigned_mod(time, kSecsPerMin * kNanoSecsPerSec);
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_dow(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_dow(const int64_t time) {
   int64_t const days_past_epoch = floor_div(time, kSecsPerDay);
   return unsigned_mod(days_past_epoch + 4, kDaysPerWeek);
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_isodow(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_isodow(const int64_t time) {
   int64_t const days_past_epoch = floor_div(time, kSecsPerDay);
   return unsigned_mod(days_past_epoch + 3, kDaysPerWeek) + 1;
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_day_of_year(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+time_extract_day_of_year(const int64_t time) {
   return MonthDaySecond(floor_div(time, kSecsPerDay)).extractDayOfYear();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_day(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_day(const int64_t time) {
   return MonthDaySecond(floor_div(time, kSecsPerDay)).extractDay();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_week_monday(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t
+time_extract_week_monday(const int64_t time) {
   return MonthDaySecond(floor_div(time, kSecsPerDay)).extract_week<MONDAY>();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_month(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_month(const int64_t time) {
   return MonthDaySecond(floor_div(time, kSecsPerDay)).extractMonth();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_quarter(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_quarter(const int64_t time) {
   return MonthDaySecond(floor_div(time, kSecsPerDay)).extractQuarter();
 }
 
-extern "C" ALWAYS_INLINE int64_t time_extract_year(const int64_t time) {
+extern "C" RUNTIME_FUNC ALLOW_INLINE int64_t time_extract_year(const int64_t time) {
   return MonthDaySecond(floor_div(time, kSecsPerDay)).extractYear();
 }

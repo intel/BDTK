@@ -21,14 +21,18 @@
  */
 
 #define STATIC_QUAL static
+
 #define FORCE_INLINE inline __attribute__((always_inline))
 
 #define RUNTIME_FUNC __attribute__((__visibility__("protected")))
 
+#define ALLOW_INLINE __attribute__((always_inline))
+
+#define NEVER_INLINE __attribute__((noinline))
+
 #define ALWAYS_INLINE \
   __attribute__((always_inline)) __attribute__((__visibility__("protected")))
 
-#define NEVER_INLINE __attribute__((noinline))
 
 #define SUFFIX(name) name
 

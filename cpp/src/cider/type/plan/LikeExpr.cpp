@@ -19,6 +19,8 @@
  * under the License.
  */
 #include "type/plan/LikeExpr.h"
+
+#include "cider/CiderException.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "type/plan/ConstantExpr.h"
 #include "type/plan/Utils.h"  // for is_unnest

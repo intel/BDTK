@@ -274,7 +274,7 @@ JITExprValue& InValues::codegen(CodegenContext& context) {
       cider_set = std::make_unique<CiderDoubleSet>();
     }
     auto filled_set = insertValuesToSet(std::move(cider_set), get_value_list());
-    auto set_ptr = context.registerCiderSet("in_set", expr_ti, std::move(filled_set));
+    auto set_ptr = context.registerCiderSet("in_set", expr_ti, filled_set);
     auto emit_desc = JITFunctionEmitDescriptor{
         .ret_type = JITTypeTag::BOOL,
         .params_vector = {set_ptr.get(), in_arg_val.getValue().get()}};
@@ -310,8 +310,7 @@ JITExprValue& InValues::codegenForString(CodegenContext& context) {
   if (get_value_list().size() >= 3) {
     CiderSetPtr cider_set = std::make_unique<CiderStringSet>();
     auto filled_set = insertValuesToSet(std::move(cider_set), get_value_list());
-    auto set_ptr =
-        context.registerCiderSet("in_set", get_type_info(), std::move(filled_set));
+    auto set_ptr = context.registerCiderSet("in_set", get_type_info(), filled_set);
     auto emit_desc = JITFunctionEmitDescriptor{
         .ret_type = JITTypeTag::BOOL,
         .params_vector = {

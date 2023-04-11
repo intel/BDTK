@@ -19,6 +19,8 @@
  * under the License.
  */
 #include "type/plan/ConstantExpr.h"
+
+#include "cider/CiderException.h"
 #include "cider/CiderOptions.h"
 #include "exec/nextgen/context/CodegenContext.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"

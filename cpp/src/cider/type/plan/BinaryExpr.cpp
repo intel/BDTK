@@ -19,7 +19,10 @@
  * under the License.
  */
 #include "type/plan/BinaryExpr.h"
+
 #include <cstddef>
+
+#include "cider/CiderException.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/utils/JITExprValue.h"
 #include "type/data/sqltypes.h"

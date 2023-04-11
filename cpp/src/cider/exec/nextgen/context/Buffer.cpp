@@ -18,38 +18,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef NEXTGEN_CONTEXT_BUFFER_H
-#define NEXTGEN_CONTEXT_BUFFER_H
+#include "exec/nextgen/context/Buffer.h"
 
-#include <functional>
-#include <memory>
-
-class CiderAllocator;
-using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
+#include "include/cider/CiderAllocator.h"
 
 namespace cider::exec::nextgen::context {
-class Buffer {
- public:
-  Buffer(const int32_t capacity,
-         const CiderAllocatorPtr& allocator,
-         const std::function<void(Buffer*)>& initializer);
+Buffer::Buffer(const int32_t capacity,
+               const CiderAllocatorPtr& allocator,
+               const std::function<void(Buffer*)>& initializer)
+    : capacity_(capacity)
+    , allocator_(allocator)
+    , buffer_(allocator_->allocate(capacity_)) {
+  initializer(this);
+}
 
-  ~Buffer();
+Buffer::~Buffer() {
+  allocator_->deallocate(buffer_, capacity_);
+}
 
-  void allocateBuffer(int32_t size);
-
-  int8_t* getBuffer() { return buffer_; }
-
-  int32_t getCapacity() { return capacity_; }
-
- private:
-  int32_t capacity_;
-  CiderAllocatorPtr allocator_;
-  int8_t* buffer_;
-};
-
-using BufferPtr = std::unique_ptr<Buffer>;
-using BufferInitializer = std::function<void(Buffer*)>;
-
-}  // namespace cider::exec::nextgen::context
-#endif  // NEXTGEN_CONTEXT_BUFFER_H
+void Buffer::allocateBuffer(int32_t size) {
+  if (buffer_) {
+    buffer_ = allocator_->reallocate(buffer_, capacity_, size);
+  } else {
+    buffer_ = allocator_->allocate(size);
+  }
+  capacity_ = size;
+}
+};  // namespace cider::exec::nextgen::context

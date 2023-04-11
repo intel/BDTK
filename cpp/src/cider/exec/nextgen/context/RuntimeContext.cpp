@@ -20,31 +20,33 @@
  */
 
 #include "exec/nextgen/context/RuntimeContext.h"
+
 #include "exec/module/batch/CiderArrowBufferHolder.h"
+#include "exec/nextgen/context/CodegenContext.h"
+#include "exec/nextgen/context/ContextDescriptors.h"
+#include "exec/nextgen/context/StringHeap.h"
 #include "exec/nextgen/operators/extractor/AggExtractorBuilder.h"
+#include "exec/nextgen/utils/FunctorUtils.h"
 #include "util/ArrowArrayBuilder.h"
 
 namespace cider::exec::nextgen::context {
-void RuntimeContext::addBatch(const CodegenContext::BatchDescriptorPtr& descriptor) {
+void RuntimeContext::addBatch(const BatchDescriptorPtr& descriptor) {
   batch_holder_.emplace_back(descriptor, nullptr);
 }
 
-void RuntimeContext::addBuffer(const CodegenContext::BufferDescriptorPtr& descriptor) {
+void RuntimeContext::addBuffer(const BufferDescriptorPtr& descriptor) {
   buffer_holder_.emplace_back(descriptor, nullptr);
 }
 
-void RuntimeContext::addHashTable(
-    const CodegenContext::HashTableDescriptorPtr& descriptor) {
+void RuntimeContext::addHashTable(const HashTableDescriptorPtr& descriptor) {
   hashtable_holder_ = descriptor;
 }
 
-void RuntimeContext::addBuildTable(
-    const CodegenContext::BuildTableDescriptorPtr& descriptor) {
+void RuntimeContext::addBuildTable(const BuildTableDescriptorPtr& descriptor) {
   buildtable_holder_ = descriptor;
 }
 
-void RuntimeContext::addCiderSet(
-    const CodegenContext::CiderSetDescriptorPtr& descriptor) {
+void RuntimeContext::addCiderSet(const CiderSetDescriptorPtr& descriptor) {
   cider_set_holder_.emplace_back(descriptor, nullptr);
 }
 
@@ -88,6 +90,18 @@ void RuntimeContext::instantiate(const CiderAllocatorPtr& allocator) {
   }
 }
 
+// TODO: batch and buffer should be self-managed
+void RuntimeContext::resetBatch(const CiderAllocatorPtr& allocator) {
+  if (!batch_holder_.empty()) {
+    auto& [descriptor, batch] = batch_holder_.front();
+    batch->reset(descriptor->type, allocator);
+  }
+}
+
+void RuntimeContext::destroyStringHeap() {
+  string_heap_ptr_->destroy();
+}
+
 void allocateBatchMem(ArrowArray* array,
                       int64_t length,
                       bool is_struct = true,
@@ -109,9 +123,8 @@ void allocateBatchMem(ArrowArray* array,
 }
 
 Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
-  AggExprsInfoVector& info = reinterpret_cast<CodegenContext::AggBufferDescriptor*>(
-                                 buffer_holder_.back().first.get())
-                                 ->info_;
+  AggExprsInfoVector& info =
+      reinterpret_cast<AggBufferDescriptor*>(buffer_holder_.back().first.get())->info_;
   int8_t* buf = buffer_holder_.back().second->getBuffer();
   Batch* batch = batch_holder_.front().second.get();
 
@@ -163,8 +176,36 @@ Batch* RuntimeContext::getNonGroupByAggOutputBatch() {
   return batch;
 }
 
-void RuntimeContext::setTrimStringOperCharMaps(
-    const CodegenContext::TrimCharMapsPtr& maps) {
+Batch* RuntimeContext::getOutputBatch() {
+  if (batch_holder_.empty()) {
+    return nullptr;
+  }
+  auto batch = batch_holder_.front().second.get();
+  auto arrow_array = batch->getArray();
+  // FIXME (bigPYJ1151): This is a workaround for output struct array length setting.
+  arrow_array->length = arrow_array->children[0]->length;
+  auto arrow_schema = batch->getSchema();
+
+  auto set_null_count_function =
+      utils::RecursiveFunctor{[](auto&& set_null_count_function,
+                                 ArrowArray* arrow_array,
+                                 ArrowSchema* arrow_schema) -> void {
+        if (arrow_array->buffers[0]) {
+          auto length = arrow_array->length;
+          arrow_array->null_count =
+              length -
+              CiderBitUtils::countSetBits(
+                  reinterpret_cast<const uint8_t*>(arrow_array->buffers[0]), length);
+        }
+        for (size_t i = 0; i < arrow_schema->n_children; ++i) {
+          set_null_count_function(arrow_array->children[i], arrow_schema->children[i]);
+        }
+      }};
+  set_null_count_function(arrow_array, arrow_schema);
+  return batch;
+}
+
+void RuntimeContext::setTrimStringOperCharMaps(const TrimCharMapsPtr& maps) {
   trim_char_maps_ = maps;
 }
 

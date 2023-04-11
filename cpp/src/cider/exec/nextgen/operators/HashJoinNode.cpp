@@ -20,8 +20,8 @@
  */
 #include "exec/nextgen/operators/HashJoinNode.h"
 
+#include "exec/nextgen/context/Buffer.h"
 #include "exec/nextgen/context/CodegenContext.h"
-#include "exec/nextgen/jitlib/JITLib.h"
 #include "exec/nextgen/jitlib/base/JITValue.h"
 #include "exec/nextgen/jitlib/base/ValueTypes.h"
 #include "type/plan/Expr.h"

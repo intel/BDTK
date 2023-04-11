@@ -21,60 +21,25 @@
 #ifndef NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 #define NEXTGEN_CONTEXT_CODEGENCONTEXT_H
 
-#include <utility>
+#include <memory>
 
-#include "common/interpreters/AggregationHashTable.h"
-#include "exec/nextgen/context/Buffer.h"
-#include "exec/nextgen/context/CiderSet.h"
-#include "exec/nextgen/context/StringHeap.h"
-#include "exec/nextgen/jitlib/JITLib.h"
+#include "exec/nextgen/context/ContextDescriptors-fwd.h"
+#include "exec/nextgen/jitlib/base/JITFunction.h"
+#include "exec/nextgen/jitlib/base/JITModule.h"
+#include "exec/nextgen/jitlib/base/JITValue.h"
+#include "exec/nextgen/jitlib/base/Options.h"
 #include "exec/nextgen/utils/JITExprValue.h"
-#include "exec/nextgen/utils/TypeUtils.h"
-#ifndef CIDER_BATCH_PROCESSOR_CONTEXT_H
-#include "exec/operator/join/CiderJoinHashTable.h"
-#endif
-#include "util/sqldefs.h"
+#include "include/cider/CiderOptions.h"
+#include "type/data/sqltypes.h"
+
+class CiderAllocator;
+class SQLTypeInfo;
+using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
 
 namespace cider::exec::nextgen::context {
 
 class RuntimeContext;
-class Batch;
 using RuntimeCtxPtr = std::unique_ptr<RuntimeContext>;
-
-struct AggExprsInfo {
- public:
-  SQLTypeInfo sql_type_info_;
-  jitlib::JITTypeTag jit_value_type_;
-  SQLAgg agg_type_;
-  int8_t start_offset_;
-  int8_t null_offset_;
-  std::string agg_name_;
-  bool is_partial_;
-
-  AggExprsInfo(SQLTypeInfo sql_type_info,
-               SQLTypeInfo arg_sql_type_info,
-               SQLAgg agg_type,
-               int8_t start_offset,
-               bool is_partial = false)
-      : sql_type_info_(sql_type_info)
-      , jit_value_type_(utils::getJITTypeTag(sql_type_info_.get_type()))
-      , agg_type_(agg_type)
-      , start_offset_(start_offset)
-      , null_offset_(-1)
-      , agg_name_(
-            getAggName(agg_type, sql_type_info_.get_type(), arg_sql_type_info.get_type()))
-      , is_partial_(is_partial) {}
-
-  void setNotNull(bool n) {
-    // true -- not null, flase -- nullable
-    sql_type_info_.set_notnull(n);
-  }
-
- private:
-  std::string getAggName(SQLAgg agg_type, SQLTypes sql_type, SQLTypes arg_sql_type);
-};
-
-using AggExprsInfoVector = std::vector<AggExprsInfo>;
 
 struct FilterDescriptor {
   bool applied_filter_mask{false};
@@ -101,15 +66,7 @@ class CodegenContext {
     jit_module_ = std::move(jit_module);
   }
 
-  void setFilterMask(jitlib::JITValuePointer& mask,
-                     jitlib::JITValuePointer& start_index) {
-    CHECK(mask->getValueTypeTag() == jitlib::JITTypeTag::INT64);
-    CHECK(start_index->getValueTypeTag() == jitlib::JITTypeTag::INT64);
-
-    filter_desc_.applied_filter_mask = true;
-    filter_desc_.filter_i64_mask.replace(mask);
-    filter_desc_.start_index.replace(start_index);
-  }
+  void setFilterMask(jitlib::JITValuePointer& mask, jitlib::JITValuePointer& start_index);
 
   bool isAppliedFilterMask() { return filter_desc_.applied_filter_mask; }
 
@@ -155,102 +112,25 @@ class CodegenContext {
   jitlib::JITValuePointer registerBuffer(
       const int32_t capacity,
       const std::string& name = "",
-      const BufferInitializer& initializer =
-          [](Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
+      const BufferInitializer& initializer = [](Buffer* buf) {},
       bool output_raw_buffer = true);
 
   jitlib::JITValuePointer registerBuffer(
       const int32_t capacity,
       const std::vector<AggExprsInfo>& info,
       const std::string& name = "",
-      const BufferInitializer& initializer =
-          [](Buffer* buf) { memset(buf->getBuffer(), 0, buf->getCapacity()); },
+      const BufferInitializer& initializer = [](Buffer* buf) {},
       bool output_raw_buffer = true);
 
   jitlib::JITValuePointer registerHashTable(const std::string& name = "");
   jitlib::JITValuePointer registerBuildTable(const std::string& name = "");
   jitlib::JITValuePointer registerCiderSet(const std::string& name,
                                            const SQLTypeInfo& type,
-                                           CiderSetPtr c_set);
-  struct BatchDescriptor {
-    int64_t ctx_id;
-    std::string name;
-    SQLTypeInfo type;
+                                           CiderSetPtr& c_set);
 
-    BatchDescriptor(int64_t id, const std::string& n, const SQLTypeInfo& t)
-        : ctx_id(id), name(n), type(t) {}
-  };
+  void setHashTable(const std::shared_ptr<processor::JoinHashTable>& join_hash_table);
 
-  struct BufferDescriptor {
-    int64_t ctx_id;
-    std::string name;
-    // SQLTypeInfo type;
-    int32_t capacity;
-
-    BufferInitializer initializer_;
-
-    BufferDescriptor(int64_t id,
-                     const std::string& n,
-                     int32_t c,
-                     const BufferInitializer& initializer)
-        : ctx_id(id), name(n), capacity(c), initializer_(initializer) {}
-
-    virtual ~BufferDescriptor() = default;
-  };
-
-  struct AggBufferDescriptor : public BufferDescriptor {
-    std::vector<AggExprsInfo> info_;
-    AggBufferDescriptor(int64_t id,
-                        const std::string& n,
-                        int32_t c,
-                        const BufferInitializer& initializer,
-                        const std::vector<AggExprsInfo>& info)
-        : BufferDescriptor(id, n, c, initializer), info_(info) {}
-  };
-
-  struct HashTableDescriptor {
-    int64_t ctx_id;
-    std::string name;
-    processor::JoinHashTablePtr hash_table;
-
-    HashTableDescriptor(
-        int64_t id,
-        const std::string& n,
-        processor::JoinHashTablePtr table = std::make_shared<processor::JoinHashTable>())
-        : ctx_id(id), name(n), hash_table(table) {}
-  };
-
-  void setHashTable(const std::shared_ptr<processor::JoinHashTable>& join_hash_table) {
-    hashtable_descriptor_.first->hash_table = join_hash_table;
-  }
-
-  struct CrossJoinBuildTableDescriptor {
-    int64_t ctx_id;
-    std::string name;
-    BatchSharedPtr build_table;
-
-    CrossJoinBuildTableDescriptor(int64_t id,
-                                  const std::string& n,
-                                  BatchSharedPtr table = std::make_shared<Batch>())
-        : ctx_id(id), name(n), build_table(table) {}
-  };
-
-  void setBuildTable(BatchSharedPtr batch) {
-    buildtable_descriptor_.first->build_table = std::move(batch);
-  }
-
-  struct CiderSetDescriptor {
-    int64_t ctx_id;
-    std::string name;
-    SQLTypeInfo type;
-    CiderSetPtr cider_set;
-    CiderSetDescriptor(int64_t id,
-                       const std::string& n,
-                       const SQLTypeInfo& t,
-                       CiderSetPtr c_set)
-        : ctx_id(id), name(n), type(t), cider_set(std::move(c_set)) {}
-  };
-
+  void setBuildTable(BatchSharedPtr& batch);
   void setCodegenOptions(CodegenOptions codegen_options) {
     codegen_options_ = codegen_options;
   }
@@ -258,13 +138,6 @@ class CodegenContext {
   void setHasOuterJoin(bool has_outer_join) { has_outer_join_ = has_outer_join; }
 
   bool getHasOuterJoin() { return has_outer_join_; }
-
-  using BatchDescriptorPtr = std::shared_ptr<BatchDescriptor>;
-  using BufferDescriptorPtr = std::shared_ptr<BufferDescriptor>;
-  using HashTableDescriptorPtr = std::shared_ptr<HashTableDescriptor>;
-  using BuildTableDescriptorPtr = std::shared_ptr<CrossJoinBuildTableDescriptor>;
-  using CiderSetDescriptorPtr = std::shared_ptr<CiderSetDescriptor>;
-  using TrimCharMapsPtr = std::shared_ptr<std::vector<std::vector<int8_t>>>;
 
   // registers a set of trim characters for TrimStringOper, to be used at runtime
   // returns an index used for retrieving the charset at runtime

@@ -149,7 +149,7 @@ void DefaultBatchProcessor::feedHashBuildTable(
   this->runtime_context_->instantiate(context_->getAllocator());
 }
 
-void DefaultBatchProcessor::feedCrossBuildData(const std::shared_ptr<Batch>& crossData) {
+void DefaultBatchProcessor::feedCrossBuildData(std::shared_ptr<Batch>& crossData) {
   // switch state from waiting to running once cross build data is ready
   this->state_ = BatchProcessorState::kRunning;
   // TODO: feed cross build data into nextGen context
