@@ -1,0 +1,172 @@
+diff --git a/presto-native-execution/Makefile b/presto-native-execution/Makefile
+index f77cff05fc..04b24adb70 100644
+--- a/presto-native-execution/Makefile
++++ b/presto-native-execution/Makefile
+@@ -61,7 +61,7 @@ velox-submodule:		#: Check out code for velox submodule
+ 
+ submodules: velox-submodule
+ 
+-cmake: submodules		#: Use CMake to create a Makefile build system
++cmake: 	   	#: Use CMake to create a Makefile build system
+ 	cmake -B "$(BUILD_BASE_DIR)/$(BUILD_DIR)" $(FORCE_COLOR) $(CMAKE_FLAGS) $(EXTRA_CMAKE_FLAGS)
+ 
+ build:					#: Build the software based in BUILD_DIR and BUILD_TYPE variables
+diff --git a/presto-native-execution/presto_cpp/main/CMakeLists.txt b/presto-native-execution/presto_cpp/main/CMakeLists.txt
+index 6591a99374..245c2aef1b 100644
+--- a/presto-native-execution/presto_cpp/main/CMakeLists.txt
++++ b/presto-native-execution/presto_cpp/main/CMakeLists.txt
+@@ -16,6 +16,8 @@ add_subdirectory(common)
+ add_subdirectory(thrift)
+ add_subdirectory(connectors)
+ 
++link_dirctory(./lib)
++
+ add_library(
+   presto_server_lib
+   Announcer.cpp
+@@ -29,6 +31,19 @@ add_library(
+   TaskManager.cpp
+   TaskResource.cpp)
+ 
++set(
++  CIDER_VELOX_LIB
++  cider_velox_static
++  velox_substrait_plan_converter
++  velox_duckdb_parser
++  velox_exec_test_lib
++  velox_arrow_bridge
++  cider_static
++  cider_function
++  cider_runtime_function
++  LLVM
++)
++
+ add_dependencies(presto_server_lib presto_operators presto_protocol
+                  presto_types presto_thrift-cpp2 presto_thrift_extra)
+ 
+@@ -61,7 +76,9 @@ target_link_libraries(
+   ${ANTLR4_RUNTIME}
+   ${GLOG}
+   ${GFLAGS_LIBRARIES}
+-  pthread)
++  pthread
++  ${CIDER_VELOX_LIB})
++
+ 
+ if(PRESTO_ENABLE_PARQUET)
+   target_link_libraries(presto_server_lib velox_dwio_parquet_reader)
+diff --git a/presto-native-execution/presto_cpp/main/PrestoServer.cpp b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
+index 3631b7d4c0..38e4c5e8af 100644
+--- a/presto-native-execution/presto_cpp/main/PrestoServer.cpp
++++ b/presto-native-execution/presto_cpp/main/PrestoServer.cpp
+@@ -44,6 +44,7 @@
+ #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
+ #include "velox/functions/prestosql/window/WindowFunctionsRegistration.h"
+ #include "velox/serializers/PrestoSerializer.h"
++#include "BDTK/cpp/src/cider-velox/src/CiderVeloxPluginCtx.h"
+ 
+ #ifdef PRESTO_ENABLE_PARQUET
+ #include "velox/dwio/parquet/RegisterParquetReader.h" // @manual
+@@ -247,6 +248,10 @@ void PrestoServer::run() {
+       velox::parquet::ParquetReaderType::NATIVE);
+ #endif
+ 
++  if (FLAGS_enable_velox_plugin_BDTK) {
++    facebook::velox::plugin::CiderVeloxPluginCtx::init(SystemConfig::instance()->ciderConfPath());
++  }
++
+   taskManager_ = std::make_unique<TaskManager>(
+       systemConfig->values(), nodeConfig->values());
+   taskManager_->setBaseUri(fmt::format(kBaseUriFormat, address_, servicePort));
+diff --git a/presto-native-execution/presto_cpp/main/TaskResource.cpp b/presto-native-execution/presto_cpp/main/TaskResource.cpp
+index 545fbd119c..4aada17404 100644
+--- a/presto-native-execution/presto_cpp/main/TaskResource.cpp
++++ b/presto-native-execution/presto_cpp/main/TaskResource.cpp
+@@ -22,6 +22,9 @@
+ #include "presto_cpp/presto_protocol/presto_protocol.h"
+ #include "velox/common/time/Timer.h"
+ #include "velox/type/tz/TimeZoneMap.h"
++#include "BDTK/cpp/src/cider-velox/src/CiderVeloxPluginCtx.h"
++
++DEFINE_bool(enable_velox_plugin_BDTK, true, "switch to turn on velox plugin using BDTK");
+ 
+ namespace facebook::presto {
+ 
+@@ -320,6 +323,11 @@ proxygen::RequestHandler* TaskResource::createOrUpdateBatchTask(
+             shuffleName, std::move(serializedShuffleWriteInfo), pool_.get());
+         planFragment = converter.toVeloxQueryPlan(
+             prestoPlan, taskUpdateRequest.tableWriteInfo, taskId);
++            auto rootNode = planFragment.planNode;
++            LOG(INFO) << "Root node is " << rootNode->name();
++            if (FLAGS_enable_velox_plugin_BDTK) {
++              planFragment.planNode = facebook::velox::plugin::CiderVeloxPluginCtx::transformVeloxPlan(rootNode);
++            }
+       });
+ }
+ 
+diff --git a/presto-native-execution/presto_cpp/main/TaskResource.h b/presto-native-execution/presto_cpp/main/TaskResource.h
+index 38642cb406..4e5fce17d9 100644
+--- a/presto-native-execution/presto_cpp/main/TaskResource.h
++++ b/presto-native-execution/presto_cpp/main/TaskResource.h
+@@ -17,6 +17,8 @@
+ #include "presto_cpp/main/http/HttpServer.h"
+ #include "velox/common/memory/Memory.h"
+ 
++DECLARE_bool(enable_velox_plugin_BDTK);
++
+ namespace facebook::presto {
+ 
+ class TaskResource {
+diff --git a/presto-native-execution/presto_cpp/main/common/Configs.cpp b/presto-native-execution/presto_cpp/main/common/Configs.cpp
+index 7ad0f3c7e4..d4ada34861 100644
+--- a/presto-native-execution/presto_cpp/main/common/Configs.cpp
++++ b/presto-native-execution/presto_cpp/main/common/Configs.cpp
+@@ -53,6 +53,10 @@ std::string SystemConfig::prestoVersion() const {
+   return requiredProperty(std::string(kPrestoVersion));
+ }
+ 
++std::string SystemConfig::ciderConfPath() const {
++  return requiredProperty(std::string(kCiderConfPath));
++}
++
+ std::string SystemConfig::discoveryUri() const {
+   return requiredProperty(std::string(kDiscoveryUri));
+ }
+diff --git a/presto-native-execution/presto_cpp/main/common/Configs.h b/presto-native-execution/presto_cpp/main/common/Configs.h
+index e7049ff16d..595d62e24f 100644
+--- a/presto-native-execution/presto_cpp/main/common/Configs.h
++++ b/presto-native-execution/presto_cpp/main/common/Configs.h
+@@ -76,6 +76,7 @@ class SystemConfig : public ConfigBase {
+   static constexpr std::string_view kPrestoVersion{"presto.version"};
+   static constexpr std::string_view kHttpServerHttpPort{
+       "http-server.http.port"};
++  static constexpr std::string_view kCiderConfPath{"cider.conf_path"};
+   // This option allows a port closed in TIME_WAIT state to be reused
+   // immediately upon worker startup. This property is mainly used by batch
+   // processing. For interactive query, the worker uses a dynamic port upon
+@@ -142,6 +143,8 @@ class SystemConfig : public ConfigBase {
+ 
+   std::string discoveryUri() const;
+ 
++  std::string ciderConfPath() const;
++
+   int32_t maxDriversPerTask() const;
+ 
+   int32_t concurrentLifespansPerTask() const;
+diff --git a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
+index f9260e0573..a9eb72da0c 100644
+--- a/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
++++ b/presto-native-execution/presto_cpp/main/types/PrestoToVeloxQueryPlan.cpp
+@@ -656,9 +656,9 @@ std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
+   if (auto hiveLayout =
+           std::dynamic_pointer_cast<const protocol::HiveTableLayoutHandle>(
+               tableHandle.connectorTableLayout)) {
+-    VELOX_CHECK(
+-        hiveLayout->pushdownFilterEnabled,
+-        "Table scan with filter pushdown disabled is not supported");
++    // VELOX_CHECK(
++    //    hiveLayout->pushdownFilterEnabled,
++    //    "Table scan with filter pushdown disabled is not supported");
+ 
+     for (const auto& entry : hiveLayout->partitionColumns) {
+       partitionColumns.emplace(entry.name, toColumnHandle(&entry));

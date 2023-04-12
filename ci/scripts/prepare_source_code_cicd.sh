@@ -21,9 +21,9 @@
 
 PRESTO_LOCAL_PATH=/workspace/github-workspace/presto
 rm -rf ${PRESTO_LOCAL_PATH}
-PATCH_NAME=presto-bdtk-67b3bf.patch
+PATCH_NAME=presto-bdtk-4df708.patch
 PATCH_PATH=$(pwd)/ci/scripts/${PATCH_NAME}
-PRESTO_BDTK_COMMIT_ID=67b3bf5251f81131328dbd183685fb50e5a7ac2c
+PRESTO_BDTK_COMMIT_ID=4df708c463d79fc4c7b97e21d7136af54251bf50
 
 git clone https://github.com/prestodb/presto.git ${PRESTO_LOCAL_PATH}
 pushd ${PRESTO_LOCAL_PATH}
