@@ -27,8 +27,14 @@ set(VELOX_PLUGIN_SOURCES
 
 add_library(velox_plugin ${VELOX_PLUGIN_SOURCES})
 
-target_link_libraries(velox_plugin velox_substrait_convertor cider_static
-                      velox_plan_transformer velox_exec ${GLOG})
+target_link_libraries(
+  velox_plugin
+  velox_functions_spark
+  velox_substrait_convertor
+  cider_static
+  velox_plan_transformer
+  velox_exec
+  ${GLOG})
 
 # install headers
 set(VELOX_PLUGIN_HEADERS CiderPlanNode.h CiderPlanNodeTranslator.h
