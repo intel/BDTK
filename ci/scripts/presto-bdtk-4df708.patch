@@ -19,7 +19,7 @@ index 6591a99374..245c2aef1b 100644
  add_subdirectory(thrift)
  add_subdirectory(connectors)
  
-+link_dirctory(./lib)
++link_directories(./lib)
 +
  add_library(
    presto_server_lib
