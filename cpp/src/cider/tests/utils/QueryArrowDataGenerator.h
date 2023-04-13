@@ -197,6 +197,26 @@ class QueryArrowDataGenerator {
     array = std::get<1>(schema_and_array);
   }
 
+  static void cloneChildren(ArrowSchema& schema_src,
+                            ArrowSchema& schema_dst,
+                            ArrowArray& array_src,
+                            ArrowArray& array_dst,
+                            std::shared_ptr<CiderAllocator> allocator =
+                                std::make_shared<CiderDefaultAllocator>()) {
+    schema_dst = schema_src;
+    array_dst = array_src;
+
+    auto column_num = schema_dst.n_children;
+    // copy children
+    array_dst.children =
+        (ArrowArray**)allocator->allocate(sizeof(ArrowArray*) * column_num);
+    memcpy(array_dst.children, array_src.children, sizeof(ArrowArray*) * column_num);
+
+    schema_dst.children =
+        (ArrowSchema**)allocator->allocate(sizeof(ArrowSchema*) * column_num);
+    memcpy(schema_dst.children, schema_src.children, sizeof(ArrowSchema*) * column_num);
+  }
+
  private:
   template <typename T>
   static std::tuple<std::vector<T>, std::vector<bool>> generateAndFillVector(

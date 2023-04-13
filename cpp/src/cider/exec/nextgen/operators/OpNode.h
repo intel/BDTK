@@ -47,8 +47,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   OpNode(const char* name = "None",
          OutputVecT&& output_exprs = {},
          JITExprValueType output_type = JITExprValueType::ROW)
-      : input_(nullptr)
-      , name_(name)
+      : name_(name)
       , output_exprs_(std::forward<OutputVecT>(output_exprs))
       , output_type_(output_type) {}
 
@@ -56,8 +55,6 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
 
   /// \brief The name of the operator node
   const char* name() const { return name_; }
-
-  void setInputOpNode(const OpNodePtr& input) { input_ = input; }
 
   std::pair<JITExprValueType, ExprPtrVector&> getOutputExprs() {
     return {output_type_, output_exprs_};
@@ -67,7 +64,7 @@ class OpNode : public std::enable_shared_from_this<OpNode> {
   virtual TranslatorPtr toTranslator(const TranslatorPtr& successor) = 0;
 
  protected:
-  OpNodePtr input_;
+  // OpNodePtr input_;
   const char* name_;
   ExprPtrVector output_exprs_;
   JITExprValueType output_type_;

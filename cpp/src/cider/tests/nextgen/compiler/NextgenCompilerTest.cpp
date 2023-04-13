@@ -50,18 +50,16 @@ class NextgenCompilerTest : public ::testing::Test {
     auto eu = substrait2eu.createRelAlgExecutionUnit();
 
     // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
+    context::CodegenContext codegen_ctx;
+    auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
     transformer::Transformer transformer;
     cider::CodegenOptions codegen_co;
     codegen_co.enable_vectorize = true;
     auto translators = transformer.toTranslator(pipeline, codegen_co);
 
     // Codegen
-    context::CodegenContext codegen_ctx;
-    cider::CompilationOptions co;
-    co.enable_vectorize = true;
-    co.dump_ir = true;
-    auto module = cider::jitlib::LLVMJITModule("test", true, co);
+    codegen_co.co.enable_vectorize = true;
+    auto module = cider::jitlib::LLVMJITModule("test", true, codegen_co.co);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
             .registerModule(module)
@@ -100,6 +98,7 @@ class NextgenCompilerTest : public ::testing::Test {
                 {false, false, false, false, true, true, true, true, false, false})
             .build();
 
+    runtime_ctx->resetBatch(allocator);
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();

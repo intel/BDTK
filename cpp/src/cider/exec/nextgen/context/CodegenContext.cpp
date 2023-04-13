@@ -229,6 +229,8 @@ RuntimeCtxPtr CodegenContext::generateRuntimeCTX(
 
   runtime_ctx->setTrimStringOperCharMaps(trim_char_maps_);
 
+  runtime_ctx->bare_output_input_map_ = bare_output_input_map_;
+
   runtime_ctx->instantiate(allocator);
   return runtime_ctx;
 }
@@ -330,6 +332,48 @@ jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
 
   ret->setName("child_array");
   return ret;
+}
+
+void setArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                        int64_t index,
+                        jitlib::JITValuePointer& child_array) {
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  auto jit_index = func.createLiteral(JITTypeTag::INT64, index);
+  func.emitRuntimeFunctionCall(
+      "set_arrow_array_child",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::VOID,
+          .params_vector = {arrow_array.get(), jit_index.get(), child_array.get()}});
+}
+
+void clearArrowArrayChild(jitlib::JITValuePointer& arrow_array, int64_t index) {
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  auto jit_index = func.createLiteral(JITTypeTag::INT64, index);
+  func.emitRuntimeFunctionCall(
+      "clear_arrow_array_child",
+      JITFunctionEmitDescriptor{.ret_type = JITTypeTag::VOID,
+                                .params_vector = {arrow_array.get(), jit_index.get()}});
+}
+
+void copyArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                         int64_t index,
+                         jitlib::JITValuePointer& child_array) {
+  CHECK(arrow_array->getValueTypeTag() == JITTypeTag::POINTER);
+  CHECK(arrow_array->getValueSubTypeTag() == JITTypeTag::INT8);
+
+  auto& func = arrow_array->getParentJITFunction();
+  auto jit_index = func.createLiteral(JITTypeTag::INT64, index);
+  func.emitRuntimeFunctionCall(
+      "copy_arrow_array_child",
+      JITFunctionEmitDescriptor{
+          .ret_type = JITTypeTag::VOID,
+          .params_vector = {arrow_array.get(), jit_index.get(), child_array.get()}});
 }
 
 jitlib::JITValuePointer getArrowArrayDictionary(jitlib::JITValuePointer& arrow_array) {

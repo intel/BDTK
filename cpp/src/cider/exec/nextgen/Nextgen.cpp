@@ -38,7 +38,7 @@ std::unique_ptr<context::CodegenContext> compile(RelAlgExecutionUnit& ra_exe_uni
                      jitlib::JITFunctionPointer function) {
     codegen_ctx->setJITFunction(function);
     codegen_ctx->setCodegenOptions(codegen_options);
-    auto pipeline = parsers::toOpPipeline(ra_exe_unit);
+    auto pipeline = parsers::toOpPipeline(ra_exe_unit, *codegen_ctx);
     auto translator = transformer::Transformer::toTranslator(pipeline, codegen_options);
     translator->consume(*codegen_ctx);
     auto ret_val = function->createVariable(cider::jitlib::JITTypeTag::INT32, "ret", 0);

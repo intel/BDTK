@@ -153,7 +153,8 @@ TpchPlan TpchInMemBuilder::getQ1Plan(double scaleFactor) const {
           //   .tableScan(kLineitem, selectedRowType, fileColumnNames, {filter})
           .tableScan(Table::TBL_LINEITEM, std::move(selectedColumns), scaleFactor)
           .capturePlanNodeId(lineitemPlanNodeId)
-          .filter(filter)
+          // velox filter will wrap result childrens in dictionary
+          //   .filter(filter)
           .project(
               {"l_returnflag",
                "l_linestatus",
@@ -214,7 +215,7 @@ TpchPlan TpchInMemBuilder::getQ3Plan(double scaleFactor) const {
           //       {customerFilter})
           .tableScan(Table::TBL_CUSTOMER, std::move(customerColumns), scaleFactor)
           .capturePlanNodeId(customerPlanNodeId)
-          .filter(customerFilter)
+          //   .filter(customerFilter)
           .planNode();
 
   auto custkeyJoinNode =
@@ -223,7 +224,7 @@ TpchPlan TpchInMemBuilder::getQ3Plan(double scaleFactor) const {
           //   {orderDateFilter})
           .tableScan(Table::TBL_ORDERS, std::move(ordersColumns), scaleFactor)
           .capturePlanNodeId(ordersPlanNodeId)
-          .filter(orderDateFilter)
+          //   .filter(orderDateFilter)
           .hashJoin({"o_custkey"},
                     {"c_custkey"},
                     customers,
@@ -238,7 +239,7 @@ TpchPlan TpchInMemBuilder::getQ3Plan(double scaleFactor) const {
           //       {shipDateFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemPlanNodeId)
-          .filter(shipDateFilter)
+          //   .filter(shipDateFilter)
           .project({"l_extendedprice * (1.0 - l_discount) AS part_revenue", "l_orderkey"})
           .hashJoin({"l_orderkey"},
                     {"o_orderkey"},
@@ -303,7 +304,7 @@ TpchPlan TpchInMemBuilder::getQ5Plan(double scaleFactor) const {
           //       kRegion, regionSelectedRowType, regionFileColumns, {regionNameFilter})
           .tableScan(Table::TBL_REGION, std::move(regionColumns), scaleFactor)
           .capturePlanNodeId(regionScanNodeId)
-          .filter(regionNameFilter)
+          //   .filter(regionNameFilter)
           .planNode();
 
   auto orders = PlanBuilder(planNodeIdGenerator)
@@ -311,7 +312,7 @@ TpchPlan TpchInMemBuilder::getQ5Plan(double scaleFactor) const {
                     //   {orderDateFilter})
                     .tableScan(Table::TBL_ORDERS, std::move(ordersColumns), scaleFactor)
                     .capturePlanNodeId(ordersScanNodeId)
-                    .filter(orderDateFilter)
+                    // .filter(orderDateFilter)
                     .planNode();
 
   auto customer =
@@ -402,9 +403,9 @@ TpchPlan TpchInMemBuilder::getQ6Plan(double scaleFactor) const {
                   //       "l_quantity < 24.0"})
                   .tableScan(Table::TBL_LINEITEM, std::move(selectedColumns), scaleFactor)
                   .capturePlanNodeId(lineitemPlanNodeId)
-                  .filter(shipDateFilter)
-                  .filter("l_discount between 0.05 and 0.07")
-                  .filter("l_quantity < 24.0")
+                  //   .filter(fmt::format("{},  l_discount between 0.05 and 0.07,
+                  //   l_quantity < 24.0",
+                  //                       shipDateFilter))
                   .project({"l_extendedprice * l_discount"})
                   .partialAggregation({}, {"sum(p0)"})
                   .localPartition({})
@@ -453,7 +454,7 @@ TpchPlan TpchInMemBuilder::getQ7Plan(double scaleFactor) const {
           //   {nationFilter})
           .tableScan(Table::TBL_NATION, std::move(nationColumns), scaleFactor)
           .capturePlanNodeId(custNationScanNodeId)
-          .filter(nationFilter)
+          //   .filter(nationFilter)
           .planNode();
 
   auto customerJoinNation =
@@ -484,7 +485,7 @@ TpchPlan TpchInMemBuilder::getQ7Plan(double scaleFactor) const {
           //   {nationFilter})
           .tableScan(Table::TBL_NATION, std::move(nationColumns1), scaleFactor)
           .capturePlanNodeId(suppNationScanNodeId)
-          .filter(nationFilter)
+          //   .filter(nationFilter)
           .planNode();
 
   auto supplierJoinNation =
@@ -504,7 +505,7 @@ TpchPlan TpchInMemBuilder::getQ7Plan(double scaleFactor) const {
           //       {shipDateFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          .filter(shipDateFilter)
+          //   .filter(shipDateFilter)
           .hashJoin({"l_suppkey"},
                     {"s_suppkey"},
                     supplierJoinNation,
@@ -602,7 +603,7 @@ TpchPlan TpchInMemBuilder::getQ8Plan(double scaleFactor) const {
                     //       'AMERICA'"})
                     .tableScan(Table::TBL_REGION, std::move(regionColumns), scaleFactor)
                     .capturePlanNodeId(regionScanNodeId)
-                    .filter("r_name = 'AMERICA'")
+                    // .filter("r_name = 'AMERICA'")
                     .planNode();
 
   auto part = PlanBuilder(planNodeIdGenerator)
@@ -612,7 +613,7 @@ TpchPlan TpchInMemBuilder::getQ8Plan(double scaleFactor) const {
                   //              {"p_type = 'ECONOMY ANODIZED STEEL'"})
                   .tableScan(Table::TBL_PART, std::move(partColumns), scaleFactor)
                   .capturePlanNodeId(partScanNodeId)
-                  .filter("p_type = 'ECONOMY ANODIZED STEEL'")
+                  //   .filter("p_type = 'ECONOMY ANODIZED STEEL'")
                   .planNode();
 
   auto nationJoinRegion =
@@ -637,7 +638,7 @@ TpchPlan TpchInMemBuilder::getQ8Plan(double scaleFactor) const {
           //   {orderDateFilter})
           .tableScan(Table::TBL_ORDERS, std::move(ordersColumns), scaleFactor)
           .capturePlanNodeId(ordersScanNodeId)
-          .filter(orderDateFilter)
+          //   .filter(orderDateFilter)
           .hashJoin({"o_custkey"},
                     {"c_custkey"},
                     customerJoinNationJoinRegion,
@@ -757,7 +758,7 @@ TpchPlan TpchInMemBuilder::getQ9Plan(double scaleFactor) const {
                   //       '%green%'")
                   .tableScan(Table::TBL_PART, std::move(partColumns), scaleFactor)
                   .capturePlanNodeId(partScanNodeId)
-                  .filter("p_name like '%green%'")
+                  //   .filter("p_name like '%green%'")
                   .planNode();
 
   auto supplier =
@@ -883,7 +884,7 @@ TpchPlan TpchInMemBuilder::getQ10Plan(double scaleFactor) const {
                     //   {orderDateFilter})
                     .tableScan(Table::TBL_ORDERS, std::move(ordersColumns), scaleFactor)
                     .capturePlanNodeId(ordersScanNodeId)
-                    .filter(orderDateFilter)
+                    // .filter(orderDateFilter)
                     .planNode();
 
   auto partialPlan =
@@ -912,7 +913,7 @@ TpchPlan TpchInMemBuilder::getQ10Plan(double scaleFactor) const {
           //              {lineitemReturnFlagFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          .filter(lineitemReturnFlagFilter)
+          //   .filter(lineitemReturnFlagFilter)
           .project({"l_extendedprice * (1.0 - l_discount) AS part_revenue", "l_orderkey"})
           .hashJoin({"l_orderkey"},
                     {"o_orderkey"},
@@ -982,12 +983,12 @@ TpchPlan TpchInMemBuilder::getQ12Plan(double scaleFactor) const {
           //              "l_commitdate < l_receiptdate")
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          .filter(receiptDateFilter)
-          .filter("l_shipmode IN ('MAIL', 'SHIP')")
-          .filter(shipDateFilter)
-          .filter(commitDateFilter)
-          .filter("l_commitdate < l_receiptdate")
-          .filter("l_shipdate < l_commitdate")
+          //   .filter(fmt::format("{}, l_shipmode IN ('MAIL', 'SHIP'), {}, {},
+          //   l_commitdate "
+          //                       "< l_receiptdate, l_shipdate < l_commitdate",
+          //                       receiptDateFilter,
+          //                       shipDateFilter,
+          //                       commitDateFilter))
           .planNode();
 
   auto plan =
@@ -1050,7 +1051,7 @@ TpchPlan TpchInMemBuilder::getQ13Plan(double scaleFactor) const {
           //              "o_comment not like '%special%requests%'")
           .tableScan(Table::TBL_ORDERS, std::move(ordersColumns), scaleFactor)
           .capturePlanNodeId(ordersScanNodeId)
-          .filter("o_comment not like '%special%requests%'")
+          //   .filter("o_comment not like '%special%requests%'")
           .hashJoin({"o_custkey"},
                     {"c_custkey"},
                     customers,
@@ -1102,7 +1103,7 @@ TpchPlan TpchInMemBuilder::getQ14Plan(double scaleFactor) const {
           //       shipDateFilter)
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          .filter(shipDateFilter)
+          //   .filter(shipDateFilter)
           .project({"l_extendedprice * (1.0 - l_discount) as part_revenue",
                     "l_shipdate",
                     "l_partkey"})
@@ -1153,7 +1154,7 @@ TpchPlan TpchInMemBuilder::getQ15Plan(double scaleFactor) const {
           //       {shipDateFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          .filter(shipDateFilter)
+          //   .filter(shipDateFilter)
           .project({"l_suppkey", "l_extendedprice * (1.0 - l_discount) as part_revenue"})
           .partialAggregation({"l_suppkey"}, {"sum(part_revenue) as total_revenue"})
           .localPartition({})
@@ -1168,7 +1169,7 @@ TpchPlan TpchInMemBuilder::getQ15Plan(double scaleFactor) const {
           //       {shipDateFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns2), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeIdSubQuery)
-          .filter(shipDateFilter)
+          //   .filter(shipDateFilter)
           .project({"l_suppkey as supplier_no",
                     "l_extendedprice * (1.0 - l_discount) as part_revenue"})
           .partialAggregation({"supplier_no"}, {"sum(part_revenue) as total_revenue"})
@@ -1229,9 +1230,9 @@ TpchPlan TpchInMemBuilder::getQ16Plan(double scaleFactor) const {
                   .capturePlanNodeId(partScanNodeId)
                   // Neq is unsupported as a tableScan subfield filter for
                   // Parquet source.
-                  .filter("p_size in (49, 14, 23, 45, 19, 3, 36, 9)")
-                  .filter("p_type NOT LIKE 'MEDIUM POLISHED%'")
-                  .filter("p_brand <> 'Brand#45'")
+                  //   .filter(
+                  //       "p_size in (49, 14, 23, 45, 19, 3, 36, 9), p_type NOT LIKE
+                  //       'MEDIUM " "POLISHED%', p_brand <> 'Brand#45'")
                   .planNode();
 
   auto supplier =
@@ -1243,7 +1244,7 @@ TpchPlan TpchInMemBuilder::getQ16Plan(double scaleFactor) const {
           //              "s_comment LIKE '%Customer%Complaints%'")
           .tableScan(Table::TBL_SUPPLIER, std::move(supplierColumns), scaleFactor)
           .capturePlanNodeId(supplierScanNodeId)
-          .filter("s_comment LIKE '%Customer%Complaints%'")
+          //   .filter("s_comment LIKE '%Customer%Complaints%'")
           .planNode();
 
   auto plan = PlanBuilder(planNodeIdGenerator)
@@ -1312,7 +1313,7 @@ TpchPlan TpchInMemBuilder::getQ18Plan(double scaleFactor) const {
           .partialAggregation({"l_orderkey"}, {"sum(l_quantity) AS partial_sum"})
           .localPartition({"l_orderkey"})
           .finalAggregation({"l_orderkey"}, {"sum(partial_sum) AS quantity"}, {DOUBLE()})
-          .filter("quantity > 300.0")
+          //   .filter("quantity > 300.0")
           .planNode();
 
   auto plan =
@@ -1407,8 +1408,9 @@ TpchPlan TpchInMemBuilder::getQ19Plan(double scaleFactor) const {
           //              {shipModeFilter, shipInstructFilter})
           .tableScan(Table::TBL_LINEITEM, std::move(lineitemColumns), scaleFactor)
           .capturePlanNodeId(lineitemScanNodeId)
-          .filter(shipModeFilter)
-          .filter(shipInstructFilter)
+          //   .filter(
+          //       "l_shipmode IN ('AIR', 'AIR REG'), l_shipinstruct = 'DELIVER IN
+          //       PERSON'")
           .project({"l_extendedprice * (1.0 - l_discount) as part_revenue",
                     "l_shipmode",
                     "l_shipinstruct",
@@ -1463,8 +1465,7 @@ TpchPlan TpchInMemBuilder::getQ22Plan(double scaleFactor) const {
           //              phoneFilter)
           .tableScan(Table::TBL_CUSTOMER, std::move(customerColumns), scaleFactor)
           .capturePlanNodeId(customerScanNodeId)
-          .filter("c_acctbal > 0.0")
-          .filter(phoneFilter)
+          //   .filter(fmt::format("c_acctbal > 0.0, {}", phoneFilter))
           .partialAggregation({}, {"avg(c_acctbal) as avg_acctbal"})
           .localPartition({})
           .finalAggregation()
@@ -1479,10 +1480,10 @@ TpchPlan TpchInMemBuilder::getQ22Plan(double scaleFactor) const {
           //              phoneFilter)
           .tableScan(Table::TBL_CUSTOMER, std::move(customerColumnsWithKey), scaleFactor)
           .capturePlanNodeId(customerScanNodeIdWithKey)
-          .filter(phoneFilter)
+          //   .filter(phoneFilter)
           .crossJoin(customerAvgAccountBalance,
                      {"c_acctbal", "avg_acctbal", "c_custkey", "c_phone"})
-          .filter("c_acctbal > avg_acctbal")
+          //   .filter("c_acctbal > avg_acctbal")
           .hashJoin({"c_custkey"},
                     {"o_custkey"},
                     orders,

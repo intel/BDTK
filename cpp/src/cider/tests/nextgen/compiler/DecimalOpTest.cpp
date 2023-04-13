@@ -54,12 +54,12 @@ void executeBinOpTest(const std::string& create_ddl,
   auto eu = substrait2eu.createRelAlgExecutionUnit();
 
   // Pipeline Building
-  auto pipeline = parsers::toOpPipeline(eu);
+  context::CodegenContext codegen_ctx;
+  auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
   transformer::Transformer transformer;
   auto translators = transformer.toTranslator(pipeline);
 
   // Codegen
-  context::CodegenContext codegen_ctx;
   auto module = cider::jitlib::LLVMJITModule("test", true);
   cider::jitlib::JITFunctionPointer function =
       cider::jitlib::JITFunctionBuilder()
@@ -91,6 +91,7 @@ void executeBinOpTest(const std::string& create_ddl,
           .template addColumn<__int128_t>("b", CREATE_SUBSTRAIT_TYPE(Decimal), operand_b)
           .build();
 
+  runtime_ctx->resetBatch(allocator);
   query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
   auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();

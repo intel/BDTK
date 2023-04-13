@@ -18,20 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-#ifndef NEXTGEN_PARSERS_PARSER_H
-#define NEXTGEN_PARSERS_PARSER_H
+#ifndef NEXTGEN_OPERATORS_LAZYTNODE_H
+#define NEXTGEN_OPERATORS_LAZYTNODE_H
 
 #include "exec/nextgen/operators/OpNode.h"
-#include "exec/template/RelAlgExecutionUnit.h"
 
-namespace cider::exec::nextgen::parsers {
+namespace cider::exec::nextgen::operators {
+class LazyNode : public OpNode {
+ public:
+  explicit LazyNode(ExprPtrVector&& output_exprs)
+      : OpNode("LazyNode", std::move(output_exprs), JITExprValueType::BATCH) {}
 
-/// \brief A parser convert from the plan fragment to an OpPipeline
-// source--> filter -->sink
-operators::OpPipeline toOpPipeline(RelAlgExecutionUnit& eu,
-                                   context::CodegenContext& context);
+  explicit LazyNode(const ExprPtrVector& output_exprs)
+      : OpNode("LazyNode", output_exprs, JITExprValueType::BATCH) {}
 
-}  // namespace cider::exec::nextgen::parsers
+  TranslatorPtr toTranslator(const TranslatorPtr& successor = nullptr) override;
+};
 
-#endif  // NEXTGEN_PARSERS_PARSER_H
+class LazyTranslator : public Translator {
+ public:
+  using Translator::Translator;
+
+  void consume(context::CodegenContext& context) override;
+
+ private:
+  void codegen(context::CodegenContext& context);
+};
+}  // namespace cider::exec::nextgen::operators
+#endif

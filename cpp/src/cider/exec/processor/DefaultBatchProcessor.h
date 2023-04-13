@@ -48,8 +48,7 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   const BatchProcessorContextPtr& getContext() const override { return context_; }
 
-  void processNextBatch(const struct ArrowArray* array,
-                        const struct ArrowSchema* schema = nullptr) override;
+  void processNextBatch(const ArrowArray* array, const ArrowSchema* schema) override;
 
   void finish() override;
 
@@ -64,10 +63,10 @@ class DefaultBatchProcessor : public BatchProcessor {
 
   BatchProcessorState state_{BatchProcessorState::kRunning};
 
-  const struct ArrowArray* input_arrow_array_{nullptr};
-  const struct ArrowSchema* input_arrow_schema_{nullptr};
+  const ArrowArray* input_arrow_array_{nullptr};
+  const ArrowSchema* input_arrow_schema_{nullptr};
 
-  struct ArrowSchema* output_arrow_schema_{nullptr};
+  ArrowSchema* output_arrow_schema_{nullptr};
 
   bool no_more_batch_{false};
 

@@ -22,6 +22,7 @@
 #define NEXTGEN_CONTEXT_BATCH_H
 
 #include <memory>
+#include <unordered_map>
 
 #include "exec/module/batch/ArrowABI.h"
 #include "include/cider/batch/CiderBatchUtils.h"
@@ -32,10 +33,12 @@ using CiderAllocatorPtr = std::shared_ptr<CiderAllocator>;
 namespace cider::exec::nextgen::context {
 class Batch {
  public:
-  Batch(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator) {
+  Batch(const SQLTypeInfo& type,
+        const CiderAllocatorPtr& allocator,
+        std::unordered_map<int, int> bare_output_input_map)
+      : bare_output_input_map_(bare_output_input_map) {
     schema_.release = nullptr;
     array_.release = nullptr;
-    reset(type, allocator);
   }
 
   Batch(ArrowSchema& schema, ArrowArray& array) : schema_(schema), array_(array) {}
@@ -44,7 +47,12 @@ class Batch {
 
   ~Batch() { release(); }
 
-  void reset(const SQLTypeInfo& type, const CiderAllocatorPtr& allocator);
+  // output batch can reuse input_array's children
+  // temporary batch(used for materialization) no need to reuse other array's children
+  void reset(const SQLTypeInfo& type,
+             const CiderAllocatorPtr& allocator,
+             const ArrowArray* input_array = nullptr,
+             const ArrowSchema* input_schema = nullptr);
 
   void move(ArrowSchema& schema, ArrowArray& array) {
     schema = schema_;
@@ -74,6 +82,10 @@ class Batch {
  private:
   ArrowSchema schema_;
   ArrowArray array_;
+
+  // bare column map
+  // output column id to input column id;
+  std::unordered_map<int, int> bare_output_input_map_;
 };
 
 using BatchPtr = std::unique_ptr<Batch>;

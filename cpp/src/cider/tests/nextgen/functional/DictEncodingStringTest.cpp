@@ -1035,5 +1035,6 @@ TEST_F(CiderDictStringToDateTestNextGen, DateStrTest) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+  FLAGS_copy_elimination = false;
   return RUN_ALL_TESTS();
 }

@@ -22,10 +22,12 @@
 
 #include "exec/nextgen/operators/ColumnToRowNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
+#include "exec/nextgen/operators/LazyNode.h"
 #include "exec/nextgen/operators/OpNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/nextgen/operators/QueryFuncInitializer.h"
 #include "exec/nextgen/operators/RowToColumnNode.h"
+#include "exec/nextgen/operators/StageNode.h"
 #include "exec/nextgen/operators/VectorizedFilterNode.h"
 #include "exec/nextgen/operators/VectorizedProjectNode.h"
 #include "exec/nextgen/utils/ExprUtils.h"
@@ -94,12 +96,6 @@ class PipelineStage {
 static TranslatorPtr generateTranslators(OpPipeline& pipeline) {
   CHECK_GT(pipeline.size(), 0);
 
-  OpNodePtr input = nullptr;
-  std::for_each(pipeline.begin(), pipeline.end(), [&input](const OpNodePtr& op) {
-    op->setInputOpNode(input);
-    input = op;
-  });
-
   TranslatorPtr ptr = nullptr;
   std::for_each(pipeline.rbegin(), pipeline.rend(), [&ptr](const OpNodePtr& op) {
     auto translator = op->toTranslator(ptr);
@@ -119,16 +115,22 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline, const CodegenOptio
   // Vectorize Project and Filter Transformation
   // Currently, auto-vectorize will be applied to pure project pipelines or filter
   // pipelines.
+  bool has_filter = false;
   auto traverse_pivot = ++pipeline.begin();
   if (co.enable_vectorize &&
       (isa<ProjectNode>(*traverse_pivot) || isa<FilterNode>(*traverse_pivot))) {
-    bool has_filter = isa<FilterNode>(*traverse_pivot);
+    has_filter = isa<FilterNode>(*traverse_pivot);
     OpNodePtr& curr_op = *traverse_pivot;
     auto&& [_, exprs] = curr_op->getOutputExprs();
     ExprPtrVector vectorizable_exprs;
     vectorizable_exprs.reserve(exprs.size());
 
     for (auto& expr : exprs) {
+      if (co.enable_copy_elimination && !has_filter &&
+          dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
+        // ignore bare columns
+        continue;
+      }
       if (expr->isAutoVectorizable()) {
         // Move vectorizable exprs out of row-based ProjectNode.
         vectorizable_exprs.emplace_back(expr);
@@ -156,12 +158,40 @@ TranslatorPtr Transformer::toTranslator(OpPipeline& pipeline, const CodegenOptio
     }
   }
 
-  if (traverse_pivot != pipeline.end()) {
-    stages.emplace_back(traverse_pivot, --pipeline.end());
-  }
+  if (!co.enable_copy_elimination || has_filter) {
+    if (traverse_pivot != pipeline.end()) {
+      stages.emplace_back(traverse_pivot, --pipeline.end());
+    }
 
-  for (auto&& stage : stages) {
-    stage.generateLoopStage(pipeline);
+    for (auto&& stage : stages) {
+      stage.generateLoopStage(pipeline);
+    }
+  } else {
+    if (traverse_pivot != pipeline.end()) {
+      auto tail = --pipeline.end();
+      if (dynamic_cast<LazyNode*>(tail->get())) {
+        OpPipeline stage_pipeline;
+        stage_pipeline.splice(stage_pipeline.begin(), pipeline, traverse_pivot, tail);
+        auto stage_node = createOpNode<StageNode>(stage_pipeline);
+        pipeline.insert(tail, stage_node);
+      } else {
+        // OpPipeline stage_pipeline;
+        // stage_pipeline.splice(
+        //     stage_pipeline.begin(), pipeline, traverse_pivot, pipeline.end());
+        // auto stage_node = createOpNode<StageNode>(stage_pipeline);
+        // pipeline.insert(pipeline.end(), stage_node);
+
+        // It's so weird that agg node don't use the last R2C, so we can't use the
+        // StageNode
+        if (traverse_pivot != pipeline.end()) {
+          stages.emplace_back(traverse_pivot, --pipeline.end());
+        }
+
+        for (auto&& stage : stages) {
+          stage.generateLoopStage(pipeline);
+        }
+      }
+    }
   }
 
   return generateTranslators(pipeline);

@@ -50,12 +50,12 @@ class CrossJoinTest : public ::testing::Test {
     auto eu = substrait2eu.createRelAlgExecutionUnit();
 
     // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
+    context::CodegenContext codegen_ctx;
+    auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
     transformer::Transformer transformer;
     auto translators = transformer.toTranslator(pipeline);
 
     // Codegen
-    context::CodegenContext codegen_ctx;
     cider::CompilationOptions co;
     co.dump_ir = true;
     auto module = cider::jitlib::LLVMJITModule("test", true, co);
@@ -95,6 +95,7 @@ class CrossJoinTest : public ::testing::Test {
     auto build_table = std::make_shared<context::Batch>(build_array);
     codegen_ctx.setBuildTable(build_table);
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
+    runtime_ctx->resetBatch(allocator);
 
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 

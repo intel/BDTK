@@ -92,8 +92,8 @@ DefaultBatchProcessor::DefaultBatchProcessor(
           ->getFunctionPointer<int32_t, int8_t*, int8_t*>());
 }
 
-void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
-                                             const struct ArrowSchema* schema) {
+void DefaultBatchProcessor::processNextBatch(const ArrowArray* array,
+                                             const ArrowSchema* schema) {
   if (BatchProcessorState::kRunning != state_) {
     CIDER_THROW(CiderRuntimeException,
                 "DefaultBatchProcessor::processNextBatch can only be called if state is "
@@ -106,6 +106,7 @@ void DefaultBatchProcessor::processNextBatch(const struct ArrowArray* array,
     input_arrow_schema_ = schema;
   }
 
+  runtime_context_->resetBatch(context_->getAllocator(), array, schema);
   int ret = query_func_((int8_t*)runtime_context_.get(), (int8_t*)array);
   if (ret != 0) {
     CIDER_THROW(CiderRuntimeException,

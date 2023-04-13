@@ -26,6 +26,7 @@
 
 #include "CiderVeloxPluginCtx.h"
 #include "TpchInMemBuilder.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "velox/common/base/SuccinctPrinter.h"
 #include "velox/connectors/tpch/TpchConnector.h"
 #include "velox/connectors/tpch/TpchConnectorSplit.h"
@@ -42,8 +43,8 @@ using namespace facebook::velox::dwio::common;
 using namespace facebook::velox::connector::tpch;
 using namespace facebook::velox::plugin;
 
-DEFINE_double(scale_factor, 1, "tpch scale factor, delete data_path if it was changed");
-DEFINE_int32(num_drivers, 1, "Number of drivers");
+DEFINE_double(scale_factor, 10, "tpch scale factor, delete data_path if it was changed");
+DEFINE_int32(num_drivers, 100, "Number of drivers");
 
 DEFINE_int32(run_query_verbose, -1, "Run a given query and print execution statistics");
 DEFINE_bool(use_cider, true, "use cider plugin in verbose");
@@ -161,16 +162,16 @@ BENCHMARK_GROUP(1);
 BENCHMARK_GROUP(3);
 BENCHMARK_GROUP(5);
 // BENCHMARK_GROUP(6);
-BENCHMARK_GROUP(7);
-BENCHMARK_GROUP(8);
+// BENCHMARK_GROUP(7);
+// BENCHMARK_GROUP(8);
 // BENCHMARK_GROUP(9);
 BENCHMARK_GROUP(10);
-BENCHMARK_GROUP(12);
-BENCHMARK_GROUP(13);
-BENCHMARK_GROUP(14);
+// BENCHMARK_GROUP(12);
+// BENCHMARK_GROUP(13); // no project
+// BENCHMARK_GROUP(14);
 BENCHMARK_GROUP(15);
 // BENCHMARK_GROUP(16);
-BENCHMARK_GROUP(18);
+// BENCHMARK_GROUP(18);
 BENCHMARK_GROUP(19);
 // BENCHMARK_GROUP(22);
 
@@ -183,6 +184,8 @@ int main(int argc, char** argv) {
   benchmark.initialize();
 
   {
+    // warmup: preload YAML
+    FunctionLookupEngine::getInstance(PlatformType::PrestoPlatform);
     // warmup `static folly::Singleton<DBGenBackend> DBGenBackendSingleton;`
     const auto planContext = queryBuilder.getWarmupPlan(FLAGS_scale_factor);
     benchmark.run(planContext);

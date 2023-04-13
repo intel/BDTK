@@ -42,7 +42,8 @@ static const std::shared_ptr<CiderAllocator> allocator =
 class CiderArrayTest : public ::testing::Test {
  public:
   operators::TranslatorPtr initSqlToTranslators(const std::string& sql,
-                                                const std::string& create_ddl) {
+                                                const std::string& create_ddl,
+                                                context::CodegenContext codegen_ctx) {
     // SQL Parsing
     auto json = RunIsthmus::processSql(sql, create_ddl);
     ::substrait::Plan plan;
@@ -52,7 +53,7 @@ class CiderArrayTest : public ::testing::Test {
     auto eu = substrait2eu.createRelAlgExecutionUnit();
 
     // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
+    auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
     transformer::Transformer transformer;
     return transformer.toTranslator(pipeline);
   }
@@ -60,10 +61,10 @@ class CiderArrayTest : public ::testing::Test {
   context::RuntimeCtxPtr executeAndReturnRuntimeCtx(const std::string& create_ddl,
                                                     const std::string& sql,
                                                     ArrowArray* array) {
-    auto translators = initSqlToTranslators(sql, create_ddl);
+    context::CodegenContext codegen_ctx;
+    auto translators = initSqlToTranslators(sql, create_ddl, codegen_ctx);
 
     // Codegen
-    context::CodegenContext codegen_ctx;
     auto module = cider::jitlib::LLVMJITModule("test", true);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
@@ -88,6 +89,7 @@ class CiderArrayTest : public ::testing::Test {
 
     // Execution
     auto runtime_ctx = codegen_ctx.generateRuntimeCTX(allocator);
+    runtime_ctx->resetBatch(allocator);
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     return runtime_ctx;

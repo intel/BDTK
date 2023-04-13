@@ -53,11 +53,10 @@ class BatchProcessor : public std::enable_shared_from_this<BatchProcessor> {
   virtual const BatchProcessorContextPtr& getContext() const = 0;
   /// Adds an input batch to the batchProcessor.  This method will only be called if
   /// getState return kRunning.
-  virtual void processNextBatch(const struct ArrowArray* array,
-                                const struct ArrowSchema* schema = nullptr) = 0;
+  virtual void processNextBatch(const ArrowArray* array, const ArrowSchema* schema) = 0;
 
   /// Gets an output batch from the batchProcessor.  return null If no output data.
-  virtual void getResult(struct ArrowArray& array, struct ArrowSchema& schema) = 0;
+  virtual void getResult(ArrowArray& array, ArrowSchema& schema) = 0;
 
   /// Notifies the batchProcessor that no more batch will be added and the
   /// batchProcessor should finish processing and flush results.

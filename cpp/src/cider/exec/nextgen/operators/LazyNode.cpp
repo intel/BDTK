@@ -19,31 +19,35 @@
  * under the License.
  */
 
-#include "exec/nextgen/operators/ProjectNode.h"
+#include "exec/nextgen/operators/LazyNode.h"
 
 namespace cider::exec::nextgen::operators {
-TranslatorPtr ProjectNode::toTranslator(const TranslatorPtr& succ) {
-  return createOpTranslator<ProjectTranslator>(shared_from_this(), succ);
+TranslatorPtr LazyNode::toTranslator(const TranslatorPtr& succ) {
+  return createOpTranslator<LazyTranslator>(shared_from_this(), succ);
 }
 
-void ProjectTranslator::consume(context::CodegenContext& context) {
+void LazyTranslator::consume(context::CodegenContext& context) {
   codegen(context);
 }
 
-void ProjectTranslator::codegen(context::CodegenContext& context) {
+void LazyTranslator::codegen(context::CodegenContext& context) {
+  auto func = context.getJITFunction();
+  auto input_array = func->getArgument(1);
+
   auto&& [output_type, exprs] = node_->getOutputExprs();
-  for (auto& expr : exprs) {
-    if (context.hasLazyNode() && dynamic_cast<Analyzer::OutputColumnVar*>(expr.get())) {
-      // ignore bare columns
+  for (size_t i = 0; i < exprs.size(); ++i) {
+    auto output_expr = dynamic_cast<Analyzer::OutputColumnVar*>(exprs[i].get());
+    if (!output_expr) {
       continue;
     }
-    // set a flag for output string expr. Nested expression like `substring(concat(col_a,
-    // col_b), 1, 5)` will have different process logical for output expression and
-    // internal expression.
-    if (auto strOper = std::dynamic_pointer_cast<Analyzer::StringOper>(expr)) {
-      strOper->setIsOutput();
-    }
-    expr->codegen(context);
+    auto input_expr = dynamic_cast<Analyzer::ColumnVar*>(
+        output_expr->get_children_reference()[0]->get());
+
+    // input set to nullptr to make sure not release this child
+    auto input_col_id = input_expr->get_column_id();
+    context::codegen_utils::clearArrowArrayChild(input_array, input_col_id);
+
+    context.bare_output_input_map_.emplace(i, input_col_id);
   }
   if (successor_) {
     successor_->consume(context);

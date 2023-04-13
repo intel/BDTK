@@ -23,3 +23,4 @@
 
 DEFINE_bool(needs_error_check, false, "needs error check");
 DEFINE_bool(dump_ir, false, "dump llvm ir");
+DEFINE_bool(copy_elimination, true, "enable bare columns copy elimination");

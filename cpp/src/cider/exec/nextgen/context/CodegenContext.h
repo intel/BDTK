@@ -54,6 +54,10 @@ class CodegenContext {
   // we can reuse the compiled func, but create RuntimeCtx for every driver.
   RuntimeCtxPtr generateRuntimeCTX(const CiderAllocatorPtr& allocator) const;
 
+  // bare column map
+  // output column id to input column id;
+  std::unordered_map<int, int> bare_output_input_map_;
+
   void setJITFunction(jitlib::JITFunctionPointer& jit_func) {
     CHECK(nullptr == jit_func_);
     jit_func_ = jit_func;
@@ -106,6 +110,13 @@ class CodegenContext {
                                         const std::string& name = "",
                                         bool arrow_array_output = true);
 
+  void setOutputBatch(jitlib::JITValuePointer& array_array) {
+    output_arrow_array_.replace(array_array);
+    return;
+  }
+
+  jitlib::JITValuePointer& getOutputBatch() { return output_arrow_array_; }
+
   jitlib::JITValuePointer registerStringHeap();
 
   // TBD: HashTable (GroupBy, Join), other objects registration.
@@ -136,8 +147,10 @@ class CodegenContext {
   }
 
   void setHasOuterJoin(bool has_outer_join) { has_outer_join_ = has_outer_join; }
-
   bool getHasOuterJoin() { return has_outer_join_; }
+
+  void setHasLazyNode(bool has_lazy_node) { has_lazy_node_ = has_lazy_node; }
+  bool hasLazyNode() { return has_lazy_node_; }
 
   // registers a set of trim characters for TrimStringOper, to be used at runtime
   // returns an index used for retrieving the charset at runtime
@@ -161,6 +174,7 @@ class CodegenContext {
       cider_set_descriptors_{};
   std::vector<std::pair<jitlib::JITValuePointer, utils::JITExprValue>>
       arrow_array_values_{};
+  jitlib::JITValuePointer output_arrow_array_;
   std::pair<BuildTableDescriptorPtr, jitlib::JITValuePointer> buildtable_descriptor_;
 
   jitlib::JITFunctionPointer jit_func_;
@@ -172,6 +186,7 @@ class CodegenContext {
   int64_t id_counter_{0};
   CodegenOptions codegen_options_;
   bool has_outer_join_ = false;
+  bool has_lazy_node_ = false;
 
   // use shared_ptr here to avoid copying the entire 2d vector when creating runtime ctx
   TrimCharMapsPtr trim_char_maps_;
@@ -190,6 +205,14 @@ jitlib::JITValuePointer getArrowArrayBuffer(jitlib::JITValuePointer& arrow_array
 
 jitlib::JITValuePointer getArrowArrayChild(jitlib::JITValuePointer& arrow_array,
                                            int64_t index);
+
+void setArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                        int64_t index,
+                        jitlib::JITValuePointer& child_array);
+void clearArrowArrayChild(jitlib::JITValuePointer& arrow_array, int64_t index);
+void copyArrowArrayChild(jitlib::JITValuePointer& arrow_array,
+                         int64_t index,
+                         jitlib::JITValuePointer& child_array);
 
 jitlib::JITValuePointer getArrowArrayDictionary(jitlib::JITValuePointer& arrow_array);
 

@@ -30,8 +30,13 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   auto duck_res = duckdb_query_runner_.runSql(sql);
   auto duck_res_arrow = DuckDbResultConvertor::fetchDataToArrow(duck_res);
 
-  struct ArrowArray output_array;
-  struct ArrowSchema output_schema;
+  ArrowArray input_array;
+  ArrowSchema input_schema;
+  QueryArrowDataGenerator::cloneChildren(
+      *input_schema_, input_schema, *input_array_, input_array);
+
+  ArrowArray output_array;
+  ArrowSchema output_schema;
   // By default, SQL statement is used to generate Substrait plan through Isthmus.
   // However, in some cases, the conversion result doesn't meet our expectations.
   // For example, for `between and` case, Isthmus will translate it into `>=` and `<=`,
@@ -40,8 +45,8 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
   // will be used to generate Substrait plan.
   auto file_or_sql = json_file.size() ? json_file : sql;
   cider_nextgen_query_runner_->runQueryOneBatch(file_or_sql,
-                                                *input_array_,
-                                                *input_schema_,
+                                                input_array,
+                                                input_schema,
                                                 output_array,
                                                 output_schema,
                                                 codegen_options_);
@@ -73,6 +78,11 @@ void CiderJoinNextgenTestBase::assertJoinQuery(const std::string& sql,
   auto duck_res = duckdb_query_runner_.runSql(sql);
   auto duck_res_arrow = DuckDbResultConvertor::fetchDataToArrow(duck_res);
 
+  ArrowArray input_array;
+  ArrowSchema input_schema;
+  QueryArrowDataGenerator::cloneChildren(
+      *input_schema_, input_schema, *input_array_, input_array);
+
   struct ArrowArray output_array;
   struct ArrowSchema output_schema;
   // By default, SQL statement is used to generate Substrait plan through Isthmus.
@@ -83,8 +93,8 @@ void CiderJoinNextgenTestBase::assertJoinQuery(const std::string& sql,
   // will be used to generate Substrait plan.
   auto file_or_sql = json_file.size() ? json_file : sql;
   cider_nextgen_query_runner_->runJoinQueryOneBatch(file_or_sql,
-                                                    *input_array_,
-                                                    *input_schema_,
+                                                    input_array,
+                                                    input_schema,
                                                     *build_array_,
                                                     *build_schema_,
                                                     output_array,
@@ -114,11 +124,16 @@ void CiderJoinNextgenTestBase::assertJoinQuery(const std::string& sql,
 
 bool CiderNextgenTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
   try {
-    struct ArrowArray output_array;
-    struct ArrowSchema output_schema;
+    ArrowArray input_array;
+    ArrowSchema input_schema;
+    QueryArrowDataGenerator::cloneChildren(
+        *input_schema_, input_schema, *input_array_, input_array);
+
+    ArrowArray output_array;
+    ArrowSchema output_schema;
     cider_nextgen_query_runner_->runQueryOneBatch(wrong_sql,
-                                                  *input_array_,
-                                                  *input_schema_,
+                                                  input_array,
+                                                  input_schema,
                                                   output_array,
                                                   output_schema,
                                                   codegen_options_);
@@ -129,15 +144,20 @@ bool CiderNextgenTestBase::executeIncorrectQuery(const std::string& wrong_sql) {
   return false;
 }
 void CiderNextgenTestBase::assertQuery(const std::string& sql,
-                                       const struct ArrowArray* expect_array,
-                                       const struct ArrowSchema* expect_schema,
+                                       const ArrowArray* expect_array,
+                                       const ArrowSchema* expect_schema,
                                        bool ignore_order) {
-  struct ArrowArray output_array;
-  struct ArrowSchema output_schema;
+  ArrowArray input_array;
+  ArrowSchema input_schema;
+  QueryArrowDataGenerator::cloneChildren(
+      *input_schema_, input_schema, *input_array_, input_array);
+
+  ArrowArray output_array;
+  ArrowSchema output_schema;
   auto file_or_sql = sql;
   cider_nextgen_query_runner_->runQueryOneBatch(file_or_sql,
-                                                *input_array_,
-                                                *input_schema_,
+                                                input_array,
+                                                input_schema,
                                                 output_array,
                                                 output_schema,
                                                 codegen_options_);

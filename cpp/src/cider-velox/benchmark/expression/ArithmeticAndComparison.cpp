@@ -28,6 +28,7 @@
 #include "cider/processor/BatchProcessor.h"
 #include "exec/module/batch/ArrowABI.h"
 #include "exec/nextgen/context/CodegenContext.h"
+#include "exec/plan/lookup/FunctionLookupEngine.h"
 #include "util/CiderBitUtils.h"
 #include "utils.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
@@ -115,6 +116,7 @@ inline cider::CodegenOptions getBaseOption() {
 class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchmarkBase {
  public:
   using ArrowArrayReleaser = void (*)(struct ArrowArray*);
+  using ArrowSchemaReleaser = void (*)(struct ArrowSchema*);
   using KernelType = void (*)(uint8_t* null_input1,
                               uint8_t* input1,
                               uint8_t* null_input2,
@@ -189,16 +191,19 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
     rowVector_ = std::make_shared<RowVector>(
         pool(), inputType_, nullptr, vectorSize, std::move(children));
 
-    ArrowSchema* _schema;
-    std::tie(inputArray_, _schema) = veloxVectorToArrow(rowVector_, execCtx_.pool());
+    std::tie(inputArray_, inputSchema_) = veloxVectorToArrow(rowVector_, execCtx_.pool());
     // hack: make processor don't release inputArray_, otherwise we can't use inputArray_
     // multi times.
-    inputReleaser_ = inputArray_->release;
+    inputArrayReleaser_ = inputArray_->release;
     inputArray_->release = nullptr;
-    _schema->release(_schema);
+    inputSchemaReleaser_ = inputSchema_->release;
+    inputSchema_->release = nullptr;
   }
 
-  ~ArithmeticAndComparisonBenchmark() { inputReleaser_(inputArray_); }
+  ~ArithmeticAndComparisonBenchmark() {
+    inputArrayReleaser_(inputArray_);
+    inputSchemaReleaser_(inputSchema_);
+  }
 
   __attribute__((noinline)) size_t nextgenCompile(
       cider::CodegenOptions cgo,
@@ -238,7 +243,7 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
 
     size_t rows_size = 0;
     for (auto i = 0; i < FLAGS_loop_count; i++) {
-      processor->processNextBatch(inputArray_);
+      processor->processNextBatch(inputArray_, inputSchema_);
 
       struct ArrowArray output_array;
       struct ArrowSchema output_schema;
@@ -301,7 +306,9 @@ class ArithmeticAndComparisonBenchmark : public functions::test::FunctionBenchma
   TypePtr inputType_;
   RowVectorPtr rowVector_;
   ArrowArray* inputArray_;
-  ArrowArrayReleaser inputReleaser_;
+  ArrowSchema* inputSchema_;
+  ArrowArrayReleaser inputArrayReleaser_;
+  ArrowSchemaReleaser inputSchemaReleaser_;
 };
 
 std::unique_ptr<ArithmeticAndComparisonBenchmark> benchmark;
@@ -412,6 +419,9 @@ BENCHMARK_GROUP(conjunctsNested,
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  // warmup: preload YAML
+  FunctionLookupEngine::getInstance(PlatformType::PrestoPlatform);
 
   benchmark = std::make_unique<ArithmeticAndComparisonBenchmark>(FLAGS_batch_size);
   folly::runBenchmarks();

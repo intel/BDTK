@@ -34,8 +34,8 @@ TEST(CiderProcessorQueryRunnerTest, filterProjectTest) {
   std::string create_ddl = "CREATE TABLE table_test(col_a BIGINT, col_b BIGINT)";
   cider_query_runner.prepare(create_ddl);
 
-  struct ArrowArray* input_array;
-  struct ArrowSchema* input_schema;
+  ArrowArray* input_array;
+  ArrowSchema* input_schema;
   QueryArrowDataGenerator::generateBatchByTypes(
       input_schema,
       input_array,
@@ -43,14 +43,19 @@ TEST(CiderProcessorQueryRunnerTest, filterProjectTest) {
       {"col_a", "col_b"},
       {CREATE_SUBSTRAIT_TYPE(I64), CREATE_SUBSTRAIT_TYPE(I64)});
 
+  ArrowArray expected_array;
+  ArrowSchema expected_schema;
+  QueryArrowDataGenerator::cloneChildren(
+      *input_schema, expected_schema, *input_array, expected_array);
+
   std::string sql_select_star = "SELECT col_a, col_b FROM table_test";
-  struct ArrowArray output_array;
-  struct ArrowSchema output_schema;
+  ArrowArray output_array;
+  ArrowSchema output_schema;
   cider_query_runner.runQueryOneBatch(
       sql_select_star, *input_array, *input_schema, output_array, output_schema);
 
   EXPECT_TRUE(CiderArrowChecker::checkArrowEq(
-      input_array, &output_array, input_schema, &output_schema));
+      &expected_array, &output_array, &expected_schema, &output_schema));
 }
 
 int main(int argc, char** argv) {

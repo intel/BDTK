@@ -50,12 +50,12 @@ class FilterProjectTest : public ::testing::Test {
     auto eu = substrait2eu.createRelAlgExecutionUnit();
 
     // Pipeline Building
-    auto pipeline = parsers::toOpPipeline(eu);
+    context::CodegenContext codegen_ctx;
+    auto pipeline = parsers::toOpPipeline(eu, codegen_ctx);
     transformer::Transformer transformer;
     auto translators = transformer.toTranslator(pipeline);
 
     // Codegen
-    context::CodegenContext codegen_ctx;
     auto module = cider::jitlib::LLVMJITModule("test", true);
     cider::jitlib::JITFunctionPointer function =
         cider::jitlib::JITFunctionBuilder()
@@ -92,6 +92,7 @@ class FilterProjectTest : public ::testing::Test {
                 "b", CREATE_SUBSTRAIT_TYPE(I64), {1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
             .build();
 
+    runtime_ctx->resetBatch(allocator);
     query_func((int8_t*)runtime_ctx.get(), (int8_t*)array);
 
     auto output_batch_array = runtime_ctx->getOutputBatch()->getArray();

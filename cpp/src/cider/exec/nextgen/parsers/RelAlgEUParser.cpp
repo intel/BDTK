@@ -24,6 +24,7 @@
 #include "exec/nextgen/operators/AggregationNode.h"
 #include "exec/nextgen/operators/FilterNode.h"
 #include "exec/nextgen/operators/HashJoinNode.h"
+#include "exec/nextgen/operators/LazyNode.h"
 #include "exec/nextgen/operators/ProjectNode.h"
 #include "exec/nextgen/operators/QueryFuncInitializer.h"
 #include "util/Logger.h"
@@ -141,7 +142,7 @@ class InputAnalyzer {
   std::unordered_map<InputColDescriptor, size_t> input_desc_to_index_;
 };
 
-OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
+OpPipeline toOpPipeline(RelAlgExecutionUnit& eu, context::CodegenContext& context) {
   // TODO (bigPYJ1151): Only support filter and project now.
   // TODO (bigPYJ1151): Only naive expression dispatch now, need to analyze expression
   // trees and dispatch more fine-grained.
@@ -150,14 +151,19 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   }
   OpPipeline ops;
 
+  // TODO (majian): should remove bare columns tree from input_exprs
   InputAnalyzer analyzer(eu);
   auto&& input_exprs = analyzer.run();
 
   // Relpace ColumnVar in target_exprs with OutputColumnVar to distinguish input cols and
   // output cols.
+  // QueryFuncInitializer call setLocalIndex(...) twice, for input and output
+  // If we don't create OutputColumnVar, then output index will overwrite input index.
+  bool can_enable_lazy_node = false;
   for (auto& expr : eu.shared_target_exprs) {
     if (auto column_var_ptr = std::dynamic_pointer_cast<Analyzer::ColumnVar>(expr)) {
       expr = std::make_shared<Analyzer::OutputColumnVar>(column_var_ptr);
+      can_enable_lazy_node = true;
     }
   }
 
@@ -174,6 +180,7 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   }
 
   if (!join_quals.empty()) {
+    can_enable_lazy_node = false;
     switch (join_type) {
       case JoinType::INNER:
       case JoinType::LEFT:
@@ -196,10 +203,12 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
     filters.push_back(filter_expr);
   }
   if (filters.size() > 0) {
+    can_enable_lazy_node = false;
     ops.emplace_back(createOpNode<operators::FilterNode>(filters));
   }
 
   ExprPtrVector projs;
+  ExprPtrVector lazys;
   ExprPtrVector aggs;
   ExprPtrVector groupbys;
 
@@ -208,6 +217,7 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
       aggs.push_back(targets_expr);
     } else {
       projs.push_back(targets_expr);
+      lazys.push_back(targets_expr);
     }
   }
   if (projs.size() > 0) {
@@ -221,7 +231,14 @@ OpPipeline toOpPipeline(RelAlgExecutionUnit& eu) {
   }
 
   if (!groupbys.empty() || !aggs.empty()) {
+    can_enable_lazy_node = false;
     ops.emplace_back(createOpNode<operators::AggNode>(groupbys, aggs));
+  }
+
+  if (can_enable_lazy_node && context.getCodegenOptions().enable_copy_elimination &&
+      lazys.size() > 0) {
+    context.setHasLazyNode(true);
+    ops.emplace_back(createOpNode<operators::LazyNode>(lazys));
   }
 
   return ops;
