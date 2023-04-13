@@ -1,3 +1,16 @@
+diff --git a/presto-native-execution/CMakeLists.txt b/presto-native-execution/CMakeLists.txt
+index bbf1551a41..0bddb08189 100644
+--- a/presto-native-execution/CMakeLists.txt
++++ b/presto-native-execution/CMakeLists.txt
+@@ -71,7 +71,7 @@ set(VELOX_BUILD_TESTING
+     CACHE BOOL "Enable Velox tests")
+ 
+ set(VELOX_ENABLE_SPARK_FUNCTIONS
+-    OFF
++    ON
+     CACHE BOOL "Enable Velox Spark functions")
+ 
+ set(VELOX_ENABLE_EXAMPLES
 diff --git a/presto-native-execution/Makefile b/presto-native-execution/Makefile
 index f77cff05fc..04b24adb70 100644
 --- a/presto-native-execution/Makefile
@@ -79,7 +92,7 @@ index 3631b7d4c0..38e4c5e8af 100644
        systemConfig->values(), nodeConfig->values());
    taskManager_->setBaseUri(fmt::format(kBaseUriFormat, address_, servicePort));
 diff --git a/presto-native-execution/presto_cpp/main/TaskResource.cpp b/presto-native-execution/presto_cpp/main/TaskResource.cpp
-index 545fbd119c..4aada17404 100644
+index 545fbd119c..0576785ed2 100644
 --- a/presto-native-execution/presto_cpp/main/TaskResource.cpp
 +++ b/presto-native-execution/presto_cpp/main/TaskResource.cpp
 @@ -22,6 +22,9 @@
