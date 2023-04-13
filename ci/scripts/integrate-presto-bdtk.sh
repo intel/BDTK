@@ -50,6 +50,8 @@ cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/function/libcider
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/src/cider/function/libcider_runtime_function.so ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/libcider_static.a ${WORKER_DIR}/presto_cpp/main/lib
 cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/cpp/libcider_velox_static.a ${WORKER_DIR}/presto_cpp/main/lib
+# copy libvelox_functions_spark to lib dir. Due to presto cpp build velox will set conf VELOX_ENABLE_SPARK_FUNCTIONS to OFF
+cp ${WORKER_DIR}/BDTK/build-${VELOX_PLUGIN_MODE}/thirdparty/velox/velox/functions/sparksql/libvelox_functions_spark.a ${WORKER_DIR}/presto_cpp/main/lib
 
 
 make -j ${CPU_COUNT:-`nproc`} PRESTO_ENABLE_PARQUET=ON ${PRESTO_CPP_MODE}
