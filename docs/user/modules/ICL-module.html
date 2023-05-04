@@ -272,10 +272,11 @@ sudo newgrp qat  <span class="c1"># effective immediately</span>
 <ul class="last simple">
 <li>Please see <span class="xref std std-ref">icl_building_the_library_reference_link</span> for how to customize your build and enable required codec.</li>
 <li>Please make sure to turn off the option <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_TESTS=OFF</span></code> and <code class="docutils literal notranslate"><span class="pre">-DICL_BUILD_BENCHMARKS=OFF</span></code> when build</li>
+<li>Please manually copy <cite>icl_codec.h</cite> and <cite>libicl_codec.a</cite> to your search path for example <cite>/usr/local/include</cite> and <cite>/usr/local/lib</cite> when build arrow in the below step</li>
 </ul>
 </div>
 </li>
-<li><p class="first">Download the Arrow patch <a class="reference external" href="https://github.com/intel/BDTK/src/compression/build-support/0001-Add-ICL-support.patch">here</a>.</p>
+<li><p class="first">Download the Arrow patch <a class="reference external" href="https://github.com/intel/BDTK/cpp/resource/0001-Add-ICL-support.patch">here</a>.</p>
 </li>
 <li><p class="first">Get the Arrow Source using the following command:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone -b apache-arrow-10.0.0 https://github.com/apache/arrow.git
