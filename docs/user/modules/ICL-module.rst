@@ -276,7 +276,8 @@ To use Arrow Compression Codec with Intel Codec Library, users need rebuild Arro
 
      * Please see :ref:`icl_building_the_library_reference_link` for how to customize your build and enable required codec. 
      * Please make sure to turn off the option ``-DICL_BUILD_TESTS=OFF`` and ``-DICL_BUILD_BENCHMARKS=OFF`` when build 
-2. Download the Arrow patch `here <https://github.com/intel/BDTK/src/compression/build-support/0001-Add-ICL-support.patch>`__.
+     * Please manually copy `icl_codec.h` and `libicl_codec.a` to your search path for example `/usr/local/include` and `/usr/local/lib` when build arrow in the below step
+2. Download the Arrow patch `here <https://github.com/intel/BDTK/cpp/resource/0001-Add-ICL-support.patch>`__.
 3. Get the Arrow Source using the following command:
 
    .. code-block:: shell

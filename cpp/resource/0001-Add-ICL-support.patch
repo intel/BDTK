@@ -1,0 +1,307 @@
+From 6ad20f5eb0ee146124f67f3c882e742059372201 Mon Sep 17 00:00:00 2001
+From: "Xie, Qi" <qi.xie@intel.com>
+Date: Sun, 18 Dec 2022 21:37:58 +0800
+Subject: [PATCH] Add ICL support
+
+---
+ cpp/CMakeLists.txt                        |  11 ++
+ cpp/cmake_modules/DefineOptions.cmake     |   1 +
+ cpp/src/arrow/CMakeLists.txt              |   5 +
+ cpp/src/arrow/util/compression_internal.h |   4 +
+ cpp/src/arrow/util/compression_zlib.cc    | 179 +++++++++++++++++++++-
+ 5 files changed, 199 insertions(+), 1 deletion(-)
+
+diff --git a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
+index 029f13f7c..00a1cfb14 100644
+--- a/cpp/CMakeLists.txt
++++ b/cpp/CMakeLists.txt
+@@ -695,6 +695,17 @@ if(ARROW_WITH_ZLIB)
+   endif()
+ endif()
+ 
++if(ARROW_WITH_ICL)
++  find_library(LIB_ICL_STATIC libicl_codec.a)
++  if (LIB_ICL_STATIC)
++    message(STATUS "Found ICL: " ${LIB_ICL_STATIC})
++  else()
++    message(STATUS "Not Found ICL: " ${LIB_ICL_STATIC})
++  endif()
++  list(APPEND ARROW_STATIC_INSTALL_INTERFACE_LIBS ${LIB_ICL_STATIC})
++  list(APPEND ARROW_SHARED_LINK_LIBS ${LIB_ICL_STATIC})
++endif()
++
+ if(ARROW_WITH_ZSTD)
+   list(APPEND ARROW_STATIC_LINK_LIBS ${ARROW_ZSTD_LIBZSTD})
+   if(zstd_SOURCE STREQUAL "SYSTEM")
+diff --git a/cpp/cmake_modules/DefineOptions.cmake b/cpp/cmake_modules/DefineOptions.cmake
+index 0a0f24b47..55c5a2150 100644
+--- a/cpp/cmake_modules/DefineOptions.cmake
++++ b/cpp/cmake_modules/DefineOptions.cmake
+@@ -528,6 +528,7 @@ takes precedence over ccache if a storage backend is configured" ON)
+   define_option(ARROW_WITH_LZ4 "Build with lz4 compression" OFF)
+   define_option(ARROW_WITH_SNAPPY "Build with Snappy compression" OFF)
+   define_option(ARROW_WITH_ZLIB "Build with zlib compression" OFF)
++  define_option(ARROW_WITH_ICL "Build with ICL backend for zlib compression" OFF)
+   define_option(ARROW_WITH_ZSTD "Build with zstd compression" OFF)
+ 
+   define_option(ARROW_WITH_UCX
+diff --git a/cpp/src/arrow/CMakeLists.txt b/cpp/src/arrow/CMakeLists.txt
+index 099a86237..d8dd3c9dc 100644
+--- a/cpp/src/arrow/CMakeLists.txt
++++ b/cpp/src/arrow/CMakeLists.txt
+@@ -308,6 +308,10 @@ if(ARROW_WITH_ZLIB)
+   list(APPEND ARROW_SRCS util/compression_zlib.cc)
+ endif()
+ 
++if(ARROW_WITH_ICL)
++  add_definitions(-DARROW_WITH_ICL)
++endif()
++
+ if(ARROW_WITH_ZSTD)
+   add_definitions(-DARROW_WITH_ZSTD)
+   list(APPEND ARROW_SRCS util/compression_zstd.cc)
+@@ -598,6 +602,7 @@ add_arrow_lib(arrow
+               ${ARROW_SHARED_PRIVATE_LINK_LIBS}
+               STATIC_LINK_LIBS
+               ${ARROW_STATIC_LINK_LIBS}
++              ${LIB_ICL_STATIC}
+               STATIC_INSTALL_INTERFACE_LIBS
+               ${ARROW_STATIC_INSTALL_INTERFACE_LIBS}
+               SHARED_INSTALL_INTERFACE_LIBS
+diff --git a/cpp/src/arrow/util/compression_internal.h b/cpp/src/arrow/util/compression_internal.h
+index d4cdca117..869117395 100644
+--- a/cpp/src/arrow/util/compression_internal.h
++++ b/cpp/src/arrow/util/compression_internal.h
+@@ -44,6 +44,10 @@ std::unique_ptr<Codec> MakeBZ2Codec(int compression_level = kBZ2DefaultCompressi
+ // GZip
+ constexpr int kGZipDefaultCompressionLevel = 9;
+ 
++#ifdef ARROW_WITH_ICL
++constexpr int kIclDefaultCompressionLevel = 1;
++#endif
++
+ struct GZipFormat {
+   enum type {
+     ZLIB,
+diff --git a/cpp/src/arrow/util/compression_zlib.cc b/cpp/src/arrow/util/compression_zlib.cc
+index 6dcc5153a..6264e4c31 100644
+--- a/cpp/src/arrow/util/compression_zlib.cc
++++ b/cpp/src/arrow/util/compression_zlib.cc
+@@ -17,6 +17,7 @@
+ 
+ #include "arrow/util/compression_internal.h"
+ 
++#include <iostream>
+ #include <algorithm>
+ #include <cstdint>
+ #include <cstring>
+@@ -25,11 +26,20 @@
+ 
+ #include <zconf.h>
+ #include <zlib.h>
++#ifdef ARROW_WITH_ICL
++#include <icl_codec.h>
++#endif
+ 
+ #include "arrow/result.h"
+ #include "arrow/status.h"
+ #include "arrow/util/logging.h"
+ #include "arrow/util/macros.h"
++#ifdef ARROW_WITH_ICL
++#include "arrow/util/bit_util.h"
++#include "arrow/util/endian.h"
++#include "arrow/util/io_util.h"
++#include "arrow/util/ubsan.h"
++#endif
+ 
+ namespace arrow {
+ namespace util {
+@@ -465,7 +475,9 @@ class GZipCodec : public Codec {
+     if (!init_compressor_status.ok()) {
+       return init_compressor_status;
+     }
+-    return InitDecompressor();
++    //return InitDecompressor();
++    auto status = InitDecompressor();
++    return status;
+   }
+ 
+   Compression::type compression_type() const override { return Compression::GZIP; }
+@@ -496,9 +508,174 @@ class GZipCodec : public Codec {
+   int compression_level_;
+ };
+ 
++#ifdef ARROW_WITH_ICL
++// ----------------------------------------------------------------------
++// ICL implementation
++
++class IclCodec : public Codec {
++ public:
++  explicit IclCodec(const std::string& codec_name, int compression_level, GZipFormat::type format) {
++    compression_level_ = compression_level == kUseDefaultCompressionLevel
++                             ? kIclDefaultCompressionLevel
++                             : compression_level;
++    codec_ = icl::codec::IclCompressionCodec::MakeIclCompressionCodec(codec_name, compression_level);
++    if (!codec_) {
++      std::cout << "using ICL failed, fallbacke to GzipCodec wiht level:" << compression_level << std::endl;
++      fallback_to_gzip_ = true;
++      gzip_codec_ = std::make_unique<GZipCodec>(compression_level, format);
++    }
++  }
++
++  Result<int64_t> Decompress(int64_t input_length, const uint8_t* input,
++                             int64_t output_length, uint8_t* output) override {
++    if (!fallback_to_gzip_) {
++      //std::cout << "Call decompress:" << input_length << std::endl;
++      int64_t total_decompressed_size = 0;
++      while (input_length >= kIclHadoopHeaderLength) {
++        const uint32_t expected_decompressed_size =
++          bit_util::FromBigEndian(SafeLoadAs<uint32_t>(input));
++        const uint32_t expected_compressed_size =
++          bit_util::FromBigEndian(SafeLoadAs<uint32_t>(input + sizeof(uint32_t)));
++        input += kIclHadoopHeaderLength;
++        input_length -= kIclHadoopHeaderLength;
++        if (input_length < expected_compressed_size) {
++          return Status::IOError("ICL decompression not enough bytes for input");
++        }
++        if (output_length < expected_decompressed_size) {
++          return Status::IOError("ICL decompression not enough bytes for output");
++        }
++        int64_t decompressed_size = codec_->Decompress(expected_compressed_size, input, output_length, output);
++        if (decompressed_size == expected_decompressed_size) {
++          input += expected_compressed_size;
++          input_length -= expected_compressed_size;
++          output += expected_decompressed_size;
++          output_length -= expected_decompressed_size;
++          total_decompressed_size += expected_decompressed_size;
++        } else {
++          return Status::IOError("ICL decompression not the same bytes");
++        }
++      }
++      return total_decompressed_size;
++    } else {
++      return gzip_codec_->Decompress(input_length, input, output_length, output);
++    }
++  }
++
++  int64_t MaxCompressedLen(int64_t input_length, const uint8_t* input) override {
++    if (!fallback_to_gzip_) {
++      return kIclHadoopHeaderLength + codec_->MaxCompressedLen(input_length, input);
++    } else {
++      return gzip_codec_->MaxCompressedLen(input_length, input);
++    }
++  }
++
++  Result<int64_t> Compress(int64_t input_length, const uint8_t* input,
++                           int64_t output_length, uint8_t* output) override {
++    if (!fallback_to_gzip_) {
++      //std::cout << "Call compress:" << input_length << std::endl;
++      if (output_length < kIclHadoopHeaderLength) {
++        return Status::Invalid("Output buffer too small for IclCodec compression");
++      }
++
++      int64_t result = codec_->Compress(input_length, input, output_length - kIclHadoopHeaderLength,
++                                                output + kIclHadoopHeaderLength);
++      if (result >= 0) {
++        const uint32_t decompressed_size =
++          bit_util::ToBigEndian(static_cast<uint32_t>(input_length));
++        const uint32_t compressed_size =
++          bit_util::ToBigEndian(static_cast<uint32_t>(result));
++        SafeStore(output, decompressed_size);
++        SafeStore(output + sizeof(uint32_t), compressed_size);
++        return result + kIclHadoopHeaderLength;
++      } else {
++        return Status::IOError("ICL compression failure with error:", result);
++      }
++    } else {
++      return gzip_codec_->Compress(input_length, input, output_length, output);
++    }
++  }
++
++  Result<std::shared_ptr<Compressor>> MakeCompressor() override {
++    if (!fallback_to_gzip_) {
++      return Status::NotImplemented("Streaming compression unsupported with ICL");
++    } else {
++      return gzip_codec_->MakeCompressor();
++    }
++  }
++
++  Result<std::shared_ptr<Decompressor>> MakeDecompressor() override {
++    if (!fallback_to_gzip_) {
++      return Status::NotImplemented("Streaming decompression unsupported with ICL");
++    } else {
++      return gzip_codec_->MakeDecompressor();
++    }
++  }
++
++  Status Init() override {
++    if (fallback_to_gzip_) {
++      auto status = gzip_codec_->Init();
++      return status;
++    } else {
++      if (compression_level_ > maximum_compression_level() || compression_level_ < minimum_compression_level()) {
++        return Status::IOError("Unsupported compression level for ICL");
++      }
++      return Status::OK();
++    }
++  }
++
++  Compression::type compression_type() const override { return Compression::GZIP; }
++
++  int compression_level() const override { return compression_level_; }
++
++  int minimum_compression_level() const override {
++    if (!fallback_to_gzip_) {
++      return codec_->minimum_compression_level();
++    } else {
++      return gzip_codec_->minimum_compression_level();
++    }
++  }
++
++  int maximum_compression_level() const override {
++    if (!fallback_to_gzip_) {
++      return codec_->maximum_compression_level();
++    } else {
++      return gzip_codec_->maximum_compression_level();
++    }
++  }
++
++  int default_compression_level() const override {
++    if (!fallback_to_gzip_) {
++      return codec_->default_compression_level();
++    } else {
++      return gzip_codec_->default_compression_level();
++    }
++  }
++
++ private:
++  static const int64_t kIclHadoopHeaderLength = sizeof(uint32_t) * 2;
++
++  int compression_level_;
++  bool fallback_to_gzip_{false};
++  std::unique_ptr<icl::codec::IclCompressionCodec> codec_;
++  std::unique_ptr<GZipCodec> gzip_codec_;
++};
++#endif
++
+ }  // namespace
+ 
+ std::unique_ptr<Codec> MakeGZipCodec(int compression_level, GZipFormat::type format) {
++  auto maybe_backend = arrow::internal::GetEnvVar("GZIP_BACKEND");
++  if (maybe_backend.ok()) {
++    auto backend = *std::move(maybe_backend);
++    //std::cout << "using backend:" << backend << std::endl;
++    if (!backend.empty()) {
++#ifdef ARROW_WITH_ICL
++      return std::unique_ptr<Codec>(new IclCodec(backend, compression_level, format));
++#else
++      ARROW_LOG(WARNING) << "Support for gzip backend with ICL not built, fallback to GzipCodec";
++#endif
++    }
++  }
+   return std::make_unique<GZipCodec>(compression_level, format);
+ }
+ 
+-- 
+2.25.1
+
