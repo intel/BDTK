@@ -1,0 +1,143 @@
+diff --git a/cpp/velox/CMakeLists.txt b/cpp/velox/CMakeLists.txt
+index 4af6454f..9c1dfdf8 100644
+--- a/cpp/velox/CMakeLists.txt
++++ b/cpp/velox/CMakeLists.txt
+@@ -67,6 +67,8 @@ endfunction()
+ macro(ADD_VELOX_DEPENDENCIES)
+   add_velox_dependency(functions::sparksql::lib "${VELOX_COMPONENTS_PATH}/functions/sparksql/libvelox_functions_spark.a")
+   add_velox_dependency(functions::sparksql::agg "${VELOX_COMPONENTS_PATH}/functions/sparksql/aggregates/libvelox_functions_spark_aggregates.a")
++  add_velox_dependency(exec::test "${VELOX_COMPONENTS_PATH}/exec/tests/utils/libvelox_exec_test_lib.a")
++
+   add_velox_dependency(functions::prestosql::agg "${VELOX_COMPONENTS_PATH}/functions/prestosql/aggregates/libvelox_aggregates.a")
+ 
+   add_velox_dependency(functions::prestosql::window "${VELOX_COMPONENTS_PATH}/functions/prestosql/window/libvelox_window.a")
+@@ -82,7 +84,11 @@ macro(ADD_VELOX_DEPENDENCIES)
+   add_velox_dependency(functions::lib "${VELOX_COMPONENTS_PATH}/functions/lib/libvelox_functions_lib.a")
+   add_velox_dependency(common::test_util "${VELOX_COMPONENTS_PATH}/common/testutil/libvelox_test_util.a")
+   add_velox_dependency(parse::parser "${VELOX_COMPONENTS_PATH}/parse/libvelox_parse_parser.a")
++
++  add_velox_dependency(duckdb_parser "${VELOX_COMPONENTS_PATH}/duckdb/conversion/libvelox_duckdb_parser.a")
++
+   add_velox_dependency(parse::expression "${VELOX_COMPONENTS_PATH}/parse/libvelox_parse_expression.a")
++  add_velox_dependency(parse::velox_parse_utils "${VELOX_COMPONENTS_PATH}/parse/libvelox_parse_utils.a")
+   add_velox_dependency(vector::arrow::bridge "${VELOX_COMPONENTS_PATH}/vector/arrow/libvelox_arrow_bridge.a")
+ 
+   add_velox_dependency(connector::hive "${VELOX_COMPONENTS_PATH}/connectors/hive/libvelox_hive_connector.a")
+@@ -106,7 +112,9 @@ macro(ADD_VELOX_DEPENDENCIES)
+ 
+   add_velox_dependency(dwio::common "${VELOX_COMPONENTS_PATH}/dwio/common/libvelox_dwio_common.a")
+   add_velox_dependency(functions::prestosql::types "${VELOX_COMPONENTS_PATH}/functions/prestosql/types/libvelox_presto_types.a")
++ 
+   add_velox_dependency(expression "${VELOX_COMPONENTS_PATH}/expression/libvelox_expression.a")
++
+   add_velox_dependency(core "${VELOX_COMPONENTS_PATH}/core/libvelox_core.a")
+ 
+   add_velox_dependency(type "${VELOX_COMPONENTS_PATH}/type/libvelox_type.a")
+@@ -139,6 +147,10 @@ macro(ADD_VELOX_DEPENDENCIES)
+   if(BUILD_TESTS)
+     add_velox_dependency(vector::test::util "${VELOX_COMPONENTS_PATH}/vector/tests/utils/libvelox_vector_test_lib.a")
+   endif()
++  add_velox_dependency(duckdb_allocator "${VELOX_COMPONENTS_PATH}/duckdb/memory/libvelox_duckdb_allocator.a")
++  add_velox_dependency(duckdb_conversion "${VELOX_COMPONENTS_PATH}/duckdb/conversion/libvelox_duckdb_conversion.a")
++  add_velox_dependency(duckdb "${VELOX_COMPONENTS_PATH}/external/duckdb/libduckdb.a")
++  add_velox_dependency(function::registry "${VELOX_COMPONENTS_PATH}/functions/libvelox_function_registry.a")
+ endmacro()
+ 
+ macro(find_libhdfs3)
+@@ -157,6 +169,7 @@ macro(find_awssdk)
+   find_package(AWSSDK REQUIRED COMPONENTS s3;identity-management)
+ endmacro()
+ 
++set(BDTK_HOME "/workspace/BDTK/cpp")
+ 
+ # Build Velox backend.
+ set(VELOX_SRCS
+@@ -183,7 +196,9 @@ target_include_directories(velox PUBLIC
+     ${VELOX_HOME}
+     ${VELOX_BUILD_PATH}
+     ${VELOX_HOME}/velox/vector
+-    ${VELOX_HOME}/third_party/xsimd/include/)
++    ${VELOX_HOME}/third_party/xsimd/include/
++    ${BDTK_HOME}/src/cider-velox
++    ${BDTK_HOME}/src/cider)
+ 
+ set_target_properties(velox PROPERTIES
+     LIBRARY_OUTPUT_DIRECTORY ${root_directory}/releases
+@@ -193,6 +208,7 @@ find_package(Folly REQUIRED CONFIG)
+ find_package(gflags REQUIRED COMPONENTS shared CONFIG)
+ 
+ target_link_libraries(velox PUBLIC gluten)
++target_link_libraries(velox PUBLIC velox_plugin cider_plan_transformer velox_plan_transformer velox_substrait_convertor)
+ add_velox_dependencies()
+ target_link_libraries(velox PUBLIC Folly::folly)
+ 
+@@ -218,3 +234,22 @@ if(VELOX_ENABLE_S3)
+   find_awssdk()
+   target_link_libraries(velox PUBLIC ${AWSSDK_LIBRARIES})
+ endif()
++
++set(ENABLE_BDTK ON)
++if(ENABLE_BDTK)
++  target_link_libraries(velox PUBLIC
++    cider
++    cider_function
++    cider_processor
++    nextgen
++    jitlib
++    cider_plan_substrait
++    cider_plan_parser
++    cider_type_plan  
++    QueryEngine
++    
++    cider_util
++    cider_plan_validator
++    cider_expr_builder) 
++
++endif()
+diff --git a/cpp/velox/compute/VeloxBackend.cc b/cpp/velox/compute/VeloxBackend.cc
+index 94ed9b58..c00a93a5 100644
+--- a/cpp/velox/compute/VeloxBackend.cc
++++ b/cpp/velox/compute/VeloxBackend.cc
+@@ -194,6 +194,7 @@ std::shared_ptr<const velox::core::PlanNode> VeloxBackend::getVeloxPlanNode(cons
+     }
+   }
+   auto planNode = subVeloxPlanConverter_->toVeloxPlan(splan);
++  std::cerr << "Spark substrait plan: " << splan.DebugString() <<std::endl;
+ #ifdef GLUTEN_PRINT_DEBUG
+   std::cout << "Plan Node: " << std::endl << planNode->toString(true, true) << std::endl;
+ #endif
+diff --git a/cpp/velox/compute/WholeStageResultIterator.cc b/cpp/velox/compute/WholeStageResultIterator.cc
+index 0ef3ad09..221ff9cd 100644
+--- a/cpp/velox/compute/WholeStageResultIterator.cc
++++ b/cpp/velox/compute/WholeStageResultIterator.cc
+@@ -8,7 +8,13 @@
+ #include "velox/connectors/hive/HiveConnectorSplit.h"
+ #include "velox/exec/PlanNodeStats.h"
+ 
++#include "src/CiderVeloxPluginCtx.h"
++#include "velox/exec/tests/utils/PlanBuilder.h"
++#include "velox/type/Type.h"
++#include "velox/parse/TypeResolver.h"
++
+ using namespace facebook;
++using namespace facebook::velox;
+ 
+ namespace gluten {
+ 
+@@ -250,7 +256,16 @@ WholeStageResultIteratorFirstStage::WholeStageResultIteratorFirstStage(
+   // Set task parameters.
+   velox::core::PlanFragment planFragment{planNode, velox::core::ExecutionStrategy::kUngrouped, 1};
+   std::shared_ptr<velox::core::QueryCtx> queryCtx = createNewVeloxQueryCtx(getConnectorConfig(), getPool());
++  auto rootNode = planFragment.planNode;
++  std::cerr << "node tree is " << rootNode->toString(true, true) << std::endl;
+ 
++  if(false) {
++    facebook::velox::plugin::CiderVeloxPluginCtx::init("/workspace/BDTK/cpp/src/cider/exec/plan/lookup/");
++    std::cerr << "Init done" << std::endl;
++    planFragment.planNode = facebook::velox::plugin::CiderVeloxPluginCtx::transformVeloxPlan(rootNode);
++    std::cerr << "transfer done. plan is" << planFragment.planNode->toString(true, true) << std::endl;
++  }
++ 
+   // Set customized confs to query context.
+   setConfToQueryContext(queryCtx);
+   task_ = std::make_shared<velox::exec::Task>(
