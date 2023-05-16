@@ -67,9 +67,10 @@ void CiderNextgenTestBase::assertQuery(const std::string& sql,
                                                   &output_schema));
     }
   }
-
-  output_array.release(&output_array);
-  output_schema.release(&output_schema);
+  if (output_array.length != 0) {
+    output_array.release(&output_array);
+    output_schema.release(&output_schema);
+  }
 }
 
 void CiderJoinNextgenTestBase::assertJoinQuery(const std::string& sql,

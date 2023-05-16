@@ -438,7 +438,7 @@ JoinType getCiderJoinType(const substrait::JoinRel_JoinType& s_join_type) {
       return JoinType::INNER;
     case substrait::JoinRel_JoinType_JOIN_TYPE_LEFT:
       return JoinType::LEFT;
-    case substrait::JoinRel_JoinType_JOIN_TYPE_SEMI:
+    case substrait::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI:
       return JoinType::SEMI;
     default:
       return JoinType::INVALID;

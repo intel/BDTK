@@ -59,8 +59,6 @@ TEST_F(CiderOperatorCompareOpTest, compareOpForTest) {
                                         "c0 = 13",
                                         "c0 <> 13"};
     verifyCompareOp(generateTestBatch(rowType, false), filters);
-    // Enable this after fix the null value problems.
-    GTEST_SKIP();
     verifyCompareOp(generateTestBatch(rowType, true), filters);
   }
 }

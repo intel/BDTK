@@ -47,6 +47,8 @@ class Batch {
 
   ~Batch() { release(); }
 
+  bool isEmpty() { return array_.length == 0; }
+
   // output batch can reuse input_array's children
   // temporary batch(used for materialization) no need to reuse other array's children
   void reset(const SQLTypeInfo& type,

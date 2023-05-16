@@ -28,8 +28,8 @@ using namespace facebook::velox::plugin;
 
 class ArrowUtilsTest : public testing::Test {
  public:
-  std::unique_ptr<facebook::velox::memory::ScopedMemoryPool> pool_{
-      facebook::velox::memory::getDefaultScopedMemoryPool()};
+  std::shared_ptr<facebook::velox::memory::MemoryPool> pool_{
+      facebook::velox::memory::getDefaultMemoryPool()};
 
   template <typename T>
   void testCiderResult(const int8_t* data_buffer,
