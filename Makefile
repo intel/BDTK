@@ -57,7 +57,7 @@ build-common:
 	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/parameterized_types.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/plan.proto
 	@sed -i "s/velox\/substrait\/proto\///g" ${CPP_SOURCE_DIR}/thirdparty/velox/velox/substrait/proto/substrait/type_expressions.proto
-	@sed -i 's|"https://.*arrow.*tar.gz"|"https://github.com/apache/arrow/archive/refs/tags/apache-arrow-8.0.0.tar.gz"|g' ${CPP_SOURCE_DIR}/thirdparty/velox/third_party/CMakeLists.txt
+	# @sed -i 's|"https://.*arrow.*tar.gz"|"https://github.com/apache/arrow/archive/refs/tags/apache-arrow-8.0.0.tar.gz"|g' ${CPP_SOURCE_DIR}/thirdparty/velox/third_party/CMakeLists.txt
 
 	@mkdir -p ${CPP_BUILD_DIR}
 	@cd ${CPP_BUILD_DIR} && \

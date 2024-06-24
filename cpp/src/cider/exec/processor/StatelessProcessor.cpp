@@ -36,7 +36,9 @@ void StatelessProcessor::getResult(struct ArrowArray& array, struct ArrowSchema&
   has_result_ = false;
 
   auto output_batch = runtime_context_->getOutputBatch();
-  output_batch->move(schema, array);
+  if (!output_batch->isEmpty()) {
+    output_batch->move(schema, array);
+  }
 }
 
 }  // namespace cider::exec::processor
